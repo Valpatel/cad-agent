@@ -5,9 +5,66 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
+import {spawnSync} from 'node:child_process';
 import {sourceTree, bundleCss} from '../../../../tools/webkit/scada/ui/gallery/css-source-tree.mjs';
 
 const root=UI;
+
+function python(source) {
+  const result = spawnSync('python3', ['-c', source], {cwd: TOOLS, encoding: 'utf8'});
+  assert.ifError(result.error);
+  assert.equal(result.status, 0, result.stderr || result.stdout);
+}
+
+test('folder maps stay compact, portable and escaped, and every generated index shares its owner map', () => python(`
+import sys,json,xml.etree.ElementTree as ET
+from pathlib import Path
+sys.path.insert(0,str(Path('ui/gallery').resolve()))
+from gallery_maps import folder_map_svg
+from asset_maps import gallery_outputs
+from scada_paths import UI
+svg=folder_map_svg('owner<&>', [('folder<&>', 'Meaning <with> & text')], 'Safe <description>')
+doc=ET.fromstring(svg)
+assert doc.get('width')=='360'
+assert doc.find('{*}title').text=='owner<&> folder map'
+assert len(doc.findall('.//{*}text'))==3
+assert not doc.findall('.//{*}script')
+assert all(not key.endswith(('href','src')) for element in doc.iter() for key in element.attrib)
+manifest=json.loads((UI/'metadata/gallery.json').read_text())
+categories=json.loads((UI/'metadata/components.json').read_text())['categories']
+outputs=gallery_outputs(manifest,categories)
+maps=[name for name in outputs if name.endswith('.svg')]
+assert len(maps)==3, maps
+for name,data in outputs.items():
+ assert (UI/name).read_bytes()==data,name
+ if name.endswith('README.md'):
+  assert b'gallery-map.svg)' in data,name
+  assert bytes([96])*3+b'mermaid' not in data,name
+`));
+
+test('SVG capture provenance follows the complete renderer and runtime closure independently of map prose', () => python(`
+import importlib.util,tempfile
+from pathlib import Path
+spec=importlib.util.spec_from_file_location('gallery',Path('ui/generate-gallery.py').resolve())
+module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
+actual=module.source_hashes()
+assert 'tools/webkit/scada/ui/gallery/renderer.py' in actual
+assert 'tools/webkit/scada/ui/gallery/exporter.mjs' in actual
+assert 'tools/webkit/scada/ui/gallery/asset_maps.py' not in actual
+with tempfile.TemporaryDirectory() as directory:
+ module.REPO=Path(directory);module.PACKAGE=module.REPO/'package';module.TOOLS=module.REPO/'gallery'
+ files=[module.PACKAGE/'src/symbol.mjs',module.TOOLS/'renderer.py',module.TOOLS/'asset_maps.py',module.REPO/'tools/webkit/scada/scada_paths.py',module.REPO/'tools/webkit/scada/paths.mjs']
+ for file in files:
+  file.parent.mkdir(parents=True,exist_ok=True);file.write_text('original')
+ baseline=module.source_hashes()
+ (module.TOOLS/'asset_maps.py').write_text('new documentation')
+ assert module.source_hashes()==baseline
+ (module.TOOLS/'renderer.py').write_text('changed browser export')
+ assert module.source_hashes()!=baseline
+ (module.TOOLS/'renderer.py').write_text('original')
+ (module.PACKAGE/'src/symbol.mjs').write_text('changed equipment art')
+ assert module.source_hashes()!=baseline
+`));
 
 test('gallery preserves var animation shorthand, declaration order and leading pseudo selector', () => {
   const css = ':is(.active,.ready) .rotor{animation:spin var(--speed,2s) infinite;animation-play-state:paused;content:"} /* not syntax */"}@keyframes spin{to{transform:rotate(1turn)}}';

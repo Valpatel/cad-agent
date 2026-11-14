@@ -14,6 +14,7 @@ flowchart TD
 | [package-lock.json](package-lock.json) | Reproducible Node dependency resolution. |
 | [package.json](package.json) | Owned commands and pinned Node development dependencies. |
 | [paths.mjs](paths.mjs) | JavaScript repository, runtime and test owner locations. |
+| [gallery_maps.py](gallery_maps.py) | Compact, self-contained SVG ownership maps for generated galleries. |
 | [scada_paths.py](scada_paths.py) | Python repository, runtime and test owner locations. |
 | [sim/](sim/README.md) | Model registries, frozen behavior checks, topology SVGs and scenario maps. |
 | [explorer/](explorer/README.md) | Scenario gallery capture and index generation. |

@@ -40,17 +40,25 @@ connections; [model.json](model.json) owns behavior and editable assumptions.
 
 [Browse topology SVGs](../../img/topologies/README.md) · [Generation metadata](../../metadata/topologies.json)
 
+<details>
+<summary>3 focused views of this system</summary>
+
 | Focused view | ID | Equipment placements |
 | --- | --- | ---: |
 | Fish, media bed & return | `water` | 5 |
 | Root zone & sensing | `roots` | 6 |
 | Aeration, power & controls | `utilities` | 6 |
 
+</details>
+
 ## Equipment and model roles
 
 Roles below are the actual records in this scenario. A shared family name does
 not imply a calibrated device equation. Circuit roles describe resource bookkeeping;
 energy roles describe declared supply/conversion/load relationships.
+
+<details>
+<summary>Inspect the 12 equipment records and model roles</summary>
 
 | Equipment ID and label | Symbol | Model / declared domains |
 | --- | --- | --- |
@@ -66,6 +74,8 @@ energy roles describe declared supply/conversion/load relationships.
 | `bedLight` · Growing-zone light | `grow-light` | `load`; energy: converter; zone: growRoom |
 | `oxygenProbe` · Dissolved oxygen · illustrative index | `water-quality-probe` | `sensor`; energy: load; explicit observation |
 | `lightProbe` · Light · illustrative index | `light-sensor` | `sensor`; energy: load; explicit observation; zone: growRoom |
+
+</details>
 
 ## Editable assumptions
 
@@ -86,12 +96,17 @@ The [catalog entry](../index.json) stores each recipe, expected observation and
 limitation. These are editable playground commands, not operating procedures.
 Run or step the shared model to observe time-dependent effects.
 
+<details>
+<summary>Inspect 4 experiment recipes and commands</summary>
+
 | Experiment | Commands |
 | --- | --- |
 | Stop the return pump (`stop-return`) | `setEnabled(equipment="returnPump", value=false)` |
 | Block the bed outlet (`block-bed`) | `setFault(equipment="bed", value="blocked")` |
 | Interrupt aeration (`stop-air`) | `setEnabled(equipment="airSupply", value=false)` |
 | Lengthen the illustrative holding phase (`edit-cycle`) | `setParameter(equipment="bed", value=8, key="cycleHold")` |
+
+</details>
 
 Serve the sibling packages over HTTP and open
 [Explorer](../../../explorer/index.html?scenario=aquaponics-media-bed); see the

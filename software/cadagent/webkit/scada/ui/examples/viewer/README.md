@@ -15,15 +15,10 @@ This fictional utility example demonstrates an editable viewer and a read-only m
 
 ```mermaid
 flowchart TD
-  main[main.mjs composition] --> model[One UtilityModel]
-  main --> definition[system.json]
-  model --> editable[Editable adapter]
-  model --> readonly[Read-only adapter]
-  editable --> viewer[Interactive ScadaViewer]
-  readonly --> monitor[Monitor ScadaViewer]
-  definition --> viewer
-  definition --> monitor
-  viewer -->|dispatch| model
+  Model["One UtilityModel"] -->|"snapshots"| Adapters["Writable adapter<br/>Read-only adapter"]
+  Adapters --> Views["Control + monitor<br/>ScadaViewer instances"]
+  Definition["system.json"] --> Views
+  Views -->|"writable dispatch"| Model
 ```
 
 From the package root, run `python -m http.server 8000` and open `http://localhost:8000/examples/viewer/`. The model advances one fictional minute per visible running tick. Step pauses first. Page visibility gates automatic advancement; page teardown stops the model and destroys owned viewer subscriptions/listeners. The view never owns the plant clock.

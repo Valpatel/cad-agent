@@ -5,12 +5,12 @@
 [index.html](./index.html) is a self-contained example page with its small host controls and module script inline. It imports the component/catalog exports and component stylesheet. Search and family filters choose a descriptor; variant selection preserves the type identity; Active, Animate and Fault supply visual state to the same renderer used elsewhere.
 
 ```mermaid
-flowchart LR
-  search[Search and family filters] --> discovery[Pure discovery API]
-  discovery --> selection[Type and variant selection]
-  selection --> state[Explicit visual inputs]
-  state --> render[renderScadaComponent]
-  render --> preview[Preview and copyable API snippet]
+flowchart TD
+  Search["Search + family"] --> Discovery["Discovery API"]
+  Discovery --> Selection["Type + variant"]
+  Selection --> State["Visual inputs"]
+  State --> Render["Component renderer"]
+  Render --> Preview["Preview + API snippet"]
 ```
 
 Run `python -m http.server 8000` from the package root and open `http://localhost:8000/examples/components/`. The displayed code follows the current selection. The example deliberately exposes only a few common controls; the authoritative full field/port list comes from the descriptor, [API](../../docs/API.md) and [state coverage review](../../docs/STATE_COVERAGE.md).

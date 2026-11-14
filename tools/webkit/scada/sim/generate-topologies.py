@@ -46,7 +46,7 @@ def catalog():
 
 
 def source_hashes():
-    paths = [PACKAGE / 'scenarios/index.json', Path(__file__).resolve(), TOOLS / 'scada_paths.py', TOOLS / 'explorer/scenario_gallery_docs.py']
+    paths = [PACKAGE / 'scenarios/index.json', Path(__file__).resolve(), TOOLS / 'scada_paths.py', TOOLS / 'explorer/scenario_gallery_docs.py', TOOLS / 'gallery_maps.py']
     paths += [PACKAGE / 'scenarios' / entry['system'] for entry in catalog()]
     paths += [p for p in SUPPORT.rglob('*') if p.suffix in ('.py', '.mjs')]
     paths += [p for p in (REPO / 'software/cadagent/webkit/scada/ui/src').rglob('*') if p.is_file() and p.suffix != '.md']

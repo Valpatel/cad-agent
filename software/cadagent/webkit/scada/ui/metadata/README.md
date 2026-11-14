@@ -12,13 +12,12 @@ These JSON files let applications and agents discover equipment and verify expor
 
 ```mermaid
 flowchart TD
-  catalog[Pure catalog] --> metadata[components.json]
-  renderer[Canonical symbols and styles] --> gallery[SVG exporter]
-  renderer --> browser[Browser capture]
-  gallery --> svg[Package img symbols and states]
-  gallery --> receipt[gallery.json]
-  browser --> jpg[Package img thumbnails]
-  browser --> thumbnails[thumbnails.json]
+  Catalog["Pure catalog"] --> Metadata["components.json"]
+  Metadata ~~~ Renderer
+  Renderer["Symbols + styles"] --> Gallery["SVG exporter"]
+  Renderer --> Browser["Browser capture"]
+  Gallery --> SVG["SVG + gallery.json"]
+  Browser --> JPG["JPEG + thumbnails.json"]
 ```
 
 Use the exported `@valpatel/scada-ui/metadata` module for live pure discovery and `@valpatel/scada-ui/metadata.json` for the packaged JSON snapshot. See [the API](../docs/API.md) and [package export map](../package.json) before choosing a path. Every asset path remains owned by this package's `img/`.

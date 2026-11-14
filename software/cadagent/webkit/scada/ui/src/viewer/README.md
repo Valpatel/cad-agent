@@ -4,13 +4,13 @@
 
 ```mermaid
 flowchart TD
-  session[External adapter and session] --> controller[ScadaViewer]
-  document[Validated system definition] --> controller
-  controller --> diagram[renderScadaDiagram]
-  diagram --> symbols[Equipment symbols]
-  controller --> inspector[Workspace equipment inspector]
-  controller --> camera[ScadaCamera]
-  host[Host-owned 2D diagram] --> camera
+  Session["External adapter"] --> Controller["ScadaViewer"]
+  Document["System document"] --> Controller
+  Controller --> Diagram["Diagram renderer"]
+  Controller --> Inspector["Inspector"]
+  Controller --> Camera["ScadaCamera"]
+  Diagram --> Symbols["Symbols"]
+  Host["Host diagram"] --> Camera
 ```
 
 `viewer.mjs` and `viewer.css` own diagram layout, selection, zoom, equipment inspection and command dispatch. `renderScadaDiagram` is presentation; `ScadaViewer` is the adapter-driven controller. The external adapter owns snapshots, subscriptions and optional command execution. Several views can share that adapter. Switching or destroying a view must never reset the external model, and rendering motion is separate from simulation time.

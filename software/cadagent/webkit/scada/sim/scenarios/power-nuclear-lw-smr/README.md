@@ -40,6 +40,9 @@ connections; [model.json](model.json) owns behavior and editable assumptions.
 
 [Browse topology SVGs](../../img/topologies/README.md) · [Generation metadata](../../metadata/topologies.json)
 
+<details>
+<summary>4 focused views of this system</summary>
+
 | Focused view | ID | Equipment placements |
 | --- | --- | ---: |
 | Integral-PWR module A | `module-a` | 9 |
@@ -47,11 +50,16 @@ connections; [model.json](model.json) owns behavior and editable assumptions.
 | Independent module cooling | `cooling` | 6 |
 | Shared electrical bus and controls | `electrical` | 9 |
 
+</details>
+
 ## Equipment and model roles
 
 Roles below are the actual records in this scenario. A shared family name does
 not imply a calibrated device equation. Circuit roles describe resource bookkeeping;
 energy roles describe declared supply/conversion/load relationships.
+
+<details>
+<summary>Inspect the 31 equipment records and model roles</summary>
 
 | Equipment ID and label | Symbol | Model / declared domains |
 | --- | --- | --- |
@@ -87,6 +95,8 @@ energy roles describe declared supply/conversion/load relationships.
 | `plc` · Shared plant controller | `plc-rack` | `controller`; energy: load |
 | `dcService` · Explicit station AC/DC service | `power-rectifier` | `power-converter`; energy: converter |
 
+</details>
+
 ## Editable assumptions
 
 The complete scenario and per-component assumptions are in [model.json](model.json).
@@ -107,6 +117,9 @@ The [catalog entry](../index.json) stores each recipe, expected observation and
 limitation. These are editable playground commands, not operating procedures.
 Run or step the shared model to observe time-dependent effects.
 
+<details>
+<summary>Inspect 5 experiment recipes and commands</summary>
+
 | Experiment | Commands |
 | --- | --- |
 | Stop Integral-PWR module A (`stop-source`) | `setEnabled(equipment="aCore", value=false)` |
@@ -114,6 +127,8 @@ Run or step the shared model to observe time-dependent effects.
 | Isolate Export breaker (`isolate-output`) | `setOpen(equipment="exportBreaker", value=true)` |
 | Raise the selected stage demand (`stress-stage`) | `setParameter(equipment="aCore", key="capacity", value=25)`; `setLoad(equipment="aCore", value=95)` |
 | Reduce fictional core heat demand (`insert-rods`) | `setRodPosition(equipment="aCore", value=100)` |
+
+</details>
 
 Serve the sibling packages over HTTP and open
 [Explorer](../../../explorer/index.html?scenario=power-nuclear-lw-smr); see the

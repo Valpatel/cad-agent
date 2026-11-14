@@ -14,12 +14,12 @@ mutable state or an alternate authoring source.
 | [topologies.json](./topologies.json) | Compact topology SVG sources, selected views and output inventory | `npm --prefix tools/webkit/scada run topologies:generate` |
 
 ```mermaid
-flowchart LR
-  Registry[Versioned source descriptors] --> Builder[Metadata builder]
-  Builder --> JSON[Registry JSON]
-  Pair[System and model JSON] --> Capture[Explorer browser capture]
-  Capture --> Images[Package-owned thumbnails]
-  Capture --> Receipt[Thumbnail manifest]
+flowchart TD
+  Registry["Source descriptors"] --> Builder["Metadata builder"]
+  Builder --> JSON["Registry JSON"]
+  Pair["System + model"] --> Capture["Browser capture"]
+  Capture --> Images["Thumbnails"]
+  Capture --> Receipt["Capture receipt"]
 ```
 
 <a href="../img/thumbnails/food-beverage/winery/preview.jpg"><img src="../img/thumbnails/food-beverage/winery/preview.jpg" width="360" alt="Captured winery initial view"></a>

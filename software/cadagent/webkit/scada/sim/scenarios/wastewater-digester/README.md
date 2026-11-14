@@ -40,17 +40,25 @@ connections; [model.json](model.json) owns behavior and editable assumptions.
 
 [Browse topology SVGs](../../img/topologies/README.md) · [Generation metadata](../../metadata/topologies.json)
 
+<details>
+<summary>3 focused views of this system</summary>
+
 | Focused view | ID | Equipment placements |
 | --- | --- | ---: |
 | Water treatment | `treatment` | 6 |
 | Sludge & biogas | `sludge-energy` | 9 |
 | Power & control | `power-control` | 7 |
 
+</details>
+
 ## Equipment and model roles
 
 Roles below are the actual records in this scenario. A shared family name does
 not imply a calibrated device equation. Circuit roles describe resource bookkeeping;
 energy roles describe declared supply/conversion/load relationships.
+
+<details>
+<summary>Inspect the 17 equipment records and model roles</summary>
 
 | Equipment ID and label | Symbol | Model / declared domains |
 | --- | --- | --- |
@@ -72,6 +80,8 @@ energy roles describe declared supply/conversion/load relationships.
 | `controller` · Plant PLC | `plc-rack` | `controller` |
 | `pressure` · Digester pressure | `pressure-transmitter` | `sensor` |
 
+</details>
+
 ## Editable assumptions
 
 The complete scenario and per-component assumptions are in [model.json](model.json).
@@ -89,6 +99,9 @@ The [catalog entry](../index.json) stores each recipe, expected observation and
 limitation. These are editable playground commands, not operating procedures.
 Run or step the shared model to observe time-dependent effects.
 
+<details>
+<summary>Inspect 5 experiment recipes and commands</summary>
+
 | Experiment | Commands |
 | --- | --- |
 | Stop the inlet lift pump (`stop-influent`) | `setEnabled(equipment="liftPump", value=false)` |
@@ -96,6 +109,8 @@ Run or step the shared model to observe time-dependent effects.
 | Inject a digester leak (`leak-digester`) | `setFault(equipment="digester", value="leaking")` |
 | Overload the electrical branch (`overload-generator`) | `setParameter(equipment="loads", key="demand", value=95)`; `setLoad(equipment="loads", value=100)` |
 | Break the biogas generator (`break-generator`) | `setFault(equipment="chp", value=true)` |
+
+</details>
 
 Serve the sibling packages over HTTP and open
 [Explorer](../../../explorer/index.html?scenario=wastewater-digester); see the

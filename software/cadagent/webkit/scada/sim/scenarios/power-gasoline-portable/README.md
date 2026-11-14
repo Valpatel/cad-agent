@@ -40,16 +40,24 @@ connections; [model.json](model.json) owns behavior and editable assumptions.
 
 [Browse topology SVGs](../../img/topologies/README.md) · [Generation metadata](../../metadata/topologies.json)
 
+<details>
+<summary>2 focused views of this system</summary>
+
 | Focused view | ID | Equipment placements |
 | --- | --- | ---: |
 | Isolated portable load | `load` | 7 |
 | Explicit liquid fuel and exhaust | `fuel` | 4 |
+
+</details>
 
 ## Equipment and model roles
 
 Roles below are the actual records in this scenario. A shared family name does
 not imply a calibrated device equation. Circuit roles describe resource bookkeeping;
 energy roles describe declared supply/conversion/load relationships.
+
+<details>
+<summary>Inspect the 10 equipment records and model roles</summary>
 
 | Equipment ID and label | Symbol | Model / declared domains |
 | --- | --- | --- |
@@ -63,6 +71,8 @@ energy roles describe declared supply/conversion/load relationships.
 | `plc` · Shared plant controller | `plc-rack` | `controller`; energy: load |
 | `dcService` · Spare DC rectifier · intentionally disabled | `power-rectifier` | `power-converter`; energy: converter |
 | `engineAir` · Explicit combustion-air boundary | `fan` | `load`; air: combustion-gas (source); energy: load |
+
+</details>
 
 ## Editable assumptions
 
@@ -84,12 +94,17 @@ The [catalog entry](../index.json) stores each recipe, expected observation and
 limitation. These are editable playground commands, not operating procedures.
 Run or step the shared model to observe time-dependent effects.
 
+<details>
+<summary>Inspect 4 experiment recipes and commands</summary>
+
 | Experiment | Commands |
 | --- | --- |
 | Stop Liquid-fuel transfer (`stop-source`) | `setEnabled(equipment="feed", value=false)` |
 | Fault Portable gasoline frame (`inject-fault`) | `setFault(equipment="engine", value=true)` |
 | Isolate Portable load breaker (`isolate-output`) | `setOpen(equipment="breaker", value=true)` |
 | Raise the selected stage demand (`stress-stage`) | `setParameter(equipment="feed", key="capacity", value=25)`; `setLoad(equipment="feed", value=95)` |
+
+</details>
 
 Serve the sibling packages over HTTP and open
 [Explorer](../../../explorer/index.html?scenario=power-gasoline-portable); see the

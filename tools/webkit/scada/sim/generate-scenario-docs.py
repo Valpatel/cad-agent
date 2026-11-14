@@ -193,16 +193,24 @@ def render_scenario(entry, system, model):
         '',
         '[Browse topology SVGs](../../img/topologies/README.md) · [Generation metadata](../../metadata/topologies.json)',
     ]
-    lines += ['', '| Focused view | ID | Equipment placements |', '| --- | --- | ---: |']
+    lines += [
+        '', '<details>',
+        f"<summary>{len(system['views'])} focused views of this system</summary>",
+        '', '| Focused view | ID | Equipment placements |', '| --- | --- | ---: |',
+    ]
     for v in system['views']:
         lines.append(f"| {cell(v['label'])} | `{v['id']}` | {len(v['placements'])} |")
     lines += [
+        '', '</details>',
         '',
         '## Equipment and model roles',
         '',
         'Roles below are the actual records in this scenario. A shared family name does',
         'not imply a calibrated device equation. Circuit roles describe resource bookkeeping;',
         'energy roles describe declared supply/conversion/load relationships.',
+        '',
+        '<details>',
+        f'<summary>Inspect the {len(components)} equipment records and model roles</summary>',
         '',
         '| Equipment ID and label | Symbol | Model / declared domains |',
         '| --- | --- | --- |',
@@ -223,6 +231,7 @@ def render_scenario(entry, system, model):
         sym = f"`{c['type']}`" + (f" / `{c['variant']}`" if c.get('variant') else '')
         lines.append(f"| `{cid}` · {cell(c['label'])} | {sym} | " + cell('; '.join(parts)) + ' |')
     lines += [
+        '', '</details>',
         '',
         '## Editable assumptions',
         '',
@@ -248,12 +257,16 @@ def render_scenario(entry, system, model):
         'limitation. These are editable playground commands, not operating procedures.',
         'Run or step the shared model to observe time-dependent effects.',
         '',
+        '<details>',
+        f"<summary>Inspect {len(entry.get('experiments', []))} experiment recipes and commands</summary>",
+        '',
         '| Experiment | Commands |',
         '| --- | --- |',
     ]
     for exp in entry.get('experiments', []):
         lines.append(f"| {cell(exp['title'])} (`{exp['id']}`) | " + cell('; '.join((command(c) for c in exp.get('commands', [])))) + ' |')
     lines += [
+        '', '</details>',
         '',
         'Serve the sibling packages over HTTP and open',
         f'[Explorer](../../../explorer/index.html?scenario={sid}); see the',

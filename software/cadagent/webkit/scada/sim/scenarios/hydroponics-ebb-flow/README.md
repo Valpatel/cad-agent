@@ -40,17 +40,25 @@ connections; [model.json](model.json) owns behavior and editable assumptions.
 
 [Browse topology SVGs](../../img/topologies/README.md) · [Generation metadata](../../metadata/topologies.json)
 
+<details>
+<summary>3 focused views of this system</summary>
+
 | Focused view | ID | Equipment placements |
 | --- | --- | ---: |
 | Fill, hold & drain | `water` | 7 |
 | Nursery phases & observations | `roots` | 6 |
 | Shared clock, light & power | `utilities` | 7 |
 
+</details>
+
 ## Equipment and model roles
 
 Roles below are the actual records in this scenario. A shared family name does
 not imply a calibrated device equation. Circuit roles describe resource bookkeeping;
 energy roles describe declared supply/conversion/load relationships.
+
+<details>
+<summary>Inspect the 13 equipment records and model roles</summary>
 
 | Equipment ID and label | Symbol | Model / declared domains |
 | --- | --- | --- |
@@ -67,6 +75,8 @@ energy roles describe declared supply/conversion/load relationships.
 | `lightB` · Table B growing light | `grow-light` | `load`; energy: converter; zone: growRoom |
 | `waterProbe` · Dissolved oxygen · illustrative index | `water-quality-probe` | `sensor`; energy: load; explicit observation |
 | `humidityProbe` · Room humidity · illustrative index | `humidity-sensor` | `sensor`; energy: load; explicit observation; zone: growRoom |
+
+</details>
 
 ## Editable assumptions
 
@@ -87,12 +97,17 @@ The [catalog entry](../index.json) stores each recipe, expected observation and
 limitation. These are editable playground commands, not operating procedures.
 Run or step the shared model to observe time-dependent effects.
 
+<details>
+<summary>Inspect 4 experiment recipes and commands</summary>
+
 | Experiment | Commands |
 | --- | --- |
 | Stop nursery filling (`stop-fill`) | `setEnabled(equipment="fillPump", value=false)` |
 | Close table A drain (`block-drain`) | `setOpen(equipment="drainA", value=false)` |
 | Stall table B cycle (`stall-cycle`) | `setFault(equipment="tableB", value="timer-stall")` |
 | Increase table A hold duration (`long-hold`) | `setParameter(equipment="tableA", value=10, key="cycleHold")` |
+
+</details>
 
 Serve the sibling packages over HTTP and open
 [Explorer](../../../explorer/index.html?scenario=hydroponics-ebb-flow); see the

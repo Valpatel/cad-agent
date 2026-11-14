@@ -1,7 +1,7 @@
 {
   "schema": "cad-agent.toolkit-examples/1",
   "scope": "Actual viewer previews and byte-identical synthetic assembly fixture; no physical or project qualification.",
-  "sourceHead": "02e44f687508989de80aac8ba972abf9bfe939c0",
+  "sourceHead": "6c92dc306ddeda502f411b2bae8bf3b3dfde4284",
   "fixtureRevision": "1111111111111111111111111111111111111111",
   "generator": {
     "path": "tools/site/figures/toolkit-examples.mjs",

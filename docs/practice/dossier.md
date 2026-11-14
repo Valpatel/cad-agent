@@ -244,7 +244,7 @@ facts are declared in code, next to the geometry (`cadagent.review.dossier.regis
 joined by id.
 
 ```python
-from cadagent.review.dossier import Axis, part, cavity, joint, fastener, assembly, build
+from cadagent.review.dossier import Axis, part, cavity, joint, fastener, assembly, not_drawn, build
 
 @part("bench_base", section="S1", grounded=True)       # ground for the connectivity gate
 def bench_base(p): ...
@@ -269,12 +269,15 @@ fastener("screw_m3x8", clamps="hopper", into="pan_base", via="I7", tool="hex_2.5
 
 assembly.step(1, fit="pan_base", onto="bench_base", direction="-Z", tool="hex_2.5", fasteners=["screw_m4x12"] * 3)
 
+not_drawn("flap_spring", reason="sized in analysis/spring.py; no solid yet",   # in the design, not in the model:
+          near=("hopper_flap", "hopper"))                                      # every gate verdict then names it
+
 if __name__ == "__main__":
     build()            # parameters from cad/parameters.json; writes exports/dossier-geometry.json
 ```
 
 <details>
-<summary>Each declaration's arguments: part, cavity, joint, fastener, assembly step</summary>
+<summary>Each declaration's arguments: part, cavity, joint, fastener, assembly step, not drawn</summary>
 
 | Declaration | Arguments | Notes |
 |---|---|---|
@@ -283,6 +286,7 @@ if __name__ == "__main__":
 | `joint(interface, kind="revolute", *, parts=(moving, fixed), axis, range_deg=None, range_mm=None, intended_contacts=(), samples=None, follows=None, closes=None)` | `kind`: `fixed`, `revolute` (needs `range_deg`), `slider` (`range_mm`), `cylindrical` (both), `planar`, `ball`. `follows`: a joint id, `(id, multiplier)` or `(id, multiplier, offset)`. `closes`: `{"parts": (a, b), "at": point, "tol_mm": 0.1}` or a list | the axis is in assembly coordinates; `axis` may be a function of the parameters. A revolute or slider joint with `follows` is driven (its value is `multiplier × the driver's + offset`, about its own axis) and needs no range; `closes` names a point two parts share. Both are the motion gate's: [driven joints](gates.md#motion-range-interference-cadagentreviewgatesmotion) |
 | `fastener(key, *, clamps, into, at, name="", via="", tool="", length_mm, diameter_mm, thread_start_mm, thread_depth_mm, min_engagement_mm, shape=None)` | `at`: one `Axis` per screw, from the head seat in the direction the screw advances | `thread_start_mm`: seat to first engaged thread; numbers may be functions; `shape` is placed at every axis (McMaster frame: origin on the seat, +Z out of the hole) |
 | `assembly.step(order, fit, onto=None, *, direction="", tool="", fasteners=(), access_check="", note="")` | `direction`: `+X`..`-Z` or `(x, y, z)` | steps may also be written in `project.yaml`; when both exist with the same order they must agree |
+| `not_drawn(name, *, reason, near=())` | `near`: a part name or a list of them | a component of the design with no shape in this build: no geometry, so no gate sees it. `reason` is required; `name` is not a part, fastener or cavity; every `near` part is registered (checked at the build). The gates state it in every verdict: [not in the model](gates.md#not-in-the-model-not_drawn) |
 
 </details>
 
@@ -332,6 +336,7 @@ def dossier_items():
                     "axis": Axis(P["flap_pivot"], (0, 1, 0)), "range_deg": (0, 70)}],
         "fasteners": [{"key": "screw_m3x8", "clamps": "hopper", "into": "pan_base", "at": [...]}],
         "assembly": [{"order": 1, "fit": "pan_base", "onto": "bench_base", "direction": "-Z"}],
+        "not_drawn": [{"name": "flap_spring", "reason": "sized in analysis; no solid yet", "near": ["hopper_flap"]}],
     }
 ```
 
@@ -373,6 +378,9 @@ and takes `follows` and `closes` as `joint()` does).
 }
 ```
 
+- **`not_drawn`** is present only when the build declares components that are not drawn:
+  `{"flap_spring": {"reason": "...", "near": ["hopper_flap", "hopper"], "declared_at": "cad/build.py:42"}}`. It
+  holds no geometry; the gates read it to say what they did not see.
 - **Hashes** are content hashes from one shared function, `cadagent.review.evidence.shape_content_hash(shape) -> str`
   (also exported as `cadagent.review.dossier.shape_content_hash` and `shape_sha256`): sha256 of the shape's BREP text,
   OCCT format version 1, without triangulation or normals, with the 7-digit per-shape flag lines removed. The registry
@@ -475,7 +483,7 @@ parts move with a joint.
 `Issue`s with `file:line` (the card's YAML line, or the build script's declaration line):
 
 <details>
-<summary>The join's eleven issue codes, their severity and when each is raised</summary>
+<summary>The join's twelve issue codes, their severity and when each is raised</summary>
 
 | Code | Severity | When |
 |---|---|---|
@@ -486,10 +494,11 @@ parts move with a joint.
 | `contains-count` | error | `contains[].count` differs from the instances the build made |
 | `joint-without-interface`, `joint-parts-mismatch`, `joint-kind-mismatch` | error | a joint with no interface of its id, other parties, or another kind (`fixed` matches any rigid kind) |
 | `interface-without-joint` | error | a mechanism interface (`revolute`, `slider`, ...) with no `@joint` |
-| `unknown-part`, `unknown-interface`, `unknown-joint` | error | a joint, fastener, cavity or step names something that does not exist; a joint's `closes` names a part, or its `follows` a joint, that is not in the record |
+| `unknown-part`, `unknown-interface`, `unknown-joint` | error | a joint, fastener, cavity, step or `not_drawn` neighbour names something that does not exist; a joint's `closes` names a part, or its `follows` a joint, that is not in the record |
 | `fastener-count` | error | a card's `fasteners[].qty` differs from the axes `fastener()` places |
 | `fastener-not-registered`, `step-fastener-unregistered` | warning | declared in the card or a step, not yet in code |
 | `step-conflict` | error | a step in `project.yaml` and in code with the same order disagree |
+| `not-drawn` | warning | one per component the build declares with `not_drawn()`: it is in the design and no gate saw it; shown on the cards of its `near` parts |
 
 </details>
 

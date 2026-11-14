@@ -167,6 +167,25 @@ try{
     await page.setViewportSize({width:1440,height:1100});await page.emulateMedia({colorScheme:'light'});
     await page.goto(`${baseURL}/kit/scada/explorer/index.html?scenario=wastewater-digester`);await expect(page.locator('#industry-lab')).toHaveAttribute('aria-busy','false');await paused();
   });
+  await check('view changes preserve painted SVG fills while a fresh equivalent SVG paints identically',async()=>{
+    await page.setViewportSize({width:1920,height:1080});
+    await page.emulateMedia({colorScheme:'dark',reducedMotion:'reduce'});
+    await page.goto(`${baseURL}/kit/scada/explorer/index.html?scenario=winery`);
+    await expect(page.locator('#industry-lab')).toHaveAttribute('aria-busy','false');await paused();
+    for(const view of ['fermentation','process']){
+      await page.locator(`[data-scada-view-choice="${view}"]`).click();
+      await expect(page.locator(`[data-scada-view-choice="${view}"]`)).toHaveAttribute('aria-current','page');
+      const art=page.locator('#lab-viewer [data-scada-equipment="aging"] svg');
+      const before=await art.screenshot({animations:'disabled'});
+      // A detached clone has identical markup but forces the browser to resolve its SVG paint servers afresh.
+      await art.evaluate(element=>element.replaceWith(element.cloneNode(true)));
+      const fresh=await art.screenshot({animations:'disabled'});
+      await writeFile(path.join(output,`${browserName}-${view}-aging-painted.png`),before);
+      assert.deepEqual(before,fresh,`${view}: changing views must not lose gradient fills`);
+      await viewportContract('#lab-viewer [data-scada-scroll]');
+    }
+    await page.emulateMedia({reducedMotion:'no-preference'});
+  });
   await check('desktop and ultrawide windows contain the workspace and enlarge fitted art within the host limit',async()=>{
     for(const scenario of ['winery','wastewater-digester','brewery','fortune-cookies'])for(const colorScheme of ['light','dark'])for(const [width,height] of [[3440,1440],[1920,1080],[1366,768]]){
       await page.setViewportSize({width,height});await page.emulateMedia({colorScheme});

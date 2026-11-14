@@ -33,6 +33,30 @@ test('diagram actions dispatch the declared asset without opening a dialog and p
   } finally {viewer.destroy();observer.destroy();dom.window.close();}
 });
 
+test('view switches mount their own SVG tree while ticks retain equipment, focus and camera controls', () => {
+  const dom=setup(),model=new UtilityModel();
+  const viewer=new ScadaViewer({definition,adapter:createUtilityAdapter(model)}).mount(dom.window.document.querySelector('#editable'));
+  try {
+    const viewport=viewer.camera.viewport,canvas=viewer.camera.canvas;
+    const art=viewer.root.querySelector('[data-scada-equipment="tank"] svg');
+    const action=viewer.root.querySelector('[data-scada-diagram-control="valveSwitch"]');
+    action.focus();click(dom.window,'[data-scada-diagram-control="valveSwitch"]',viewer.root);
+    assert.equal(viewer.camera.canvas,canvas);
+    assert.equal(viewer.root.querySelector('[data-scada-equipment="tank"] svg'),art);
+    assert.equal(dom.window.document.activeElement,action);
+    viewer.setView('power');
+    assert.equal(viewer.camera.viewport,viewport);
+    assert.notEqual(viewer.camera.canvas,canvas);
+    assert.equal(canvas.isConnected,false);
+    assert.equal(viewer.camera.canvas.dataset.scadaView,'power');
+    assert.equal(viewer.root.querySelectorAll('[data-scada-camera-controls]').length,1);
+    assert.equal(viewer.root.querySelector('[data-scada-diagram-control="valveSwitch"]').textContent,'Open');
+    viewer.setView('water');
+    assert.equal(viewer.camera.canvas.dataset.scadaView,'water');
+    assert.equal(viewer.root.querySelectorAll('[data-scada-camera-controls]').length,1);
+  } finally {viewer.destroy();dom.window.close();}
+});
+
 test('diagram actions require a typed live binding and expose adapter rejection without changing state', async () => {
   const dom=setup(),model=new UtilityModel();let writes=0;
   const adapter={getSnapshot:()=>({...model.getSnapshot(),controls:{pumpOn:'true',valveOpen:true}}),subscribe:()=>()=>{},dispatch:()=>{writes++;return Promise.reject(new Error('Interlock refuses this command'));}};

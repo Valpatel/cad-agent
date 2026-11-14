@@ -225,7 +225,8 @@ try {
   for (const [kind, file] of [['absolute', site.url + '/legacy/small%20part.stl'], ['root', '/legacy/small%20part.stl'], ['cors', cors.url + '/part.stl']]) routes.set(`/legacy/${kind}.json`, (_, res) => res.end(encode({ parts: [{ name: 'Published pan base fixture', file, color: 'steelblue', bounds_mm: legacyShape.bounds }] })));
 routes.set('/legacy/redirect.stl', (_, res) => { res.writeHead(302, { Location: '/legacy/small%20part.stl' }); res.end(); });
 routes.set('/legacy/redirect.json', (_, res) => res.end(encode({ parts: [{ name: 'redirect', file: '/legacy/redirect.stl', color: 'steelblue', bounds_mm: legacyShape.bounds }] })));
-  browser = await engine.launch(engine === chromium ? { channel: process.env.PLAYWRIGHT_CHANNEL === 'chromium' ? undefined : 'chrome', headless: true } : { headless: true });
+  // Full Chromium's headless mode supports native bfcache; the separate headless shell does not.
+  browser = await engine.launch(engine === chromium ? { channel: process.env.PLAYWRIGHT_CHANNEL === 'chromium' ? 'chromium' : 'chrome', executablePath: process.env.CHROMIUM_EXECUTABLE, headless: true, ignoreDefaultArgs: ['--disable-back-forward-cache'] } : { headless: true });
   const context = await browser.newContext({ viewport: { width: 1100, height: 800 } });
   const page = await context.newPage(); page.on('pageerror', error => errors.push(error.message)); page.on('console', message => {if(message.type()==='error')consoleErrors.push(message.text());});
   const visit = async (version, viewport = { width: 1100, height: 800 }) => {
@@ -317,6 +318,37 @@ routes.set('/legacy/redirect.json', (_, res) => res.end(encode({ parts: [{ name:
     assert.equal(await page.evaluate(()=>localStorage.getItem('cad-theme')),null);
   }
   cases.push({assemblyThemeFollowsLiveOS:true});
+  // Use a separately cacheable source server: no-store remains the default for all
+  // ordinary fixtures. Only a native persisted return can prove bfcache recovery.
+  const cacheRoutes=new Map(routes);
+  cacheRoutes.set('/theme-away.html',(_req,res)=>res.writeHead(200,{'Content-Type':'text/html','Cache-Control':'public,max-age=300'}).end('<!doctype html><title>Away</title><p>Return to the assembly</p>'));
+  const cacheSite=await serveWebkit(cacheRoutes,{cacheControl:'public,max-age=300'});
+  try{
+    await context.addInitScript(()=>{
+      window.__historyMount=crypto.randomUUID();window.__historyEvents=[];
+      for(const name of ['pageshow','pagehide'])addEventListener(name,event=>window.__historyEvents.push({type:event.type,persisted:event.persisted}));
+    });
+    await page.goto(cacheSite.url+'/kit/model/viewer.html?guide=/v1/guide.json');
+    await page.waitForFunction(()=>document.body.dataset.ready==='1');
+    await page.getByLabel('Instruction step',{exact:true}).selectOption('screws');
+    await page.getByLabel('Instruction display',{exact:true}).selectOption('wireframe');
+    await page.evaluate(()=>{window.__viewer.stage.controls.enableDamping=false;window.__viewer.stage.controls.update();window.__viewer.setSelection('screw#1');});
+    const before=await themeScene(),token=await page.evaluate(()=>window.__historyMount);
+    await page.goto(cacheSite.url+'/theme-away.html');await page.evaluate(()=>localStorage.setItem('cad-theme','dark'));
+    await page.goBack({waitUntil:'commit'});
+    await page.waitForFunction(()=>document.body.dataset.ready==='1'&&window.__viewer&&document.querySelectorAll('#app canvas').length===1);
+    await page.waitForFunction(()=>document.documentElement.dataset.theme==='dark');
+    const lifecycle=await page.evaluate(()=>({token:window.__historyMount,events:window.__historyEvents}));
+    const persisted=lifecycle.events.some(event=>event.type==='pageshow'&&event.persisted);
+    if(engine===chromium)assert.ok(persisted,'Chromium must actually restore bfcache, not reload: '+JSON.stringify(lifecycle));
+    if(persisted){assert.equal(lifecycle.token,token);sameThemeScene(await themeScene(),before);}
+    // WebKit may reload; readiness above is required before checking that fresh instance.
+    readableTheme(await themeAppearance());
+    await page.evaluate(()=>window.__viewer.setExplode(.1));
+    assert.equal(await page.locator('#app canvas').count(),1);
+    await page.screenshot({path:out+'/'+engine.name()+'-history-return.png'});
+    cases.push({assemblyHistory:{persisted,freshReload:!persisted,lifecycle,retainedScene:persisted,theme:'dark',usable:true}});
+  }finally{await cacheSite.close();}
   const v1UUIDs = [];
   for (const [index, version] of versions.entries()) {
     await visit(version);
@@ -640,7 +672,7 @@ routes.set('/legacy/redirect.json', (_, res) => res.end(encode({ parts: [{ name:
   }
   }
   assert.deepEqual(errors, []);
-  await writeFile(`${out}/${engine.name()}-report.json`, JSON.stringify({ passed: true, cases, errors }, null, 2));
+  await writeFile(`${out}/${engine.name()}-report.json`, JSON.stringify({ passed: true, browser: await browser.version(), cases, errors }, null, 2));
   console.log(JSON.stringify({ passed: true, engine: engine.name(), cases: cases.length, out }));
 } catch (error) {
   for (const context of browser?.contexts() || []) for (const page of context.pages()) { try { await page.screenshot({ path: `${out}/${engine.name()}-failure.png` }); } catch {} }

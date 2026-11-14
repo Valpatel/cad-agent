@@ -275,8 +275,9 @@ test('Toolkit is a native capability with package terms and the same catalogue i
 test('SCADA guides and skills resolve inside the published shared site frame',async()=>{
   const html=await readFile(path.join(out,'toolkit/scada.html'),'utf8');
   assert.doesNotMatch(html,/href="\/kit\/scada\/[^"#?]*\.md/);
-  const destinations=new Set([...html.matchAll(/href="([^"#]+)"/g)].map(match=>match[1]).filter(href=>href.startsWith('/repo/folders/')||href.startsWith('/skills/scada-')||href.startsWith('/docs/practice/scada/')));
+  const destinations=new Set([...html.matchAll(/href="([^"#]+)"/g)].map(match=>match[1]).filter(href=>href.startsWith('/repo/folders/')||href.startsWith('/skills/scada-')||href.startsWith('/docs/scada/')));
   assert.ok(destinations.size>=9,'library maps, local guide and all five domain skills are discoverable');
+  for(const guide of ['architecture','local-use','resources-and-growth'])destinations.add(`/docs/scada/${guide}`);
   for(const href of destinations) {
     const target=await readFile(local(href)+'.html','utf8');
     assert.match(target,/aria-label="Main"/);

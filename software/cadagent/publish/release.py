@@ -586,22 +586,11 @@ def _linked_images(text: str, src_rel: str, root: Path) -> List[str]:
     return out
 
 
-def _guide_runtime() -> Dict[str, bytes]:
-    """Capture the installed, pinned web kit; no dependency on a live website."""
+def _guide_runtime():
+    """Capture only the checked assembly-reader dependency closure."""
+    from cadagent.publish.runtime import capture_profile
     from cadagent.publish.site import KIT_DIR
-    required = ("viewer.html", "viewer.js", "stage.js", "assembly/guide.js")
-    if any(not (KIT_DIR / name).is_file() for name in required):
-        raise CadConfigError("assembly guide release needs the shared assembly-guide viewer runtime")
-    files = {}
-    for path in sorted(KIT_DIR.rglob("*")):
-        relative = path.relative_to(KIT_DIR)
-        if "__pycache__" in relative.parts or any(p.startswith(".") for p in relative.parts):
-            continue
-        if path.is_symlink():
-            raise CadConfigError("assembly guide runtime must not contain symlinks")
-        if path.is_file():
-            files[relative.as_posix()] = path.read_bytes()
-    return files
+    return capture_profile("assembly-reader", kit_dir=KIT_DIR)
 
 
 def _guide_page(bundle) -> str:
@@ -1096,6 +1085,7 @@ def build_release(project: CadProject, out: Optional[Path] = None, make_zip: boo
     if guides:
         manifest["assembly_guides"] = guide_entries
         manifest["guide_runtime"] = {"root": "guides/_cadagent/", "toolkit_version": __version__,
+                                     **getattr(guide_runtime, "identity", {}),
                                      "files": {name: hashlib.sha256(data).hexdigest()
                                                for name, data in guide_runtime.items()}}
     (folder / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")

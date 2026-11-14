@@ -29,7 +29,7 @@
             "vendor/three/three.module.min.js",
             "vendor/three/addons/controls/OrbitControls.js"
           ],
-          "sha256": "f8d8e6a41acf9163a1f6558776a98862693d061a7f2510711ab01c1d9655a956"
+          "sha256": "f62b95e16a99e06686d32454397948fd50a67a973736ffc76a03b82f5e54b486"
         },
         "model/viewer.html": {
           "requires": [

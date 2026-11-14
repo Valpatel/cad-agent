@@ -26,6 +26,8 @@ function radialGlow(stops) {
 // wide while the camera moves; fade only subpixel spacing at the horizon, not the near-camera floor.
 function floorGrid(accent, color) {
   const material = new THREE.ShaderMaterial({
+    // WebGL 1 needs the GLSL extension directive for fwidth; it is core in WebGL 2.
+    extensions: { derivatives: true },
     uniforms: { axisColor: { value: new THREE.Color(accent) }, gridColor: { value: new THREE.Color(color) },
       opacity: { value: 1 } },
     vertexShader: `varying vec2 vGrid;

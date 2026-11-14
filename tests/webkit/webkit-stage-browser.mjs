@@ -66,7 +66,8 @@ async function gridPixels(page) {
     }
     const data=pixels(),rgbSum=[0,0,0];let painted=0,outside=0,alphaSum=0;
     for(let i=0;i<w*h;i++)if(data[4*i+3]>2){painted++;alphaSum+=data[4*i+3];if(!mask[i])outside++;for(let c=0;c<3;c++)rgbSum[c]+=data[4*i+c];}
-    return {painted,outside,alphaSum,rgbSum,width:w,height:h,near:stage.camera.near,far:stage.camera.far};
+    return {painted,outside,alphaSum,rgbSum,width:w,height:h,near:stage.camera.near,far:stage.camera.far,
+      webglVersion:gl.getParameter(gl.VERSION)};
   });
 }
 function assertGrid(sample) {
@@ -154,11 +155,45 @@ try {
   });
   assert.deepEqual(disposal,{geometry:1,material:1,before:disposal.before,after:disposal.before,canvases:0});
   assert.ok(disposal.before>0);assert.deepEqual(errors,[]);
+  await context.close();
+
+  // Exercise the renderer's real WebGL 1 fallback, not a mocked capabilities flag. Derivative shaders need both
+  // OES_standard_derivatives support and the extension directive in GLSL ES 1.00, unlike the default WebGL 2 path.
+  const fallback=await browser.newContext({viewport:{width:404,height:430},deviceScaleFactor:1,reducedMotion:'reduce'});
+  await fallback.addInitScript(()=>{
+    const original=HTMLCanvasElement.prototype.getContext;
+    HTMLCanvasElement.prototype.getContext=function(kind,...args){return kind==='webgl2'?null:original.call(this,kind,...args);};
+  });
+  const fallbackPage=await fallback.newPage(),fallbackErrors=[];
+  fallbackPage.on('pageerror',error=>fallbackErrors.push(error.message));
+  fallbackPage.on('console',message=>{if(message.type()==='error')fallbackErrors.push(message.text());});
+  await fallbackPage.goto(site.url);await fallbackPage.waitForFunction(()=>window.ready);
+  const fallbackInfo=await fallbackPage.evaluate(()=>{
+    const gl=stage.renderer.getContext();
+    return {version:gl.getParameter(gl.VERSION),webgl2:stage.renderer.capabilities.isWebGL2,
+      derivativesAvailable:!!gl.getExtension('OES_standard_derivatives')};
+  });
+  assert.equal(fallbackInfo.webgl2,false);assert.match(fallbackInfo.version,/^WebGL 1\.0/);
+  assert.equal(fallbackInfo.derivativesAvailable,true,'The fallback fixture needs actual derivatives support');
+  for(const theme of ['dark','light']){
+    await fallbackPage.evaluate(theme=>{
+      restore();stage.setPalette(theme==='dark'?{accent:'#00f0ff',grid:'#0e7490',background:'#0b1018'}
+        :{accent:'#006e7a',grid:'#477984',background:'#f4f3ed'});draw();
+    },theme);
+    await fallbackPage.screenshot({path:`${out}/${engine.name()}-webgl1-${theme}.png`});
+    await fallbackPage.evaluate(()=>isolate(grid));
+    const sample=await gridPixels(fallbackPage);
+    assert.deepEqual(fallbackErrors,[],'WebGL 1 must compile and draw without shader errors');assertGrid(sample);
+    cases.push({context:'webgl1',theme,grid:sample});
+  }
+  await fallbackPage.evaluate(()=>{stage.dispose();model.geometry.dispose();model.material.dispose();});
+  assert.equal(await fallbackPage.locator('canvas').count(),0);
+  await fallback.close();
   const hash=data=>createHash('sha256').update(data).digest('hex');
   const report={engine:engine.name(),browserVersion:browser.version(),sourceRevision:process.env.TEST_SOURCE_REVISION||'unrecorded',
     stageSha256:hash(await readFile(new URL('../../software/cadagent/webkit/model/stage.js',import.meta.url))),
-    harnessSha256:hash(await readFile(new URL(import.meta.url))),cases,nativeControl,filledControl,corrected,palette,disposal,errors};
+    harnessSha256:hash(await readFile(new URL(import.meta.url))),cases,nativeControl,filledControl,corrected,palette,disposal,
+    fallback:{...fallbackInfo,errors:fallbackErrors},errors};
   await writeFile(`${out}/${engine.name()}-result.json`,JSON.stringify(report,null,2));
   console.log(JSON.stringify({engine:report.engine,cases:cases.length,nativeOutside:nativeControl.outside,correctedOutside:corrected.outside,errors:errors.length}));
-  await context.close();
 } finally {await browser?.close();await site.close();}

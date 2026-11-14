@@ -148,10 +148,10 @@ def _wheel_smoke(tmp_path):
     source, wheels, outside = (tmp_path / name for name in ("source", "wheels", "outside"))
     env_dir = outside / ".venv"
     source.mkdir(); wheels.mkdir(); outside.mkdir()
-    env = {k: v for k, v in os.environ.items() if k not in ("PYTHONPATH", "PYTHONHOME", "NODE_PATH", "NODE_OPTIONS")}
+    process_environment = {k: v for k, v in os.environ.items() if k not in ("PYTHONPATH", "PYTHONHOME", "NODE_PATH", "NODE_OPTIONS")}
 
     def run(args, *, cwd=outside, check=True):
-        result = subprocess.run([str(a) for a in args], cwd=cwd, env=env, capture_output=True, text=True, timeout=180)
+        result = subprocess.run([str(a) for a in args], cwd=cwd, env=process_environment, capture_output=True, text=True, timeout=180)
         if check and result.returncode:
             raise AssertionError(f"{args[0]} exited {result.returncode}\n{result.stdout}\n{result.stderr}")
         return result
@@ -224,7 +224,7 @@ print(json.dumps({"package": str(Path(cadagent.__file__).resolve()), "project": 
         assert hashlib.sha256(installed.read_bytes()).hexdigest() == digest, installed
     scopes = [parent / "package.json" for parent in (sdk, *sdk.parents) if (parent / "package.json").is_file()]
     assert scopes[:2] == [sdk / "package.json", outside / "package.json"], scopes
-    node = shutil.which("node", path=env.get("PATH"))
+    node = shutil.which("node", path=process_environment.get("PATH"))
     assert node, "the required wheel SDK consumer needs Node 22+; it must not be skipped"
     node_version = run([node, "-p", "process.versions.node"]).stdout.strip()
     assert int(node_version.split(".")[0]) >= 22, node_version

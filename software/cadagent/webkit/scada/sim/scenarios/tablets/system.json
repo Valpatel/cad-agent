@@ -1,0 +1,2686 @@
+{
+  "$schema": "../../../scada-ui/schema/scada-system.schema.json",
+  "format": "scada-system",
+  "version": 1,
+  "system": {
+    "id": "tablets",
+    "label": "Tablet manufacturing",
+    "description": "A generic powder-to-package demonstration: weigh, meter, mill, granulate, dry, screen, blend and compress. No formulation, dose or validated processing condition is provided."
+  },
+  "components": [
+    {
+      "id": "powder",
+      "type": "silo",
+      "label": "Powder receiving silo",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "level": 55,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/powder/active",
+        "running": "/components/powder/running",
+        "fault": "/components/powder/fault",
+        "status": "/components/powder/status",
+        "level": "/components/powder/level",
+        "damage": "/components/powder/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "fill",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "discharge",
+          "side": "right",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "weighing",
+      "type": "weigh-hopper",
+      "label": "Batch weighing hopper",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "level": 55,
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/weighing/active",
+        "running": "/components/weighing/running",
+        "fault": "/components/weighing/fault",
+        "status": "/components/weighing/status",
+        "level": "/components/weighing/level",
+        "load": "/components/weighing/load",
+        "damage": "/components/weighing/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "supply",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "feeder",
+      "type": "screw-feeder",
+      "label": "Powder metering screw",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/feeder/active",
+        "running": "/components/feeder/running",
+        "fault": "/components/feeder/fault",
+        "status": "/components/feeder/status",
+        "load": "/components/feeder/load",
+        "speed": "/components/feeder/speed",
+        "damage": "/components/feeder/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "supply",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "mill",
+      "type": "grinding-mill",
+      "label": "Particle preparation mill",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/mill/active",
+        "running": "/components/mill/running",
+        "fault": "/components/mill/fault",
+        "status": "/components/mill/status",
+        "load": "/components/mill/load",
+        "speed": "/components/mill/speed",
+        "damage": "/components/mill/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "supply",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "granulator",
+      "type": "granulator",
+      "label": "Granulation stage",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/granulator/active",
+        "running": "/components/granulator/running",
+        "fault": "/components/granulator/fault",
+        "status": "/components/granulator/status",
+        "load": "/components/granulator/load",
+        "speed": "/components/granulator/speed",
+        "damage": "/components/granulator/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "supply",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "dryer",
+      "type": "dryer",
+      "label": "Granule drying stage",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "temperature": 90,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/dryer/active",
+        "running": "/components/dryer/running",
+        "fault": "/components/dryer/fault",
+        "status": "/components/dryer/status",
+        "load": "/components/dryer/load",
+        "speed": "/components/dryer/speed",
+        "temperature": "/components/dryer/temperature",
+        "damage": "/components/dryer/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "supply",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "fuel",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "screen",
+      "type": "vibrating-screen",
+      "label": "Granule screening",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/screen/active",
+        "running": "/components/screen/running",
+        "fault": "/components/screen/fault",
+        "status": "/components/screen/status",
+        "load": "/components/screen/load",
+        "speed": "/components/screen/speed",
+        "damage": "/components/screen/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "supply",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "blender",
+      "type": "drum-mixer",
+      "label": "Dry blending drum",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/blender/active",
+        "running": "/components/blender/running",
+        "fault": "/components/blender/fault",
+        "status": "/components/blender/status",
+        "load": "/components/blender/load",
+        "speed": "/components/blender/speed",
+        "damage": "/components/blender/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "supply",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "press",
+      "type": "tablet-press",
+      "label": "Tablet compression station",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/press/active",
+        "running": "/components/press/running",
+        "fault": "/components/press/fault",
+        "status": "/components/press/status",
+        "load": "/components/press/load",
+        "speed": "/components/press/speed",
+        "damage": "/components/press/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "supply",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "inspection",
+      "type": "conveyor",
+      "label": "Inspection transfer",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/inspection/active",
+        "running": "/components/inspection/running",
+        "fault": "/components/inspection/fault",
+        "status": "/components/inspection/status",
+        "load": "/components/inspection/load",
+        "speed": "/components/inspection/speed",
+        "damage": "/components/inspection/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "supply",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "packer",
+      "type": "packaging-line",
+      "label": "Tablet packaging",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/packer/active",
+        "running": "/components/packer/running",
+        "fault": "/components/packer/fault",
+        "status": "/components/packer/status",
+        "load": "/components/packer/load",
+        "speed": "/components/packer/speed",
+        "damage": "/components/packer/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "supply",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "power",
+      "type": "generator",
+      "label": "Demonstration site power",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/power/active",
+        "running": "/components/power/running",
+        "fault": "/components/power/fault",
+        "status": "/components/power/status",
+        "load": "/components/power/load",
+        "speed": "/components/power/speed",
+        "damage": "/components/power/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "fuel",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "output",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "exhaust",
+          "side": "right",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "controller",
+      "type": "plc-rack",
+      "label": "Powder-line controller",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "connected": true,
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/controller/active",
+        "running": "/components/controller/running",
+        "fault": "/components/controller/fault",
+        "status": "/components/controller/status",
+        "connected": "/components/controller/connected",
+        "load": "/components/controller/load",
+        "damage": "/components/controller/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "power",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "motor",
+      "type": "motor",
+      "label": "Auxiliary extraction drive",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/motor/active",
+        "running": "/components/motor/running",
+        "fault": "/components/motor/fault",
+        "status": "/components/motor/status",
+        "load": "/components/motor/load",
+        "speed": "/components/motor/speed",
+        "damage": "/components/motor/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "supply",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "shaft",
+          "side": "right",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "temperature",
+      "type": "temperature-sensor",
+      "label": "Dryer display probe",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "value": 42,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/temperature/active",
+        "running": "/components/temperature/running",
+        "fault": "/components/temperature/fault",
+        "status": "/components/temperature/status",
+        "value": "/components/temperature/value",
+        "damage": "/components/temperature/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "process",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "signal",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "power",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "powder-to-weighing",
+      "from": {
+        "component": "powder",
+        "port": "discharge"
+      },
+      "to": {
+        "component": "weighing",
+        "port": "inlet"
+      },
+      "medium": "solids",
+      "flowBinding": "/flows/powder-to-weighing",
+      "label": "Powder receiving silo \u2192 Batch weighing hopper"
+    },
+    {
+      "id": "weighing-to-feeder",
+      "from": {
+        "component": "weighing",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "feeder",
+        "port": "inlet"
+      },
+      "medium": "solids",
+      "flowBinding": "/flows/weighing-to-feeder",
+      "label": "Batch weighing hopper \u2192 Powder metering screw"
+    },
+    {
+      "id": "feeder-to-mill",
+      "from": {
+        "component": "feeder",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "mill",
+        "port": "inlet"
+      },
+      "medium": "solids",
+      "flowBinding": "/flows/feeder-to-mill",
+      "label": "Powder metering screw \u2192 Particle preparation mill"
+    },
+    {
+      "id": "mill-to-granulator",
+      "from": {
+        "component": "mill",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "granulator",
+        "port": "inlet"
+      },
+      "medium": "solids",
+      "flowBinding": "/flows/mill-to-granulator",
+      "label": "Particle preparation mill \u2192 Granulation stage"
+    },
+    {
+      "id": "granulator-to-dryer",
+      "from": {
+        "component": "granulator",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "dryer",
+        "port": "inlet"
+      },
+      "medium": "solids",
+      "flowBinding": "/flows/granulator-to-dryer",
+      "label": "Granulation stage \u2192 Granule drying stage"
+    },
+    {
+      "id": "dryer-to-screen",
+      "from": {
+        "component": "dryer",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "screen",
+        "port": "inlet"
+      },
+      "medium": "material",
+      "flowBinding": "/flows/dryer-to-screen",
+      "label": "Granule drying stage \u2192 Granule screening"
+    },
+    {
+      "id": "screen-to-blender",
+      "from": {
+        "component": "screen",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "blender",
+        "port": "inlet"
+      },
+      "medium": "solids",
+      "flowBinding": "/flows/screen-to-blender",
+      "label": "Granule screening \u2192 Dry blending drum"
+    },
+    {
+      "id": "blender-to-press",
+      "from": {
+        "component": "blender",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "press",
+        "port": "inlet"
+      },
+      "medium": "solids",
+      "flowBinding": "/flows/blender-to-press",
+      "label": "Dry blending drum \u2192 Tablet compression station"
+    },
+    {
+      "id": "press-to-inspection",
+      "from": {
+        "component": "press",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "inspection",
+        "port": "inlet"
+      },
+      "medium": "solids",
+      "flowBinding": "/flows/press-to-inspection",
+      "label": "Tablet compression station \u2192 Inspection transfer"
+    },
+    {
+      "id": "inspection-to-packer",
+      "from": {
+        "component": "inspection",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "packer",
+        "port": "inlet"
+      },
+      "medium": "solids",
+      "flowBinding": "/flows/inspection-to-packer",
+      "label": "Inspection transfer \u2192 Tablet packaging"
+    },
+    {
+      "id": "power-to-weighing",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "weighing",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-weighing",
+      "label": "Demonstration site power \u2192 Batch weighing hopper"
+    },
+    {
+      "id": "power-to-feeder",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "feeder",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-feeder",
+      "label": "Demonstration site power \u2192 Powder metering screw"
+    },
+    {
+      "id": "power-to-mill",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "mill",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-mill",
+      "label": "Demonstration site power \u2192 Particle preparation mill"
+    },
+    {
+      "id": "power-to-granulator",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "granulator",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-granulator",
+      "label": "Demonstration site power \u2192 Granulation stage"
+    },
+    {
+      "id": "power-to-dryer",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "dryer",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-dryer",
+      "label": "Demonstration site power \u2192 Granule drying stage"
+    },
+    {
+      "id": "power-to-screen",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "screen",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-screen",
+      "label": "Demonstration site power \u2192 Granule screening"
+    },
+    {
+      "id": "power-to-blender",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "blender",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-blender",
+      "label": "Demonstration site power \u2192 Dry blending drum"
+    },
+    {
+      "id": "power-to-press",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "press",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-press",
+      "label": "Demonstration site power \u2192 Tablet compression station"
+    },
+    {
+      "id": "power-to-inspection",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "inspection",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-inspection",
+      "label": "Demonstration site power \u2192 Inspection transfer"
+    },
+    {
+      "id": "power-to-packer",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "packer",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-packer",
+      "label": "Demonstration site power \u2192 Tablet packaging"
+    },
+    {
+      "id": "power-to-controller",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "controller",
+        "port": "power"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-controller",
+      "label": "Demonstration site power \u2192 Powder-line controller"
+    },
+    {
+      "id": "power-to-motor",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "motor",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-motor",
+      "label": "Demonstration site power \u2192 Auxiliary extraction drive"
+    },
+    {
+      "id": "power-to-temperature",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "temperature",
+        "port": "power"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-temperature",
+      "label": "Demonstration site power \u2192 Dryer display probe"
+    },
+    {
+      "id": "dryer-to-temperature",
+      "from": {
+        "component": "dryer",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "temperature",
+        "port": "process"
+      },
+      "medium": "measurement",
+      "flowBinding": "/flows/dryer-to-temperature",
+      "label": "Granule drying stage \u2192 Dryer display probe"
+    },
+    {
+      "id": "temperature-to-controller",
+      "from": {
+        "component": "temperature",
+        "port": "signal"
+      },
+      "to": {
+        "component": "controller",
+        "port": "network"
+      },
+      "medium": "data",
+      "flowBinding": "/flows/temperature-to-controller",
+      "label": "Dryer display probe \u2192 Powder-line controller"
+    }
+  ],
+  "views": [
+    {
+      "id": "process",
+      "label": "Main process",
+      "canvas": {
+        "width": 1280,
+        "height": 940
+      },
+      "placements": [
+        {
+          "component": "powder",
+          "x": 60,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "weighing",
+          "x": 360,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "feeder",
+          "x": 660,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "mill",
+          "x": 960,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "granulator",
+          "x": 960,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "dryer",
+          "x": 660,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "screen",
+          "x": 360,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "blender",
+          "x": 60,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "press",
+          "x": 60,
+          "y": 620,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "inspection",
+          "x": 360,
+          "y": 620,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "packer",
+          "x": 660,
+          "y": 620,
+          "width": 200,
+          "height": 190
+        }
+      ],
+      "routes": [
+        {
+          "connection": "powder-to-weighing",
+          "points": [
+            {
+              "x": 260,
+              "y": 155
+            },
+            {
+              "x": 360,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "weighing-to-feeder",
+          "points": [
+            {
+              "x": 560,
+              "y": 155
+            },
+            {
+              "x": 660,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "feeder-to-mill",
+          "points": [
+            {
+              "x": 860,
+              "y": 155
+            },
+            {
+              "x": 960,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "mill-to-granulator",
+          "points": [
+            {
+              "x": 1060,
+              "y": 250
+            },
+            {
+              "x": 1060,
+              "y": 340
+            }
+          ]
+        },
+        {
+          "connection": "granulator-to-dryer",
+          "points": [
+            {
+              "x": 960,
+              "y": 435
+            },
+            {
+              "x": 860,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "dryer-to-screen",
+          "points": [
+            {
+              "x": 660,
+              "y": 435
+            },
+            {
+              "x": 560,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "screen-to-blender",
+          "points": [
+            {
+              "x": 360,
+              "y": 435
+            },
+            {
+              "x": 260,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "blender-to-press",
+          "points": [
+            {
+              "x": 160,
+              "y": 530
+            },
+            {
+              "x": 160,
+              "y": 620
+            }
+          ]
+        },
+        {
+          "connection": "press-to-inspection",
+          "points": [
+            {
+              "x": 260,
+              "y": 715
+            },
+            {
+              "x": 360,
+              "y": 715
+            }
+          ]
+        },
+        {
+          "connection": "inspection-to-packer",
+          "points": [
+            {
+              "x": 560,
+              "y": 715
+            },
+            {
+              "x": 660,
+              "y": 715
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "utilities",
+      "label": "Utilities & control",
+      "canvas": {
+        "width": 980,
+        "height": 660
+      },
+      "placements": [
+        {
+          "component": "power",
+          "x": 60,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "controller",
+          "x": 360,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "motor",
+          "x": 660,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "temperature",
+          "x": 660,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "mill",
+          "x": 360,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "inspection",
+          "x": 60,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        }
+      ],
+      "routes": [
+        {
+          "connection": "power-to-mill",
+          "points": [
+            {
+              "x": 260,
+              "y": 155
+            },
+            {
+              "x": 284,
+              "y": 155
+            },
+            {
+              "x": 284,
+              "y": 316
+            },
+            {
+              "x": 336,
+              "y": 316
+            },
+            {
+              "x": 336,
+              "y": 435
+            },
+            {
+              "x": 360,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "power-to-inspection",
+          "points": [
+            {
+              "x": 160,
+              "y": 250
+            },
+            {
+              "x": 160,
+              "y": 340
+            }
+          ]
+        },
+        {
+          "connection": "power-to-controller",
+          "points": [
+            {
+              "x": 260,
+              "y": 155
+            },
+            {
+              "x": 360,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "power-to-motor",
+          "points": [
+            {
+              "x": 260,
+              "y": 155
+            },
+            {
+              "x": 336,
+              "y": 155
+            },
+            {
+              "x": 336,
+              "y": 36
+            },
+            {
+              "x": 636,
+              "y": 36
+            },
+            {
+              "x": 636,
+              "y": 155
+            },
+            {
+              "x": 660,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "power-to-temperature",
+          "points": [
+            {
+              "x": 260,
+              "y": 155
+            },
+            {
+              "x": 284,
+              "y": 155
+            },
+            {
+              "x": 284,
+              "y": 316
+            },
+            {
+              "x": 636,
+              "y": 316
+            },
+            {
+              "x": 636,
+              "y": 435
+            },
+            {
+              "x": 660,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "temperature-to-controller",
+          "points": [
+            {
+              "x": 660,
+              "y": 435
+            },
+            {
+              "x": 636,
+              "y": 435
+            },
+            {
+              "x": 636,
+              "y": 274
+            },
+            {
+              "x": 584,
+              "y": 274
+            },
+            {
+              "x": 584,
+              "y": 155
+            },
+            {
+              "x": 560,
+              "y": 155
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "finishing",
+      "label": "Finishing & storage",
+      "canvas": {
+        "width": 980,
+        "height": 940
+      },
+      "placements": [
+        {
+          "component": "screen",
+          "x": 60,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "blender",
+          "x": 360,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "press",
+          "x": 660,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "inspection",
+          "x": 660,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "packer",
+          "x": 360,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "controller",
+          "x": 60,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "temperature",
+          "x": 60,
+          "y": 620,
+          "width": 200,
+          "height": 190
+        }
+      ],
+      "routes": [
+        {
+          "connection": "screen-to-blender",
+          "points": [
+            {
+              "x": 260,
+              "y": 155
+            },
+            {
+              "x": 360,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "blender-to-press",
+          "points": [
+            {
+              "x": 560,
+              "y": 155
+            },
+            {
+              "x": 660,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "press-to-inspection",
+          "points": [
+            {
+              "x": 760,
+              "y": 250
+            },
+            {
+              "x": 760,
+              "y": 340
+            }
+          ]
+        },
+        {
+          "connection": "inspection-to-packer",
+          "points": [
+            {
+              "x": 660,
+              "y": 435
+            },
+            {
+              "x": 560,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "temperature-to-controller",
+          "points": [
+            {
+              "x": 160,
+              "y": 620
+            },
+            {
+              "x": 160,
+              "y": 530
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "commands": [
+    {
+      "id": "powder-enabled",
+      "label": "Powder receiving silo \u00b7 Enabled",
+      "component": "powder",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "powder"
+      }
+    },
+    {
+      "id": "powder-load",
+      "label": "Powder receiving silo \u00b7 Requested load",
+      "component": "powder",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "powder"
+      }
+    },
+    {
+      "id": "powder-fault",
+      "label": "Powder receiving silo \u00b7 Injected failure",
+      "component": "powder",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "powder"
+      }
+    },
+    {
+      "id": "powder-repair",
+      "label": "Repair Powder receiving silo",
+      "component": "powder",
+      "action": "repair",
+      "arguments": {
+        "equipment": "powder"
+      }
+    },
+    {
+      "id": "weighing-enabled",
+      "label": "Batch weighing hopper \u00b7 Enabled",
+      "component": "weighing",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "weighing"
+      }
+    },
+    {
+      "id": "weighing-load",
+      "label": "Batch weighing hopper \u00b7 Requested load",
+      "component": "weighing",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "weighing"
+      }
+    },
+    {
+      "id": "weighing-fault",
+      "label": "Batch weighing hopper \u00b7 Injected failure",
+      "component": "weighing",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "weighing"
+      }
+    },
+    {
+      "id": "weighing-repair",
+      "label": "Repair Batch weighing hopper",
+      "component": "weighing",
+      "action": "repair",
+      "arguments": {
+        "equipment": "weighing"
+      }
+    },
+    {
+      "id": "feeder-enabled",
+      "label": "Powder metering screw \u00b7 Enabled",
+      "component": "feeder",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "feeder"
+      }
+    },
+    {
+      "id": "feeder-load",
+      "label": "Powder metering screw \u00b7 Requested load",
+      "component": "feeder",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "feeder"
+      }
+    },
+    {
+      "id": "feeder-fault",
+      "label": "Powder metering screw \u00b7 Injected failure",
+      "component": "feeder",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "feeder"
+      }
+    },
+    {
+      "id": "feeder-repair",
+      "label": "Repair Powder metering screw",
+      "component": "feeder",
+      "action": "repair",
+      "arguments": {
+        "equipment": "feeder"
+      }
+    },
+    {
+      "id": "mill-enabled",
+      "label": "Particle preparation mill \u00b7 Enabled",
+      "component": "mill",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "mill"
+      }
+    },
+    {
+      "id": "mill-load",
+      "label": "Particle preparation mill \u00b7 Requested load",
+      "component": "mill",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "mill"
+      }
+    },
+    {
+      "id": "mill-fault",
+      "label": "Particle preparation mill \u00b7 Injected failure",
+      "component": "mill",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "mill"
+      }
+    },
+    {
+      "id": "mill-repair",
+      "label": "Repair Particle preparation mill",
+      "component": "mill",
+      "action": "repair",
+      "arguments": {
+        "equipment": "mill"
+      }
+    },
+    {
+      "id": "granulator-enabled",
+      "label": "Granulation stage \u00b7 Enabled",
+      "component": "granulator",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "granulator"
+      }
+    },
+    {
+      "id": "granulator-load",
+      "label": "Granulation stage \u00b7 Requested load",
+      "component": "granulator",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "granulator"
+      }
+    },
+    {
+      "id": "granulator-fault",
+      "label": "Granulation stage \u00b7 Injected failure",
+      "component": "granulator",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "granulator"
+      }
+    },
+    {
+      "id": "granulator-repair",
+      "label": "Repair Granulation stage",
+      "component": "granulator",
+      "action": "repair",
+      "arguments": {
+        "equipment": "granulator"
+      }
+    },
+    {
+      "id": "dryer-enabled",
+      "label": "Granule drying stage \u00b7 Enabled",
+      "component": "dryer",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "dryer"
+      }
+    },
+    {
+      "id": "dryer-load",
+      "label": "Granule drying stage \u00b7 Requested load",
+      "component": "dryer",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "dryer"
+      }
+    },
+    {
+      "id": "dryer-fault",
+      "label": "Granule drying stage \u00b7 Injected failure",
+      "component": "dryer",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "dryer"
+      }
+    },
+    {
+      "id": "dryer-repair",
+      "label": "Repair Granule drying stage",
+      "component": "dryer",
+      "action": "repair",
+      "arguments": {
+        "equipment": "dryer"
+      }
+    },
+    {
+      "id": "screen-enabled",
+      "label": "Granule screening \u00b7 Enabled",
+      "component": "screen",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "screen"
+      }
+    },
+    {
+      "id": "screen-load",
+      "label": "Granule screening \u00b7 Requested load",
+      "component": "screen",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "screen"
+      }
+    },
+    {
+      "id": "screen-fault",
+      "label": "Granule screening \u00b7 Injected failure",
+      "component": "screen",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "screen"
+      }
+    },
+    {
+      "id": "screen-repair",
+      "label": "Repair Granule screening",
+      "component": "screen",
+      "action": "repair",
+      "arguments": {
+        "equipment": "screen"
+      }
+    },
+    {
+      "id": "blender-enabled",
+      "label": "Dry blending drum \u00b7 Enabled",
+      "component": "blender",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "blender"
+      }
+    },
+    {
+      "id": "blender-load",
+      "label": "Dry blending drum \u00b7 Requested load",
+      "component": "blender",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "blender"
+      }
+    },
+    {
+      "id": "blender-fault",
+      "label": "Dry blending drum \u00b7 Injected failure",
+      "component": "blender",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "blender"
+      }
+    },
+    {
+      "id": "blender-repair",
+      "label": "Repair Dry blending drum",
+      "component": "blender",
+      "action": "repair",
+      "arguments": {
+        "equipment": "blender"
+      }
+    },
+    {
+      "id": "press-enabled",
+      "label": "Tablet compression station \u00b7 Enabled",
+      "component": "press",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "press"
+      }
+    },
+    {
+      "id": "press-load",
+      "label": "Tablet compression station \u00b7 Requested load",
+      "component": "press",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "press"
+      }
+    },
+    {
+      "id": "press-fault",
+      "label": "Tablet compression station \u00b7 Injected failure",
+      "component": "press",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "press"
+      }
+    },
+    {
+      "id": "press-repair",
+      "label": "Repair Tablet compression station",
+      "component": "press",
+      "action": "repair",
+      "arguments": {
+        "equipment": "press"
+      }
+    },
+    {
+      "id": "inspection-enabled",
+      "label": "Inspection transfer \u00b7 Enabled",
+      "component": "inspection",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "inspection"
+      }
+    },
+    {
+      "id": "inspection-load",
+      "label": "Inspection transfer \u00b7 Requested load",
+      "component": "inspection",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "inspection"
+      }
+    },
+    {
+      "id": "inspection-fault",
+      "label": "Inspection transfer \u00b7 Injected failure",
+      "component": "inspection",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "inspection"
+      }
+    },
+    {
+      "id": "inspection-repair",
+      "label": "Repair Inspection transfer",
+      "component": "inspection",
+      "action": "repair",
+      "arguments": {
+        "equipment": "inspection"
+      }
+    },
+    {
+      "id": "packer-enabled",
+      "label": "Tablet packaging \u00b7 Enabled",
+      "component": "packer",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "packer"
+      }
+    },
+    {
+      "id": "packer-load",
+      "label": "Tablet packaging \u00b7 Requested load",
+      "component": "packer",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "packer"
+      }
+    },
+    {
+      "id": "packer-fault",
+      "label": "Tablet packaging \u00b7 Injected failure",
+      "component": "packer",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "packer"
+      }
+    },
+    {
+      "id": "packer-repair",
+      "label": "Repair Tablet packaging",
+      "component": "packer",
+      "action": "repair",
+      "arguments": {
+        "equipment": "packer"
+      }
+    },
+    {
+      "id": "power-enabled",
+      "label": "Demonstration site power \u00b7 Enabled",
+      "component": "power",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "power"
+      }
+    },
+    {
+      "id": "power-load",
+      "label": "Demonstration site power \u00b7 Requested load",
+      "component": "power",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "power"
+      }
+    },
+    {
+      "id": "power-fault",
+      "label": "Demonstration site power \u00b7 Injected failure",
+      "component": "power",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "power"
+      }
+    },
+    {
+      "id": "power-repair",
+      "label": "Repair Demonstration site power",
+      "component": "power",
+      "action": "repair",
+      "arguments": {
+        "equipment": "power"
+      }
+    },
+    {
+      "id": "controller-enabled",
+      "label": "Powder-line controller \u00b7 Enabled",
+      "component": "controller",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "controller"
+      }
+    },
+    {
+      "id": "controller-load",
+      "label": "Powder-line controller \u00b7 Requested load",
+      "component": "controller",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "controller"
+      }
+    },
+    {
+      "id": "controller-fault",
+      "label": "Powder-line controller \u00b7 Injected failure",
+      "component": "controller",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "controller"
+      }
+    },
+    {
+      "id": "controller-repair",
+      "label": "Repair Powder-line controller",
+      "component": "controller",
+      "action": "repair",
+      "arguments": {
+        "equipment": "controller"
+      }
+    },
+    {
+      "id": "motor-enabled",
+      "label": "Auxiliary extraction drive \u00b7 Enabled",
+      "component": "motor",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "motor"
+      }
+    },
+    {
+      "id": "motor-load",
+      "label": "Auxiliary extraction drive \u00b7 Requested load",
+      "component": "motor",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "motor"
+      }
+    },
+    {
+      "id": "motor-fault",
+      "label": "Auxiliary extraction drive \u00b7 Injected failure",
+      "component": "motor",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "motor"
+      }
+    },
+    {
+      "id": "motor-repair",
+      "label": "Repair Auxiliary extraction drive",
+      "component": "motor",
+      "action": "repair",
+      "arguments": {
+        "equipment": "motor"
+      }
+    },
+    {
+      "id": "temperature-enabled",
+      "label": "Dryer display probe \u00b7 Enabled",
+      "component": "temperature",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "temperature"
+      }
+    },
+    {
+      "id": "temperature-load",
+      "label": "Dryer display probe \u00b7 Requested load",
+      "component": "temperature",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "temperature"
+      }
+    },
+    {
+      "id": "temperature-fault",
+      "label": "Dryer display probe \u00b7 Injected failure",
+      "component": "temperature",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "temperature"
+      }
+    },
+    {
+      "id": "temperature-repair",
+      "label": "Repair Dryer display probe",
+      "component": "temperature",
+      "action": "repair",
+      "arguments": {
+        "equipment": "temperature"
+      }
+    },
+    {
+      "id": "plant-setRunning",
+      "label": "Run the shared plant",
+      "action": "setRunning",
+      "arguments": {}
+    },
+    {
+      "id": "plant-step",
+      "label": "Advance one model step",
+      "action": "step",
+      "arguments": {
+        "value": 1
+      }
+    },
+    {
+      "id": "plant-reset",
+      "label": "Reset dynamics \u00b7 keep edited parameters",
+      "action": "reset",
+      "arguments": {}
+    }
+  ],
+  "controls": [
+    {
+      "id": "powder-enabled-control",
+      "label": "Enabled",
+      "component": "powder",
+      "kind": "toggle",
+      "command": "powder-enabled",
+      "binding": "/controls/powder/enabled"
+    },
+    {
+      "id": "powder-load-control",
+      "label": "Requested load",
+      "component": "powder",
+      "kind": "range",
+      "command": "powder-load",
+      "binding": "/controls/powder/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "powder-fault-control",
+      "label": "Injected failure",
+      "component": "powder",
+      "kind": "toggle",
+      "command": "powder-fault",
+      "binding": "/controls/powder/fault"
+    },
+    {
+      "id": "powder-repair-control",
+      "label": "Repair component",
+      "component": "powder",
+      "kind": "button",
+      "command": "powder-repair"
+    },
+    {
+      "id": "weighing-enabled-control",
+      "label": "Enabled",
+      "component": "weighing",
+      "kind": "toggle",
+      "command": "weighing-enabled",
+      "binding": "/controls/weighing/enabled"
+    },
+    {
+      "id": "weighing-load-control",
+      "label": "Requested load",
+      "component": "weighing",
+      "kind": "range",
+      "command": "weighing-load",
+      "binding": "/controls/weighing/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "weighing-fault-control",
+      "label": "Injected failure",
+      "component": "weighing",
+      "kind": "toggle",
+      "command": "weighing-fault",
+      "binding": "/controls/weighing/fault"
+    },
+    {
+      "id": "weighing-repair-control",
+      "label": "Repair component",
+      "component": "weighing",
+      "kind": "button",
+      "command": "weighing-repair"
+    },
+    {
+      "id": "feeder-enabled-control",
+      "label": "Enabled",
+      "component": "feeder",
+      "kind": "toggle",
+      "command": "feeder-enabled",
+      "binding": "/controls/feeder/enabled"
+    },
+    {
+      "id": "feeder-load-control",
+      "label": "Requested load",
+      "component": "feeder",
+      "kind": "range",
+      "command": "feeder-load",
+      "binding": "/controls/feeder/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "feeder-fault-control",
+      "label": "Injected failure",
+      "component": "feeder",
+      "kind": "toggle",
+      "command": "feeder-fault",
+      "binding": "/controls/feeder/fault"
+    },
+    {
+      "id": "feeder-repair-control",
+      "label": "Repair component",
+      "component": "feeder",
+      "kind": "button",
+      "command": "feeder-repair"
+    },
+    {
+      "id": "mill-enabled-control",
+      "label": "Enabled",
+      "component": "mill",
+      "kind": "toggle",
+      "command": "mill-enabled",
+      "binding": "/controls/mill/enabled"
+    },
+    {
+      "id": "mill-load-control",
+      "label": "Requested load",
+      "component": "mill",
+      "kind": "range",
+      "command": "mill-load",
+      "binding": "/controls/mill/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "mill-fault-control",
+      "label": "Injected failure",
+      "component": "mill",
+      "kind": "toggle",
+      "command": "mill-fault",
+      "binding": "/controls/mill/fault"
+    },
+    {
+      "id": "mill-repair-control",
+      "label": "Repair component",
+      "component": "mill",
+      "kind": "button",
+      "command": "mill-repair"
+    },
+    {
+      "id": "granulator-enabled-control",
+      "label": "Enabled",
+      "component": "granulator",
+      "kind": "toggle",
+      "command": "granulator-enabled",
+      "binding": "/controls/granulator/enabled"
+    },
+    {
+      "id": "granulator-load-control",
+      "label": "Requested load",
+      "component": "granulator",
+      "kind": "range",
+      "command": "granulator-load",
+      "binding": "/controls/granulator/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "granulator-fault-control",
+      "label": "Injected failure",
+      "component": "granulator",
+      "kind": "toggle",
+      "command": "granulator-fault",
+      "binding": "/controls/granulator/fault"
+    },
+    {
+      "id": "granulator-repair-control",
+      "label": "Repair component",
+      "component": "granulator",
+      "kind": "button",
+      "command": "granulator-repair"
+    },
+    {
+      "id": "dryer-enabled-control",
+      "label": "Enabled",
+      "component": "dryer",
+      "kind": "toggle",
+      "command": "dryer-enabled",
+      "binding": "/controls/dryer/enabled"
+    },
+    {
+      "id": "dryer-load-control",
+      "label": "Requested load",
+      "component": "dryer",
+      "kind": "range",
+      "command": "dryer-load",
+      "binding": "/controls/dryer/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "dryer-fault-control",
+      "label": "Injected failure",
+      "component": "dryer",
+      "kind": "toggle",
+      "command": "dryer-fault",
+      "binding": "/controls/dryer/fault"
+    },
+    {
+      "id": "dryer-repair-control",
+      "label": "Repair component",
+      "component": "dryer",
+      "kind": "button",
+      "command": "dryer-repair"
+    },
+    {
+      "id": "screen-enabled-control",
+      "label": "Enabled",
+      "component": "screen",
+      "kind": "toggle",
+      "command": "screen-enabled",
+      "binding": "/controls/screen/enabled"
+    },
+    {
+      "id": "screen-load-control",
+      "label": "Requested load",
+      "component": "screen",
+      "kind": "range",
+      "command": "screen-load",
+      "binding": "/controls/screen/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "screen-fault-control",
+      "label": "Injected failure",
+      "component": "screen",
+      "kind": "toggle",
+      "command": "screen-fault",
+      "binding": "/controls/screen/fault"
+    },
+    {
+      "id": "screen-repair-control",
+      "label": "Repair component",
+      "component": "screen",
+      "kind": "button",
+      "command": "screen-repair"
+    },
+    {
+      "id": "blender-enabled-control",
+      "label": "Enabled",
+      "component": "blender",
+      "kind": "toggle",
+      "command": "blender-enabled",
+      "binding": "/controls/blender/enabled"
+    },
+    {
+      "id": "blender-load-control",
+      "label": "Requested load",
+      "component": "blender",
+      "kind": "range",
+      "command": "blender-load",
+      "binding": "/controls/blender/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "blender-fault-control",
+      "label": "Injected failure",
+      "component": "blender",
+      "kind": "toggle",
+      "command": "blender-fault",
+      "binding": "/controls/blender/fault"
+    },
+    {
+      "id": "blender-repair-control",
+      "label": "Repair component",
+      "component": "blender",
+      "kind": "button",
+      "command": "blender-repair"
+    },
+    {
+      "id": "press-enabled-control",
+      "label": "Enabled",
+      "component": "press",
+      "kind": "toggle",
+      "command": "press-enabled",
+      "binding": "/controls/press/enabled"
+    },
+    {
+      "id": "press-load-control",
+      "label": "Requested load",
+      "component": "press",
+      "kind": "range",
+      "command": "press-load",
+      "binding": "/controls/press/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "press-fault-control",
+      "label": "Injected failure",
+      "component": "press",
+      "kind": "toggle",
+      "command": "press-fault",
+      "binding": "/controls/press/fault"
+    },
+    {
+      "id": "press-repair-control",
+      "label": "Repair component",
+      "component": "press",
+      "kind": "button",
+      "command": "press-repair"
+    },
+    {
+      "id": "inspection-enabled-control",
+      "label": "Enabled",
+      "component": "inspection",
+      "kind": "toggle",
+      "command": "inspection-enabled",
+      "binding": "/controls/inspection/enabled"
+    },
+    {
+      "id": "inspection-load-control",
+      "label": "Requested load",
+      "component": "inspection",
+      "kind": "range",
+      "command": "inspection-load",
+      "binding": "/controls/inspection/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "inspection-fault-control",
+      "label": "Injected failure",
+      "component": "inspection",
+      "kind": "toggle",
+      "command": "inspection-fault",
+      "binding": "/controls/inspection/fault"
+    },
+    {
+      "id": "inspection-repair-control",
+      "label": "Repair component",
+      "component": "inspection",
+      "kind": "button",
+      "command": "inspection-repair"
+    },
+    {
+      "id": "packer-enabled-control",
+      "label": "Enabled",
+      "component": "packer",
+      "kind": "toggle",
+      "command": "packer-enabled",
+      "binding": "/controls/packer/enabled"
+    },
+    {
+      "id": "packer-load-control",
+      "label": "Requested load",
+      "component": "packer",
+      "kind": "range",
+      "command": "packer-load",
+      "binding": "/controls/packer/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "packer-fault-control",
+      "label": "Injected failure",
+      "component": "packer",
+      "kind": "toggle",
+      "command": "packer-fault",
+      "binding": "/controls/packer/fault"
+    },
+    {
+      "id": "packer-repair-control",
+      "label": "Repair component",
+      "component": "packer",
+      "kind": "button",
+      "command": "packer-repair"
+    },
+    {
+      "id": "power-enabled-control",
+      "label": "Enabled",
+      "component": "power",
+      "kind": "toggle",
+      "command": "power-enabled",
+      "binding": "/controls/power/enabled"
+    },
+    {
+      "id": "power-load-control",
+      "label": "Requested load",
+      "component": "power",
+      "kind": "range",
+      "command": "power-load",
+      "binding": "/controls/power/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "power-fault-control",
+      "label": "Injected failure",
+      "component": "power",
+      "kind": "toggle",
+      "command": "power-fault",
+      "binding": "/controls/power/fault"
+    },
+    {
+      "id": "power-repair-control",
+      "label": "Repair component",
+      "component": "power",
+      "kind": "button",
+      "command": "power-repair"
+    },
+    {
+      "id": "controller-enabled-control",
+      "label": "Enabled",
+      "component": "controller",
+      "kind": "toggle",
+      "command": "controller-enabled",
+      "binding": "/controls/controller/enabled"
+    },
+    {
+      "id": "controller-load-control",
+      "label": "Requested load",
+      "component": "controller",
+      "kind": "range",
+      "command": "controller-load",
+      "binding": "/controls/controller/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "controller-fault-control",
+      "label": "Injected failure",
+      "component": "controller",
+      "kind": "toggle",
+      "command": "controller-fault",
+      "binding": "/controls/controller/fault"
+    },
+    {
+      "id": "controller-repair-control",
+      "label": "Repair component",
+      "component": "controller",
+      "kind": "button",
+      "command": "controller-repair"
+    },
+    {
+      "id": "motor-enabled-control",
+      "label": "Enabled",
+      "component": "motor",
+      "kind": "toggle",
+      "command": "motor-enabled",
+      "binding": "/controls/motor/enabled"
+    },
+    {
+      "id": "motor-load-control",
+      "label": "Requested load",
+      "component": "motor",
+      "kind": "range",
+      "command": "motor-load",
+      "binding": "/controls/motor/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "motor-fault-control",
+      "label": "Injected failure",
+      "component": "motor",
+      "kind": "toggle",
+      "command": "motor-fault",
+      "binding": "/controls/motor/fault"
+    },
+    {
+      "id": "motor-repair-control",
+      "label": "Repair component",
+      "component": "motor",
+      "kind": "button",
+      "command": "motor-repair"
+    },
+    {
+      "id": "temperature-enabled-control",
+      "label": "Enabled",
+      "component": "temperature",
+      "kind": "toggle",
+      "command": "temperature-enabled",
+      "binding": "/controls/temperature/enabled"
+    },
+    {
+      "id": "temperature-load-control",
+      "label": "Requested load",
+      "component": "temperature",
+      "kind": "range",
+      "command": "temperature-load",
+      "binding": "/controls/temperature/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "temperature-fault-control",
+      "label": "Injected failure",
+      "component": "temperature",
+      "kind": "toggle",
+      "command": "temperature-fault",
+      "binding": "/controls/temperature/fault"
+    },
+    {
+      "id": "temperature-repair-control",
+      "label": "Repair component",
+      "component": "temperature",
+      "kind": "button",
+      "command": "temperature-repair"
+    },
+    {
+      "id": "plant-setRunning-control",
+      "label": "Run the shared plant",
+      "kind": "toggle",
+      "command": "plant-setRunning",
+      "binding": "/running"
+    },
+    {
+      "id": "plant-step-control",
+      "label": "Advance one model step",
+      "kind": "button",
+      "command": "plant-step"
+    },
+    {
+      "id": "plant-reset-control",
+      "label": "Reset dynamics \u00b7 keep edited parameters",
+      "kind": "button",
+      "command": "plant-reset"
+    }
+  ],
+  "units": {
+    "flow": "normalized flow units",
+    "inventory": "normalized inventory units",
+    "load": "% requested demonstration load",
+    "pressure": "normalized pressure index",
+    "temperature": "normalized model thermal index; artwork displays an illustrative range"
+  },
+  "provenance": [
+    {
+      "id": "demo-model",
+      "label": "Editable placeholder model",
+      "kind": "assumed",
+      "description": "Family-level normalized behavior for UI experimentation; no calibrated industry process, safety envelope or recipe."
+    },
+    {
+      "id": "assumed-topology",
+      "label": "Illustrative editable routing",
+      "kind": "illustrative",
+      "description": "Industry-inspired stage names and interfaces. This is not a verified plant P&ID, wiring diagram or production design."
+    }
+  ],
+  "assumptions": [
+    {
+      "id": "nominalCapacity",
+      "label": "Default normalized stage capacity",
+      "value": 75,
+      "unit": "normalized units",
+      "provenance": "demo-model"
+    },
+    {
+      "id": "warningIndex",
+      "label": "Demonstration warning threshold",
+      "value": 78,
+      "unit": "normalized index",
+      "provenance": "demo-model"
+    },
+    {
+      "id": "optionalUtilities",
+      "label": "Utility equipment is illustrative and may be optional",
+      "value": true,
+      "provenance": "assumed-topology"
+    }
+  ]
+}

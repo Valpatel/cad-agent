@@ -8,7 +8,7 @@ import { CARDS_MIN, FOLD_LINES, FOLD_ROWS, fold, pagePlacer, sectionCards } from
 const PNG = Buffer.from('89504e470d0a1a0a0000000d49484452000002800000019008060000', 'hex');   // 640 x 400
 const base = {
   pageFiles: new Set(['docs/a.md', 'docs/b.md']),
-  tracked: ['docs/img/out.png', 'docs/img/two.png', 'software/cadagent/review/gates/motion.py', 'software/cadagent/simulation/fea/__init__.py', 'tools/draw.py', 'software/cadagent/webkit/part-table.js'],
+  tracked: ['docs/img/out.png', 'docs/img/two.png', 'software/cadagent/review/gates/motion.py', 'software/cadagent/simulation/fea/__init__.py', 'tools/draw.py', 'software/cadagent/webkit/assembly/part-table.js'],
   commandNames: new Set(['gates', 'site']), readBuf: async () => PNG, pageURL: f => '/' + f.replace(/\.md$/, ''),
 };
 const out = (o = {}) => ({ img: 'docs/img/out.png', shows: 'output', tool: 'cad-agent site', on: 'fixture', caption: 'Six gates pass.', alt: 'A table', ...o });
@@ -28,8 +28,8 @@ test('a band (hero and tiles) goes under the title and its first paragraph, each
   const colon = await place('docs/a.md', '<h1 id="a">A</h1><p>Every review walks this list:</p><ol><li>x</li></ol>' + PAGE.slice(PAGE.indexOf('<h2')));
   assert.match(colon, /^<h1 id="a">A<\/h1><section class="page-band"[^]*?<\/section><p>Every review walks this list:<\/p><ol>/);
   assert.equal(await place('docs/b.md', PAGE), PAGE, 'a page without an entry or pictures is untouched');
-  const kit = await pagePlacer({ ...base, spec: { 'docs/b.md': { hero: out({ tool: 'kit/part-table.js' }) } } })('docs/b.md', PAGE);
-  assert.match(kit, /<b class="shows-output">Real output<\/b> of <code>kit\/part-table\.js<\/code>/, 'a web kit file is a tool, as the site publishes it');
+  const kit = await pagePlacer({ ...base, spec: { 'docs/b.md': { hero: out({ tool: 'kit/assembly/part-table.js' }) } } })('docs/b.md', PAGE);
+  assert.match(kit, /<b class="shows-output">Real output<\/b> of <code>kit\/assembly\/part-table\.js<\/code>/, 'a web kit file is a tool, as the site publishes it');
   // A tile is one link: the Gyropup credit's own link would nest in it and split the tile (#217 review). The hero keeps it.
   const gyropup = await pagePlacer({ ...base, spec: { 'docs/a.md': { hero: out({ on: 'gyropup' }), band: [tile({ on: 'gyropup' }), tile()] } } })('docs/a.md', PAGE);
   for (const li of gyropup.match(/<li>[^]*?<\/li>/g)) assert.equal(li.match(/<a\b/g).length, 1, li);
@@ -140,6 +140,21 @@ test('long tables and code blocks fold, with a summary of what is inside; short 
   assert.match(fold(code(40)), /<summary><span class="fold-kind">Code<\/span> 40 lines<\/summary>/);
   const diagram = '<pre><code class="language-mermaid">' + 'a\n'.repeat(40) + '</code></pre>';
   assert.equal(fold(diagram), diagram, 'a diagram source is a picture, not reference text');
+});
+
+test('authored references open with one action and automatic folding is idempotent', () => {
+  const table = '<div class="table-scroll"><table><tbody>' + '<tr><td>Equipment</td></tr>'.repeat(FOLD_ROWS + 1) + '</tbody></table></div>';
+  const code = '<cad-copy><pre><code>' + 'parameter = 1\n'.repeat(FOLD_LINES + 1) + '</code></pre></cad-copy>';
+  const nested = '<details><summary>Units</summary>' + code + '</details>';
+  const authored = '<DETAILS data-label="A > B"><summary>Equipment and units</summary>' + table + nested + '</DETAILS>';
+  assert.equal(fold(authored), authored, 'keep the authored title, table and intentional nested reference intact');
+  const comment = '<!-- <details><summary>Example only</summary> -->';
+  assert.equal(fold(comment + authored + table + code), comment + authored + fold(table) + fold(code),
+    'comment markup does not hide the subsequent ordinary references from automatic folding');
+  assert.equal(fold('<details-card>' + table + '</details-card>'), '<details-card>' + fold(table) + '</details-card>',
+    'a similarly named custom element is not a native disclosure');
+  const once = fold(table + code);
+  assert.equal(fold(once), once, 'a second compiler pass must not introduce another click');
 });
 
 

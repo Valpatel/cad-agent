@@ -1341,8 +1341,11 @@ Showing how it fails, for the report:
   ("edge of a Ø5.5 hole", "R4 inside fillet", "flat face, 1.9 mm from an R4 inside fillet", "sharp inside corner"),
   and a mesh note when the smoothed value is far below the peak.
 
-Open a case with `kit/fea.html?case=../../exports/fea/<part>-<case>.json` (the kit copied by `cad-agent webkit`, or the
-copy `cad-agent site --serve` serves at `/_cadagent/kit/fea.html`). The viewer has:
+For the default `cad-agent webkit` copy, open
+`web/kit/fea/fea.html?case=../../../exports/fea/<part>-<case>.json` from the project server.
+With `cad-agent site --serve`, open
+`/_cadagent/kit/fea/fea.html?case=../../../exports/fea/<part>-<case>.json`.
+The viewer has:
 
 - a load-factor slider from 0 to 1.3 x the failure load, and a play button that ramps it (pausing at the design load
   and at first failure). Deformation and colours scale linearly. Triangles whose element is past the strength turn

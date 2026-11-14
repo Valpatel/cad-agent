@@ -1,119 +1,63 @@
-# cad-agent web kit
+# Browser toolkit
 
-Browser pieces for showing a robot or mechanism: a lit 3D stage, a control-room HUD skin, panel controls and an
-expressive face. Plain ES modules, no build step, works offline.
+Reusable viewers, controls and document enhancements for CAD, assembly instructions,
+analysis and engineering calculations. Plain ES modules run in an application or
+standalone page and work with the kit's pinned local dependencies.
 
-```bash
-cad-agent webkit designer/kit      # copies this kit into your project (re-run to update)
+```mermaid
+flowchart LR
+  App[App] --> Host[Host]
+  Host --> Views[Viewers]
+  Views --> Assets[Assets]
+  App --> UI[Controls]
 ```
+
+| Owner | Responsibility |
+| --- | --- |
+| [host/](host/README.md) | Renderer-independent frame, accessible controls, mount/dispose and two real 3D adapters. |
+| [scada/](scada/README.md) | Process symbols, shared diagram views, headless models, equation providers and owned galleries/examples |
+| [model/](model/README.md) | Ordinary assembly/STL viewer, inline packed model element and shared 3D stage. |
+| [files/](files/README.md) | Original CAD file viewer, parsers, workers and themes. |
+| [assembly/](assembly/README.md) | Build instructions, playback, part tracking and part tables. |
+| [fea/](fea/README.md) | Analysis result viewing and deformed-shape playback. |
+| [ui/](ui/README.md) | HUD, panel controls, app navigation and reusable galleries. |
+| [documents/](documents/README.md) | Page navigation, copy/review enhancements and Mermaid diagrams. |
+| [calculators/](calculators/README.md) | Formula-backed engineering elements and static drawing APIs. |
+| [vendor/](vendor/README.md) | Pinned renderer, parsers, fonts, receipts and third-party notices. |
+| [package.json](package.json) | ES-module package metadata. |
+
+## Use the toolkit
+
+`cad-agent webkit designer/kit` copies the installed toolkit into a project.
+Use `model/viewer.html` for assembly/STL documents, `files/file-viewer.html` for
+original files, or `fea/fea.html` for analysis results. Import reusable modules
+from their owner folders. Each standalone page has its own document contract.
+
+For multiple viewers in one page, load `host/viewer-host.css`, provide explicit
+container heights and the Three.js import map, then use the
+[contained adapters](host/README.md). Each instance owns its camera and inspector;
+the application owns document identity, simulation clocks and command authority.
+Camera surfaces use orbit/pan/zoom and a visible Zoom to fit control.
+
+Runtime profiles select the exact assets needed by a frozen reader. A complete
+copied kit and an installed wheel include the admitted owner folders; publication
+must validate every imported module, stylesheet, worker and decoder asset.
 
 <details>
-<summary>Embed the viewer and parts table</summary>
+<summary>Extend an owner</summary>
 
-```html
-<link rel="stylesheet" href="kit/hud.css">
-<script type="importmap">{"imports": {"three": "./kit/vendor/three/three.module.min.js",
-                                      "three/addons/": "./kit/vendor/three/addons/"}}</script>
-<div id="app"></div>
-<div id="hud"><header id="topbar">…</header><main id="stage-overlay"></main><aside id="panel"></aside></div>
-<script type="module">
-  import { createStage } from './kit/stage.js';
-  const stage = createStage(document.getElementById('app'), { height: 0.7 });  // robot height in metres
-  stage.root.add(myRobotGroup);
-  stage.onFrame((t, dt) => { /* animate joints */ });
-  stage.start();
-</script>
-```
+Keep model equations, document/controller state and rendering responsibilities
+separate. Reuse a shared control only when real consumers need the same behavior.
+Add the new file to its owner's README, repair direct imports and distribution
+membership, and test actual mount, failure, resize and disposal behavior. No
+placeholder owner folders or universal renderer are needed to add a domain.
 
 </details>
 
-| File | What it gives you |
-|---|---|
-| `stage.js` | `createStage(el, {height, zoomSpeed = 0.25, dragZoomSpeed = 1})`: renderer, orbit camera, control-room lighting, shadowed floor, grid, glow pad, `setSceneLight(0..1)`, `onFrame(cb)`, `stop()`, `dispose()`, `setInsets({left,right,top,bottom})` (keep the model out from under overlay panels), `fitView(points)`. Metres, y up |
-| [assembly/](assembly/README.md) | Optional version-bound assembly instructions over the existing viewer; absolute part states and authored CAD-frame offsets |
-| `panel.js` | `section`, `slider`, `jointSliders`, `chips`, `toggle`, `readouts`: HUD panel controls; `collapsiblePanel(hud, panel)` (hide/show the side panel) and `overlayInsets(hud)` (pixels the overlays cover, for `setInsets`) |
-| `face.js` | `createFace({palette})`: a canvas-texture cartoon face with eased expressions, blinks, gaze drift and talking; `faceGlyph(name)` for buttons. Palettes `warm` and `visor` |
-| `fea-viewer.js`, `fea.html` | `mountFeaViewer(el, url)`: interactive FEA results from `cadagent.simulation.fea` `Study.export_viewer()`: the deformed part coloured by stress, stress/strength, local safety factor or displacement; a load-factor slider and a play ramp past first failure (black = past the strength); hot spots with the load at which each fails (click to fly there); held faces, load arrows, section cut, hover and pinned readouts; `dispose()` to re-mount. `fea.html?case=<json>` is the ready page (`&load=1.5&field=sf&spot=1&clip=x:0.4&panel=0` for links and screenshots) |
-| `copy.js` | `<cad-copy>`: a one-click copy button on any command, config or prompt block (`<cad-copy><pre>…</pre></cad-copy>`, or `text="…"` to copy something other than what is shown). "Copied" feedback, screen-reader announcement, a select-and-press-Ctrl+C fallback, no dependencies; `enhance(root)` wraps every `<pre>` on a page you do not generate |
-| `nav.js`, `nav.css` | `<cad-nav>`: a page tree for long docs. On wide screens it is a sticky column with the current page's outline, marking the section being read (also in a right-hand "On this page" column via `rail="selector"`), plus a filter; it shrinks to the room its column leaves on screen, so at the end of a long page the filter stays below the header. On narrow screens it is one native `<details class="cad-nav-fold">` fold, which opens with or without the script (slow, blocked or failing); on wide screens the fold takes no box and its toggle hides. Write the tree, fold, filter and outline as HTML and link `nav.css` in `<head>`: the first paint is then final, and it all works without script (`aria-label` text is never parsed as markup). Without that markup the script builds the fold, filter and outline itself |
-| `model.js`, `model.css` | `<cad-model src="model.json">`: a whole assembly in 3D on any page, from a model packed by `cadagent.publish.view.pack_view` (welded, 16-bit, gzip: Gyropup's 58 parts are 312 KB). Put a still `<img class="cad-model-poster">` inside and give the element an `aspect-ratio`: the poster is the first paint, and three.js and the model load only once the page has loaded, the element is near the screen and the browser is idle (behind a button with Save-Data on). Drag to turn, part names on hover, Explode and Pause buttons; it turns slowly unless the reader prefers reduced motion. `snapshot(w, h)` renders a still (the poster); works under a strict CSP (no import map, no inline script) |
-| `gallery.js`, `gallery.css` | `<cad-gallery>`: tabs, facets, search and sorting over cards the page already wrote, for a catalogue or a parts library. Tabs are links upgraded to ARIA tabs (arrow keys); facets are checkboxes or links matched against each card's `data-<name>` tokens, with counts of what each choice would leave; every choice is a URL parameter, so a view can be shared and Back works. The overview shows the first `limit` cards per group (the page marks the rest, so the first paint is final); a filter sheet for small screens (modal, Escape, focus returned); covers that move on hover, focus or in view, never under reduced motion. Without script every card shows, grouped; chips and labels are text, never markup |
-| `hud.css` | The skin: Valpatel design language (dark void, cyan hairlines, monospace telemetry) |
-| `vendor/` | three.js r160 (+ OrbitControls, BufferGeometryUtils; receipt in `three/SOURCE.json`), Inter and JetBrains Mono (receipt in `fonts/SOURCE.json`); Mermaid 11.17.2 for `diagrams.js` (receipt in `mermaid/SOURCE.json`); the file viewer's parsers: three.js r160 STL and 3MF loaders, fflate 0.8.3, LinkeDOM 0.18.12, occt-import-js 0.0.23 (receipts in `file-viewer-sources.json`, licences in `FILE-VIEWER-NOTICES.md`). The receipts record each file's source and SHA-256 (and the one patched file, OrbitControls), and `tests/webkit/webkit-vendor.test.mjs` checks every vendored file has one and matches it |
-| `formulas.js`, `formulas-data.js` | The browser port of `cadagent.formulas` (snap arm, cantilever curve and strain profile, four-bar Grashof class, angles, transmission angle and input limits, fans in series and parallel, the fan operating point and stall flow, a rectangular torsion bar, and a thread-forming screw in a plastic boss), SI units, tested against the Python on golden vectors (`tools/formula_vectors.py`); printed filaments with their modulus and allowable strain by print direction, their tensile strength, datasheet fan curves and DELTA PT screw sizes (generated, do not edit) |
-| `cantilever.js`, `cantilever.css` | `<cad-cantilever>`: an interactive snap-arm explorer. Sliders and the material and print direction drive a beam that bends along its computed curve, coloured by strain, with root strain, force and pass/fail. Link the CSS in `<head>` (it reserves the size, so nothing moves) and put a still `<img>` inside as the fallback; keyboard and screen-reader labelled, reduced motion respected, `drawCantilever()` for static figures. The equations and their sources are on the site's Engineering formulas page (`docs/formulas.md`) |
-| `fourbar.js`, `fourbar.css` | `<cad-fourbar>`: an interactive four-bar linkage. Sliders set the crank, coupler, rocker and ground; the crank turns, or rocks and stops where the linkage locks, on the open or crossed assembly with the other one dashed, the coupler point's path drawn, the Grashof class, and the transmission angle charted over the input's travel against 40°. Link the CSS in `<head>` (it reserves the size) and put a still `<img>` inside as the fallback; keyboard and screen-reader labelled, reduced motion respected, light or dark from the page's color-scheme, `drawFourbar()` and `drawChart()` for static figures. Rigid links on ideal pins, position only. The equations are on the site's Linkages page (`docs/mechanical/linkages.md`) |
-| `fan-curve.js`, `fan-curve.css` | `<cad-fan-curve>`: a fan curve against a system curve. A real fan's datasheet curve at 8, 12 or 16 V, the pressure the enclosure needs at 100 m³/h, and one to four fans in parallel or in series; the chart marks the operating point, the airflow and pressure, and the stall region, with a warning when the point lands there (a check for curves that cross more than once is there too, but this fan's dips are too shallow for any system to cross twice). Link the CSS in `<head>` (it reserves the size) and put a still `<img>` inside as the fallback; keyboard and screen-reader labelled, light or dark from the page's color-scheme, `drawFanCurve()` for static figures. Steady flow, identical fans, the maker's test rig. The page is Airflow and fans (`docs/fans.md`) |
-| `torsion-snap.js`, `torsion-snap.css` | `<cad-torsion-snap>`: a torsion-bar snap. Sliders set one bar or a rocker on two, the bar's length, width and thickness, the twist and the lever, with the filament and how often it opens; the bar twists in an oblique view beside its end view, coloured by shear strain, with the peak strain against the allowable across the layers, the force at the lever and pass/fail. Link the CSS in `<head>` (it reserves the size) and put a still `<img>` inside as the fallback; keyboard and screen-reader labelled, light or dark from the page's color-scheme, `drawTorsionSnap()` for static figures. Saint-Venant torsion, ends free to warp, a rigid lever. The page is Snap fits (`docs/mechanical/compliant.md`) |
-| `printed-boss.js`, `printed-boss.css` | `<cad-printed-boss>`: a thread-forming screw (DELTA PT) in a printed boss. The screw size, the boss's outside diameter and engagement, the torque, the filament and the print direction drive the boss in section, coloured by hoop stress with its layers drawn, and the torque window: the drive torque the screw may take, the most to tighten to and where the thread strips, with the clamp band and pass/fail. Link the CSS in `<head>` (it reserves the size) and put a still `<img>` inside as the fallback; keyboard and screen-reader labelled, light or dark from the page's color-scheme, `drawPrintedBoss()` for static figures. Closed forms and datasheet strengths, not a rating. The page is Screw bosses (`docs/mechanical/screw-bosses.md`) |
-
-## Zoom sensitivity
-
-The shared stage zooms the wheel (and a trackpad pinch, which arrives as ctrl+wheel) at `zoomSpeed: 0.25`, four wheel increments over the previous single-increment distance, and middle-button drag and touch pinch at `dragZoomSpeed: 1`. Small trackpad deltas remain continuous. Pass `{zoomSpeed: 1}` for the earlier wheel sensitivity. Zoom limits, orbit and pan are unchanged. The vendored OrbitControls carries one local patch: the wheel delta is normalised by 100, not by the integer device pixel ratio (which was 0 below a ratio of 1).
-The model viewer and FEA viewer inherit the shared default. Projects with copied kits must rerun `cad-agent webkit`;
-`cad-agent site --serve` uses the installed toolkit directly (restart after updating it).
-
-## Credits
-
-- Stage, face and HUD skin are adapted from the browser simulator in
-  [mvalancy/moxie-robot-saver](https://github.com/mvalancy/moxie-robot-saver) (`sim/web/moxie/scene.js`,
-  `sim/web/moxie/face.js`, `sim/web/css/hud.css`), MIT, © 2026 moxie-robot-parent-app contributors.
-- three.js r160 (`three@0.160.0`), MIT, © 2010–2023 three.js authors. Unmodified.
-- Inter (the Inter Project Authors) and JetBrains Mono (JetBrains), SIL Open Font License 1.1. Unmodified.
-- Mermaid 11.17.2 (`mermaid@11.17.2` core entry), MIT, © 2014–2022 Knut Sveidqvist. Derived security rebuild with locked DOMPurify3.4.17/KaTeX0.18.10; [producer](https://github.com/Valpatel/cad-agent/blob/dev/tools/mermaid/README.md), [receipt/input record](vendor/mermaid/SOURCE.json) and [all emitted dependency licences](vendor/mermaid/THIRD-PARTY-LICENSES.txt). The original bundle hash is retained in the patch record.
-- fflate 0.8.3 (`fflate@0.8.3`, `esm/browser.js`), MIT, © 2026 Arjun Barrett. Unmodified; it replaces three.js r160's bundled fflate 0.6.9.
+The stage and HUD are adapted from the MIT [Moxie simulator](https://github.com/mvalancy/moxie-robot-saver).
+Pinned browser dependencies include `three@0.160.0`, `mermaid@11.17.2` and
+`fflate@0.8.3`; their source receipts, authorship and licenses remain under
+[vendor/](vendor/README.md). Host-example geometry fixtures are original
+illustrative blocks.
 
 [Package map](../README.md)
-
-Model and file viewing
-
-```mermaid
-flowchart TD
-    L["file-loader.js"]
-    V["file-viewer.js"]
-    P["vendor/"]
-    M["model.js"]
-    D["diagrams.js"]
-    L --> V
-    V --> P
-    M --> V
-    D --> P
-    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
-```
-
-Parts and tracking
-
-```mermaid
-flowchart TD
-    T["part-table.js"]
-    S["part-tracker.js"]
-    T --> S
-    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
-```
-
-## File and child ownership
-
-| File or folder | Purpose |
-|---|---|
-| [appnav.js](appnav.js) | Application navigation enhancement. |
-| [diagrams.css](diagrams.css) | Diagram presentation and fallback styles. |
-| [file-geometry.js](file-geometry.js) | Geometry decoding/assembly helpers. |
-| [file-loader.js](file-loader.js) | Original-file input lifecycle and format dispatch. |
-| [file-mesh-worker.js](file-mesh-worker.js) | Isolated mesh decode worker. |
-| [file-step-worker.js](file-step-worker.js) | Isolated STEP decode worker. |
-| [file-viewer-theme.js](file-viewer-theme.js) | Theme binding for the original-file viewer. |
-| [file-viewer.css](file-viewer.css) | Original-file viewer layout. |
-| [file-viewer.html](file-viewer.html) | Standalone original-file viewer shell. |
-| [file-viewer.js](file-viewer.js) | Original-file viewer orchestration and controls. |
-| [package.json](package.json) | Web-kit module type metadata. |
-| [part-table.css](part-table.css) | Part checklist styles. |
-| [part-table.js](part-table.js) | Sort/filter checklist enhancement. |
-| [part-tracker.js](part-tracker.js) | Stable part state ownership. |
-| [review.js](review.js) | Review-site interaction. |
-| [viewer.html](viewer.html) | Standalone packed-model viewer shell. |
-| [vendor/](vendor/README.md) | Browser source/licence/integrity records. |
-
-
-| File | Purpose |
-|---|---|
-| [viewer.js](viewer.js) | Packed-model viewer setup and page bindings. |

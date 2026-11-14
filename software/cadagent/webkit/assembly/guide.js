@@ -268,7 +268,7 @@ export function validateState(state, partNames) {
 export async function mountGuide({ app, panel, title, guideUrl, expectedHash, signal, onProgress = () => {}, assetRoot }) {
   if (expectedHash !== undefined && !hashPattern.test(expectedHash)) fail('Invalid guide SHA-256');
   const loaded = await loadGuide(guideUrl, { expectedHash, signal, assetRoot });
-  const { createViewer } = await import('../viewer.js');
+  const { createViewer } = await import('../model/viewer.js');
   let controls, syncAppearance;
   const viewer = await createViewer({ app, panel, title, manifestUrl: loaded.manifestUrl, manifest: loaded.manifest, guideBound: true, assemblyPlan: loaded.plan, signal, onProgress, assetRoot, onStateChange: () => syncAppearance?.() });
   try {

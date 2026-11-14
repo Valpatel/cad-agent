@@ -1,6 +1,6 @@
 # Assembly instructions
 
-Optional instruction data and controls for the existing [assembly viewer](../viewer.js).
+Optional instruction data and controls for the existing [assembly viewer](../model/viewer.js).
 Meshes have their assembled placement baked in: CAD millimetres, z up. Guide offsets are presentation only;
 they do not prove an insertion path, physical fit or an assembly's qualification.
 
@@ -14,6 +14,7 @@ flowchart TD
 
 | File | Responsibility |
 |---|---|
+| [NOTICE.txt](NOTICE.txt) | Existing toolkit and adapted stage/HUD license terms carried by portable reader exports |
 | `guide.js` | Strict guide/view validation, bounded asset reads and absolute step controller |
 | `playback.js` | Canonical plan validation, absolute piecewise pose/parent adapter and reversible serial evaluation; legacy explicit instance order and absolute installation timing; caller supplies stage ticks |
 
@@ -27,3 +28,11 @@ This optional interface supports the first versioned pilot in Gyropup #266, unde
 cad-agent #302. The wider build-package feature remains separate.
 
 [Web kit](../README.md)
+
+## Part state and tables
+
+| File | Responsibility |
+| --- | --- |
+| [part-tracker.js](part-tracker.js) | Local part progress state and persistence. |
+| [part-table.js](part-table.js) | Part-table enhancement and progress controls. |
+| [part-table.css](part-table.css) | Part-table presentation and states. |

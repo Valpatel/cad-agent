@@ -44,7 +44,7 @@ Guides explain how to use the toolkit. Folder maps lead into its code, tests and
 </details>
 
 <details>
-<summary>.agents — 19 folders</summary>
+<summary>.agents — 25 folders</summary>
 
 <details>
 <summary><code>.agents/README.md</code> — 1 folders</summary>
@@ -281,6 +281,84 @@ Guides explain how to use the toolkit. Folder maps lead into its code, tests and
 </details>
 
 <details>
+<summary><code>.agents/skills/repository-documentation/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-.agents/d-skills/d-repository-documentation/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/.agents/skills/repository-documentation/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `.agents/skills/repository-documentation` |
+
+</details>
+
+<details>
+<summary><code>.agents/skills/scada-component-authoring/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-.agents/d-skills/d-scada-component-authoring/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/.agents/skills/scada-component-authoring/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `.agents/skills/scada-component-authoring` |
+
+</details>
+
+<details>
+<summary><code>.agents/skills/scada-distribution-review/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-.agents/d-skills/d-scada-distribution-review/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/.agents/skills/scada-distribution-review/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `.agents/skills/scada-distribution-review` |
+
+</details>
+
+<details>
+<summary><code>.agents/skills/scada-model-adaptation/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-.agents/d-skills/d-scada-model-adaptation/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/.agents/skills/scada-model-adaptation/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `.agents/skills/scada-model-adaptation` |
+
+</details>
+
+<details>
+<summary><code>.agents/skills/scada-system-authoring/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-.agents/d-skills/d-scada-system-authoring/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/.agents/skills/scada-system-authoring/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `.agents/skills/scada-system-authoring` |
+
+</details>
+
+<details>
+<summary><code>.agents/skills/scada-viewer-review/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-.agents/d-skills/d-scada-viewer-review/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/.agents/skills/scada-viewer-review/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `.agents/skills/scada-viewer-review` |
+
+</details>
+
+<details>
 <summary><code>.agents/skills/sheet-metal-hardware/README.md</code> — 1 folders</summary>
 
 [Published folder map](https://cad-agent.valpatel.com/repo/folders/d-.agents/d-skills/d-sheet-metal-hardware/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/.agents/skills/sheet-metal-hardware/README.md)
@@ -334,7 +412,7 @@ Guides explain how to use the toolkit. Folder maps lead into its code, tests and
 </details>
 
 <details>
-<summary>docs — 51 folders</summary>
+<summary>docs — 52 folders</summary>
 
 <details>
 <summary><code>docs/README.md</code> — 1 folders</summary>
@@ -909,6 +987,19 @@ Guides explain how to use the toolkit. Folder maps lead into its code, tests and
 </details>
 
 <details>
+<summary><code>docs/practice/scada/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-docs/d-practice/d-scada/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/docs/practice/scada/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `docs/practice/scada` |
+
+</details>
+
+<details>
 <summary><code>docs/research/README.md</code> — 1 folders</summary>
 
 [Published owner](research/README.md)
@@ -1002,7 +1093,7 @@ Guides explain how to use the toolkit. Folder maps lead into its code, tests and
 </details>
 
 <details>
-<summary>software — 612 folders</summary>
+<summary>software — 1181 folders</summary>
 
 <details>
 <summary><code>software/README.md</code> — 1 folders</summary>
@@ -1274,6 +1365,7403 @@ Guides explain how to use the toolkit. Folder maps lead into its code, tests and
 | Folder |
 |---|
 | `software/cadagent/webkit/assembly` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/calculators/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-calculators/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/calculators/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/calculators` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/documents/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-documents/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/documents/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/documents` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/fea/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-fea/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/fea/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/fea` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/files/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-files/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/files/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/files` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/host/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-host/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/host/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/host` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/model/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-model/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/model/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/model` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/explorer/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-explorer/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/explorer/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/explorer` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/docs/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-docs/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/docs/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/docs` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/examples/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-examples/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/examples/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/examples` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/examples/equation-models/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-examples/d-equation-models/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/examples/equation-models/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/examples/equation-models` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/examples/external-adapter/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-examples/d-external-adapter/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/examples/external-adapter/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/examples/external-adapter` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/examples/model-switching/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-examples/d-model-switching/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/examples/model-switching/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/examples/model-switching` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/thumbnails/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-thumbnails/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/thumbnails/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/thumbnails` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/thumbnails/agriculture-aquaculture/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-thumbnails/d-agriculture-aquaculture/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/thumbnails/agriculture-aquaculture/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/thumbnails/agriculture-aquaculture` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/thumbnails/agriculture-aquaculture/aquaponics-dwc/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-thumbnails/d-agriculture-aquaculture/d-aquaponics-dwc/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/thumbnails/agriculture-aquaculture/aquaponics-dwc/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/thumbnails/agriculture-aquaculture/aquaponics-dwc` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/thumbnails/agriculture-aquaculture/aquaponics-media-bed/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-thumbnails/d-agriculture-aquaculture/d-aquaponics-media-bed/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/thumbnails/agriculture-aquaculture/aquaponics-media-bed/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/thumbnails/agriculture-aquaculture/aquaponics-media-bed` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/thumbnails/agriculture-aquaculture/greenhouse-drip/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-thumbnails/d-agriculture-aquaculture/d-greenhouse-drip/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/thumbnails/agriculture-aquaculture/greenhouse-drip/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/thumbnails/agriculture-aquaculture/greenhouse-drip` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/thumbnails/agriculture-aquaculture/hydroponics-ebb-flow/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-thumbnails/d-agriculture-aquaculture/d-hydroponics-ebb-flow/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/thumbnails/agriculture-aquaculture/hydroponics-ebb-flow/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/thumbnails/agriculture-aquaculture/hydroponics-ebb-flow` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/thumbnails/agriculture-aquaculture/hydroponics-nft/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-thumbnails/d-agriculture-aquaculture/d-hydroponics-nft/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/thumbnails/agriculture-aquaculture/hydroponics-nft/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/thumbnails/agriculture-aquaculture/hydroponics-nft` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/thumbnails/agriculture-aquaculture/indoor-aeroponics/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-thumbnails/d-agriculture-aquaculture/d-indoor-aeroponics/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/thumbnails/agriculture-aquaculture/indoor-aeroponics/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/thumbnails/agriculture-aquaculture/indoor-aeroponics` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/thumbnails/biopharma/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-thumbnails/d-biopharma/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/thumbnails/biopharma/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/thumbnails/biopharma` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/thumbnails/biopharma/biopharma-fermentation/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-thumbnails/d-biopharma/d-biopharma-fermentation/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/thumbnails/biopharma/biopharma-fermentation/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/thumbnails/biopharma/biopharma-fermentation` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/thumbnails/chemicals/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-thumbnails/d-chemicals/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/thumbnails/chemicals/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/thumbnails/chemicals` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/thumbnails/chemicals/industrial-detergent/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-thumbnails/d-chemicals/d-industrial-detergent/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/thumbnails/chemicals/industrial-detergent/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/thumbnails/chemicals/industrial-detergent` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/thumbnails/chemicals/paint-blending/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-thumbnails/d-chemicals/d-paint-blending/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/thumbnails/chemicals/paint-blending/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/thumbnails/chemicals/paint-blending` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/thumbnails/construction-materials/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-thumbnails/d-construction-materials/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/thumbnails/construction-materials/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/thumbnails/construction-materials` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/thumbnails/construction-materials/cement/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-thumbnails/d-construction-materials/d-cement/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/thumbnails/construction-materials/cement/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/thumbnails/construction-materials/cement` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/thumbnails/construction-materials/concrete-batching/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-thumbnails/d-construction-materials/d-concrete-batching/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/thumbnails/construction-materials/concrete-batching/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/thumbnails/construction-materials/concrete-batching` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/thumbnails/consumer-products/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-thumbnails/d-consumer-products/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/thumbnails/consumer-products/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/thumbnails/consumer-products` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/thumbnails/consumer-products/shampoo/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-thumbnails/d-consumer-products/d-shampoo/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/thumbnails/consumer-products/shampoo/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/thumbnails/consumer-products/shampoo` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/thumbnails/fiber-processing/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-thumbnails/d-fiber-processing/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/thumbnails/fiber-processing/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/thumbnails/fiber-processing` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/thumbnails/fiber-processing/pulp-paper/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-thumbnails/d-fiber-processing/d-pulp-paper/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/thumbnails/fiber-processing/pulp-paper/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/thumbnails/fiber-processing/pulp-paper` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/thumbnails/food-beverage/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-thumbnails/d-food-beverage/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/thumbnails/food-beverage/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/thumbnails/food-beverage` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/thumbnails/food-beverage/brewery/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-thumbnails/d-food-beverage/d-brewery/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/thumbnails/food-beverage/brewery/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/thumbnails/food-beverage/brewery` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/thumbnails/food-beverage/carbonated-beverages/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-thumbnails/d-food-beverage/d-carbonated-beverages/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/thumbnails/food-beverage/carbonated-beverages/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/thumbnails/food-beverage/carbonated-beverages` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/thumbnails/food-beverage/dairy/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-thumbnails/d-food-beverage/d-dairy/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/thumbnails/food-beverage/dairy/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/thumbnails/food-beverage/dairy` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/thumbnails/food-beverage/fortune-cookies/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-thumbnails/d-food-beverage/d-fortune-cookies/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/thumbnails/food-beverage/fortune-cookies/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/thumbnails/food-beverage/fortune-cookies` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/thumbnails/food-beverage/fruit-juice/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-thumbnails/d-food-beverage/d-fruit-juice/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/thumbnails/food-beverage/fruit-juice/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/thumbnails/food-beverage/fruit-juice` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/thumbnails/food-beverage/winery/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-thumbnails/d-food-beverage/d-winery/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/thumbnails/food-beverage/winery/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/thumbnails/food-beverage/winery` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/thumbnails/manufacturing-thermal-processing/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-thumbnails/d-manufacturing-thermal-processing/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/thumbnails/manufacturing-thermal-processing/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/thumbnails/manufacturing-thermal-processing` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/thumbnails/manufacturing-thermal-processing/electric-batch-oven/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-thumbnails/d-manufacturing-thermal-processing/d-electric-batch-oven/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/thumbnails/manufacturing-thermal-processing/electric-batch-oven/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/thumbnails/manufacturing-thermal-processing/electric-batch-oven` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/thumbnails/materials/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-thumbnails/d-materials/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/thumbnails/materials/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/thumbnails/materials` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/thumbnails/materials/polymer-extrusion/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-thumbnails/d-materials/d-polymer-extrusion/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/thumbnails/materials/polymer-extrusion/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/thumbnails/materials/polymer-extrusion` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/thumbnails/mineral-processing/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-thumbnails/d-mineral-processing/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/thumbnails/mineral-processing/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/thumbnails/mineral-processing` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/thumbnails/mineral-processing/mineral-crushing/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-thumbnails/d-mineral-processing/d-mineral-crushing/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/thumbnails/mineral-processing/mineral-crushing/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/thumbnails/mineral-processing/mineral-crushing` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/thumbnails/mineral-processing/mineral-flotation/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-thumbnails/d-mineral-processing/d-mineral-flotation/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/thumbnails/mineral-processing/mineral-flotation/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/thumbnails/mineral-processing/mineral-flotation` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/thumbnails/pharmaceuticals/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-thumbnails/d-pharmaceuticals/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/thumbnails/pharmaceuticals/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/thumbnails/pharmaceuticals` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/thumbnails/pharmaceuticals/pharma-oral-liquid/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-thumbnails/d-pharmaceuticals/d-pharma-oral-liquid/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/thumbnails/pharmaceuticals/pharma-oral-liquid/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/thumbnails/pharmaceuticals/pharma-oral-liquid` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/thumbnails/pharmaceuticals/sterile-filling/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-thumbnails/d-pharmaceuticals/d-sterile-filling/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/thumbnails/pharmaceuticals/sterile-filling/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/thumbnails/pharmaceuticals/sterile-filling` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/thumbnails/pharmaceuticals/tablets/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-thumbnails/d-pharmaceuticals/d-tablets/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/thumbnails/pharmaceuticals/tablets/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/thumbnails/pharmaceuticals/tablets` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/thumbnails/power-utilities/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-thumbnails/d-power-utilities/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/thumbnails/power-utilities/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/thumbnails/power-utilities` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/thumbnails/power-utilities/power-battery-storage/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-thumbnails/d-power-utilities/d-power-battery-storage/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/thumbnails/power-utilities/power-battery-storage/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/thumbnails/power-utilities/power-battery-storage` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/thumbnails/power-utilities/power-biomass-chp/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-thumbnails/d-power-utilities/d-power-biomass-chp/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/thumbnails/power-utilities/power-biomass-chp/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/thumbnails/power-utilities/power-biomass-chp` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/thumbnails/power-utilities/power-coal-steam/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-thumbnails/d-power-utilities/d-power-coal-steam/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/thumbnails/power-utilities/power-coal-steam/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/thumbnails/power-utilities/power-coal-steam` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/thumbnails/power-utilities/power-csp-tower/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-thumbnails/d-power-utilities/d-power-csp-tower/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/thumbnails/power-utilities/power-csp-tower/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/thumbnails/power-utilities/power-csp-tower` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/thumbnails/power-utilities/power-csp-trough/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-thumbnails/d-power-utilities/d-power-csp-trough/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/thumbnails/power-utilities/power-csp-trough/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/thumbnails/power-utilities/power-csp-trough` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/thumbnails/power-utilities/power-diesel-standby/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-thumbnails/d-power-utilities/d-power-diesel-standby/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/thumbnails/power-utilities/power-diesel-standby/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/thumbnails/power-utilities/power-diesel-standby` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/thumbnails/power-utilities/power-fuel-cell/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-thumbnails/d-power-utilities/d-power-fuel-cell/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/thumbnails/power-utilities/power-fuel-cell/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/thumbnails/power-utilities/power-fuel-cell` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/thumbnails/power-utilities/power-gas-combined-cycle/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-thumbnails/d-power-utilities/d-power-gas-combined-cycle/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/thumbnails/power-utilities/power-gas-combined-cycle/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/thumbnails/power-utilities/power-gas-combined-cycle` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/thumbnails/power-utilities/power-gas-simple-cycle/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-thumbnails/d-power-utilities/d-power-gas-simple-cycle/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/thumbnails/power-utilities/power-gas-simple-cycle/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/thumbnails/power-utilities/power-gas-simple-cycle` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/thumbnails/power-utilities/power-gasoline-portable/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-thumbnails/d-power-utilities/d-power-gasoline-portable/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/thumbnails/power-utilities/power-gasoline-portable/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/thumbnails/power-utilities/power-gasoline-portable` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/thumbnails/power-utilities/power-geothermal-binary/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-thumbnails/d-power-utilities/d-power-geothermal-binary/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/thumbnails/power-utilities/power-geothermal-binary/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/thumbnails/power-utilities/power-geothermal-binary` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/thumbnails/power-utilities/power-geothermal-dry-steam/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-thumbnails/d-power-utilities/d-power-geothermal-dry-steam/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/thumbnails/power-utilities/power-geothermal-dry-steam/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/thumbnails/power-utilities/power-geothermal-dry-steam` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/thumbnails/power-utilities/power-geothermal-flash/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-thumbnails/d-power-utilities/d-power-geothermal-flash/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/thumbnails/power-utilities/power-geothermal-flash/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/thumbnails/power-utilities/power-geothermal-flash` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/thumbnails/power-utilities/power-hvdc-interface/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-thumbnails/d-power-utilities/d-power-hvdc-interface/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/thumbnails/power-utilities/power-hvdc-interface/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/thumbnails/power-utilities/power-hvdc-interface` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/thumbnails/power-utilities/power-hybrid-microgrid/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-thumbnails/d-power-utilities/d-power-hybrid-microgrid/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/thumbnails/power-utilities/power-hybrid-microgrid/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/thumbnails/power-utilities/power-hybrid-microgrid` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/thumbnails/power-utilities/power-hydro-diversion/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-thumbnails/d-power-utilities/d-power-hydro-diversion/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/thumbnails/power-utilities/power-hydro-diversion/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/thumbnails/power-utilities/power-hydro-diversion` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/thumbnails/power-utilities/power-hydro-impoundment/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-thumbnails/d-power-utilities/d-power-hydro-impoundment/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/thumbnails/power-utilities/power-hydro-impoundment/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/thumbnails/power-utilities/power-hydro-impoundment` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/thumbnails/power-utilities/power-ng-engine-chp/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-thumbnails/d-power-utilities/d-power-ng-engine-chp/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/thumbnails/power-utilities/power-ng-engine-chp/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/thumbnails/power-utilities/power-ng-engine-chp` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/thumbnails/power-utilities/power-nuclear-bwr/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-thumbnails/d-power-utilities/d-power-nuclear-bwr/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/thumbnails/power-utilities/power-nuclear-bwr/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/thumbnails/power-utilities/power-nuclear-bwr` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/thumbnails/power-utilities/power-nuclear-htgr/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-thumbnails/d-power-utilities/d-power-nuclear-htgr/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/thumbnails/power-utilities/power-nuclear-htgr/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/thumbnails/power-utilities/power-nuclear-htgr` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/thumbnails/power-utilities/power-nuclear-lw-smr/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-thumbnails/d-power-utilities/d-power-nuclear-lw-smr/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/thumbnails/power-utilities/power-nuclear-lw-smr/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/thumbnails/power-utilities/power-nuclear-lw-smr` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/thumbnails/power-utilities/power-nuclear-molten-salt/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-thumbnails/d-power-utilities/d-power-nuclear-molten-salt/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/thumbnails/power-utilities/power-nuclear-molten-salt/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/thumbnails/power-utilities/power-nuclear-molten-salt` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/thumbnails/power-utilities/power-nuclear-phwr/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-thumbnails/d-power-utilities/d-power-nuclear-phwr/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/thumbnails/power-utilities/power-nuclear-phwr/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/thumbnails/power-utilities/power-nuclear-phwr` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/thumbnails/power-utilities/power-nuclear-pwr/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-thumbnails/d-power-utilities/d-power-nuclear-pwr/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/thumbnails/power-utilities/power-nuclear-pwr/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/thumbnails/power-utilities/power-nuclear-pwr` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/thumbnails/power-utilities/power-nuclear-sodium-fast/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-thumbnails/d-power-utilities/d-power-nuclear-sodium-fast/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/thumbnails/power-utilities/power-nuclear-sodium-fast/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/thumbnails/power-utilities/power-nuclear-sodium-fast` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/thumbnails/power-utilities/power-pumped-storage/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-thumbnails/d-power-utilities/d-power-pumped-storage/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/thumbnails/power-utilities/power-pumped-storage/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/thumbnails/power-utilities/power-pumped-storage` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/thumbnails/power-utilities/power-solar-pv/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-thumbnails/d-power-utilities/d-power-solar-pv/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/thumbnails/power-utilities/power-solar-pv/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/thumbnails/power-utilities/power-solar-pv` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/thumbnails/power-utilities/power-substation-distribution/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-thumbnails/d-power-utilities/d-power-substation-distribution/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/thumbnails/power-utilities/power-substation-distribution/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/thumbnails/power-utilities/power-substation-distribution` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/thumbnails/power-utilities/power-substation-gis/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-thumbnails/d-power-utilities/d-power-substation-gis/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/thumbnails/power-utilities/power-substation-gis/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/thumbnails/power-utilities/power-substation-gis` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/thumbnails/power-utilities/power-substation-gsu/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-thumbnails/d-power-utilities/d-power-substation-gsu/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/thumbnails/power-utilities/power-substation-gsu/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/thumbnails/power-utilities/power-substation-gsu` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/thumbnails/power-utilities/power-tidal-current/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-thumbnails/d-power-utilities/d-power-tidal-current/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/thumbnails/power-utilities/power-tidal-current/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/thumbnails/power-utilities/power-tidal-current` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/thumbnails/power-utilities/power-wave-point-absorber/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-thumbnails/d-power-utilities/d-power-wave-point-absorber/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/thumbnails/power-utilities/power-wave-point-absorber/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/thumbnails/power-utilities/power-wave-point-absorber` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/thumbnails/power-utilities/power-wind-collection/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-thumbnails/d-power-utilities/d-power-wind-collection/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/thumbnails/power-utilities/power-wind-collection/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/thumbnails/power-utilities/power-wind-collection` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/thumbnails/surface-treatment/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-thumbnails/d-surface-treatment/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/thumbnails/surface-treatment/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/thumbnails/surface-treatment` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/thumbnails/surface-treatment/metal-finishing/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-thumbnails/d-surface-treatment/d-metal-finishing/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/thumbnails/surface-treatment/metal-finishing/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/thumbnails/surface-treatment/metal-finishing` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/thumbnails/water-utilities/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-thumbnails/d-water-utilities/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/thumbnails/water-utilities/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/thumbnails/water-utilities` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/thumbnails/water-utilities/wastewater-digester/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-thumbnails/d-water-utilities/d-wastewater-digester/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/thumbnails/water-utilities/wastewater-digester/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/thumbnails/water-utilities/wastewater-digester` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/topologies/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-topologies/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/topologies/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/topologies` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/topologies/agriculture-aquaculture/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-topologies/d-agriculture-aquaculture/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/topologies/agriculture-aquaculture/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/topologies/agriculture-aquaculture` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/topologies/agriculture-aquaculture/aquaponics-dwc/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-topologies/d-agriculture-aquaculture/d-aquaponics-dwc/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/topologies/agriculture-aquaculture/aquaponics-dwc/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/topologies/agriculture-aquaculture/aquaponics-dwc` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/topologies/agriculture-aquaculture/aquaponics-media-bed/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-topologies/d-agriculture-aquaculture/d-aquaponics-media-bed/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/topologies/agriculture-aquaculture/aquaponics-media-bed/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/topologies/agriculture-aquaculture/aquaponics-media-bed` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/topologies/agriculture-aquaculture/greenhouse-drip/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-topologies/d-agriculture-aquaculture/d-greenhouse-drip/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/topologies/agriculture-aquaculture/greenhouse-drip/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/topologies/agriculture-aquaculture/greenhouse-drip` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/topologies/agriculture-aquaculture/hydroponics-ebb-flow/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-topologies/d-agriculture-aquaculture/d-hydroponics-ebb-flow/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/topologies/agriculture-aquaculture/hydroponics-ebb-flow/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/topologies/agriculture-aquaculture/hydroponics-ebb-flow` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/topologies/agriculture-aquaculture/hydroponics-nft/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-topologies/d-agriculture-aquaculture/d-hydroponics-nft/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/topologies/agriculture-aquaculture/hydroponics-nft/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/topologies/agriculture-aquaculture/hydroponics-nft` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/topologies/agriculture-aquaculture/indoor-aeroponics/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-topologies/d-agriculture-aquaculture/d-indoor-aeroponics/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/topologies/agriculture-aquaculture/indoor-aeroponics/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/topologies/agriculture-aquaculture/indoor-aeroponics` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/topologies/biopharma/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-topologies/d-biopharma/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/topologies/biopharma/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/topologies/biopharma` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/topologies/biopharma/biopharma-fermentation/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-topologies/d-biopharma/d-biopharma-fermentation/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/topologies/biopharma/biopharma-fermentation/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/topologies/biopharma/biopharma-fermentation` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/topologies/chemicals/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-topologies/d-chemicals/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/topologies/chemicals/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/topologies/chemicals` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/topologies/chemicals/industrial-detergent/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-topologies/d-chemicals/d-industrial-detergent/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/topologies/chemicals/industrial-detergent/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/topologies/chemicals/industrial-detergent` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/topologies/chemicals/paint-blending/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-topologies/d-chemicals/d-paint-blending/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/topologies/chemicals/paint-blending/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/topologies/chemicals/paint-blending` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/topologies/construction-materials/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-topologies/d-construction-materials/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/topologies/construction-materials/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/topologies/construction-materials` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/topologies/construction-materials/cement/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-topologies/d-construction-materials/d-cement/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/topologies/construction-materials/cement/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/topologies/construction-materials/cement` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/topologies/construction-materials/concrete-batching/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-topologies/d-construction-materials/d-concrete-batching/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/topologies/construction-materials/concrete-batching/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/topologies/construction-materials/concrete-batching` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/topologies/consumer-products/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-topologies/d-consumer-products/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/topologies/consumer-products/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/topologies/consumer-products` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/topologies/consumer-products/shampoo/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-topologies/d-consumer-products/d-shampoo/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/topologies/consumer-products/shampoo/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/topologies/consumer-products/shampoo` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/topologies/fiber-processing/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-topologies/d-fiber-processing/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/topologies/fiber-processing/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/topologies/fiber-processing` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/topologies/fiber-processing/pulp-paper/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-topologies/d-fiber-processing/d-pulp-paper/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/topologies/fiber-processing/pulp-paper/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/topologies/fiber-processing/pulp-paper` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/topologies/food-beverage/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-topologies/d-food-beverage/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/topologies/food-beverage/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/topologies/food-beverage` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/topologies/food-beverage/brewery/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-topologies/d-food-beverage/d-brewery/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/topologies/food-beverage/brewery/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/topologies/food-beverage/brewery` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/topologies/food-beverage/carbonated-beverages/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-topologies/d-food-beverage/d-carbonated-beverages/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/topologies/food-beverage/carbonated-beverages/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/topologies/food-beverage/carbonated-beverages` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/topologies/food-beverage/dairy/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-topologies/d-food-beverage/d-dairy/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/topologies/food-beverage/dairy/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/topologies/food-beverage/dairy` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/topologies/food-beverage/fortune-cookies/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-topologies/d-food-beverage/d-fortune-cookies/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/topologies/food-beverage/fortune-cookies/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/topologies/food-beverage/fortune-cookies` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/topologies/food-beverage/fruit-juice/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-topologies/d-food-beverage/d-fruit-juice/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/topologies/food-beverage/fruit-juice/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/topologies/food-beverage/fruit-juice` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/topologies/food-beverage/winery/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-topologies/d-food-beverage/d-winery/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/topologies/food-beverage/winery/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/topologies/food-beverage/winery` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/topologies/manufacturing-thermal-processing/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-topologies/d-manufacturing-thermal-processing/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/topologies/manufacturing-thermal-processing/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/topologies/manufacturing-thermal-processing` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/topologies/manufacturing-thermal-processing/electric-batch-oven/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-topologies/d-manufacturing-thermal-processing/d-electric-batch-oven/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/topologies/manufacturing-thermal-processing/electric-batch-oven/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/topologies/manufacturing-thermal-processing/electric-batch-oven` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/topologies/materials/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-topologies/d-materials/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/topologies/materials/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/topologies/materials` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/topologies/materials/polymer-extrusion/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-topologies/d-materials/d-polymer-extrusion/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/topologies/materials/polymer-extrusion/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/topologies/materials/polymer-extrusion` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/topologies/mineral-processing/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-topologies/d-mineral-processing/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/topologies/mineral-processing/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/topologies/mineral-processing` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/topologies/mineral-processing/mineral-crushing/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-topologies/d-mineral-processing/d-mineral-crushing/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/topologies/mineral-processing/mineral-crushing/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/topologies/mineral-processing/mineral-crushing` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/topologies/mineral-processing/mineral-flotation/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-topologies/d-mineral-processing/d-mineral-flotation/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/topologies/mineral-processing/mineral-flotation/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/topologies/mineral-processing/mineral-flotation` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/topologies/pharmaceuticals/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-topologies/d-pharmaceuticals/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/topologies/pharmaceuticals/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/topologies/pharmaceuticals` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/topologies/pharmaceuticals/pharma-oral-liquid/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-topologies/d-pharmaceuticals/d-pharma-oral-liquid/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/topologies/pharmaceuticals/pharma-oral-liquid/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/topologies/pharmaceuticals/pharma-oral-liquid` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/topologies/pharmaceuticals/sterile-filling/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-topologies/d-pharmaceuticals/d-sterile-filling/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/topologies/pharmaceuticals/sterile-filling/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/topologies/pharmaceuticals/sterile-filling` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/topologies/pharmaceuticals/tablets/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-topologies/d-pharmaceuticals/d-tablets/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/topologies/pharmaceuticals/tablets/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/topologies/pharmaceuticals/tablets` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/topologies/power-utilities/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-topologies/d-power-utilities/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/topologies/power-utilities/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/topologies/power-utilities` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/topologies/power-utilities/power-battery-storage/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-topologies/d-power-utilities/d-power-battery-storage/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/topologies/power-utilities/power-battery-storage/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/topologies/power-utilities/power-battery-storage` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/topologies/power-utilities/power-biomass-chp/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-topologies/d-power-utilities/d-power-biomass-chp/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/topologies/power-utilities/power-biomass-chp/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/topologies/power-utilities/power-biomass-chp` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/topologies/power-utilities/power-coal-steam/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-topologies/d-power-utilities/d-power-coal-steam/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/topologies/power-utilities/power-coal-steam/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/topologies/power-utilities/power-coal-steam` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/topologies/power-utilities/power-csp-tower/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-topologies/d-power-utilities/d-power-csp-tower/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/topologies/power-utilities/power-csp-tower/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/topologies/power-utilities/power-csp-tower` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/topologies/power-utilities/power-csp-trough/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-topologies/d-power-utilities/d-power-csp-trough/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/topologies/power-utilities/power-csp-trough/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/topologies/power-utilities/power-csp-trough` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/topologies/power-utilities/power-diesel-standby/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-topologies/d-power-utilities/d-power-diesel-standby/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/topologies/power-utilities/power-diesel-standby/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/topologies/power-utilities/power-diesel-standby` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/topologies/power-utilities/power-fuel-cell/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-topologies/d-power-utilities/d-power-fuel-cell/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/topologies/power-utilities/power-fuel-cell/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/topologies/power-utilities/power-fuel-cell` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/topologies/power-utilities/power-gas-combined-cycle/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-topologies/d-power-utilities/d-power-gas-combined-cycle/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/topologies/power-utilities/power-gas-combined-cycle/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/topologies/power-utilities/power-gas-combined-cycle` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/topologies/power-utilities/power-gas-simple-cycle/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-topologies/d-power-utilities/d-power-gas-simple-cycle/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/topologies/power-utilities/power-gas-simple-cycle/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/topologies/power-utilities/power-gas-simple-cycle` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/topologies/power-utilities/power-gasoline-portable/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-topologies/d-power-utilities/d-power-gasoline-portable/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/topologies/power-utilities/power-gasoline-portable/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/topologies/power-utilities/power-gasoline-portable` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/topologies/power-utilities/power-geothermal-binary/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-topologies/d-power-utilities/d-power-geothermal-binary/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/topologies/power-utilities/power-geothermal-binary/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/topologies/power-utilities/power-geothermal-binary` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/topologies/power-utilities/power-geothermal-dry-steam/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-topologies/d-power-utilities/d-power-geothermal-dry-steam/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/topologies/power-utilities/power-geothermal-dry-steam/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/topologies/power-utilities/power-geothermal-dry-steam` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/topologies/power-utilities/power-geothermal-flash/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-topologies/d-power-utilities/d-power-geothermal-flash/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/topologies/power-utilities/power-geothermal-flash/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/topologies/power-utilities/power-geothermal-flash` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/topologies/power-utilities/power-hvdc-interface/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-topologies/d-power-utilities/d-power-hvdc-interface/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/topologies/power-utilities/power-hvdc-interface/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/topologies/power-utilities/power-hvdc-interface` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/topologies/power-utilities/power-hybrid-microgrid/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-topologies/d-power-utilities/d-power-hybrid-microgrid/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/topologies/power-utilities/power-hybrid-microgrid/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/topologies/power-utilities/power-hybrid-microgrid` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/topologies/power-utilities/power-hydro-diversion/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-topologies/d-power-utilities/d-power-hydro-diversion/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/topologies/power-utilities/power-hydro-diversion/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/topologies/power-utilities/power-hydro-diversion` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/topologies/power-utilities/power-hydro-impoundment/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-topologies/d-power-utilities/d-power-hydro-impoundment/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/topologies/power-utilities/power-hydro-impoundment/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/topologies/power-utilities/power-hydro-impoundment` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/topologies/power-utilities/power-ng-engine-chp/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-topologies/d-power-utilities/d-power-ng-engine-chp/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/topologies/power-utilities/power-ng-engine-chp/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/topologies/power-utilities/power-ng-engine-chp` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/topologies/power-utilities/power-nuclear-bwr/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-topologies/d-power-utilities/d-power-nuclear-bwr/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/topologies/power-utilities/power-nuclear-bwr/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/topologies/power-utilities/power-nuclear-bwr` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/topologies/power-utilities/power-nuclear-htgr/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-topologies/d-power-utilities/d-power-nuclear-htgr/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/topologies/power-utilities/power-nuclear-htgr/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/topologies/power-utilities/power-nuclear-htgr` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/topologies/power-utilities/power-nuclear-lw-smr/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-topologies/d-power-utilities/d-power-nuclear-lw-smr/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/topologies/power-utilities/power-nuclear-lw-smr/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/topologies/power-utilities/power-nuclear-lw-smr` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/topologies/power-utilities/power-nuclear-molten-salt/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-topologies/d-power-utilities/d-power-nuclear-molten-salt/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/topologies/power-utilities/power-nuclear-molten-salt/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/topologies/power-utilities/power-nuclear-molten-salt` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/topologies/power-utilities/power-nuclear-phwr/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-topologies/d-power-utilities/d-power-nuclear-phwr/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/topologies/power-utilities/power-nuclear-phwr/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/topologies/power-utilities/power-nuclear-phwr` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/topologies/power-utilities/power-nuclear-pwr/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-topologies/d-power-utilities/d-power-nuclear-pwr/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/topologies/power-utilities/power-nuclear-pwr/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/topologies/power-utilities/power-nuclear-pwr` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/topologies/power-utilities/power-nuclear-sodium-fast/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-topologies/d-power-utilities/d-power-nuclear-sodium-fast/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/topologies/power-utilities/power-nuclear-sodium-fast/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/topologies/power-utilities/power-nuclear-sodium-fast` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/topologies/power-utilities/power-pumped-storage/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-topologies/d-power-utilities/d-power-pumped-storage/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/topologies/power-utilities/power-pumped-storage/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/topologies/power-utilities/power-pumped-storage` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/topologies/power-utilities/power-solar-pv/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-topologies/d-power-utilities/d-power-solar-pv/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/topologies/power-utilities/power-solar-pv/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/topologies/power-utilities/power-solar-pv` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/topologies/power-utilities/power-substation-distribution/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-topologies/d-power-utilities/d-power-substation-distribution/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/topologies/power-utilities/power-substation-distribution/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/topologies/power-utilities/power-substation-distribution` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/topologies/power-utilities/power-substation-gis/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-topologies/d-power-utilities/d-power-substation-gis/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/topologies/power-utilities/power-substation-gis/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/topologies/power-utilities/power-substation-gis` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/topologies/power-utilities/power-substation-gsu/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-topologies/d-power-utilities/d-power-substation-gsu/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/topologies/power-utilities/power-substation-gsu/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/topologies/power-utilities/power-substation-gsu` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/topologies/power-utilities/power-tidal-current/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-topologies/d-power-utilities/d-power-tidal-current/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/topologies/power-utilities/power-tidal-current/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/topologies/power-utilities/power-tidal-current` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/topologies/power-utilities/power-wave-point-absorber/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-topologies/d-power-utilities/d-power-wave-point-absorber/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/topologies/power-utilities/power-wave-point-absorber/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/topologies/power-utilities/power-wave-point-absorber` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/topologies/power-utilities/power-wind-collection/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-topologies/d-power-utilities/d-power-wind-collection/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/topologies/power-utilities/power-wind-collection/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/topologies/power-utilities/power-wind-collection` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/topologies/surface-treatment/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-topologies/d-surface-treatment/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/topologies/surface-treatment/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/topologies/surface-treatment` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/topologies/surface-treatment/metal-finishing/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-topologies/d-surface-treatment/d-metal-finishing/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/topologies/surface-treatment/metal-finishing/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/topologies/surface-treatment/metal-finishing` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/topologies/water-utilities/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-topologies/d-water-utilities/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/topologies/water-utilities/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/topologies/water-utilities` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/img/topologies/water-utilities/wastewater-digester/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-img/d-topologies/d-water-utilities/d-wastewater-digester/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/topologies/water-utilities/wastewater-digester/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/img/topologies/water-utilities/wastewater-digester` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/metadata/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-metadata/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/metadata/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/metadata` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/scenarios/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-scenarios/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/scenarios/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/scenarios` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/scenarios/aquaponics-dwc/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-scenarios/d-aquaponics-dwc/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/scenarios/aquaponics-dwc/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/scenarios/aquaponics-dwc` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/scenarios/aquaponics-media-bed/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-scenarios/d-aquaponics-media-bed/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/scenarios/aquaponics-media-bed/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/scenarios/aquaponics-media-bed` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/scenarios/biopharma-fermentation/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-scenarios/d-biopharma-fermentation/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/scenarios/biopharma-fermentation/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/scenarios/biopharma-fermentation` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/scenarios/brewery/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-scenarios/d-brewery/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/scenarios/brewery/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/scenarios/brewery` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/scenarios/carbonated-beverages/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-scenarios/d-carbonated-beverages/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/scenarios/carbonated-beverages/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/scenarios/carbonated-beverages` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/scenarios/cement/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-scenarios/d-cement/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/scenarios/cement/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/scenarios/cement` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/scenarios/concrete-batching/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-scenarios/d-concrete-batching/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/scenarios/concrete-batching/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/scenarios/concrete-batching` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/scenarios/dairy/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-scenarios/d-dairy/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/scenarios/dairy/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/scenarios/dairy` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/scenarios/electric-batch-oven/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-scenarios/d-electric-batch-oven/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/scenarios/electric-batch-oven/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/scenarios/electric-batch-oven` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/scenarios/fortune-cookies/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-scenarios/d-fortune-cookies/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/scenarios/fortune-cookies/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/scenarios/fortune-cookies` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/scenarios/fruit-juice/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-scenarios/d-fruit-juice/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/scenarios/fruit-juice/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/scenarios/fruit-juice` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/scenarios/greenhouse-drip/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-scenarios/d-greenhouse-drip/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/scenarios/greenhouse-drip/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/scenarios/greenhouse-drip` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/scenarios/hydroponics-ebb-flow/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-scenarios/d-hydroponics-ebb-flow/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/scenarios/hydroponics-ebb-flow/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/scenarios/hydroponics-ebb-flow` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/scenarios/hydroponics-nft/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-scenarios/d-hydroponics-nft/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/scenarios/hydroponics-nft/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/scenarios/hydroponics-nft` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/scenarios/indoor-aeroponics/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-scenarios/d-indoor-aeroponics/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/scenarios/indoor-aeroponics/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/scenarios/indoor-aeroponics` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/scenarios/industrial-detergent/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-scenarios/d-industrial-detergent/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/scenarios/industrial-detergent/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/scenarios/industrial-detergent` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/scenarios/metal-finishing/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-scenarios/d-metal-finishing/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/scenarios/metal-finishing/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/scenarios/metal-finishing` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/scenarios/mineral-crushing/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-scenarios/d-mineral-crushing/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/scenarios/mineral-crushing/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/scenarios/mineral-crushing` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/scenarios/mineral-flotation/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-scenarios/d-mineral-flotation/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/scenarios/mineral-flotation/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/scenarios/mineral-flotation` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/scenarios/paint-blending/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-scenarios/d-paint-blending/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/scenarios/paint-blending/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/scenarios/paint-blending` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/scenarios/pharma-oral-liquid/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-scenarios/d-pharma-oral-liquid/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/scenarios/pharma-oral-liquid/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/scenarios/pharma-oral-liquid` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/scenarios/polymer-extrusion/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-scenarios/d-polymer-extrusion/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/scenarios/polymer-extrusion/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/scenarios/polymer-extrusion` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/scenarios/power-battery-storage/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-scenarios/d-power-battery-storage/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/scenarios/power-battery-storage/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/scenarios/power-battery-storage` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/scenarios/power-biomass-chp/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-scenarios/d-power-biomass-chp/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/scenarios/power-biomass-chp/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/scenarios/power-biomass-chp` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/scenarios/power-coal-steam/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-scenarios/d-power-coal-steam/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/scenarios/power-coal-steam/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/scenarios/power-coal-steam` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/scenarios/power-csp-tower/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-scenarios/d-power-csp-tower/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/scenarios/power-csp-tower/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/scenarios/power-csp-tower` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/scenarios/power-csp-trough/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-scenarios/d-power-csp-trough/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/scenarios/power-csp-trough/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/scenarios/power-csp-trough` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/scenarios/power-diesel-standby/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-scenarios/d-power-diesel-standby/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/scenarios/power-diesel-standby/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/scenarios/power-diesel-standby` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/scenarios/power-fuel-cell/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-scenarios/d-power-fuel-cell/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/scenarios/power-fuel-cell/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/scenarios/power-fuel-cell` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/scenarios/power-gas-combined-cycle/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-scenarios/d-power-gas-combined-cycle/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/scenarios/power-gas-combined-cycle/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/scenarios/power-gas-combined-cycle` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/scenarios/power-gas-simple-cycle/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-scenarios/d-power-gas-simple-cycle/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/scenarios/power-gas-simple-cycle/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/scenarios/power-gas-simple-cycle` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/scenarios/power-gasoline-portable/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-scenarios/d-power-gasoline-portable/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/scenarios/power-gasoline-portable/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/scenarios/power-gasoline-portable` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/scenarios/power-geothermal-binary/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-scenarios/d-power-geothermal-binary/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/scenarios/power-geothermal-binary/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/scenarios/power-geothermal-binary` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/scenarios/power-geothermal-dry-steam/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-scenarios/d-power-geothermal-dry-steam/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/scenarios/power-geothermal-dry-steam/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/scenarios/power-geothermal-dry-steam` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/scenarios/power-geothermal-flash/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-scenarios/d-power-geothermal-flash/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/scenarios/power-geothermal-flash/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/scenarios/power-geothermal-flash` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/scenarios/power-hvdc-interface/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-scenarios/d-power-hvdc-interface/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/scenarios/power-hvdc-interface/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/scenarios/power-hvdc-interface` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/scenarios/power-hybrid-microgrid/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-scenarios/d-power-hybrid-microgrid/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/scenarios/power-hybrid-microgrid/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/scenarios/power-hybrid-microgrid` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/scenarios/power-hydro-diversion/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-scenarios/d-power-hydro-diversion/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/scenarios/power-hydro-diversion/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/scenarios/power-hydro-diversion` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/scenarios/power-hydro-impoundment/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-scenarios/d-power-hydro-impoundment/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/scenarios/power-hydro-impoundment/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/scenarios/power-hydro-impoundment` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/scenarios/power-ng-engine-chp/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-scenarios/d-power-ng-engine-chp/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/scenarios/power-ng-engine-chp/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/scenarios/power-ng-engine-chp` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/scenarios/power-nuclear-bwr/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-scenarios/d-power-nuclear-bwr/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/scenarios/power-nuclear-bwr/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/scenarios/power-nuclear-bwr` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/scenarios/power-nuclear-htgr/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-scenarios/d-power-nuclear-htgr/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/scenarios/power-nuclear-htgr/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/scenarios/power-nuclear-htgr` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/scenarios/power-nuclear-lw-smr/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-scenarios/d-power-nuclear-lw-smr/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/scenarios/power-nuclear-lw-smr/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/scenarios/power-nuclear-lw-smr` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/scenarios/power-nuclear-molten-salt/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-scenarios/d-power-nuclear-molten-salt/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/scenarios/power-nuclear-molten-salt/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/scenarios/power-nuclear-molten-salt` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/scenarios/power-nuclear-phwr/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-scenarios/d-power-nuclear-phwr/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/scenarios/power-nuclear-phwr/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/scenarios/power-nuclear-phwr` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/scenarios/power-nuclear-pwr/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-scenarios/d-power-nuclear-pwr/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/scenarios/power-nuclear-pwr/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/scenarios/power-nuclear-pwr` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/scenarios/power-nuclear-sodium-fast/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-scenarios/d-power-nuclear-sodium-fast/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/scenarios/power-nuclear-sodium-fast/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/scenarios/power-nuclear-sodium-fast` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/scenarios/power-pumped-storage/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-scenarios/d-power-pumped-storage/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/scenarios/power-pumped-storage/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/scenarios/power-pumped-storage` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/scenarios/power-solar-pv/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-scenarios/d-power-solar-pv/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/scenarios/power-solar-pv/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/scenarios/power-solar-pv` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/scenarios/power-substation-distribution/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-scenarios/d-power-substation-distribution/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/scenarios/power-substation-distribution/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/scenarios/power-substation-distribution` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/scenarios/power-substation-gis/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-scenarios/d-power-substation-gis/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/scenarios/power-substation-gis/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/scenarios/power-substation-gis` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/scenarios/power-substation-gsu/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-scenarios/d-power-substation-gsu/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/scenarios/power-substation-gsu/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/scenarios/power-substation-gsu` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/scenarios/power-tidal-current/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-scenarios/d-power-tidal-current/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/scenarios/power-tidal-current/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/scenarios/power-tidal-current` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/scenarios/power-wave-point-absorber/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-scenarios/d-power-wave-point-absorber/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/scenarios/power-wave-point-absorber/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/scenarios/power-wave-point-absorber` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/scenarios/power-wind-collection/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-scenarios/d-power-wind-collection/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/scenarios/power-wind-collection/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/scenarios/power-wind-collection` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/scenarios/pulp-paper/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-scenarios/d-pulp-paper/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/scenarios/pulp-paper/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/scenarios/pulp-paper` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/scenarios/shampoo/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-scenarios/d-shampoo/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/scenarios/shampoo/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/scenarios/shampoo` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/scenarios/sterile-filling/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-scenarios/d-sterile-filling/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/scenarios/sterile-filling/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/scenarios/sterile-filling` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/scenarios/tablets/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-scenarios/d-tablets/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/scenarios/tablets/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/scenarios/tablets` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/scenarios/wastewater-digester/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-scenarios/d-wastewater-digester/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/scenarios/wastewater-digester/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/scenarios/wastewater-digester` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/scenarios/winery/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-scenarios/d-winery/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/scenarios/winery/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/scenarios/winery` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/schema/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-schema/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/schema/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/schema` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/src/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-src/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/src/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/src` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/src/equation-examples/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-src/d-equation-examples/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/src/equation-examples/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/src/equation-examples` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/src/equations/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-src/d-equations/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/src/equations/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/src/equations` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/sim/src/v2/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-sim/d-src/d-v2/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/src/v2/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/sim/src/v2` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/docs/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-docs/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/docs/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/docs` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/examples/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-examples/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/examples/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/examples` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/examples/components/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-examples/d-components/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/examples/components/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/examples/components` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/examples/viewer/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-examples/d-viewer/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/examples/viewer/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/examples/viewer` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/states/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-states/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/states/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/states` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/states/availability/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-states/d-availability/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/states/availability/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/states/availability` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/states/damage-and-alarms/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-states/d-damage-and-alarms/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/states/damage-and-alarms/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/states/damage-and-alarms` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/states/levels-and-controls/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-states/d-levels-and-controls/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/states/levels-and-controls/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/states/levels-and-controls` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/states/operating/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-states/d-operating/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/states/operating/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/states/operating` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/agriculture/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-agriculture/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/agriculture/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/agriculture` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/agriculture/aeroponic-chamber/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-agriculture/d-aeroponic-chamber/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/agriculture/aeroponic-chamber/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/agriculture/aeroponic-chamber` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/agriculture/air-diffuser/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-agriculture/d-air-diffuser/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/agriculture/air-diffuser/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/agriculture/air-diffuser` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/agriculture/biofilter/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-agriculture/d-biofilter/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/agriculture/biofilter/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/agriculture/biofilter` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/agriculture/drip-zone/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-agriculture/d-drip-zone/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/agriculture/drip-zone/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/agriculture/drip-zone` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/agriculture/dwc-raft-bed/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-agriculture/d-dwc-raft-bed/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/agriculture/dwc-raft-bed/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/agriculture/dwc-raft-bed` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/agriculture/ebb-flow-table/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-agriculture/d-ebb-flow-table/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/agriculture/ebb-flow-table/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/agriculture/ebb-flow-table` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/agriculture/fish-tank/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-agriculture/d-fish-tank/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/agriculture/fish-tank/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/agriculture/fish-tank` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/agriculture/grow-light/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-agriculture/d-grow-light/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/agriculture/grow-light/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/agriculture/grow-light` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/agriculture/media-grow-bed/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-agriculture/d-media-grow-bed/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/agriculture/media-grow-bed/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/agriculture/media-grow-bed` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/agriculture/nft-channel/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-agriculture/d-nft-channel/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/agriculture/nft-channel/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/agriculture/nft-channel` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/automation/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-automation/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/automation/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/automation` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/automation/hmi/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-automation/d-hmi/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/automation/hmi/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/automation/hmi` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/automation/network-switch/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-automation/d-network-switch/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/automation/network-switch/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/automation/network-switch` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/automation/plc-cpu/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-automation/d-plc-cpu/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/automation/plc-cpu/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/automation/plc-cpu` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/automation/plc-rack/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-automation/d-plc-rack/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/automation/plc-rack/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/automation/plc-rack` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/automation/radio/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-automation/d-radio/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/automation/radio/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/automation/radio` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/automation/remote-io/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-automation/d-remote-io/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/automation/remote-io/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/automation/remote-io` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/automation/scada-server/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-automation/d-scada-server/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/automation/scada-server/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/automation/scada-server` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/climate/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-climate/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/climate/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/climate` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/climate/dehumidifier/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-climate/d-dehumidifier/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/climate/dehumidifier/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/climate/dehumidifier` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/climate/evaporative-pad/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-climate/d-evaporative-pad/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/climate/evaporative-pad/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/climate/evaporative-pad` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/climate/greenhouse-vent/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-climate/d-greenhouse-vent/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/climate/greenhouse-vent/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/climate/greenhouse-vent` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/climate/shade-screen/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-climate/d-shade-screen/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/climate/shade-screen/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/climate/shade-screen` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/connections/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-connections/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/connections/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/connections` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/connections/junction/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-connections/d-junction/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/connections/junction/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/connections/junction` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/connections/pipe/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-connections/d-pipe/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/connections/pipe/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/connections/pipe` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/instruments/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-instruments/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/instruments/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/instruments` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/instruments/flow-meter/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-instruments/d-flow-meter/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/instruments/flow-meter/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/instruments/flow-meter` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/instruments/gas-analyzer/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-instruments/d-gas-analyzer/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/instruments/gas-analyzer/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/instruments/gas-analyzer` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/instruments/humidity-sensor/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-instruments/d-humidity-sensor/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/instruments/humidity-sensor/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/instruments/humidity-sensor` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/instruments/level-sensor/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-instruments/d-level-sensor/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/instruments/level-sensor/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/instruments/level-sensor` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/instruments/light-sensor/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-instruments/d-light-sensor/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/instruments/light-sensor/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/instruments/light-sensor` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/instruments/pressure-transmitter/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-instruments/d-pressure-transmitter/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/instruments/pressure-transmitter/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/instruments/pressure-transmitter` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/instruments/temperature-sensor/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-instruments/d-temperature-sensor/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/instruments/temperature-sensor/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/instruments/temperature-sensor` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/instruments/water-quality-probe/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-instruments/d-water-quality-probe/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/instruments/water-quality-probe/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/instruments/water-quality-probe` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/manufacturing/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-manufacturing/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/manufacturing/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/manufacturing` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/manufacturing/conveyor/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-manufacturing/d-conveyor/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/manufacturing/conveyor/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/manufacturing/conveyor` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/manufacturing/crusher/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-manufacturing/d-crusher/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/manufacturing/crusher/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/manufacturing/crusher` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/manufacturing/drum-mixer/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-manufacturing/d-drum-mixer/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/manufacturing/drum-mixer/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/manufacturing/drum-mixer` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/manufacturing/dryer/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-manufacturing/d-dryer/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/manufacturing/dryer/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/manufacturing/dryer` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/manufacturing/extruder/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-manufacturing/d-extruder/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/manufacturing/extruder/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/manufacturing/extruder` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/manufacturing/filling-line/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-manufacturing/d-filling-line/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/manufacturing/filling-line/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/manufacturing/filling-line` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/manufacturing/forming-machine/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-manufacturing/d-forming-machine/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/manufacturing/forming-machine/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/manufacturing/forming-machine` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/manufacturing/granulator/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-manufacturing/d-granulator/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/manufacturing/granulator/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/manufacturing/granulator` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/manufacturing/grinding-mill/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-manufacturing/d-grinding-mill/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/manufacturing/grinding-mill/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/manufacturing/grinding-mill` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/manufacturing/oven/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-manufacturing/d-oven/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/manufacturing/oven/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/manufacturing/oven` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/manufacturing/packaging-line/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-manufacturing/d-packaging-line/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/manufacturing/packaging-line/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/manufacturing/packaging-line` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/manufacturing/paper-machine/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-manufacturing/d-paper-machine/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/manufacturing/paper-machine/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/manufacturing/paper-machine` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/manufacturing/rack-oven/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-manufacturing/d-rack-oven/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/manufacturing/rack-oven/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/manufacturing/rack-oven` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/manufacturing/rotary-kiln/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-manufacturing/d-rotary-kiln/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/manufacturing/rotary-kiln/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/manufacturing/rotary-kiln` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/manufacturing/screw-feeder/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-manufacturing/d-screw-feeder/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/manufacturing/screw-feeder/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/manufacturing/screw-feeder` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/manufacturing/tablet-press/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-manufacturing/d-tablet-press/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/manufacturing/tablet-press/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/manufacturing/tablet-press` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/manufacturing/vibrating-screen/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-manufacturing/d-vibrating-screen/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/manufacturing/vibrating-screen/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/manufacturing/vibrating-screen` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/manufacturing/weigh-hopper/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-manufacturing/d-weigh-hopper/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/manufacturing/weigh-hopper/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/manufacturing/weigh-hopper` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/nuclear/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-nuclear/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/nuclear/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/nuclear` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/nuclear/bwr-reactor-vessel/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-nuclear/d-bwr-reactor-vessel/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/nuclear/bwr-reactor-vessel/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/nuclear/bwr-reactor-vessel` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/nuclear/containment-structure/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-nuclear/d-containment-structure/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/nuclear/containment-structure/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/nuclear/containment-structure` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/nuclear/control-rod-drive/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-nuclear/d-control-rod-drive/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/nuclear/control-rod-drive/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/nuclear/control-rod-drive` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/nuclear/gas-cooled-reactor/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-nuclear/d-gas-cooled-reactor/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/nuclear/gas-cooled-reactor/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/nuclear/gas-cooled-reactor` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/nuclear/molten-salt-reactor/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-nuclear/d-molten-salt-reactor/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/nuclear/molten-salt-reactor/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/nuclear/molten-salt-reactor` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/nuclear/neutron-monitor/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-nuclear/d-neutron-monitor/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/nuclear/neutron-monitor/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/nuclear/neutron-monitor` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/nuclear/nuclear-steam-generator/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-nuclear/d-nuclear-steam-generator/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/nuclear/nuclear-steam-generator/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/nuclear/nuclear-steam-generator` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/nuclear/phwr-calandria/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-nuclear/d-phwr-calandria/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/nuclear/phwr-calandria/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/nuclear/phwr-calandria` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/nuclear/pressurizer/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-nuclear/d-pressurizer/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/nuclear/pressurizer/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/nuclear/pressurizer` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/nuclear/pwr-reactor-vessel/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-nuclear/d-pwr-reactor-vessel/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/nuclear/pwr-reactor-vessel/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/nuclear/pwr-reactor-vessel` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/nuclear/radiation-monitor/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-nuclear/d-radiation-monitor/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/nuclear/radiation-monitor/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/nuclear/radiation-monitor` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/nuclear/sodium-reactor-vessel/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-nuclear/d-sodium-reactor-vessel/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/nuclear/sodium-reactor-vessel/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/nuclear/sodium-reactor-vessel` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/nuclear/used-fuel-pool/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-nuclear/d-used-fuel-pool/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/nuclear/used-fuel-pool/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/nuclear/used-fuel-pool` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/power/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-power/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/power/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/power` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/power/alternator/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-power/d-alternator/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/power/alternator/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/power/alternator` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/power/automatic-transfer-switch/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-power/d-automatic-transfer-switch/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/power/automatic-transfer-switch/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/power/automatic-transfer-switch` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/power/battery/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-power/d-battery/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/power/battery/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/power/battery` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/power/breaker/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-power/d-breaker/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/power/breaker/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/power/breaker` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/power/busbar/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-power/d-busbar/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/power/busbar/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/power/busbar` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/power/capacitor-bank/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-power/d-capacitor-bank/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/power/capacitor-bank/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/power/capacitor-bank` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/power/cooling-radiator/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-power/d-cooling-radiator/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/power/cooling-radiator/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/power/cooling-radiator` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/power/current-transformer/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-power/d-current-transformer/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/power/current-transformer/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/power/current-transformer` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/power/deaerator/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-power/d-deaerator/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/power/deaerator/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/power/deaerator` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/power/disconnect-switch/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-power/d-disconnect-switch/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/power/disconnect-switch/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/power/disconnect-switch` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/power/earthing-switch/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-power/d-earthing-switch/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/power/earthing-switch/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/power/earthing-switch` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/power/electrical-meter/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-power/d-electrical-meter/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/power/electrical-meter/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/power/electrical-meter` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/power/electrolyzer/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-power/d-electrolyzer/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/power/electrolyzer/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/power/electrolyzer` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/power/excitation-system/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-power/d-excitation-system/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/power/excitation-system/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/power/excitation-system` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/power/fuel-cell/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-power/d-fuel-cell/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/power/fuel-cell/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/power/fuel-cell` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/power/fuel-pressure-regulator/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-power/d-fuel-pressure-regulator/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/power/fuel-pressure-regulator/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/power/fuel-pressure-regulator` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/power/gas-turbine/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-power/d-gas-turbine/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/power/gas-turbine/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/power/gas-turbine` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/power/generator/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-power/d-generator/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/power/generator/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/power/generator` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/power/gis-bay/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-power/d-gis-bay/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/power/gis-bay/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/power/gis-bay` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/power/heat-recovery-steam-generator/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-power/d-heat-recovery-steam-generator/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/power/heat-recovery-steam-generator/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/power/heat-recovery-steam-generator` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/power/heliostat/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-power/d-heliostat/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/power/heliostat/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/power/heliostat` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/power/hv-circuit-breaker/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-power/d-hv-circuit-breaker/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/power/hv-circuit-breaker/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/power/hv-circuit-breaker` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/power/hydro-turbine/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-power/d-hydro-turbine/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/power/hydro-turbine/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/power/hydro-turbine` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/power/intake-gate/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-power/d-intake-gate/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/power/intake-gate/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/power/intake-gate` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/power/parabolic-trough/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-power/d-parabolic-trough/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/power/parabolic-trough/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/power/parabolic-trough` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/power/power-inverter/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-power/d-power-inverter/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/power/power-inverter/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/power/power-inverter` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/power/power-rectifier/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-power/d-power-rectifier/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/power/power-rectifier/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/power/power-rectifier` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/power/protection-relay/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-power/d-protection-relay/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/power/protection-relay/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/power/protection-relay` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/power/reservoir/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-power/d-reservoir/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/power/reservoir/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/power/reservoir` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/power/reversible-pump-turbine/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-power/d-reversible-pump-turbine/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/power/reversible-pump-turbine/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/power/reversible-pump-turbine` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/power/shunt-reactor/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-power/d-shunt-reactor/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/power/shunt-reactor/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/power/shunt-reactor` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/power/solar-panel/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-power/d-solar-panel/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/power/solar-panel/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/power/solar-panel` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/power/solar-receiver/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-power/d-solar-receiver/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/power/solar-receiver/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/power/solar-receiver` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/power/steam-turbine/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-power/d-steam-turbine/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/power/steam-turbine/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/power/steam-turbine` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/power/surface-condenser/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-power/d-surface-condenser/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/power/surface-condenser/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/power/surface-condenser` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/power/surge-arrester/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-power/d-surge-arrester/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/power/surge-arrester/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/power/surge-arrester` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/power/switchgear-panel/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-power/d-switchgear-panel/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/power/switchgear-panel/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/power/switchgear-panel` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/power/tidal-turbine/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-power/d-tidal-turbine/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/power/tidal-turbine/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/power/tidal-turbine` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/power/transformer/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-power/d-transformer/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/power/transformer/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/power/transformer` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/power/ups/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-power/d-ups/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/power/ups/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/power/ups` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/power/voltage-transformer/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-power/d-voltage-transformer/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/power/voltage-transformer/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/power/voltage-transformer` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/power/wave-energy-converter/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-power/d-wave-energy-converter/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/power/wave-energy-converter/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/power/wave-energy-converter` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/power/wind-turbine/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-power/d-wind-turbine/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/power/wind-turbine/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/power/wind-turbine` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/process/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-process/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/process/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/process` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/process/aeration-basin/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-process/d-aeration-basin/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/process/aeration-basin/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/process/aeration-basin` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/process/boiler/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-process/d-boiler/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/process/boiler/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/process/boiler` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/process/centrifuge/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-process/d-centrifuge/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/process/centrifuge/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/process/centrifuge` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/process/chiller/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-process/d-chiller/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/process/chiller/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/process/chiller` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/process/clarifier/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-process/d-clarifier/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/process/clarifier/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/process/clarifier` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/process/cooling-tower/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-process/d-cooling-tower/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/process/cooling-tower/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/process/cooling-tower` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/process/cyclone/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-process/d-cyclone/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/process/cyclone/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/process/cyclone` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/process/digester/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-process/d-digester/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/process/digester/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/process/digester` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/process/distillation-column/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-process/d-distillation-column/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/process/distillation-column/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/process/distillation-column` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/process/evaporator/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-process/d-evaporator/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/process/evaporator/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/process/evaporator` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/process/filter/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-process/d-filter/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/process/filter/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/process/filter` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/process/flare/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-process/d-flare/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/process/flare/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/process/flare` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/process/flotation-cell/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-process/d-flotation-cell/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/process/flotation-cell/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/process/flotation-cell` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/process/gas-holder/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-process/d-gas-holder/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/process/gas-holder/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/process/gas-holder` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/process/gas-treatment/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-process/d-gas-treatment/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/process/gas-treatment/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/process/gas-treatment` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/process/heat-exchanger/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-process/d-heat-exchanger/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/process/heat-exchanger/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/process/heat-exchanger` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/process/membrane-filter/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-process/d-membrane-filter/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/process/membrane-filter/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/process/membrane-filter` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/process/mixing-tank/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-process/d-mixing-tank/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/process/mixing-tank/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/process/mixing-tank` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/process/reactor/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-process/d-reactor/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/process/reactor/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/process/reactor` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/process/reverse-osmosis/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-process/d-reverse-osmosis/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/process/reverse-osmosis/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/process/reverse-osmosis` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/process/scrubber/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-process/d-scrubber/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/process/scrubber/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/process/scrubber` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/process/separator/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-process/d-separator/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/process/separator/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/process/separator` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/process/silo/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-process/d-silo/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/process/silo/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/process/silo` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/process/tank/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-process/d-tank/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/process/tank/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/process/tank` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/process/wellhead/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-process/d-wellhead/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/process/wellhead/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/process/wellhead` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/rotating/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-rotating/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/rotating/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/rotating` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/rotating/blower/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-rotating/d-blower/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/rotating/blower/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/rotating/blower` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/rotating/compressor/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-rotating/d-compressor/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/rotating/compressor/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/rotating/compressor` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/rotating/dosing-pump/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-rotating/d-dosing-pump/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/rotating/dosing-pump/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/rotating/dosing-pump` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/rotating/fan/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-rotating/d-fan/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/rotating/fan/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/rotating/fan` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/rotating/motor/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-rotating/d-motor/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/rotating/motor/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/rotating/motor` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/rotating/pump/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-rotating/d-pump/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/rotating/pump/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/rotating/pump` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/rotating/submersible-pump/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-rotating/d-submersible-pump/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/rotating/submersible-pump/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/rotating/submersible-pump` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/valves/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-valves/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/valves/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/valves` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/valves/butterfly-valve/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-valves/d-butterfly-valve/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/valves/butterfly-valve/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/valves/butterfly-valve` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/valves/check-valve/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-valves/d-check-valve/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/valves/check-valve/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/valves/check-valve` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/valves/control-valve/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-valves/d-control-valve/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/valves/control-valve/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/valves/control-valve` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/valves/gate-valve/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-valves/d-gate-valve/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/valves/gate-valve/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/valves/gate-valve` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/symbols/valves/relief-valve/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-symbols/d-valves/d-relief-valve/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/symbols/valves/relief-valve/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/symbols/valves/relief-valve` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/agriculture/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-agriculture/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/agriculture/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/agriculture` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/agriculture/aeroponic-chamber/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-agriculture/d-aeroponic-chamber/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/agriculture/aeroponic-chamber/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/agriculture/aeroponic-chamber` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/agriculture/air-diffuser/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-agriculture/d-air-diffuser/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/agriculture/air-diffuser/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/agriculture/air-diffuser` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/agriculture/biofilter/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-agriculture/d-biofilter/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/agriculture/biofilter/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/agriculture/biofilter` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/agriculture/drip-zone/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-agriculture/d-drip-zone/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/agriculture/drip-zone/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/agriculture/drip-zone` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/agriculture/dwc-raft-bed/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-agriculture/d-dwc-raft-bed/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/agriculture/dwc-raft-bed/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/agriculture/dwc-raft-bed` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/agriculture/ebb-flow-table/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-agriculture/d-ebb-flow-table/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/agriculture/ebb-flow-table/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/agriculture/ebb-flow-table` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/agriculture/fish-tank/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-agriculture/d-fish-tank/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/agriculture/fish-tank/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/agriculture/fish-tank` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/agriculture/grow-light/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-agriculture/d-grow-light/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/agriculture/grow-light/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/agriculture/grow-light` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/agriculture/media-grow-bed/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-agriculture/d-media-grow-bed/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/agriculture/media-grow-bed/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/agriculture/media-grow-bed` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/agriculture/nft-channel/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-agriculture/d-nft-channel/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/agriculture/nft-channel/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/agriculture/nft-channel` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/automation/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-automation/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/automation/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/automation` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/automation/hmi/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-automation/d-hmi/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/automation/hmi/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/automation/hmi` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/automation/network-switch/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-automation/d-network-switch/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/automation/network-switch/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/automation/network-switch` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/automation/plc-cpu/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-automation/d-plc-cpu/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/automation/plc-cpu/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/automation/plc-cpu` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/automation/plc-rack/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-automation/d-plc-rack/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/automation/plc-rack/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/automation/plc-rack` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/automation/radio/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-automation/d-radio/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/automation/radio/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/automation/radio` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/automation/remote-io/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-automation/d-remote-io/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/automation/remote-io/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/automation/remote-io` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/automation/scada-server/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-automation/d-scada-server/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/automation/scada-server/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/automation/scada-server` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/climate/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-climate/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/climate/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/climate` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/climate/dehumidifier/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-climate/d-dehumidifier/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/climate/dehumidifier/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/climate/dehumidifier` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/climate/evaporative-pad/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-climate/d-evaporative-pad/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/climate/evaporative-pad/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/climate/evaporative-pad` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/climate/greenhouse-vent/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-climate/d-greenhouse-vent/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/climate/greenhouse-vent/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/climate/greenhouse-vent` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/climate/shade-screen/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-climate/d-shade-screen/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/climate/shade-screen/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/climate/shade-screen` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/connections/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-connections/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/connections/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/connections` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/connections/junction/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-connections/d-junction/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/connections/junction/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/connections/junction` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/connections/pipe/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-connections/d-pipe/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/connections/pipe/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/connections/pipe` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/instruments/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-instruments/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/instruments/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/instruments` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/instruments/flow-meter/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-instruments/d-flow-meter/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/instruments/flow-meter/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/instruments/flow-meter` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/instruments/gas-analyzer/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-instruments/d-gas-analyzer/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/instruments/gas-analyzer/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/instruments/gas-analyzer` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/instruments/humidity-sensor/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-instruments/d-humidity-sensor/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/instruments/humidity-sensor/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/instruments/humidity-sensor` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/instruments/level-sensor/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-instruments/d-level-sensor/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/instruments/level-sensor/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/instruments/level-sensor` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/instruments/light-sensor/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-instruments/d-light-sensor/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/instruments/light-sensor/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/instruments/light-sensor` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/instruments/pressure-transmitter/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-instruments/d-pressure-transmitter/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/instruments/pressure-transmitter/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/instruments/pressure-transmitter` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/instruments/temperature-sensor/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-instruments/d-temperature-sensor/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/instruments/temperature-sensor/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/instruments/temperature-sensor` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/instruments/water-quality-probe/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-instruments/d-water-quality-probe/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/instruments/water-quality-probe/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/instruments/water-quality-probe` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/manufacturing/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-manufacturing/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/manufacturing/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/manufacturing` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/manufacturing/conveyor/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-manufacturing/d-conveyor/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/manufacturing/conveyor/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/manufacturing/conveyor` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/manufacturing/crusher/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-manufacturing/d-crusher/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/manufacturing/crusher/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/manufacturing/crusher` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/manufacturing/drum-mixer/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-manufacturing/d-drum-mixer/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/manufacturing/drum-mixer/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/manufacturing/drum-mixer` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/manufacturing/dryer/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-manufacturing/d-dryer/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/manufacturing/dryer/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/manufacturing/dryer` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/manufacturing/extruder/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-manufacturing/d-extruder/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/manufacturing/extruder/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/manufacturing/extruder` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/manufacturing/filling-line/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-manufacturing/d-filling-line/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/manufacturing/filling-line/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/manufacturing/filling-line` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/manufacturing/forming-machine/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-manufacturing/d-forming-machine/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/manufacturing/forming-machine/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/manufacturing/forming-machine` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/manufacturing/granulator/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-manufacturing/d-granulator/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/manufacturing/granulator/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/manufacturing/granulator` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/manufacturing/grinding-mill/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-manufacturing/d-grinding-mill/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/manufacturing/grinding-mill/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/manufacturing/grinding-mill` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/manufacturing/oven/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-manufacturing/d-oven/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/manufacturing/oven/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/manufacturing/oven` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/manufacturing/packaging-line/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-manufacturing/d-packaging-line/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/manufacturing/packaging-line/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/manufacturing/packaging-line` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/manufacturing/paper-machine/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-manufacturing/d-paper-machine/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/manufacturing/paper-machine/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/manufacturing/paper-machine` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/manufacturing/rack-oven/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-manufacturing/d-rack-oven/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/manufacturing/rack-oven/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/manufacturing/rack-oven` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/manufacturing/rotary-kiln/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-manufacturing/d-rotary-kiln/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/manufacturing/rotary-kiln/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/manufacturing/rotary-kiln` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/manufacturing/screw-feeder/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-manufacturing/d-screw-feeder/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/manufacturing/screw-feeder/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/manufacturing/screw-feeder` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/manufacturing/tablet-press/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-manufacturing/d-tablet-press/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/manufacturing/tablet-press/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/manufacturing/tablet-press` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/manufacturing/vibrating-screen/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-manufacturing/d-vibrating-screen/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/manufacturing/vibrating-screen/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/manufacturing/vibrating-screen` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/manufacturing/weigh-hopper/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-manufacturing/d-weigh-hopper/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/manufacturing/weigh-hopper/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/manufacturing/weigh-hopper` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/nuclear/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-nuclear/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/nuclear/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/nuclear` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/nuclear/bwr-reactor-vessel/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-nuclear/d-bwr-reactor-vessel/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/nuclear/bwr-reactor-vessel/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/nuclear/bwr-reactor-vessel` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/nuclear/containment-structure/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-nuclear/d-containment-structure/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/nuclear/containment-structure/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/nuclear/containment-structure` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/nuclear/control-rod-drive/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-nuclear/d-control-rod-drive/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/nuclear/control-rod-drive/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/nuclear/control-rod-drive` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/nuclear/gas-cooled-reactor/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-nuclear/d-gas-cooled-reactor/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/nuclear/gas-cooled-reactor/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/nuclear/gas-cooled-reactor` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/nuclear/molten-salt-reactor/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-nuclear/d-molten-salt-reactor/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/nuclear/molten-salt-reactor/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/nuclear/molten-salt-reactor` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/nuclear/neutron-monitor/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-nuclear/d-neutron-monitor/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/nuclear/neutron-monitor/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/nuclear/neutron-monitor` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/nuclear/nuclear-steam-generator/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-nuclear/d-nuclear-steam-generator/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/nuclear/nuclear-steam-generator/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/nuclear/nuclear-steam-generator` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/nuclear/phwr-calandria/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-nuclear/d-phwr-calandria/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/nuclear/phwr-calandria/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/nuclear/phwr-calandria` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/nuclear/pressurizer/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-nuclear/d-pressurizer/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/nuclear/pressurizer/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/nuclear/pressurizer` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/nuclear/pwr-reactor-vessel/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-nuclear/d-pwr-reactor-vessel/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/nuclear/pwr-reactor-vessel/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/nuclear/pwr-reactor-vessel` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/nuclear/radiation-monitor/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-nuclear/d-radiation-monitor/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/nuclear/radiation-monitor/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/nuclear/radiation-monitor` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/nuclear/sodium-reactor-vessel/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-nuclear/d-sodium-reactor-vessel/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/nuclear/sodium-reactor-vessel/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/nuclear/sodium-reactor-vessel` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/nuclear/used-fuel-pool/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-nuclear/d-used-fuel-pool/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/nuclear/used-fuel-pool/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/nuclear/used-fuel-pool` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-power/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/alternator/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-power/d-alternator/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/alternator/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/alternator` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/automatic-transfer-switch/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-power/d-automatic-transfer-switch/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/automatic-transfer-switch/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/automatic-transfer-switch` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/battery/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-power/d-battery/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/battery/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/battery` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/breaker/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-power/d-breaker/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/breaker/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/breaker` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/busbar/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-power/d-busbar/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/busbar/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/busbar` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/capacitor-bank/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-power/d-capacitor-bank/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/capacitor-bank/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/capacitor-bank` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/cooling-radiator/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-power/d-cooling-radiator/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/cooling-radiator/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/cooling-radiator` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/current-transformer/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-power/d-current-transformer/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/current-transformer/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/current-transformer` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/deaerator/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-power/d-deaerator/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/deaerator/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/deaerator` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/disconnect-switch/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-power/d-disconnect-switch/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/disconnect-switch/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/disconnect-switch` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/earthing-switch/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-power/d-earthing-switch/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/earthing-switch/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/earthing-switch` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/electrical-meter/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-power/d-electrical-meter/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/electrical-meter/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/electrical-meter` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/electrolyzer/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-power/d-electrolyzer/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/electrolyzer/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/electrolyzer` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/excitation-system/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-power/d-excitation-system/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/excitation-system/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/excitation-system` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/fuel-cell/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-power/d-fuel-cell/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/fuel-cell/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/fuel-cell` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/fuel-pressure-regulator/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-power/d-fuel-pressure-regulator/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/fuel-pressure-regulator/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/fuel-pressure-regulator` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/gas-turbine/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-power/d-gas-turbine/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/gas-turbine/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/gas-turbine` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/generator/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-power/d-generator/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/generator/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/generator` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/gis-bay/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-power/d-gis-bay/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/gis-bay/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/gis-bay` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/heat-recovery-steam-generator/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-power/d-heat-recovery-steam-generator/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/heat-recovery-steam-generator/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/heat-recovery-steam-generator` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/heliostat/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-power/d-heliostat/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/heliostat/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/heliostat` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/hv-circuit-breaker/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-power/d-hv-circuit-breaker/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/hv-circuit-breaker/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/hv-circuit-breaker` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/hydro-turbine/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-power/d-hydro-turbine/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/hydro-turbine/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/hydro-turbine` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/intake-gate/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-power/d-intake-gate/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/intake-gate/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/intake-gate` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/parabolic-trough/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-power/d-parabolic-trough/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/parabolic-trough/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/parabolic-trough` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/power-inverter/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-power/d-power-inverter/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/power-inverter/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/power-inverter` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/power-rectifier/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-power/d-power-rectifier/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/power-rectifier/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/power-rectifier` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/protection-relay/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-power/d-protection-relay/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/protection-relay/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/protection-relay` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/reservoir/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-power/d-reservoir/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/reservoir/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/reservoir` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/reversible-pump-turbine/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-power/d-reversible-pump-turbine/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/reversible-pump-turbine/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/reversible-pump-turbine` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/shunt-reactor/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-power/d-shunt-reactor/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/shunt-reactor/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/shunt-reactor` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/solar-panel/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-power/d-solar-panel/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/solar-panel/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/solar-panel` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/solar-receiver/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-power/d-solar-receiver/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/solar-receiver/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/solar-receiver` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/steam-turbine/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-power/d-steam-turbine/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/steam-turbine/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/steam-turbine` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/surface-condenser/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-power/d-surface-condenser/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/surface-condenser/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/surface-condenser` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/surge-arrester/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-power/d-surge-arrester/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/surge-arrester/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/surge-arrester` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/switchgear-panel/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-power/d-switchgear-panel/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/switchgear-panel/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/switchgear-panel` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/tidal-turbine/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-power/d-tidal-turbine/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/tidal-turbine/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/tidal-turbine` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/transformer/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-power/d-transformer/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/transformer/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/transformer` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/ups/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-power/d-ups/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/ups/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/ups` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/voltage-transformer/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-power/d-voltage-transformer/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/voltage-transformer/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/voltage-transformer` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/wave-energy-converter/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-power/d-wave-energy-converter/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/wave-energy-converter/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/wave-energy-converter` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/wind-turbine/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-power/d-wind-turbine/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/wind-turbine/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/power/wind-turbine` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/process/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-process/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/process/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/process` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/process/aeration-basin/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-process/d-aeration-basin/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/process/aeration-basin/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/process/aeration-basin` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/process/boiler/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-process/d-boiler/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/process/boiler/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/process/boiler` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/process/centrifuge/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-process/d-centrifuge/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/process/centrifuge/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/process/centrifuge` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/process/chiller/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-process/d-chiller/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/process/chiller/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/process/chiller` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/process/clarifier/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-process/d-clarifier/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/process/clarifier/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/process/clarifier` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/process/cooling-tower/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-process/d-cooling-tower/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/process/cooling-tower/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/process/cooling-tower` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/process/cyclone/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-process/d-cyclone/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/process/cyclone/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/process/cyclone` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/process/digester/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-process/d-digester/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/process/digester/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/process/digester` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/process/distillation-column/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-process/d-distillation-column/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/process/distillation-column/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/process/distillation-column` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/process/evaporator/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-process/d-evaporator/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/process/evaporator/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/process/evaporator` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/process/filter/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-process/d-filter/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/process/filter/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/process/filter` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/process/flare/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-process/d-flare/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/process/flare/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/process/flare` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/process/flotation-cell/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-process/d-flotation-cell/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/process/flotation-cell/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/process/flotation-cell` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/process/gas-holder/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-process/d-gas-holder/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/process/gas-holder/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/process/gas-holder` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/process/gas-treatment/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-process/d-gas-treatment/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/process/gas-treatment/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/process/gas-treatment` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/process/heat-exchanger/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-process/d-heat-exchanger/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/process/heat-exchanger/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/process/heat-exchanger` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/process/membrane-filter/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-process/d-membrane-filter/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/process/membrane-filter/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/process/membrane-filter` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/process/mixing-tank/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-process/d-mixing-tank/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/process/mixing-tank/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/process/mixing-tank` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/process/reactor/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-process/d-reactor/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/process/reactor/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/process/reactor` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/process/reverse-osmosis/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-process/d-reverse-osmosis/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/process/reverse-osmosis/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/process/reverse-osmosis` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/process/scrubber/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-process/d-scrubber/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/process/scrubber/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/process/scrubber` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/process/separator/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-process/d-separator/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/process/separator/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/process/separator` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/process/silo/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-process/d-silo/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/process/silo/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/process/silo` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/process/tank/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-process/d-tank/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/process/tank/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/process/tank` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/process/wellhead/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-process/d-wellhead/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/process/wellhead/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/process/wellhead` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/rotating/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-rotating/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/rotating/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/rotating` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/rotating/blower/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-rotating/d-blower/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/rotating/blower/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/rotating/blower` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/rotating/compressor/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-rotating/d-compressor/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/rotating/compressor/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/rotating/compressor` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/rotating/dosing-pump/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-rotating/d-dosing-pump/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/rotating/dosing-pump/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/rotating/dosing-pump` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/rotating/fan/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-rotating/d-fan/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/rotating/fan/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/rotating/fan` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/rotating/motor/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-rotating/d-motor/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/rotating/motor/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/rotating/motor` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/rotating/pump/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-rotating/d-pump/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/rotating/pump/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/rotating/pump` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/rotating/submersible-pump/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-rotating/d-submersible-pump/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/rotating/submersible-pump/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/rotating/submersible-pump` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/valves/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-valves/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/valves/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/valves` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/valves/butterfly-valve/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-valves/d-butterfly-valve/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/valves/butterfly-valve/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/valves/butterfly-valve` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/valves/check-valve/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-valves/d-check-valve/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/valves/check-valve/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/valves/check-valve` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/valves/control-valve/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-valves/d-control-valve/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/valves/control-valve/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/valves/control-valve` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/valves/gate-valve/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-valves/d-gate-valve/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/valves/gate-valve/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/valves/gate-valve` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/equipment/valves/relief-valve/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-equipment/d-valves/d-relief-valve/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/equipment/valves/relief-valve/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/equipment/valves/relief-valve` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/states/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-states/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/states/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/states` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/thumbnails/workspace/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-thumbnails/d-workspace/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/thumbnails/workspace/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/thumbnails/workspace` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/metadata/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-metadata/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/metadata/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/metadata` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/schema/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-schema/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/schema/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/schema` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/src/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-src/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/src/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/src` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/src/catalog/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-src/d-catalog/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/src/catalog/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/src/catalog` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/src/catalog/definitions/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-src/d-catalog/d-definitions/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/src/catalog/definitions/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/src/catalog/definitions` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/src/contracts/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-src/d-contracts/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/src/contracts/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/src/contracts` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/src/symbols/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-src/d-symbols/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/src/symbols/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/src/symbols` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/src/symbols/art/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-src/d-symbols/d-art/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/src/symbols/art/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/src/symbols/art` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/src/symbols/power/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-src/d-symbols/d-power/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/src/symbols/power/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/src/symbols/power` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/src/viewer/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-src/d-viewer/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/src/viewer/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/src/viewer` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/src/workspace/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-src/d-workspace/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/src/workspace/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/src/workspace` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/ui/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-ui/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/ui/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/ui` |
 
 </details>
 
@@ -1962,7 +9450,7 @@ Guides explain how to use the toolkit. Folder maps lead into its code, tests and
 </details>
 
 <details>
-<summary>tests — 352 folders</summary>
+<summary>tests — 360 folders</summary>
 
 <details>
 <summary><code>tests/README.md</code> — 1 folders</summary>
@@ -2004,7 +9492,7 @@ Guides explain how to use the toolkit. Folder maps lead into its code, tests and
 </details>
 
 <details>
-<summary><code>tests/fixtures/README.md</code> — 335 folders</summary>
+<summary><code>tests/fixtures/README.md</code> — 336 folders</summary>
 
 [Published folder map](https://cad-agent.valpatel.com/repo/folders/d-tests/d-fixtures/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/tests/fixtures/README.md)
 
@@ -2347,6 +9835,7 @@ Guides explain how to use the toolkit. Folder maps lead into its code, tests and
 | `tests/fixtures/prusa_config/printer` |
 | `tests/fixtures/prusa_config/vendor` |
 | `tests/fixtures/prusa_logs` |
+| `tests/fixtures/scada` |
 
 </details>
 
@@ -2494,6 +9983,19 @@ Guides explain how to use the toolkit. Folder maps lead into its code, tests and
 </details>
 
 <details>
+<summary><code>tests/site/toolkit/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-tests/d-site/d-toolkit/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/tests/site/toolkit/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `tests/site/toolkit` |
+
+</details>
+
+<details>
 <summary><code>tests/thermal/README.md</code> — 1 folders</summary>
 
 [Published folder map](https://cad-agent.valpatel.com/repo/folders/d-tests/d-thermal/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/tests/thermal/README.md)
@@ -2532,10 +10034,88 @@ Guides explain how to use the toolkit. Folder maps lead into its code, tests and
 
 </details>
 
+<details>
+<summary><code>tests/webkit/host/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-tests/d-webkit/d-host/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/tests/webkit/host/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `tests/webkit/host` |
+
 </details>
 
 <details>
-<summary>tools — 12 folders</summary>
+<summary><code>tests/webkit/scada/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-tests/d-webkit/d-scada/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/tests/webkit/scada/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `tests/webkit/scada` |
+
+</details>
+
+<details>
+<summary><code>tests/webkit/scada/explorer/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-tests/d-webkit/d-scada/d-explorer/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/tests/webkit/scada/explorer/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `tests/webkit/scada/explorer` |
+
+</details>
+
+<details>
+<summary><code>tests/webkit/scada/sim/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-tests/d-webkit/d-scada/d-sim/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/tests/webkit/scada/sim/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `tests/webkit/scada/sim` |
+
+</details>
+
+<details>
+<summary><code>tests/webkit/scada/sim/scenarios/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-tests/d-webkit/d-scada/d-sim/d-scenarios/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/tests/webkit/scada/sim/scenarios/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `tests/webkit/scada/sim/scenarios` |
+
+</details>
+
+<details>
+<summary><code>tests/webkit/scada/ui/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-tests/d-webkit/d-scada/d-ui/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/tests/webkit/scada/ui/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `tests/webkit/scada/ui` |
+
+</details>
+
+</details>
+
+<details>
+<summary>tools — 21 folders</summary>
 
 <details>
 <summary><code>tools/README.md</code> — 1 folders</summary>
@@ -2690,6 +10270,123 @@ Guides explain how to use the toolkit. Folder maps lead into its code, tests and
 | Folder |
 |---|
 | `tools/site/figures` |
+
+</details>
+
+<details>
+<summary><code>tools/webkit/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-tools/d-webkit/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/tools/webkit/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `tools/webkit` |
+
+</details>
+
+<details>
+<summary><code>tools/webkit/scada/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-tools/d-webkit/d-scada/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/tools/webkit/scada/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `tools/webkit/scada` |
+
+</details>
+
+<details>
+<summary><code>tools/webkit/scada/explorer/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-tools/d-webkit/d-scada/d-explorer/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/tools/webkit/scada/explorer/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `tools/webkit/scada/explorer` |
+
+</details>
+
+<details>
+<summary><code>tools/webkit/scada/explorer/qa/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-tools/d-webkit/d-scada/d-explorer/d-qa/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/tools/webkit/scada/explorer/qa/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `tools/webkit/scada/explorer/qa` |
+
+</details>
+
+<details>
+<summary><code>tools/webkit/scada/sim/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-tools/d-webkit/d-scada/d-sim/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/tools/webkit/scada/sim/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `tools/webkit/scada/sim` |
+
+</details>
+
+<details>
+<summary><code>tools/webkit/scada/sim/topology/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-tools/d-webkit/d-scada/d-sim/d-topology/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/tools/webkit/scada/sim/topology/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `tools/webkit/scada/sim/topology` |
+
+</details>
+
+<details>
+<summary><code>tools/webkit/scada/ui/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-tools/d-webkit/d-scada/d-ui/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/tools/webkit/scada/ui/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `tools/webkit/scada/ui` |
+
+</details>
+
+<details>
+<summary><code>tools/webkit/scada/ui/gallery/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-tools/d-webkit/d-scada/d-ui/d-gallery/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/tools/webkit/scada/ui/gallery/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `tools/webkit/scada/ui/gallery` |
+
+</details>
+
+<details>
+<summary><code>tools/webkit/scada/ui/qa/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-tools/d-webkit/d-scada/d-ui/d-qa/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/tools/webkit/scada/ui/qa/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `tools/webkit/scada/ui/qa` |
 
 </details>
 

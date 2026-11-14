@@ -1,0 +1,2751 @@
+{
+  "format": "scada-system",
+  "version": 1,
+  "system": {
+    "id": "hydroponics-ebb-flow",
+    "label": "Ebb-and-flow nursery",
+    "description": "Two nursery tables fill, hold and drain on one shared model clock. Each tray retains its own stock and phase while sharing the reservoir."
+  },
+  "components": [
+    {
+      "id": "reservoir",
+      "type": "tank",
+      "label": "Shared nursery reservoir",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "level": 55,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/reservoir/active",
+        "running": "/components/reservoir/running",
+        "fault": "/components/reservoir/fault",
+        "status": "/components/reservoir/status",
+        "level": "/components/reservoir/level",
+        "damage": "/components/reservoir/damage"
+      },
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        }
+      ],
+      "provenance": [
+        "model-guesses",
+        "authored-topology",
+        "A1",
+        "A3",
+        "A5",
+        "A7"
+      ]
+    },
+    {
+      "id": "fillPump",
+      "type": "submersible-pump",
+      "label": "Nursery filling pump",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/fillPump/active",
+        "running": "/components/fillPump/running",
+        "fault": "/components/fillPump/fault",
+        "status": "/components/fillPump/status",
+        "load": "/components/fillPump/load",
+        "speed": "/components/fillPump/speed",
+        "damage": "/components/fillPump/damage"
+      },
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "drive",
+          "side": "bottom",
+          "offset": 0.75
+        }
+      ],
+      "provenance": [
+        "model-guesses",
+        "authored-topology",
+        "A1",
+        "A3",
+        "A5",
+        "A7"
+      ],
+      "variant": "water"
+    },
+    {
+      "id": "header",
+      "type": "junction",
+      "label": "Table feed manifold",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "open": true,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/header/active",
+        "running": "/components/header/running",
+        "fault": "/components/header/fault",
+        "status": "/components/header/status",
+        "open": "/components/header/open",
+        "damage": "/components/header/damage"
+      },
+      "ports": [
+        {
+          "id": "west",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "east",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "north",
+          "side": "top",
+          "offset": 0.5
+        },
+        {
+          "id": "south",
+          "side": "bottom",
+          "offset": 0.5
+        }
+      ],
+      "provenance": [
+        "model-guesses",
+        "authored-topology",
+        "A1",
+        "A3",
+        "A5",
+        "A7"
+      ]
+    },
+    {
+      "id": "tableA",
+      "type": "ebb-flow-table",
+      "label": "Nursery table A",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "level": 55,
+        "moisture": 55,
+        "phase": "holding",
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/tableA/active",
+        "running": "/components/tableA/running",
+        "fault": "/components/tableA/fault",
+        "status": "/components/tableA/status",
+        "level": "/components/tableA/level",
+        "moisture": "/components/tableA/moisture",
+        "phase": "/components/tableA/phase",
+        "damage": "/components/tableA/damage"
+      },
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "light",
+          "side": "top",
+          "offset": 0.5
+        },
+        {
+          "id": "control",
+          "side": "bottom",
+          "offset": 0.5
+        },
+        {
+          "id": "measurement",
+          "side": "top",
+          "offset": 0.75
+        }
+      ],
+      "provenance": [
+        "model-guesses",
+        "authored-topology",
+        "A1",
+        "A3",
+        "A5",
+        "A7"
+      ]
+    },
+    {
+      "id": "drainA",
+      "type": "gate-valve",
+      "label": "Table A return valve",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "open": true,
+        "opening": 100,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/drainA/active",
+        "running": "/components/drainA/running",
+        "fault": "/components/drainA/fault",
+        "status": "/components/drainA/status",
+        "open": "/components/drainA/open",
+        "opening": "/components/drainA/opening",
+        "damage": "/components/drainA/damage"
+      },
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        }
+      ],
+      "provenance": [
+        "model-guesses",
+        "authored-topology",
+        "A1",
+        "A3",
+        "A5",
+        "A7"
+      ],
+      "variant": "water"
+    },
+    {
+      "id": "tableB",
+      "type": "ebb-flow-table",
+      "label": "Nursery table B",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "level": 55,
+        "moisture": 55,
+        "phase": "holding",
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/tableB/active",
+        "running": "/components/tableB/running",
+        "fault": "/components/tableB/fault",
+        "status": "/components/tableB/status",
+        "level": "/components/tableB/level",
+        "moisture": "/components/tableB/moisture",
+        "phase": "/components/tableB/phase",
+        "damage": "/components/tableB/damage"
+      },
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "light",
+          "side": "top",
+          "offset": 0.5
+        },
+        {
+          "id": "control",
+          "side": "bottom",
+          "offset": 0.5
+        },
+        {
+          "id": "measurement",
+          "side": "top",
+          "offset": 0.75
+        }
+      ],
+      "provenance": [
+        "model-guesses",
+        "authored-topology",
+        "A1",
+        "A3",
+        "A5",
+        "A7"
+      ]
+    },
+    {
+      "id": "drainB",
+      "type": "gate-valve",
+      "label": "Table B return valve",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "open": true,
+        "opening": 100,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/drainB/active",
+        "running": "/components/drainB/running",
+        "fault": "/components/drainB/fault",
+        "status": "/components/drainB/status",
+        "open": "/components/drainB/open",
+        "opening": "/components/drainB/opening",
+        "damage": "/components/drainB/damage"
+      },
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        }
+      ],
+      "provenance": [
+        "model-guesses",
+        "authored-topology",
+        "A1",
+        "A3",
+        "A5",
+        "A7"
+      ],
+      "variant": "water"
+    },
+    {
+      "id": "sitePower",
+      "type": "transformer",
+      "label": "Explicit grid-service boundary",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/sitePower/active",
+        "running": "/components/sitePower/running",
+        "fault": "/components/sitePower/fault",
+        "status": "/components/sitePower/status",
+        "load": "/components/sitePower/load",
+        "damage": "/components/sitePower/damage"
+      },
+      "ports": [
+        {
+          "id": "primary",
+          "side": "bottom",
+          "offset": 0.75
+        },
+        {
+          "id": "secondary",
+          "side": "right",
+          "offset": 0.5
+        }
+      ],
+      "provenance": [
+        "model-guesses",
+        "authored-topology",
+        "A1",
+        "A3",
+        "A5",
+        "A7"
+      ]
+    },
+    {
+      "id": "plc",
+      "type": "plc-rack",
+      "label": "Shared growing-system controller",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "connected": true,
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/plc/active",
+        "running": "/components/plc/running",
+        "fault": "/components/plc/fault",
+        "status": "/components/plc/status",
+        "connected": "/components/plc/connected",
+        "load": "/components/plc/load",
+        "damage": "/components/plc/damage"
+      },
+      "ports": [
+        {
+          "id": "network",
+          "side": "bottom",
+          "offset": 0.5
+        },
+        {
+          "id": "power",
+          "side": "bottom",
+          "offset": 0.75
+        },
+        {
+          "id": "io",
+          "side": "bottom",
+          "offset": 0.5
+        }
+      ],
+      "provenance": [
+        "model-guesses",
+        "authored-topology",
+        "A1",
+        "A3",
+        "A5",
+        "A7"
+      ]
+    },
+    {
+      "id": "lightA",
+      "type": "grow-light",
+      "label": "Table A growing light",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "light": 60,
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/lightA/active",
+        "running": "/components/lightA/running",
+        "fault": "/components/lightA/fault",
+        "status": "/components/lightA/status",
+        "light": "/components/lightA/light",
+        "load": "/components/lightA/load",
+        "damage": "/components/lightA/damage"
+      },
+      "ports": [
+        {
+          "id": "supply",
+          "side": "bottom",
+          "offset": 0.75
+        },
+        {
+          "id": "light",
+          "side": "bottom",
+          "offset": 0.5
+        },
+        {
+          "id": "heat",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "control",
+          "side": "bottom",
+          "offset": 0.5
+        }
+      ],
+      "provenance": [
+        "model-guesses",
+        "authored-topology",
+        "A1",
+        "A3",
+        "A5",
+        "A7"
+      ]
+    },
+    {
+      "id": "lightB",
+      "type": "grow-light",
+      "label": "Table B growing light",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "light": 60,
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/lightB/active",
+        "running": "/components/lightB/running",
+        "fault": "/components/lightB/fault",
+        "status": "/components/lightB/status",
+        "light": "/components/lightB/light",
+        "load": "/components/lightB/load",
+        "damage": "/components/lightB/damage"
+      },
+      "ports": [
+        {
+          "id": "supply",
+          "side": "bottom",
+          "offset": 0.75
+        },
+        {
+          "id": "light",
+          "side": "bottom",
+          "offset": 0.5
+        },
+        {
+          "id": "heat",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "control",
+          "side": "bottom",
+          "offset": 0.5
+        }
+      ],
+      "provenance": [
+        "model-guesses",
+        "authored-topology",
+        "A1",
+        "A3",
+        "A5",
+        "A7"
+      ]
+    },
+    {
+      "id": "waterProbe",
+      "type": "water-quality-probe",
+      "label": "Dissolved oxygen \u00b7 illustrative index",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "connected": true,
+        "measurement": "do",
+        "value": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/waterProbe/active",
+        "running": "/components/waterProbe/running",
+        "fault": "/components/waterProbe/fault",
+        "status": "/components/waterProbe/status",
+        "connected": "/components/waterProbe/connected",
+        "measurement": "/components/waterProbe/measurement",
+        "value": "/components/waterProbe/value",
+        "damage": "/components/waterProbe/damage"
+      },
+      "ports": [
+        {
+          "id": "measurement",
+          "side": "top",
+          "offset": 0.75
+        },
+        {
+          "id": "signal",
+          "side": "bottom",
+          "offset": 0.5
+        },
+        {
+          "id": "supply",
+          "side": "bottom",
+          "offset": 0.75
+        }
+      ],
+      "provenance": [
+        "model-guesses",
+        "authored-topology",
+        "A1",
+        "A3",
+        "A5",
+        "A7"
+      ]
+    },
+    {
+      "id": "humidityProbe",
+      "type": "humidity-sensor",
+      "label": "Room humidity \u00b7 illustrative index",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "connected": true,
+        "humidity": 55,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/humidityProbe/active",
+        "running": "/components/humidityProbe/running",
+        "fault": "/components/humidityProbe/fault",
+        "status": "/components/humidityProbe/status",
+        "connected": "/components/humidityProbe/connected",
+        "humidity": "/components/humidityProbe/humidity",
+        "damage": "/components/humidityProbe/damage"
+      },
+      "ports": [
+        {
+          "id": "measurement",
+          "side": "top",
+          "offset": 0.75
+        },
+        {
+          "id": "signal",
+          "side": "bottom",
+          "offset": 0.5
+        },
+        {
+          "id": "supply",
+          "side": "bottom",
+          "offset": 0.75
+        }
+      ],
+      "provenance": [
+        "model-guesses",
+        "authored-topology",
+        "A1",
+        "A3",
+        "A5",
+        "A7"
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "header-north-to-tableA-inlet",
+      "from": {
+        "component": "header",
+        "port": "north"
+      },
+      "to": {
+        "component": "tableA",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "label": "liquid",
+      "flowBinding": "/flows/header-north-to-tableA-inlet"
+    },
+    {
+      "id": "tableA-outlet-to-drainA-inlet",
+      "from": {
+        "component": "tableA",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "drainA",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "label": "liquid",
+      "flowBinding": "/flows/tableA-outlet-to-drainA-inlet"
+    },
+    {
+      "id": "drainA-outlet-to-reservoir-inlet",
+      "from": {
+        "component": "drainA",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "reservoir",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "label": "liquid",
+      "flowBinding": "/flows/drainA-outlet-to-reservoir-inlet"
+    },
+    {
+      "id": "header-south-to-tableB-inlet",
+      "from": {
+        "component": "header",
+        "port": "south"
+      },
+      "to": {
+        "component": "tableB",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "label": "liquid",
+      "flowBinding": "/flows/header-south-to-tableB-inlet"
+    },
+    {
+      "id": "tableB-outlet-to-drainB-inlet",
+      "from": {
+        "component": "tableB",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "drainB",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "label": "liquid",
+      "flowBinding": "/flows/tableB-outlet-to-drainB-inlet"
+    },
+    {
+      "id": "drainB-outlet-to-reservoir-inlet",
+      "from": {
+        "component": "drainB",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "reservoir",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "label": "liquid",
+      "flowBinding": "/flows/drainB-outlet-to-reservoir-inlet"
+    },
+    {
+      "id": "reservoir-outlet-to-fillPump-inlet",
+      "from": {
+        "component": "reservoir",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "fillPump",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "label": "liquid",
+      "flowBinding": "/flows/reservoir-outlet-to-fillPump-inlet"
+    },
+    {
+      "id": "fillPump-outlet-to-header-west",
+      "from": {
+        "component": "fillPump",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "header",
+        "port": "west"
+      },
+      "medium": "liquid",
+      "label": "liquid",
+      "flowBinding": "/flows/fillPump-outlet-to-header-west"
+    },
+    {
+      "id": "sitePower-secondary-to-plc-power",
+      "from": {
+        "component": "sitePower",
+        "port": "secondary"
+      },
+      "to": {
+        "component": "plc",
+        "port": "power"
+      },
+      "medium": "electricity",
+      "label": "Control power",
+      "flowBinding": "/flows/sitePower-secondary-to-plc-power"
+    },
+    {
+      "id": "sitePower-secondary-to-fillPump-drive",
+      "from": {
+        "component": "sitePower",
+        "port": "secondary"
+      },
+      "to": {
+        "component": "fillPump",
+        "port": "drive"
+      },
+      "medium": "electricity",
+      "label": "Declared grid power",
+      "flowBinding": "/flows/sitePower-secondary-to-fillPump-drive"
+    },
+    {
+      "id": "plc-io-to-tableA-control",
+      "from": {
+        "component": "plc",
+        "port": "io"
+      },
+      "to": {
+        "component": "tableA",
+        "port": "control"
+      },
+      "medium": "data",
+      "label": "Shared controller command",
+      "flowBinding": "/flows/plc-io-to-tableA-control"
+    },
+    {
+      "id": "sitePower-secondary-to-lightA-supply",
+      "from": {
+        "component": "sitePower",
+        "port": "secondary"
+      },
+      "to": {
+        "component": "lightA",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "label": "Declared grid power",
+      "flowBinding": "/flows/sitePower-secondary-to-lightA-supply"
+    },
+    {
+      "id": "plc-io-to-lightA-control",
+      "from": {
+        "component": "plc",
+        "port": "io"
+      },
+      "to": {
+        "component": "lightA",
+        "port": "control"
+      },
+      "medium": "data",
+      "label": "Shared controller command",
+      "flowBinding": "/flows/plc-io-to-lightA-control"
+    },
+    {
+      "id": "lightA-light-to-tableA-light",
+      "from": {
+        "component": "lightA",
+        "port": "light"
+      },
+      "to": {
+        "component": "tableA",
+        "port": "light"
+      },
+      "medium": "optical",
+      "label": "Illustrative light energy",
+      "flowBinding": "/flows/lightA-light-to-tableA-light"
+    },
+    {
+      "id": "plc-io-to-tableB-control",
+      "from": {
+        "component": "plc",
+        "port": "io"
+      },
+      "to": {
+        "component": "tableB",
+        "port": "control"
+      },
+      "medium": "data",
+      "label": "Shared controller command",
+      "flowBinding": "/flows/plc-io-to-tableB-control"
+    },
+    {
+      "id": "sitePower-secondary-to-lightB-supply",
+      "from": {
+        "component": "sitePower",
+        "port": "secondary"
+      },
+      "to": {
+        "component": "lightB",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "label": "Declared grid power",
+      "flowBinding": "/flows/sitePower-secondary-to-lightB-supply"
+    },
+    {
+      "id": "plc-io-to-lightB-control",
+      "from": {
+        "component": "plc",
+        "port": "io"
+      },
+      "to": {
+        "component": "lightB",
+        "port": "control"
+      },
+      "medium": "data",
+      "label": "Shared controller command",
+      "flowBinding": "/flows/plc-io-to-lightB-control"
+    },
+    {
+      "id": "lightB-light-to-tableB-light",
+      "from": {
+        "component": "lightB",
+        "port": "light"
+      },
+      "to": {
+        "component": "tableB",
+        "port": "light"
+      },
+      "medium": "optical",
+      "label": "Illustrative light energy",
+      "flowBinding": "/flows/lightB-light-to-tableB-light"
+    },
+    {
+      "id": "sitePower-secondary-to-waterProbe-supply",
+      "from": {
+        "component": "sitePower",
+        "port": "secondary"
+      },
+      "to": {
+        "component": "waterProbe",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "label": "Declared grid power",
+      "flowBinding": "/flows/sitePower-secondary-to-waterProbe-supply"
+    },
+    {
+      "id": "tableA-measurement-to-waterProbe-measurement",
+      "from": {
+        "component": "tableA",
+        "port": "measurement"
+      },
+      "to": {
+        "component": "waterProbe",
+        "port": "measurement"
+      },
+      "medium": "measurement",
+      "label": "Non-consuming observation",
+      "flowBinding": "/flows/tableA-measurement-to-waterProbe-measurement"
+    },
+    {
+      "id": "waterProbe-signal-to-plc-io",
+      "from": {
+        "component": "waterProbe",
+        "port": "signal"
+      },
+      "to": {
+        "component": "plc",
+        "port": "io"
+      },
+      "medium": "data",
+      "label": "Measured index",
+      "flowBinding": "/flows/waterProbe-signal-to-plc-io"
+    },
+    {
+      "id": "sitePower-secondary-to-humidityProbe-supply",
+      "from": {
+        "component": "sitePower",
+        "port": "secondary"
+      },
+      "to": {
+        "component": "humidityProbe",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "label": "Declared grid power",
+      "flowBinding": "/flows/sitePower-secondary-to-humidityProbe-supply"
+    },
+    {
+      "id": "humidityProbe-signal-to-plc-io",
+      "from": {
+        "component": "humidityProbe",
+        "port": "signal"
+      },
+      "to": {
+        "component": "plc",
+        "port": "io"
+      },
+      "medium": "data",
+      "label": "Zone observation",
+      "flowBinding": "/flows/humidityProbe-signal-to-plc-io"
+    }
+  ],
+  "views": [
+    {
+      "id": "water",
+      "label": "Fill, hold & drain",
+      "canvas": {
+        "width": 980,
+        "height": 940
+      },
+      "placements": [
+        {
+          "component": "reservoir",
+          "x": 60,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "fillPump",
+          "x": 360,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "header",
+          "x": 660,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "tableA",
+          "x": 660,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "drainA",
+          "x": 360,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "tableB",
+          "x": 60,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "drainB",
+          "x": 60,
+          "y": 620,
+          "width": 200,
+          "height": 190
+        }
+      ],
+      "routes": [
+        {
+          "connection": "header-north-to-tableA-inlet",
+          "points": [
+            {
+              "x": 760,
+              "y": 60
+            },
+            {
+              "x": 760,
+              "y": 40
+            },
+            {
+              "x": 640,
+              "y": 40
+            },
+            {
+              "x": 640,
+              "y": 435
+            },
+            {
+              "x": 660,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "tableA-outlet-to-drainA-inlet",
+          "points": [
+            {
+              "x": 860,
+              "y": 435
+            },
+            {
+              "x": 880,
+              "y": 435
+            },
+            {
+              "x": 880,
+              "y": 320
+            },
+            {
+              "x": 340,
+              "y": 320
+            },
+            {
+              "x": 340,
+              "y": 435
+            },
+            {
+              "x": 360,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "drainA-outlet-to-reservoir-inlet",
+          "points": [
+            {
+              "x": 560,
+              "y": 435
+            },
+            {
+              "x": 580,
+              "y": 435
+            },
+            {
+              "x": 580,
+              "y": 270
+            },
+            {
+              "x": 40,
+              "y": 270
+            },
+            {
+              "x": 40,
+              "y": 155
+            },
+            {
+              "x": 60,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "header-south-to-tableB-inlet",
+          "points": [
+            {
+              "x": 760,
+              "y": 250
+            },
+            {
+              "x": 760,
+              "y": 320
+            },
+            {
+              "x": 40,
+              "y": 320
+            },
+            {
+              "x": 40,
+              "y": 435
+            },
+            {
+              "x": 60,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "tableB-outlet-to-drainB-inlet",
+          "points": [
+            {
+              "x": 260,
+              "y": 435
+            },
+            {
+              "x": 280,
+              "y": 435
+            },
+            {
+              "x": 280,
+              "y": 600
+            },
+            {
+              "x": 40,
+              "y": 600
+            },
+            {
+              "x": 40,
+              "y": 715
+            },
+            {
+              "x": 60,
+              "y": 715
+            }
+          ]
+        },
+        {
+          "connection": "drainB-outlet-to-reservoir-inlet",
+          "points": [
+            {
+              "x": 260,
+              "y": 715
+            },
+            {
+              "x": 280,
+              "y": 715
+            },
+            {
+              "x": 280,
+              "y": 270
+            },
+            {
+              "x": 40,
+              "y": 270
+            },
+            {
+              "x": 40,
+              "y": 155
+            },
+            {
+              "x": 60,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "reservoir-outlet-to-fillPump-inlet",
+          "points": [
+            {
+              "x": 260,
+              "y": 155
+            },
+            {
+              "x": 360,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "fillPump-outlet-to-header-west",
+          "points": [
+            {
+              "x": 560,
+              "y": 155
+            },
+            {
+              "x": 660,
+              "y": 155
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "roots",
+      "label": "Nursery phases & observations",
+      "canvas": {
+        "width": 980,
+        "height": 660
+      },
+      "placements": [
+        {
+          "component": "tableA",
+          "x": 60,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "tableB",
+          "x": 360,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "waterProbe",
+          "x": 660,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "humidityProbe",
+          "x": 660,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "lightA",
+          "x": 360,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "lightB",
+          "x": 60,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        }
+      ],
+      "routes": [
+        {
+          "connection": "lightA-light-to-tableA-light",
+          "points": [
+            {
+              "x": 460,
+              "y": 530
+            },
+            {
+              "x": 460,
+              "y": 572
+            },
+            {
+              "x": 318,
+              "y": 572
+            },
+            {
+              "x": 318,
+              "y": 292
+            },
+            {
+              "x": 302,
+              "y": 292
+            },
+            {
+              "x": 302,
+              "y": 18
+            },
+            {
+              "x": 160,
+              "y": 18
+            },
+            {
+              "x": 160,
+              "y": 60
+            }
+          ]
+        },
+        {
+          "connection": "lightB-light-to-tableB-light",
+          "points": [
+            {
+              "x": 160,
+              "y": 530
+            },
+            {
+              "x": 160,
+              "y": 572
+            },
+            {
+              "x": 302,
+              "y": 572
+            },
+            {
+              "x": 302,
+              "y": 292
+            },
+            {
+              "x": 318,
+              "y": 292
+            },
+            {
+              "x": 318,
+              "y": 18
+            },
+            {
+              "x": 460,
+              "y": 18
+            },
+            {
+              "x": 460,
+              "y": 60
+            }
+          ]
+        },
+        {
+          "connection": "tableA-measurement-to-waterProbe-measurement",
+          "points": [
+            {
+              "x": 210,
+              "y": 60
+            },
+            {
+              "x": 210,
+              "y": 6
+            },
+            {
+              "x": 810,
+              "y": 6
+            },
+            {
+              "x": 810,
+              "y": 60
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "utilities",
+      "label": "Shared clock, light & power",
+      "canvas": {
+        "width": 980,
+        "height": 940
+      },
+      "placements": [
+        {
+          "component": "sitePower",
+          "x": 60,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "plc",
+          "x": 360,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "fillPump",
+          "x": 660,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "tableA",
+          "x": 660,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "tableB",
+          "x": 360,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "lightA",
+          "x": 60,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "lightB",
+          "x": 60,
+          "y": 620,
+          "width": 200,
+          "height": 190
+        }
+      ],
+      "routes": [
+        {
+          "connection": "sitePower-secondary-to-plc-power",
+          "points": [
+            {
+              "x": 260,
+              "y": 155
+            },
+            {
+              "x": 324,
+              "y": 155
+            },
+            {
+              "x": 324,
+              "y": 286
+            },
+            {
+              "x": 510,
+              "y": 286
+            },
+            {
+              "x": 510,
+              "y": 250
+            }
+          ]
+        },
+        {
+          "connection": "sitePower-secondary-to-fillPump-drive",
+          "points": [
+            {
+              "x": 260,
+              "y": 155
+            },
+            {
+              "x": 324,
+              "y": 155
+            },
+            {
+              "x": 324,
+              "y": 286
+            },
+            {
+              "x": 810,
+              "y": 286
+            },
+            {
+              "x": 810,
+              "y": 250
+            }
+          ]
+        },
+        {
+          "connection": "plc-io-to-tableA-control",
+          "points": [
+            {
+              "x": 460,
+              "y": 250
+            },
+            {
+              "x": 460,
+              "y": 298
+            },
+            {
+              "x": 612,
+              "y": 298
+            },
+            {
+              "x": 612,
+              "y": 578
+            },
+            {
+              "x": 760,
+              "y": 578
+            },
+            {
+              "x": 760,
+              "y": 530
+            }
+          ]
+        },
+        {
+          "connection": "sitePower-secondary-to-lightA-supply",
+          "points": [
+            {
+              "x": 260,
+              "y": 155
+            },
+            {
+              "x": 296,
+              "y": 155
+            },
+            {
+              "x": 296,
+              "y": 566
+            },
+            {
+              "x": 210,
+              "y": 566
+            },
+            {
+              "x": 210,
+              "y": 530
+            }
+          ]
+        },
+        {
+          "connection": "plc-io-to-lightA-control",
+          "points": [
+            {
+              "x": 460,
+              "y": 250
+            },
+            {
+              "x": 460,
+              "y": 298
+            },
+            {
+              "x": 308,
+              "y": 298
+            },
+            {
+              "x": 308,
+              "y": 578
+            },
+            {
+              "x": 160,
+              "y": 578
+            },
+            {
+              "x": 160,
+              "y": 530
+            }
+          ]
+        },
+        {
+          "connection": "lightA-light-to-tableA-light",
+          "points": [
+            {
+              "x": 160,
+              "y": 530
+            },
+            {
+              "x": 160,
+              "y": 572
+            },
+            {
+              "x": 618,
+              "y": 572
+            },
+            {
+              "x": 618,
+              "y": 298
+            },
+            {
+              "x": 760,
+              "y": 298
+            },
+            {
+              "x": 760,
+              "y": 340
+            }
+          ]
+        },
+        {
+          "connection": "plc-io-to-tableB-control",
+          "points": [
+            {
+              "x": 460,
+              "y": 250
+            },
+            {
+              "x": 460,
+              "y": 298
+            },
+            {
+              "x": 608,
+              "y": 298
+            },
+            {
+              "x": 608,
+              "y": 578
+            },
+            {
+              "x": 460,
+              "y": 578
+            },
+            {
+              "x": 460,
+              "y": 530
+            }
+          ]
+        },
+        {
+          "connection": "sitePower-secondary-to-lightB-supply",
+          "points": [
+            {
+              "x": 260,
+              "y": 155
+            },
+            {
+              "x": 296,
+              "y": 155
+            },
+            {
+              "x": 296,
+              "y": 846
+            },
+            {
+              "x": 210,
+              "y": 846
+            },
+            {
+              "x": 210,
+              "y": 810
+            }
+          ]
+        },
+        {
+          "connection": "plc-io-to-lightB-control",
+          "points": [
+            {
+              "x": 460,
+              "y": 250
+            },
+            {
+              "x": 460,
+              "y": 298
+            },
+            {
+              "x": 308,
+              "y": 298
+            },
+            {
+              "x": 308,
+              "y": 858
+            },
+            {
+              "x": 160,
+              "y": 858
+            },
+            {
+              "x": 160,
+              "y": 810
+            }
+          ]
+        },
+        {
+          "connection": "lightB-light-to-tableB-light",
+          "points": [
+            {
+              "x": 160,
+              "y": 810
+            },
+            {
+              "x": 160,
+              "y": 852
+            },
+            {
+              "x": 302,
+              "y": 852
+            },
+            {
+              "x": 302,
+              "y": 572
+            },
+            {
+              "x": 318,
+              "y": 572
+            },
+            {
+              "x": 318,
+              "y": 298
+            },
+            {
+              "x": 460,
+              "y": 298
+            },
+            {
+              "x": 460,
+              "y": 340
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "commands": [
+    {
+      "id": "reservoir-enabled",
+      "label": "Equipment enabled",
+      "component": "reservoir",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "reservoir"
+      }
+    },
+    {
+      "id": "reservoir-load",
+      "label": "Requested duty (%)",
+      "component": "reservoir",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "reservoir"
+      }
+    },
+    {
+      "id": "reservoir-fault",
+      "label": "Inject fictional failure",
+      "component": "reservoir",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "reservoir",
+        "value": true
+      }
+    },
+    {
+      "id": "reservoir-repair",
+      "label": "Repair selected equipment",
+      "component": "reservoir",
+      "action": "repair",
+      "arguments": {
+        "equipment": "reservoir"
+      }
+    },
+    {
+      "id": "fillPump-enabled",
+      "label": "Equipment enabled",
+      "component": "fillPump",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "fillPump"
+      }
+    },
+    {
+      "id": "fillPump-load",
+      "label": "Requested duty (%)",
+      "component": "fillPump",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "fillPump"
+      }
+    },
+    {
+      "id": "fillPump-fault",
+      "label": "Inject fictional failure",
+      "component": "fillPump",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "fillPump",
+        "value": true
+      }
+    },
+    {
+      "id": "fillPump-repair",
+      "label": "Repair selected equipment",
+      "component": "fillPump",
+      "action": "repair",
+      "arguments": {
+        "equipment": "fillPump"
+      }
+    },
+    {
+      "id": "header-enabled",
+      "label": "Equipment enabled",
+      "component": "header",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "header"
+      }
+    },
+    {
+      "id": "header-load",
+      "label": "Requested duty (%)",
+      "component": "header",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "header"
+      }
+    },
+    {
+      "id": "header-fault",
+      "label": "Inject fictional failure",
+      "component": "header",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "header",
+        "value": true
+      }
+    },
+    {
+      "id": "header-repair",
+      "label": "Repair selected equipment",
+      "component": "header",
+      "action": "repair",
+      "arguments": {
+        "equipment": "header"
+      }
+    },
+    {
+      "id": "header-open",
+      "label": "Flow path open",
+      "component": "header",
+      "action": "setOpen",
+      "arguments": {
+        "equipment": "header"
+      }
+    },
+    {
+      "id": "tableA-enabled",
+      "label": "Equipment enabled",
+      "component": "tableA",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "tableA"
+      }
+    },
+    {
+      "id": "tableA-load",
+      "label": "Requested duty (%)",
+      "component": "tableA",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "tableA"
+      }
+    },
+    {
+      "id": "tableA-fault",
+      "label": "Inject fictional failure",
+      "component": "tableA",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "tableA",
+        "value": true
+      }
+    },
+    {
+      "id": "tableA-repair",
+      "label": "Repair selected equipment",
+      "component": "tableA",
+      "action": "repair",
+      "arguments": {
+        "equipment": "tableA"
+      }
+    },
+    {
+      "id": "drainA-enabled",
+      "label": "Equipment enabled",
+      "component": "drainA",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "drainA"
+      }
+    },
+    {
+      "id": "drainA-load",
+      "label": "Valve opening (%)",
+      "component": "drainA",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "drainA"
+      }
+    },
+    {
+      "id": "drainA-fault",
+      "label": "Inject fictional failure",
+      "component": "drainA",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "drainA",
+        "value": true
+      }
+    },
+    {
+      "id": "drainA-repair",
+      "label": "Repair selected equipment",
+      "component": "drainA",
+      "action": "repair",
+      "arguments": {
+        "equipment": "drainA"
+      }
+    },
+    {
+      "id": "drainA-open",
+      "label": "Flow path open",
+      "component": "drainA",
+      "action": "setOpen",
+      "arguments": {
+        "equipment": "drainA"
+      }
+    },
+    {
+      "id": "tableB-enabled",
+      "label": "Equipment enabled",
+      "component": "tableB",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "tableB"
+      }
+    },
+    {
+      "id": "tableB-load",
+      "label": "Requested duty (%)",
+      "component": "tableB",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "tableB"
+      }
+    },
+    {
+      "id": "tableB-fault",
+      "label": "Inject fictional failure",
+      "component": "tableB",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "tableB",
+        "value": true
+      }
+    },
+    {
+      "id": "tableB-repair",
+      "label": "Repair selected equipment",
+      "component": "tableB",
+      "action": "repair",
+      "arguments": {
+        "equipment": "tableB"
+      }
+    },
+    {
+      "id": "drainB-enabled",
+      "label": "Equipment enabled",
+      "component": "drainB",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "drainB"
+      }
+    },
+    {
+      "id": "drainB-load",
+      "label": "Valve opening (%)",
+      "component": "drainB",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "drainB"
+      }
+    },
+    {
+      "id": "drainB-fault",
+      "label": "Inject fictional failure",
+      "component": "drainB",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "drainB",
+        "value": true
+      }
+    },
+    {
+      "id": "drainB-repair",
+      "label": "Repair selected equipment",
+      "component": "drainB",
+      "action": "repair",
+      "arguments": {
+        "equipment": "drainB"
+      }
+    },
+    {
+      "id": "drainB-open",
+      "label": "Flow path open",
+      "component": "drainB",
+      "action": "setOpen",
+      "arguments": {
+        "equipment": "drainB"
+      }
+    },
+    {
+      "id": "sitePower-enabled",
+      "label": "Equipment enabled",
+      "component": "sitePower",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "sitePower"
+      }
+    },
+    {
+      "id": "sitePower-load",
+      "label": "Requested duty (%)",
+      "component": "sitePower",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "sitePower"
+      }
+    },
+    {
+      "id": "sitePower-fault",
+      "label": "Inject fictional failure",
+      "component": "sitePower",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "sitePower",
+        "value": true
+      }
+    },
+    {
+      "id": "sitePower-repair",
+      "label": "Repair selected equipment",
+      "component": "sitePower",
+      "action": "repair",
+      "arguments": {
+        "equipment": "sitePower"
+      }
+    },
+    {
+      "id": "plc-enabled",
+      "label": "Equipment enabled",
+      "component": "plc",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "plc"
+      }
+    },
+    {
+      "id": "plc-load",
+      "label": "Requested duty (%)",
+      "component": "plc",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "plc"
+      }
+    },
+    {
+      "id": "plc-fault",
+      "label": "Inject fictional failure",
+      "component": "plc",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "plc",
+        "value": true
+      }
+    },
+    {
+      "id": "plc-repair",
+      "label": "Repair selected equipment",
+      "component": "plc",
+      "action": "repair",
+      "arguments": {
+        "equipment": "plc"
+      }
+    },
+    {
+      "id": "lightA-enabled",
+      "label": "Equipment enabled",
+      "component": "lightA",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "lightA"
+      }
+    },
+    {
+      "id": "lightA-load",
+      "label": "Requested duty (%)",
+      "component": "lightA",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "lightA"
+      }
+    },
+    {
+      "id": "lightA-fault",
+      "label": "Inject fictional failure",
+      "component": "lightA",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "lightA",
+        "value": true
+      }
+    },
+    {
+      "id": "lightA-repair",
+      "label": "Repair selected equipment",
+      "component": "lightA",
+      "action": "repair",
+      "arguments": {
+        "equipment": "lightA"
+      }
+    },
+    {
+      "id": "lightB-enabled",
+      "label": "Equipment enabled",
+      "component": "lightB",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "lightB"
+      }
+    },
+    {
+      "id": "lightB-load",
+      "label": "Requested duty (%)",
+      "component": "lightB",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "lightB"
+      }
+    },
+    {
+      "id": "lightB-fault",
+      "label": "Inject fictional failure",
+      "component": "lightB",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "lightB",
+        "value": true
+      }
+    },
+    {
+      "id": "lightB-repair",
+      "label": "Repair selected equipment",
+      "component": "lightB",
+      "action": "repair",
+      "arguments": {
+        "equipment": "lightB"
+      }
+    },
+    {
+      "id": "waterProbe-enabled",
+      "label": "Equipment enabled",
+      "component": "waterProbe",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "waterProbe"
+      }
+    },
+    {
+      "id": "waterProbe-load",
+      "label": "Requested duty (%)",
+      "component": "waterProbe",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "waterProbe"
+      }
+    },
+    {
+      "id": "waterProbe-fault",
+      "label": "Inject fictional failure",
+      "component": "waterProbe",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "waterProbe",
+        "value": true
+      }
+    },
+    {
+      "id": "waterProbe-repair",
+      "label": "Repair selected equipment",
+      "component": "waterProbe",
+      "action": "repair",
+      "arguments": {
+        "equipment": "waterProbe"
+      }
+    },
+    {
+      "id": "humidityProbe-enabled",
+      "label": "Equipment enabled",
+      "component": "humidityProbe",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "humidityProbe"
+      }
+    },
+    {
+      "id": "humidityProbe-load",
+      "label": "Requested duty (%)",
+      "component": "humidityProbe",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "humidityProbe"
+      }
+    },
+    {
+      "id": "humidityProbe-fault",
+      "label": "Inject fictional failure",
+      "component": "humidityProbe",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "humidityProbe",
+        "value": true
+      }
+    },
+    {
+      "id": "humidityProbe-repair",
+      "label": "Repair selected equipment",
+      "component": "humidityProbe",
+      "action": "repair",
+      "arguments": {
+        "equipment": "humidityProbe"
+      }
+    }
+  ],
+  "controls": [
+    {
+      "id": "reservoir-enabled-control",
+      "label": "Equipment enabled",
+      "component": "reservoir",
+      "kind": "toggle",
+      "command": "reservoir-enabled",
+      "binding": "/controls/reservoir/enabled"
+    },
+    {
+      "id": "reservoir-load-control",
+      "label": "Requested duty (%)",
+      "component": "reservoir",
+      "kind": "range",
+      "command": "reservoir-load",
+      "binding": "/controls/reservoir/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "reservoir-fault-control",
+      "label": "Inject fictional failure",
+      "component": "reservoir",
+      "kind": "button",
+      "command": "reservoir-fault"
+    },
+    {
+      "id": "reservoir-repair-control",
+      "label": "Repair selected equipment",
+      "component": "reservoir",
+      "kind": "button",
+      "command": "reservoir-repair"
+    },
+    {
+      "id": "fillPump-enabled-control",
+      "label": "Equipment enabled",
+      "component": "fillPump",
+      "kind": "toggle",
+      "command": "fillPump-enabled",
+      "binding": "/controls/fillPump/enabled"
+    },
+    {
+      "id": "fillPump-load-control",
+      "label": "Requested duty (%)",
+      "component": "fillPump",
+      "kind": "range",
+      "command": "fillPump-load",
+      "binding": "/controls/fillPump/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "fillPump-fault-control",
+      "label": "Inject fictional failure",
+      "component": "fillPump",
+      "kind": "button",
+      "command": "fillPump-fault"
+    },
+    {
+      "id": "fillPump-repair-control",
+      "label": "Repair selected equipment",
+      "component": "fillPump",
+      "kind": "button",
+      "command": "fillPump-repair"
+    },
+    {
+      "id": "header-enabled-control",
+      "label": "Equipment enabled",
+      "component": "header",
+      "kind": "toggle",
+      "command": "header-enabled",
+      "binding": "/controls/header/enabled"
+    },
+    {
+      "id": "header-load-control",
+      "label": "Requested duty (%)",
+      "component": "header",
+      "kind": "range",
+      "command": "header-load",
+      "binding": "/controls/header/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "header-fault-control",
+      "label": "Inject fictional failure",
+      "component": "header",
+      "kind": "button",
+      "command": "header-fault"
+    },
+    {
+      "id": "header-repair-control",
+      "label": "Repair selected equipment",
+      "component": "header",
+      "kind": "button",
+      "command": "header-repair"
+    },
+    {
+      "id": "header-open-control",
+      "label": "Flow path open",
+      "component": "header",
+      "kind": "toggle",
+      "command": "header-open",
+      "binding": "/controls/header/open"
+    },
+    {
+      "id": "tableA-enabled-control",
+      "label": "Equipment enabled",
+      "component": "tableA",
+      "kind": "toggle",
+      "command": "tableA-enabled",
+      "binding": "/controls/tableA/enabled"
+    },
+    {
+      "id": "tableA-load-control",
+      "label": "Requested duty (%)",
+      "component": "tableA",
+      "kind": "range",
+      "command": "tableA-load",
+      "binding": "/controls/tableA/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "tableA-fault-control",
+      "label": "Inject fictional failure",
+      "component": "tableA",
+      "kind": "button",
+      "command": "tableA-fault"
+    },
+    {
+      "id": "tableA-repair-control",
+      "label": "Repair selected equipment",
+      "component": "tableA",
+      "kind": "button",
+      "command": "tableA-repair"
+    },
+    {
+      "id": "drainA-enabled-control",
+      "label": "Equipment enabled",
+      "component": "drainA",
+      "kind": "toggle",
+      "command": "drainA-enabled",
+      "binding": "/controls/drainA/enabled"
+    },
+    {
+      "id": "drainA-load-control",
+      "label": "Valve opening (%)",
+      "component": "drainA",
+      "kind": "range",
+      "command": "drainA-load",
+      "binding": "/controls/drainA/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "drainA-fault-control",
+      "label": "Inject fictional failure",
+      "component": "drainA",
+      "kind": "button",
+      "command": "drainA-fault"
+    },
+    {
+      "id": "drainA-repair-control",
+      "label": "Repair selected equipment",
+      "component": "drainA",
+      "kind": "button",
+      "command": "drainA-repair"
+    },
+    {
+      "id": "drainA-open-control",
+      "label": "Flow path open",
+      "component": "drainA",
+      "kind": "toggle",
+      "command": "drainA-open",
+      "binding": "/controls/drainA/open"
+    },
+    {
+      "id": "tableB-enabled-control",
+      "label": "Equipment enabled",
+      "component": "tableB",
+      "kind": "toggle",
+      "command": "tableB-enabled",
+      "binding": "/controls/tableB/enabled"
+    },
+    {
+      "id": "tableB-load-control",
+      "label": "Requested duty (%)",
+      "component": "tableB",
+      "kind": "range",
+      "command": "tableB-load",
+      "binding": "/controls/tableB/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "tableB-fault-control",
+      "label": "Inject fictional failure",
+      "component": "tableB",
+      "kind": "button",
+      "command": "tableB-fault"
+    },
+    {
+      "id": "tableB-repair-control",
+      "label": "Repair selected equipment",
+      "component": "tableB",
+      "kind": "button",
+      "command": "tableB-repair"
+    },
+    {
+      "id": "drainB-enabled-control",
+      "label": "Equipment enabled",
+      "component": "drainB",
+      "kind": "toggle",
+      "command": "drainB-enabled",
+      "binding": "/controls/drainB/enabled"
+    },
+    {
+      "id": "drainB-load-control",
+      "label": "Valve opening (%)",
+      "component": "drainB",
+      "kind": "range",
+      "command": "drainB-load",
+      "binding": "/controls/drainB/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "drainB-fault-control",
+      "label": "Inject fictional failure",
+      "component": "drainB",
+      "kind": "button",
+      "command": "drainB-fault"
+    },
+    {
+      "id": "drainB-repair-control",
+      "label": "Repair selected equipment",
+      "component": "drainB",
+      "kind": "button",
+      "command": "drainB-repair"
+    },
+    {
+      "id": "drainB-open-control",
+      "label": "Flow path open",
+      "component": "drainB",
+      "kind": "toggle",
+      "command": "drainB-open",
+      "binding": "/controls/drainB/open"
+    },
+    {
+      "id": "sitePower-enabled-control",
+      "label": "Equipment enabled",
+      "component": "sitePower",
+      "kind": "toggle",
+      "command": "sitePower-enabled",
+      "binding": "/controls/sitePower/enabled"
+    },
+    {
+      "id": "sitePower-load-control",
+      "label": "Requested duty (%)",
+      "component": "sitePower",
+      "kind": "range",
+      "command": "sitePower-load",
+      "binding": "/controls/sitePower/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "sitePower-fault-control",
+      "label": "Inject fictional failure",
+      "component": "sitePower",
+      "kind": "button",
+      "command": "sitePower-fault"
+    },
+    {
+      "id": "sitePower-repair-control",
+      "label": "Repair selected equipment",
+      "component": "sitePower",
+      "kind": "button",
+      "command": "sitePower-repair"
+    },
+    {
+      "id": "plc-enabled-control",
+      "label": "Equipment enabled",
+      "component": "plc",
+      "kind": "toggle",
+      "command": "plc-enabled",
+      "binding": "/controls/plc/enabled"
+    },
+    {
+      "id": "plc-load-control",
+      "label": "Requested duty (%)",
+      "component": "plc",
+      "kind": "range",
+      "command": "plc-load",
+      "binding": "/controls/plc/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "plc-fault-control",
+      "label": "Inject fictional failure",
+      "component": "plc",
+      "kind": "button",
+      "command": "plc-fault"
+    },
+    {
+      "id": "plc-repair-control",
+      "label": "Repair selected equipment",
+      "component": "plc",
+      "kind": "button",
+      "command": "plc-repair"
+    },
+    {
+      "id": "lightA-enabled-control",
+      "label": "Equipment enabled",
+      "component": "lightA",
+      "kind": "toggle",
+      "command": "lightA-enabled",
+      "binding": "/controls/lightA/enabled"
+    },
+    {
+      "id": "lightA-load-control",
+      "label": "Requested duty (%)",
+      "component": "lightA",
+      "kind": "range",
+      "command": "lightA-load",
+      "binding": "/controls/lightA/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "lightA-fault-control",
+      "label": "Inject fictional failure",
+      "component": "lightA",
+      "kind": "button",
+      "command": "lightA-fault"
+    },
+    {
+      "id": "lightA-repair-control",
+      "label": "Repair selected equipment",
+      "component": "lightA",
+      "kind": "button",
+      "command": "lightA-repair"
+    },
+    {
+      "id": "lightB-enabled-control",
+      "label": "Equipment enabled",
+      "component": "lightB",
+      "kind": "toggle",
+      "command": "lightB-enabled",
+      "binding": "/controls/lightB/enabled"
+    },
+    {
+      "id": "lightB-load-control",
+      "label": "Requested duty (%)",
+      "component": "lightB",
+      "kind": "range",
+      "command": "lightB-load",
+      "binding": "/controls/lightB/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "lightB-fault-control",
+      "label": "Inject fictional failure",
+      "component": "lightB",
+      "kind": "button",
+      "command": "lightB-fault"
+    },
+    {
+      "id": "lightB-repair-control",
+      "label": "Repair selected equipment",
+      "component": "lightB",
+      "kind": "button",
+      "command": "lightB-repair"
+    },
+    {
+      "id": "waterProbe-enabled-control",
+      "label": "Equipment enabled",
+      "component": "waterProbe",
+      "kind": "toggle",
+      "command": "waterProbe-enabled",
+      "binding": "/controls/waterProbe/enabled"
+    },
+    {
+      "id": "waterProbe-load-control",
+      "label": "Requested duty (%)",
+      "component": "waterProbe",
+      "kind": "range",
+      "command": "waterProbe-load",
+      "binding": "/controls/waterProbe/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "waterProbe-fault-control",
+      "label": "Inject fictional failure",
+      "component": "waterProbe",
+      "kind": "button",
+      "command": "waterProbe-fault"
+    },
+    {
+      "id": "waterProbe-repair-control",
+      "label": "Repair selected equipment",
+      "component": "waterProbe",
+      "kind": "button",
+      "command": "waterProbe-repair"
+    },
+    {
+      "id": "humidityProbe-enabled-control",
+      "label": "Equipment enabled",
+      "component": "humidityProbe",
+      "kind": "toggle",
+      "command": "humidityProbe-enabled",
+      "binding": "/controls/humidityProbe/enabled"
+    },
+    {
+      "id": "humidityProbe-load-control",
+      "label": "Requested duty (%)",
+      "component": "humidityProbe",
+      "kind": "range",
+      "command": "humidityProbe-load",
+      "binding": "/controls/humidityProbe/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "humidityProbe-fault-control",
+      "label": "Inject fictional failure",
+      "component": "humidityProbe",
+      "kind": "button",
+      "command": "humidityProbe-fault"
+    },
+    {
+      "id": "humidityProbe-repair-control",
+      "label": "Repair selected equipment",
+      "component": "humidityProbe",
+      "kind": "button",
+      "command": "humidityProbe-repair"
+    }
+  ],
+  "provenance": [
+    {
+      "id": "model-guesses",
+      "label": "Editable normalized model guesses",
+      "kind": "assumed",
+      "description": "All quantities, coefficients, inventories, timings and fault responses are author-selected teaching indices, not biological or engineering calibration."
+    },
+    {
+      "id": "authored-topology",
+      "label": "Authored demonstration topology",
+      "kind": "illustrative",
+      "description": "One selected process arrangement with separate water, air, optical, power and signal paths. Screen geometry is not physical sizing."
+    },
+    {
+      "id": "A1",
+      "label": "OSU Extension \u00b7 Hydroponics",
+      "kind": "external",
+      "source": "https://extension.okstate.edu/fact-sheets/hydroponics",
+      "description": "Read 2026-11-13. Supports equipment identity and structural distinctions only. See docs/agriculture-references.md; does not validate placeholder parameters."
+    },
+    {
+      "id": "A3",
+      "label": "Maryland Extension \u00b7 Small-Scale Aquaponic System",
+      "kind": "external",
+      "source": "https://extension.umd.edu/resource/how-build-low-cost-small-scale-aquaponic-system-em-2023-0698",
+      "description": "Read 2026-11-13. Supports equipment identity and structural distinctions only. See docs/agriculture-references.md; does not validate placeholder parameters."
+    },
+    {
+      "id": "A5",
+      "label": "Cornell CEA \u00b7 Hydroponic Lettuce Handbook",
+      "kind": "external",
+      "source": "https://cea.cals.cornell.edu/files/2019/06/Cornell-CEA-Lettuce-Handbook-.pdf",
+      "description": "Read 2026-11-13. Supports equipment identity and structural distinctions only. See docs/agriculture-references.md; does not validate placeholder parameters."
+    },
+    {
+      "id": "A7",
+      "label": "Virginia Cooperative Extension \u00b7 Media systems",
+      "kind": "external",
+      "source": "https://www.pubs.ext.vt.edu/content/pubs_ext_vt_edu/en/SPES/spes-465/spes-465.html",
+      "description": "Read 2026-11-13. Supports equipment identity and structural distinctions only. See docs/agriculture-references.md; does not validate placeholder parameters."
+    }
+  ],
+  "assumptions": [
+    {
+      "id": "normalized",
+      "label": "All model values are editable teaching assumptions",
+      "value": true,
+      "provenance": "model-guesses"
+    },
+    {
+      "id": "separate-media",
+      "label": "Air and optical energy never add to water inventory",
+      "value": true,
+      "provenance": "authored-topology"
+    },
+    {
+      "id": "no-biology-prediction",
+      "label": "No crop-yield or fish-welfare prediction",
+      "value": true,
+      "provenance": "model-guesses"
+    }
+  ]
+}

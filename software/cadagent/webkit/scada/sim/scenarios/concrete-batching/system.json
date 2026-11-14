@@ -1,0 +1,2687 @@
+{
+  "$schema": "../../../scada-ui/schema/scada-system.schema.json",
+  "format": "scada-system",
+  "version": 1,
+  "system": {
+    "id": "concrete-batching",
+    "label": "Concrete batching",
+    "description": "Independent aggregate, binder and water feeds converge at a generic mixing/discharge process. Batch quantities and strength recipes are not provided."
+  },
+  "components": [
+    {
+      "id": "aggregate",
+      "type": "silo",
+      "label": "Aggregate storage",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "level": 55,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/aggregate/active",
+        "running": "/components/aggregate/running",
+        "fault": "/components/aggregate/fault",
+        "status": "/components/aggregate/status",
+        "level": "/components/aggregate/level",
+        "damage": "/components/aggregate/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "fill",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "discharge",
+          "side": "right",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "screen",
+      "type": "vibrating-screen",
+      "label": "Aggregate screening",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/screen/active",
+        "running": "/components/screen/running",
+        "fault": "/components/screen/fault",
+        "status": "/components/screen/status",
+        "load": "/components/screen/load",
+        "speed": "/components/screen/speed",
+        "damage": "/components/screen/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "supply",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "aggregateWeigh",
+      "type": "weigh-hopper",
+      "label": "Aggregate weighing",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "level": 55,
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/aggregateWeigh/active",
+        "running": "/components/aggregateWeigh/running",
+        "fault": "/components/aggregateWeigh/fault",
+        "status": "/components/aggregateWeigh/status",
+        "level": "/components/aggregateWeigh/level",
+        "load": "/components/aggregateWeigh/load",
+        "damage": "/components/aggregateWeigh/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "supply",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "cement",
+      "type": "silo",
+      "label": "Binder storage",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "level": 55,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/cement/active",
+        "running": "/components/cement/running",
+        "fault": "/components/cement/fault",
+        "status": "/components/cement/status",
+        "level": "/components/cement/level",
+        "damage": "/components/cement/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "fill",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "discharge",
+          "side": "right",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "binderFeed",
+      "type": "screw-feeder",
+      "label": "Binder metering screw",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/binderFeed/active",
+        "running": "/components/binderFeed/running",
+        "fault": "/components/binderFeed/fault",
+        "status": "/components/binderFeed/status",
+        "load": "/components/binderFeed/load",
+        "speed": "/components/binderFeed/speed",
+        "damage": "/components/binderFeed/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "supply",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "water",
+      "type": "tank",
+      "label": "Water feed store",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "level": 55,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/water/active",
+        "running": "/components/water/running",
+        "fault": "/components/water/fault",
+        "status": "/components/water/status",
+        "level": "/components/water/level",
+        "damage": "/components/water/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "waterPump",
+      "type": "pump",
+      "label": "Water metering pump",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/waterPump/active",
+        "running": "/components/waterPump/running",
+        "fault": "/components/waterPump/fault",
+        "status": "/components/waterPump/status",
+        "load": "/components/waterPump/load",
+        "speed": "/components/waterPump/speed",
+        "damage": "/components/waterPump/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "drive",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "mixer",
+      "type": "drum-mixer",
+      "label": "Batch mixing drum",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/mixer/active",
+        "running": "/components/mixer/running",
+        "fault": "/components/mixer/fault",
+        "status": "/components/mixer/status",
+        "load": "/components/mixer/load",
+        "speed": "/components/mixer/speed",
+        "damage": "/components/mixer/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "supply",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "transfer",
+      "type": "conveyor",
+      "label": "Mixed-product transfer",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/transfer/active",
+        "running": "/components/transfer/running",
+        "fault": "/components/transfer/fault",
+        "status": "/components/transfer/status",
+        "load": "/components/transfer/load",
+        "speed": "/components/transfer/speed",
+        "damage": "/components/transfer/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "supply",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "discharge",
+      "type": "weigh-hopper",
+      "label": "Discharge buffer",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "level": 55,
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/discharge/active",
+        "running": "/components/discharge/running",
+        "fault": "/components/discharge/fault",
+        "status": "/components/discharge/status",
+        "level": "/components/discharge/level",
+        "load": "/components/discharge/load",
+        "damage": "/components/discharge/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "supply",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "power",
+      "type": "generator",
+      "label": "Demonstration site power",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/power/active",
+        "running": "/components/power/running",
+        "fault": "/components/power/fault",
+        "status": "/components/power/status",
+        "load": "/components/power/load",
+        "speed": "/components/power/speed",
+        "damage": "/components/power/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "fuel",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "output",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "exhaust",
+          "side": "right",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "breaker",
+      "type": "breaker",
+      "label": "Mixing-line breaker",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "open": true,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/breaker/active",
+        "running": "/components/breaker/running",
+        "fault": "/components/breaker/fault",
+        "status": "/components/breaker/status",
+        "open": "/components/breaker/open",
+        "damage": "/components/breaker/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "supply",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "load",
+          "side": "right",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "controller",
+      "type": "plc-rack",
+      "label": "Batch controller",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "connected": true,
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/controller/active",
+        "running": "/components/controller/running",
+        "fault": "/components/controller/fault",
+        "status": "/components/controller/status",
+        "connected": "/components/controller/connected",
+        "load": "/components/controller/load",
+        "damage": "/components/controller/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "power",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "radio",
+      "type": "radio",
+      "label": "Illustrative remote telemetry",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "connected": true,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/radio/active",
+        "running": "/components/radio/running",
+        "fault": "/components/radio/fault",
+        "status": "/components/radio/status",
+        "connected": "/components/radio/connected",
+        "damage": "/components/radio/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "power",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "level",
+      "type": "level-sensor",
+      "label": "Water inventory monitor",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "level": 55,
+        "value": 42,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/level/active",
+        "running": "/components/level/running",
+        "fault": "/components/level/fault",
+        "status": "/components/level/status",
+        "level": "/components/level/level",
+        "value": "/components/level/value",
+        "damage": "/components/level/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "process",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "signal",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "power",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "aggregate-to-screen",
+      "from": {
+        "component": "aggregate",
+        "port": "discharge"
+      },
+      "to": {
+        "component": "screen",
+        "port": "inlet"
+      },
+      "medium": "solids",
+      "flowBinding": "/flows/aggregate-to-screen",
+      "label": "Aggregate storage \u2192 Aggregate screening"
+    },
+    {
+      "id": "screen-to-aggregateWeigh",
+      "from": {
+        "component": "screen",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "aggregateWeigh",
+        "port": "inlet"
+      },
+      "medium": "solids",
+      "flowBinding": "/flows/screen-to-aggregateWeigh",
+      "label": "Aggregate screening \u2192 Aggregate weighing"
+    },
+    {
+      "id": "aggregateWeigh-to-mixer",
+      "from": {
+        "component": "aggregateWeigh",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "mixer",
+        "port": "inlet"
+      },
+      "medium": "solids",
+      "flowBinding": "/flows/aggregateWeigh-to-mixer",
+      "label": "Aggregate weighing \u2192 Batch mixing drum"
+    },
+    {
+      "id": "cement-to-binderFeed",
+      "from": {
+        "component": "cement",
+        "port": "discharge"
+      },
+      "to": {
+        "component": "binderFeed",
+        "port": "inlet"
+      },
+      "medium": "solids",
+      "flowBinding": "/flows/cement-to-binderFeed",
+      "label": "Binder storage \u2192 Binder metering screw"
+    },
+    {
+      "id": "binderFeed-to-mixer",
+      "from": {
+        "component": "binderFeed",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "mixer",
+        "port": "inlet"
+      },
+      "medium": "solids",
+      "flowBinding": "/flows/binderFeed-to-mixer",
+      "label": "Binder metering screw \u2192 Batch mixing drum"
+    },
+    {
+      "id": "water-to-waterPump",
+      "from": {
+        "component": "water",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "waterPump",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "flowBinding": "/flows/water-to-waterPump",
+      "label": "Water feed store \u2192 Water metering pump"
+    },
+    {
+      "id": "waterPump-to-mixer",
+      "from": {
+        "component": "waterPump",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "mixer",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "flowBinding": "/flows/waterPump-to-mixer",
+      "label": "Water metering pump \u2192 Batch mixing drum"
+    },
+    {
+      "id": "mixer-to-transfer",
+      "from": {
+        "component": "mixer",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "transfer",
+        "port": "inlet"
+      },
+      "medium": "solids",
+      "flowBinding": "/flows/mixer-to-transfer",
+      "label": "Batch mixing drum \u2192 Mixed-product transfer"
+    },
+    {
+      "id": "transfer-to-discharge",
+      "from": {
+        "component": "transfer",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "discharge",
+        "port": "inlet"
+      },
+      "medium": "solids",
+      "flowBinding": "/flows/transfer-to-discharge",
+      "label": "Mixed-product transfer \u2192 Discharge buffer"
+    },
+    {
+      "id": "power-to-breaker",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "breaker",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-breaker",
+      "label": "Demonstration site power \u2192 Mixing-line breaker"
+    },
+    {
+      "id": "breaker-to-screen",
+      "from": {
+        "component": "breaker",
+        "port": "load"
+      },
+      "to": {
+        "component": "screen",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/breaker-to-screen",
+      "label": "Mixing-line breaker \u2192 Aggregate screening"
+    },
+    {
+      "id": "breaker-to-aggregateWeigh",
+      "from": {
+        "component": "breaker",
+        "port": "load"
+      },
+      "to": {
+        "component": "aggregateWeigh",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/breaker-to-aggregateWeigh",
+      "label": "Mixing-line breaker \u2192 Aggregate weighing"
+    },
+    {
+      "id": "breaker-to-binderFeed",
+      "from": {
+        "component": "breaker",
+        "port": "load"
+      },
+      "to": {
+        "component": "binderFeed",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/breaker-to-binderFeed",
+      "label": "Mixing-line breaker \u2192 Binder metering screw"
+    },
+    {
+      "id": "breaker-to-waterPump",
+      "from": {
+        "component": "breaker",
+        "port": "load"
+      },
+      "to": {
+        "component": "waterPump",
+        "port": "drive"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/breaker-to-waterPump",
+      "label": "Mixing-line breaker \u2192 Water metering pump"
+    },
+    {
+      "id": "breaker-to-mixer",
+      "from": {
+        "component": "breaker",
+        "port": "load"
+      },
+      "to": {
+        "component": "mixer",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/breaker-to-mixer",
+      "label": "Mixing-line breaker \u2192 Batch mixing drum"
+    },
+    {
+      "id": "breaker-to-transfer",
+      "from": {
+        "component": "breaker",
+        "port": "load"
+      },
+      "to": {
+        "component": "transfer",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/breaker-to-transfer",
+      "label": "Mixing-line breaker \u2192 Mixed-product transfer"
+    },
+    {
+      "id": "breaker-to-discharge",
+      "from": {
+        "component": "breaker",
+        "port": "load"
+      },
+      "to": {
+        "component": "discharge",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/breaker-to-discharge",
+      "label": "Mixing-line breaker \u2192 Discharge buffer"
+    },
+    {
+      "id": "breaker-to-controller",
+      "from": {
+        "component": "breaker",
+        "port": "load"
+      },
+      "to": {
+        "component": "controller",
+        "port": "power"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/breaker-to-controller",
+      "label": "Mixing-line breaker \u2192 Batch controller"
+    },
+    {
+      "id": "breaker-to-radio",
+      "from": {
+        "component": "breaker",
+        "port": "load"
+      },
+      "to": {
+        "component": "radio",
+        "port": "power"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/breaker-to-radio",
+      "label": "Mixing-line breaker \u2192 Illustrative remote telemetry"
+    },
+    {
+      "id": "breaker-to-level",
+      "from": {
+        "component": "breaker",
+        "port": "load"
+      },
+      "to": {
+        "component": "level",
+        "port": "power"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/breaker-to-level",
+      "label": "Mixing-line breaker \u2192 Water inventory monitor"
+    },
+    {
+      "id": "radio-to-controller",
+      "from": {
+        "component": "radio",
+        "port": "network"
+      },
+      "to": {
+        "component": "controller",
+        "port": "network"
+      },
+      "medium": "data",
+      "flowBinding": "/flows/radio-to-controller",
+      "label": "Illustrative remote telemetry \u2192 Batch controller"
+    },
+    {
+      "id": "water-to-level",
+      "from": {
+        "component": "water",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "level",
+        "port": "process"
+      },
+      "medium": "measurement",
+      "flowBinding": "/flows/water-to-level",
+      "label": "Water feed store \u2192 Water inventory monitor"
+    },
+    {
+      "id": "level-to-controller",
+      "from": {
+        "component": "level",
+        "port": "signal"
+      },
+      "to": {
+        "component": "controller",
+        "port": "network"
+      },
+      "medium": "data",
+      "flowBinding": "/flows/level-to-controller",
+      "label": "Water inventory monitor \u2192 Batch controller"
+    }
+  ],
+  "views": [
+    {
+      "id": "process",
+      "label": "Main process",
+      "canvas": {
+        "width": 1280,
+        "height": 940
+      },
+      "placements": [
+        {
+          "component": "aggregate",
+          "x": 60,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "screen",
+          "x": 360,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "aggregateWeigh",
+          "x": 660,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "cement",
+          "x": 960,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "binderFeed",
+          "x": 960,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "water",
+          "x": 660,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "waterPump",
+          "x": 360,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "mixer",
+          "x": 60,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "transfer",
+          "x": 60,
+          "y": 620,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "discharge",
+          "x": 360,
+          "y": 620,
+          "width": 200,
+          "height": 190
+        }
+      ],
+      "routes": [
+        {
+          "connection": "aggregate-to-screen",
+          "points": [
+            {
+              "x": 260,
+              "y": 155
+            },
+            {
+              "x": 360,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "screen-to-aggregateWeigh",
+          "points": [
+            {
+              "x": 560,
+              "y": 155
+            },
+            {
+              "x": 660,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "aggregateWeigh-to-mixer",
+          "points": [
+            {
+              "x": 660,
+              "y": 155
+            },
+            {
+              "x": 636,
+              "y": 155
+            },
+            {
+              "x": 636,
+              "y": 316
+            },
+            {
+              "x": 284,
+              "y": 316
+            },
+            {
+              "x": 284,
+              "y": 435
+            },
+            {
+              "x": 260,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "cement-to-binderFeed",
+          "points": [
+            {
+              "x": 1060,
+              "y": 250
+            },
+            {
+              "x": 1060,
+              "y": 340
+            }
+          ]
+        },
+        {
+          "connection": "binderFeed-to-mixer",
+          "points": [
+            {
+              "x": 960,
+              "y": 435
+            },
+            {
+              "x": 884,
+              "y": 435
+            },
+            {
+              "x": 884,
+              "y": 316
+            },
+            {
+              "x": 284,
+              "y": 316
+            },
+            {
+              "x": 284,
+              "y": 435
+            },
+            {
+              "x": 260,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "water-to-waterPump",
+          "points": [
+            {
+              "x": 660,
+              "y": 435
+            },
+            {
+              "x": 560,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "waterPump-to-mixer",
+          "points": [
+            {
+              "x": 360,
+              "y": 435
+            },
+            {
+              "x": 260,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "mixer-to-transfer",
+          "points": [
+            {
+              "x": 160,
+              "y": 530
+            },
+            {
+              "x": 160,
+              "y": 620
+            }
+          ]
+        },
+        {
+          "connection": "transfer-to-discharge",
+          "points": [
+            {
+              "x": 260,
+              "y": 715
+            },
+            {
+              "x": 360,
+              "y": 715
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "utilities",
+      "label": "Utilities & control",
+      "canvas": {
+        "width": 980,
+        "height": 940
+      },
+      "placements": [
+        {
+          "component": "power",
+          "x": 60,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "breaker",
+          "x": 360,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "controller",
+          "x": 660,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "radio",
+          "x": 660,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "level",
+          "x": 360,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "cement",
+          "x": 60,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "transfer",
+          "x": 60,
+          "y": 620,
+          "width": 200,
+          "height": 190
+        }
+      ],
+      "routes": [
+        {
+          "connection": "power-to-breaker",
+          "points": [
+            {
+              "x": 260,
+              "y": 155
+            },
+            {
+              "x": 360,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "breaker-to-transfer",
+          "points": [
+            {
+              "x": 460,
+              "y": 250
+            },
+            {
+              "x": 460,
+              "y": 316
+            },
+            {
+              "x": 336,
+              "y": 316
+            },
+            {
+              "x": 336,
+              "y": 596
+            },
+            {
+              "x": 160,
+              "y": 596
+            },
+            {
+              "x": 160,
+              "y": 620
+            }
+          ]
+        },
+        {
+          "connection": "breaker-to-controller",
+          "points": [
+            {
+              "x": 560,
+              "y": 155
+            },
+            {
+              "x": 660,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "breaker-to-radio",
+          "points": [
+            {
+              "x": 560,
+              "y": 155
+            },
+            {
+              "x": 584,
+              "y": 155
+            },
+            {
+              "x": 584,
+              "y": 316
+            },
+            {
+              "x": 636,
+              "y": 316
+            },
+            {
+              "x": 636,
+              "y": 435
+            },
+            {
+              "x": 660,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "breaker-to-level",
+          "points": [
+            {
+              "x": 460,
+              "y": 250
+            },
+            {
+              "x": 460,
+              "y": 340
+            }
+          ]
+        },
+        {
+          "connection": "radio-to-controller",
+          "points": [
+            {
+              "x": 760,
+              "y": 340
+            },
+            {
+              "x": 760,
+              "y": 250
+            }
+          ]
+        },
+        {
+          "connection": "level-to-controller",
+          "points": [
+            {
+              "x": 560,
+              "y": 435
+            },
+            {
+              "x": 584,
+              "y": 435
+            },
+            {
+              "x": 584,
+              "y": 274
+            },
+            {
+              "x": 636,
+              "y": 274
+            },
+            {
+              "x": 636,
+              "y": 155
+            },
+            {
+              "x": 660,
+              "y": 155
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "finishing",
+      "label": "Finishing & storage",
+      "canvas": {
+        "width": 980,
+        "height": 940
+      },
+      "placements": [
+        {
+          "component": "water",
+          "x": 60,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "waterPump",
+          "x": 360,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "mixer",
+          "x": 660,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "transfer",
+          "x": 660,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "discharge",
+          "x": 360,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "controller",
+          "x": 60,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "level",
+          "x": 60,
+          "y": 620,
+          "width": 200,
+          "height": 190
+        }
+      ],
+      "routes": [
+        {
+          "connection": "water-to-waterPump",
+          "points": [
+            {
+              "x": 260,
+              "y": 155
+            },
+            {
+              "x": 360,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "waterPump-to-mixer",
+          "points": [
+            {
+              "x": 560,
+              "y": 155
+            },
+            {
+              "x": 660,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "mixer-to-transfer",
+          "points": [
+            {
+              "x": 760,
+              "y": 250
+            },
+            {
+              "x": 760,
+              "y": 340
+            }
+          ]
+        },
+        {
+          "connection": "transfer-to-discharge",
+          "points": [
+            {
+              "x": 660,
+              "y": 435
+            },
+            {
+              "x": 560,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "water-to-level",
+          "points": [
+            {
+              "x": 160,
+              "y": 250
+            },
+            {
+              "x": 160,
+              "y": 316
+            },
+            {
+              "x": 36,
+              "y": 316
+            },
+            {
+              "x": 36,
+              "y": 596
+            },
+            {
+              "x": 160,
+              "y": 596
+            },
+            {
+              "x": 160,
+              "y": 620
+            }
+          ]
+        },
+        {
+          "connection": "level-to-controller",
+          "points": [
+            {
+              "x": 160,
+              "y": 620
+            },
+            {
+              "x": 160,
+              "y": 530
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "commands": [
+    {
+      "id": "aggregate-enabled",
+      "label": "Aggregate storage \u00b7 Enabled",
+      "component": "aggregate",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "aggregate"
+      }
+    },
+    {
+      "id": "aggregate-load",
+      "label": "Aggregate storage \u00b7 Requested load",
+      "component": "aggregate",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "aggregate"
+      }
+    },
+    {
+      "id": "aggregate-fault",
+      "label": "Aggregate storage \u00b7 Injected failure",
+      "component": "aggregate",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "aggregate"
+      }
+    },
+    {
+      "id": "aggregate-repair",
+      "label": "Repair Aggregate storage",
+      "component": "aggregate",
+      "action": "repair",
+      "arguments": {
+        "equipment": "aggregate"
+      }
+    },
+    {
+      "id": "screen-enabled",
+      "label": "Aggregate screening \u00b7 Enabled",
+      "component": "screen",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "screen"
+      }
+    },
+    {
+      "id": "screen-load",
+      "label": "Aggregate screening \u00b7 Requested load",
+      "component": "screen",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "screen"
+      }
+    },
+    {
+      "id": "screen-fault",
+      "label": "Aggregate screening \u00b7 Injected failure",
+      "component": "screen",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "screen"
+      }
+    },
+    {
+      "id": "screen-repair",
+      "label": "Repair Aggregate screening",
+      "component": "screen",
+      "action": "repair",
+      "arguments": {
+        "equipment": "screen"
+      }
+    },
+    {
+      "id": "aggregateWeigh-enabled",
+      "label": "Aggregate weighing \u00b7 Enabled",
+      "component": "aggregateWeigh",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "aggregateWeigh"
+      }
+    },
+    {
+      "id": "aggregateWeigh-load",
+      "label": "Aggregate weighing \u00b7 Requested load",
+      "component": "aggregateWeigh",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "aggregateWeigh"
+      }
+    },
+    {
+      "id": "aggregateWeigh-fault",
+      "label": "Aggregate weighing \u00b7 Injected failure",
+      "component": "aggregateWeigh",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "aggregateWeigh"
+      }
+    },
+    {
+      "id": "aggregateWeigh-repair",
+      "label": "Repair Aggregate weighing",
+      "component": "aggregateWeigh",
+      "action": "repair",
+      "arguments": {
+        "equipment": "aggregateWeigh"
+      }
+    },
+    {
+      "id": "cement-enabled",
+      "label": "Binder storage \u00b7 Enabled",
+      "component": "cement",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "cement"
+      }
+    },
+    {
+      "id": "cement-load",
+      "label": "Binder storage \u00b7 Requested load",
+      "component": "cement",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "cement"
+      }
+    },
+    {
+      "id": "cement-fault",
+      "label": "Binder storage \u00b7 Injected failure",
+      "component": "cement",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "cement"
+      }
+    },
+    {
+      "id": "cement-repair",
+      "label": "Repair Binder storage",
+      "component": "cement",
+      "action": "repair",
+      "arguments": {
+        "equipment": "cement"
+      }
+    },
+    {
+      "id": "binderFeed-enabled",
+      "label": "Binder metering screw \u00b7 Enabled",
+      "component": "binderFeed",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "binderFeed"
+      }
+    },
+    {
+      "id": "binderFeed-load",
+      "label": "Binder metering screw \u00b7 Requested load",
+      "component": "binderFeed",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "binderFeed"
+      }
+    },
+    {
+      "id": "binderFeed-fault",
+      "label": "Binder metering screw \u00b7 Injected failure",
+      "component": "binderFeed",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "binderFeed"
+      }
+    },
+    {
+      "id": "binderFeed-repair",
+      "label": "Repair Binder metering screw",
+      "component": "binderFeed",
+      "action": "repair",
+      "arguments": {
+        "equipment": "binderFeed"
+      }
+    },
+    {
+      "id": "water-enabled",
+      "label": "Water feed store \u00b7 Enabled",
+      "component": "water",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "water"
+      }
+    },
+    {
+      "id": "water-load",
+      "label": "Water feed store \u00b7 Requested load",
+      "component": "water",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "water"
+      }
+    },
+    {
+      "id": "water-fault",
+      "label": "Water feed store \u00b7 Injected failure",
+      "component": "water",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "water"
+      }
+    },
+    {
+      "id": "water-repair",
+      "label": "Repair Water feed store",
+      "component": "water",
+      "action": "repair",
+      "arguments": {
+        "equipment": "water"
+      }
+    },
+    {
+      "id": "waterPump-enabled",
+      "label": "Water metering pump \u00b7 Enabled",
+      "component": "waterPump",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "waterPump"
+      }
+    },
+    {
+      "id": "waterPump-load",
+      "label": "Water metering pump \u00b7 Requested load",
+      "component": "waterPump",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "waterPump"
+      }
+    },
+    {
+      "id": "waterPump-fault",
+      "label": "Water metering pump \u00b7 Injected failure",
+      "component": "waterPump",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "waterPump"
+      }
+    },
+    {
+      "id": "waterPump-repair",
+      "label": "Repair Water metering pump",
+      "component": "waterPump",
+      "action": "repair",
+      "arguments": {
+        "equipment": "waterPump"
+      }
+    },
+    {
+      "id": "mixer-enabled",
+      "label": "Batch mixing drum \u00b7 Enabled",
+      "component": "mixer",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "mixer"
+      }
+    },
+    {
+      "id": "mixer-load",
+      "label": "Batch mixing drum \u00b7 Requested load",
+      "component": "mixer",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "mixer"
+      }
+    },
+    {
+      "id": "mixer-fault",
+      "label": "Batch mixing drum \u00b7 Injected failure",
+      "component": "mixer",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "mixer"
+      }
+    },
+    {
+      "id": "mixer-repair",
+      "label": "Repair Batch mixing drum",
+      "component": "mixer",
+      "action": "repair",
+      "arguments": {
+        "equipment": "mixer"
+      }
+    },
+    {
+      "id": "transfer-enabled",
+      "label": "Mixed-product transfer \u00b7 Enabled",
+      "component": "transfer",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "transfer"
+      }
+    },
+    {
+      "id": "transfer-load",
+      "label": "Mixed-product transfer \u00b7 Requested load",
+      "component": "transfer",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "transfer"
+      }
+    },
+    {
+      "id": "transfer-fault",
+      "label": "Mixed-product transfer \u00b7 Injected failure",
+      "component": "transfer",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "transfer"
+      }
+    },
+    {
+      "id": "transfer-repair",
+      "label": "Repair Mixed-product transfer",
+      "component": "transfer",
+      "action": "repair",
+      "arguments": {
+        "equipment": "transfer"
+      }
+    },
+    {
+      "id": "discharge-enabled",
+      "label": "Discharge buffer \u00b7 Enabled",
+      "component": "discharge",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "discharge"
+      }
+    },
+    {
+      "id": "discharge-load",
+      "label": "Discharge buffer \u00b7 Requested load",
+      "component": "discharge",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "discharge"
+      }
+    },
+    {
+      "id": "discharge-fault",
+      "label": "Discharge buffer \u00b7 Injected failure",
+      "component": "discharge",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "discharge"
+      }
+    },
+    {
+      "id": "discharge-repair",
+      "label": "Repair Discharge buffer",
+      "component": "discharge",
+      "action": "repair",
+      "arguments": {
+        "equipment": "discharge"
+      }
+    },
+    {
+      "id": "power-enabled",
+      "label": "Demonstration site power \u00b7 Enabled",
+      "component": "power",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "power"
+      }
+    },
+    {
+      "id": "power-load",
+      "label": "Demonstration site power \u00b7 Requested load",
+      "component": "power",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "power"
+      }
+    },
+    {
+      "id": "power-fault",
+      "label": "Demonstration site power \u00b7 Injected failure",
+      "component": "power",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "power"
+      }
+    },
+    {
+      "id": "power-repair",
+      "label": "Repair Demonstration site power",
+      "component": "power",
+      "action": "repair",
+      "arguments": {
+        "equipment": "power"
+      }
+    },
+    {
+      "id": "breaker-enabled",
+      "label": "Mixing-line breaker \u00b7 Enabled",
+      "component": "breaker",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "breaker"
+      }
+    },
+    {
+      "id": "breaker-load",
+      "label": "Mixing-line breaker \u00b7 Requested load",
+      "component": "breaker",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "breaker"
+      }
+    },
+    {
+      "id": "breaker-fault",
+      "label": "Mixing-line breaker \u00b7 Injected failure",
+      "component": "breaker",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "breaker"
+      }
+    },
+    {
+      "id": "breaker-open",
+      "label": "Mixing-line breaker \u00b7 Breaker open / power isolated",
+      "component": "breaker",
+      "action": "setOpen",
+      "arguments": {
+        "equipment": "breaker"
+      }
+    },
+    {
+      "id": "breaker-repair",
+      "label": "Repair Mixing-line breaker",
+      "component": "breaker",
+      "action": "repair",
+      "arguments": {
+        "equipment": "breaker"
+      }
+    },
+    {
+      "id": "controller-enabled",
+      "label": "Batch controller \u00b7 Enabled",
+      "component": "controller",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "controller"
+      }
+    },
+    {
+      "id": "controller-load",
+      "label": "Batch controller \u00b7 Requested load",
+      "component": "controller",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "controller"
+      }
+    },
+    {
+      "id": "controller-fault",
+      "label": "Batch controller \u00b7 Injected failure",
+      "component": "controller",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "controller"
+      }
+    },
+    {
+      "id": "controller-repair",
+      "label": "Repair Batch controller",
+      "component": "controller",
+      "action": "repair",
+      "arguments": {
+        "equipment": "controller"
+      }
+    },
+    {
+      "id": "radio-enabled",
+      "label": "Illustrative remote telemetry \u00b7 Enabled",
+      "component": "radio",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "radio"
+      }
+    },
+    {
+      "id": "radio-load",
+      "label": "Illustrative remote telemetry \u00b7 Requested load",
+      "component": "radio",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "radio"
+      }
+    },
+    {
+      "id": "radio-fault",
+      "label": "Illustrative remote telemetry \u00b7 Injected failure",
+      "component": "radio",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "radio"
+      }
+    },
+    {
+      "id": "radio-repair",
+      "label": "Repair Illustrative remote telemetry",
+      "component": "radio",
+      "action": "repair",
+      "arguments": {
+        "equipment": "radio"
+      }
+    },
+    {
+      "id": "level-enabled",
+      "label": "Water inventory monitor \u00b7 Enabled",
+      "component": "level",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "level"
+      }
+    },
+    {
+      "id": "level-load",
+      "label": "Water inventory monitor \u00b7 Requested load",
+      "component": "level",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "level"
+      }
+    },
+    {
+      "id": "level-fault",
+      "label": "Water inventory monitor \u00b7 Injected failure",
+      "component": "level",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "level"
+      }
+    },
+    {
+      "id": "level-repair",
+      "label": "Repair Water inventory monitor",
+      "component": "level",
+      "action": "repair",
+      "arguments": {
+        "equipment": "level"
+      }
+    },
+    {
+      "id": "plant-setRunning",
+      "label": "Run the shared plant",
+      "action": "setRunning",
+      "arguments": {}
+    },
+    {
+      "id": "plant-step",
+      "label": "Advance one model step",
+      "action": "step",
+      "arguments": {
+        "value": 1
+      }
+    },
+    {
+      "id": "plant-reset",
+      "label": "Reset dynamics \u00b7 keep edited parameters",
+      "action": "reset",
+      "arguments": {}
+    }
+  ],
+  "controls": [
+    {
+      "id": "aggregate-enabled-control",
+      "label": "Enabled",
+      "component": "aggregate",
+      "kind": "toggle",
+      "command": "aggregate-enabled",
+      "binding": "/controls/aggregate/enabled"
+    },
+    {
+      "id": "aggregate-load-control",
+      "label": "Requested load",
+      "component": "aggregate",
+      "kind": "range",
+      "command": "aggregate-load",
+      "binding": "/controls/aggregate/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "aggregate-fault-control",
+      "label": "Injected failure",
+      "component": "aggregate",
+      "kind": "toggle",
+      "command": "aggregate-fault",
+      "binding": "/controls/aggregate/fault"
+    },
+    {
+      "id": "aggregate-repair-control",
+      "label": "Repair component",
+      "component": "aggregate",
+      "kind": "button",
+      "command": "aggregate-repair"
+    },
+    {
+      "id": "screen-enabled-control",
+      "label": "Enabled",
+      "component": "screen",
+      "kind": "toggle",
+      "command": "screen-enabled",
+      "binding": "/controls/screen/enabled"
+    },
+    {
+      "id": "screen-load-control",
+      "label": "Requested load",
+      "component": "screen",
+      "kind": "range",
+      "command": "screen-load",
+      "binding": "/controls/screen/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "screen-fault-control",
+      "label": "Injected failure",
+      "component": "screen",
+      "kind": "toggle",
+      "command": "screen-fault",
+      "binding": "/controls/screen/fault"
+    },
+    {
+      "id": "screen-repair-control",
+      "label": "Repair component",
+      "component": "screen",
+      "kind": "button",
+      "command": "screen-repair"
+    },
+    {
+      "id": "aggregateWeigh-enabled-control",
+      "label": "Enabled",
+      "component": "aggregateWeigh",
+      "kind": "toggle",
+      "command": "aggregateWeigh-enabled",
+      "binding": "/controls/aggregateWeigh/enabled"
+    },
+    {
+      "id": "aggregateWeigh-load-control",
+      "label": "Requested load",
+      "component": "aggregateWeigh",
+      "kind": "range",
+      "command": "aggregateWeigh-load",
+      "binding": "/controls/aggregateWeigh/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "aggregateWeigh-fault-control",
+      "label": "Injected failure",
+      "component": "aggregateWeigh",
+      "kind": "toggle",
+      "command": "aggregateWeigh-fault",
+      "binding": "/controls/aggregateWeigh/fault"
+    },
+    {
+      "id": "aggregateWeigh-repair-control",
+      "label": "Repair component",
+      "component": "aggregateWeigh",
+      "kind": "button",
+      "command": "aggregateWeigh-repair"
+    },
+    {
+      "id": "cement-enabled-control",
+      "label": "Enabled",
+      "component": "cement",
+      "kind": "toggle",
+      "command": "cement-enabled",
+      "binding": "/controls/cement/enabled"
+    },
+    {
+      "id": "cement-load-control",
+      "label": "Requested load",
+      "component": "cement",
+      "kind": "range",
+      "command": "cement-load",
+      "binding": "/controls/cement/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "cement-fault-control",
+      "label": "Injected failure",
+      "component": "cement",
+      "kind": "toggle",
+      "command": "cement-fault",
+      "binding": "/controls/cement/fault"
+    },
+    {
+      "id": "cement-repair-control",
+      "label": "Repair component",
+      "component": "cement",
+      "kind": "button",
+      "command": "cement-repair"
+    },
+    {
+      "id": "binderFeed-enabled-control",
+      "label": "Enabled",
+      "component": "binderFeed",
+      "kind": "toggle",
+      "command": "binderFeed-enabled",
+      "binding": "/controls/binderFeed/enabled"
+    },
+    {
+      "id": "binderFeed-load-control",
+      "label": "Requested load",
+      "component": "binderFeed",
+      "kind": "range",
+      "command": "binderFeed-load",
+      "binding": "/controls/binderFeed/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "binderFeed-fault-control",
+      "label": "Injected failure",
+      "component": "binderFeed",
+      "kind": "toggle",
+      "command": "binderFeed-fault",
+      "binding": "/controls/binderFeed/fault"
+    },
+    {
+      "id": "binderFeed-repair-control",
+      "label": "Repair component",
+      "component": "binderFeed",
+      "kind": "button",
+      "command": "binderFeed-repair"
+    },
+    {
+      "id": "water-enabled-control",
+      "label": "Enabled",
+      "component": "water",
+      "kind": "toggle",
+      "command": "water-enabled",
+      "binding": "/controls/water/enabled"
+    },
+    {
+      "id": "water-load-control",
+      "label": "Requested load",
+      "component": "water",
+      "kind": "range",
+      "command": "water-load",
+      "binding": "/controls/water/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "water-fault-control",
+      "label": "Injected failure",
+      "component": "water",
+      "kind": "toggle",
+      "command": "water-fault",
+      "binding": "/controls/water/fault"
+    },
+    {
+      "id": "water-repair-control",
+      "label": "Repair component",
+      "component": "water",
+      "kind": "button",
+      "command": "water-repair"
+    },
+    {
+      "id": "waterPump-enabled-control",
+      "label": "Enabled",
+      "component": "waterPump",
+      "kind": "toggle",
+      "command": "waterPump-enabled",
+      "binding": "/controls/waterPump/enabled"
+    },
+    {
+      "id": "waterPump-load-control",
+      "label": "Requested load",
+      "component": "waterPump",
+      "kind": "range",
+      "command": "waterPump-load",
+      "binding": "/controls/waterPump/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "waterPump-fault-control",
+      "label": "Injected failure",
+      "component": "waterPump",
+      "kind": "toggle",
+      "command": "waterPump-fault",
+      "binding": "/controls/waterPump/fault"
+    },
+    {
+      "id": "waterPump-repair-control",
+      "label": "Repair component",
+      "component": "waterPump",
+      "kind": "button",
+      "command": "waterPump-repair"
+    },
+    {
+      "id": "mixer-enabled-control",
+      "label": "Enabled",
+      "component": "mixer",
+      "kind": "toggle",
+      "command": "mixer-enabled",
+      "binding": "/controls/mixer/enabled"
+    },
+    {
+      "id": "mixer-load-control",
+      "label": "Requested load",
+      "component": "mixer",
+      "kind": "range",
+      "command": "mixer-load",
+      "binding": "/controls/mixer/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "mixer-fault-control",
+      "label": "Injected failure",
+      "component": "mixer",
+      "kind": "toggle",
+      "command": "mixer-fault",
+      "binding": "/controls/mixer/fault"
+    },
+    {
+      "id": "mixer-repair-control",
+      "label": "Repair component",
+      "component": "mixer",
+      "kind": "button",
+      "command": "mixer-repair"
+    },
+    {
+      "id": "transfer-enabled-control",
+      "label": "Enabled",
+      "component": "transfer",
+      "kind": "toggle",
+      "command": "transfer-enabled",
+      "binding": "/controls/transfer/enabled"
+    },
+    {
+      "id": "transfer-load-control",
+      "label": "Requested load",
+      "component": "transfer",
+      "kind": "range",
+      "command": "transfer-load",
+      "binding": "/controls/transfer/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "transfer-fault-control",
+      "label": "Injected failure",
+      "component": "transfer",
+      "kind": "toggle",
+      "command": "transfer-fault",
+      "binding": "/controls/transfer/fault"
+    },
+    {
+      "id": "transfer-repair-control",
+      "label": "Repair component",
+      "component": "transfer",
+      "kind": "button",
+      "command": "transfer-repair"
+    },
+    {
+      "id": "discharge-enabled-control",
+      "label": "Enabled",
+      "component": "discharge",
+      "kind": "toggle",
+      "command": "discharge-enabled",
+      "binding": "/controls/discharge/enabled"
+    },
+    {
+      "id": "discharge-load-control",
+      "label": "Requested load",
+      "component": "discharge",
+      "kind": "range",
+      "command": "discharge-load",
+      "binding": "/controls/discharge/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "discharge-fault-control",
+      "label": "Injected failure",
+      "component": "discharge",
+      "kind": "toggle",
+      "command": "discharge-fault",
+      "binding": "/controls/discharge/fault"
+    },
+    {
+      "id": "discharge-repair-control",
+      "label": "Repair component",
+      "component": "discharge",
+      "kind": "button",
+      "command": "discharge-repair"
+    },
+    {
+      "id": "power-enabled-control",
+      "label": "Enabled",
+      "component": "power",
+      "kind": "toggle",
+      "command": "power-enabled",
+      "binding": "/controls/power/enabled"
+    },
+    {
+      "id": "power-load-control",
+      "label": "Requested load",
+      "component": "power",
+      "kind": "range",
+      "command": "power-load",
+      "binding": "/controls/power/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "power-fault-control",
+      "label": "Injected failure",
+      "component": "power",
+      "kind": "toggle",
+      "command": "power-fault",
+      "binding": "/controls/power/fault"
+    },
+    {
+      "id": "power-repair-control",
+      "label": "Repair component",
+      "component": "power",
+      "kind": "button",
+      "command": "power-repair"
+    },
+    {
+      "id": "breaker-enabled-control",
+      "label": "Enabled",
+      "component": "breaker",
+      "kind": "toggle",
+      "command": "breaker-enabled",
+      "binding": "/controls/breaker/enabled"
+    },
+    {
+      "id": "breaker-load-control",
+      "label": "Requested load",
+      "component": "breaker",
+      "kind": "range",
+      "command": "breaker-load",
+      "binding": "/controls/breaker/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "breaker-fault-control",
+      "label": "Injected failure",
+      "component": "breaker",
+      "kind": "toggle",
+      "command": "breaker-fault",
+      "binding": "/controls/breaker/fault"
+    },
+    {
+      "id": "breaker-open-control",
+      "label": "Breaker open / power isolated",
+      "component": "breaker",
+      "kind": "toggle",
+      "command": "breaker-open",
+      "binding": "/controls/breaker/open"
+    },
+    {
+      "id": "breaker-repair-control",
+      "label": "Repair component",
+      "component": "breaker",
+      "kind": "button",
+      "command": "breaker-repair"
+    },
+    {
+      "id": "controller-enabled-control",
+      "label": "Enabled",
+      "component": "controller",
+      "kind": "toggle",
+      "command": "controller-enabled",
+      "binding": "/controls/controller/enabled"
+    },
+    {
+      "id": "controller-load-control",
+      "label": "Requested load",
+      "component": "controller",
+      "kind": "range",
+      "command": "controller-load",
+      "binding": "/controls/controller/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "controller-fault-control",
+      "label": "Injected failure",
+      "component": "controller",
+      "kind": "toggle",
+      "command": "controller-fault",
+      "binding": "/controls/controller/fault"
+    },
+    {
+      "id": "controller-repair-control",
+      "label": "Repair component",
+      "component": "controller",
+      "kind": "button",
+      "command": "controller-repair"
+    },
+    {
+      "id": "radio-enabled-control",
+      "label": "Enabled",
+      "component": "radio",
+      "kind": "toggle",
+      "command": "radio-enabled",
+      "binding": "/controls/radio/enabled"
+    },
+    {
+      "id": "radio-load-control",
+      "label": "Requested load",
+      "component": "radio",
+      "kind": "range",
+      "command": "radio-load",
+      "binding": "/controls/radio/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "radio-fault-control",
+      "label": "Injected failure",
+      "component": "radio",
+      "kind": "toggle",
+      "command": "radio-fault",
+      "binding": "/controls/radio/fault"
+    },
+    {
+      "id": "radio-repair-control",
+      "label": "Repair component",
+      "component": "radio",
+      "kind": "button",
+      "command": "radio-repair"
+    },
+    {
+      "id": "level-enabled-control",
+      "label": "Enabled",
+      "component": "level",
+      "kind": "toggle",
+      "command": "level-enabled",
+      "binding": "/controls/level/enabled"
+    },
+    {
+      "id": "level-load-control",
+      "label": "Requested load",
+      "component": "level",
+      "kind": "range",
+      "command": "level-load",
+      "binding": "/controls/level/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "level-fault-control",
+      "label": "Injected failure",
+      "component": "level",
+      "kind": "toggle",
+      "command": "level-fault",
+      "binding": "/controls/level/fault"
+    },
+    {
+      "id": "level-repair-control",
+      "label": "Repair component",
+      "component": "level",
+      "kind": "button",
+      "command": "level-repair"
+    },
+    {
+      "id": "plant-setRunning-control",
+      "label": "Run the shared plant",
+      "kind": "toggle",
+      "command": "plant-setRunning",
+      "binding": "/running"
+    },
+    {
+      "id": "plant-step-control",
+      "label": "Advance one model step",
+      "kind": "button",
+      "command": "plant-step"
+    },
+    {
+      "id": "plant-reset-control",
+      "label": "Reset dynamics \u00b7 keep edited parameters",
+      "kind": "button",
+      "command": "plant-reset"
+    }
+  ],
+  "units": {
+    "flow": "normalized flow units",
+    "inventory": "normalized inventory units",
+    "load": "% requested demonstration load",
+    "pressure": "normalized pressure index",
+    "temperature": "normalized model thermal index; artwork displays an illustrative range"
+  },
+  "provenance": [
+    {
+      "id": "demo-model",
+      "label": "Editable placeholder model",
+      "kind": "assumed",
+      "description": "Family-level normalized behavior for UI experimentation; no calibrated industry process, safety envelope or recipe."
+    },
+    {
+      "id": "assumed-topology",
+      "label": "Illustrative editable routing",
+      "kind": "illustrative",
+      "description": "Industry-inspired stage names and interfaces. This is not a verified plant P&ID, wiring diagram or production design."
+    }
+  ],
+  "assumptions": [
+    {
+      "id": "nominalCapacity",
+      "label": "Default normalized stage capacity",
+      "value": 75,
+      "unit": "normalized units",
+      "provenance": "demo-model"
+    },
+    {
+      "id": "warningIndex",
+      "label": "Demonstration warning threshold",
+      "value": 78,
+      "unit": "normalized index",
+      "provenance": "demo-model"
+    },
+    {
+      "id": "optionalUtilities",
+      "label": "Utility equipment is illustrative and may be optional",
+      "value": true,
+      "provenance": "assumed-topology"
+    }
+  ]
+}

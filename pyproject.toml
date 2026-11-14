@@ -4,11 +4,11 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "cad-agent"
-version = "0.41.1"
+version = "0.42.0"
 description = "Agent toolkit for mechanical and electrical design: CAD checks, simulation, manufacturing files and review reports"
 readme = "README.md"
 requires-python = ">=3.10"
-license = {text = "MIT"}
+license = {text = "MIT AND LicenseRef-SCADA-Retained-Terms"}
 # Floors (#151): no lower release with a known advisory (docs/research/security-report.md), and each one tested: CI runs the
 # core suite at numpy 1.22.0, pyyaml 6.0 and pytest 9.0.3, and the site tests at markdown 3.8.1. vtk 9.5.2 is the lowest
 # VTK that cadquery-ocp 7.9.3 (cadquery 2.8) pins; cadquery 2.6 and 2.7 pin vtk 9.3.1, which has three advisories.
@@ -46,7 +46,11 @@ where = ["software"]
 include = ["cadagent*"]
 
 [tool.setuptools.package-data]
-cadagent = ["webkit/*", "webkit/assembly/*", "webkit/vendor/**/*"]
+# The installed SDK includes owned galleries, examples and notices.
+# Published assembly guides use their smaller explicit runtime profile.
+cadagent = ["webkit/*", "webkit/model/*", "webkit/files/*", "webkit/ui/*", "webkit/documents/*",
+            "webkit/assembly/*", "webkit/fea/*", "webkit/calculators/*", "webkit/host/*",
+            "webkit/vendor/**/*", "webkit/scada/**/*", "publish/runtime-profiles.json"]
 
 # `cad-agent init`'s starter, for a wheel install: docs/examples/starter-box installed under <prefix>/share/cad-agent/. A
 # checkout's own docs/examples/starter-box comes first (cadagent.project.starter_dir); tests/cli/test_init.py keeps this list

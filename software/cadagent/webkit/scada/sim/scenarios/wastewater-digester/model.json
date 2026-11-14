@@ -1,0 +1,475 @@
+{
+  "format": "scada-placeholder-model",
+  "version": 1,
+  "scenarioId": "wastewater-digester",
+  "seed": 69201,
+  "components": {
+    "influent": {
+      "kind": "source",
+      "parameters": {
+        "capacity": 90,
+        "response": 0.35,
+        "demand": 0,
+        "loss": 0,
+        "pressureGain": 8,
+        "heatGain": 4,
+        "warningAt": 85,
+        "damageRate": 0.6
+      },
+      "initial": {
+        "enabled": true,
+        "open": true,
+        "load": 60,
+        "level": 55,
+        "inventory": 55,
+        "temperature": 25,
+        "pressure": 12,
+        "failed": false,
+        "damage": 0
+      },
+      "assumptions": [
+        "Influent boundary: editable normalized demo parameters, not manufacturer or plant measurements."
+      ]
+    },
+    "screen": {
+      "kind": "processor",
+      "parameters": {
+        "capacity": 80,
+        "response": 0.35,
+        "demand": 4,
+        "loss": 0.02,
+        "pressureGain": 8,
+        "heatGain": 4,
+        "warningAt": 85,
+        "damageRate": 0.6
+      },
+      "initial": {
+        "enabled": true,
+        "open": true,
+        "load": 60,
+        "level": 55,
+        "inventory": 55,
+        "temperature": 25,
+        "pressure": 12,
+        "failed": false,
+        "damage": 0
+      },
+      "assumptions": [
+        "Inlet screening: editable normalized demo parameters, not manufacturer or plant measurements."
+      ]
+    },
+    "liftPump": {
+      "kind": "pump",
+      "parameters": {
+        "capacity": 80,
+        "response": 0.35,
+        "demand": 4,
+        "loss": 0.02,
+        "pressureGain": 35,
+        "heatGain": 4,
+        "warningAt": 85,
+        "damageRate": 0.6
+      },
+      "initial": {
+        "enabled": true,
+        "open": true,
+        "load": 60,
+        "level": 55,
+        "inventory": 55,
+        "temperature": 25,
+        "pressure": 12,
+        "failed": false,
+        "damage": 0
+      },
+      "assumptions": [
+        "Lift pump: editable normalized demo parameters, not manufacturer or plant measurements."
+      ]
+    },
+    "aeration": {
+      "kind": "processor",
+      "parameters": {
+        "capacity": 80,
+        "response": 0.35,
+        "demand": 4,
+        "loss": 0.02,
+        "pressureGain": 8,
+        "heatGain": 4,
+        "warningAt": 85,
+        "damageRate": 0.6
+      },
+      "initial": {
+        "enabled": true,
+        "open": true,
+        "load": 60,
+        "level": 55,
+        "inventory": 55,
+        "temperature": 25,
+        "pressure": 12,
+        "failed": false,
+        "damage": 0
+      },
+      "assumptions": [
+        "Aeration basin: editable normalized demo parameters, not manufacturer or plant measurements."
+      ]
+    },
+    "clarifier": {
+      "kind": "processor",
+      "parameters": {
+        "capacity": 80,
+        "response": 0.35,
+        "demand": 4,
+        "loss": 0.02,
+        "pressureGain": 8,
+        "heatGain": 4,
+        "warningAt": 85,
+        "damageRate": 0.6
+      },
+      "initial": {
+        "enabled": true,
+        "open": true,
+        "load": 60,
+        "level": 55,
+        "inventory": 55,
+        "temperature": 25,
+        "pressure": 12,
+        "failed": false,
+        "damage": 0
+      },
+      "assumptions": [
+        "Secondary clarifier: editable normalized demo parameters, not manufacturer or plant measurements."
+      ]
+    },
+    "effluent": {
+      "kind": "sink",
+      "parameters": {
+        "capacity": 100,
+        "response": 0.35,
+        "demand": 0,
+        "loss": 0.02,
+        "pressureGain": 8,
+        "heatGain": 4,
+        "warningAt": 85,
+        "damageRate": 0.6
+      },
+      "initial": {
+        "enabled": true,
+        "open": true,
+        "load": 60,
+        "level": 55,
+        "inventory": 55,
+        "temperature": 25,
+        "pressure": 12,
+        "failed": false,
+        "damage": 0
+      },
+      "assumptions": [
+        "Treated-water outlet: editable normalized demo parameters, not manufacturer or plant measurements."
+      ]
+    },
+    "sludgeValve": {
+      "kind": "valve",
+      "parameters": {
+        "capacity": 80,
+        "response": 0.35,
+        "demand": 4,
+        "loss": 0.02,
+        "pressureGain": 8,
+        "heatGain": 4,
+        "warningAt": 85,
+        "damageRate": 0.6
+      },
+      "initial": {
+        "enabled": true,
+        "open": true,
+        "load": 60,
+        "level": 55,
+        "inventory": 55,
+        "temperature": 25,
+        "pressure": 12,
+        "failed": false,
+        "damage": 0
+      },
+      "assumptions": [
+        "Sludge isolation: editable normalized demo parameters, not manufacturer or plant measurements."
+      ]
+    },
+    "digester": {
+      "kind": "processor",
+      "parameters": {
+        "capacity": 80,
+        "response": 0.35,
+        "demand": 4,
+        "loss": 0.02,
+        "pressureGain": 8,
+        "heatGain": 4,
+        "warningAt": 85,
+        "damageRate": 0.6
+      },
+      "initial": {
+        "enabled": true,
+        "open": true,
+        "load": 60,
+        "level": 55,
+        "inventory": 55,
+        "temperature": 25,
+        "pressure": 12,
+        "failed": false,
+        "damage": 0
+      },
+      "assumptions": [
+        "Anaerobic digester: editable normalized demo parameters, not manufacturer or plant measurements."
+      ]
+    },
+    "digestate": {
+      "kind": "storage",
+      "parameters": {
+        "capacity": 80,
+        "response": 0.35,
+        "demand": 4,
+        "loss": 0.02,
+        "pressureGain": 8,
+        "heatGain": 4,
+        "warningAt": 85,
+        "damageRate": 0.6
+      },
+      "initial": {
+        "enabled": true,
+        "open": true,
+        "load": 60,
+        "level": 55,
+        "inventory": 55,
+        "temperature": 25,
+        "pressure": 12,
+        "failed": false,
+        "damage": 0
+      },
+      "assumptions": [
+        "Digestate storage: editable normalized demo parameters, not manufacturer or plant measurements."
+      ]
+    },
+    "gasHolder": {
+      "kind": "storage",
+      "parameters": {
+        "capacity": 80,
+        "response": 0.35,
+        "demand": 4,
+        "loss": 0.02,
+        "pressureGain": 8,
+        "heatGain": 4,
+        "warningAt": 85,
+        "damageRate": 0.6
+      },
+      "initial": {
+        "enabled": true,
+        "open": true,
+        "load": 60,
+        "level": 75,
+        "inventory": 75,
+        "temperature": 25,
+        "pressure": 12,
+        "failed": false,
+        "damage": 0
+      },
+      "assumptions": [
+        "Biogas buffer: editable normalized demo parameters, not manufacturer or plant measurements."
+      ]
+    },
+    "gasClean": {
+      "kind": "processor",
+      "parameters": {
+        "capacity": 80,
+        "response": 0.35,
+        "demand": 4,
+        "loss": 0.02,
+        "pressureGain": 8,
+        "heatGain": 4,
+        "warningAt": 85,
+        "damageRate": 0.6
+      },
+      "initial": {
+        "enabled": true,
+        "open": true,
+        "load": 60,
+        "level": 55,
+        "inventory": 55,
+        "temperature": 25,
+        "pressure": 12,
+        "failed": false,
+        "damage": 0
+      },
+      "assumptions": [
+        "Biogas conditioning: editable normalized demo parameters, not manufacturer or plant measurements."
+      ]
+    },
+    "chp": {
+      "kind": "generator",
+      "parameters": {
+        "capacity": 95,
+        "response": 0.35,
+        "demand": 4,
+        "loss": 0.02,
+        "pressureGain": 8,
+        "heatGain": 22,
+        "warningAt": 85,
+        "damageRate": 0.6
+      },
+      "initial": {
+        "enabled": true,
+        "open": true,
+        "load": 60,
+        "level": 55,
+        "inventory": 55,
+        "temperature": 25,
+        "pressure": 12,
+        "failed": false,
+        "damage": 0
+      },
+      "assumptions": [
+        "Biogas CHP generator: editable normalized demo parameters, not manufacturer or plant measurements."
+      ]
+    },
+    "flare": {
+      "kind": "heater",
+      "parameters": {
+        "capacity": 80,
+        "response": 0.35,
+        "demand": 4,
+        "loss": 0.02,
+        "pressureGain": 8,
+        "heatGain": 55,
+        "warningAt": 85,
+        "damageRate": 0.6
+      },
+      "initial": {
+        "enabled": true,
+        "open": true,
+        "load": 25,
+        "level": 55,
+        "inventory": 55,
+        "temperature": 25,
+        "pressure": 12,
+        "failed": false,
+        "damage": 0
+      },
+      "assumptions": [
+        "Biogas flare: editable normalized demo parameters, not manufacturer or plant measurements."
+      ]
+    },
+    "loads": {
+      "kind": "load",
+      "parameters": {
+        "capacity": 80,
+        "response": 0.35,
+        "demand": 8,
+        "loss": 0.02,
+        "pressureGain": 8,
+        "heatGain": 4,
+        "warningAt": 85,
+        "damageRate": 0.6
+      },
+      "initial": {
+        "enabled": true,
+        "open": true,
+        "load": 60,
+        "level": 55,
+        "inventory": 55,
+        "temperature": 25,
+        "pressure": 12,
+        "failed": false,
+        "damage": 0
+      },
+      "assumptions": [
+        "Electrical loads: editable normalized demo parameters, not manufacturer or plant measurements."
+      ]
+    },
+    "standby": {
+      "kind": "generator",
+      "parameters": {
+        "capacity": 95,
+        "response": 0.35,
+        "demand": 4,
+        "loss": 0.02,
+        "pressureGain": 8,
+        "heatGain": 22,
+        "warningAt": 85,
+        "damageRate": 0.6
+      },
+      "initial": {
+        "enabled": true,
+        "open": true,
+        "load": 85,
+        "level": 55,
+        "inventory": 55,
+        "temperature": 25,
+        "pressure": 12,
+        "failed": false,
+        "damage": 0
+      },
+      "assumptions": [
+        "Standby generator: editable normalized demo parameters, not manufacturer or plant measurements.",
+        "Fuel is supplied by an explicit illustrative external boundary; no emissions, protection or fuel economy is calculated."
+      ]
+    },
+    "controller": {
+      "kind": "controller",
+      "parameters": {
+        "capacity": 80,
+        "response": 0.35,
+        "demand": 1,
+        "loss": 0.02,
+        "pressureGain": 8,
+        "heatGain": 4,
+        "warningAt": 85,
+        "damageRate": 0.6
+      },
+      "initial": {
+        "enabled": true,
+        "open": true,
+        "load": 60,
+        "level": 55,
+        "inventory": 55,
+        "temperature": 25,
+        "pressure": 12,
+        "failed": false,
+        "damage": 0
+      },
+      "assumptions": [
+        "Plant PLC: editable normalized demo parameters, not manufacturer or plant measurements."
+      ]
+    },
+    "pressure": {
+      "kind": "sensor",
+      "parameters": {
+        "capacity": 80,
+        "response": 0.35,
+        "demand": 1,
+        "loss": 0.02,
+        "pressureGain": 8,
+        "heatGain": 4,
+        "warningAt": 85,
+        "damageRate": 0.6
+      },
+      "initial": {
+        "enabled": true,
+        "open": true,
+        "load": 60,
+        "level": 55,
+        "inventory": 55,
+        "temperature": 25,
+        "pressure": 12,
+        "failed": false,
+        "damage": 0
+      },
+      "assumptions": [
+        "Digester pressure: editable normalized demo parameters, not manufacturer or plant measurements."
+      ]
+    }
+  },
+  "assumptions": [
+    "All quantities are editable normalized estimates; no calibrated wastewater kinetics, gas composition, mass stoichiometry or treatment-quality criteria are modeled.",
+    "Water and sludge connections are generic resource indices. The digester branch does not predict methane yield or real gas pressure.",
+    "Influent is replenished; treated-water output is an external sink. Initial inventories prime the gas pathway. Standby generator fuel is an assumed external boundary.",
+    "The CHP generator is connected to the gas pathway and the electrical load; its failure has an explicit downstream effect.",
+    "Opening another diagram does not create a second simulation or reset equipment state."
+  ]
+}

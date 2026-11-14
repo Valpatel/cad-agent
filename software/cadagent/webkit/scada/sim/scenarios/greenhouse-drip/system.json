@@ -1,0 +1,3775 @@
+{
+  "format": "scada-system",
+  "version": 1,
+  "system": {
+    "id": "greenhouse-drip",
+    "label": "Drip / substrate greenhouse",
+    "description": "Recirculating substrate irrigation shares a greenhouse climate zone. Pad cooling has its own water circuit; shade, vent and room measurements remain separate."
+  },
+  "components": [
+    {
+      "id": "reservoir",
+      "type": "mixing-tank",
+      "label": "Solution preparation reservoir",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "level": 55,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/reservoir/active",
+        "running": "/components/reservoir/running",
+        "fault": "/components/reservoir/fault",
+        "status": "/components/reservoir/status",
+        "level": "/components/reservoir/level",
+        "damage": "/components/reservoir/damage"
+      },
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "drive",
+          "side": "bottom",
+          "offset": 0.75
+        }
+      ],
+      "provenance": [
+        "model-guesses",
+        "authored-topology",
+        "A1",
+        "A7",
+        "A8",
+        "A9",
+        "A10"
+      ]
+    },
+    {
+      "id": "irrigationPump",
+      "type": "pump",
+      "label": "Drip supply pump",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/irrigationPump/active",
+        "running": "/components/irrigationPump/running",
+        "fault": "/components/irrigationPump/fault",
+        "status": "/components/irrigationPump/status",
+        "load": "/components/irrigationPump/load",
+        "speed": "/components/irrigationPump/speed",
+        "damage": "/components/irrigationPump/damage"
+      },
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "drive",
+          "side": "bottom",
+          "offset": 0.75
+        }
+      ],
+      "provenance": [
+        "model-guesses",
+        "authored-topology",
+        "A1",
+        "A7",
+        "A8",
+        "A9",
+        "A10"
+      ],
+      "variant": "water"
+    },
+    {
+      "id": "filter",
+      "type": "filter",
+      "label": "Emitter protection filter",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/filter/active",
+        "running": "/components/filter/running",
+        "fault": "/components/filter/fault",
+        "status": "/components/filter/status",
+        "load": "/components/filter/load",
+        "damage": "/components/filter/damage"
+      },
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "backwash",
+          "side": "left",
+          "offset": 0.5
+        }
+      ],
+      "provenance": [
+        "model-guesses",
+        "authored-topology",
+        "A1",
+        "A7",
+        "A8",
+        "A9",
+        "A10"
+      ]
+    },
+    {
+      "id": "header",
+      "type": "junction",
+      "label": "Substrate row manifold",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "open": true,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/header/active",
+        "running": "/components/header/running",
+        "fault": "/components/header/fault",
+        "status": "/components/header/status",
+        "open": "/components/header/open",
+        "damage": "/components/header/damage"
+      },
+      "ports": [
+        {
+          "id": "west",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "east",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "north",
+          "side": "top",
+          "offset": 0.5
+        },
+        {
+          "id": "south",
+          "side": "bottom",
+          "offset": 0.5
+        }
+      ],
+      "provenance": [
+        "model-guesses",
+        "authored-topology",
+        "A1",
+        "A7",
+        "A8",
+        "A9",
+        "A10"
+      ]
+    },
+    {
+      "id": "rowA",
+      "type": "drip-zone",
+      "label": "Substrate row A",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "moisture": 55,
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/rowA/active",
+        "running": "/components/rowA/running",
+        "fault": "/components/rowA/fault",
+        "status": "/components/rowA/status",
+        "moisture": "/components/rowA/moisture",
+        "load": "/components/rowA/load",
+        "damage": "/components/rowA/damage"
+      },
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "light",
+          "side": "top",
+          "offset": 0.5
+        },
+        {
+          "id": "measurement",
+          "side": "top",
+          "offset": 0.75
+        }
+      ],
+      "provenance": [
+        "model-guesses",
+        "authored-topology",
+        "A1",
+        "A7",
+        "A8",
+        "A9",
+        "A10"
+      ]
+    },
+    {
+      "id": "rowB",
+      "type": "drip-zone",
+      "label": "Substrate row B",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "moisture": 55,
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/rowB/active",
+        "running": "/components/rowB/running",
+        "fault": "/components/rowB/fault",
+        "status": "/components/rowB/status",
+        "moisture": "/components/rowB/moisture",
+        "load": "/components/rowB/load",
+        "damage": "/components/rowB/damage"
+      },
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "light",
+          "side": "top",
+          "offset": 0.5
+        },
+        {
+          "id": "measurement",
+          "side": "top",
+          "offset": 0.75
+        }
+      ],
+      "provenance": [
+        "model-guesses",
+        "authored-topology",
+        "A1",
+        "A7",
+        "A8",
+        "A9",
+        "A10"
+      ]
+    },
+    {
+      "id": "drainTank",
+      "type": "tank",
+      "label": "Collected substrate drainage",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "level": 55,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/drainTank/active",
+        "running": "/components/drainTank/running",
+        "fault": "/components/drainTank/fault",
+        "status": "/components/drainTank/status",
+        "level": "/components/drainTank/level",
+        "damage": "/components/drainTank/damage"
+      },
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        }
+      ],
+      "provenance": [
+        "model-guesses",
+        "authored-topology",
+        "A1",
+        "A7",
+        "A8",
+        "A9",
+        "A10"
+      ]
+    },
+    {
+      "id": "returnPump",
+      "type": "pump",
+      "label": "Declared recirculation pump",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/returnPump/active",
+        "running": "/components/returnPump/running",
+        "fault": "/components/returnPump/fault",
+        "status": "/components/returnPump/status",
+        "load": "/components/returnPump/load",
+        "speed": "/components/returnPump/speed",
+        "damage": "/components/returnPump/damage"
+      },
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "drive",
+          "side": "bottom",
+          "offset": 0.75
+        }
+      ],
+      "provenance": [
+        "model-guesses",
+        "authored-topology",
+        "A1",
+        "A7",
+        "A8",
+        "A9",
+        "A10"
+      ],
+      "variant": "water"
+    },
+    {
+      "id": "sitePower",
+      "type": "transformer",
+      "label": "Explicit grid-service boundary",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/sitePower/active",
+        "running": "/components/sitePower/running",
+        "fault": "/components/sitePower/fault",
+        "status": "/components/sitePower/status",
+        "load": "/components/sitePower/load",
+        "damage": "/components/sitePower/damage"
+      },
+      "ports": [
+        {
+          "id": "primary",
+          "side": "bottom",
+          "offset": 0.75
+        },
+        {
+          "id": "secondary",
+          "side": "right",
+          "offset": 0.5
+        }
+      ],
+      "provenance": [
+        "model-guesses",
+        "authored-topology",
+        "A1",
+        "A7",
+        "A8",
+        "A9",
+        "A10"
+      ]
+    },
+    {
+      "id": "plc",
+      "type": "plc-rack",
+      "label": "Shared growing-system controller",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "connected": true,
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/plc/active",
+        "running": "/components/plc/running",
+        "fault": "/components/plc/fault",
+        "status": "/components/plc/status",
+        "connected": "/components/plc/connected",
+        "load": "/components/plc/load",
+        "damage": "/components/plc/damage"
+      },
+      "ports": [
+        {
+          "id": "network",
+          "side": "bottom",
+          "offset": 0.5
+        },
+        {
+          "id": "power",
+          "side": "bottom",
+          "offset": 0.75
+        },
+        {
+          "id": "io",
+          "side": "bottom",
+          "offset": 0.5
+        }
+      ],
+      "provenance": [
+        "model-guesses",
+        "authored-topology",
+        "A1",
+        "A7",
+        "A8",
+        "A9",
+        "A10"
+      ]
+    },
+    {
+      "id": "shade",
+      "type": "shade-screen",
+      "label": "External daylight / shade screen",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "opening": 50,
+        "light": 50,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/shade/active",
+        "running": "/components/shade/running",
+        "fault": "/components/shade/fault",
+        "status": "/components/shade/status",
+        "opening": "/components/shade/opening",
+        "light": "/components/shade/light",
+        "damage": "/components/shade/damage"
+      },
+      "ports": [
+        {
+          "id": "light-in",
+          "side": "top",
+          "offset": 0.5
+        },
+        {
+          "id": "light-out",
+          "side": "bottom",
+          "offset": 0.5
+        },
+        {
+          "id": "supply",
+          "side": "bottom",
+          "offset": 0.75
+        },
+        {
+          "id": "control",
+          "side": "bottom",
+          "offset": 0.5
+        }
+      ],
+      "provenance": [
+        "model-guesses",
+        "authored-topology",
+        "A1",
+        "A7",
+        "A8",
+        "A9",
+        "A10"
+      ]
+    },
+    {
+      "id": "airFan",
+      "type": "fan",
+      "label": "Ambient ventilation fan \u00b7 air boundary",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/airFan/active",
+        "running": "/components/airFan/running",
+        "fault": "/components/airFan/fault",
+        "status": "/components/airFan/status",
+        "load": "/components/airFan/load",
+        "speed": "/components/airFan/speed",
+        "damage": "/components/airFan/damage"
+      },
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "supply",
+          "side": "bottom",
+          "offset": 0.75
+        },
+        {
+          "id": "control",
+          "side": "bottom",
+          "offset": 0.5
+        }
+      ],
+      "provenance": [
+        "model-guesses",
+        "authored-topology",
+        "A1",
+        "A7",
+        "A8",
+        "A9",
+        "A10"
+      ]
+    },
+    {
+      "id": "pad",
+      "type": "evaporative-pad",
+      "label": "Fan-and-pad cooling",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "moisture": 60,
+        "airflow": 60,
+        "humidity": 55,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/pad/active",
+        "running": "/components/pad/running",
+        "fault": "/components/pad/fault",
+        "status": "/components/pad/status",
+        "moisture": "/components/pad/moisture",
+        "airflow": "/components/pad/airflow",
+        "humidity": "/components/pad/humidity",
+        "damage": "/components/pad/damage"
+      },
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "top",
+          "offset": 0.3
+        },
+        {
+          "id": "drain",
+          "side": "bottom",
+          "offset": 0.3
+        },
+        {
+          "id": "air-in",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "air-out",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "measurement",
+          "side": "top",
+          "offset": 0.75
+        }
+      ],
+      "provenance": [
+        "model-guesses",
+        "authored-topology",
+        "A1",
+        "A7",
+        "A8",
+        "A9",
+        "A10"
+      ]
+    },
+    {
+      "id": "vent",
+      "type": "greenhouse-vent",
+      "label": "Roof air-exchange vent",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "opening": 50,
+        "airflow": 50,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/vent/active",
+        "running": "/components/vent/running",
+        "fault": "/components/vent/fault",
+        "status": "/components/vent/status",
+        "opening": "/components/vent/opening",
+        "airflow": "/components/vent/airflow",
+        "damage": "/components/vent/damage"
+      },
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "supply",
+          "side": "bottom",
+          "offset": 0.75
+        },
+        {
+          "id": "control",
+          "side": "bottom",
+          "offset": 0.5
+        }
+      ],
+      "provenance": [
+        "model-guesses",
+        "authored-topology",
+        "A1",
+        "A7",
+        "A8",
+        "A9",
+        "A10"
+      ]
+    },
+    {
+      "id": "padSump",
+      "type": "tank",
+      "label": "Independent pad-water sump",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "level": 55,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/padSump/active",
+        "running": "/components/padSump/running",
+        "fault": "/components/padSump/fault",
+        "status": "/components/padSump/status",
+        "level": "/components/padSump/level",
+        "damage": "/components/padSump/damage"
+      },
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        }
+      ],
+      "provenance": [
+        "model-guesses",
+        "authored-topology",
+        "A1",
+        "A7",
+        "A8",
+        "A9",
+        "A10"
+      ]
+    },
+    {
+      "id": "padPump",
+      "type": "pump",
+      "label": "Pad recirculation pump",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/padPump/active",
+        "running": "/components/padPump/running",
+        "fault": "/components/padPump/fault",
+        "status": "/components/padPump/status",
+        "load": "/components/padPump/load",
+        "speed": "/components/padPump/speed",
+        "damage": "/components/padPump/damage"
+      },
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "drive",
+          "side": "bottom",
+          "offset": 0.75
+        }
+      ],
+      "provenance": [
+        "model-guesses",
+        "authored-topology",
+        "A1",
+        "A7",
+        "A8",
+        "A9",
+        "A10"
+      ],
+      "variant": "water"
+    },
+    {
+      "id": "humidityProbe",
+      "type": "humidity-sensor",
+      "label": "Room humidity \u00b7 illustrative index",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "connected": true,
+        "humidity": 55,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/humidityProbe/active",
+        "running": "/components/humidityProbe/running",
+        "fault": "/components/humidityProbe/fault",
+        "status": "/components/humidityProbe/status",
+        "connected": "/components/humidityProbe/connected",
+        "humidity": "/components/humidityProbe/humidity",
+        "damage": "/components/humidityProbe/damage"
+      },
+      "ports": [
+        {
+          "id": "measurement",
+          "side": "top",
+          "offset": 0.75
+        },
+        {
+          "id": "signal",
+          "side": "bottom",
+          "offset": 0.5
+        },
+        {
+          "id": "supply",
+          "side": "bottom",
+          "offset": 0.75
+        }
+      ],
+      "provenance": [
+        "model-guesses",
+        "authored-topology",
+        "A1",
+        "A7",
+        "A8",
+        "A9",
+        "A10"
+      ]
+    },
+    {
+      "id": "lightProbe",
+      "type": "light-sensor",
+      "label": "Light \u00b7 illustrative index",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "connected": true,
+        "light": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/lightProbe/active",
+        "running": "/components/lightProbe/running",
+        "fault": "/components/lightProbe/fault",
+        "status": "/components/lightProbe/status",
+        "connected": "/components/lightProbe/connected",
+        "light": "/components/lightProbe/light",
+        "damage": "/components/lightProbe/damage"
+      },
+      "ports": [
+        {
+          "id": "measurement",
+          "side": "top",
+          "offset": 0.75
+        },
+        {
+          "id": "signal",
+          "side": "bottom",
+          "offset": 0.5
+        },
+        {
+          "id": "supply",
+          "side": "bottom",
+          "offset": 0.75
+        }
+      ],
+      "provenance": [
+        "model-guesses",
+        "authored-topology",
+        "A1",
+        "A7",
+        "A8",
+        "A9",
+        "A10"
+      ]
+    },
+    {
+      "id": "ecProbe",
+      "type": "water-quality-probe",
+      "label": "Conductivity \u00b7 illustrative index",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "connected": true,
+        "measurement": "do",
+        "value": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/ecProbe/active",
+        "running": "/components/ecProbe/running",
+        "fault": "/components/ecProbe/fault",
+        "status": "/components/ecProbe/status",
+        "connected": "/components/ecProbe/connected",
+        "measurement": "/components/ecProbe/measurement",
+        "value": "/components/ecProbe/value",
+        "damage": "/components/ecProbe/damage"
+      },
+      "ports": [
+        {
+          "id": "measurement",
+          "side": "top",
+          "offset": 0.75
+        },
+        {
+          "id": "signal",
+          "side": "bottom",
+          "offset": 0.5
+        },
+        {
+          "id": "supply",
+          "side": "bottom",
+          "offset": 0.75
+        }
+      ],
+      "provenance": [
+        "model-guesses",
+        "authored-topology",
+        "A1",
+        "A7",
+        "A8",
+        "A9",
+        "A10"
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "reservoir-outlet-to-irrigationPump-inlet",
+      "from": {
+        "component": "reservoir",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "irrigationPump",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "label": "liquid",
+      "flowBinding": "/flows/reservoir-outlet-to-irrigationPump-inlet"
+    },
+    {
+      "id": "irrigationPump-outlet-to-filter-inlet",
+      "from": {
+        "component": "irrigationPump",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "filter",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "label": "liquid",
+      "flowBinding": "/flows/irrigationPump-outlet-to-filter-inlet"
+    },
+    {
+      "id": "filter-outlet-to-header-west",
+      "from": {
+        "component": "filter",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "header",
+        "port": "west"
+      },
+      "medium": "liquid",
+      "label": "liquid",
+      "flowBinding": "/flows/filter-outlet-to-header-west"
+    },
+    {
+      "id": "header-north-to-rowA-inlet",
+      "from": {
+        "component": "header",
+        "port": "north"
+      },
+      "to": {
+        "component": "rowA",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "label": "liquid",
+      "flowBinding": "/flows/header-north-to-rowA-inlet"
+    },
+    {
+      "id": "rowA-outlet-to-drainTank-inlet",
+      "from": {
+        "component": "rowA",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "drainTank",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "label": "liquid",
+      "flowBinding": "/flows/rowA-outlet-to-drainTank-inlet"
+    },
+    {
+      "id": "header-south-to-rowB-inlet",
+      "from": {
+        "component": "header",
+        "port": "south"
+      },
+      "to": {
+        "component": "rowB",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "label": "liquid",
+      "flowBinding": "/flows/header-south-to-rowB-inlet"
+    },
+    {
+      "id": "rowB-outlet-to-drainTank-inlet",
+      "from": {
+        "component": "rowB",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "drainTank",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "label": "liquid",
+      "flowBinding": "/flows/rowB-outlet-to-drainTank-inlet"
+    },
+    {
+      "id": "drainTank-outlet-to-returnPump-inlet",
+      "from": {
+        "component": "drainTank",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "returnPump",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "label": "liquid",
+      "flowBinding": "/flows/drainTank-outlet-to-returnPump-inlet"
+    },
+    {
+      "id": "returnPump-outlet-to-reservoir-inlet",
+      "from": {
+        "component": "returnPump",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "reservoir",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "label": "liquid",
+      "flowBinding": "/flows/returnPump-outlet-to-reservoir-inlet"
+    },
+    {
+      "id": "sitePower-secondary-to-plc-power",
+      "from": {
+        "component": "sitePower",
+        "port": "secondary"
+      },
+      "to": {
+        "component": "plc",
+        "port": "power"
+      },
+      "medium": "electricity",
+      "label": "Control power",
+      "flowBinding": "/flows/sitePower-secondary-to-plc-power"
+    },
+    {
+      "id": "sitePower-secondary-to-reservoir-drive",
+      "from": {
+        "component": "sitePower",
+        "port": "secondary"
+      },
+      "to": {
+        "component": "reservoir",
+        "port": "drive"
+      },
+      "medium": "electricity",
+      "label": "Declared grid power",
+      "flowBinding": "/flows/sitePower-secondary-to-reservoir-drive"
+    },
+    {
+      "id": "sitePower-secondary-to-irrigationPump-drive",
+      "from": {
+        "component": "sitePower",
+        "port": "secondary"
+      },
+      "to": {
+        "component": "irrigationPump",
+        "port": "drive"
+      },
+      "medium": "electricity",
+      "label": "Declared grid power",
+      "flowBinding": "/flows/sitePower-secondary-to-irrigationPump-drive"
+    },
+    {
+      "id": "sitePower-secondary-to-returnPump-drive",
+      "from": {
+        "component": "sitePower",
+        "port": "secondary"
+      },
+      "to": {
+        "component": "returnPump",
+        "port": "drive"
+      },
+      "medium": "electricity",
+      "label": "Declared grid power",
+      "flowBinding": "/flows/sitePower-secondary-to-returnPump-drive"
+    },
+    {
+      "id": "sitePower-secondary-to-shade-supply",
+      "from": {
+        "component": "sitePower",
+        "port": "secondary"
+      },
+      "to": {
+        "component": "shade",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "label": "Declared grid power",
+      "flowBinding": "/flows/sitePower-secondary-to-shade-supply"
+    },
+    {
+      "id": "plc-io-to-shade-control",
+      "from": {
+        "component": "plc",
+        "port": "io"
+      },
+      "to": {
+        "component": "shade",
+        "port": "control"
+      },
+      "medium": "data",
+      "label": "Shared controller command",
+      "flowBinding": "/flows/plc-io-to-shade-control"
+    },
+    {
+      "id": "shade-light-out-to-rowA-light",
+      "from": {
+        "component": "shade",
+        "port": "light-out"
+      },
+      "to": {
+        "component": "rowA",
+        "port": "light"
+      },
+      "medium": "optical",
+      "label": "optical",
+      "flowBinding": "/flows/shade-light-out-to-rowA-light"
+    },
+    {
+      "id": "shade-light-out-to-rowB-light",
+      "from": {
+        "component": "shade",
+        "port": "light-out"
+      },
+      "to": {
+        "component": "rowB",
+        "port": "light"
+      },
+      "medium": "optical",
+      "label": "optical",
+      "flowBinding": "/flows/shade-light-out-to-rowB-light"
+    },
+    {
+      "id": "airFan-outlet-to-pad-air-in",
+      "from": {
+        "component": "airFan",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "pad",
+        "port": "air-in"
+      },
+      "medium": "air",
+      "label": "air",
+      "flowBinding": "/flows/airFan-outlet-to-pad-air-in"
+    },
+    {
+      "id": "pad-air-out-to-vent-inlet",
+      "from": {
+        "component": "pad",
+        "port": "air-out"
+      },
+      "to": {
+        "component": "vent",
+        "port": "inlet"
+      },
+      "medium": "air",
+      "label": "air",
+      "flowBinding": "/flows/pad-air-out-to-vent-inlet"
+    },
+    {
+      "id": "sitePower-secondary-to-airFan-supply",
+      "from": {
+        "component": "sitePower",
+        "port": "secondary"
+      },
+      "to": {
+        "component": "airFan",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "label": "Declared grid power",
+      "flowBinding": "/flows/sitePower-secondary-to-airFan-supply"
+    },
+    {
+      "id": "sitePower-secondary-to-vent-supply",
+      "from": {
+        "component": "sitePower",
+        "port": "secondary"
+      },
+      "to": {
+        "component": "vent",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "label": "Declared grid power",
+      "flowBinding": "/flows/sitePower-secondary-to-vent-supply"
+    },
+    {
+      "id": "plc-io-to-airFan-control",
+      "from": {
+        "component": "plc",
+        "port": "io"
+      },
+      "to": {
+        "component": "airFan",
+        "port": "control"
+      },
+      "medium": "data",
+      "label": "Shared controller command",
+      "flowBinding": "/flows/plc-io-to-airFan-control"
+    },
+    {
+      "id": "plc-io-to-vent-control",
+      "from": {
+        "component": "plc",
+        "port": "io"
+      },
+      "to": {
+        "component": "vent",
+        "port": "control"
+      },
+      "medium": "data",
+      "label": "Shared controller command",
+      "flowBinding": "/flows/plc-io-to-vent-control"
+    },
+    {
+      "id": "padSump-outlet-to-padPump-inlet",
+      "from": {
+        "component": "padSump",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "padPump",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "label": "liquid",
+      "flowBinding": "/flows/padSump-outlet-to-padPump-inlet"
+    },
+    {
+      "id": "padPump-outlet-to-pad-inlet",
+      "from": {
+        "component": "padPump",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "pad",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "label": "liquid",
+      "flowBinding": "/flows/padPump-outlet-to-pad-inlet"
+    },
+    {
+      "id": "pad-drain-to-padSump-inlet",
+      "from": {
+        "component": "pad",
+        "port": "drain"
+      },
+      "to": {
+        "component": "padSump",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "label": "liquid",
+      "flowBinding": "/flows/pad-drain-to-padSump-inlet"
+    },
+    {
+      "id": "sitePower-secondary-to-padPump-drive",
+      "from": {
+        "component": "sitePower",
+        "port": "secondary"
+      },
+      "to": {
+        "component": "padPump",
+        "port": "drive"
+      },
+      "medium": "electricity",
+      "label": "Declared grid power",
+      "flowBinding": "/flows/sitePower-secondary-to-padPump-drive"
+    },
+    {
+      "id": "sitePower-secondary-to-humidityProbe-supply",
+      "from": {
+        "component": "sitePower",
+        "port": "secondary"
+      },
+      "to": {
+        "component": "humidityProbe",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "label": "Declared grid power",
+      "flowBinding": "/flows/sitePower-secondary-to-humidityProbe-supply"
+    },
+    {
+      "id": "humidityProbe-signal-to-plc-io",
+      "from": {
+        "component": "humidityProbe",
+        "port": "signal"
+      },
+      "to": {
+        "component": "plc",
+        "port": "io"
+      },
+      "medium": "data",
+      "label": "Zone observation",
+      "flowBinding": "/flows/humidityProbe-signal-to-plc-io"
+    },
+    {
+      "id": "sitePower-secondary-to-lightProbe-supply",
+      "from": {
+        "component": "sitePower",
+        "port": "secondary"
+      },
+      "to": {
+        "component": "lightProbe",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "label": "Declared grid power",
+      "flowBinding": "/flows/sitePower-secondary-to-lightProbe-supply"
+    },
+    {
+      "id": "lightProbe-signal-to-plc-io",
+      "from": {
+        "component": "lightProbe",
+        "port": "signal"
+      },
+      "to": {
+        "component": "plc",
+        "port": "io"
+      },
+      "medium": "data",
+      "label": "Zone observation",
+      "flowBinding": "/flows/lightProbe-signal-to-plc-io"
+    },
+    {
+      "id": "sitePower-secondary-to-ecProbe-supply",
+      "from": {
+        "component": "sitePower",
+        "port": "secondary"
+      },
+      "to": {
+        "component": "ecProbe",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "label": "Declared grid power",
+      "flowBinding": "/flows/sitePower-secondary-to-ecProbe-supply"
+    },
+    {
+      "id": "reservoir-outlet-to-ecProbe-measurement",
+      "from": {
+        "component": "reservoir",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "ecProbe",
+        "port": "measurement"
+      },
+      "medium": "measurement",
+      "label": "Non-consuming observation",
+      "flowBinding": "/flows/reservoir-outlet-to-ecProbe-measurement"
+    },
+    {
+      "id": "ecProbe-signal-to-plc-io",
+      "from": {
+        "component": "ecProbe",
+        "port": "signal"
+      },
+      "to": {
+        "component": "plc",
+        "port": "io"
+      },
+      "medium": "data",
+      "label": "Measured index",
+      "flowBinding": "/flows/ecProbe-signal-to-plc-io"
+    }
+  ],
+  "views": [
+    {
+      "id": "water",
+      "label": "Substrate irrigation & return",
+      "canvas": {
+        "width": 980,
+        "height": 940
+      },
+      "placements": [
+        {
+          "component": "reservoir",
+          "x": 60,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "irrigationPump",
+          "x": 360,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "filter",
+          "x": 660,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "header",
+          "x": 660,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "rowA",
+          "x": 360,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "rowB",
+          "x": 60,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "drainTank",
+          "x": 60,
+          "y": 620,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "returnPump",
+          "x": 360,
+          "y": 620,
+          "width": 200,
+          "height": 190
+        }
+      ],
+      "routes": [
+        {
+          "connection": "reservoir-outlet-to-irrigationPump-inlet",
+          "points": [
+            {
+              "x": 260,
+              "y": 155
+            },
+            {
+              "x": 360,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "irrigationPump-outlet-to-filter-inlet",
+          "points": [
+            {
+              "x": 560,
+              "y": 155
+            },
+            {
+              "x": 660,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "filter-outlet-to-header-west",
+          "points": [
+            {
+              "x": 860,
+              "y": 155
+            },
+            {
+              "x": 880,
+              "y": 155
+            },
+            {
+              "x": 880,
+              "y": 320
+            },
+            {
+              "x": 640,
+              "y": 320
+            },
+            {
+              "x": 640,
+              "y": 435
+            },
+            {
+              "x": 660,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "header-north-to-rowA-inlet",
+          "points": [
+            {
+              "x": 760,
+              "y": 340
+            },
+            {
+              "x": 760,
+              "y": 320
+            },
+            {
+              "x": 340,
+              "y": 320
+            },
+            {
+              "x": 340,
+              "y": 435
+            },
+            {
+              "x": 360,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "rowA-outlet-to-drainTank-inlet",
+          "points": [
+            {
+              "x": 560,
+              "y": 435
+            },
+            {
+              "x": 580,
+              "y": 435
+            },
+            {
+              "x": 580,
+              "y": 600
+            },
+            {
+              "x": 40,
+              "y": 600
+            },
+            {
+              "x": 40,
+              "y": 715
+            },
+            {
+              "x": 60,
+              "y": 715
+            }
+          ]
+        },
+        {
+          "connection": "header-south-to-rowB-inlet",
+          "points": [
+            {
+              "x": 760,
+              "y": 530
+            },
+            {
+              "x": 760,
+              "y": 550
+            },
+            {
+              "x": 40,
+              "y": 550
+            },
+            {
+              "x": 40,
+              "y": 435
+            },
+            {
+              "x": 60,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "rowB-outlet-to-drainTank-inlet",
+          "points": [
+            {
+              "x": 260,
+              "y": 435
+            },
+            {
+              "x": 280,
+              "y": 435
+            },
+            {
+              "x": 280,
+              "y": 600
+            },
+            {
+              "x": 40,
+              "y": 600
+            },
+            {
+              "x": 40,
+              "y": 715
+            },
+            {
+              "x": 60,
+              "y": 715
+            }
+          ]
+        },
+        {
+          "connection": "drainTank-outlet-to-returnPump-inlet",
+          "points": [
+            {
+              "x": 260,
+              "y": 715
+            },
+            {
+              "x": 360,
+              "y": 715
+            }
+          ]
+        },
+        {
+          "connection": "returnPump-outlet-to-reservoir-inlet",
+          "points": [
+            {
+              "x": 560,
+              "y": 715
+            },
+            {
+              "x": 580,
+              "y": 715
+            },
+            {
+              "x": 580,
+              "y": 270
+            },
+            {
+              "x": 40,
+              "y": 270
+            },
+            {
+              "x": 40,
+              "y": 155
+            },
+            {
+              "x": 60,
+              "y": 155
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "climate",
+      "label": "Air, shade & independent pad water",
+      "canvas": {
+        "width": 980,
+        "height": 940
+      },
+      "placements": [
+        {
+          "component": "shade",
+          "x": 60,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "rowA",
+          "x": 360,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "lightProbe",
+          "x": 660,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "airFan",
+          "x": 660,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "pad",
+          "x": 360,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "vent",
+          "x": 60,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "padSump",
+          "x": 60,
+          "y": 620,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "padPump",
+          "x": 360,
+          "y": 620,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "humidityProbe",
+          "x": 660,
+          "y": 620,
+          "width": 200,
+          "height": 190
+        }
+      ],
+      "routes": [
+        {
+          "connection": "shade-light-out-to-rowA-light",
+          "points": [
+            {
+              "x": 160,
+              "y": 250
+            },
+            {
+              "x": 160,
+              "y": 292
+            },
+            {
+              "x": 318,
+              "y": 292
+            },
+            {
+              "x": 318,
+              "y": 18
+            },
+            {
+              "x": 460,
+              "y": 18
+            },
+            {
+              "x": 460,
+              "y": 60
+            }
+          ]
+        },
+        {
+          "connection": "airFan-outlet-to-pad-air-in",
+          "points": [
+            {
+              "x": 860,
+              "y": 435
+            },
+            {
+              "x": 890,
+              "y": 435
+            },
+            {
+              "x": 890,
+              "y": 310
+            },
+            {
+              "x": 330,
+              "y": 310
+            },
+            {
+              "x": 330,
+              "y": 435
+            },
+            {
+              "x": 360,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "pad-air-out-to-vent-inlet",
+          "points": [
+            {
+              "x": 560,
+              "y": 435
+            },
+            {
+              "x": 590,
+              "y": 435
+            },
+            {
+              "x": 590,
+              "y": 310
+            },
+            {
+              "x": 30,
+              "y": 310
+            },
+            {
+              "x": 30,
+              "y": 435
+            },
+            {
+              "x": 60,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "padSump-outlet-to-padPump-inlet",
+          "points": [
+            {
+              "x": 260,
+              "y": 715
+            },
+            {
+              "x": 360,
+              "y": 715
+            }
+          ]
+        },
+        {
+          "connection": "padPump-outlet-to-pad-inlet",
+          "points": [
+            {
+              "x": 560,
+              "y": 715
+            },
+            {
+              "x": 580,
+              "y": 715
+            },
+            {
+              "x": 580,
+              "y": 320
+            },
+            {
+              "x": 420,
+              "y": 320
+            },
+            {
+              "x": 420,
+              "y": 340
+            }
+          ]
+        },
+        {
+          "connection": "pad-drain-to-padSump-inlet",
+          "points": [
+            {
+              "x": 420,
+              "y": 530
+            },
+            {
+              "x": 420,
+              "y": 600
+            },
+            {
+              "x": 40,
+              "y": 600
+            },
+            {
+              "x": 40,
+              "y": 715
+            },
+            {
+              "x": 60,
+              "y": 715
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "utilities",
+      "label": "Power, sensing & controls",
+      "canvas": {
+        "width": 980,
+        "height": 940
+      },
+      "placements": [
+        {
+          "component": "sitePower",
+          "x": 60,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "plc",
+          "x": 360,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "ecProbe",
+          "x": 660,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "humidityProbe",
+          "x": 660,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "irrigationPump",
+          "x": 360,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "returnPump",
+          "x": 60,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "airFan",
+          "x": 60,
+          "y": 620,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "vent",
+          "x": 360,
+          "y": 620,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "padPump",
+          "x": 660,
+          "y": 620,
+          "width": 200,
+          "height": 190
+        }
+      ],
+      "routes": [
+        {
+          "connection": "sitePower-secondary-to-plc-power",
+          "points": [
+            {
+              "x": 260,
+              "y": 155
+            },
+            {
+              "x": 324,
+              "y": 155
+            },
+            {
+              "x": 324,
+              "y": 286
+            },
+            {
+              "x": 510,
+              "y": 286
+            },
+            {
+              "x": 510,
+              "y": 250
+            }
+          ]
+        },
+        {
+          "connection": "sitePower-secondary-to-irrigationPump-drive",
+          "points": [
+            {
+              "x": 260,
+              "y": 155
+            },
+            {
+              "x": 296,
+              "y": 155
+            },
+            {
+              "x": 296,
+              "y": 304
+            },
+            {
+              "x": 324,
+              "y": 304
+            },
+            {
+              "x": 324,
+              "y": 566
+            },
+            {
+              "x": 510,
+              "y": 566
+            },
+            {
+              "x": 510,
+              "y": 530
+            }
+          ]
+        },
+        {
+          "connection": "sitePower-secondary-to-returnPump-drive",
+          "points": [
+            {
+              "x": 260,
+              "y": 155
+            },
+            {
+              "x": 296,
+              "y": 155
+            },
+            {
+              "x": 296,
+              "y": 566
+            },
+            {
+              "x": 210,
+              "y": 566
+            },
+            {
+              "x": 210,
+              "y": 530
+            }
+          ]
+        },
+        {
+          "connection": "sitePower-secondary-to-airFan-supply",
+          "points": [
+            {
+              "x": 260,
+              "y": 155
+            },
+            {
+              "x": 296,
+              "y": 155
+            },
+            {
+              "x": 296,
+              "y": 846
+            },
+            {
+              "x": 210,
+              "y": 846
+            },
+            {
+              "x": 210,
+              "y": 810
+            }
+          ]
+        },
+        {
+          "connection": "sitePower-secondary-to-vent-supply",
+          "points": [
+            {
+              "x": 260,
+              "y": 155
+            },
+            {
+              "x": 296,
+              "y": 155
+            },
+            {
+              "x": 296,
+              "y": 584
+            },
+            {
+              "x": 324,
+              "y": 584
+            },
+            {
+              "x": 324,
+              "y": 846
+            },
+            {
+              "x": 510,
+              "y": 846
+            },
+            {
+              "x": 510,
+              "y": 810
+            }
+          ]
+        },
+        {
+          "connection": "plc-io-to-airFan-control",
+          "points": [
+            {
+              "x": 460,
+              "y": 250
+            },
+            {
+              "x": 460,
+              "y": 298
+            },
+            {
+              "x": 308,
+              "y": 298
+            },
+            {
+              "x": 308,
+              "y": 858
+            },
+            {
+              "x": 160,
+              "y": 858
+            },
+            {
+              "x": 160,
+              "y": 810
+            }
+          ]
+        },
+        {
+          "connection": "plc-io-to-vent-control",
+          "points": [
+            {
+              "x": 460,
+              "y": 250
+            },
+            {
+              "x": 460,
+              "y": 298
+            },
+            {
+              "x": 312,
+              "y": 298
+            },
+            {
+              "x": 312,
+              "y": 858
+            },
+            {
+              "x": 460,
+              "y": 858
+            },
+            {
+              "x": 460,
+              "y": 810
+            }
+          ]
+        },
+        {
+          "connection": "sitePower-secondary-to-padPump-drive",
+          "points": [
+            {
+              "x": 260,
+              "y": 155
+            },
+            {
+              "x": 296,
+              "y": 155
+            },
+            {
+              "x": 296,
+              "y": 584
+            },
+            {
+              "x": 624,
+              "y": 584
+            },
+            {
+              "x": 624,
+              "y": 846
+            },
+            {
+              "x": 810,
+              "y": 846
+            },
+            {
+              "x": 810,
+              "y": 810
+            }
+          ]
+        },
+        {
+          "connection": "sitePower-secondary-to-humidityProbe-supply",
+          "points": [
+            {
+              "x": 260,
+              "y": 155
+            },
+            {
+              "x": 296,
+              "y": 155
+            },
+            {
+              "x": 296,
+              "y": 304
+            },
+            {
+              "x": 624,
+              "y": 304
+            },
+            {
+              "x": 624,
+              "y": 566
+            },
+            {
+              "x": 810,
+              "y": 566
+            },
+            {
+              "x": 810,
+              "y": 530
+            }
+          ]
+        },
+        {
+          "connection": "humidityProbe-signal-to-plc-io",
+          "points": [
+            {
+              "x": 760,
+              "y": 530
+            },
+            {
+              "x": 760,
+              "y": 578
+            },
+            {
+              "x": 608,
+              "y": 578
+            },
+            {
+              "x": 608,
+              "y": 298
+            },
+            {
+              "x": 460,
+              "y": 298
+            },
+            {
+              "x": 460,
+              "y": 250
+            }
+          ]
+        },
+        {
+          "connection": "sitePower-secondary-to-ecProbe-supply",
+          "points": [
+            {
+              "x": 260,
+              "y": 155
+            },
+            {
+              "x": 324,
+              "y": 155
+            },
+            {
+              "x": 324,
+              "y": 286
+            },
+            {
+              "x": 810,
+              "y": 286
+            },
+            {
+              "x": 810,
+              "y": 250
+            }
+          ]
+        },
+        {
+          "connection": "ecProbe-signal-to-plc-io",
+          "points": [
+            {
+              "x": 760,
+              "y": 250
+            },
+            {
+              "x": 760,
+              "y": 298
+            },
+            {
+              "x": 460,
+              "y": 298
+            },
+            {
+              "x": 460,
+              "y": 250
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "commands": [
+    {
+      "id": "reservoir-enabled",
+      "label": "Equipment enabled",
+      "component": "reservoir",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "reservoir"
+      }
+    },
+    {
+      "id": "reservoir-load",
+      "label": "Requested duty (%)",
+      "component": "reservoir",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "reservoir"
+      }
+    },
+    {
+      "id": "reservoir-fault",
+      "label": "Inject fictional failure",
+      "component": "reservoir",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "reservoir",
+        "value": true
+      }
+    },
+    {
+      "id": "reservoir-repair",
+      "label": "Repair selected equipment",
+      "component": "reservoir",
+      "action": "repair",
+      "arguments": {
+        "equipment": "reservoir"
+      }
+    },
+    {
+      "id": "irrigationPump-enabled",
+      "label": "Equipment enabled",
+      "component": "irrigationPump",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "irrigationPump"
+      }
+    },
+    {
+      "id": "irrigationPump-load",
+      "label": "Requested duty (%)",
+      "component": "irrigationPump",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "irrigationPump"
+      }
+    },
+    {
+      "id": "irrigationPump-fault",
+      "label": "Inject fictional failure",
+      "component": "irrigationPump",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "irrigationPump",
+        "value": true
+      }
+    },
+    {
+      "id": "irrigationPump-repair",
+      "label": "Repair selected equipment",
+      "component": "irrigationPump",
+      "action": "repair",
+      "arguments": {
+        "equipment": "irrigationPump"
+      }
+    },
+    {
+      "id": "filter-enabled",
+      "label": "Equipment enabled",
+      "component": "filter",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "filter"
+      }
+    },
+    {
+      "id": "filter-load",
+      "label": "Requested duty (%)",
+      "component": "filter",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "filter"
+      }
+    },
+    {
+      "id": "filter-fault",
+      "label": "Inject fictional failure",
+      "component": "filter",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "filter",
+        "value": true
+      }
+    },
+    {
+      "id": "filter-repair",
+      "label": "Repair selected equipment",
+      "component": "filter",
+      "action": "repair",
+      "arguments": {
+        "equipment": "filter"
+      }
+    },
+    {
+      "id": "header-enabled",
+      "label": "Equipment enabled",
+      "component": "header",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "header"
+      }
+    },
+    {
+      "id": "header-load",
+      "label": "Requested duty (%)",
+      "component": "header",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "header"
+      }
+    },
+    {
+      "id": "header-fault",
+      "label": "Inject fictional failure",
+      "component": "header",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "header",
+        "value": true
+      }
+    },
+    {
+      "id": "header-repair",
+      "label": "Repair selected equipment",
+      "component": "header",
+      "action": "repair",
+      "arguments": {
+        "equipment": "header"
+      }
+    },
+    {
+      "id": "header-open",
+      "label": "Flow path open",
+      "component": "header",
+      "action": "setOpen",
+      "arguments": {
+        "equipment": "header"
+      }
+    },
+    {
+      "id": "rowA-enabled",
+      "label": "Equipment enabled",
+      "component": "rowA",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "rowA"
+      }
+    },
+    {
+      "id": "rowA-load",
+      "label": "Requested duty (%)",
+      "component": "rowA",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "rowA"
+      }
+    },
+    {
+      "id": "rowA-fault",
+      "label": "Inject fictional failure",
+      "component": "rowA",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "rowA",
+        "value": true
+      }
+    },
+    {
+      "id": "rowA-repair",
+      "label": "Repair selected equipment",
+      "component": "rowA",
+      "action": "repair",
+      "arguments": {
+        "equipment": "rowA"
+      }
+    },
+    {
+      "id": "rowB-enabled",
+      "label": "Equipment enabled",
+      "component": "rowB",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "rowB"
+      }
+    },
+    {
+      "id": "rowB-load",
+      "label": "Requested duty (%)",
+      "component": "rowB",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "rowB"
+      }
+    },
+    {
+      "id": "rowB-fault",
+      "label": "Inject fictional failure",
+      "component": "rowB",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "rowB",
+        "value": true
+      }
+    },
+    {
+      "id": "rowB-repair",
+      "label": "Repair selected equipment",
+      "component": "rowB",
+      "action": "repair",
+      "arguments": {
+        "equipment": "rowB"
+      }
+    },
+    {
+      "id": "drainTank-enabled",
+      "label": "Equipment enabled",
+      "component": "drainTank",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "drainTank"
+      }
+    },
+    {
+      "id": "drainTank-load",
+      "label": "Requested duty (%)",
+      "component": "drainTank",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "drainTank"
+      }
+    },
+    {
+      "id": "drainTank-fault",
+      "label": "Inject fictional failure",
+      "component": "drainTank",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "drainTank",
+        "value": true
+      }
+    },
+    {
+      "id": "drainTank-repair",
+      "label": "Repair selected equipment",
+      "component": "drainTank",
+      "action": "repair",
+      "arguments": {
+        "equipment": "drainTank"
+      }
+    },
+    {
+      "id": "returnPump-enabled",
+      "label": "Equipment enabled",
+      "component": "returnPump",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "returnPump"
+      }
+    },
+    {
+      "id": "returnPump-load",
+      "label": "Requested duty (%)",
+      "component": "returnPump",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "returnPump"
+      }
+    },
+    {
+      "id": "returnPump-fault",
+      "label": "Inject fictional failure",
+      "component": "returnPump",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "returnPump",
+        "value": true
+      }
+    },
+    {
+      "id": "returnPump-repair",
+      "label": "Repair selected equipment",
+      "component": "returnPump",
+      "action": "repair",
+      "arguments": {
+        "equipment": "returnPump"
+      }
+    },
+    {
+      "id": "sitePower-enabled",
+      "label": "Equipment enabled",
+      "component": "sitePower",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "sitePower"
+      }
+    },
+    {
+      "id": "sitePower-load",
+      "label": "Requested duty (%)",
+      "component": "sitePower",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "sitePower"
+      }
+    },
+    {
+      "id": "sitePower-fault",
+      "label": "Inject fictional failure",
+      "component": "sitePower",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "sitePower",
+        "value": true
+      }
+    },
+    {
+      "id": "sitePower-repair",
+      "label": "Repair selected equipment",
+      "component": "sitePower",
+      "action": "repair",
+      "arguments": {
+        "equipment": "sitePower"
+      }
+    },
+    {
+      "id": "plc-enabled",
+      "label": "Equipment enabled",
+      "component": "plc",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "plc"
+      }
+    },
+    {
+      "id": "plc-load",
+      "label": "Requested duty (%)",
+      "component": "plc",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "plc"
+      }
+    },
+    {
+      "id": "plc-fault",
+      "label": "Inject fictional failure",
+      "component": "plc",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "plc",
+        "value": true
+      }
+    },
+    {
+      "id": "plc-repair",
+      "label": "Repair selected equipment",
+      "component": "plc",
+      "action": "repair",
+      "arguments": {
+        "equipment": "plc"
+      }
+    },
+    {
+      "id": "shade-enabled",
+      "label": "Equipment enabled",
+      "component": "shade",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "shade"
+      }
+    },
+    {
+      "id": "shade-load",
+      "label": "Opening / retraction (%)",
+      "component": "shade",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "shade"
+      }
+    },
+    {
+      "id": "shade-fault",
+      "label": "Inject fictional failure",
+      "component": "shade",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "shade",
+        "value": true
+      }
+    },
+    {
+      "id": "shade-repair",
+      "label": "Repair selected equipment",
+      "component": "shade",
+      "action": "repair",
+      "arguments": {
+        "equipment": "shade"
+      }
+    },
+    {
+      "id": "airFan-enabled",
+      "label": "Equipment enabled",
+      "component": "airFan",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "airFan"
+      }
+    },
+    {
+      "id": "airFan-load",
+      "label": "Requested duty (%)",
+      "component": "airFan",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "airFan"
+      }
+    },
+    {
+      "id": "airFan-fault",
+      "label": "Inject fictional failure",
+      "component": "airFan",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "airFan",
+        "value": true
+      }
+    },
+    {
+      "id": "airFan-repair",
+      "label": "Repair selected equipment",
+      "component": "airFan",
+      "action": "repair",
+      "arguments": {
+        "equipment": "airFan"
+      }
+    },
+    {
+      "id": "pad-enabled",
+      "label": "Equipment enabled",
+      "component": "pad",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "pad"
+      }
+    },
+    {
+      "id": "pad-load",
+      "label": "Requested duty (%)",
+      "component": "pad",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "pad"
+      }
+    },
+    {
+      "id": "pad-fault",
+      "label": "Inject fictional failure",
+      "component": "pad",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "pad",
+        "value": true
+      }
+    },
+    {
+      "id": "pad-repair",
+      "label": "Repair selected equipment",
+      "component": "pad",
+      "action": "repair",
+      "arguments": {
+        "equipment": "pad"
+      }
+    },
+    {
+      "id": "vent-enabled",
+      "label": "Equipment enabled",
+      "component": "vent",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "vent"
+      }
+    },
+    {
+      "id": "vent-load",
+      "label": "Opening / retraction (%)",
+      "component": "vent",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "vent"
+      }
+    },
+    {
+      "id": "vent-fault",
+      "label": "Inject fictional failure",
+      "component": "vent",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "vent",
+        "value": true
+      }
+    },
+    {
+      "id": "vent-repair",
+      "label": "Repair selected equipment",
+      "component": "vent",
+      "action": "repair",
+      "arguments": {
+        "equipment": "vent"
+      }
+    },
+    {
+      "id": "padSump-enabled",
+      "label": "Equipment enabled",
+      "component": "padSump",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "padSump"
+      }
+    },
+    {
+      "id": "padSump-load",
+      "label": "Requested duty (%)",
+      "component": "padSump",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "padSump"
+      }
+    },
+    {
+      "id": "padSump-fault",
+      "label": "Inject fictional failure",
+      "component": "padSump",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "padSump",
+        "value": true
+      }
+    },
+    {
+      "id": "padSump-repair",
+      "label": "Repair selected equipment",
+      "component": "padSump",
+      "action": "repair",
+      "arguments": {
+        "equipment": "padSump"
+      }
+    },
+    {
+      "id": "padPump-enabled",
+      "label": "Equipment enabled",
+      "component": "padPump",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "padPump"
+      }
+    },
+    {
+      "id": "padPump-load",
+      "label": "Requested duty (%)",
+      "component": "padPump",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "padPump"
+      }
+    },
+    {
+      "id": "padPump-fault",
+      "label": "Inject fictional failure",
+      "component": "padPump",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "padPump",
+        "value": true
+      }
+    },
+    {
+      "id": "padPump-repair",
+      "label": "Repair selected equipment",
+      "component": "padPump",
+      "action": "repair",
+      "arguments": {
+        "equipment": "padPump"
+      }
+    },
+    {
+      "id": "humidityProbe-enabled",
+      "label": "Equipment enabled",
+      "component": "humidityProbe",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "humidityProbe"
+      }
+    },
+    {
+      "id": "humidityProbe-load",
+      "label": "Requested duty (%)",
+      "component": "humidityProbe",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "humidityProbe"
+      }
+    },
+    {
+      "id": "humidityProbe-fault",
+      "label": "Inject fictional failure",
+      "component": "humidityProbe",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "humidityProbe",
+        "value": true
+      }
+    },
+    {
+      "id": "humidityProbe-repair",
+      "label": "Repair selected equipment",
+      "component": "humidityProbe",
+      "action": "repair",
+      "arguments": {
+        "equipment": "humidityProbe"
+      }
+    },
+    {
+      "id": "lightProbe-enabled",
+      "label": "Equipment enabled",
+      "component": "lightProbe",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "lightProbe"
+      }
+    },
+    {
+      "id": "lightProbe-load",
+      "label": "Requested duty (%)",
+      "component": "lightProbe",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "lightProbe"
+      }
+    },
+    {
+      "id": "lightProbe-fault",
+      "label": "Inject fictional failure",
+      "component": "lightProbe",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "lightProbe",
+        "value": true
+      }
+    },
+    {
+      "id": "lightProbe-repair",
+      "label": "Repair selected equipment",
+      "component": "lightProbe",
+      "action": "repair",
+      "arguments": {
+        "equipment": "lightProbe"
+      }
+    },
+    {
+      "id": "ecProbe-enabled",
+      "label": "Equipment enabled",
+      "component": "ecProbe",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "ecProbe"
+      }
+    },
+    {
+      "id": "ecProbe-load",
+      "label": "Requested duty (%)",
+      "component": "ecProbe",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "ecProbe"
+      }
+    },
+    {
+      "id": "ecProbe-fault",
+      "label": "Inject fictional failure",
+      "component": "ecProbe",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "ecProbe",
+        "value": true
+      }
+    },
+    {
+      "id": "ecProbe-repair",
+      "label": "Repair selected equipment",
+      "component": "ecProbe",
+      "action": "repair",
+      "arguments": {
+        "equipment": "ecProbe"
+      }
+    }
+  ],
+  "controls": [
+    {
+      "id": "reservoir-enabled-control",
+      "label": "Equipment enabled",
+      "component": "reservoir",
+      "kind": "toggle",
+      "command": "reservoir-enabled",
+      "binding": "/controls/reservoir/enabled"
+    },
+    {
+      "id": "reservoir-load-control",
+      "label": "Requested duty (%)",
+      "component": "reservoir",
+      "kind": "range",
+      "command": "reservoir-load",
+      "binding": "/controls/reservoir/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "reservoir-fault-control",
+      "label": "Inject fictional failure",
+      "component": "reservoir",
+      "kind": "button",
+      "command": "reservoir-fault"
+    },
+    {
+      "id": "reservoir-repair-control",
+      "label": "Repair selected equipment",
+      "component": "reservoir",
+      "kind": "button",
+      "command": "reservoir-repair"
+    },
+    {
+      "id": "irrigationPump-enabled-control",
+      "label": "Equipment enabled",
+      "component": "irrigationPump",
+      "kind": "toggle",
+      "command": "irrigationPump-enabled",
+      "binding": "/controls/irrigationPump/enabled"
+    },
+    {
+      "id": "irrigationPump-load-control",
+      "label": "Requested duty (%)",
+      "component": "irrigationPump",
+      "kind": "range",
+      "command": "irrigationPump-load",
+      "binding": "/controls/irrigationPump/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "irrigationPump-fault-control",
+      "label": "Inject fictional failure",
+      "component": "irrigationPump",
+      "kind": "button",
+      "command": "irrigationPump-fault"
+    },
+    {
+      "id": "irrigationPump-repair-control",
+      "label": "Repair selected equipment",
+      "component": "irrigationPump",
+      "kind": "button",
+      "command": "irrigationPump-repair"
+    },
+    {
+      "id": "filter-enabled-control",
+      "label": "Equipment enabled",
+      "component": "filter",
+      "kind": "toggle",
+      "command": "filter-enabled",
+      "binding": "/controls/filter/enabled"
+    },
+    {
+      "id": "filter-load-control",
+      "label": "Requested duty (%)",
+      "component": "filter",
+      "kind": "range",
+      "command": "filter-load",
+      "binding": "/controls/filter/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "filter-fault-control",
+      "label": "Inject fictional failure",
+      "component": "filter",
+      "kind": "button",
+      "command": "filter-fault"
+    },
+    {
+      "id": "filter-repair-control",
+      "label": "Repair selected equipment",
+      "component": "filter",
+      "kind": "button",
+      "command": "filter-repair"
+    },
+    {
+      "id": "header-enabled-control",
+      "label": "Equipment enabled",
+      "component": "header",
+      "kind": "toggle",
+      "command": "header-enabled",
+      "binding": "/controls/header/enabled"
+    },
+    {
+      "id": "header-load-control",
+      "label": "Requested duty (%)",
+      "component": "header",
+      "kind": "range",
+      "command": "header-load",
+      "binding": "/controls/header/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "header-fault-control",
+      "label": "Inject fictional failure",
+      "component": "header",
+      "kind": "button",
+      "command": "header-fault"
+    },
+    {
+      "id": "header-repair-control",
+      "label": "Repair selected equipment",
+      "component": "header",
+      "kind": "button",
+      "command": "header-repair"
+    },
+    {
+      "id": "header-open-control",
+      "label": "Flow path open",
+      "component": "header",
+      "kind": "toggle",
+      "command": "header-open",
+      "binding": "/controls/header/open"
+    },
+    {
+      "id": "rowA-enabled-control",
+      "label": "Equipment enabled",
+      "component": "rowA",
+      "kind": "toggle",
+      "command": "rowA-enabled",
+      "binding": "/controls/rowA/enabled"
+    },
+    {
+      "id": "rowA-load-control",
+      "label": "Requested duty (%)",
+      "component": "rowA",
+      "kind": "range",
+      "command": "rowA-load",
+      "binding": "/controls/rowA/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "rowA-fault-control",
+      "label": "Inject fictional failure",
+      "component": "rowA",
+      "kind": "button",
+      "command": "rowA-fault"
+    },
+    {
+      "id": "rowA-repair-control",
+      "label": "Repair selected equipment",
+      "component": "rowA",
+      "kind": "button",
+      "command": "rowA-repair"
+    },
+    {
+      "id": "rowB-enabled-control",
+      "label": "Equipment enabled",
+      "component": "rowB",
+      "kind": "toggle",
+      "command": "rowB-enabled",
+      "binding": "/controls/rowB/enabled"
+    },
+    {
+      "id": "rowB-load-control",
+      "label": "Requested duty (%)",
+      "component": "rowB",
+      "kind": "range",
+      "command": "rowB-load",
+      "binding": "/controls/rowB/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "rowB-fault-control",
+      "label": "Inject fictional failure",
+      "component": "rowB",
+      "kind": "button",
+      "command": "rowB-fault"
+    },
+    {
+      "id": "rowB-repair-control",
+      "label": "Repair selected equipment",
+      "component": "rowB",
+      "kind": "button",
+      "command": "rowB-repair"
+    },
+    {
+      "id": "drainTank-enabled-control",
+      "label": "Equipment enabled",
+      "component": "drainTank",
+      "kind": "toggle",
+      "command": "drainTank-enabled",
+      "binding": "/controls/drainTank/enabled"
+    },
+    {
+      "id": "drainTank-load-control",
+      "label": "Requested duty (%)",
+      "component": "drainTank",
+      "kind": "range",
+      "command": "drainTank-load",
+      "binding": "/controls/drainTank/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "drainTank-fault-control",
+      "label": "Inject fictional failure",
+      "component": "drainTank",
+      "kind": "button",
+      "command": "drainTank-fault"
+    },
+    {
+      "id": "drainTank-repair-control",
+      "label": "Repair selected equipment",
+      "component": "drainTank",
+      "kind": "button",
+      "command": "drainTank-repair"
+    },
+    {
+      "id": "returnPump-enabled-control",
+      "label": "Equipment enabled",
+      "component": "returnPump",
+      "kind": "toggle",
+      "command": "returnPump-enabled",
+      "binding": "/controls/returnPump/enabled"
+    },
+    {
+      "id": "returnPump-load-control",
+      "label": "Requested duty (%)",
+      "component": "returnPump",
+      "kind": "range",
+      "command": "returnPump-load",
+      "binding": "/controls/returnPump/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "returnPump-fault-control",
+      "label": "Inject fictional failure",
+      "component": "returnPump",
+      "kind": "button",
+      "command": "returnPump-fault"
+    },
+    {
+      "id": "returnPump-repair-control",
+      "label": "Repair selected equipment",
+      "component": "returnPump",
+      "kind": "button",
+      "command": "returnPump-repair"
+    },
+    {
+      "id": "sitePower-enabled-control",
+      "label": "Equipment enabled",
+      "component": "sitePower",
+      "kind": "toggle",
+      "command": "sitePower-enabled",
+      "binding": "/controls/sitePower/enabled"
+    },
+    {
+      "id": "sitePower-load-control",
+      "label": "Requested duty (%)",
+      "component": "sitePower",
+      "kind": "range",
+      "command": "sitePower-load",
+      "binding": "/controls/sitePower/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "sitePower-fault-control",
+      "label": "Inject fictional failure",
+      "component": "sitePower",
+      "kind": "button",
+      "command": "sitePower-fault"
+    },
+    {
+      "id": "sitePower-repair-control",
+      "label": "Repair selected equipment",
+      "component": "sitePower",
+      "kind": "button",
+      "command": "sitePower-repair"
+    },
+    {
+      "id": "plc-enabled-control",
+      "label": "Equipment enabled",
+      "component": "plc",
+      "kind": "toggle",
+      "command": "plc-enabled",
+      "binding": "/controls/plc/enabled"
+    },
+    {
+      "id": "plc-load-control",
+      "label": "Requested duty (%)",
+      "component": "plc",
+      "kind": "range",
+      "command": "plc-load",
+      "binding": "/controls/plc/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "plc-fault-control",
+      "label": "Inject fictional failure",
+      "component": "plc",
+      "kind": "button",
+      "command": "plc-fault"
+    },
+    {
+      "id": "plc-repair-control",
+      "label": "Repair selected equipment",
+      "component": "plc",
+      "kind": "button",
+      "command": "plc-repair"
+    },
+    {
+      "id": "shade-enabled-control",
+      "label": "Equipment enabled",
+      "component": "shade",
+      "kind": "toggle",
+      "command": "shade-enabled",
+      "binding": "/controls/shade/enabled"
+    },
+    {
+      "id": "shade-load-control",
+      "label": "Opening / retraction (%)",
+      "component": "shade",
+      "kind": "range",
+      "command": "shade-load",
+      "binding": "/controls/shade/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "shade-fault-control",
+      "label": "Inject fictional failure",
+      "component": "shade",
+      "kind": "button",
+      "command": "shade-fault"
+    },
+    {
+      "id": "shade-repair-control",
+      "label": "Repair selected equipment",
+      "component": "shade",
+      "kind": "button",
+      "command": "shade-repair"
+    },
+    {
+      "id": "airFan-enabled-control",
+      "label": "Equipment enabled",
+      "component": "airFan",
+      "kind": "toggle",
+      "command": "airFan-enabled",
+      "binding": "/controls/airFan/enabled"
+    },
+    {
+      "id": "airFan-load-control",
+      "label": "Requested duty (%)",
+      "component": "airFan",
+      "kind": "range",
+      "command": "airFan-load",
+      "binding": "/controls/airFan/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "airFan-fault-control",
+      "label": "Inject fictional failure",
+      "component": "airFan",
+      "kind": "button",
+      "command": "airFan-fault"
+    },
+    {
+      "id": "airFan-repair-control",
+      "label": "Repair selected equipment",
+      "component": "airFan",
+      "kind": "button",
+      "command": "airFan-repair"
+    },
+    {
+      "id": "pad-enabled-control",
+      "label": "Equipment enabled",
+      "component": "pad",
+      "kind": "toggle",
+      "command": "pad-enabled",
+      "binding": "/controls/pad/enabled"
+    },
+    {
+      "id": "pad-load-control",
+      "label": "Requested duty (%)",
+      "component": "pad",
+      "kind": "range",
+      "command": "pad-load",
+      "binding": "/controls/pad/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "pad-fault-control",
+      "label": "Inject fictional failure",
+      "component": "pad",
+      "kind": "button",
+      "command": "pad-fault"
+    },
+    {
+      "id": "pad-repair-control",
+      "label": "Repair selected equipment",
+      "component": "pad",
+      "kind": "button",
+      "command": "pad-repair"
+    },
+    {
+      "id": "vent-enabled-control",
+      "label": "Equipment enabled",
+      "component": "vent",
+      "kind": "toggle",
+      "command": "vent-enabled",
+      "binding": "/controls/vent/enabled"
+    },
+    {
+      "id": "vent-load-control",
+      "label": "Opening / retraction (%)",
+      "component": "vent",
+      "kind": "range",
+      "command": "vent-load",
+      "binding": "/controls/vent/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "vent-fault-control",
+      "label": "Inject fictional failure",
+      "component": "vent",
+      "kind": "button",
+      "command": "vent-fault"
+    },
+    {
+      "id": "vent-repair-control",
+      "label": "Repair selected equipment",
+      "component": "vent",
+      "kind": "button",
+      "command": "vent-repair"
+    },
+    {
+      "id": "padSump-enabled-control",
+      "label": "Equipment enabled",
+      "component": "padSump",
+      "kind": "toggle",
+      "command": "padSump-enabled",
+      "binding": "/controls/padSump/enabled"
+    },
+    {
+      "id": "padSump-load-control",
+      "label": "Requested duty (%)",
+      "component": "padSump",
+      "kind": "range",
+      "command": "padSump-load",
+      "binding": "/controls/padSump/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "padSump-fault-control",
+      "label": "Inject fictional failure",
+      "component": "padSump",
+      "kind": "button",
+      "command": "padSump-fault"
+    },
+    {
+      "id": "padSump-repair-control",
+      "label": "Repair selected equipment",
+      "component": "padSump",
+      "kind": "button",
+      "command": "padSump-repair"
+    },
+    {
+      "id": "padPump-enabled-control",
+      "label": "Equipment enabled",
+      "component": "padPump",
+      "kind": "toggle",
+      "command": "padPump-enabled",
+      "binding": "/controls/padPump/enabled"
+    },
+    {
+      "id": "padPump-load-control",
+      "label": "Requested duty (%)",
+      "component": "padPump",
+      "kind": "range",
+      "command": "padPump-load",
+      "binding": "/controls/padPump/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "padPump-fault-control",
+      "label": "Inject fictional failure",
+      "component": "padPump",
+      "kind": "button",
+      "command": "padPump-fault"
+    },
+    {
+      "id": "padPump-repair-control",
+      "label": "Repair selected equipment",
+      "component": "padPump",
+      "kind": "button",
+      "command": "padPump-repair"
+    },
+    {
+      "id": "humidityProbe-enabled-control",
+      "label": "Equipment enabled",
+      "component": "humidityProbe",
+      "kind": "toggle",
+      "command": "humidityProbe-enabled",
+      "binding": "/controls/humidityProbe/enabled"
+    },
+    {
+      "id": "humidityProbe-load-control",
+      "label": "Requested duty (%)",
+      "component": "humidityProbe",
+      "kind": "range",
+      "command": "humidityProbe-load",
+      "binding": "/controls/humidityProbe/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "humidityProbe-fault-control",
+      "label": "Inject fictional failure",
+      "component": "humidityProbe",
+      "kind": "button",
+      "command": "humidityProbe-fault"
+    },
+    {
+      "id": "humidityProbe-repair-control",
+      "label": "Repair selected equipment",
+      "component": "humidityProbe",
+      "kind": "button",
+      "command": "humidityProbe-repair"
+    },
+    {
+      "id": "lightProbe-enabled-control",
+      "label": "Equipment enabled",
+      "component": "lightProbe",
+      "kind": "toggle",
+      "command": "lightProbe-enabled",
+      "binding": "/controls/lightProbe/enabled"
+    },
+    {
+      "id": "lightProbe-load-control",
+      "label": "Requested duty (%)",
+      "component": "lightProbe",
+      "kind": "range",
+      "command": "lightProbe-load",
+      "binding": "/controls/lightProbe/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "lightProbe-fault-control",
+      "label": "Inject fictional failure",
+      "component": "lightProbe",
+      "kind": "button",
+      "command": "lightProbe-fault"
+    },
+    {
+      "id": "lightProbe-repair-control",
+      "label": "Repair selected equipment",
+      "component": "lightProbe",
+      "kind": "button",
+      "command": "lightProbe-repair"
+    },
+    {
+      "id": "ecProbe-enabled-control",
+      "label": "Equipment enabled",
+      "component": "ecProbe",
+      "kind": "toggle",
+      "command": "ecProbe-enabled",
+      "binding": "/controls/ecProbe/enabled"
+    },
+    {
+      "id": "ecProbe-load-control",
+      "label": "Requested duty (%)",
+      "component": "ecProbe",
+      "kind": "range",
+      "command": "ecProbe-load",
+      "binding": "/controls/ecProbe/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "ecProbe-fault-control",
+      "label": "Inject fictional failure",
+      "component": "ecProbe",
+      "kind": "button",
+      "command": "ecProbe-fault"
+    },
+    {
+      "id": "ecProbe-repair-control",
+      "label": "Repair selected equipment",
+      "component": "ecProbe",
+      "kind": "button",
+      "command": "ecProbe-repair"
+    }
+  ],
+  "provenance": [
+    {
+      "id": "model-guesses",
+      "label": "Editable normalized model guesses",
+      "kind": "assumed",
+      "description": "All quantities, coefficients, inventories, timings and fault responses are author-selected teaching indices, not biological or engineering calibration."
+    },
+    {
+      "id": "authored-topology",
+      "label": "Authored demonstration topology",
+      "kind": "illustrative",
+      "description": "One selected process arrangement with separate water, air, optical, power and signal paths. Screen geometry is not physical sizing."
+    },
+    {
+      "id": "A1",
+      "label": "OSU Extension \u00b7 Hydroponics",
+      "kind": "external",
+      "source": "https://extension.okstate.edu/fact-sheets/hydroponics",
+      "description": "Read 2026-11-13. Supports equipment identity and structural distinctions only. See docs/agriculture-references.md; does not validate placeholder parameters."
+    },
+    {
+      "id": "A7",
+      "label": "Virginia Cooperative Extension \u00b7 Media systems",
+      "kind": "external",
+      "source": "https://www.pubs.ext.vt.edu/content/pubs_ext_vt_edu/en/SPES/spes-465/spes-465.html",
+      "description": "Read 2026-11-13. Supports equipment identity and structural distinctions only. See docs/agriculture-references.md; does not validate placeholder parameters."
+    },
+    {
+      "id": "A8",
+      "label": "UMass Extension \u00b7 Ventilation for Greenhouses",
+      "kind": "external",
+      "source": "https://www.umass.edu/agriculture-food-environment/greenhouse-floriculture/fact-sheets/ventilation-for-greenhouses",
+      "description": "Read 2026-11-13. Supports equipment identity and structural distinctions only. See docs/agriculture-references.md; does not validate placeholder parameters."
+    },
+    {
+      "id": "A9",
+      "label": "UMass Extension \u00b7 Fan and Pad Evaporative Cooling",
+      "kind": "external",
+      "source": "https://www.umass.edu/agriculture-food-environment/greenhouse-floriculture/fact-sheets/fan-pad-evaporative-cooling-systems",
+      "description": "Read 2026-11-13. Supports equipment identity and structural distinctions only. See docs/agriculture-references.md; does not validate placeholder parameters."
+    },
+    {
+      "id": "A10",
+      "label": "UMass Extension \u00b7 Greenhouse environmental management",
+      "kind": "external",
+      "source": "https://www.umass.edu/agriculture-food-environment/greenhouse-floriculture/greenhouse-best-management-practices-bmp-manual/disease-management",
+      "description": "Read 2026-11-13. Supports equipment identity and structural distinctions only. See docs/agriculture-references.md; does not validate placeholder parameters."
+    }
+  ],
+  "assumptions": [
+    {
+      "id": "normalized",
+      "label": "All model values are editable teaching assumptions",
+      "value": true,
+      "provenance": "model-guesses"
+    },
+    {
+      "id": "separate-media",
+      "label": "Air and optical energy never add to water inventory",
+      "value": true,
+      "provenance": "authored-topology"
+    },
+    {
+      "id": "no-biology-prediction",
+      "label": "No crop-yield or fish-welfare prediction",
+      "value": true,
+      "provenance": "model-guesses"
+    }
+  ]
+}

@@ -240,7 +240,7 @@ Back to [process lessons](README.md), [the vision](../../vision.md) and [contrib
 
 ### Give a new folder index a distinct catalogue identity
 - **Rule:** preserve published root-page IDs and include enough path context to distinguish a new folder map.
-- **Check:** `tests/site/website-catalog.test.mjs` now requires root `guide-index`, docs `guide-docs-index` and research `research-index`; the real site build must succeed. `npm run build:site` produced the failure under Node 22.23.4. A page map is navigation evidence, not physical validation.
+- **Check:** `tests/site/toolkit/website-catalog.test.mjs` now requires root `guide-index`, docs `guide-docs-index` and research `research-index`; the real site build must succeed. `npm run build:site` produced the failure under Node 22.23.4. A page map is navigation evidence, not physical validation.
 
 <details>
 <summary>Build incident and source</summary>

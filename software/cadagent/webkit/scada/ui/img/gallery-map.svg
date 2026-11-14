@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="360" height="292" viewBox="0 0 360 292" role="img" aria-labelledby="title description">
+<title id="title">scada/ui/img/ folder map</title>
+<desc id="description">UI images are owned by the symbol, state and thumbnail galleries. Simulation previews belong to the sibling model library.</desc>
+<rect x="1" y="1" width="358" height="290" rx="12" fill="#fffdf5" stroke="#6f8a80"/>
+<g font-family="Arial, sans-serif" fill="#173d3c">
+<text x="24" y="35" font-size="18" font-weight="700">scada/ui/img/</text>
+<path d="M32 53V262" fill="none" stroke="#6f8a80" stroke-width="2"/>
+<path d="M32 76H48" stroke="#6f8a80" stroke-width="2"/>
+<rect x="48" y="57" width="288" height="62" rx="7" fill="#eef1e4"/>
+<text x="61" y="81" font-size="20" font-weight="600">symbols/</text>
+<text x="61" y="105" font-size="18">Animated equipment SVGs</text>
+<path d="M32 148H48" stroke="#6f8a80" stroke-width="2"/>
+<rect x="48" y="129" width="288" height="62" rx="7" fill="#eef1e4"/>
+<text x="61" y="153" font-size="20" font-weight="600">states/</text>
+<text x="61" y="177" font-size="18">Illustrative state comparisons</text>
+<path d="M32 220H48" stroke="#6f8a80" stroke-width="2"/>
+<rect x="48" y="201" width="288" height="62" rx="7" fill="#eef1e4"/>
+<text x="61" y="225" font-size="20" font-weight="600">thumbnails/</text>
+<text x="61" y="249" font-size="18">Equipment and workspace JPEGs</text>
+</g>
+</svg>

@@ -1,0 +1,2892 @@
+{
+  "$schema": "../../../scada-ui/schema/scada-system.schema.json",
+  "format": "scada-system",
+  "version": 1,
+  "system": {
+    "id": "pulp-paper",
+    "label": "Pulp & paper",
+    "description": "Prepare and screen stock, refine, form a sheet, press/dry and package. A clearly illustrative steam/power branch demonstrates shared utility dependencies."
+  },
+  "components": [
+    {
+      "id": "pulp",
+      "type": "silo",
+      "label": "Pulp receiving store",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "level": 55,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/pulp/active",
+        "running": "/components/pulp/running",
+        "fault": "/components/pulp/fault",
+        "status": "/components/pulp/status",
+        "level": "/components/pulp/level",
+        "damage": "/components/pulp/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "fill",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "discharge",
+          "side": "right",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "stock",
+      "type": "mixing-tank",
+      "label": "Stock blending chest",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "level": 55,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/stock/active",
+        "running": "/components/stock/running",
+        "fault": "/components/stock/fault",
+        "status": "/components/stock/status",
+        "level": "/components/stock/level",
+        "damage": "/components/stock/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "drive",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "screen",
+      "type": "vibrating-screen",
+      "label": "Stock screening",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/screen/active",
+        "running": "/components/screen/running",
+        "fault": "/components/screen/fault",
+        "status": "/components/screen/status",
+        "load": "/components/screen/load",
+        "speed": "/components/screen/speed",
+        "damage": "/components/screen/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "supply",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "refiner",
+      "type": "grinding-mill",
+      "label": "Stock refining stage",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/refiner/active",
+        "running": "/components/refiner/running",
+        "fault": "/components/refiner/fault",
+        "status": "/components/refiner/status",
+        "load": "/components/refiner/load",
+        "speed": "/components/refiner/speed",
+        "damage": "/components/refiner/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "supply",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "headbox",
+      "type": "tank",
+      "label": "Headbox supply chest",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "level": 55,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/headbox/active",
+        "running": "/components/headbox/running",
+        "fault": "/components/headbox/fault",
+        "status": "/components/headbox/status",
+        "level": "/components/headbox/level",
+        "damage": "/components/headbox/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "machine",
+      "type": "paper-machine",
+      "label": "Sheet-forming machine",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/machine/active",
+        "running": "/components/machine/running",
+        "fault": "/components/machine/fault",
+        "status": "/components/machine/status",
+        "load": "/components/machine/load",
+        "speed": "/components/machine/speed",
+        "damage": "/components/machine/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "supply",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "press",
+      "type": "forming-machine",
+      "label": "Sheet pressing section",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/press/active",
+        "running": "/components/press/running",
+        "fault": "/components/press/fault",
+        "status": "/components/press/status",
+        "load": "/components/press/load",
+        "speed": "/components/press/speed",
+        "damage": "/components/press/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "supply",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "dryer",
+      "type": "dryer",
+      "label": "Sheet drying section",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "temperature": 90,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/dryer/active",
+        "running": "/components/dryer/running",
+        "fault": "/components/dryer/fault",
+        "status": "/components/dryer/status",
+        "load": "/components/dryer/load",
+        "speed": "/components/dryer/speed",
+        "temperature": "/components/dryer/temperature",
+        "damage": "/components/dryer/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "supply",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "fuel",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "reel",
+      "type": "forming-machine",
+      "label": "Reel forming station",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/reel/active",
+        "running": "/components/reel/running",
+        "fault": "/components/reel/fault",
+        "status": "/components/reel/status",
+        "load": "/components/reel/load",
+        "speed": "/components/reel/speed",
+        "damage": "/components/reel/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "supply",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "packer",
+      "type": "packaging-line",
+      "label": "Reel packaging",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/packer/active",
+        "running": "/components/packer/running",
+        "fault": "/components/packer/fault",
+        "status": "/components/packer/status",
+        "load": "/components/packer/load",
+        "speed": "/components/packer/speed",
+        "damage": "/components/packer/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "supply",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "boiler",
+      "type": "boiler",
+      "label": "Illustrative steam service",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "temperature": 180,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/boiler/active",
+        "running": "/components/boiler/running",
+        "fault": "/components/boiler/fault",
+        "status": "/components/boiler/status",
+        "load": "/components/boiler/load",
+        "temperature": "/components/boiler/temperature",
+        "damage": "/components/boiler/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "fuel",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "heat",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "exhaust",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "steam",
+          "side": "right",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "power",
+      "type": "steam-turbine",
+      "label": "Illustrative steam-power unit",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "temperature": 450,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/power/active",
+        "running": "/components/power/running",
+        "fault": "/components/power/fault",
+        "status": "/components/power/status",
+        "load": "/components/power/load",
+        "speed": "/components/power/speed",
+        "temperature": "/components/power/temperature",
+        "damage": "/components/power/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "output",
+          "side": "right",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "meter",
+      "type": "electrical-meter",
+      "label": "Net power monitor",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/meter/active",
+        "running": "/components/meter/running",
+        "fault": "/components/meter/fault",
+        "status": "/components/meter/status",
+        "load": "/components/meter/load",
+        "damage": "/components/meter/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "measurement",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "signal",
+          "side": "right",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "controller",
+      "type": "scada-server",
+      "label": "Line supervisory server",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "connected": true,
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/controller/active",
+        "running": "/components/controller/running",
+        "fault": "/components/controller/fault",
+        "status": "/components/controller/status",
+        "connected": "/components/controller/connected",
+        "load": "/components/controller/load",
+        "damage": "/components/controller/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "power",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "io",
+      "type": "remote-io",
+      "label": "Machine-section IO",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "connected": true,
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/io/active",
+        "running": "/components/io/running",
+        "fault": "/components/io/fault",
+        "status": "/components/io/status",
+        "connected": "/components/io/connected",
+        "load": "/components/io/load",
+        "damage": "/components/io/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "power",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "inputs",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outputs",
+          "side": "right",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "temperature",
+      "type": "temperature-sensor",
+      "label": "Dryer display probe",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "value": 42,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/temperature/active",
+        "running": "/components/temperature/running",
+        "fault": "/components/temperature/fault",
+        "status": "/components/temperature/status",
+        "value": "/components/temperature/value",
+        "damage": "/components/temperature/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "process",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "signal",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "power",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "pulp-to-stock",
+      "from": {
+        "component": "pulp",
+        "port": "discharge"
+      },
+      "to": {
+        "component": "stock",
+        "port": "inlet"
+      },
+      "medium": "solids",
+      "flowBinding": "/flows/pulp-to-stock",
+      "label": "Pulp receiving store \u2192 Stock blending chest"
+    },
+    {
+      "id": "stock-to-screen",
+      "from": {
+        "component": "stock",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "screen",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "flowBinding": "/flows/stock-to-screen",
+      "label": "Stock blending chest \u2192 Stock screening"
+    },
+    {
+      "id": "screen-to-refiner",
+      "from": {
+        "component": "screen",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "refiner",
+        "port": "inlet"
+      },
+      "medium": "solids",
+      "flowBinding": "/flows/screen-to-refiner",
+      "label": "Stock screening \u2192 Stock refining stage"
+    },
+    {
+      "id": "refiner-to-headbox",
+      "from": {
+        "component": "refiner",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "headbox",
+        "port": "inlet"
+      },
+      "medium": "solids",
+      "flowBinding": "/flows/refiner-to-headbox",
+      "label": "Stock refining stage \u2192 Headbox supply chest"
+    },
+    {
+      "id": "headbox-to-machine",
+      "from": {
+        "component": "headbox",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "machine",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "flowBinding": "/flows/headbox-to-machine",
+      "label": "Headbox supply chest \u2192 Sheet-forming machine"
+    },
+    {
+      "id": "machine-to-press",
+      "from": {
+        "component": "machine",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "press",
+        "port": "inlet"
+      },
+      "medium": "product",
+      "flowBinding": "/flows/machine-to-press",
+      "label": "Sheet-forming machine \u2192 Sheet pressing section"
+    },
+    {
+      "id": "press-to-dryer",
+      "from": {
+        "component": "press",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "dryer",
+        "port": "inlet"
+      },
+      "medium": "product",
+      "flowBinding": "/flows/press-to-dryer",
+      "label": "Sheet pressing section \u2192 Sheet drying section"
+    },
+    {
+      "id": "dryer-to-reel",
+      "from": {
+        "component": "dryer",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "reel",
+        "port": "inlet"
+      },
+      "medium": "material",
+      "flowBinding": "/flows/dryer-to-reel",
+      "label": "Sheet drying section \u2192 Reel forming station"
+    },
+    {
+      "id": "reel-to-packer",
+      "from": {
+        "component": "reel",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "packer",
+        "port": "inlet"
+      },
+      "medium": "product",
+      "flowBinding": "/flows/reel-to-packer",
+      "label": "Reel forming station \u2192 Reel packaging"
+    },
+    {
+      "id": "boiler-to-power",
+      "from": {
+        "component": "boiler",
+        "port": "steam"
+      },
+      "to": {
+        "component": "power",
+        "port": "inlet"
+      },
+      "medium": "steam",
+      "flowBinding": "/flows/boiler-to-power",
+      "label": "Illustrative steam service \u2192 Illustrative steam-power unit"
+    },
+    {
+      "id": "power-to-meter",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "meter",
+        "port": "measurement"
+      },
+      "medium": "measurement",
+      "flowBinding": "/flows/power-to-meter",
+      "label": "Illustrative steam-power unit \u2192 Net power monitor"
+    },
+    {
+      "id": "power-to-stock",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "stock",
+        "port": "drive"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-stock",
+      "label": "Illustrative steam-power unit \u2192 Stock blending chest"
+    },
+    {
+      "id": "power-to-screen",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "screen",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-screen",
+      "label": "Illustrative steam-power unit \u2192 Stock screening"
+    },
+    {
+      "id": "power-to-refiner",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "refiner",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-refiner",
+      "label": "Illustrative steam-power unit \u2192 Stock refining stage"
+    },
+    {
+      "id": "power-to-machine",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "machine",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-machine",
+      "label": "Illustrative steam-power unit \u2192 Sheet-forming machine"
+    },
+    {
+      "id": "power-to-press",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "press",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-press",
+      "label": "Illustrative steam-power unit \u2192 Sheet pressing section"
+    },
+    {
+      "id": "power-to-dryer",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "dryer",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-dryer",
+      "label": "Illustrative steam-power unit \u2192 Sheet drying section"
+    },
+    {
+      "id": "power-to-reel",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "reel",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-reel",
+      "label": "Illustrative steam-power unit \u2192 Reel forming station"
+    },
+    {
+      "id": "power-to-packer",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "packer",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-packer",
+      "label": "Illustrative steam-power unit \u2192 Reel packaging"
+    },
+    {
+      "id": "power-to-controller",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "controller",
+        "port": "power"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-controller",
+      "label": "Illustrative steam-power unit \u2192 Line supervisory server"
+    },
+    {
+      "id": "power-to-io",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "io",
+        "port": "power"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-io",
+      "label": "Illustrative steam-power unit \u2192 Machine-section IO"
+    },
+    {
+      "id": "power-to-temperature",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "temperature",
+        "port": "power"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-temperature",
+      "label": "Illustrative steam-power unit \u2192 Dryer display probe"
+    },
+    {
+      "id": "meter-to-controller",
+      "from": {
+        "component": "meter",
+        "port": "signal"
+      },
+      "to": {
+        "component": "controller",
+        "port": "network"
+      },
+      "medium": "data",
+      "flowBinding": "/flows/meter-to-controller",
+      "label": "Net power monitor \u2192 Line supervisory server"
+    },
+    {
+      "id": "dryer-to-temperature",
+      "from": {
+        "component": "dryer",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "temperature",
+        "port": "process"
+      },
+      "medium": "measurement",
+      "flowBinding": "/flows/dryer-to-temperature",
+      "label": "Sheet drying section \u2192 Dryer display probe"
+    },
+    {
+      "id": "temperature-to-controller",
+      "from": {
+        "component": "temperature",
+        "port": "signal"
+      },
+      "to": {
+        "component": "controller",
+        "port": "network"
+      },
+      "medium": "data",
+      "flowBinding": "/flows/temperature-to-controller",
+      "label": "Dryer display probe \u2192 Line supervisory server"
+    },
+    {
+      "id": "controller-to-io",
+      "from": {
+        "component": "controller",
+        "port": "network"
+      },
+      "to": {
+        "component": "io",
+        "port": "network"
+      },
+      "medium": "data",
+      "flowBinding": "/flows/controller-to-io",
+      "label": "Line supervisory server \u2192 Machine-section IO"
+    }
+  ],
+  "views": [
+    {
+      "id": "process",
+      "label": "Main process",
+      "canvas": {
+        "width": 1280,
+        "height": 940
+      },
+      "placements": [
+        {
+          "component": "pulp",
+          "x": 60,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "stock",
+          "x": 360,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "screen",
+          "x": 660,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "refiner",
+          "x": 960,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "headbox",
+          "x": 960,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "machine",
+          "x": 660,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "press",
+          "x": 360,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "dryer",
+          "x": 60,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "reel",
+          "x": 60,
+          "y": 620,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "packer",
+          "x": 360,
+          "y": 620,
+          "width": 200,
+          "height": 190
+        }
+      ],
+      "routes": [
+        {
+          "connection": "pulp-to-stock",
+          "points": [
+            {
+              "x": 260,
+              "y": 155
+            },
+            {
+              "x": 360,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "stock-to-screen",
+          "points": [
+            {
+              "x": 560,
+              "y": 155
+            },
+            {
+              "x": 660,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "screen-to-refiner",
+          "points": [
+            {
+              "x": 860,
+              "y": 155
+            },
+            {
+              "x": 960,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "refiner-to-headbox",
+          "points": [
+            {
+              "x": 1060,
+              "y": 250
+            },
+            {
+              "x": 1060,
+              "y": 340
+            }
+          ]
+        },
+        {
+          "connection": "headbox-to-machine",
+          "points": [
+            {
+              "x": 960,
+              "y": 435
+            },
+            {
+              "x": 860,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "machine-to-press",
+          "points": [
+            {
+              "x": 660,
+              "y": 435
+            },
+            {
+              "x": 560,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "press-to-dryer",
+          "points": [
+            {
+              "x": 360,
+              "y": 435
+            },
+            {
+              "x": 260,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "dryer-to-reel",
+          "points": [
+            {
+              "x": 160,
+              "y": 530
+            },
+            {
+              "x": 160,
+              "y": 620
+            }
+          ]
+        },
+        {
+          "connection": "reel-to-packer",
+          "points": [
+            {
+              "x": 260,
+              "y": 715
+            },
+            {
+              "x": 360,
+              "y": 715
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "utilities",
+      "label": "Utilities & control",
+      "canvas": {
+        "width": 980,
+        "height": 940
+      },
+      "placements": [
+        {
+          "component": "boiler",
+          "x": 60,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "power",
+          "x": 360,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "meter",
+          "x": 660,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "controller",
+          "x": 660,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "io",
+          "x": 360,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "temperature",
+          "x": 60,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "refiner",
+          "x": 60,
+          "y": 620,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "reel",
+          "x": 360,
+          "y": 620,
+          "width": 200,
+          "height": 190
+        }
+      ],
+      "routes": [
+        {
+          "connection": "boiler-to-power",
+          "points": [
+            {
+              "x": 260,
+              "y": 155
+            },
+            {
+              "x": 360,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "power-to-meter",
+          "points": [
+            {
+              "x": 560,
+              "y": 155
+            },
+            {
+              "x": 660,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "power-to-refiner",
+          "points": [
+            {
+              "x": 460,
+              "y": 250
+            },
+            {
+              "x": 460,
+              "y": 316
+            },
+            {
+              "x": 336,
+              "y": 316
+            },
+            {
+              "x": 336,
+              "y": 596
+            },
+            {
+              "x": 160,
+              "y": 596
+            },
+            {
+              "x": 160,
+              "y": 620
+            }
+          ]
+        },
+        {
+          "connection": "power-to-reel",
+          "points": [
+            {
+              "x": 460,
+              "y": 250
+            },
+            {
+              "x": 460,
+              "y": 316
+            },
+            {
+              "x": 336,
+              "y": 316
+            },
+            {
+              "x": 336,
+              "y": 596
+            },
+            {
+              "x": 460,
+              "y": 596
+            },
+            {
+              "x": 460,
+              "y": 620
+            }
+          ]
+        },
+        {
+          "connection": "power-to-controller",
+          "points": [
+            {
+              "x": 560,
+              "y": 155
+            },
+            {
+              "x": 584,
+              "y": 155
+            },
+            {
+              "x": 584,
+              "y": 316
+            },
+            {
+              "x": 636,
+              "y": 316
+            },
+            {
+              "x": 636,
+              "y": 435
+            },
+            {
+              "x": 660,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "power-to-io",
+          "points": [
+            {
+              "x": 460,
+              "y": 250
+            },
+            {
+              "x": 460,
+              "y": 340
+            }
+          ]
+        },
+        {
+          "connection": "power-to-temperature",
+          "points": [
+            {
+              "x": 360,
+              "y": 155
+            },
+            {
+              "x": 336,
+              "y": 155
+            },
+            {
+              "x": 336,
+              "y": 316
+            },
+            {
+              "x": 284,
+              "y": 316
+            },
+            {
+              "x": 284,
+              "y": 435
+            },
+            {
+              "x": 260,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "meter-to-controller",
+          "points": [
+            {
+              "x": 760,
+              "y": 250
+            },
+            {
+              "x": 760,
+              "y": 340
+            }
+          ]
+        },
+        {
+          "connection": "temperature-to-controller",
+          "points": [
+            {
+              "x": 260,
+              "y": 435
+            },
+            {
+              "x": 336,
+              "y": 435
+            },
+            {
+              "x": 336,
+              "y": 316
+            },
+            {
+              "x": 636,
+              "y": 316
+            },
+            {
+              "x": 636,
+              "y": 435
+            },
+            {
+              "x": 660,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "controller-to-io",
+          "points": [
+            {
+              "x": 660,
+              "y": 435
+            },
+            {
+              "x": 560,
+              "y": 435
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "finishing",
+      "label": "Finishing & storage",
+      "canvas": {
+        "width": 980,
+        "height": 940
+      },
+      "placements": [
+        {
+          "component": "machine",
+          "x": 60,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "press",
+          "x": 360,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "dryer",
+          "x": 660,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "reel",
+          "x": 660,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "packer",
+          "x": 360,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "meter",
+          "x": 60,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "controller",
+          "x": 60,
+          "y": 620,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "io",
+          "x": 360,
+          "y": 620,
+          "width": 200,
+          "height": 190
+        }
+      ],
+      "routes": [
+        {
+          "connection": "machine-to-press",
+          "points": [
+            {
+              "x": 260,
+              "y": 155
+            },
+            {
+              "x": 360,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "press-to-dryer",
+          "points": [
+            {
+              "x": 560,
+              "y": 155
+            },
+            {
+              "x": 660,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "dryer-to-reel",
+          "points": [
+            {
+              "x": 760,
+              "y": 250
+            },
+            {
+              "x": 760,
+              "y": 340
+            }
+          ]
+        },
+        {
+          "connection": "reel-to-packer",
+          "points": [
+            {
+              "x": 660,
+              "y": 435
+            },
+            {
+              "x": 560,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "meter-to-controller",
+          "points": [
+            {
+              "x": 160,
+              "y": 530
+            },
+            {
+              "x": 160,
+              "y": 620
+            }
+          ]
+        },
+        {
+          "connection": "controller-to-io",
+          "points": [
+            {
+              "x": 260,
+              "y": 715
+            },
+            {
+              "x": 360,
+              "y": 715
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "commands": [
+    {
+      "id": "pulp-enabled",
+      "label": "Pulp receiving store \u00b7 Enabled",
+      "component": "pulp",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "pulp"
+      }
+    },
+    {
+      "id": "pulp-load",
+      "label": "Pulp receiving store \u00b7 Requested load",
+      "component": "pulp",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "pulp"
+      }
+    },
+    {
+      "id": "pulp-fault",
+      "label": "Pulp receiving store \u00b7 Injected failure",
+      "component": "pulp",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "pulp"
+      }
+    },
+    {
+      "id": "pulp-repair",
+      "label": "Repair Pulp receiving store",
+      "component": "pulp",
+      "action": "repair",
+      "arguments": {
+        "equipment": "pulp"
+      }
+    },
+    {
+      "id": "stock-enabled",
+      "label": "Stock blending chest \u00b7 Enabled",
+      "component": "stock",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "stock"
+      }
+    },
+    {
+      "id": "stock-load",
+      "label": "Stock blending chest \u00b7 Requested load",
+      "component": "stock",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "stock"
+      }
+    },
+    {
+      "id": "stock-fault",
+      "label": "Stock blending chest \u00b7 Injected failure",
+      "component": "stock",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "stock"
+      }
+    },
+    {
+      "id": "stock-repair",
+      "label": "Repair Stock blending chest",
+      "component": "stock",
+      "action": "repair",
+      "arguments": {
+        "equipment": "stock"
+      }
+    },
+    {
+      "id": "screen-enabled",
+      "label": "Stock screening \u00b7 Enabled",
+      "component": "screen",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "screen"
+      }
+    },
+    {
+      "id": "screen-load",
+      "label": "Stock screening \u00b7 Requested load",
+      "component": "screen",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "screen"
+      }
+    },
+    {
+      "id": "screen-fault",
+      "label": "Stock screening \u00b7 Injected failure",
+      "component": "screen",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "screen"
+      }
+    },
+    {
+      "id": "screen-repair",
+      "label": "Repair Stock screening",
+      "component": "screen",
+      "action": "repair",
+      "arguments": {
+        "equipment": "screen"
+      }
+    },
+    {
+      "id": "refiner-enabled",
+      "label": "Stock refining stage \u00b7 Enabled",
+      "component": "refiner",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "refiner"
+      }
+    },
+    {
+      "id": "refiner-load",
+      "label": "Stock refining stage \u00b7 Requested load",
+      "component": "refiner",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "refiner"
+      }
+    },
+    {
+      "id": "refiner-fault",
+      "label": "Stock refining stage \u00b7 Injected failure",
+      "component": "refiner",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "refiner"
+      }
+    },
+    {
+      "id": "refiner-repair",
+      "label": "Repair Stock refining stage",
+      "component": "refiner",
+      "action": "repair",
+      "arguments": {
+        "equipment": "refiner"
+      }
+    },
+    {
+      "id": "headbox-enabled",
+      "label": "Headbox supply chest \u00b7 Enabled",
+      "component": "headbox",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "headbox"
+      }
+    },
+    {
+      "id": "headbox-load",
+      "label": "Headbox supply chest \u00b7 Requested load",
+      "component": "headbox",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "headbox"
+      }
+    },
+    {
+      "id": "headbox-fault",
+      "label": "Headbox supply chest \u00b7 Injected failure",
+      "component": "headbox",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "headbox"
+      }
+    },
+    {
+      "id": "headbox-repair",
+      "label": "Repair Headbox supply chest",
+      "component": "headbox",
+      "action": "repair",
+      "arguments": {
+        "equipment": "headbox"
+      }
+    },
+    {
+      "id": "machine-enabled",
+      "label": "Sheet-forming machine \u00b7 Enabled",
+      "component": "machine",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "machine"
+      }
+    },
+    {
+      "id": "machine-load",
+      "label": "Sheet-forming machine \u00b7 Requested load",
+      "component": "machine",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "machine"
+      }
+    },
+    {
+      "id": "machine-fault",
+      "label": "Sheet-forming machine \u00b7 Injected failure",
+      "component": "machine",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "machine"
+      }
+    },
+    {
+      "id": "machine-repair",
+      "label": "Repair Sheet-forming machine",
+      "component": "machine",
+      "action": "repair",
+      "arguments": {
+        "equipment": "machine"
+      }
+    },
+    {
+      "id": "press-enabled",
+      "label": "Sheet pressing section \u00b7 Enabled",
+      "component": "press",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "press"
+      }
+    },
+    {
+      "id": "press-load",
+      "label": "Sheet pressing section \u00b7 Requested load",
+      "component": "press",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "press"
+      }
+    },
+    {
+      "id": "press-fault",
+      "label": "Sheet pressing section \u00b7 Injected failure",
+      "component": "press",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "press"
+      }
+    },
+    {
+      "id": "press-repair",
+      "label": "Repair Sheet pressing section",
+      "component": "press",
+      "action": "repair",
+      "arguments": {
+        "equipment": "press"
+      }
+    },
+    {
+      "id": "dryer-enabled",
+      "label": "Sheet drying section \u00b7 Enabled",
+      "component": "dryer",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "dryer"
+      }
+    },
+    {
+      "id": "dryer-load",
+      "label": "Sheet drying section \u00b7 Requested load",
+      "component": "dryer",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "dryer"
+      }
+    },
+    {
+      "id": "dryer-fault",
+      "label": "Sheet drying section \u00b7 Injected failure",
+      "component": "dryer",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "dryer"
+      }
+    },
+    {
+      "id": "dryer-repair",
+      "label": "Repair Sheet drying section",
+      "component": "dryer",
+      "action": "repair",
+      "arguments": {
+        "equipment": "dryer"
+      }
+    },
+    {
+      "id": "reel-enabled",
+      "label": "Reel forming station \u00b7 Enabled",
+      "component": "reel",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "reel"
+      }
+    },
+    {
+      "id": "reel-load",
+      "label": "Reel forming station \u00b7 Requested load",
+      "component": "reel",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "reel"
+      }
+    },
+    {
+      "id": "reel-fault",
+      "label": "Reel forming station \u00b7 Injected failure",
+      "component": "reel",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "reel"
+      }
+    },
+    {
+      "id": "reel-repair",
+      "label": "Repair Reel forming station",
+      "component": "reel",
+      "action": "repair",
+      "arguments": {
+        "equipment": "reel"
+      }
+    },
+    {
+      "id": "packer-enabled",
+      "label": "Reel packaging \u00b7 Enabled",
+      "component": "packer",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "packer"
+      }
+    },
+    {
+      "id": "packer-load",
+      "label": "Reel packaging \u00b7 Requested load",
+      "component": "packer",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "packer"
+      }
+    },
+    {
+      "id": "packer-fault",
+      "label": "Reel packaging \u00b7 Injected failure",
+      "component": "packer",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "packer"
+      }
+    },
+    {
+      "id": "packer-repair",
+      "label": "Repair Reel packaging",
+      "component": "packer",
+      "action": "repair",
+      "arguments": {
+        "equipment": "packer"
+      }
+    },
+    {
+      "id": "boiler-enabled",
+      "label": "Illustrative steam service \u00b7 Enabled",
+      "component": "boiler",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "boiler"
+      }
+    },
+    {
+      "id": "boiler-load",
+      "label": "Illustrative steam service \u00b7 Requested load",
+      "component": "boiler",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "boiler"
+      }
+    },
+    {
+      "id": "boiler-fault",
+      "label": "Illustrative steam service \u00b7 Injected failure",
+      "component": "boiler",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "boiler"
+      }
+    },
+    {
+      "id": "boiler-repair",
+      "label": "Repair Illustrative steam service",
+      "component": "boiler",
+      "action": "repair",
+      "arguments": {
+        "equipment": "boiler"
+      }
+    },
+    {
+      "id": "power-enabled",
+      "label": "Illustrative steam-power unit \u00b7 Enabled",
+      "component": "power",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "power"
+      }
+    },
+    {
+      "id": "power-load",
+      "label": "Illustrative steam-power unit \u00b7 Requested load",
+      "component": "power",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "power"
+      }
+    },
+    {
+      "id": "power-fault",
+      "label": "Illustrative steam-power unit \u00b7 Injected failure",
+      "component": "power",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "power"
+      }
+    },
+    {
+      "id": "power-repair",
+      "label": "Repair Illustrative steam-power unit",
+      "component": "power",
+      "action": "repair",
+      "arguments": {
+        "equipment": "power"
+      }
+    },
+    {
+      "id": "meter-enabled",
+      "label": "Net power monitor \u00b7 Enabled",
+      "component": "meter",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "meter"
+      }
+    },
+    {
+      "id": "meter-load",
+      "label": "Net power monitor \u00b7 Requested load",
+      "component": "meter",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "meter"
+      }
+    },
+    {
+      "id": "meter-fault",
+      "label": "Net power monitor \u00b7 Injected failure",
+      "component": "meter",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "meter"
+      }
+    },
+    {
+      "id": "meter-repair",
+      "label": "Repair Net power monitor",
+      "component": "meter",
+      "action": "repair",
+      "arguments": {
+        "equipment": "meter"
+      }
+    },
+    {
+      "id": "controller-enabled",
+      "label": "Line supervisory server \u00b7 Enabled",
+      "component": "controller",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "controller"
+      }
+    },
+    {
+      "id": "controller-load",
+      "label": "Line supervisory server \u00b7 Requested load",
+      "component": "controller",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "controller"
+      }
+    },
+    {
+      "id": "controller-fault",
+      "label": "Line supervisory server \u00b7 Injected failure",
+      "component": "controller",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "controller"
+      }
+    },
+    {
+      "id": "controller-repair",
+      "label": "Repair Line supervisory server",
+      "component": "controller",
+      "action": "repair",
+      "arguments": {
+        "equipment": "controller"
+      }
+    },
+    {
+      "id": "io-enabled",
+      "label": "Machine-section IO \u00b7 Enabled",
+      "component": "io",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "io"
+      }
+    },
+    {
+      "id": "io-load",
+      "label": "Machine-section IO \u00b7 Requested load",
+      "component": "io",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "io"
+      }
+    },
+    {
+      "id": "io-fault",
+      "label": "Machine-section IO \u00b7 Injected failure",
+      "component": "io",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "io"
+      }
+    },
+    {
+      "id": "io-repair",
+      "label": "Repair Machine-section IO",
+      "component": "io",
+      "action": "repair",
+      "arguments": {
+        "equipment": "io"
+      }
+    },
+    {
+      "id": "temperature-enabled",
+      "label": "Dryer display probe \u00b7 Enabled",
+      "component": "temperature",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "temperature"
+      }
+    },
+    {
+      "id": "temperature-load",
+      "label": "Dryer display probe \u00b7 Requested load",
+      "component": "temperature",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "temperature"
+      }
+    },
+    {
+      "id": "temperature-fault",
+      "label": "Dryer display probe \u00b7 Injected failure",
+      "component": "temperature",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "temperature"
+      }
+    },
+    {
+      "id": "temperature-repair",
+      "label": "Repair Dryer display probe",
+      "component": "temperature",
+      "action": "repair",
+      "arguments": {
+        "equipment": "temperature"
+      }
+    },
+    {
+      "id": "plant-setRunning",
+      "label": "Run the shared plant",
+      "action": "setRunning",
+      "arguments": {}
+    },
+    {
+      "id": "plant-step",
+      "label": "Advance one model step",
+      "action": "step",
+      "arguments": {
+        "value": 1
+      }
+    },
+    {
+      "id": "plant-reset",
+      "label": "Reset dynamics \u00b7 keep edited parameters",
+      "action": "reset",
+      "arguments": {}
+    }
+  ],
+  "controls": [
+    {
+      "id": "pulp-enabled-control",
+      "label": "Enabled",
+      "component": "pulp",
+      "kind": "toggle",
+      "command": "pulp-enabled",
+      "binding": "/controls/pulp/enabled"
+    },
+    {
+      "id": "pulp-load-control",
+      "label": "Requested load",
+      "component": "pulp",
+      "kind": "range",
+      "command": "pulp-load",
+      "binding": "/controls/pulp/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "pulp-fault-control",
+      "label": "Injected failure",
+      "component": "pulp",
+      "kind": "toggle",
+      "command": "pulp-fault",
+      "binding": "/controls/pulp/fault"
+    },
+    {
+      "id": "pulp-repair-control",
+      "label": "Repair component",
+      "component": "pulp",
+      "kind": "button",
+      "command": "pulp-repair"
+    },
+    {
+      "id": "stock-enabled-control",
+      "label": "Enabled",
+      "component": "stock",
+      "kind": "toggle",
+      "command": "stock-enabled",
+      "binding": "/controls/stock/enabled"
+    },
+    {
+      "id": "stock-load-control",
+      "label": "Requested load",
+      "component": "stock",
+      "kind": "range",
+      "command": "stock-load",
+      "binding": "/controls/stock/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "stock-fault-control",
+      "label": "Injected failure",
+      "component": "stock",
+      "kind": "toggle",
+      "command": "stock-fault",
+      "binding": "/controls/stock/fault"
+    },
+    {
+      "id": "stock-repair-control",
+      "label": "Repair component",
+      "component": "stock",
+      "kind": "button",
+      "command": "stock-repair"
+    },
+    {
+      "id": "screen-enabled-control",
+      "label": "Enabled",
+      "component": "screen",
+      "kind": "toggle",
+      "command": "screen-enabled",
+      "binding": "/controls/screen/enabled"
+    },
+    {
+      "id": "screen-load-control",
+      "label": "Requested load",
+      "component": "screen",
+      "kind": "range",
+      "command": "screen-load",
+      "binding": "/controls/screen/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "screen-fault-control",
+      "label": "Injected failure",
+      "component": "screen",
+      "kind": "toggle",
+      "command": "screen-fault",
+      "binding": "/controls/screen/fault"
+    },
+    {
+      "id": "screen-repair-control",
+      "label": "Repair component",
+      "component": "screen",
+      "kind": "button",
+      "command": "screen-repair"
+    },
+    {
+      "id": "refiner-enabled-control",
+      "label": "Enabled",
+      "component": "refiner",
+      "kind": "toggle",
+      "command": "refiner-enabled",
+      "binding": "/controls/refiner/enabled"
+    },
+    {
+      "id": "refiner-load-control",
+      "label": "Requested load",
+      "component": "refiner",
+      "kind": "range",
+      "command": "refiner-load",
+      "binding": "/controls/refiner/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "refiner-fault-control",
+      "label": "Injected failure",
+      "component": "refiner",
+      "kind": "toggle",
+      "command": "refiner-fault",
+      "binding": "/controls/refiner/fault"
+    },
+    {
+      "id": "refiner-repair-control",
+      "label": "Repair component",
+      "component": "refiner",
+      "kind": "button",
+      "command": "refiner-repair"
+    },
+    {
+      "id": "headbox-enabled-control",
+      "label": "Enabled",
+      "component": "headbox",
+      "kind": "toggle",
+      "command": "headbox-enabled",
+      "binding": "/controls/headbox/enabled"
+    },
+    {
+      "id": "headbox-load-control",
+      "label": "Requested load",
+      "component": "headbox",
+      "kind": "range",
+      "command": "headbox-load",
+      "binding": "/controls/headbox/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "headbox-fault-control",
+      "label": "Injected failure",
+      "component": "headbox",
+      "kind": "toggle",
+      "command": "headbox-fault",
+      "binding": "/controls/headbox/fault"
+    },
+    {
+      "id": "headbox-repair-control",
+      "label": "Repair component",
+      "component": "headbox",
+      "kind": "button",
+      "command": "headbox-repair"
+    },
+    {
+      "id": "machine-enabled-control",
+      "label": "Enabled",
+      "component": "machine",
+      "kind": "toggle",
+      "command": "machine-enabled",
+      "binding": "/controls/machine/enabled"
+    },
+    {
+      "id": "machine-load-control",
+      "label": "Requested load",
+      "component": "machine",
+      "kind": "range",
+      "command": "machine-load",
+      "binding": "/controls/machine/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "machine-fault-control",
+      "label": "Injected failure",
+      "component": "machine",
+      "kind": "toggle",
+      "command": "machine-fault",
+      "binding": "/controls/machine/fault"
+    },
+    {
+      "id": "machine-repair-control",
+      "label": "Repair component",
+      "component": "machine",
+      "kind": "button",
+      "command": "machine-repair"
+    },
+    {
+      "id": "press-enabled-control",
+      "label": "Enabled",
+      "component": "press",
+      "kind": "toggle",
+      "command": "press-enabled",
+      "binding": "/controls/press/enabled"
+    },
+    {
+      "id": "press-load-control",
+      "label": "Requested load",
+      "component": "press",
+      "kind": "range",
+      "command": "press-load",
+      "binding": "/controls/press/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "press-fault-control",
+      "label": "Injected failure",
+      "component": "press",
+      "kind": "toggle",
+      "command": "press-fault",
+      "binding": "/controls/press/fault"
+    },
+    {
+      "id": "press-repair-control",
+      "label": "Repair component",
+      "component": "press",
+      "kind": "button",
+      "command": "press-repair"
+    },
+    {
+      "id": "dryer-enabled-control",
+      "label": "Enabled",
+      "component": "dryer",
+      "kind": "toggle",
+      "command": "dryer-enabled",
+      "binding": "/controls/dryer/enabled"
+    },
+    {
+      "id": "dryer-load-control",
+      "label": "Requested load",
+      "component": "dryer",
+      "kind": "range",
+      "command": "dryer-load",
+      "binding": "/controls/dryer/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "dryer-fault-control",
+      "label": "Injected failure",
+      "component": "dryer",
+      "kind": "toggle",
+      "command": "dryer-fault",
+      "binding": "/controls/dryer/fault"
+    },
+    {
+      "id": "dryer-repair-control",
+      "label": "Repair component",
+      "component": "dryer",
+      "kind": "button",
+      "command": "dryer-repair"
+    },
+    {
+      "id": "reel-enabled-control",
+      "label": "Enabled",
+      "component": "reel",
+      "kind": "toggle",
+      "command": "reel-enabled",
+      "binding": "/controls/reel/enabled"
+    },
+    {
+      "id": "reel-load-control",
+      "label": "Requested load",
+      "component": "reel",
+      "kind": "range",
+      "command": "reel-load",
+      "binding": "/controls/reel/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "reel-fault-control",
+      "label": "Injected failure",
+      "component": "reel",
+      "kind": "toggle",
+      "command": "reel-fault",
+      "binding": "/controls/reel/fault"
+    },
+    {
+      "id": "reel-repair-control",
+      "label": "Repair component",
+      "component": "reel",
+      "kind": "button",
+      "command": "reel-repair"
+    },
+    {
+      "id": "packer-enabled-control",
+      "label": "Enabled",
+      "component": "packer",
+      "kind": "toggle",
+      "command": "packer-enabled",
+      "binding": "/controls/packer/enabled"
+    },
+    {
+      "id": "packer-load-control",
+      "label": "Requested load",
+      "component": "packer",
+      "kind": "range",
+      "command": "packer-load",
+      "binding": "/controls/packer/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "packer-fault-control",
+      "label": "Injected failure",
+      "component": "packer",
+      "kind": "toggle",
+      "command": "packer-fault",
+      "binding": "/controls/packer/fault"
+    },
+    {
+      "id": "packer-repair-control",
+      "label": "Repair component",
+      "component": "packer",
+      "kind": "button",
+      "command": "packer-repair"
+    },
+    {
+      "id": "boiler-enabled-control",
+      "label": "Enabled",
+      "component": "boiler",
+      "kind": "toggle",
+      "command": "boiler-enabled",
+      "binding": "/controls/boiler/enabled"
+    },
+    {
+      "id": "boiler-load-control",
+      "label": "Requested load",
+      "component": "boiler",
+      "kind": "range",
+      "command": "boiler-load",
+      "binding": "/controls/boiler/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "boiler-fault-control",
+      "label": "Injected failure",
+      "component": "boiler",
+      "kind": "toggle",
+      "command": "boiler-fault",
+      "binding": "/controls/boiler/fault"
+    },
+    {
+      "id": "boiler-repair-control",
+      "label": "Repair component",
+      "component": "boiler",
+      "kind": "button",
+      "command": "boiler-repair"
+    },
+    {
+      "id": "power-enabled-control",
+      "label": "Enabled",
+      "component": "power",
+      "kind": "toggle",
+      "command": "power-enabled",
+      "binding": "/controls/power/enabled"
+    },
+    {
+      "id": "power-load-control",
+      "label": "Requested load",
+      "component": "power",
+      "kind": "range",
+      "command": "power-load",
+      "binding": "/controls/power/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "power-fault-control",
+      "label": "Injected failure",
+      "component": "power",
+      "kind": "toggle",
+      "command": "power-fault",
+      "binding": "/controls/power/fault"
+    },
+    {
+      "id": "power-repair-control",
+      "label": "Repair component",
+      "component": "power",
+      "kind": "button",
+      "command": "power-repair"
+    },
+    {
+      "id": "meter-enabled-control",
+      "label": "Enabled",
+      "component": "meter",
+      "kind": "toggle",
+      "command": "meter-enabled",
+      "binding": "/controls/meter/enabled"
+    },
+    {
+      "id": "meter-load-control",
+      "label": "Requested load",
+      "component": "meter",
+      "kind": "range",
+      "command": "meter-load",
+      "binding": "/controls/meter/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "meter-fault-control",
+      "label": "Injected failure",
+      "component": "meter",
+      "kind": "toggle",
+      "command": "meter-fault",
+      "binding": "/controls/meter/fault"
+    },
+    {
+      "id": "meter-repair-control",
+      "label": "Repair component",
+      "component": "meter",
+      "kind": "button",
+      "command": "meter-repair"
+    },
+    {
+      "id": "controller-enabled-control",
+      "label": "Enabled",
+      "component": "controller",
+      "kind": "toggle",
+      "command": "controller-enabled",
+      "binding": "/controls/controller/enabled"
+    },
+    {
+      "id": "controller-load-control",
+      "label": "Requested load",
+      "component": "controller",
+      "kind": "range",
+      "command": "controller-load",
+      "binding": "/controls/controller/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "controller-fault-control",
+      "label": "Injected failure",
+      "component": "controller",
+      "kind": "toggle",
+      "command": "controller-fault",
+      "binding": "/controls/controller/fault"
+    },
+    {
+      "id": "controller-repair-control",
+      "label": "Repair component",
+      "component": "controller",
+      "kind": "button",
+      "command": "controller-repair"
+    },
+    {
+      "id": "io-enabled-control",
+      "label": "Enabled",
+      "component": "io",
+      "kind": "toggle",
+      "command": "io-enabled",
+      "binding": "/controls/io/enabled"
+    },
+    {
+      "id": "io-load-control",
+      "label": "Requested load",
+      "component": "io",
+      "kind": "range",
+      "command": "io-load",
+      "binding": "/controls/io/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "io-fault-control",
+      "label": "Injected failure",
+      "component": "io",
+      "kind": "toggle",
+      "command": "io-fault",
+      "binding": "/controls/io/fault"
+    },
+    {
+      "id": "io-repair-control",
+      "label": "Repair component",
+      "component": "io",
+      "kind": "button",
+      "command": "io-repair"
+    },
+    {
+      "id": "temperature-enabled-control",
+      "label": "Enabled",
+      "component": "temperature",
+      "kind": "toggle",
+      "command": "temperature-enabled",
+      "binding": "/controls/temperature/enabled"
+    },
+    {
+      "id": "temperature-load-control",
+      "label": "Requested load",
+      "component": "temperature",
+      "kind": "range",
+      "command": "temperature-load",
+      "binding": "/controls/temperature/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "temperature-fault-control",
+      "label": "Injected failure",
+      "component": "temperature",
+      "kind": "toggle",
+      "command": "temperature-fault",
+      "binding": "/controls/temperature/fault"
+    },
+    {
+      "id": "temperature-repair-control",
+      "label": "Repair component",
+      "component": "temperature",
+      "kind": "button",
+      "command": "temperature-repair"
+    },
+    {
+      "id": "plant-setRunning-control",
+      "label": "Run the shared plant",
+      "kind": "toggle",
+      "command": "plant-setRunning",
+      "binding": "/running"
+    },
+    {
+      "id": "plant-step-control",
+      "label": "Advance one model step",
+      "kind": "button",
+      "command": "plant-step"
+    },
+    {
+      "id": "plant-reset-control",
+      "label": "Reset dynamics \u00b7 keep edited parameters",
+      "kind": "button",
+      "command": "plant-reset"
+    }
+  ],
+  "units": {
+    "flow": "normalized flow units",
+    "inventory": "normalized inventory units",
+    "load": "% requested demonstration load",
+    "pressure": "normalized pressure index",
+    "temperature": "normalized model thermal index; artwork displays an illustrative range"
+  },
+  "provenance": [
+    {
+      "id": "demo-model",
+      "label": "Editable placeholder model",
+      "kind": "assumed",
+      "description": "Family-level normalized behavior for UI experimentation; no calibrated industry process, safety envelope or recipe."
+    },
+    {
+      "id": "assumed-topology",
+      "label": "Illustrative editable routing",
+      "kind": "illustrative",
+      "description": "Industry-inspired stage names and interfaces. This is not a verified plant P&ID, wiring diagram or production design."
+    }
+  ],
+  "assumptions": [
+    {
+      "id": "nominalCapacity",
+      "label": "Default normalized stage capacity",
+      "value": 75,
+      "unit": "normalized units",
+      "provenance": "demo-model"
+    },
+    {
+      "id": "warningIndex",
+      "label": "Demonstration warning threshold",
+      "value": 78,
+      "unit": "normalized index",
+      "provenance": "demo-model"
+    },
+    {
+      "id": "optionalUtilities",
+      "label": "Utility equipment is illustrative and may be optional",
+      "value": true,
+      "provenance": "assumed-topology"
+    }
+  ]
+}

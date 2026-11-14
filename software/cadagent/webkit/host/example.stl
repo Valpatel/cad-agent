@@ -1,0 +1,86 @@
+solid example
+  facet normal 0 0 0
+    outer loop
+      vertex 0 0 0
+      vertex 20 32 0
+      vertex 20 0 0
+    endloop
+  endfacet
+  facet normal 0 0 0
+    outer loop
+      vertex 0 0 0
+      vertex 0 32 0
+      vertex 20 32 0
+    endloop
+  endfacet
+  facet normal 0 0 0
+    outer loop
+      vertex 0 0 18
+      vertex 20 0 18
+      vertex 20 32 18
+    endloop
+  endfacet
+  facet normal 0 0 0
+    outer loop
+      vertex 0 0 18
+      vertex 20 32 18
+      vertex 0 32 18
+    endloop
+  endfacet
+  facet normal 0 0 0
+    outer loop
+      vertex 0 0 0
+      vertex 20 0 0
+      vertex 20 0 18
+    endloop
+  endfacet
+  facet normal 0 0 0
+    outer loop
+      vertex 0 0 0
+      vertex 20 0 18
+      vertex 0 0 18
+    endloop
+  endfacet
+  facet normal 0 0 0
+    outer loop
+      vertex 20 0 0
+      vertex 20 32 0
+      vertex 20 32 18
+    endloop
+  endfacet
+  facet normal 0 0 0
+    outer loop
+      vertex 20 0 0
+      vertex 20 32 18
+      vertex 20 0 18
+    endloop
+  endfacet
+  facet normal 0 0 0
+    outer loop
+      vertex 20 32 0
+      vertex 0 32 0
+      vertex 0 32 18
+    endloop
+  endfacet
+  facet normal 0 0 0
+    outer loop
+      vertex 20 32 0
+      vertex 0 32 18
+      vertex 20 32 18
+    endloop
+  endfacet
+  facet normal 0 0 0
+    outer loop
+      vertex 0 32 0
+      vertex 0 0 0
+      vertex 0 0 18
+    endloop
+  endfacet
+  facet normal 0 0 0
+    outer loop
+      vertex 0 32 0
+      vertex 0 0 18
+      vertex 0 32 18
+    endloop
+  endfacet
+endsolid example

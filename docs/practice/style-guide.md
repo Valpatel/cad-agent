@@ -40,7 +40,9 @@ flowchart TD
 ## Shape of a README
 
 1. `# <folder name>`, then one sentence: what the folder is for.
-2. One Mermaid diagram (below).
+2. One compact Mermaid diagram (below) or an owned SVG map. Use a clean SVG for a stable topology or asset gallery;
+   do not stretch a simple file list into a tall chain of boxes. Link the actual local SVG so it works on GitHub
+   and in a local checkout. A screenshot or an external image alone does not describe source ownership.
 3. **What's here**: a table, one row per file or subfolder, one plain line each.
 4. **Related**: the parent README, neighbouring folders, the docs page that explains the topic.
 5. Credits where the folder builds on someone's work: name the person or project and link it.
@@ -122,7 +124,7 @@ Beside concise takeaways, credit known creators and organisations together and p
 
 ## Folder ownership checks
 
-Run `node tools/site/compiler/site-repo-map.mjs --check` in the existing Node22 site context; `--write` regenerates [the repository map](../map.md). The required Chromium job runs its actual structural fault controls and freshness check. Normal owned folders have a README/Mermaid/table, an up link and child-map links. Every direct file appears explicitly in a table, including package entry points. The root keeps its compact introduction.
+Run `node tools/site/compiler/site-repo-map.mjs --check` in the existing Node22 site context; `--write` regenerates [the repository map](../map.md). The required Chromium job runs its actual structural fault controls and freshness check. Normal owned folders have a README, a Mermaid or local SVG map, a table, an up link and child-map links. Every direct file appears explicitly in a table, including package entry points; gallery thumbnails may link the exact asset instead of repeating its filename. The root keeps its compact introduction.
 
 Installer role prompts are mapped from the agent-kit owner; installed skills own their bundled resource links. GitHub policy uses CONTRIBUTING. Named fixture sets, generated figure topics and pinned upstream components retain their layouts under explicit parent owners in `tools/site/compiler/repo-map.json`; a new set/topic/component still needs a parent row. Dated incidents require actual symptom-index links, and numbered changelog fragments retain the existing release-parser contract. These are consumer-based ownership rules, not historical inventory counts or wildcard exemptions for new source folders.
 

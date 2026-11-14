@@ -340,6 +340,10 @@ export async function readerOverflowProblems(browser, base) {
     const panel=page.locator('.cad-nav-panel');await panel.evaluate(p=>{for(const group of p.querySelectorAll('details'))group.open=false;});const folded=await current({width:1920,height:1080,overflow:false,position:'sticky'});
     states.push({folded});if(!folded.fits||folded.contain!=='auto')problems.push('reader overflow: folded fitting tree traps wheel input');
     const old=await page.addStyleTag({content:'cad-nav .cad-nav-panel{overscroll-behavior-y:contain!important}'});const planted=await state();states.push({blanketContainRejected:planted.fits&&planted.contain!=='auto'});if(!(planted.fits&&planted.contain!=='auto'))problems.push('reader overflow: old blanket-contain control not rejected');await old.evaluate(el=>el.remove());
+    // Finish restoring the positive case before sending native input; the compositor can retain the planted
+    // containment after computed style has updated. Preserve the same wheel event and response deadline.
+    states.push({restored:await current({width:1920,height:1080,overflow:false,position:'sticky'})});
+    await page.screenshot({path:path.join(evidence,'restored-before-wheel.png')});
     const box=await panel.boundingBox();await page.mouse.move(box.x+box.width/2,box.y+60);await page.mouse.wheel(0,300);await page.waitForTimeout(400);
     const wheel=await state();states.push({wheel});if(wheel.article<100)problems.push('reader overflow: actual wheel over fitting tree does not scroll article');
     await panel.evaluate(p=>{for(const group of p.querySelectorAll('details'))group.open=true;});const expanded=await current({width:1920,height:1080,overflow:true,position:'sticky'});states.push({expanded});if(expanded.fits||expanded.contain!=='contain')problems.push('reader overflow: expanded tree does not contain its wheel');

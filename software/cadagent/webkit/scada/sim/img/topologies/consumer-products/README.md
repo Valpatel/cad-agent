@@ -1,0 +1,16 @@
+# Consumer products — compact topology diagrams
+
+Static SVG schematics of the first declared view. Symbols identify equipment; arrows show declared connections, not instantaneous flow or measured facility performance.
+
+[All sectors](../README.md) · [Scenario library](../../../scenarios/README.md)
+
+```mermaid
+flowchart LR
+  Sector[Sector] --> Scenario[Scenario folders]
+  Scenario --> Model[System and model]
+  Scenario --> View[Preview]
+```
+
+| Scenario | Preview |
+| --- | --- |
+| [Shampoo blending](shampoo/README.md)<br>`shampoo` | <a href="shampoo/topology.svg"><img src="shampoo/topology.svg" width="360" alt="Shampoo blending declared topology"></a> |

@@ -1,0 +1,4967 @@
+{
+  "format": "scada-system",
+  "version": 1,
+  "system": {
+    "id": "power-nuclear-lw-smr",
+    "label": "Two-module integral-PWR concept",
+    "description": "Two explicitly integral-PWR conceptual modules retain separate primary and steam circuits, each with an independent integrated turbine train; electrical collection is shared."
+  },
+  "components": [
+    {
+      "id": "collection",
+      "type": "busbar",
+      "label": "Shared electrical collection",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/collection/active",
+        "running": "/components/collection/running",
+        "fault": "/components/collection/fault",
+        "status": "/components/collection/status",
+        "load": "/components/collection/load",
+        "damage": "/components/collection/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "P11",
+        "P13"
+      ]
+    },
+    {
+      "id": "aCore",
+      "type": "pwr-reactor-vessel",
+      "label": "Integral-PWR module A",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "heat": 45,
+        "flow": 60,
+        "level": 55,
+        "rodPosition": 30,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/aCore/active",
+        "running": "/components/aCore/running",
+        "fault": "/components/aCore/fault",
+        "status": "/components/aCore/status",
+        "load": "/components/aCore/load",
+        "heat": "/components/aCore/heat",
+        "flow": "/components/aCore/flow",
+        "level": "/components/aCore/level",
+        "rodPosition": "/components/aCore/rodPosition",
+        "damage": "/components/aCore/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "P11",
+        "P13"
+      ]
+    },
+    {
+      "id": "aSG",
+      "type": "nuclear-steam-generator",
+      "label": "Module A isolated steam generator",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "primaryFlow": 60,
+        "secondaryFlow": 60,
+        "level": 55,
+        "heat": 45,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/aSG/active",
+        "running": "/components/aSG/running",
+        "fault": "/components/aSG/fault",
+        "status": "/components/aSG/status",
+        "primaryFlow": "/components/aSG/primaryFlow",
+        "secondaryFlow": "/components/aSG/secondaryFlow",
+        "level": "/components/aSG/level",
+        "heat": "/components/aSG/heat",
+        "damage": "/components/aSG/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "P11",
+        "P13"
+      ]
+    },
+    {
+      "id": "aPrimaryPump",
+      "type": "pump",
+      "label": "Module A primary circulation",
+      "variant": "water",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/aPrimaryPump/active",
+        "running": "/components/aPrimaryPump/running",
+        "fault": "/components/aPrimaryPump/fault",
+        "status": "/components/aPrimaryPump/status",
+        "load": "/components/aPrimaryPump/load",
+        "speed": "/components/aPrimaryPump/speed",
+        "damage": "/components/aPrimaryPump/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "P11",
+        "P13"
+      ]
+    },
+    {
+      "id": "aPressurizer",
+      "type": "pressurizer",
+      "label": "Module A pressurizer",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "level": 55,
+        "heat": 45,
+        "pressure": 45,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/aPressurizer/active",
+        "running": "/components/aPressurizer/running",
+        "fault": "/components/aPressurizer/fault",
+        "status": "/components/aPressurizer/status",
+        "level": "/components/aPressurizer/level",
+        "heat": "/components/aPressurizer/heat",
+        "pressure": "/components/aPressurizer/pressure",
+        "damage": "/components/aPressurizer/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "P11",
+        "P13"
+      ]
+    },
+    {
+      "id": "aContainment",
+      "type": "containment-structure",
+      "label": "Module A containment context",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "pressure": 10,
+        "integrity": 100,
+        "flow": 20,
+        "heat": 10,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/aContainment/active",
+        "running": "/components/aContainment/running",
+        "fault": "/components/aContainment/fault",
+        "status": "/components/aContainment/status",
+        "pressure": "/components/aContainment/pressure",
+        "integrity": "/components/aContainment/integrity",
+        "flow": "/components/aContainment/flow",
+        "heat": "/components/aContainment/heat",
+        "damage": "/components/aContainment/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "P11",
+        "P13"
+      ]
+    },
+    {
+      "id": "aRadiation",
+      "type": "radiation-monitor",
+      "label": "Module A fictional containment index",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "value": 42,
+        "connected": true,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/aRadiation/active",
+        "running": "/components/aRadiation/running",
+        "fault": "/components/aRadiation/fault",
+        "status": "/components/aRadiation/status",
+        "value": "/components/aRadiation/value",
+        "connected": "/components/aRadiation/connected",
+        "damage": "/components/aRadiation/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "P11",
+        "P13"
+      ]
+    },
+    {
+      "id": "aRods",
+      "type": "control-rod-drive",
+      "label": "Module A rod command",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "rodPosition": 30,
+        "speed": 60,
+        "moving": false,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/aRods/active",
+        "running": "/components/aRods/running",
+        "fault": "/components/aRods/fault",
+        "status": "/components/aRods/status",
+        "rodPosition": "/components/aCore/rodPosition",
+        "speed": "/components/aRods/speed",
+        "moving": "/components/aRods/moving",
+        "damage": "/components/aRods/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "P11",
+        "P13"
+      ]
+    },
+    {
+      "id": "aTurbine",
+      "type": "steam-turbine",
+      "label": "Module A steam turbine-generator",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "temperature": 450,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/aTurbine/active",
+        "running": "/components/aTurbine/running",
+        "fault": "/components/aTurbine/fault",
+        "status": "/components/aTurbine/status",
+        "load": "/components/aTurbine/load",
+        "speed": "/components/aTurbine/speed",
+        "temperature": "/components/aTurbine/temperature",
+        "damage": "/components/aTurbine/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "P11",
+        "P13"
+      ]
+    },
+    {
+      "id": "aCondenser",
+      "type": "surface-condenser",
+      "label": "Module A surface condenser",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "primaryFlow": 60,
+        "secondaryFlow": 60,
+        "level": 55,
+        "heat": 45,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/aCondenser/active",
+        "running": "/components/aCondenser/running",
+        "fault": "/components/aCondenser/fault",
+        "status": "/components/aCondenser/status",
+        "primaryFlow": "/components/aCondenser/primaryFlow",
+        "secondaryFlow": "/components/aCondenser/secondaryFlow",
+        "level": "/components/aCondenser/level",
+        "heat": "/components/aCondenser/heat",
+        "damage": "/components/aCondenser/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "P11",
+        "P13"
+      ]
+    },
+    {
+      "id": "aFeedPump",
+      "type": "pump",
+      "label": "Module A feedwater pump",
+      "variant": "water",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/aFeedPump/active",
+        "running": "/components/aFeedPump/running",
+        "fault": "/components/aFeedPump/fault",
+        "status": "/components/aFeedPump/status",
+        "load": "/components/aFeedPump/load",
+        "speed": "/components/aFeedPump/speed",
+        "damage": "/components/aFeedPump/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "P11",
+        "P13"
+      ]
+    },
+    {
+      "id": "aCoolingTower",
+      "type": "cooling-tower",
+      "label": "Module A cooling tower",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "temperature": 32,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/aCoolingTower/active",
+        "running": "/components/aCoolingTower/running",
+        "fault": "/components/aCoolingTower/fault",
+        "status": "/components/aCoolingTower/status",
+        "load": "/components/aCoolingTower/load",
+        "speed": "/components/aCoolingTower/speed",
+        "temperature": "/components/aCoolingTower/temperature",
+        "damage": "/components/aCoolingTower/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "P11",
+        "P13"
+      ]
+    },
+    {
+      "id": "aCoolingPump",
+      "type": "pump",
+      "label": "Module A cooling-water pump",
+      "variant": "water",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/aCoolingPump/active",
+        "running": "/components/aCoolingPump/running",
+        "fault": "/components/aCoolingPump/fault",
+        "status": "/components/aCoolingPump/status",
+        "load": "/components/aCoolingPump/load",
+        "speed": "/components/aCoolingPump/speed",
+        "damage": "/components/aCoolingPump/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "P11",
+        "P13"
+      ]
+    },
+    {
+      "id": "bCore",
+      "type": "pwr-reactor-vessel",
+      "label": "Integral-PWR module B",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "heat": 45,
+        "flow": 60,
+        "level": 55,
+        "rodPosition": 30,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/bCore/active",
+        "running": "/components/bCore/running",
+        "fault": "/components/bCore/fault",
+        "status": "/components/bCore/status",
+        "load": "/components/bCore/load",
+        "heat": "/components/bCore/heat",
+        "flow": "/components/bCore/flow",
+        "level": "/components/bCore/level",
+        "rodPosition": "/components/bCore/rodPosition",
+        "damage": "/components/bCore/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "P11",
+        "P13"
+      ]
+    },
+    {
+      "id": "bSG",
+      "type": "nuclear-steam-generator",
+      "label": "Module B isolated steam generator",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "primaryFlow": 60,
+        "secondaryFlow": 60,
+        "level": 55,
+        "heat": 45,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/bSG/active",
+        "running": "/components/bSG/running",
+        "fault": "/components/bSG/fault",
+        "status": "/components/bSG/status",
+        "primaryFlow": "/components/bSG/primaryFlow",
+        "secondaryFlow": "/components/bSG/secondaryFlow",
+        "level": "/components/bSG/level",
+        "heat": "/components/bSG/heat",
+        "damage": "/components/bSG/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "P11",
+        "P13"
+      ]
+    },
+    {
+      "id": "bPrimaryPump",
+      "type": "pump",
+      "label": "Module B primary circulation",
+      "variant": "water",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/bPrimaryPump/active",
+        "running": "/components/bPrimaryPump/running",
+        "fault": "/components/bPrimaryPump/fault",
+        "status": "/components/bPrimaryPump/status",
+        "load": "/components/bPrimaryPump/load",
+        "speed": "/components/bPrimaryPump/speed",
+        "damage": "/components/bPrimaryPump/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "P11",
+        "P13"
+      ]
+    },
+    {
+      "id": "bPressurizer",
+      "type": "pressurizer",
+      "label": "Module B pressurizer",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "level": 55,
+        "heat": 45,
+        "pressure": 45,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/bPressurizer/active",
+        "running": "/components/bPressurizer/running",
+        "fault": "/components/bPressurizer/fault",
+        "status": "/components/bPressurizer/status",
+        "level": "/components/bPressurizer/level",
+        "heat": "/components/bPressurizer/heat",
+        "pressure": "/components/bPressurizer/pressure",
+        "damage": "/components/bPressurizer/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "P11",
+        "P13"
+      ]
+    },
+    {
+      "id": "bContainment",
+      "type": "containment-structure",
+      "label": "Module B containment context",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "pressure": 10,
+        "integrity": 100,
+        "flow": 20,
+        "heat": 10,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/bContainment/active",
+        "running": "/components/bContainment/running",
+        "fault": "/components/bContainment/fault",
+        "status": "/components/bContainment/status",
+        "pressure": "/components/bContainment/pressure",
+        "integrity": "/components/bContainment/integrity",
+        "flow": "/components/bContainment/flow",
+        "heat": "/components/bContainment/heat",
+        "damage": "/components/bContainment/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "P11",
+        "P13"
+      ]
+    },
+    {
+      "id": "bRadiation",
+      "type": "radiation-monitor",
+      "label": "Module B fictional containment index",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "value": 42,
+        "connected": true,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/bRadiation/active",
+        "running": "/components/bRadiation/running",
+        "fault": "/components/bRadiation/fault",
+        "status": "/components/bRadiation/status",
+        "value": "/components/bRadiation/value",
+        "connected": "/components/bRadiation/connected",
+        "damage": "/components/bRadiation/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "P11",
+        "P13"
+      ]
+    },
+    {
+      "id": "bRods",
+      "type": "control-rod-drive",
+      "label": "Module B rod command",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "rodPosition": 30,
+        "speed": 60,
+        "moving": false,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/bRods/active",
+        "running": "/components/bRods/running",
+        "fault": "/components/bRods/fault",
+        "status": "/components/bRods/status",
+        "rodPosition": "/components/bCore/rodPosition",
+        "speed": "/components/bRods/speed",
+        "moving": "/components/bRods/moving",
+        "damage": "/components/bRods/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "P11",
+        "P13"
+      ]
+    },
+    {
+      "id": "bTurbine",
+      "type": "steam-turbine",
+      "label": "Module B steam turbine-generator",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "temperature": 450,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/bTurbine/active",
+        "running": "/components/bTurbine/running",
+        "fault": "/components/bTurbine/fault",
+        "status": "/components/bTurbine/status",
+        "load": "/components/bTurbine/load",
+        "speed": "/components/bTurbine/speed",
+        "temperature": "/components/bTurbine/temperature",
+        "damage": "/components/bTurbine/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "P11",
+        "P13"
+      ]
+    },
+    {
+      "id": "bCondenser",
+      "type": "surface-condenser",
+      "label": "Module B surface condenser",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "primaryFlow": 60,
+        "secondaryFlow": 60,
+        "level": 55,
+        "heat": 45,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/bCondenser/active",
+        "running": "/components/bCondenser/running",
+        "fault": "/components/bCondenser/fault",
+        "status": "/components/bCondenser/status",
+        "primaryFlow": "/components/bCondenser/primaryFlow",
+        "secondaryFlow": "/components/bCondenser/secondaryFlow",
+        "level": "/components/bCondenser/level",
+        "heat": "/components/bCondenser/heat",
+        "damage": "/components/bCondenser/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "P11",
+        "P13"
+      ]
+    },
+    {
+      "id": "bFeedPump",
+      "type": "pump",
+      "label": "Module B feedwater pump",
+      "variant": "water",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/bFeedPump/active",
+        "running": "/components/bFeedPump/running",
+        "fault": "/components/bFeedPump/fault",
+        "status": "/components/bFeedPump/status",
+        "load": "/components/bFeedPump/load",
+        "speed": "/components/bFeedPump/speed",
+        "damage": "/components/bFeedPump/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "P11",
+        "P13"
+      ]
+    },
+    {
+      "id": "bCoolingTower",
+      "type": "cooling-tower",
+      "label": "Module B cooling tower",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "temperature": 32,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/bCoolingTower/active",
+        "running": "/components/bCoolingTower/running",
+        "fault": "/components/bCoolingTower/fault",
+        "status": "/components/bCoolingTower/status",
+        "load": "/components/bCoolingTower/load",
+        "speed": "/components/bCoolingTower/speed",
+        "temperature": "/components/bCoolingTower/temperature",
+        "damage": "/components/bCoolingTower/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "P11",
+        "P13"
+      ]
+    },
+    {
+      "id": "bCoolingPump",
+      "type": "pump",
+      "label": "Module B cooling-water pump",
+      "variant": "water",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/bCoolingPump/active",
+        "running": "/components/bCoolingPump/running",
+        "fault": "/components/bCoolingPump/fault",
+        "status": "/components/bCoolingPump/status",
+        "load": "/components/bCoolingPump/load",
+        "speed": "/components/bCoolingPump/speed",
+        "damage": "/components/bCoolingPump/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "P11",
+        "P13"
+      ]
+    },
+    {
+      "id": "transformer",
+      "type": "transformer",
+      "label": "Export transformer",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/transformer/active",
+        "running": "/components/transformer/running",
+        "fault": "/components/transformer/fault",
+        "status": "/components/transformer/status",
+        "load": "/components/transformer/load",
+        "damage": "/components/transformer/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "P11",
+        "P13"
+      ]
+    },
+    {
+      "id": "exportBreaker",
+      "type": "hv-circuit-breaker",
+      "label": "Export breaker",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "open": false,
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/exportBreaker/active",
+        "running": "/components/exportBreaker/running",
+        "fault": "/components/exportBreaker/fault",
+        "status": "/components/exportBreaker/status",
+        "open": "/components/exportBreaker/open",
+        "load": "/components/exportBreaker/load",
+        "damage": "/components/exportBreaker/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "P11",
+        "P13"
+      ]
+    },
+    {
+      "id": "load",
+      "type": "motor",
+      "label": "Explicit external electrical demand",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/load/active",
+        "running": "/components/load/running",
+        "fault": "/components/load/fault",
+        "status": "/components/load/status",
+        "load": "/components/load/load",
+        "speed": "/components/load/speed",
+        "damage": "/components/load/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "P11",
+        "P13"
+      ]
+    },
+    {
+      "id": "station",
+      "type": "transformer",
+      "label": "Explicit station-service boundary",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/station/active",
+        "running": "/components/station/running",
+        "fault": "/components/station/fault",
+        "status": "/components/station/status",
+        "load": "/components/station/load",
+        "damage": "/components/station/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "P11",
+        "P13"
+      ]
+    },
+    {
+      "id": "plc",
+      "type": "plc-rack",
+      "label": "Shared plant controller",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "connected": true,
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/plc/active",
+        "running": "/components/plc/running",
+        "fault": "/components/plc/fault",
+        "status": "/components/plc/status",
+        "connected": "/components/plc/connected",
+        "load": "/components/plc/load",
+        "damage": "/components/plc/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "P11",
+        "P13"
+      ]
+    },
+    {
+      "id": "dcService",
+      "type": "power-rectifier",
+      "label": "Explicit station AC/DC service",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "direction": "forward",
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/dcService/active",
+        "running": "/components/dcService/running",
+        "fault": "/components/dcService/fault",
+        "status": "/components/dcService/status",
+        "load": "/components/dcService/load",
+        "direction": "/components/dcService/direction",
+        "damage": "/components/dcService/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "P11",
+        "P13"
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "aContainment-monitor-to-aRadiation-process",
+      "from": {
+        "component": "aContainment",
+        "port": "monitor"
+      },
+      "to": {
+        "component": "aRadiation",
+        "port": "process"
+      },
+      "medium": "measurement",
+      "label": "measurement",
+      "flowBinding": "/flows/aContainment-monitor-to-aRadiation-process"
+    },
+    {
+      "id": "aCore-coolant-out-to-aSG-primary-in",
+      "from": {
+        "component": "aCore",
+        "port": "coolant-out"
+      },
+      "to": {
+        "component": "aSG",
+        "port": "primary-in"
+      },
+      "medium": "liquid",
+      "label": "liquid",
+      "flowBinding": "/flows/aCore-coolant-out-to-aSG-primary-in"
+    },
+    {
+      "id": "aSG-primary-out-to-aPrimaryPump-inlet",
+      "from": {
+        "component": "aSG",
+        "port": "primary-out"
+      },
+      "to": {
+        "component": "aPrimaryPump",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "label": "liquid",
+      "flowBinding": "/flows/aSG-primary-out-to-aPrimaryPump-inlet"
+    },
+    {
+      "id": "aPrimaryPump-outlet-to-aCore-coolant-in",
+      "from": {
+        "component": "aPrimaryPump",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "aCore",
+        "port": "coolant-in"
+      },
+      "medium": "liquid",
+      "label": "liquid",
+      "flowBinding": "/flows/aPrimaryPump-outlet-to-aCore-coolant-in"
+    },
+    {
+      "id": "aCore-coolant-out-to-aPressurizer-surge",
+      "from": {
+        "component": "aCore",
+        "port": "coolant-out"
+      },
+      "to": {
+        "component": "aPressurizer",
+        "port": "surge"
+      },
+      "medium": "liquid",
+      "label": "liquid",
+      "flowBinding": "/flows/aCore-coolant-out-to-aPressurizer-surge"
+    },
+    {
+      "id": "aRods-position-signal-to-aCore-control",
+      "from": {
+        "component": "aRods",
+        "port": "position-signal"
+      },
+      "to": {
+        "component": "aCore",
+        "port": "control"
+      },
+      "medium": "data",
+      "label": "data",
+      "flowBinding": "/flows/aRods-position-signal-to-aCore-control"
+    },
+    {
+      "id": "aSG-steam-to-aTurbine-inlet",
+      "from": {
+        "component": "aSG",
+        "port": "steam"
+      },
+      "to": {
+        "component": "aTurbine",
+        "port": "inlet"
+      },
+      "medium": "steam",
+      "label": "Steam / working vapor",
+      "flowBinding": "/flows/aSG-steam-to-aTurbine-inlet"
+    },
+    {
+      "id": "aTurbine-outlet-to-aCondenser-steam",
+      "from": {
+        "component": "aTurbine",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "aCondenser",
+        "port": "steam"
+      },
+      "medium": "steam",
+      "label": "Turbine exhaust",
+      "flowBinding": "/flows/aTurbine-outlet-to-aCondenser-steam"
+    },
+    {
+      "id": "aCondenser-condensate-to-aFeedPump-inlet",
+      "from": {
+        "component": "aCondenser",
+        "port": "condensate"
+      },
+      "to": {
+        "component": "aFeedPump",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "label": "Condensate",
+      "flowBinding": "/flows/aCondenser-condensate-to-aFeedPump-inlet"
+    },
+    {
+      "id": "aFeedPump-outlet-to-aSG-feedwater",
+      "from": {
+        "component": "aFeedPump",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "aSG",
+        "port": "feedwater"
+      },
+      "medium": "liquid",
+      "label": "Feedwater return",
+      "flowBinding": "/flows/aFeedPump-outlet-to-aSG-feedwater"
+    },
+    {
+      "id": "aCoolingTower-outlet-to-aCoolingPump-inlet",
+      "from": {
+        "component": "aCoolingTower",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "aCoolingPump",
+        "port": "inlet"
+      },
+      "medium": "thermal-fluid",
+      "label": "Cooling water",
+      "flowBinding": "/flows/aCoolingTower-outlet-to-aCoolingPump-inlet"
+    },
+    {
+      "id": "aCoolingPump-outlet-to-aCondenser-cooling-in",
+      "from": {
+        "component": "aCoolingPump",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "aCondenser",
+        "port": "cooling-in"
+      },
+      "medium": "liquid",
+      "label": "Independent cooling water",
+      "flowBinding": "/flows/aCoolingPump-outlet-to-aCondenser-cooling-in"
+    },
+    {
+      "id": "aCondenser-cooling-out-to-aCoolingTower-inlet",
+      "from": {
+        "component": "aCondenser",
+        "port": "cooling-out"
+      },
+      "to": {
+        "component": "aCoolingTower",
+        "port": "inlet"
+      },
+      "medium": "thermal-fluid",
+      "label": "Warm cooling return",
+      "flowBinding": "/flows/aCondenser-cooling-out-to-aCoolingTower-inlet"
+    },
+    {
+      "id": "aTurbine-output-to-collection-supply",
+      "from": {
+        "component": "aTurbine",
+        "port": "output"
+      },
+      "to": {
+        "component": "collection",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "label": "electricity",
+      "flowBinding": "/flows/aTurbine-output-to-collection-supply"
+    },
+    {
+      "id": "bContainment-monitor-to-bRadiation-process",
+      "from": {
+        "component": "bContainment",
+        "port": "monitor"
+      },
+      "to": {
+        "component": "bRadiation",
+        "port": "process"
+      },
+      "medium": "measurement",
+      "label": "measurement",
+      "flowBinding": "/flows/bContainment-monitor-to-bRadiation-process"
+    },
+    {
+      "id": "bCore-coolant-out-to-bSG-primary-in",
+      "from": {
+        "component": "bCore",
+        "port": "coolant-out"
+      },
+      "to": {
+        "component": "bSG",
+        "port": "primary-in"
+      },
+      "medium": "liquid",
+      "label": "liquid",
+      "flowBinding": "/flows/bCore-coolant-out-to-bSG-primary-in"
+    },
+    {
+      "id": "bSG-primary-out-to-bPrimaryPump-inlet",
+      "from": {
+        "component": "bSG",
+        "port": "primary-out"
+      },
+      "to": {
+        "component": "bPrimaryPump",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "label": "liquid",
+      "flowBinding": "/flows/bSG-primary-out-to-bPrimaryPump-inlet"
+    },
+    {
+      "id": "bPrimaryPump-outlet-to-bCore-coolant-in",
+      "from": {
+        "component": "bPrimaryPump",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "bCore",
+        "port": "coolant-in"
+      },
+      "medium": "liquid",
+      "label": "liquid",
+      "flowBinding": "/flows/bPrimaryPump-outlet-to-bCore-coolant-in"
+    },
+    {
+      "id": "bCore-coolant-out-to-bPressurizer-surge",
+      "from": {
+        "component": "bCore",
+        "port": "coolant-out"
+      },
+      "to": {
+        "component": "bPressurizer",
+        "port": "surge"
+      },
+      "medium": "liquid",
+      "label": "liquid",
+      "flowBinding": "/flows/bCore-coolant-out-to-bPressurizer-surge"
+    },
+    {
+      "id": "bRods-position-signal-to-bCore-control",
+      "from": {
+        "component": "bRods",
+        "port": "position-signal"
+      },
+      "to": {
+        "component": "bCore",
+        "port": "control"
+      },
+      "medium": "data",
+      "label": "data",
+      "flowBinding": "/flows/bRods-position-signal-to-bCore-control"
+    },
+    {
+      "id": "bSG-steam-to-bTurbine-inlet",
+      "from": {
+        "component": "bSG",
+        "port": "steam"
+      },
+      "to": {
+        "component": "bTurbine",
+        "port": "inlet"
+      },
+      "medium": "steam",
+      "label": "Steam / working vapor",
+      "flowBinding": "/flows/bSG-steam-to-bTurbine-inlet"
+    },
+    {
+      "id": "bTurbine-outlet-to-bCondenser-steam",
+      "from": {
+        "component": "bTurbine",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "bCondenser",
+        "port": "steam"
+      },
+      "medium": "steam",
+      "label": "Turbine exhaust",
+      "flowBinding": "/flows/bTurbine-outlet-to-bCondenser-steam"
+    },
+    {
+      "id": "bCondenser-condensate-to-bFeedPump-inlet",
+      "from": {
+        "component": "bCondenser",
+        "port": "condensate"
+      },
+      "to": {
+        "component": "bFeedPump",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "label": "Condensate",
+      "flowBinding": "/flows/bCondenser-condensate-to-bFeedPump-inlet"
+    },
+    {
+      "id": "bFeedPump-outlet-to-bSG-feedwater",
+      "from": {
+        "component": "bFeedPump",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "bSG",
+        "port": "feedwater"
+      },
+      "medium": "liquid",
+      "label": "Feedwater return",
+      "flowBinding": "/flows/bFeedPump-outlet-to-bSG-feedwater"
+    },
+    {
+      "id": "bCoolingTower-outlet-to-bCoolingPump-inlet",
+      "from": {
+        "component": "bCoolingTower",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "bCoolingPump",
+        "port": "inlet"
+      },
+      "medium": "thermal-fluid",
+      "label": "Cooling water",
+      "flowBinding": "/flows/bCoolingTower-outlet-to-bCoolingPump-inlet"
+    },
+    {
+      "id": "bCoolingPump-outlet-to-bCondenser-cooling-in",
+      "from": {
+        "component": "bCoolingPump",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "bCondenser",
+        "port": "cooling-in"
+      },
+      "medium": "liquid",
+      "label": "Independent cooling water",
+      "flowBinding": "/flows/bCoolingPump-outlet-to-bCondenser-cooling-in"
+    },
+    {
+      "id": "bCondenser-cooling-out-to-bCoolingTower-inlet",
+      "from": {
+        "component": "bCondenser",
+        "port": "cooling-out"
+      },
+      "to": {
+        "component": "bCoolingTower",
+        "port": "inlet"
+      },
+      "medium": "thermal-fluid",
+      "label": "Warm cooling return",
+      "flowBinding": "/flows/bCondenser-cooling-out-to-bCoolingTower-inlet"
+    },
+    {
+      "id": "bTurbine-output-to-collection-supply",
+      "from": {
+        "component": "bTurbine",
+        "port": "output"
+      },
+      "to": {
+        "component": "collection",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "label": "electricity",
+      "flowBinding": "/flows/bTurbine-output-to-collection-supply"
+    },
+    {
+      "id": "collection-branch-a-to-transformer-primary",
+      "from": {
+        "component": "collection",
+        "port": "branch-a"
+      },
+      "to": {
+        "component": "transformer",
+        "port": "primary"
+      },
+      "medium": "electricity",
+      "label": "AC generation",
+      "flowBinding": "/flows/collection-branch-a-to-transformer-primary"
+    },
+    {
+      "id": "transformer-secondary-to-exportBreaker-line",
+      "from": {
+        "component": "transformer",
+        "port": "secondary"
+      },
+      "to": {
+        "component": "exportBreaker",
+        "port": "line"
+      },
+      "medium": "electricity",
+      "label": "Export circuit",
+      "flowBinding": "/flows/transformer-secondary-to-exportBreaker-line"
+    },
+    {
+      "id": "exportBreaker-load-to-load-supply",
+      "from": {
+        "component": "exportBreaker",
+        "port": "load"
+      },
+      "to": {
+        "component": "load",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "label": "Delivered AC",
+      "flowBinding": "/flows/exportBreaker-load-to-load-supply"
+    },
+    {
+      "id": "station-secondary-to-dcService-ac",
+      "from": {
+        "component": "station",
+        "port": "secondary"
+      },
+      "to": {
+        "component": "dcService",
+        "port": "ac"
+      },
+      "medium": "electricity",
+      "label": "Station AC input",
+      "flowBinding": "/flows/station-secondary-to-dcService-ac"
+    },
+    {
+      "id": "station-secondary-to-plc-power",
+      "from": {
+        "component": "station",
+        "port": "secondary"
+      },
+      "to": {
+        "component": "plc",
+        "port": "power"
+      },
+      "medium": "electricity",
+      "label": "Station control power",
+      "flowBinding": "/flows/station-secondary-to-plc-power"
+    },
+    {
+      "id": "station-secondary-to-aCoolingPump-drive",
+      "from": {
+        "component": "station",
+        "port": "secondary"
+      },
+      "to": {
+        "component": "aCoolingPump",
+        "port": "drive"
+      },
+      "medium": "electricity",
+      "label": "Station auxiliary AC",
+      "flowBinding": "/flows/station-secondary-to-aCoolingPump-drive"
+    },
+    {
+      "id": "station-secondary-to-aCoolingTower-supply",
+      "from": {
+        "component": "station",
+        "port": "secondary"
+      },
+      "to": {
+        "component": "aCoolingTower",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "label": "Station auxiliary AC",
+      "flowBinding": "/flows/station-secondary-to-aCoolingTower-supply"
+    },
+    {
+      "id": "station-secondary-to-aFeedPump-drive",
+      "from": {
+        "component": "station",
+        "port": "secondary"
+      },
+      "to": {
+        "component": "aFeedPump",
+        "port": "drive"
+      },
+      "medium": "electricity",
+      "label": "Station auxiliary AC",
+      "flowBinding": "/flows/station-secondary-to-aFeedPump-drive"
+    },
+    {
+      "id": "station-secondary-to-aPressurizer-supply",
+      "from": {
+        "component": "station",
+        "port": "secondary"
+      },
+      "to": {
+        "component": "aPressurizer",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "label": "Station auxiliary AC",
+      "flowBinding": "/flows/station-secondary-to-aPressurizer-supply"
+    },
+    {
+      "id": "station-secondary-to-aPrimaryPump-drive",
+      "from": {
+        "component": "station",
+        "port": "secondary"
+      },
+      "to": {
+        "component": "aPrimaryPump",
+        "port": "drive"
+      },
+      "medium": "electricity",
+      "label": "Station auxiliary AC",
+      "flowBinding": "/flows/station-secondary-to-aPrimaryPump-drive"
+    },
+    {
+      "id": "dcService-dc-to-aRadiation-power",
+      "from": {
+        "component": "dcService",
+        "port": "dc"
+      },
+      "to": {
+        "component": "aRadiation",
+        "port": "power"
+      },
+      "medium": "electricity",
+      "label": "Station auxiliary DC",
+      "flowBinding": "/flows/dcService-dc-to-aRadiation-power"
+    },
+    {
+      "id": "station-secondary-to-aRods-supply",
+      "from": {
+        "component": "station",
+        "port": "secondary"
+      },
+      "to": {
+        "component": "aRods",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "label": "Station auxiliary AC",
+      "flowBinding": "/flows/station-secondary-to-aRods-supply"
+    },
+    {
+      "id": "station-secondary-to-bCoolingPump-drive",
+      "from": {
+        "component": "station",
+        "port": "secondary"
+      },
+      "to": {
+        "component": "bCoolingPump",
+        "port": "drive"
+      },
+      "medium": "electricity",
+      "label": "Station auxiliary AC",
+      "flowBinding": "/flows/station-secondary-to-bCoolingPump-drive"
+    },
+    {
+      "id": "station-secondary-to-bCoolingTower-supply",
+      "from": {
+        "component": "station",
+        "port": "secondary"
+      },
+      "to": {
+        "component": "bCoolingTower",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "label": "Station auxiliary AC",
+      "flowBinding": "/flows/station-secondary-to-bCoolingTower-supply"
+    },
+    {
+      "id": "station-secondary-to-bFeedPump-drive",
+      "from": {
+        "component": "station",
+        "port": "secondary"
+      },
+      "to": {
+        "component": "bFeedPump",
+        "port": "drive"
+      },
+      "medium": "electricity",
+      "label": "Station auxiliary AC",
+      "flowBinding": "/flows/station-secondary-to-bFeedPump-drive"
+    },
+    {
+      "id": "station-secondary-to-bPressurizer-supply",
+      "from": {
+        "component": "station",
+        "port": "secondary"
+      },
+      "to": {
+        "component": "bPressurizer",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "label": "Station auxiliary AC",
+      "flowBinding": "/flows/station-secondary-to-bPressurizer-supply"
+    },
+    {
+      "id": "station-secondary-to-bPrimaryPump-drive",
+      "from": {
+        "component": "station",
+        "port": "secondary"
+      },
+      "to": {
+        "component": "bPrimaryPump",
+        "port": "drive"
+      },
+      "medium": "electricity",
+      "label": "Station auxiliary AC",
+      "flowBinding": "/flows/station-secondary-to-bPrimaryPump-drive"
+    },
+    {
+      "id": "dcService-dc-to-bRadiation-power",
+      "from": {
+        "component": "dcService",
+        "port": "dc"
+      },
+      "to": {
+        "component": "bRadiation",
+        "port": "power"
+      },
+      "medium": "electricity",
+      "label": "Station auxiliary DC",
+      "flowBinding": "/flows/dcService-dc-to-bRadiation-power"
+    },
+    {
+      "id": "station-secondary-to-bRods-supply",
+      "from": {
+        "component": "station",
+        "port": "secondary"
+      },
+      "to": {
+        "component": "bRods",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "label": "Station auxiliary AC",
+      "flowBinding": "/flows/station-secondary-to-bRods-supply"
+    },
+    {
+      "id": "dcService-dc-to-exportBreaker-supply",
+      "from": {
+        "component": "dcService",
+        "port": "dc"
+      },
+      "to": {
+        "component": "exportBreaker",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "label": "Station auxiliary DC",
+      "flowBinding": "/flows/dcService-dc-to-exportBreaker-supply"
+    },
+    {
+      "id": "plc-io-to-aRods-control",
+      "from": {
+        "component": "plc",
+        "port": "io"
+      },
+      "to": {
+        "component": "aRods",
+        "port": "control"
+      },
+      "medium": "data",
+      "label": "data",
+      "flowBinding": "/flows/plc-io-to-aRods-control"
+    },
+    {
+      "id": "plc-io-to-bRods-control",
+      "from": {
+        "component": "plc",
+        "port": "io"
+      },
+      "to": {
+        "component": "bRods",
+        "port": "control"
+      },
+      "medium": "data",
+      "label": "data",
+      "flowBinding": "/flows/plc-io-to-bRods-control"
+    }
+  ],
+  "views": [
+    {
+      "id": "module-a",
+      "label": "Integral-PWR module A",
+      "canvas": {
+        "width": 1280,
+        "height": 940
+      },
+      "placements": [
+        {
+          "component": "aCore",
+          "x": 60,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "aPrimaryPump",
+          "x": 360,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "aSG",
+          "x": 660,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "aPressurizer",
+          "x": 960,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "aContainment",
+          "x": 960,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "aRadiation",
+          "x": 660,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "aRods",
+          "x": 360,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "aTurbine",
+          "x": 60,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "aFeedPump",
+          "x": 60,
+          "y": 620,
+          "width": 200,
+          "height": 190
+        }
+      ],
+      "routes": [
+        {
+          "connection": "aContainment-monitor-to-aRadiation-process",
+          "points": [
+            {
+              "x": 960,
+              "y": 435
+            },
+            {
+              "x": 860,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "aCore-coolant-out-to-aSG-primary-in",
+          "points": [
+            {
+              "x": 260,
+              "y": 155
+            },
+            {
+              "x": 336,
+              "y": 155
+            },
+            {
+              "x": 336,
+              "y": 36
+            },
+            {
+              "x": 636,
+              "y": 36
+            },
+            {
+              "x": 636,
+              "y": 155
+            },
+            {
+              "x": 660,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "aSG-primary-out-to-aPrimaryPump-inlet",
+          "points": [
+            {
+              "x": 660,
+              "y": 155
+            },
+            {
+              "x": 560,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "aPrimaryPump-outlet-to-aCore-coolant-in",
+          "points": [
+            {
+              "x": 360,
+              "y": 155
+            },
+            {
+              "x": 260,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "aCore-coolant-out-to-aPressurizer-surge",
+          "points": [
+            {
+              "x": 260,
+              "y": 155
+            },
+            {
+              "x": 336,
+              "y": 155
+            },
+            {
+              "x": 336,
+              "y": 36
+            },
+            {
+              "x": 936,
+              "y": 36
+            },
+            {
+              "x": 936,
+              "y": 155
+            },
+            {
+              "x": 960,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "aRods-position-signal-to-aCore-control",
+          "points": [
+            {
+              "x": 360,
+              "y": 435
+            },
+            {
+              "x": 336,
+              "y": 435
+            },
+            {
+              "x": 336,
+              "y": 274
+            },
+            {
+              "x": 284,
+              "y": 274
+            },
+            {
+              "x": 284,
+              "y": 155
+            },
+            {
+              "x": 260,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "aSG-steam-to-aTurbine-inlet",
+          "points": [
+            {
+              "x": 660,
+              "y": 155
+            },
+            {
+              "x": 636,
+              "y": 155
+            },
+            {
+              "x": 636,
+              "y": 316
+            },
+            {
+              "x": 284,
+              "y": 316
+            },
+            {
+              "x": 284,
+              "y": 435
+            },
+            {
+              "x": 260,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "aFeedPump-outlet-to-aSG-feedwater",
+          "points": [
+            {
+              "x": 260,
+              "y": 715
+            },
+            {
+              "x": 284,
+              "y": 715
+            },
+            {
+              "x": 284,
+              "y": 274
+            },
+            {
+              "x": 636,
+              "y": 274
+            },
+            {
+              "x": 636,
+              "y": 155
+            },
+            {
+              "x": 660,
+              "y": 155
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "module-b",
+      "label": "Integral-PWR module B",
+      "canvas": {
+        "width": 1280,
+        "height": 940
+      },
+      "placements": [
+        {
+          "component": "bCore",
+          "x": 60,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "bPrimaryPump",
+          "x": 360,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "bSG",
+          "x": 660,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "bPressurizer",
+          "x": 960,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "bContainment",
+          "x": 960,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "bRadiation",
+          "x": 660,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "bRods",
+          "x": 360,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "bTurbine",
+          "x": 60,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "bFeedPump",
+          "x": 60,
+          "y": 620,
+          "width": 200,
+          "height": 190
+        }
+      ],
+      "routes": [
+        {
+          "connection": "bContainment-monitor-to-bRadiation-process",
+          "points": [
+            {
+              "x": 960,
+              "y": 435
+            },
+            {
+              "x": 860,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "bCore-coolant-out-to-bSG-primary-in",
+          "points": [
+            {
+              "x": 260,
+              "y": 155
+            },
+            {
+              "x": 336,
+              "y": 155
+            },
+            {
+              "x": 336,
+              "y": 36
+            },
+            {
+              "x": 636,
+              "y": 36
+            },
+            {
+              "x": 636,
+              "y": 155
+            },
+            {
+              "x": 660,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "bSG-primary-out-to-bPrimaryPump-inlet",
+          "points": [
+            {
+              "x": 660,
+              "y": 155
+            },
+            {
+              "x": 560,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "bPrimaryPump-outlet-to-bCore-coolant-in",
+          "points": [
+            {
+              "x": 360,
+              "y": 155
+            },
+            {
+              "x": 260,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "bCore-coolant-out-to-bPressurizer-surge",
+          "points": [
+            {
+              "x": 260,
+              "y": 155
+            },
+            {
+              "x": 336,
+              "y": 155
+            },
+            {
+              "x": 336,
+              "y": 36
+            },
+            {
+              "x": 936,
+              "y": 36
+            },
+            {
+              "x": 936,
+              "y": 155
+            },
+            {
+              "x": 960,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "bRods-position-signal-to-bCore-control",
+          "points": [
+            {
+              "x": 360,
+              "y": 435
+            },
+            {
+              "x": 336,
+              "y": 435
+            },
+            {
+              "x": 336,
+              "y": 274
+            },
+            {
+              "x": 284,
+              "y": 274
+            },
+            {
+              "x": 284,
+              "y": 155
+            },
+            {
+              "x": 260,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "bSG-steam-to-bTurbine-inlet",
+          "points": [
+            {
+              "x": 660,
+              "y": 155
+            },
+            {
+              "x": 636,
+              "y": 155
+            },
+            {
+              "x": 636,
+              "y": 316
+            },
+            {
+              "x": 284,
+              "y": 316
+            },
+            {
+              "x": 284,
+              "y": 435
+            },
+            {
+              "x": 260,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "bFeedPump-outlet-to-bSG-feedwater",
+          "points": [
+            {
+              "x": 260,
+              "y": 715
+            },
+            {
+              "x": 284,
+              "y": 715
+            },
+            {
+              "x": 284,
+              "y": 274
+            },
+            {
+              "x": 636,
+              "y": 274
+            },
+            {
+              "x": 636,
+              "y": 155
+            },
+            {
+              "x": 660,
+              "y": 155
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "cooling",
+      "label": "Independent module cooling",
+      "canvas": {
+        "width": 980,
+        "height": 660
+      },
+      "placements": [
+        {
+          "component": "aCondenser",
+          "x": 60,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "aCoolingPump",
+          "x": 360,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "aCoolingTower",
+          "x": 660,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "bCondenser",
+          "x": 660,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "bCoolingPump",
+          "x": 360,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "bCoolingTower",
+          "x": 60,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        }
+      ],
+      "routes": [
+        {
+          "connection": "aCoolingTower-outlet-to-aCoolingPump-inlet",
+          "points": [
+            {
+              "x": 660,
+              "y": 155
+            },
+            {
+              "x": 560,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "aCoolingPump-outlet-to-aCondenser-cooling-in",
+          "points": [
+            {
+              "x": 360,
+              "y": 155
+            },
+            {
+              "x": 260,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "aCondenser-cooling-out-to-aCoolingTower-inlet",
+          "points": [
+            {
+              "x": 260,
+              "y": 155
+            },
+            {
+              "x": 336,
+              "y": 155
+            },
+            {
+              "x": 336,
+              "y": 36
+            },
+            {
+              "x": 636,
+              "y": 36
+            },
+            {
+              "x": 636,
+              "y": 155
+            },
+            {
+              "x": 660,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "bCoolingTower-outlet-to-bCoolingPump-inlet",
+          "points": [
+            {
+              "x": 260,
+              "y": 435
+            },
+            {
+              "x": 360,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "bCoolingPump-outlet-to-bCondenser-cooling-in",
+          "points": [
+            {
+              "x": 560,
+              "y": 435
+            },
+            {
+              "x": 660,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "bCondenser-cooling-out-to-bCoolingTower-inlet",
+          "points": [
+            {
+              "x": 660,
+              "y": 435
+            },
+            {
+              "x": 584,
+              "y": 435
+            },
+            {
+              "x": 584,
+              "y": 316
+            },
+            {
+              "x": 284,
+              "y": 316
+            },
+            {
+              "x": 284,
+              "y": 435
+            },
+            {
+              "x": 260,
+              "y": 435
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "electrical",
+      "label": "Shared electrical bus and controls",
+      "canvas": {
+        "width": 980,
+        "height": 940
+      },
+      "placements": [
+        {
+          "component": "aTurbine",
+          "x": 60,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "bTurbine",
+          "x": 360,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "collection",
+          "x": 660,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "transformer",
+          "x": 660,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "exportBreaker",
+          "x": 360,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "load",
+          "x": 60,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "station",
+          "x": 60,
+          "y": 620,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "plc",
+          "x": 360,
+          "y": 620,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "dcService",
+          "x": 660,
+          "y": 620,
+          "width": 200,
+          "height": 190
+        }
+      ],
+      "routes": [
+        {
+          "connection": "aTurbine-output-to-collection-supply",
+          "points": [
+            {
+              "x": 260,
+              "y": 155
+            },
+            {
+              "x": 336,
+              "y": 155
+            },
+            {
+              "x": 336,
+              "y": 36
+            },
+            {
+              "x": 636,
+              "y": 36
+            },
+            {
+              "x": 636,
+              "y": 155
+            },
+            {
+              "x": 660,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "bTurbine-output-to-collection-supply",
+          "points": [
+            {
+              "x": 560,
+              "y": 155
+            },
+            {
+              "x": 660,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "collection-branch-a-to-transformer-primary",
+          "points": [
+            {
+              "x": 760,
+              "y": 250
+            },
+            {
+              "x": 760,
+              "y": 340
+            }
+          ]
+        },
+        {
+          "connection": "transformer-secondary-to-exportBreaker-line",
+          "points": [
+            {
+              "x": 660,
+              "y": 435
+            },
+            {
+              "x": 560,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "exportBreaker-load-to-load-supply",
+          "points": [
+            {
+              "x": 360,
+              "y": 435
+            },
+            {
+              "x": 260,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "station-secondary-to-dcService-ac",
+          "points": [
+            {
+              "x": 260,
+              "y": 715
+            },
+            {
+              "x": 336,
+              "y": 715
+            },
+            {
+              "x": 336,
+              "y": 596
+            },
+            {
+              "x": 636,
+              "y": 596
+            },
+            {
+              "x": 636,
+              "y": 715
+            },
+            {
+              "x": 660,
+              "y": 715
+            }
+          ]
+        },
+        {
+          "connection": "station-secondary-to-plc-power",
+          "points": [
+            {
+              "x": 260,
+              "y": 715
+            },
+            {
+              "x": 360,
+              "y": 715
+            }
+          ]
+        },
+        {
+          "connection": "dcService-dc-to-exportBreaker-supply",
+          "points": [
+            {
+              "x": 660,
+              "y": 715
+            },
+            {
+              "x": 636,
+              "y": 715
+            },
+            {
+              "x": 636,
+              "y": 554
+            },
+            {
+              "x": 584,
+              "y": 554
+            },
+            {
+              "x": 584,
+              "y": 435
+            },
+            {
+              "x": 560,
+              "y": 435
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "commands": [
+    {
+      "id": "collection-enabled",
+      "label": "Equipment enabled",
+      "component": "collection",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "collection"
+      }
+    },
+    {
+      "id": "collection-load",
+      "label": "Requested output / load (%)",
+      "component": "collection",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "collection"
+      }
+    },
+    {
+      "id": "collection-fault",
+      "label": "Inject fictional fault",
+      "component": "collection",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "collection",
+        "value": true
+      }
+    },
+    {
+      "id": "collection-repair",
+      "label": "Repair damage",
+      "component": "collection",
+      "action": "repair",
+      "arguments": {
+        "equipment": "collection"
+      }
+    },
+    {
+      "id": "aCore-enabled",
+      "label": "Equipment enabled",
+      "component": "aCore",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "aCore"
+      }
+    },
+    {
+      "id": "aCore-load",
+      "label": "Requested output / load (%)",
+      "component": "aCore",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "aCore"
+      }
+    },
+    {
+      "id": "aCore-fault",
+      "label": "Inject fictional fault",
+      "component": "aCore",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "aCore",
+        "value": true
+      }
+    },
+    {
+      "id": "aCore-repair",
+      "label": "Repair damage",
+      "component": "aCore",
+      "action": "repair",
+      "arguments": {
+        "equipment": "aCore"
+      }
+    },
+    {
+      "id": "aCore-rod-position",
+      "label": "Core heat demand \u00b7 rod insertion (100 = inserted)",
+      "component": "aCore",
+      "action": "setRodPosition",
+      "arguments": {
+        "equipment": "aCore"
+      }
+    },
+    {
+      "id": "aSG-enabled",
+      "label": "Equipment enabled",
+      "component": "aSG",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "aSG"
+      }
+    },
+    {
+      "id": "aSG-load",
+      "label": "Requested output / load (%)",
+      "component": "aSG",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "aSG"
+      }
+    },
+    {
+      "id": "aSG-fault",
+      "label": "Inject fictional fault",
+      "component": "aSG",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "aSG",
+        "value": true
+      }
+    },
+    {
+      "id": "aSG-repair",
+      "label": "Repair damage",
+      "component": "aSG",
+      "action": "repair",
+      "arguments": {
+        "equipment": "aSG"
+      }
+    },
+    {
+      "id": "aPrimaryPump-enabled",
+      "label": "Equipment enabled",
+      "component": "aPrimaryPump",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "aPrimaryPump"
+      }
+    },
+    {
+      "id": "aPrimaryPump-load",
+      "label": "Requested output / load (%)",
+      "component": "aPrimaryPump",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "aPrimaryPump"
+      }
+    },
+    {
+      "id": "aPrimaryPump-fault",
+      "label": "Inject fictional fault",
+      "component": "aPrimaryPump",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "aPrimaryPump",
+        "value": true
+      }
+    },
+    {
+      "id": "aPrimaryPump-repair",
+      "label": "Repair damage",
+      "component": "aPrimaryPump",
+      "action": "repair",
+      "arguments": {
+        "equipment": "aPrimaryPump"
+      }
+    },
+    {
+      "id": "aPressurizer-enabled",
+      "label": "Equipment enabled",
+      "component": "aPressurizer",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "aPressurizer"
+      }
+    },
+    {
+      "id": "aPressurizer-load",
+      "label": "Requested output / load (%)",
+      "component": "aPressurizer",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "aPressurizer"
+      }
+    },
+    {
+      "id": "aPressurizer-fault",
+      "label": "Inject fictional fault",
+      "component": "aPressurizer",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "aPressurizer",
+        "value": true
+      }
+    },
+    {
+      "id": "aPressurizer-repair",
+      "label": "Repair damage",
+      "component": "aPressurizer",
+      "action": "repair",
+      "arguments": {
+        "equipment": "aPressurizer"
+      }
+    },
+    {
+      "id": "aContainment-enabled",
+      "label": "Equipment enabled",
+      "component": "aContainment",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "aContainment"
+      }
+    },
+    {
+      "id": "aContainment-load",
+      "label": "Requested output / load (%)",
+      "component": "aContainment",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "aContainment"
+      }
+    },
+    {
+      "id": "aContainment-fault",
+      "label": "Inject fictional fault",
+      "component": "aContainment",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "aContainment",
+        "value": true
+      }
+    },
+    {
+      "id": "aContainment-repair",
+      "label": "Repair damage",
+      "component": "aContainment",
+      "action": "repair",
+      "arguments": {
+        "equipment": "aContainment"
+      }
+    },
+    {
+      "id": "aRadiation-enabled",
+      "label": "Equipment enabled",
+      "component": "aRadiation",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "aRadiation"
+      }
+    },
+    {
+      "id": "aRadiation-load",
+      "label": "Requested output / load (%)",
+      "component": "aRadiation",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "aRadiation"
+      }
+    },
+    {
+      "id": "aRadiation-fault",
+      "label": "Inject fictional fault",
+      "component": "aRadiation",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "aRadiation",
+        "value": true
+      }
+    },
+    {
+      "id": "aRadiation-repair",
+      "label": "Repair damage",
+      "component": "aRadiation",
+      "action": "repair",
+      "arguments": {
+        "equipment": "aRadiation"
+      }
+    },
+    {
+      "id": "aRods-enabled",
+      "label": "Equipment enabled",
+      "component": "aRods",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "aRods"
+      }
+    },
+    {
+      "id": "aRods-load",
+      "label": "Requested output / load (%)",
+      "component": "aRods",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "aRods"
+      }
+    },
+    {
+      "id": "aRods-fault",
+      "label": "Inject fictional fault",
+      "component": "aRods",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "aRods",
+        "value": true
+      }
+    },
+    {
+      "id": "aRods-repair",
+      "label": "Repair damage",
+      "component": "aRods",
+      "action": "repair",
+      "arguments": {
+        "equipment": "aRods"
+      }
+    },
+    {
+      "id": "aRods-rod-position",
+      "label": "Core heat demand \u00b7 rod insertion (100 = inserted)",
+      "component": "aRods",
+      "action": "setRodPosition",
+      "arguments": {
+        "equipment": "aCore"
+      }
+    },
+    {
+      "id": "aTurbine-enabled",
+      "label": "Equipment enabled",
+      "component": "aTurbine",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "aTurbine"
+      }
+    },
+    {
+      "id": "aTurbine-load",
+      "label": "Requested output / load (%)",
+      "component": "aTurbine",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "aTurbine"
+      }
+    },
+    {
+      "id": "aTurbine-fault",
+      "label": "Inject fictional fault",
+      "component": "aTurbine",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "aTurbine",
+        "value": true
+      }
+    },
+    {
+      "id": "aTurbine-repair",
+      "label": "Repair damage",
+      "component": "aTurbine",
+      "action": "repair",
+      "arguments": {
+        "equipment": "aTurbine"
+      }
+    },
+    {
+      "id": "aCondenser-enabled",
+      "label": "Equipment enabled",
+      "component": "aCondenser",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "aCondenser"
+      }
+    },
+    {
+      "id": "aCondenser-load",
+      "label": "Requested output / load (%)",
+      "component": "aCondenser",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "aCondenser"
+      }
+    },
+    {
+      "id": "aCondenser-fault",
+      "label": "Inject fictional fault",
+      "component": "aCondenser",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "aCondenser",
+        "value": true
+      }
+    },
+    {
+      "id": "aCondenser-repair",
+      "label": "Repair damage",
+      "component": "aCondenser",
+      "action": "repair",
+      "arguments": {
+        "equipment": "aCondenser"
+      }
+    },
+    {
+      "id": "aFeedPump-enabled",
+      "label": "Equipment enabled",
+      "component": "aFeedPump",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "aFeedPump"
+      }
+    },
+    {
+      "id": "aFeedPump-load",
+      "label": "Requested output / load (%)",
+      "component": "aFeedPump",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "aFeedPump"
+      }
+    },
+    {
+      "id": "aFeedPump-fault",
+      "label": "Inject fictional fault",
+      "component": "aFeedPump",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "aFeedPump",
+        "value": true
+      }
+    },
+    {
+      "id": "aFeedPump-repair",
+      "label": "Repair damage",
+      "component": "aFeedPump",
+      "action": "repair",
+      "arguments": {
+        "equipment": "aFeedPump"
+      }
+    },
+    {
+      "id": "aCoolingTower-enabled",
+      "label": "Equipment enabled",
+      "component": "aCoolingTower",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "aCoolingTower"
+      }
+    },
+    {
+      "id": "aCoolingTower-load",
+      "label": "Requested output / load (%)",
+      "component": "aCoolingTower",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "aCoolingTower"
+      }
+    },
+    {
+      "id": "aCoolingTower-fault",
+      "label": "Inject fictional fault",
+      "component": "aCoolingTower",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "aCoolingTower",
+        "value": true
+      }
+    },
+    {
+      "id": "aCoolingTower-repair",
+      "label": "Repair damage",
+      "component": "aCoolingTower",
+      "action": "repair",
+      "arguments": {
+        "equipment": "aCoolingTower"
+      }
+    },
+    {
+      "id": "aCoolingPump-enabled",
+      "label": "Equipment enabled",
+      "component": "aCoolingPump",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "aCoolingPump"
+      }
+    },
+    {
+      "id": "aCoolingPump-load",
+      "label": "Requested output / load (%)",
+      "component": "aCoolingPump",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "aCoolingPump"
+      }
+    },
+    {
+      "id": "aCoolingPump-fault",
+      "label": "Inject fictional fault",
+      "component": "aCoolingPump",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "aCoolingPump",
+        "value": true
+      }
+    },
+    {
+      "id": "aCoolingPump-repair",
+      "label": "Repair damage",
+      "component": "aCoolingPump",
+      "action": "repair",
+      "arguments": {
+        "equipment": "aCoolingPump"
+      }
+    },
+    {
+      "id": "bCore-enabled",
+      "label": "Equipment enabled",
+      "component": "bCore",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "bCore"
+      }
+    },
+    {
+      "id": "bCore-load",
+      "label": "Requested output / load (%)",
+      "component": "bCore",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "bCore"
+      }
+    },
+    {
+      "id": "bCore-fault",
+      "label": "Inject fictional fault",
+      "component": "bCore",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "bCore",
+        "value": true
+      }
+    },
+    {
+      "id": "bCore-repair",
+      "label": "Repair damage",
+      "component": "bCore",
+      "action": "repair",
+      "arguments": {
+        "equipment": "bCore"
+      }
+    },
+    {
+      "id": "bCore-rod-position",
+      "label": "Core heat demand \u00b7 rod insertion (100 = inserted)",
+      "component": "bCore",
+      "action": "setRodPosition",
+      "arguments": {
+        "equipment": "bCore"
+      }
+    },
+    {
+      "id": "bSG-enabled",
+      "label": "Equipment enabled",
+      "component": "bSG",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "bSG"
+      }
+    },
+    {
+      "id": "bSG-load",
+      "label": "Requested output / load (%)",
+      "component": "bSG",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "bSG"
+      }
+    },
+    {
+      "id": "bSG-fault",
+      "label": "Inject fictional fault",
+      "component": "bSG",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "bSG",
+        "value": true
+      }
+    },
+    {
+      "id": "bSG-repair",
+      "label": "Repair damage",
+      "component": "bSG",
+      "action": "repair",
+      "arguments": {
+        "equipment": "bSG"
+      }
+    },
+    {
+      "id": "bPrimaryPump-enabled",
+      "label": "Equipment enabled",
+      "component": "bPrimaryPump",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "bPrimaryPump"
+      }
+    },
+    {
+      "id": "bPrimaryPump-load",
+      "label": "Requested output / load (%)",
+      "component": "bPrimaryPump",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "bPrimaryPump"
+      }
+    },
+    {
+      "id": "bPrimaryPump-fault",
+      "label": "Inject fictional fault",
+      "component": "bPrimaryPump",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "bPrimaryPump",
+        "value": true
+      }
+    },
+    {
+      "id": "bPrimaryPump-repair",
+      "label": "Repair damage",
+      "component": "bPrimaryPump",
+      "action": "repair",
+      "arguments": {
+        "equipment": "bPrimaryPump"
+      }
+    },
+    {
+      "id": "bPressurizer-enabled",
+      "label": "Equipment enabled",
+      "component": "bPressurizer",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "bPressurizer"
+      }
+    },
+    {
+      "id": "bPressurizer-load",
+      "label": "Requested output / load (%)",
+      "component": "bPressurizer",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "bPressurizer"
+      }
+    },
+    {
+      "id": "bPressurizer-fault",
+      "label": "Inject fictional fault",
+      "component": "bPressurizer",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "bPressurizer",
+        "value": true
+      }
+    },
+    {
+      "id": "bPressurizer-repair",
+      "label": "Repair damage",
+      "component": "bPressurizer",
+      "action": "repair",
+      "arguments": {
+        "equipment": "bPressurizer"
+      }
+    },
+    {
+      "id": "bContainment-enabled",
+      "label": "Equipment enabled",
+      "component": "bContainment",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "bContainment"
+      }
+    },
+    {
+      "id": "bContainment-load",
+      "label": "Requested output / load (%)",
+      "component": "bContainment",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "bContainment"
+      }
+    },
+    {
+      "id": "bContainment-fault",
+      "label": "Inject fictional fault",
+      "component": "bContainment",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "bContainment",
+        "value": true
+      }
+    },
+    {
+      "id": "bContainment-repair",
+      "label": "Repair damage",
+      "component": "bContainment",
+      "action": "repair",
+      "arguments": {
+        "equipment": "bContainment"
+      }
+    },
+    {
+      "id": "bRadiation-enabled",
+      "label": "Equipment enabled",
+      "component": "bRadiation",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "bRadiation"
+      }
+    },
+    {
+      "id": "bRadiation-load",
+      "label": "Requested output / load (%)",
+      "component": "bRadiation",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "bRadiation"
+      }
+    },
+    {
+      "id": "bRadiation-fault",
+      "label": "Inject fictional fault",
+      "component": "bRadiation",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "bRadiation",
+        "value": true
+      }
+    },
+    {
+      "id": "bRadiation-repair",
+      "label": "Repair damage",
+      "component": "bRadiation",
+      "action": "repair",
+      "arguments": {
+        "equipment": "bRadiation"
+      }
+    },
+    {
+      "id": "bRods-enabled",
+      "label": "Equipment enabled",
+      "component": "bRods",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "bRods"
+      }
+    },
+    {
+      "id": "bRods-load",
+      "label": "Requested output / load (%)",
+      "component": "bRods",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "bRods"
+      }
+    },
+    {
+      "id": "bRods-fault",
+      "label": "Inject fictional fault",
+      "component": "bRods",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "bRods",
+        "value": true
+      }
+    },
+    {
+      "id": "bRods-repair",
+      "label": "Repair damage",
+      "component": "bRods",
+      "action": "repair",
+      "arguments": {
+        "equipment": "bRods"
+      }
+    },
+    {
+      "id": "bRods-rod-position",
+      "label": "Core heat demand \u00b7 rod insertion (100 = inserted)",
+      "component": "bRods",
+      "action": "setRodPosition",
+      "arguments": {
+        "equipment": "bCore"
+      }
+    },
+    {
+      "id": "bTurbine-enabled",
+      "label": "Equipment enabled",
+      "component": "bTurbine",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "bTurbine"
+      }
+    },
+    {
+      "id": "bTurbine-load",
+      "label": "Requested output / load (%)",
+      "component": "bTurbine",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "bTurbine"
+      }
+    },
+    {
+      "id": "bTurbine-fault",
+      "label": "Inject fictional fault",
+      "component": "bTurbine",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "bTurbine",
+        "value": true
+      }
+    },
+    {
+      "id": "bTurbine-repair",
+      "label": "Repair damage",
+      "component": "bTurbine",
+      "action": "repair",
+      "arguments": {
+        "equipment": "bTurbine"
+      }
+    },
+    {
+      "id": "bCondenser-enabled",
+      "label": "Equipment enabled",
+      "component": "bCondenser",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "bCondenser"
+      }
+    },
+    {
+      "id": "bCondenser-load",
+      "label": "Requested output / load (%)",
+      "component": "bCondenser",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "bCondenser"
+      }
+    },
+    {
+      "id": "bCondenser-fault",
+      "label": "Inject fictional fault",
+      "component": "bCondenser",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "bCondenser",
+        "value": true
+      }
+    },
+    {
+      "id": "bCondenser-repair",
+      "label": "Repair damage",
+      "component": "bCondenser",
+      "action": "repair",
+      "arguments": {
+        "equipment": "bCondenser"
+      }
+    },
+    {
+      "id": "bFeedPump-enabled",
+      "label": "Equipment enabled",
+      "component": "bFeedPump",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "bFeedPump"
+      }
+    },
+    {
+      "id": "bFeedPump-load",
+      "label": "Requested output / load (%)",
+      "component": "bFeedPump",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "bFeedPump"
+      }
+    },
+    {
+      "id": "bFeedPump-fault",
+      "label": "Inject fictional fault",
+      "component": "bFeedPump",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "bFeedPump",
+        "value": true
+      }
+    },
+    {
+      "id": "bFeedPump-repair",
+      "label": "Repair damage",
+      "component": "bFeedPump",
+      "action": "repair",
+      "arguments": {
+        "equipment": "bFeedPump"
+      }
+    },
+    {
+      "id": "bCoolingTower-enabled",
+      "label": "Equipment enabled",
+      "component": "bCoolingTower",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "bCoolingTower"
+      }
+    },
+    {
+      "id": "bCoolingTower-load",
+      "label": "Requested output / load (%)",
+      "component": "bCoolingTower",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "bCoolingTower"
+      }
+    },
+    {
+      "id": "bCoolingTower-fault",
+      "label": "Inject fictional fault",
+      "component": "bCoolingTower",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "bCoolingTower",
+        "value": true
+      }
+    },
+    {
+      "id": "bCoolingTower-repair",
+      "label": "Repair damage",
+      "component": "bCoolingTower",
+      "action": "repair",
+      "arguments": {
+        "equipment": "bCoolingTower"
+      }
+    },
+    {
+      "id": "bCoolingPump-enabled",
+      "label": "Equipment enabled",
+      "component": "bCoolingPump",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "bCoolingPump"
+      }
+    },
+    {
+      "id": "bCoolingPump-load",
+      "label": "Requested output / load (%)",
+      "component": "bCoolingPump",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "bCoolingPump"
+      }
+    },
+    {
+      "id": "bCoolingPump-fault",
+      "label": "Inject fictional fault",
+      "component": "bCoolingPump",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "bCoolingPump",
+        "value": true
+      }
+    },
+    {
+      "id": "bCoolingPump-repair",
+      "label": "Repair damage",
+      "component": "bCoolingPump",
+      "action": "repair",
+      "arguments": {
+        "equipment": "bCoolingPump"
+      }
+    },
+    {
+      "id": "transformer-enabled",
+      "label": "Equipment enabled",
+      "component": "transformer",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "transformer"
+      }
+    },
+    {
+      "id": "transformer-load",
+      "label": "Requested output / load (%)",
+      "component": "transformer",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "transformer"
+      }
+    },
+    {
+      "id": "transformer-fault",
+      "label": "Inject fictional fault",
+      "component": "transformer",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "transformer",
+        "value": true
+      }
+    },
+    {
+      "id": "transformer-repair",
+      "label": "Repair damage",
+      "component": "transformer",
+      "action": "repair",
+      "arguments": {
+        "equipment": "transformer"
+      }
+    },
+    {
+      "id": "exportBreaker-enabled",
+      "label": "Equipment enabled",
+      "component": "exportBreaker",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "exportBreaker"
+      }
+    },
+    {
+      "id": "exportBreaker-load",
+      "label": "Requested output / load (%)",
+      "component": "exportBreaker",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "exportBreaker"
+      }
+    },
+    {
+      "id": "exportBreaker-fault",
+      "label": "Inject fictional fault",
+      "component": "exportBreaker",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "exportBreaker",
+        "value": true
+      }
+    },
+    {
+      "id": "exportBreaker-repair",
+      "label": "Repair damage",
+      "component": "exportBreaker",
+      "action": "repair",
+      "arguments": {
+        "equipment": "exportBreaker"
+      }
+    },
+    {
+      "id": "exportBreaker-open",
+      "label": "Contacts open / isolated",
+      "component": "exportBreaker",
+      "action": "setOpen",
+      "arguments": {
+        "equipment": "exportBreaker"
+      }
+    },
+    {
+      "id": "load-enabled",
+      "label": "Equipment enabled",
+      "component": "load",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "load"
+      }
+    },
+    {
+      "id": "load-load",
+      "label": "Requested output / load (%)",
+      "component": "load",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "load"
+      }
+    },
+    {
+      "id": "load-fault",
+      "label": "Inject fictional fault",
+      "component": "load",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "load",
+        "value": true
+      }
+    },
+    {
+      "id": "load-repair",
+      "label": "Repair damage",
+      "component": "load",
+      "action": "repair",
+      "arguments": {
+        "equipment": "load"
+      }
+    },
+    {
+      "id": "station-enabled",
+      "label": "Equipment enabled",
+      "component": "station",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "station"
+      }
+    },
+    {
+      "id": "station-load",
+      "label": "Requested output / load (%)",
+      "component": "station",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "station"
+      }
+    },
+    {
+      "id": "station-fault",
+      "label": "Inject fictional fault",
+      "component": "station",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "station",
+        "value": true
+      }
+    },
+    {
+      "id": "station-repair",
+      "label": "Repair damage",
+      "component": "station",
+      "action": "repair",
+      "arguments": {
+        "equipment": "station"
+      }
+    },
+    {
+      "id": "plc-enabled",
+      "label": "Equipment enabled",
+      "component": "plc",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "plc"
+      }
+    },
+    {
+      "id": "plc-load",
+      "label": "Requested output / load (%)",
+      "component": "plc",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "plc"
+      }
+    },
+    {
+      "id": "plc-fault",
+      "label": "Inject fictional fault",
+      "component": "plc",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "plc",
+        "value": true
+      }
+    },
+    {
+      "id": "plc-repair",
+      "label": "Repair damage",
+      "component": "plc",
+      "action": "repair",
+      "arguments": {
+        "equipment": "plc"
+      }
+    },
+    {
+      "id": "dcService-enabled",
+      "label": "Equipment enabled",
+      "component": "dcService",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "dcService"
+      }
+    },
+    {
+      "id": "dcService-load",
+      "label": "Requested output / load (%)",
+      "component": "dcService",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "dcService"
+      }
+    },
+    {
+      "id": "dcService-fault",
+      "label": "Inject fictional fault",
+      "component": "dcService",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "dcService",
+        "value": true
+      }
+    },
+    {
+      "id": "dcService-repair",
+      "label": "Repair damage",
+      "component": "dcService",
+      "action": "repair",
+      "arguments": {
+        "equipment": "dcService"
+      }
+    },
+    {
+      "id": "dcService-mode-forward",
+      "label": "Forward conversion",
+      "component": "dcService",
+      "action": "setMode",
+      "arguments": {
+        "equipment": "dcService",
+        "value": "forward"
+      }
+    },
+    {
+      "id": "dcService-mode-idle",
+      "label": "Idle conversion",
+      "component": "dcService",
+      "action": "setMode",
+      "arguments": {
+        "equipment": "dcService",
+        "value": "idle"
+      }
+    },
+    {
+      "id": "plant-setRunning",
+      "label": "Run shared plant",
+      "action": "setRunning",
+      "arguments": {}
+    },
+    {
+      "id": "plant-step",
+      "label": "Advance one toy minute",
+      "action": "step",
+      "arguments": {
+        "value": 1
+      }
+    },
+    {
+      "id": "plant-reset",
+      "label": "Reset dynamics \u00b7 retain edited parameters",
+      "action": "reset",
+      "arguments": {}
+    }
+  ],
+  "controls": [
+    {
+      "id": "collection-enabled-control",
+      "label": "Equipment enabled",
+      "component": "collection",
+      "kind": "toggle",
+      "command": "collection-enabled",
+      "binding": "/controls/collection/enabled"
+    },
+    {
+      "id": "collection-load-control",
+      "label": "Requested output / load (%)",
+      "component": "collection",
+      "kind": "range",
+      "command": "collection-load",
+      "binding": "/controls/collection/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "collection-fault-control",
+      "label": "Inject fictional fault",
+      "component": "collection",
+      "kind": "button",
+      "command": "collection-fault"
+    },
+    {
+      "id": "collection-repair-control",
+      "label": "Repair damage",
+      "component": "collection",
+      "kind": "button",
+      "command": "collection-repair"
+    },
+    {
+      "id": "aCore-enabled-control",
+      "label": "Equipment enabled",
+      "component": "aCore",
+      "kind": "toggle",
+      "command": "aCore-enabled",
+      "binding": "/controls/aCore/enabled"
+    },
+    {
+      "id": "aCore-load-control",
+      "label": "Requested output / load (%)",
+      "component": "aCore",
+      "kind": "range",
+      "command": "aCore-load",
+      "binding": "/controls/aCore/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "aCore-fault-control",
+      "label": "Inject fictional fault",
+      "component": "aCore",
+      "kind": "button",
+      "command": "aCore-fault"
+    },
+    {
+      "id": "aCore-repair-control",
+      "label": "Repair damage",
+      "component": "aCore",
+      "kind": "button",
+      "command": "aCore-repair"
+    },
+    {
+      "id": "aCore-rod-position-control",
+      "label": "Core heat demand \u00b7 rod insertion (100 = inserted)",
+      "component": "aCore",
+      "kind": "range",
+      "command": "aCore-rod-position",
+      "binding": "/controls/aCore/rodPosition",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "aSG-enabled-control",
+      "label": "Equipment enabled",
+      "component": "aSG",
+      "kind": "toggle",
+      "command": "aSG-enabled",
+      "binding": "/controls/aSG/enabled"
+    },
+    {
+      "id": "aSG-load-control",
+      "label": "Requested output / load (%)",
+      "component": "aSG",
+      "kind": "range",
+      "command": "aSG-load",
+      "binding": "/controls/aSG/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "aSG-fault-control",
+      "label": "Inject fictional fault",
+      "component": "aSG",
+      "kind": "button",
+      "command": "aSG-fault"
+    },
+    {
+      "id": "aSG-repair-control",
+      "label": "Repair damage",
+      "component": "aSG",
+      "kind": "button",
+      "command": "aSG-repair"
+    },
+    {
+      "id": "aPrimaryPump-enabled-control",
+      "label": "Equipment enabled",
+      "component": "aPrimaryPump",
+      "kind": "toggle",
+      "command": "aPrimaryPump-enabled",
+      "binding": "/controls/aPrimaryPump/enabled"
+    },
+    {
+      "id": "aPrimaryPump-load-control",
+      "label": "Requested output / load (%)",
+      "component": "aPrimaryPump",
+      "kind": "range",
+      "command": "aPrimaryPump-load",
+      "binding": "/controls/aPrimaryPump/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "aPrimaryPump-fault-control",
+      "label": "Inject fictional fault",
+      "component": "aPrimaryPump",
+      "kind": "button",
+      "command": "aPrimaryPump-fault"
+    },
+    {
+      "id": "aPrimaryPump-repair-control",
+      "label": "Repair damage",
+      "component": "aPrimaryPump",
+      "kind": "button",
+      "command": "aPrimaryPump-repair"
+    },
+    {
+      "id": "aPressurizer-enabled-control",
+      "label": "Equipment enabled",
+      "component": "aPressurizer",
+      "kind": "toggle",
+      "command": "aPressurizer-enabled",
+      "binding": "/controls/aPressurizer/enabled"
+    },
+    {
+      "id": "aPressurizer-load-control",
+      "label": "Requested output / load (%)",
+      "component": "aPressurizer",
+      "kind": "range",
+      "command": "aPressurizer-load",
+      "binding": "/controls/aPressurizer/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "aPressurizer-fault-control",
+      "label": "Inject fictional fault",
+      "component": "aPressurizer",
+      "kind": "button",
+      "command": "aPressurizer-fault"
+    },
+    {
+      "id": "aPressurizer-repair-control",
+      "label": "Repair damage",
+      "component": "aPressurizer",
+      "kind": "button",
+      "command": "aPressurizer-repair"
+    },
+    {
+      "id": "aContainment-enabled-control",
+      "label": "Equipment enabled",
+      "component": "aContainment",
+      "kind": "toggle",
+      "command": "aContainment-enabled",
+      "binding": "/controls/aContainment/enabled"
+    },
+    {
+      "id": "aContainment-load-control",
+      "label": "Requested output / load (%)",
+      "component": "aContainment",
+      "kind": "range",
+      "command": "aContainment-load",
+      "binding": "/controls/aContainment/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "aContainment-fault-control",
+      "label": "Inject fictional fault",
+      "component": "aContainment",
+      "kind": "button",
+      "command": "aContainment-fault"
+    },
+    {
+      "id": "aContainment-repair-control",
+      "label": "Repair damage",
+      "component": "aContainment",
+      "kind": "button",
+      "command": "aContainment-repair"
+    },
+    {
+      "id": "aRadiation-enabled-control",
+      "label": "Equipment enabled",
+      "component": "aRadiation",
+      "kind": "toggle",
+      "command": "aRadiation-enabled",
+      "binding": "/controls/aRadiation/enabled"
+    },
+    {
+      "id": "aRadiation-load-control",
+      "label": "Requested output / load (%)",
+      "component": "aRadiation",
+      "kind": "range",
+      "command": "aRadiation-load",
+      "binding": "/controls/aRadiation/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "aRadiation-fault-control",
+      "label": "Inject fictional fault",
+      "component": "aRadiation",
+      "kind": "button",
+      "command": "aRadiation-fault"
+    },
+    {
+      "id": "aRadiation-repair-control",
+      "label": "Repair damage",
+      "component": "aRadiation",
+      "kind": "button",
+      "command": "aRadiation-repair"
+    },
+    {
+      "id": "aRods-enabled-control",
+      "label": "Equipment enabled",
+      "component": "aRods",
+      "kind": "toggle",
+      "command": "aRods-enabled",
+      "binding": "/controls/aRods/enabled"
+    },
+    {
+      "id": "aRods-load-control",
+      "label": "Requested output / load (%)",
+      "component": "aRods",
+      "kind": "range",
+      "command": "aRods-load",
+      "binding": "/controls/aRods/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "aRods-fault-control",
+      "label": "Inject fictional fault",
+      "component": "aRods",
+      "kind": "button",
+      "command": "aRods-fault"
+    },
+    {
+      "id": "aRods-repair-control",
+      "label": "Repair damage",
+      "component": "aRods",
+      "kind": "button",
+      "command": "aRods-repair"
+    },
+    {
+      "id": "aRods-rod-position-control",
+      "label": "Core heat demand \u00b7 rod insertion (100 = inserted)",
+      "component": "aRods",
+      "kind": "range",
+      "command": "aRods-rod-position",
+      "binding": "/controls/aCore/rodPosition",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "aTurbine-enabled-control",
+      "label": "Equipment enabled",
+      "component": "aTurbine",
+      "kind": "toggle",
+      "command": "aTurbine-enabled",
+      "binding": "/controls/aTurbine/enabled"
+    },
+    {
+      "id": "aTurbine-load-control",
+      "label": "Requested output / load (%)",
+      "component": "aTurbine",
+      "kind": "range",
+      "command": "aTurbine-load",
+      "binding": "/controls/aTurbine/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "aTurbine-fault-control",
+      "label": "Inject fictional fault",
+      "component": "aTurbine",
+      "kind": "button",
+      "command": "aTurbine-fault"
+    },
+    {
+      "id": "aTurbine-repair-control",
+      "label": "Repair damage",
+      "component": "aTurbine",
+      "kind": "button",
+      "command": "aTurbine-repair"
+    },
+    {
+      "id": "aCondenser-enabled-control",
+      "label": "Equipment enabled",
+      "component": "aCondenser",
+      "kind": "toggle",
+      "command": "aCondenser-enabled",
+      "binding": "/controls/aCondenser/enabled"
+    },
+    {
+      "id": "aCondenser-load-control",
+      "label": "Requested output / load (%)",
+      "component": "aCondenser",
+      "kind": "range",
+      "command": "aCondenser-load",
+      "binding": "/controls/aCondenser/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "aCondenser-fault-control",
+      "label": "Inject fictional fault",
+      "component": "aCondenser",
+      "kind": "button",
+      "command": "aCondenser-fault"
+    },
+    {
+      "id": "aCondenser-repair-control",
+      "label": "Repair damage",
+      "component": "aCondenser",
+      "kind": "button",
+      "command": "aCondenser-repair"
+    },
+    {
+      "id": "aFeedPump-enabled-control",
+      "label": "Equipment enabled",
+      "component": "aFeedPump",
+      "kind": "toggle",
+      "command": "aFeedPump-enabled",
+      "binding": "/controls/aFeedPump/enabled"
+    },
+    {
+      "id": "aFeedPump-load-control",
+      "label": "Requested output / load (%)",
+      "component": "aFeedPump",
+      "kind": "range",
+      "command": "aFeedPump-load",
+      "binding": "/controls/aFeedPump/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "aFeedPump-fault-control",
+      "label": "Inject fictional fault",
+      "component": "aFeedPump",
+      "kind": "button",
+      "command": "aFeedPump-fault"
+    },
+    {
+      "id": "aFeedPump-repair-control",
+      "label": "Repair damage",
+      "component": "aFeedPump",
+      "kind": "button",
+      "command": "aFeedPump-repair"
+    },
+    {
+      "id": "aCoolingTower-enabled-control",
+      "label": "Equipment enabled",
+      "component": "aCoolingTower",
+      "kind": "toggle",
+      "command": "aCoolingTower-enabled",
+      "binding": "/controls/aCoolingTower/enabled"
+    },
+    {
+      "id": "aCoolingTower-load-control",
+      "label": "Requested output / load (%)",
+      "component": "aCoolingTower",
+      "kind": "range",
+      "command": "aCoolingTower-load",
+      "binding": "/controls/aCoolingTower/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "aCoolingTower-fault-control",
+      "label": "Inject fictional fault",
+      "component": "aCoolingTower",
+      "kind": "button",
+      "command": "aCoolingTower-fault"
+    },
+    {
+      "id": "aCoolingTower-repair-control",
+      "label": "Repair damage",
+      "component": "aCoolingTower",
+      "kind": "button",
+      "command": "aCoolingTower-repair"
+    },
+    {
+      "id": "aCoolingPump-enabled-control",
+      "label": "Equipment enabled",
+      "component": "aCoolingPump",
+      "kind": "toggle",
+      "command": "aCoolingPump-enabled",
+      "binding": "/controls/aCoolingPump/enabled"
+    },
+    {
+      "id": "aCoolingPump-load-control",
+      "label": "Requested output / load (%)",
+      "component": "aCoolingPump",
+      "kind": "range",
+      "command": "aCoolingPump-load",
+      "binding": "/controls/aCoolingPump/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "aCoolingPump-fault-control",
+      "label": "Inject fictional fault",
+      "component": "aCoolingPump",
+      "kind": "button",
+      "command": "aCoolingPump-fault"
+    },
+    {
+      "id": "aCoolingPump-repair-control",
+      "label": "Repair damage",
+      "component": "aCoolingPump",
+      "kind": "button",
+      "command": "aCoolingPump-repair"
+    },
+    {
+      "id": "bCore-enabled-control",
+      "label": "Equipment enabled",
+      "component": "bCore",
+      "kind": "toggle",
+      "command": "bCore-enabled",
+      "binding": "/controls/bCore/enabled"
+    },
+    {
+      "id": "bCore-load-control",
+      "label": "Requested output / load (%)",
+      "component": "bCore",
+      "kind": "range",
+      "command": "bCore-load",
+      "binding": "/controls/bCore/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "bCore-fault-control",
+      "label": "Inject fictional fault",
+      "component": "bCore",
+      "kind": "button",
+      "command": "bCore-fault"
+    },
+    {
+      "id": "bCore-repair-control",
+      "label": "Repair damage",
+      "component": "bCore",
+      "kind": "button",
+      "command": "bCore-repair"
+    },
+    {
+      "id": "bCore-rod-position-control",
+      "label": "Core heat demand \u00b7 rod insertion (100 = inserted)",
+      "component": "bCore",
+      "kind": "range",
+      "command": "bCore-rod-position",
+      "binding": "/controls/bCore/rodPosition",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "bSG-enabled-control",
+      "label": "Equipment enabled",
+      "component": "bSG",
+      "kind": "toggle",
+      "command": "bSG-enabled",
+      "binding": "/controls/bSG/enabled"
+    },
+    {
+      "id": "bSG-load-control",
+      "label": "Requested output / load (%)",
+      "component": "bSG",
+      "kind": "range",
+      "command": "bSG-load",
+      "binding": "/controls/bSG/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "bSG-fault-control",
+      "label": "Inject fictional fault",
+      "component": "bSG",
+      "kind": "button",
+      "command": "bSG-fault"
+    },
+    {
+      "id": "bSG-repair-control",
+      "label": "Repair damage",
+      "component": "bSG",
+      "kind": "button",
+      "command": "bSG-repair"
+    },
+    {
+      "id": "bPrimaryPump-enabled-control",
+      "label": "Equipment enabled",
+      "component": "bPrimaryPump",
+      "kind": "toggle",
+      "command": "bPrimaryPump-enabled",
+      "binding": "/controls/bPrimaryPump/enabled"
+    },
+    {
+      "id": "bPrimaryPump-load-control",
+      "label": "Requested output / load (%)",
+      "component": "bPrimaryPump",
+      "kind": "range",
+      "command": "bPrimaryPump-load",
+      "binding": "/controls/bPrimaryPump/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "bPrimaryPump-fault-control",
+      "label": "Inject fictional fault",
+      "component": "bPrimaryPump",
+      "kind": "button",
+      "command": "bPrimaryPump-fault"
+    },
+    {
+      "id": "bPrimaryPump-repair-control",
+      "label": "Repair damage",
+      "component": "bPrimaryPump",
+      "kind": "button",
+      "command": "bPrimaryPump-repair"
+    },
+    {
+      "id": "bPressurizer-enabled-control",
+      "label": "Equipment enabled",
+      "component": "bPressurizer",
+      "kind": "toggle",
+      "command": "bPressurizer-enabled",
+      "binding": "/controls/bPressurizer/enabled"
+    },
+    {
+      "id": "bPressurizer-load-control",
+      "label": "Requested output / load (%)",
+      "component": "bPressurizer",
+      "kind": "range",
+      "command": "bPressurizer-load",
+      "binding": "/controls/bPressurizer/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "bPressurizer-fault-control",
+      "label": "Inject fictional fault",
+      "component": "bPressurizer",
+      "kind": "button",
+      "command": "bPressurizer-fault"
+    },
+    {
+      "id": "bPressurizer-repair-control",
+      "label": "Repair damage",
+      "component": "bPressurizer",
+      "kind": "button",
+      "command": "bPressurizer-repair"
+    },
+    {
+      "id": "bContainment-enabled-control",
+      "label": "Equipment enabled",
+      "component": "bContainment",
+      "kind": "toggle",
+      "command": "bContainment-enabled",
+      "binding": "/controls/bContainment/enabled"
+    },
+    {
+      "id": "bContainment-load-control",
+      "label": "Requested output / load (%)",
+      "component": "bContainment",
+      "kind": "range",
+      "command": "bContainment-load",
+      "binding": "/controls/bContainment/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "bContainment-fault-control",
+      "label": "Inject fictional fault",
+      "component": "bContainment",
+      "kind": "button",
+      "command": "bContainment-fault"
+    },
+    {
+      "id": "bContainment-repair-control",
+      "label": "Repair damage",
+      "component": "bContainment",
+      "kind": "button",
+      "command": "bContainment-repair"
+    },
+    {
+      "id": "bRadiation-enabled-control",
+      "label": "Equipment enabled",
+      "component": "bRadiation",
+      "kind": "toggle",
+      "command": "bRadiation-enabled",
+      "binding": "/controls/bRadiation/enabled"
+    },
+    {
+      "id": "bRadiation-load-control",
+      "label": "Requested output / load (%)",
+      "component": "bRadiation",
+      "kind": "range",
+      "command": "bRadiation-load",
+      "binding": "/controls/bRadiation/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "bRadiation-fault-control",
+      "label": "Inject fictional fault",
+      "component": "bRadiation",
+      "kind": "button",
+      "command": "bRadiation-fault"
+    },
+    {
+      "id": "bRadiation-repair-control",
+      "label": "Repair damage",
+      "component": "bRadiation",
+      "kind": "button",
+      "command": "bRadiation-repair"
+    },
+    {
+      "id": "bRods-enabled-control",
+      "label": "Equipment enabled",
+      "component": "bRods",
+      "kind": "toggle",
+      "command": "bRods-enabled",
+      "binding": "/controls/bRods/enabled"
+    },
+    {
+      "id": "bRods-load-control",
+      "label": "Requested output / load (%)",
+      "component": "bRods",
+      "kind": "range",
+      "command": "bRods-load",
+      "binding": "/controls/bRods/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "bRods-fault-control",
+      "label": "Inject fictional fault",
+      "component": "bRods",
+      "kind": "button",
+      "command": "bRods-fault"
+    },
+    {
+      "id": "bRods-repair-control",
+      "label": "Repair damage",
+      "component": "bRods",
+      "kind": "button",
+      "command": "bRods-repair"
+    },
+    {
+      "id": "bRods-rod-position-control",
+      "label": "Core heat demand \u00b7 rod insertion (100 = inserted)",
+      "component": "bRods",
+      "kind": "range",
+      "command": "bRods-rod-position",
+      "binding": "/controls/bCore/rodPosition",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "bTurbine-enabled-control",
+      "label": "Equipment enabled",
+      "component": "bTurbine",
+      "kind": "toggle",
+      "command": "bTurbine-enabled",
+      "binding": "/controls/bTurbine/enabled"
+    },
+    {
+      "id": "bTurbine-load-control",
+      "label": "Requested output / load (%)",
+      "component": "bTurbine",
+      "kind": "range",
+      "command": "bTurbine-load",
+      "binding": "/controls/bTurbine/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "bTurbine-fault-control",
+      "label": "Inject fictional fault",
+      "component": "bTurbine",
+      "kind": "button",
+      "command": "bTurbine-fault"
+    },
+    {
+      "id": "bTurbine-repair-control",
+      "label": "Repair damage",
+      "component": "bTurbine",
+      "kind": "button",
+      "command": "bTurbine-repair"
+    },
+    {
+      "id": "bCondenser-enabled-control",
+      "label": "Equipment enabled",
+      "component": "bCondenser",
+      "kind": "toggle",
+      "command": "bCondenser-enabled",
+      "binding": "/controls/bCondenser/enabled"
+    },
+    {
+      "id": "bCondenser-load-control",
+      "label": "Requested output / load (%)",
+      "component": "bCondenser",
+      "kind": "range",
+      "command": "bCondenser-load",
+      "binding": "/controls/bCondenser/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "bCondenser-fault-control",
+      "label": "Inject fictional fault",
+      "component": "bCondenser",
+      "kind": "button",
+      "command": "bCondenser-fault"
+    },
+    {
+      "id": "bCondenser-repair-control",
+      "label": "Repair damage",
+      "component": "bCondenser",
+      "kind": "button",
+      "command": "bCondenser-repair"
+    },
+    {
+      "id": "bFeedPump-enabled-control",
+      "label": "Equipment enabled",
+      "component": "bFeedPump",
+      "kind": "toggle",
+      "command": "bFeedPump-enabled",
+      "binding": "/controls/bFeedPump/enabled"
+    },
+    {
+      "id": "bFeedPump-load-control",
+      "label": "Requested output / load (%)",
+      "component": "bFeedPump",
+      "kind": "range",
+      "command": "bFeedPump-load",
+      "binding": "/controls/bFeedPump/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "bFeedPump-fault-control",
+      "label": "Inject fictional fault",
+      "component": "bFeedPump",
+      "kind": "button",
+      "command": "bFeedPump-fault"
+    },
+    {
+      "id": "bFeedPump-repair-control",
+      "label": "Repair damage",
+      "component": "bFeedPump",
+      "kind": "button",
+      "command": "bFeedPump-repair"
+    },
+    {
+      "id": "bCoolingTower-enabled-control",
+      "label": "Equipment enabled",
+      "component": "bCoolingTower",
+      "kind": "toggle",
+      "command": "bCoolingTower-enabled",
+      "binding": "/controls/bCoolingTower/enabled"
+    },
+    {
+      "id": "bCoolingTower-load-control",
+      "label": "Requested output / load (%)",
+      "component": "bCoolingTower",
+      "kind": "range",
+      "command": "bCoolingTower-load",
+      "binding": "/controls/bCoolingTower/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "bCoolingTower-fault-control",
+      "label": "Inject fictional fault",
+      "component": "bCoolingTower",
+      "kind": "button",
+      "command": "bCoolingTower-fault"
+    },
+    {
+      "id": "bCoolingTower-repair-control",
+      "label": "Repair damage",
+      "component": "bCoolingTower",
+      "kind": "button",
+      "command": "bCoolingTower-repair"
+    },
+    {
+      "id": "bCoolingPump-enabled-control",
+      "label": "Equipment enabled",
+      "component": "bCoolingPump",
+      "kind": "toggle",
+      "command": "bCoolingPump-enabled",
+      "binding": "/controls/bCoolingPump/enabled"
+    },
+    {
+      "id": "bCoolingPump-load-control",
+      "label": "Requested output / load (%)",
+      "component": "bCoolingPump",
+      "kind": "range",
+      "command": "bCoolingPump-load",
+      "binding": "/controls/bCoolingPump/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "bCoolingPump-fault-control",
+      "label": "Inject fictional fault",
+      "component": "bCoolingPump",
+      "kind": "button",
+      "command": "bCoolingPump-fault"
+    },
+    {
+      "id": "bCoolingPump-repair-control",
+      "label": "Repair damage",
+      "component": "bCoolingPump",
+      "kind": "button",
+      "command": "bCoolingPump-repair"
+    },
+    {
+      "id": "transformer-enabled-control",
+      "label": "Equipment enabled",
+      "component": "transformer",
+      "kind": "toggle",
+      "command": "transformer-enabled",
+      "binding": "/controls/transformer/enabled"
+    },
+    {
+      "id": "transformer-load-control",
+      "label": "Requested output / load (%)",
+      "component": "transformer",
+      "kind": "range",
+      "command": "transformer-load",
+      "binding": "/controls/transformer/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "transformer-fault-control",
+      "label": "Inject fictional fault",
+      "component": "transformer",
+      "kind": "button",
+      "command": "transformer-fault"
+    },
+    {
+      "id": "transformer-repair-control",
+      "label": "Repair damage",
+      "component": "transformer",
+      "kind": "button",
+      "command": "transformer-repair"
+    },
+    {
+      "id": "exportBreaker-enabled-control",
+      "label": "Equipment enabled",
+      "component": "exportBreaker",
+      "kind": "toggle",
+      "command": "exportBreaker-enabled",
+      "binding": "/controls/exportBreaker/enabled"
+    },
+    {
+      "id": "exportBreaker-load-control",
+      "label": "Requested output / load (%)",
+      "component": "exportBreaker",
+      "kind": "range",
+      "command": "exportBreaker-load",
+      "binding": "/controls/exportBreaker/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "exportBreaker-fault-control",
+      "label": "Inject fictional fault",
+      "component": "exportBreaker",
+      "kind": "button",
+      "command": "exportBreaker-fault"
+    },
+    {
+      "id": "exportBreaker-repair-control",
+      "label": "Repair damage",
+      "component": "exportBreaker",
+      "kind": "button",
+      "command": "exportBreaker-repair"
+    },
+    {
+      "id": "exportBreaker-open-control",
+      "label": "Contacts open / isolated",
+      "component": "exportBreaker",
+      "kind": "toggle",
+      "command": "exportBreaker-open",
+      "binding": "/controls/exportBreaker/open"
+    },
+    {
+      "id": "load-enabled-control",
+      "label": "Equipment enabled",
+      "component": "load",
+      "kind": "toggle",
+      "command": "load-enabled",
+      "binding": "/controls/load/enabled"
+    },
+    {
+      "id": "load-load-control",
+      "label": "Requested output / load (%)",
+      "component": "load",
+      "kind": "range",
+      "command": "load-load",
+      "binding": "/controls/load/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "load-fault-control",
+      "label": "Inject fictional fault",
+      "component": "load",
+      "kind": "button",
+      "command": "load-fault"
+    },
+    {
+      "id": "load-repair-control",
+      "label": "Repair damage",
+      "component": "load",
+      "kind": "button",
+      "command": "load-repair"
+    },
+    {
+      "id": "station-enabled-control",
+      "label": "Equipment enabled",
+      "component": "station",
+      "kind": "toggle",
+      "command": "station-enabled",
+      "binding": "/controls/station/enabled"
+    },
+    {
+      "id": "station-load-control",
+      "label": "Requested output / load (%)",
+      "component": "station",
+      "kind": "range",
+      "command": "station-load",
+      "binding": "/controls/station/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "station-fault-control",
+      "label": "Inject fictional fault",
+      "component": "station",
+      "kind": "button",
+      "command": "station-fault"
+    },
+    {
+      "id": "station-repair-control",
+      "label": "Repair damage",
+      "component": "station",
+      "kind": "button",
+      "command": "station-repair"
+    },
+    {
+      "id": "plc-enabled-control",
+      "label": "Equipment enabled",
+      "component": "plc",
+      "kind": "toggle",
+      "command": "plc-enabled",
+      "binding": "/controls/plc/enabled"
+    },
+    {
+      "id": "plc-load-control",
+      "label": "Requested output / load (%)",
+      "component": "plc",
+      "kind": "range",
+      "command": "plc-load",
+      "binding": "/controls/plc/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "plc-fault-control",
+      "label": "Inject fictional fault",
+      "component": "plc",
+      "kind": "button",
+      "command": "plc-fault"
+    },
+    {
+      "id": "plc-repair-control",
+      "label": "Repair damage",
+      "component": "plc",
+      "kind": "button",
+      "command": "plc-repair"
+    },
+    {
+      "id": "dcService-enabled-control",
+      "label": "Equipment enabled",
+      "component": "dcService",
+      "kind": "toggle",
+      "command": "dcService-enabled",
+      "binding": "/controls/dcService/enabled"
+    },
+    {
+      "id": "dcService-load-control",
+      "label": "Requested output / load (%)",
+      "component": "dcService",
+      "kind": "range",
+      "command": "dcService-load",
+      "binding": "/controls/dcService/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "dcService-fault-control",
+      "label": "Inject fictional fault",
+      "component": "dcService",
+      "kind": "button",
+      "command": "dcService-fault"
+    },
+    {
+      "id": "dcService-repair-control",
+      "label": "Repair damage",
+      "component": "dcService",
+      "kind": "button",
+      "command": "dcService-repair"
+    },
+    {
+      "id": "dcService-mode-forward-control",
+      "label": "Forward conversion",
+      "component": "dcService",
+      "kind": "button",
+      "command": "dcService-mode-forward"
+    },
+    {
+      "id": "dcService-mode-idle-control",
+      "label": "Idle conversion",
+      "component": "dcService",
+      "kind": "button",
+      "command": "dcService-mode-idle"
+    },
+    {
+      "id": "plant-setRunning-control",
+      "label": "Run shared plant",
+      "kind": "toggle",
+      "command": "plant-setRunning",
+      "binding": "/running"
+    },
+    {
+      "id": "plant-step-control",
+      "label": "Advance one toy minute",
+      "kind": "button",
+      "command": "plant-step"
+    },
+    {
+      "id": "plant-reset-control",
+      "label": "Reset dynamics \u00b7 retain edited parameters",
+      "kind": "button",
+      "command": "plant-reset"
+    }
+  ],
+  "provenance": [
+    {
+      "id": "assumed-model",
+      "label": "Editable normalized model guesses",
+      "kind": "assumed",
+      "description": "Every capacity, inventory, thermal index, loss, response and incident coefficient is an authoring choice, not validated by the references."
+    },
+    {
+      "id": "authored-layout",
+      "label": "Illustrative plant routing and layout",
+      "kind": "illustrative",
+      "description": "Coordinates, asset tags, selected concept composition and simplified connections are editable authored diagrams, not a verified P&ID or electrical design."
+    },
+    {
+      "id": "P11",
+      "label": "P11 \u00b7 structural reference",
+      "kind": "external",
+      "source": "DOE, [Nuclear 101: How Does a Nuclear Reactor Work?](https://www.energy.gov/ne/articles/nuclear-101-how-does-nuclear-reactor-work), 2025-05-19",
+      "description": "Full article; PWR/BWR sections | Supports: PWR primary coolant transfers heat to a separate steam loop. BWR steam is produced in the reactor vessel and goes to the turbine. Preserve that structural distinction. | Reviewed 2026-11-13. Does not validate toy parameters."
+    },
+    {
+      "id": "P13",
+      "label": "P13 \u00b7 structural reference",
+      "kind": "external",
+      "source": "DOE, [Advanced Small Modular Reactors](https://www.energy.gov/ne/advanced-small-modular-reactors-smrs), page says updated 2026-03-05",
+      "description": "Technology/coolant overview only | Supports: SMR is a size/modularity concept encompassing water, gas, liquid-metal and salt designs. Do not assign all SMRs one coolant or physics class. Project/timeline claims on this page are not used. | Reviewed 2026-11-13. Does not validate toy parameters."
+    }
+  ],
+  "assumptions": [
+    {
+      "id": "normalized",
+      "label": "All model numbers are editable teaching assumptions",
+      "value": true,
+      "provenance": "assumed-model"
+    },
+    {
+      "id": "circuitIdentity",
+      "label": "Separate named circuits never mix stock through heat links",
+      "value": true,
+      "provenance": "authored-layout"
+    }
+  ],
+  "units": {
+    "power": "normalized power units; explicit optional display mapping",
+    "flow": "normalized material units per toy minute",
+    "inventory": "normalized finite stock",
+    "heat": "normalized stored heat; not a physical operating temperature"
+  }
+}

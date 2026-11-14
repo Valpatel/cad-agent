@@ -1,0 +1,533 @@
+{
+  "format": "scada-placeholder-model",
+  "version": 2,
+  "scenarioId": "power-wind-collection",
+  "seed": 8122,
+  "components": {
+    "deviceA": {
+      "model": "generator",
+      "parameters": {
+        "capacity": 80,
+        "response": 0.4,
+        "demand": 1,
+        "loss": 0,
+        "pressureGain": 20,
+        "heatGain": 8,
+        "warningAt": 92,
+        "damageRate": 0.05,
+        "oxygenTransfer": 0.1,
+        "tracerConversion": 0.02,
+        "uptake": 0.01,
+        "mistDuty": 60,
+        "ventExchange": 0.1,
+        "condensation": 0.1,
+        "cycleFill": 5,
+        "cycleHold": 3,
+        "cycleDrain": 5,
+        "humidityGain": 0.1,
+        "lightGain": 0.8,
+        "temperatureResponse": 0.1
+      },
+      "initial": {
+        "enabled": true,
+        "open": true,
+        "load": 55,
+        "damage": 0,
+        "mode": "forward",
+        "rodPosition": 30
+      },
+      "circuits": {},
+      "thermalLinks": [],
+      "assumptions": [
+        "All version 2 quantities and coefficients are editable normalized teaching assumptions. No hidden bench supply."
+      ],
+      "energy": {
+        "role": "source",
+        "inputs": [],
+        "outputs": [
+          "output"
+        ],
+        "capacity": 80,
+        "demand": 1,
+        "efficiency": 0.97,
+        "supply": {
+          "kind": "environment",
+          "environment": "wind"
+        }
+      }
+    },
+    "deviceB": {
+      "model": "generator",
+      "parameters": {
+        "capacity": 80,
+        "response": 0.4,
+        "demand": 1,
+        "loss": 0,
+        "pressureGain": 20,
+        "heatGain": 8,
+        "warningAt": 92,
+        "damageRate": 0.05,
+        "oxygenTransfer": 0.1,
+        "tracerConversion": 0.02,
+        "uptake": 0.01,
+        "mistDuty": 60,
+        "ventExchange": 0.1,
+        "condensation": 0.1,
+        "cycleFill": 5,
+        "cycleHold": 3,
+        "cycleDrain": 5,
+        "humidityGain": 0.1,
+        "lightGain": 0.8,
+        "temperatureResponse": 0.1
+      },
+      "initial": {
+        "enabled": true,
+        "open": true,
+        "load": 55,
+        "damage": 0,
+        "mode": "forward",
+        "rodPosition": 30
+      },
+      "circuits": {},
+      "thermalLinks": [],
+      "assumptions": [
+        "All version 2 quantities and coefficients are editable normalized teaching assumptions. No hidden bench supply."
+      ],
+      "energy": {
+        "role": "source",
+        "inputs": [],
+        "outputs": [
+          "output"
+        ],
+        "capacity": 80,
+        "demand": 1,
+        "efficiency": 0.97,
+        "supply": {
+          "kind": "environment",
+          "environment": "wind"
+        }
+      }
+    },
+    "collection": {
+      "model": "processor",
+      "parameters": {
+        "capacity": 80,
+        "response": 0.4,
+        "demand": 1,
+        "loss": 0,
+        "pressureGain": 20,
+        "heatGain": 8,
+        "warningAt": 92,
+        "damageRate": 0.05,
+        "oxygenTransfer": 0.1,
+        "tracerConversion": 0.02,
+        "uptake": 0.01,
+        "mistDuty": 60,
+        "ventExchange": 0.1,
+        "condensation": 0.1,
+        "cycleFill": 5,
+        "cycleHold": 3,
+        "cycleDrain": 5,
+        "humidityGain": 0.1,
+        "lightGain": 0.8,
+        "temperatureResponse": 0.1
+      },
+      "initial": {
+        "enabled": true,
+        "open": true,
+        "load": 55,
+        "damage": 0,
+        "mode": "forward",
+        "rodPosition": 30
+      },
+      "circuits": {},
+      "thermalLinks": [],
+      "assumptions": [
+        "All version 2 quantities and coefficients are editable normalized teaching assumptions. No hidden bench supply."
+      ],
+      "energy": {
+        "role": "relay",
+        "inputs": [
+          "supply"
+        ],
+        "outputs": [
+          "branch-a",
+          "branch-b",
+          "branch-c"
+        ],
+        "capacity": 80,
+        "demand": 1,
+        "efficiency": 0.97
+      }
+    },
+    "transformer": {
+      "model": "processor",
+      "parameters": {
+        "capacity": 80,
+        "response": 0.4,
+        "demand": 1,
+        "loss": 0,
+        "pressureGain": 20,
+        "heatGain": 8,
+        "warningAt": 92,
+        "damageRate": 0.05,
+        "oxygenTransfer": 0.1,
+        "tracerConversion": 0.02,
+        "uptake": 0.01,
+        "mistDuty": 60,
+        "ventExchange": 0.1,
+        "condensation": 0.1,
+        "cycleFill": 5,
+        "cycleHold": 3,
+        "cycleDrain": 5,
+        "humidityGain": 0.1,
+        "lightGain": 0.8,
+        "temperatureResponse": 0.1
+      },
+      "initial": {
+        "enabled": true,
+        "open": true,
+        "load": 55,
+        "damage": 0,
+        "mode": "forward",
+        "rodPosition": 30
+      },
+      "circuits": {},
+      "thermalLinks": [],
+      "assumptions": [
+        "All version 2 quantities and coefficients are editable normalized teaching assumptions. No hidden bench supply."
+      ],
+      "energy": {
+        "role": "relay",
+        "inputs": [
+          "primary"
+        ],
+        "outputs": [
+          "secondary"
+        ],
+        "capacity": 80,
+        "demand": 1,
+        "efficiency": 0.97
+      }
+    },
+    "exportBreaker": {
+      "model": "switch",
+      "parameters": {
+        "capacity": 80,
+        "response": 0.4,
+        "demand": 1,
+        "loss": 0,
+        "pressureGain": 20,
+        "heatGain": 8,
+        "warningAt": 92,
+        "damageRate": 0.05,
+        "oxygenTransfer": 0.1,
+        "tracerConversion": 0.02,
+        "uptake": 0.01,
+        "mistDuty": 60,
+        "ventExchange": 0.1,
+        "condensation": 0.1,
+        "cycleFill": 5,
+        "cycleHold": 3,
+        "cycleDrain": 5,
+        "humidityGain": 0.1,
+        "lightGain": 0.8,
+        "temperatureResponse": 0.1
+      },
+      "initial": {
+        "enabled": true,
+        "open": false,
+        "load": 55,
+        "damage": 0,
+        "mode": "forward",
+        "rodPosition": 30
+      },
+      "circuits": {},
+      "thermalLinks": [],
+      "assumptions": [
+        "All version 2 quantities and coefficients are editable normalized teaching assumptions. No hidden bench supply."
+      ],
+      "energy": {
+        "role": "relay",
+        "inputs": [
+          "line"
+        ],
+        "outputs": [
+          "load"
+        ],
+        "capacity": 80,
+        "demand": 1,
+        "efficiency": 0.97
+      }
+    },
+    "load": {
+      "model": "load",
+      "parameters": {
+        "capacity": 80,
+        "response": 0.4,
+        "demand": 1,
+        "loss": 0,
+        "pressureGain": 20,
+        "heatGain": 8,
+        "warningAt": 92,
+        "damageRate": 0.05,
+        "oxygenTransfer": 0.1,
+        "tracerConversion": 0.02,
+        "uptake": 0.01,
+        "mistDuty": 60,
+        "ventExchange": 0.1,
+        "condensation": 0.1,
+        "cycleFill": 5,
+        "cycleHold": 3,
+        "cycleDrain": 5,
+        "humidityGain": 0.1,
+        "lightGain": 0.8,
+        "temperatureResponse": 0.1
+      },
+      "initial": {
+        "enabled": true,
+        "open": true,
+        "load": 55,
+        "damage": 0,
+        "mode": "forward",
+        "rodPosition": 30
+      },
+      "circuits": {},
+      "thermalLinks": [],
+      "assumptions": [
+        "All version 2 quantities and coefficients are editable normalized teaching assumptions. No hidden bench supply."
+      ],
+      "energy": {
+        "role": "load",
+        "inputs": [
+          "supply"
+        ],
+        "outputs": [],
+        "capacity": 80,
+        "demand": 8,
+        "efficiency": 0.97
+      }
+    },
+    "station": {
+      "model": "processor",
+      "parameters": {
+        "capacity": 80,
+        "response": 0.4,
+        "demand": 1,
+        "loss": 0,
+        "pressureGain": 20,
+        "heatGain": 8,
+        "warningAt": 92,
+        "damageRate": 0.05,
+        "oxygenTransfer": 0.1,
+        "tracerConversion": 0.02,
+        "uptake": 0.01,
+        "mistDuty": 60,
+        "ventExchange": 0.1,
+        "condensation": 0.1,
+        "cycleFill": 5,
+        "cycleHold": 3,
+        "cycleDrain": 5,
+        "humidityGain": 0.1,
+        "lightGain": 0.8,
+        "temperatureResponse": 0.1
+      },
+      "initial": {
+        "enabled": true,
+        "open": true,
+        "load": 75,
+        "damage": 0,
+        "mode": "forward",
+        "rodPosition": 30
+      },
+      "circuits": {},
+      "thermalLinks": [],
+      "assumptions": [
+        "All version 2 quantities and coefficients are editable normalized teaching assumptions. No hidden bench supply.",
+        "This labeled component is an explicit external energy boundary. Its supply capacity is an editable assumption."
+      ],
+      "energy": {
+        "role": "source",
+        "inputs": [
+          "primary"
+        ],
+        "outputs": [
+          "secondary"
+        ],
+        "capacity": 80,
+        "demand": 1,
+        "efficiency": 0.97,
+        "supply": {
+          "kind": "boundary"
+        }
+      }
+    },
+    "plc": {
+      "model": "controller",
+      "parameters": {
+        "capacity": 80,
+        "response": 0.4,
+        "demand": 1,
+        "loss": 0,
+        "pressureGain": 20,
+        "heatGain": 8,
+        "warningAt": 92,
+        "damageRate": 0.05,
+        "oxygenTransfer": 0.1,
+        "tracerConversion": 0.02,
+        "uptake": 0.01,
+        "mistDuty": 60,
+        "ventExchange": 0.1,
+        "condensation": 0.1,
+        "cycleFill": 5,
+        "cycleHold": 3,
+        "cycleDrain": 5,
+        "humidityGain": 0.1,
+        "lightGain": 0.8,
+        "temperatureResponse": 0.1
+      },
+      "initial": {
+        "enabled": true,
+        "open": true,
+        "load": 55,
+        "damage": 0,
+        "mode": "forward",
+        "rodPosition": 30
+      },
+      "circuits": {},
+      "thermalLinks": [],
+      "assumptions": [
+        "All version 2 quantities and coefficients are editable normalized teaching assumptions. No hidden bench supply."
+      ],
+      "energy": {
+        "role": "load",
+        "inputs": [
+          "power"
+        ],
+        "outputs": [],
+        "capacity": 80,
+        "demand": 1,
+        "efficiency": 0.97
+      }
+    },
+    "dcService": {
+      "model": "power-converter",
+      "parameters": {
+        "capacity": 80,
+        "response": 0.4,
+        "demand": 1,
+        "loss": 0,
+        "pressureGain": 20,
+        "heatGain": 8,
+        "warningAt": 92,
+        "damageRate": 0.05,
+        "oxygenTransfer": 0.1,
+        "tracerConversion": 0.02,
+        "uptake": 0.01,
+        "mistDuty": 60,
+        "ventExchange": 0.1,
+        "condensation": 0.1,
+        "cycleFill": 5,
+        "cycleHold": 3,
+        "cycleDrain": 5,
+        "humidityGain": 0.1,
+        "lightGain": 0.8,
+        "temperatureResponse": 0.1
+      },
+      "initial": {
+        "enabled": true,
+        "open": true,
+        "load": 55,
+        "damage": 0,
+        "mode": "forward",
+        "rodPosition": 30
+      },
+      "circuits": {},
+      "thermalLinks": [],
+      "assumptions": [
+        "All version 2 quantities and coefficients are editable normalized teaching assumptions. No hidden bench supply."
+      ],
+      "energy": {
+        "role": "converter",
+        "inputs": [
+          "ac"
+        ],
+        "outputs": [
+          "dc"
+        ],
+        "capacity": 80,
+        "demand": 1,
+        "efficiency": 0.97,
+        "modes": {
+          "forward": "forward",
+          "reverse": "reverse",
+          "idle": "idle"
+        }
+      }
+    },
+    "radio": {
+      "model": "network",
+      "parameters": {
+        "capacity": 80,
+        "response": 0.4,
+        "demand": 1,
+        "loss": 0,
+        "pressureGain": 20,
+        "heatGain": 8,
+        "warningAt": 92,
+        "damageRate": 0.05,
+        "oxygenTransfer": 0.1,
+        "tracerConversion": 0.02,
+        "uptake": 0.01,
+        "mistDuty": 60,
+        "ventExchange": 0.1,
+        "condensation": 0.1,
+        "cycleFill": 5,
+        "cycleHold": 3,
+        "cycleDrain": 5,
+        "humidityGain": 0.1,
+        "lightGain": 0.8,
+        "temperatureResponse": 0.1
+      },
+      "initial": {
+        "enabled": true,
+        "open": true,
+        "load": 55,
+        "damage": 0,
+        "mode": "forward",
+        "rodPosition": 30
+      },
+      "circuits": {},
+      "thermalLinks": [],
+      "assumptions": [
+        "All version 2 quantities and coefficients are editable normalized teaching assumptions. No hidden bench supply."
+      ],
+      "energy": {
+        "role": "load",
+        "inputs": [
+          "power"
+        ],
+        "outputs": [],
+        "capacity": 80,
+        "demand": 1,
+        "efficiency": 0.97
+      }
+    }
+  },
+  "connections": {},
+  "environment": {
+    "ambient": 20,
+    "light": 60,
+    "wind": 60,
+    "wave": 60,
+    "waterCurrent": 60
+  },
+  "zones": {},
+  "assumptions": [
+    "All sources, sinks, and environmental inputs are explicitly declared. Model values are normalized indices, not plant operating predictions.",
+    "Onshore/offshore illustrative turbine variants each retain integrated electrical output, combining on a collection bus before step-up and an export bay.",
+    "Structural references support equipment roles and separate circuit relationships. Every parameter, display rating and layout is an editable illustrative assumption.",
+    "Each view reads one external model. View selection and inspector use do not create a new physics island or change time.",
+    "This conceptual factory model has no calibrated engineering, protection or nuclear-operation meaning. Replace the model through the adapter contract for real-system integration."
+  ]
+}

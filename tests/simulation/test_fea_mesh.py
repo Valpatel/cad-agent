@@ -254,6 +254,31 @@ def test_converge_compares_a_finer_mesh():
         sharp.converge(factor=1.5)
 
 
+def test_convergence_uses_unrounded_stress_and_is_invariant_to_load_scale():
+    """The same cantilever at tiny and ordinary loads changes about 5% on refinement (#687).
+
+    Rounding the displayed MPa to .01 used to report 0% (a false pass) and 16.67%, respectively.
+    Compare the real element stresses so both the decision and its retained evidence remain auditable.
+    """
+    changes = []
+    for load in (0.0001, 1.0):
+        st = Study(cq.Workplane().box(20, 12, 12, centered=(False, True, True)), STEEL, mesh_mm=4)
+        st.fix(plane_at(0, 0))
+        st.force(plane_at(0, 20), (0, 0, -load))
+        st.solve()
+        with pytest.warns(MeshWarning, match='not converged'):
+            rec = st.converge(factor=0.5, tolerance=0.04)
+        raw = [float(s.vm_elem[~s._touches_bc].max()) for s in (st, st.finer)]
+        change = (raw[1] - raw[0]) / raw[0]
+        assert change > rec['tolerance'] and not rec['converged']
+        assert rec['von_mises_design_mpa'] == pytest.approx(raw, rel=1e-12, abs=0)
+        assert rec['change'] == pytest.approx(change, rel=1e-12, abs=0)
+        if load == 0.0001:
+            assert st.result['von_mises_design_mpa'] == st.finer.result['von_mises_design_mpa'] == 0
+        changes.append(rec['change'])
+    assert changes[0] == pytest.approx(changes[1], rel=1e-8)
+
+
 def test_converge_never_passes_a_sharp_corner_whose_two_meshes_agree():
     """Two meshes of a singular corner can agree by chance. Refined to 0.25 mm, the L-bracket's sharp corner read 1094
     MPa, and 1114 MPa (+1.8 %) at 0.1875 mm on gmsh 4.15.2, and converge() called it converged; at 0.125 mm it reads

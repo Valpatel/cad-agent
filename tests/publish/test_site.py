@@ -59,10 +59,10 @@ def test_markdown_links_are_rewritten(tmp_path):
     assert 'src="../../docs/pic.png"' in readme, "other files point back into the project"
     assert 'href="../../tools/"' in readme
     assert '<pre class="mermaid">' in readme
-    assert 'import("../assets/diagrams.js")' in readme
+    assert 'import("../assets/documents/diagrams.js")' in readme
     assert "cdn.jsdelivr.net" not in readme
-    assert 'import("./assets/diagrams.js")' in (root / "site/index.html").read_text()
-    for rel in ("diagrams.js", "diagrams.css", "vendor/mermaid/mermaid.min.js", "vendor/mermaid/LICENSE"):
+    assert 'import("./assets/documents/diagrams.js")' in (root / "site/index.html").read_text()
+    for rel in ("documents/diagrams.js", "documents/diagrams.css", "vendor/mermaid/mermaid.min.js", "vendor/mermaid/LICENSE"):
         assert (root / "site/assets" / rel).read_bytes() == (site.KIT_DIR / rel).read_bytes()
     assert not (root / "site/assets/software/vendor").exists(), "repository source owners must not leak into project asset URLs"
     plan = (root / "site" / "pages" / "docs-plan-md.html").read_text()
@@ -127,9 +127,9 @@ def test_site_serves_the_kit_and_links_the_model(tmp_path):
     threading.Thread(target=server.serve_forever, daemon=True).start()
     try:
         with urllib.request.urlopen(url) as r:
-            assert b"_cadagent/kit/viewer.html" in r.read()
+            assert b"_cadagent/kit/model/viewer.html" in r.read()
         kit = url.replace("/site/", site.KIT_URL)
-        with urllib.request.urlopen(kit + "viewer.html") as r:
+        with urllib.request.urlopen(kit + "model/viewer.html") as r:
             assert b"createViewer" in r.read()
         with urllib.request.urlopen(kit + "vendor/three/addons/loaders/STLLoader.js") as r:
             assert b"STLLoader" in r.read()
@@ -246,7 +246,7 @@ def test_served_project_pages_get_the_top_bar(tmp_path):
         head = urllib.request.Request(base + "preview/sim.html", method="HEAD")
         with urllib.request.urlopen(head) as r, urllib.request.urlopen(base + "preview/sim.html") as g:
             assert r.headers["Content-Length"] == g.headers["Content-Length"] == str(len(g.read()))
-        with urllib.request.urlopen(base + site.KIT_URL.lstrip("/") + "viewer.html") as r:
+        with urllib.request.urlopen(base + site.KIT_URL.lstrip("/") + "model/viewer.html") as r:
             assert "mountAppNav" in r.read().decode(), "the web kit's pages get the bar too"
     finally:
         server.shutdown()

@@ -21,9 +21,9 @@ Diagram and theme dependencies
 ```mermaid
 flowchart TD
     M["mermaid/"]
-    D["../diagrams.js"]
+    D["../documents/diagrams.js"]
     F["fonts/"]
-    C["../theme.css"]
+    C["../ui/hud.css"]
     M --> D
     F --> C
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c

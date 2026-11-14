@@ -393,8 +393,15 @@ domains:
         cli: [package, release, serve, site, view, webkit]
         api: [cadagent.publish.site, cadagent.publish.site_review, cadagent.publish.report, cadagent.publish.htmlreport,
               cadagent.publish.render, cadagent.publish.view, cadagent.publish.dotsvg, cadagent.publish.serve,
-              cadagent.publish.release, cadagent.publish.guides, cadagent.publish.anim]
+              cadagent.publish.release, cadagent.publish.guides, cadagent.publish.runtime, cadagent.publish.anim]
         issues: [104, 141, 181]
+      - slug: scada
+        title: SCADA toolkit
+        scope: Shared process diagrams, equipment artwork, replaceable simulation models and reusable authoring workflows.
+        maturity: tooling
+        pages: [docs/practice/scada/README.md, docs/practice/scada/architecture.md, docs/practice/scada/local-use.md, docs/practice/scada/resources-and-growth.md]
+        skills: [scada-component-authoring, scada-system-authoring, scada-model-adaptation, scada-viewer-review, scada-distribution-review, repository-documentation]
+        issues: [692]
       - slug: evaluation
         title: Evaluation
         scope: Standard jobs and graders that measure models, harnesses and our tooling.

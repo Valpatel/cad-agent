@@ -22,7 +22,7 @@
   reason: >-
     Deliberate maintenance-pass policy under issues 153 and 322, reaffirmed 2026-11-07: retain grouped weekly
     GitHub Actions version PRs, without starting recurring npm version-PR campaigns during backlog closure.
-    The weekly supply-chain workflow audits both explicit npm locks online and keeps one findings issue;
+    The weekly supply-chain workflow audits all explicit npm locks online and keeps one findings issue;
     pin updates still require independent review, provenance and browser CI. This accepts only the absence
     of the npm version-update configuration, not an advisory, stale pin or failed audit. It does not claim
     Dependabot monitors these manifests or that dependency-graph/SBOM discovery is verified; issue 153
@@ -54,6 +54,21 @@
     missing/mismatched input fails instead of invoking the hook. This fingerprint includes tools/mermaid/package.json and covers only 0.28.2's known hook,
     not an advisory, registry drift, a future hook or another context that runs install scripts.
   accepted: 2026-11-07
+
+- check: npm-install-script
+  subject: npm:esbuild
+  fp: e002f7ae48e41d8e
+  reason: >-
+    SCADA maintenance tests use the exact tools/webkit/scada esbuild 0.25.12 package to check bundled module
+    dependency boundaries; neither the deployed runtime nor the Python wheel includes this tool dependency.
+    Its complete install.js was read on 2026-11-14, SHA256
+    10f6fa3644d8d23d066ff67b0ae449074e75884503546a9fedb667f1dcb9ade2, and compared with the npm archive
+    verified against the committed SHA512 integrity. The hook can install or download a platform executable,
+    execute its version probe and rewrite the wrapper. SCADA CI and documented maintenance installs use
+    npm ci --ignore-scripts; a clean such install successfully bundled an ESM input using the exact optional
+    platform package already covered by the lock. This accepts only that unexecuted install hook at this
+    version and owning manifest, not advisories, integrity failures, other contexts or future scripts.
+  accepted: 2026-11-14
 
 - check: npm-install-script
   subject: npm:fsevents

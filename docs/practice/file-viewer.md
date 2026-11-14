@@ -1,11 +1,11 @@
 # Viewing original CAD files
 
-The standalone `webkit/file-viewer.html` opens original STL, STEP/STP and core 3MF
+The standalone `webkit/files/file-viewer.html` opens original STL, STEP/STP and core 3MF
 files. It parses the requested file itself; it never substitutes a similarly named
 STL or an assembly manifest. The download link retains the original URL and bytes.
 
 ```html
-<a href="kit/file-viewer.html?file=%2Fexports%2Fbracket.step&back=%2Fbuild.html">View bracket</a>
+<a href="kit/files/file-viewer.html?file=%2Fexports%2Fbracket.step&back=%2Fbuild.html">View bracket</a>
 ```
 
 Files and the optional back link must be on the current origin. Deploy the entire
@@ -74,7 +74,7 @@ flowchart TD
 Link `file-viewer.css` and provide the existing Three import map before importing:
 
 ```js
-import {createFileViewer} from './kit/file-viewer.js';
+import {createFileViewer} from './kit/files/file-viewer.js';
 const viewer = createFileViewer(host, {
   file: '/exports/bracket.step',
   back: '/build.html',

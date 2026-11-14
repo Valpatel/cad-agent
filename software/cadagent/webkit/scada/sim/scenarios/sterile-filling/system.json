@@ -1,0 +1,2626 @@
+{
+  "$schema": "../../../scada-ui/schema/scada-system.schema.json",
+  "format": "scada-system",
+  "version": 1,
+  "system": {
+    "id": "sterile-filling",
+    "label": "Sterile-filling concept",
+    "description": "A conceptual controlled-transfer and filling line with filtration, buffering, inspection and packaging. The toy state never establishes sterility, containment or validated quality."
+  },
+  "components": [
+    {
+      "id": "solution",
+      "type": "tank",
+      "label": "Prepared solution feed",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "level": 55,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/solution/active",
+        "running": "/components/solution/running",
+        "fault": "/components/solution/fault",
+        "status": "/components/solution/status",
+        "level": "/components/solution/level",
+        "damage": "/components/solution/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "filter",
+      "type": "membrane-filter",
+      "label": "Illustrative final membrane stage",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/filter/active",
+        "running": "/components/filter/running",
+        "fault": "/components/filter/fault",
+        "status": "/components/filter/status",
+        "load": "/components/filter/load",
+        "damage": "/components/filter/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "supply",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "reject",
+          "side": "right",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "buffer",
+      "type": "tank",
+      "label": "Filling supply buffer",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "level": 55,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/buffer/active",
+        "running": "/components/buffer/running",
+        "fault": "/components/buffer/fault",
+        "status": "/components/buffer/status",
+        "level": "/components/buffer/level",
+        "damage": "/components/buffer/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "valve",
+      "type": "control-valve",
+      "label": "Controlled transfer valve",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "open": true,
+        "opening": 100,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/valve/active",
+        "running": "/components/valve/running",
+        "fault": "/components/valve/fault",
+        "status": "/components/valve/status",
+        "open": "/components/valve/open",
+        "opening": "/components/valve/opening",
+        "damage": "/components/valve/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "control",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "pump",
+      "type": "pump",
+      "label": "Filling supply pump",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/pump/active",
+        "running": "/components/pump/running",
+        "fault": "/components/pump/fault",
+        "status": "/components/pump/status",
+        "load": "/components/pump/load",
+        "speed": "/components/pump/speed",
+        "damage": "/components/pump/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "drive",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "filler",
+      "type": "filling-line",
+      "label": "Filling station",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/filler/active",
+        "running": "/components/filler/running",
+        "fault": "/components/filler/fault",
+        "status": "/components/filler/status",
+        "load": "/components/filler/load",
+        "speed": "/components/filler/speed",
+        "damage": "/components/filler/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "supply",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "closing",
+      "type": "forming-machine",
+      "label": "Container closing station",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/closing/active",
+        "running": "/components/closing/running",
+        "fault": "/components/closing/fault",
+        "status": "/components/closing/status",
+        "load": "/components/closing/load",
+        "speed": "/components/closing/speed",
+        "damage": "/components/closing/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "supply",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "inspection",
+      "type": "conveyor",
+      "label": "Inspection transfer",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/inspection/active",
+        "running": "/components/inspection/running",
+        "fault": "/components/inspection/fault",
+        "status": "/components/inspection/status",
+        "load": "/components/inspection/load",
+        "speed": "/components/inspection/speed",
+        "damage": "/components/inspection/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "supply",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "packer",
+      "type": "packaging-line",
+      "label": "Secondary packaging",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/packer/active",
+        "running": "/components/packer/running",
+        "fault": "/components/packer/fault",
+        "status": "/components/packer/status",
+        "load": "/components/packer/load",
+        "speed": "/components/packer/speed",
+        "damage": "/components/packer/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "supply",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "power",
+      "type": "generator",
+      "label": "Demonstration site power",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/power/active",
+        "running": "/components/power/running",
+        "fault": "/components/power/fault",
+        "status": "/components/power/status",
+        "load": "/components/power/load",
+        "speed": "/components/power/speed",
+        "damage": "/components/power/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "fuel",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "output",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "exhaust",
+          "side": "right",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "ups",
+      "type": "ups",
+      "label": "Control-power UPS",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "level": 55,
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/ups/active",
+        "running": "/components/ups/running",
+        "fault": "/components/ups/fault",
+        "status": "/components/ups/status",
+        "level": "/components/ups/level",
+        "load": "/components/ups/load",
+        "damage": "/components/ups/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "supply",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "load",
+          "side": "right",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "controller",
+      "type": "plc-cpu",
+      "label": "Filling controller",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "connected": true,
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/controller/active",
+        "running": "/components/controller/running",
+        "fault": "/components/controller/fault",
+        "status": "/components/controller/status",
+        "connected": "/components/controller/connected",
+        "load": "/components/controller/load",
+        "damage": "/components/controller/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "power",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "io",
+      "type": "remote-io",
+      "label": "Distributed filling IO",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "connected": true,
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/io/active",
+        "running": "/components/io/running",
+        "fault": "/components/io/fault",
+        "status": "/components/io/status",
+        "connected": "/components/io/connected",
+        "load": "/components/io/load",
+        "damage": "/components/io/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "power",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "inputs",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outputs",
+          "side": "right",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "pressure",
+      "type": "pressure-transmitter",
+      "label": "Transfer pressure monitor",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "value": 42,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/pressure/active",
+        "running": "/components/pressure/running",
+        "fault": "/components/pressure/fault",
+        "status": "/components/pressure/status",
+        "value": "/components/pressure/value",
+        "damage": "/components/pressure/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "process",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "signal",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "power",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "solution-to-filter",
+      "from": {
+        "component": "solution",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "filter",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "flowBinding": "/flows/solution-to-filter",
+      "label": "Prepared solution feed \u2192 Illustrative final membrane stage"
+    },
+    {
+      "id": "filter-to-buffer",
+      "from": {
+        "component": "filter",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "buffer",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "flowBinding": "/flows/filter-to-buffer",
+      "label": "Illustrative final membrane stage \u2192 Filling supply buffer"
+    },
+    {
+      "id": "buffer-to-valve",
+      "from": {
+        "component": "buffer",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "valve",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "flowBinding": "/flows/buffer-to-valve",
+      "label": "Filling supply buffer \u2192 Controlled transfer valve"
+    },
+    {
+      "id": "valve-to-pump",
+      "from": {
+        "component": "valve",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "pump",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "flowBinding": "/flows/valve-to-pump",
+      "label": "Controlled transfer valve \u2192 Filling supply pump"
+    },
+    {
+      "id": "pump-to-filler",
+      "from": {
+        "component": "pump",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "filler",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "flowBinding": "/flows/pump-to-filler",
+      "label": "Filling supply pump \u2192 Filling station"
+    },
+    {
+      "id": "filler-to-closing",
+      "from": {
+        "component": "filler",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "closing",
+        "port": "inlet"
+      },
+      "medium": "product",
+      "flowBinding": "/flows/filler-to-closing",
+      "label": "Filling station \u2192 Container closing station"
+    },
+    {
+      "id": "closing-to-inspection",
+      "from": {
+        "component": "closing",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "inspection",
+        "port": "inlet"
+      },
+      "medium": "product",
+      "flowBinding": "/flows/closing-to-inspection",
+      "label": "Container closing station \u2192 Inspection transfer"
+    },
+    {
+      "id": "inspection-to-packer",
+      "from": {
+        "component": "inspection",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "packer",
+        "port": "inlet"
+      },
+      "medium": "solids",
+      "flowBinding": "/flows/inspection-to-packer",
+      "label": "Inspection transfer \u2192 Secondary packaging"
+    },
+    {
+      "id": "power-to-filter",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "filter",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-filter",
+      "label": "Demonstration site power \u2192 Illustrative final membrane stage"
+    },
+    {
+      "id": "power-to-pump",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "pump",
+        "port": "drive"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-pump",
+      "label": "Demonstration site power \u2192 Filling supply pump"
+    },
+    {
+      "id": "power-to-filler",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "filler",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-filler",
+      "label": "Demonstration site power \u2192 Filling station"
+    },
+    {
+      "id": "power-to-closing",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "closing",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-closing",
+      "label": "Demonstration site power \u2192 Container closing station"
+    },
+    {
+      "id": "power-to-inspection",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "inspection",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-inspection",
+      "label": "Demonstration site power \u2192 Inspection transfer"
+    },
+    {
+      "id": "power-to-packer",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "packer",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-packer",
+      "label": "Demonstration site power \u2192 Secondary packaging"
+    },
+    {
+      "id": "power-to-ups",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "ups",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-ups",
+      "label": "Demonstration site power \u2192 Control-power UPS"
+    },
+    {
+      "id": "power-to-controller",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "controller",
+        "port": "power"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-controller",
+      "label": "Demonstration site power \u2192 Filling controller"
+    },
+    {
+      "id": "power-to-io",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "io",
+        "port": "power"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-io",
+      "label": "Demonstration site power \u2192 Distributed filling IO"
+    },
+    {
+      "id": "power-to-pressure",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "pressure",
+        "port": "power"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-pressure",
+      "label": "Demonstration site power \u2192 Transfer pressure monitor"
+    },
+    {
+      "id": "pump-to-pressure",
+      "from": {
+        "component": "pump",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "pressure",
+        "port": "process"
+      },
+      "medium": "measurement",
+      "flowBinding": "/flows/pump-to-pressure",
+      "label": "Filling supply pump \u2192 Transfer pressure monitor"
+    },
+    {
+      "id": "pressure-to-controller",
+      "from": {
+        "component": "pressure",
+        "port": "signal"
+      },
+      "to": {
+        "component": "controller",
+        "port": "network"
+      },
+      "medium": "data",
+      "flowBinding": "/flows/pressure-to-controller",
+      "label": "Transfer pressure monitor \u2192 Filling controller"
+    },
+    {
+      "id": "controller-to-valve",
+      "from": {
+        "component": "controller",
+        "port": "network"
+      },
+      "to": {
+        "component": "valve",
+        "port": "control"
+      },
+      "medium": "data",
+      "flowBinding": "/flows/controller-to-valve",
+      "label": "Filling controller \u2192 Controlled transfer valve"
+    },
+    {
+      "id": "controller-to-io",
+      "from": {
+        "component": "controller",
+        "port": "network"
+      },
+      "to": {
+        "component": "io",
+        "port": "network"
+      },
+      "medium": "data",
+      "flowBinding": "/flows/controller-to-io",
+      "label": "Filling controller \u2192 Distributed filling IO"
+    }
+  ],
+  "views": [
+    {
+      "id": "process",
+      "label": "Main process",
+      "canvas": {
+        "width": 1280,
+        "height": 940
+      },
+      "placements": [
+        {
+          "component": "solution",
+          "x": 60,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "filter",
+          "x": 360,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "buffer",
+          "x": 660,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "valve",
+          "x": 960,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "pump",
+          "x": 960,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "filler",
+          "x": 660,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "closing",
+          "x": 360,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "inspection",
+          "x": 60,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "packer",
+          "x": 60,
+          "y": 620,
+          "width": 200,
+          "height": 190
+        }
+      ],
+      "routes": [
+        {
+          "connection": "solution-to-filter",
+          "points": [
+            {
+              "x": 260,
+              "y": 155
+            },
+            {
+              "x": 360,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "filter-to-buffer",
+          "points": [
+            {
+              "x": 560,
+              "y": 155
+            },
+            {
+              "x": 660,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "buffer-to-valve",
+          "points": [
+            {
+              "x": 860,
+              "y": 155
+            },
+            {
+              "x": 960,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "valve-to-pump",
+          "points": [
+            {
+              "x": 1060,
+              "y": 250
+            },
+            {
+              "x": 1060,
+              "y": 340
+            }
+          ]
+        },
+        {
+          "connection": "pump-to-filler",
+          "points": [
+            {
+              "x": 960,
+              "y": 435
+            },
+            {
+              "x": 860,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "filler-to-closing",
+          "points": [
+            {
+              "x": 660,
+              "y": 435
+            },
+            {
+              "x": 560,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "closing-to-inspection",
+          "points": [
+            {
+              "x": 360,
+              "y": 435
+            },
+            {
+              "x": 260,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "inspection-to-packer",
+          "points": [
+            {
+              "x": 160,
+              "y": 530
+            },
+            {
+              "x": 160,
+              "y": 620
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "utilities",
+      "label": "Utilities & control",
+      "canvas": {
+        "width": 980,
+        "height": 940
+      },
+      "placements": [
+        {
+          "component": "power",
+          "x": 60,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "ups",
+          "x": 360,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "controller",
+          "x": 660,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "io",
+          "x": 660,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "pressure",
+          "x": 360,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "valve",
+          "x": 60,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "inspection",
+          "x": 60,
+          "y": 620,
+          "width": 200,
+          "height": 190
+        }
+      ],
+      "routes": [
+        {
+          "connection": "power-to-inspection",
+          "points": [
+            {
+              "x": 160,
+              "y": 250
+            },
+            {
+              "x": 160,
+              "y": 316
+            },
+            {
+              "x": 36,
+              "y": 316
+            },
+            {
+              "x": 36,
+              "y": 596
+            },
+            {
+              "x": 160,
+              "y": 596
+            },
+            {
+              "x": 160,
+              "y": 620
+            }
+          ]
+        },
+        {
+          "connection": "power-to-ups",
+          "points": [
+            {
+              "x": 260,
+              "y": 155
+            },
+            {
+              "x": 360,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "power-to-controller",
+          "points": [
+            {
+              "x": 260,
+              "y": 155
+            },
+            {
+              "x": 336,
+              "y": 155
+            },
+            {
+              "x": 336,
+              "y": 36
+            },
+            {
+              "x": 636,
+              "y": 36
+            },
+            {
+              "x": 636,
+              "y": 155
+            },
+            {
+              "x": 660,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "power-to-io",
+          "points": [
+            {
+              "x": 260,
+              "y": 155
+            },
+            {
+              "x": 284,
+              "y": 155
+            },
+            {
+              "x": 284,
+              "y": 316
+            },
+            {
+              "x": 636,
+              "y": 316
+            },
+            {
+              "x": 636,
+              "y": 435
+            },
+            {
+              "x": 660,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "power-to-pressure",
+          "points": [
+            {
+              "x": 260,
+              "y": 155
+            },
+            {
+              "x": 284,
+              "y": 155
+            },
+            {
+              "x": 284,
+              "y": 316
+            },
+            {
+              "x": 336,
+              "y": 316
+            },
+            {
+              "x": 336,
+              "y": 435
+            },
+            {
+              "x": 360,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "pressure-to-controller",
+          "points": [
+            {
+              "x": 560,
+              "y": 435
+            },
+            {
+              "x": 584,
+              "y": 435
+            },
+            {
+              "x": 584,
+              "y": 274
+            },
+            {
+              "x": 636,
+              "y": 274
+            },
+            {
+              "x": 636,
+              "y": 155
+            },
+            {
+              "x": 660,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "controller-to-valve",
+          "points": [
+            {
+              "x": 660,
+              "y": 155
+            },
+            {
+              "x": 636,
+              "y": 155
+            },
+            {
+              "x": 636,
+              "y": 316
+            },
+            {
+              "x": 284,
+              "y": 316
+            },
+            {
+              "x": 284,
+              "y": 435
+            },
+            {
+              "x": 260,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "controller-to-io",
+          "points": [
+            {
+              "x": 760,
+              "y": 250
+            },
+            {
+              "x": 760,
+              "y": 340
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "finishing",
+      "label": "Finishing & storage",
+      "canvas": {
+        "width": 980,
+        "height": 940
+      },
+      "placements": [
+        {
+          "component": "pump",
+          "x": 60,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "filler",
+          "x": 360,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "closing",
+          "x": 660,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "inspection",
+          "x": 660,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "packer",
+          "x": 360,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "controller",
+          "x": 60,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "io",
+          "x": 60,
+          "y": 620,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "pressure",
+          "x": 360,
+          "y": 620,
+          "width": 200,
+          "height": 190
+        }
+      ],
+      "routes": [
+        {
+          "connection": "pump-to-filler",
+          "points": [
+            {
+              "x": 260,
+              "y": 155
+            },
+            {
+              "x": 360,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "filler-to-closing",
+          "points": [
+            {
+              "x": 560,
+              "y": 155
+            },
+            {
+              "x": 660,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "closing-to-inspection",
+          "points": [
+            {
+              "x": 760,
+              "y": 250
+            },
+            {
+              "x": 760,
+              "y": 340
+            }
+          ]
+        },
+        {
+          "connection": "inspection-to-packer",
+          "points": [
+            {
+              "x": 660,
+              "y": 435
+            },
+            {
+              "x": 560,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "pump-to-pressure",
+          "points": [
+            {
+              "x": 160,
+              "y": 250
+            },
+            {
+              "x": 160,
+              "y": 316
+            },
+            {
+              "x": 284,
+              "y": 316
+            },
+            {
+              "x": 284,
+              "y": 596
+            },
+            {
+              "x": 460,
+              "y": 596
+            },
+            {
+              "x": 460,
+              "y": 620
+            }
+          ]
+        },
+        {
+          "connection": "pressure-to-controller",
+          "points": [
+            {
+              "x": 360,
+              "y": 715
+            },
+            {
+              "x": 336,
+              "y": 715
+            },
+            {
+              "x": 336,
+              "y": 554
+            },
+            {
+              "x": 284,
+              "y": 554
+            },
+            {
+              "x": 284,
+              "y": 435
+            },
+            {
+              "x": 260,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "controller-to-io",
+          "points": [
+            {
+              "x": 160,
+              "y": 530
+            },
+            {
+              "x": 160,
+              "y": 620
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "commands": [
+    {
+      "id": "solution-enabled",
+      "label": "Prepared solution feed \u00b7 Enabled",
+      "component": "solution",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "solution"
+      }
+    },
+    {
+      "id": "solution-load",
+      "label": "Prepared solution feed \u00b7 Requested load",
+      "component": "solution",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "solution"
+      }
+    },
+    {
+      "id": "solution-fault",
+      "label": "Prepared solution feed \u00b7 Injected failure",
+      "component": "solution",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "solution"
+      }
+    },
+    {
+      "id": "solution-repair",
+      "label": "Repair Prepared solution feed",
+      "component": "solution",
+      "action": "repair",
+      "arguments": {
+        "equipment": "solution"
+      }
+    },
+    {
+      "id": "filter-enabled",
+      "label": "Illustrative final membrane stage \u00b7 Enabled",
+      "component": "filter",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "filter"
+      }
+    },
+    {
+      "id": "filter-load",
+      "label": "Illustrative final membrane stage \u00b7 Requested load",
+      "component": "filter",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "filter"
+      }
+    },
+    {
+      "id": "filter-fault",
+      "label": "Illustrative final membrane stage \u00b7 Injected failure",
+      "component": "filter",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "filter"
+      }
+    },
+    {
+      "id": "filter-repair",
+      "label": "Repair Illustrative final membrane stage",
+      "component": "filter",
+      "action": "repair",
+      "arguments": {
+        "equipment": "filter"
+      }
+    },
+    {
+      "id": "buffer-enabled",
+      "label": "Filling supply buffer \u00b7 Enabled",
+      "component": "buffer",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "buffer"
+      }
+    },
+    {
+      "id": "buffer-load",
+      "label": "Filling supply buffer \u00b7 Requested load",
+      "component": "buffer",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "buffer"
+      }
+    },
+    {
+      "id": "buffer-fault",
+      "label": "Filling supply buffer \u00b7 Injected failure",
+      "component": "buffer",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "buffer"
+      }
+    },
+    {
+      "id": "buffer-repair",
+      "label": "Repair Filling supply buffer",
+      "component": "buffer",
+      "action": "repair",
+      "arguments": {
+        "equipment": "buffer"
+      }
+    },
+    {
+      "id": "valve-enabled",
+      "label": "Controlled transfer valve \u00b7 Enabled",
+      "component": "valve",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "valve"
+      }
+    },
+    {
+      "id": "valve-load",
+      "label": "Controlled transfer valve \u00b7 Opening setpoint (%)",
+      "component": "valve",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "valve"
+      }
+    },
+    {
+      "id": "valve-fault",
+      "label": "Controlled transfer valve \u00b7 Injected failure",
+      "component": "valve",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "valve"
+      }
+    },
+    {
+      "id": "valve-open",
+      "label": "Controlled transfer valve \u00b7 Open path",
+      "component": "valve",
+      "action": "setOpen",
+      "arguments": {
+        "equipment": "valve"
+      }
+    },
+    {
+      "id": "valve-repair",
+      "label": "Repair Controlled transfer valve",
+      "component": "valve",
+      "action": "repair",
+      "arguments": {
+        "equipment": "valve"
+      }
+    },
+    {
+      "id": "pump-enabled",
+      "label": "Filling supply pump \u00b7 Enabled",
+      "component": "pump",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "pump"
+      }
+    },
+    {
+      "id": "pump-load",
+      "label": "Filling supply pump \u00b7 Requested load",
+      "component": "pump",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "pump"
+      }
+    },
+    {
+      "id": "pump-fault",
+      "label": "Filling supply pump \u00b7 Injected failure",
+      "component": "pump",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "pump"
+      }
+    },
+    {
+      "id": "pump-repair",
+      "label": "Repair Filling supply pump",
+      "component": "pump",
+      "action": "repair",
+      "arguments": {
+        "equipment": "pump"
+      }
+    },
+    {
+      "id": "filler-enabled",
+      "label": "Filling station \u00b7 Enabled",
+      "component": "filler",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "filler"
+      }
+    },
+    {
+      "id": "filler-load",
+      "label": "Filling station \u00b7 Requested load",
+      "component": "filler",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "filler"
+      }
+    },
+    {
+      "id": "filler-fault",
+      "label": "Filling station \u00b7 Injected failure",
+      "component": "filler",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "filler"
+      }
+    },
+    {
+      "id": "filler-repair",
+      "label": "Repair Filling station",
+      "component": "filler",
+      "action": "repair",
+      "arguments": {
+        "equipment": "filler"
+      }
+    },
+    {
+      "id": "closing-enabled",
+      "label": "Container closing station \u00b7 Enabled",
+      "component": "closing",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "closing"
+      }
+    },
+    {
+      "id": "closing-load",
+      "label": "Container closing station \u00b7 Requested load",
+      "component": "closing",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "closing"
+      }
+    },
+    {
+      "id": "closing-fault",
+      "label": "Container closing station \u00b7 Injected failure",
+      "component": "closing",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "closing"
+      }
+    },
+    {
+      "id": "closing-repair",
+      "label": "Repair Container closing station",
+      "component": "closing",
+      "action": "repair",
+      "arguments": {
+        "equipment": "closing"
+      }
+    },
+    {
+      "id": "inspection-enabled",
+      "label": "Inspection transfer \u00b7 Enabled",
+      "component": "inspection",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "inspection"
+      }
+    },
+    {
+      "id": "inspection-load",
+      "label": "Inspection transfer \u00b7 Requested load",
+      "component": "inspection",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "inspection"
+      }
+    },
+    {
+      "id": "inspection-fault",
+      "label": "Inspection transfer \u00b7 Injected failure",
+      "component": "inspection",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "inspection"
+      }
+    },
+    {
+      "id": "inspection-repair",
+      "label": "Repair Inspection transfer",
+      "component": "inspection",
+      "action": "repair",
+      "arguments": {
+        "equipment": "inspection"
+      }
+    },
+    {
+      "id": "packer-enabled",
+      "label": "Secondary packaging \u00b7 Enabled",
+      "component": "packer",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "packer"
+      }
+    },
+    {
+      "id": "packer-load",
+      "label": "Secondary packaging \u00b7 Requested load",
+      "component": "packer",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "packer"
+      }
+    },
+    {
+      "id": "packer-fault",
+      "label": "Secondary packaging \u00b7 Injected failure",
+      "component": "packer",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "packer"
+      }
+    },
+    {
+      "id": "packer-repair",
+      "label": "Repair Secondary packaging",
+      "component": "packer",
+      "action": "repair",
+      "arguments": {
+        "equipment": "packer"
+      }
+    },
+    {
+      "id": "power-enabled",
+      "label": "Demonstration site power \u00b7 Enabled",
+      "component": "power",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "power"
+      }
+    },
+    {
+      "id": "power-load",
+      "label": "Demonstration site power \u00b7 Requested load",
+      "component": "power",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "power"
+      }
+    },
+    {
+      "id": "power-fault",
+      "label": "Demonstration site power \u00b7 Injected failure",
+      "component": "power",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "power"
+      }
+    },
+    {
+      "id": "power-repair",
+      "label": "Repair Demonstration site power",
+      "component": "power",
+      "action": "repair",
+      "arguments": {
+        "equipment": "power"
+      }
+    },
+    {
+      "id": "ups-enabled",
+      "label": "Control-power UPS \u00b7 Enabled",
+      "component": "ups",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "ups"
+      }
+    },
+    {
+      "id": "ups-load",
+      "label": "Control-power UPS \u00b7 Requested load",
+      "component": "ups",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "ups"
+      }
+    },
+    {
+      "id": "ups-fault",
+      "label": "Control-power UPS \u00b7 Injected failure",
+      "component": "ups",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "ups"
+      }
+    },
+    {
+      "id": "ups-repair",
+      "label": "Repair Control-power UPS",
+      "component": "ups",
+      "action": "repair",
+      "arguments": {
+        "equipment": "ups"
+      }
+    },
+    {
+      "id": "controller-enabled",
+      "label": "Filling controller \u00b7 Enabled",
+      "component": "controller",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "controller"
+      }
+    },
+    {
+      "id": "controller-load",
+      "label": "Filling controller \u00b7 Requested load",
+      "component": "controller",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "controller"
+      }
+    },
+    {
+      "id": "controller-fault",
+      "label": "Filling controller \u00b7 Injected failure",
+      "component": "controller",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "controller"
+      }
+    },
+    {
+      "id": "controller-repair",
+      "label": "Repair Filling controller",
+      "component": "controller",
+      "action": "repair",
+      "arguments": {
+        "equipment": "controller"
+      }
+    },
+    {
+      "id": "io-enabled",
+      "label": "Distributed filling IO \u00b7 Enabled",
+      "component": "io",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "io"
+      }
+    },
+    {
+      "id": "io-load",
+      "label": "Distributed filling IO \u00b7 Requested load",
+      "component": "io",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "io"
+      }
+    },
+    {
+      "id": "io-fault",
+      "label": "Distributed filling IO \u00b7 Injected failure",
+      "component": "io",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "io"
+      }
+    },
+    {
+      "id": "io-repair",
+      "label": "Repair Distributed filling IO",
+      "component": "io",
+      "action": "repair",
+      "arguments": {
+        "equipment": "io"
+      }
+    },
+    {
+      "id": "pressure-enabled",
+      "label": "Transfer pressure monitor \u00b7 Enabled",
+      "component": "pressure",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "pressure"
+      }
+    },
+    {
+      "id": "pressure-load",
+      "label": "Transfer pressure monitor \u00b7 Requested load",
+      "component": "pressure",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "pressure"
+      }
+    },
+    {
+      "id": "pressure-fault",
+      "label": "Transfer pressure monitor \u00b7 Injected failure",
+      "component": "pressure",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "pressure"
+      }
+    },
+    {
+      "id": "pressure-repair",
+      "label": "Repair Transfer pressure monitor",
+      "component": "pressure",
+      "action": "repair",
+      "arguments": {
+        "equipment": "pressure"
+      }
+    },
+    {
+      "id": "plant-setRunning",
+      "label": "Run the shared plant",
+      "action": "setRunning",
+      "arguments": {}
+    },
+    {
+      "id": "plant-step",
+      "label": "Advance one model step",
+      "action": "step",
+      "arguments": {
+        "value": 1
+      }
+    },
+    {
+      "id": "plant-reset",
+      "label": "Reset dynamics \u00b7 keep edited parameters",
+      "action": "reset",
+      "arguments": {}
+    }
+  ],
+  "controls": [
+    {
+      "id": "solution-enabled-control",
+      "label": "Enabled",
+      "component": "solution",
+      "kind": "toggle",
+      "command": "solution-enabled",
+      "binding": "/controls/solution/enabled"
+    },
+    {
+      "id": "solution-load-control",
+      "label": "Requested load",
+      "component": "solution",
+      "kind": "range",
+      "command": "solution-load",
+      "binding": "/controls/solution/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "solution-fault-control",
+      "label": "Injected failure",
+      "component": "solution",
+      "kind": "toggle",
+      "command": "solution-fault",
+      "binding": "/controls/solution/fault"
+    },
+    {
+      "id": "solution-repair-control",
+      "label": "Repair component",
+      "component": "solution",
+      "kind": "button",
+      "command": "solution-repair"
+    },
+    {
+      "id": "filter-enabled-control",
+      "label": "Enabled",
+      "component": "filter",
+      "kind": "toggle",
+      "command": "filter-enabled",
+      "binding": "/controls/filter/enabled"
+    },
+    {
+      "id": "filter-load-control",
+      "label": "Requested load",
+      "component": "filter",
+      "kind": "range",
+      "command": "filter-load",
+      "binding": "/controls/filter/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "filter-fault-control",
+      "label": "Injected failure",
+      "component": "filter",
+      "kind": "toggle",
+      "command": "filter-fault",
+      "binding": "/controls/filter/fault"
+    },
+    {
+      "id": "filter-repair-control",
+      "label": "Repair component",
+      "component": "filter",
+      "kind": "button",
+      "command": "filter-repair"
+    },
+    {
+      "id": "buffer-enabled-control",
+      "label": "Enabled",
+      "component": "buffer",
+      "kind": "toggle",
+      "command": "buffer-enabled",
+      "binding": "/controls/buffer/enabled"
+    },
+    {
+      "id": "buffer-load-control",
+      "label": "Requested load",
+      "component": "buffer",
+      "kind": "range",
+      "command": "buffer-load",
+      "binding": "/controls/buffer/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "buffer-fault-control",
+      "label": "Injected failure",
+      "component": "buffer",
+      "kind": "toggle",
+      "command": "buffer-fault",
+      "binding": "/controls/buffer/fault"
+    },
+    {
+      "id": "buffer-repair-control",
+      "label": "Repair component",
+      "component": "buffer",
+      "kind": "button",
+      "command": "buffer-repair"
+    },
+    {
+      "id": "valve-enabled-control",
+      "label": "Enabled",
+      "component": "valve",
+      "kind": "toggle",
+      "command": "valve-enabled",
+      "binding": "/controls/valve/enabled"
+    },
+    {
+      "id": "valve-load-control",
+      "label": "Opening setpoint (%)",
+      "component": "valve",
+      "kind": "range",
+      "command": "valve-load",
+      "binding": "/controls/valve/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "valve-fault-control",
+      "label": "Injected failure",
+      "component": "valve",
+      "kind": "toggle",
+      "command": "valve-fault",
+      "binding": "/controls/valve/fault"
+    },
+    {
+      "id": "valve-open-control",
+      "label": "Open path",
+      "component": "valve",
+      "kind": "toggle",
+      "command": "valve-open",
+      "binding": "/controls/valve/open"
+    },
+    {
+      "id": "valve-repair-control",
+      "label": "Repair component",
+      "component": "valve",
+      "kind": "button",
+      "command": "valve-repair"
+    },
+    {
+      "id": "pump-enabled-control",
+      "label": "Enabled",
+      "component": "pump",
+      "kind": "toggle",
+      "command": "pump-enabled",
+      "binding": "/controls/pump/enabled"
+    },
+    {
+      "id": "pump-load-control",
+      "label": "Requested load",
+      "component": "pump",
+      "kind": "range",
+      "command": "pump-load",
+      "binding": "/controls/pump/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "pump-fault-control",
+      "label": "Injected failure",
+      "component": "pump",
+      "kind": "toggle",
+      "command": "pump-fault",
+      "binding": "/controls/pump/fault"
+    },
+    {
+      "id": "pump-repair-control",
+      "label": "Repair component",
+      "component": "pump",
+      "kind": "button",
+      "command": "pump-repair"
+    },
+    {
+      "id": "filler-enabled-control",
+      "label": "Enabled",
+      "component": "filler",
+      "kind": "toggle",
+      "command": "filler-enabled",
+      "binding": "/controls/filler/enabled"
+    },
+    {
+      "id": "filler-load-control",
+      "label": "Requested load",
+      "component": "filler",
+      "kind": "range",
+      "command": "filler-load",
+      "binding": "/controls/filler/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "filler-fault-control",
+      "label": "Injected failure",
+      "component": "filler",
+      "kind": "toggle",
+      "command": "filler-fault",
+      "binding": "/controls/filler/fault"
+    },
+    {
+      "id": "filler-repair-control",
+      "label": "Repair component",
+      "component": "filler",
+      "kind": "button",
+      "command": "filler-repair"
+    },
+    {
+      "id": "closing-enabled-control",
+      "label": "Enabled",
+      "component": "closing",
+      "kind": "toggle",
+      "command": "closing-enabled",
+      "binding": "/controls/closing/enabled"
+    },
+    {
+      "id": "closing-load-control",
+      "label": "Requested load",
+      "component": "closing",
+      "kind": "range",
+      "command": "closing-load",
+      "binding": "/controls/closing/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "closing-fault-control",
+      "label": "Injected failure",
+      "component": "closing",
+      "kind": "toggle",
+      "command": "closing-fault",
+      "binding": "/controls/closing/fault"
+    },
+    {
+      "id": "closing-repair-control",
+      "label": "Repair component",
+      "component": "closing",
+      "kind": "button",
+      "command": "closing-repair"
+    },
+    {
+      "id": "inspection-enabled-control",
+      "label": "Enabled",
+      "component": "inspection",
+      "kind": "toggle",
+      "command": "inspection-enabled",
+      "binding": "/controls/inspection/enabled"
+    },
+    {
+      "id": "inspection-load-control",
+      "label": "Requested load",
+      "component": "inspection",
+      "kind": "range",
+      "command": "inspection-load",
+      "binding": "/controls/inspection/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "inspection-fault-control",
+      "label": "Injected failure",
+      "component": "inspection",
+      "kind": "toggle",
+      "command": "inspection-fault",
+      "binding": "/controls/inspection/fault"
+    },
+    {
+      "id": "inspection-repair-control",
+      "label": "Repair component",
+      "component": "inspection",
+      "kind": "button",
+      "command": "inspection-repair"
+    },
+    {
+      "id": "packer-enabled-control",
+      "label": "Enabled",
+      "component": "packer",
+      "kind": "toggle",
+      "command": "packer-enabled",
+      "binding": "/controls/packer/enabled"
+    },
+    {
+      "id": "packer-load-control",
+      "label": "Requested load",
+      "component": "packer",
+      "kind": "range",
+      "command": "packer-load",
+      "binding": "/controls/packer/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "packer-fault-control",
+      "label": "Injected failure",
+      "component": "packer",
+      "kind": "toggle",
+      "command": "packer-fault",
+      "binding": "/controls/packer/fault"
+    },
+    {
+      "id": "packer-repair-control",
+      "label": "Repair component",
+      "component": "packer",
+      "kind": "button",
+      "command": "packer-repair"
+    },
+    {
+      "id": "power-enabled-control",
+      "label": "Enabled",
+      "component": "power",
+      "kind": "toggle",
+      "command": "power-enabled",
+      "binding": "/controls/power/enabled"
+    },
+    {
+      "id": "power-load-control",
+      "label": "Requested load",
+      "component": "power",
+      "kind": "range",
+      "command": "power-load",
+      "binding": "/controls/power/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "power-fault-control",
+      "label": "Injected failure",
+      "component": "power",
+      "kind": "toggle",
+      "command": "power-fault",
+      "binding": "/controls/power/fault"
+    },
+    {
+      "id": "power-repair-control",
+      "label": "Repair component",
+      "component": "power",
+      "kind": "button",
+      "command": "power-repair"
+    },
+    {
+      "id": "ups-enabled-control",
+      "label": "Enabled",
+      "component": "ups",
+      "kind": "toggle",
+      "command": "ups-enabled",
+      "binding": "/controls/ups/enabled"
+    },
+    {
+      "id": "ups-load-control",
+      "label": "Requested load",
+      "component": "ups",
+      "kind": "range",
+      "command": "ups-load",
+      "binding": "/controls/ups/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "ups-fault-control",
+      "label": "Injected failure",
+      "component": "ups",
+      "kind": "toggle",
+      "command": "ups-fault",
+      "binding": "/controls/ups/fault"
+    },
+    {
+      "id": "ups-repair-control",
+      "label": "Repair component",
+      "component": "ups",
+      "kind": "button",
+      "command": "ups-repair"
+    },
+    {
+      "id": "controller-enabled-control",
+      "label": "Enabled",
+      "component": "controller",
+      "kind": "toggle",
+      "command": "controller-enabled",
+      "binding": "/controls/controller/enabled"
+    },
+    {
+      "id": "controller-load-control",
+      "label": "Requested load",
+      "component": "controller",
+      "kind": "range",
+      "command": "controller-load",
+      "binding": "/controls/controller/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "controller-fault-control",
+      "label": "Injected failure",
+      "component": "controller",
+      "kind": "toggle",
+      "command": "controller-fault",
+      "binding": "/controls/controller/fault"
+    },
+    {
+      "id": "controller-repair-control",
+      "label": "Repair component",
+      "component": "controller",
+      "kind": "button",
+      "command": "controller-repair"
+    },
+    {
+      "id": "io-enabled-control",
+      "label": "Enabled",
+      "component": "io",
+      "kind": "toggle",
+      "command": "io-enabled",
+      "binding": "/controls/io/enabled"
+    },
+    {
+      "id": "io-load-control",
+      "label": "Requested load",
+      "component": "io",
+      "kind": "range",
+      "command": "io-load",
+      "binding": "/controls/io/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "io-fault-control",
+      "label": "Injected failure",
+      "component": "io",
+      "kind": "toggle",
+      "command": "io-fault",
+      "binding": "/controls/io/fault"
+    },
+    {
+      "id": "io-repair-control",
+      "label": "Repair component",
+      "component": "io",
+      "kind": "button",
+      "command": "io-repair"
+    },
+    {
+      "id": "pressure-enabled-control",
+      "label": "Enabled",
+      "component": "pressure",
+      "kind": "toggle",
+      "command": "pressure-enabled",
+      "binding": "/controls/pressure/enabled"
+    },
+    {
+      "id": "pressure-load-control",
+      "label": "Requested load",
+      "component": "pressure",
+      "kind": "range",
+      "command": "pressure-load",
+      "binding": "/controls/pressure/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "pressure-fault-control",
+      "label": "Injected failure",
+      "component": "pressure",
+      "kind": "toggle",
+      "command": "pressure-fault",
+      "binding": "/controls/pressure/fault"
+    },
+    {
+      "id": "pressure-repair-control",
+      "label": "Repair component",
+      "component": "pressure",
+      "kind": "button",
+      "command": "pressure-repair"
+    },
+    {
+      "id": "plant-setRunning-control",
+      "label": "Run the shared plant",
+      "kind": "toggle",
+      "command": "plant-setRunning",
+      "binding": "/running"
+    },
+    {
+      "id": "plant-step-control",
+      "label": "Advance one model step",
+      "kind": "button",
+      "command": "plant-step"
+    },
+    {
+      "id": "plant-reset-control",
+      "label": "Reset dynamics \u00b7 keep edited parameters",
+      "kind": "button",
+      "command": "plant-reset"
+    }
+  ],
+  "units": {
+    "flow": "normalized flow units",
+    "inventory": "normalized inventory units",
+    "load": "% requested demonstration load",
+    "pressure": "normalized pressure index",
+    "temperature": "normalized model thermal index; artwork displays an illustrative range"
+  },
+  "provenance": [
+    {
+      "id": "demo-model",
+      "label": "Editable placeholder model",
+      "kind": "assumed",
+      "description": "Family-level normalized behavior for UI experimentation; no calibrated industry process, safety envelope or recipe."
+    },
+    {
+      "id": "assumed-topology",
+      "label": "Illustrative editable routing",
+      "kind": "illustrative",
+      "description": "Industry-inspired stage names and interfaces. This is not a verified plant P&ID, wiring diagram or production design."
+    }
+  ],
+  "assumptions": [
+    {
+      "id": "nominalCapacity",
+      "label": "Default normalized stage capacity",
+      "value": 75,
+      "unit": "normalized units",
+      "provenance": "demo-model"
+    },
+    {
+      "id": "warningIndex",
+      "label": "Demonstration warning threshold",
+      "value": 78,
+      "unit": "normalized index",
+      "provenance": "demo-model"
+    },
+    {
+      "id": "optionalUtilities",
+      "label": "Utility equipment is illustrative and may be optional",
+      "value": true,
+      "provenance": "assumed-topology"
+    }
+  ]
+}

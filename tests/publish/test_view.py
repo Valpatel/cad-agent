@@ -100,7 +100,7 @@ def test_bad_config_rejected_before_writing(tmp_path, bad):
     assert not (tmp_path / 'exports/view').exists()
 
 
-# ---- pack_view: the compact model the site's <cad-model> loads (kit/model.js decodes it; #179) ----
+# ---- pack_view: the compact model the site's <cad-model> loads (kit/model/model.js decodes it; #179) ----
 
 import importlib.util
 from pathlib import Path

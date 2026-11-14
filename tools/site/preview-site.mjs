@@ -57,12 +57,15 @@ const server = createServer(async (req, res) => {
   if (/[\0\\]/.test(pathname) || path.posix.normalize(pathname) !== pathname) { res.writeHead(400).end(); return; }
   if (redirects.has(pathname)) { const [to, code] = redirects.get(pathname); res.writeHead(code, { location: to + url.search }).end(); return; }
   if (pathname.endsWith('.html')) {                               // Pages drops .html with a redirect
-    const pretty = pathname === '/index.html' ? '/' : pathname.replace(/(?:\/index)?\.html$/, '');
+    const pretty = pathname.endsWith('/index.html') ? pathname.slice(0,-'index.html'.length) : pathname.replace(/\.html$/, '');
     res.writeHead(308, { location: pretty + url.search }).end(); return;
   }
   const candidates = pathname.endsWith('/') ? [pathname + 'index.html'] : [pathname, pathname + '.html', pathname + '/index.html'];
   let file = null;
   for (const c of candidates) if (await exists(path.join(dir, c))) { file = c; break; }
+  // Directory applications resolve their own modules beside index.html. Keep the trailing slash, including
+  // requests for the bare directory; otherwise a relative ./app.mjs incorrectly resolves one level above it.
+  if(file === pathname+'/index.html') {res.writeHead(308,{location:pathname+'/'+url.search}).end();return;}
   const status = file ? 200 : 404;
   file ??= '/404.html';
   const body = await readFile(path.join(dir, file)).catch(() => Buffer.from('Not found'));

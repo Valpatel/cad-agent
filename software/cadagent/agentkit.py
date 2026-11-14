@@ -93,6 +93,46 @@ def _playwright() -> Optional[str]:
     return "; ".join(missing) or None
 
 
+def _node() -> Optional[str]:
+    """Check the existing site/SCADA toolchain floor without fetching packages."""
+    required = "Node.js 22.22.2+, 24.15.0+, or 26+ is required by SCADA maintenance tools"
+    if not _on_path("node"):
+        return "`node` is not on PATH: " + required
+    try:
+        result = subprocess.run(["node", "--version"], capture_output=True, text=True, timeout=5)
+    except (OSError, subprocess.SubprocessError):
+        return "`node --version` failed: " + required
+    version = re.fullmatch(r"v(\d+)\.(\d+)\.(\d+)\s*", result.stdout)
+    parsed = tuple(map(int, version.groups())) if version else (0, 0, 0)
+    supported = (parsed[0] == 22 and parsed >= (22, 22, 2)) or (parsed[0] == 24 and parsed >= (24, 15, 0)) or parsed[0] >= 26
+    if result.returncode or not supported:
+        return required
+    return None
+
+
+def _scada_browser() -> Optional[str]:
+    """Find the Python capture dependency and a local Chromium; do not launch or download it.
+
+    The capture tools default to ``chromium`` on PATH, else Playwright's own
+    installed Chromium. This checks that same choice. A successful browser test
+    is still needed to establish OS libraries, permissions and rendering behavior.
+    """
+    if importlib.util.find_spec("playwright") is None:
+        return "Python Playwright is missing: install tools/webkit/scada/ui/requirements.txt in this Python"
+    if shutil.which("chromium"):
+        return None
+    code = ("from playwright.sync_api import sync_playwright\n"
+            "with sync_playwright() as p: print(p.chromium.executable_path)\n")
+    try:
+        result = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, timeout=10)
+        executable = result.stdout.strip()
+        if result.returncode == 0 and executable and len(executable) < 4096 and Path(executable).is_file():
+            return None
+    except (OSError, subprocess.SubprocessError):
+        pass
+    return "Chromium was not found: install a local chromium binary or run this Python's `-m playwright install chromium`"
+
+
 @dataclass(frozen=True)
 class Requirement:
     label: str                                       # how a Needs line and the notice name it
@@ -105,6 +145,9 @@ REQUIREMENTS: Dict[str, Requirement] = {
     "ssh": Requirement("`ssh`", lambda: None if _on_path("ssh") else "`ssh` is not on PATH"),
     "rsync": Requirement("`rsync`", lambda: None if _on_path("rsync") else "`rsync` is not on PATH"),
     "playwright": Requirement("Playwright and Google Chrome", _playwright),
+    "node": Requirement("`node` 22.22.2+, 24.15.0+, or 26+", _node),
+    "npm": Requirement("`npm`", lambda: None if _on_path("npm") else "`npm` is not on PATH"),
+    "scada-browser": Requirement("Python Playwright and local Chromium", _scada_browser),
     "write-access": Requirement("write access to the repository it works in", None),
     "compute-host": Requirement("a compute host you can reach over `ssh`", None),
 }

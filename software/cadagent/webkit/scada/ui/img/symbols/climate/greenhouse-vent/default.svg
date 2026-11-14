@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="480" height="360" viewBox="0 0 480 360" role="img" aria-labelledby="gallery-greenhouse-vent-base-active-title gallery-greenhouse-vent-base-active-desc"><title id="gallery-greenhouse-vent-base-active-title">Greenhouse vent</title><desc id="gallery-greenhouse-vent-base-active-desc">Greenhouse vent. Active, illustrative opening 50%, illustrative airflow 50index. Standalone illustrative gallery preview; not a running model.</desc><style>:is(.twin-root.is-paused,.twin-document-hidden,html.motion-paused) .twin-equipment-art *,
+:is(.twin-root.is-paused,.twin-document-hidden,html.motion-paused) .twin-equipment-art *::before,
+:is(.twin-root.is-paused,.twin-document-hidden,html.motion-paused) .twin-equipment-art *::after{animation-play-state:paused!important;transition:none!important}
+@media (prefers-reduced-motion:reduce){.twin-equipment-art *,.twin-equipment-art *::before,.twin-equipment-art *::after{animation:none!important;transition:none!important}}
+.scada-component .scada-agri-flow{animation:scada-agri-flow var(--agri-duration,2s) linear infinite}
+.scada-component .scada-agri-vent-air{opacity:var(--agri-vent-air,0)}
+@keyframes scada-agri-flow{to{stroke-dashoffset:-22}}
+@media (prefers-reduced-motion:reduce){.scada-component .scada-agri-art *{animation:none!important;transition:none!important}}
+.scada-component{display:inline-flex;position:relative;align-items:center;justify-content:center;width:210px;height:160px;max-width:100%;vertical-align:middle;isolation:isolate;color:#c4ebf1;--scada-accent:#62ffbc;--scada-activity-duration:2.4s}
+.scada-component.scada-component-with-gauges{box-sizing:border-box;height:calc(136px + var(--scada-gauge-height,22px));padding-bottom:var(--scada-gauge-height,22px)}
+.scada-component&gt;.scada-component-svg{display:block;width:100%;height:100%;overflow:visible;pointer-events:none}
+.scada-component[data-scada-host-state=false][data-running=false] *,.scada-component[data-scada-host-state=false][data-running=false] *::before,.scada-component[data-scada-host-state=false][data-running=false] *::after{animation-play-state:paused!important;transition:none!important}
+html.motion-paused .scada-component *,html.motion-paused .scada-component *::before,html.motion-paused .scada-component *::after{animation-play-state:paused!important;transition:none!important}
+@media (prefers-reduced-motion:reduce){.scada-component *,.scada-component *::before,.scada-component *::after{animation:none!important;transition:none!important}}
+
+.gallery-label{font-family:Arial,sans-serif;fill:#dcecf1}
+.gallery-code{font-family:monospace;fill:#8fbac9}
+.gallery-symbol.scada-component{display:block;width:auto;height:auto;padding:0;max-width:none;overflow:visible}
+.gallery-symbol&gt;.twin-equipment-art{display:block;width:auto;height:auto;max-width:none}
+.gallery-symbol&gt;svg,.gallery-symbol&gt;.twin-equipment-art&gt;svg{display:block;width:280px!important;height:194px!important;max-width:none!important;max-height:none!important;overflow:visible}
+.gallery-condition svg{width:24px;height:24px}
+</style><defs><linearGradient id="gallery-greenhouse-vent-base-active-card" x2="1" y2="1"><stop offset="0" stop-color="#102635"/><stop offset="1" stop-color="#0b1724"/></linearGradient></defs><rect x="0.5" y="0.5" width="479" height="359" rx="14" fill="url(#gallery-greenhouse-vent-base-active-card)" stroke="#355665"/><text class="gallery-label" x="20" y="28" font-size="11" letter-spacing="1" style="fill:#7acfc9">CLIMATE CONTROL</text><text class="gallery-label" x="20" y="55" font-size="21" font-weight="600">Greenhouse vent</text><g transform="translate(100 79)"><g class="scada-component scada-component-with-gauges gallery-symbol" data-scada-type="greenhouse-vent" data-scada-instance="scada-gallery-greenhouse-vent-base-active" data-scada-host-state="false" data-active="true" data-failed="false" data-running="true" data-status="normal" data-flow="true" data-damage="none" data-speed-zero="false" data-opening="50" style="--scada-level:55;--scada-load:60;--scada-flow-opacity:0.475;--scada-gauge-height:30px;--scada-activity-duration:2.2s;--activity-speed:2.2s;--buffer-fraction:0.55;--scada-level-offset:0px;--flame-scale:0.9750000000000001" aria-hidden="true"><svg class="scada-component-svg" viewBox="0 0 180 136" aria-hidden="true" focusable="false" x="0" y="0" width="280" height="194" preserveAspectRatio="xMidYMid meet"><defs>
+ <linearGradient id="scada-gallery-greenhouse-vent-base-active-steel"><stop stop-color="#16374a"/><stop offset=".3" stop-color="#659bae"/><stop offset=".5" stop-color="#acd5de"/><stop offset=".72" stop-color="#396a81"/><stop offset="1" stop-color="#122e42"/></linearGradient>
+ <linearGradient id="scada-gallery-greenhouse-vent-base-active-glass" x2=".8" y2="1"><stop stop-color="#69eff1" stop-opacity=".18"/><stop offset="1" stop-color="#081827" stop-opacity=".65"/></linearGradient>
+ <linearGradient id="scada-gallery-greenhouse-vent-base-active-liquid" x2="0" y2="1"><stop stop-color="#57ffd0" stop-opacity=".85"/><stop offset="1" stop-color="#087a92" stop-opacity=".55"/></linearGradient>
+ <radialGradient id="scada-gallery-greenhouse-vent-base-active-glow"><stop stop-color="#00e5e9" stop-opacity=".18"/><stop offset="1" stop-color="#00e5e9" stop-opacity="0"/></radialGradient>
+ </defs><ellipse cx="90" cy="75" rx="83" ry="59" fill="url(#scada-gallery-greenhouse-vent-base-active-glow)"/><ellipse cx="90" cy="128" rx="67" ry="5" fill="#030d19" opacity=".65"/><g class="scada-drawing"><g class="scada-agri-art" data-agri-type="greenhouse-vent" data-agri-active="true" data-agri-running="true" data-agri-phase="continuous" style="--agri-duration:2.40s;--agri-air-opacity:0.50"><ellipse cx="90" cy="127" rx="68" ry="4" fill="#020c16" opacity=".65"/>
+ <path d="M26 94L86 45 143 94V123H26Z" fill="#205064" fill-opacity=".17" stroke="#638c9e" stroke-width="1.5"/>
+ <path class="scada-agri-vent-aperture" d="M86 45L96 29 153 78 143 94Z" fill="#102e3e" stroke="#476f85"/>
+ <path d="M26 94L86 45M26 94h117M26 94v29h117V94M153 78v29l-10 16" fill="none" stroke="#82b0bd" stroke-width="3"/>
+ <path d="M33 93L82 53V93Z" fill="#2b6674" fill-opacity=".22" stroke="#457b8e"/>
+ <g class="scada-agri-vent-air" style="--agri-vent-air:0.250">
+  <path d="M91 113Q91 92 118 86T173 68.75227648564582" fill="none" stroke="#a7e6f0" stroke-width="2" class="scada-agri-motion scada-agri-flow" stroke-dasharray="5 7"/>
+  <path d="M169 62.75227648564582l5 6-8 2" fill="none" stroke="#a7e6f0" stroke-width="2"/>
+ </g>
+ <g class="scada-agri-vent-panel" data-vent-opening="50">
+  <path d="M86 45L159.33 61.5 169.33 45.5 96 29Z" fill="url(#scada-gallery-greenhouse-vent-base-active-steel)" stroke="#c5e5e8" stroke-width="2" stroke-linejoin="round"/>
+  <path d="M92.73 43.6L155.8 57.79 162.6 46.91 99.53 32.72Z" fill="#236272" stroke="#9bd8da" stroke-width="1"/>
+  <path d="M123.87 51.33L131.47 39.17" fill="none" stroke="#b3dce0" stroke-width="1.5"/>
+  <path d="M94.37 42.32L150.83 55.03" fill="none" stroke="#d7f5e7" stroke-width="0.8" opacity=".55"/>
+ </g>
+ <g class="scada-agri-vent-actuator">
+  <path d="M111 111L140.73 55.13" fill="none" stroke="#c7e4e4" stroke-width="3.3" stroke-linecap="round"/>
+  <path d="M111 111L127.35 80.27" fill="none" stroke="#103143" stroke-width="8" stroke-linecap="round"/>
+  <path d="M111 111L127.35 80.27" fill="none" stroke="#73a1b2" stroke-width="5" stroke-linecap="round"/>
+  <path d="M111 111v11" fill="none" stroke="#b6d4d9" stroke-width="3"/>
+  <circle cx="140.73244713971124" cy="55.1283236690429" r="2.7" fill="#163c4b" stroke="#d4eae3"/>
+  <circle cx="111" cy="111" r="3.2" fill="#163c4b" stroke="#d4eae3"/>
+ </g>
+ <path d="M84 47L98 27" fill="none" stroke="#c9e3dd" stroke-width="4" stroke-linecap="round"/><circle cx="86" cy="45" r="3" fill="#214759" stroke="#d2e7df"/>
+ </g></g></svg></g></g><g data-scada-gauge="opening"><text class="gallery-code" x="90" y="288" font-size="10">OPEN</text><rect x="155" y="282" width="145" height="5" rx="2.5" fill="#153c50" stroke="#537d90" stroke-width="0.6"/><rect x="155" y="282" width="72.5" height="5" rx="2.5" fill="#63e6d9"/><text class="gallery-code" x="385" y="288" font-size="10" text-anchor="end">50%</text></g><g data-scada-gauge="airflow"><text class="gallery-code" x="90" y="300" font-size="10">AIR</text><rect x="155" y="294" width="145" height="5" rx="2.5" fill="#153c50" stroke="#537d90" stroke-width="0.6"/><rect x="155" y="294" width="72.5" height="5" rx="2.5" fill="#63e6d9"/><text class="gallery-code" x="385" y="300" font-size="10" text-anchor="end">50 idx</text></g><text class="gallery-label" x="20" y="328" font-size="12" style="fill:#bdeee6">Active illustrative preview</text><text class="gallery-code" x="20" y="346" font-size="10">greenhouse-vent</text></svg>

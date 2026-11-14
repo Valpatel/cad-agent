@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="480" height="360" viewBox="0 0 480 360" role="img" aria-labelledby="gallery-current-transformer-base-active-title gallery-current-transformer-base-active-desc"><title id="gallery-current-transformer-base-active-title">Current transformer</title><desc id="gallery-current-transformer-base-active-desc">Current transformer. Active, illustrative value 42index. Standalone illustrative gallery preview; not a running model.</desc><style>:is(.twin-root.is-paused,.twin-document-hidden,html.motion-paused) .twin-equipment-art *,
+:is(.twin-root.is-paused,.twin-document-hidden,html.motion-paused) .twin-equipment-art *::before,
+:is(.twin-root.is-paused,.twin-document-hidden,html.motion-paused) .twin-equipment-art *::after{animation-play-state:paused!important;transition:none!important}
+@media (prefers-reduced-motion:reduce){.twin-equipment-art *,.twin-equipment-art *::before,.twin-equipment-art *::after{animation:none!important;transition:none!important}}
+.scada-component .scada-power-art{--scada-power-cycle:2.4s}
+.scada-component .scada-power-motion{animation-play-state:paused;transform-box:view-box}
+.scada-component .scada-electrical-flow{animation:scada-power-electrons var(--scada-power-cycle) linear infinite paused;opacity:var(--scada-power-current-opacity,1)}
+.scada-component :is(.scada-power-monitor,.scada-power-charge,.scada-power-convert-pulse,.scada-power-field-pulse,.scada-power-protection-pulse,.scada-power-signal){animation:scada-power-pulse var(--scada-power-cycle) ease-in-out infinite paused}
+.scada-component[data-scada-host-state=false][data-active=true][data-running=true]:not([data-failed=true]):not([data-status=offline]) .scada-power-art :is(.scada-power-motion,.scada-power-monitor){animation-play-state:running}
+@keyframes scada-power-electrons{to{stroke-dashoffset:-20}}
+@keyframes scada-power-pulse{0%,100%{opacity:.55}50%{opacity:1}}
+@media (prefers-reduced-motion:reduce){.scada-component .scada-power-art :is(.scada-power-motion,.scada-power-monitor,.scada-power-arc){animation:none!important;transform:none!important}}
+.scada-component .scada-power-detail-label{fill:#b7cfda;font:600 7px ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.2px}
+.scada-component{display:inline-flex;position:relative;align-items:center;justify-content:center;width:210px;height:160px;max-width:100%;vertical-align:middle;isolation:isolate;color:#c4ebf1;--scada-accent:#62ffbc;--scada-activity-duration:2.4s}
+.scada-component.scada-component-with-gauges{box-sizing:border-box;height:calc(136px + var(--scada-gauge-height,22px));padding-bottom:var(--scada-gauge-height,22px)}
+.scada-component&gt;.scada-component-svg{display:block;width:100%;height:100%;overflow:visible;pointer-events:none}
+.scada-component[data-scada-host-state=false][data-running=false] *,.scada-component[data-scada-host-state=false][data-running=false] *::before,.scada-component[data-scada-host-state=false][data-running=false] *::after{animation-play-state:paused!important;transition:none!important}
+html.motion-paused .scada-component *,html.motion-paused .scada-component *::before,html.motion-paused .scada-component *::after{animation-play-state:paused!important;transition:none!important}
+@media (prefers-reduced-motion:reduce){.scada-component *,.scada-component *::before,.scada-component *::after{animation:none!important;transition:none!important}}
+
+.gallery-label{font-family:Arial,sans-serif;fill:#dcecf1}
+.gallery-code{font-family:monospace;fill:#8fbac9}
+.gallery-symbol.scada-component{display:block;width:auto;height:auto;padding:0;max-width:none;overflow:visible}
+.gallery-symbol&gt;.twin-equipment-art{display:block;width:auto;height:auto;max-width:none}
+.gallery-symbol&gt;svg,.gallery-symbol&gt;.twin-equipment-art&gt;svg{display:block;width:280px!important;height:194px!important;max-width:none!important;max-height:none!important;overflow:visible}
+.gallery-condition svg{width:24px;height:24px}
+</style><defs><linearGradient id="gallery-current-transformer-base-active-card" x2="1" y2="1"><stop offset="0" stop-color="#102635"/><stop offset="1" stop-color="#0b1724"/></linearGradient></defs><rect x="0.5" y="0.5" width="479" height="359" rx="14" fill="url(#gallery-current-transformer-base-active-card)" stroke="#355665"/><text class="gallery-label" x="20" y="28" font-size="11" letter-spacing="1" style="fill:#7acfc9">POWER &amp; ENERGY</text><text class="gallery-label" x="20" y="55" font-size="21" font-weight="600">Current transformer</text><g transform="translate(100 79)"><g class="scada-component scada-component-with-gauges gallery-symbol" data-scada-type="current-transformer" data-scada-instance="scada-gallery-current-transformer-base-active" data-scada-host-state="false" data-active="true" data-failed="false" data-running="true" data-status="normal" data-flow="true" data-damage="none" data-speed-zero="false" data-reading-valid="true" data-connected="true" style="--scada-level:55;--scada-load:60;--scada-flow-opacity:0.95;--scada-gauge-height:17px;--scada-activity-duration:2.2s;--activity-speed:2.2s;--buffer-fraction:0.55;--scada-level-offset:0px;--flame-scale:0.9750000000000001" aria-hidden="true"><svg class="scada-component-svg" viewBox="0 0 180 136" aria-hidden="true" focusable="false" x="0" y="0" width="280" height="194" preserveAspectRatio="xMidYMid meet"><defs>
+ <linearGradient id="scada-gallery-current-transformer-base-active-steel"><stop stop-color="#16374a"/><stop offset=".3" stop-color="#659bae"/><stop offset=".5" stop-color="#acd5de"/><stop offset=".72" stop-color="#396a81"/><stop offset="1" stop-color="#122e42"/></linearGradient>
+ <linearGradient id="scada-gallery-current-transformer-base-active-glass" x2=".8" y2="1"><stop stop-color="#69eff1" stop-opacity=".18"/><stop offset="1" stop-color="#081827" stop-opacity=".65"/></linearGradient>
+ <linearGradient id="scada-gallery-current-transformer-base-active-liquid" x2="0" y2="1"><stop stop-color="#57ffd0" stop-opacity=".85"/><stop offset="1" stop-color="#087a92" stop-opacity=".55"/></linearGradient>
+ <radialGradient id="scada-gallery-current-transformer-base-active-glow"><stop stop-color="#00e5e9" stop-opacity=".18"/><stop offset="1" stop-color="#00e5e9" stop-opacity="0"/></radialGradient>
+ </defs><ellipse cx="90" cy="75" rx="83" ry="59" fill="url(#scada-gallery-current-transformer-base-active-glow)"/><ellipse cx="90" cy="128" rx="67" ry="5" fill="#030d19" opacity=".65"/><g class="scada-drawing"><g class="scada-power-art scada-electrical-art" data-power-type="current-transformer" style="--scada-power-cycle:2.30s;--scada-power-current-opacity:0.6799999999999999">
+    <ellipse cx="90" cy="126" rx="65" ry="4.5" fill="#020d18" opacity=".72"/>
+    <path d="M56 111H123V120H56Z" fill="url(#scada-gallery-current-transformer-base-active-steel)" stroke="#9dbfca" stroke-width="1.4"/>
+    <path d="M66 104v10m46-10v10" stroke="#83aabb" stroke-width="6"/>
+    <g class="scada-ct-primary scada-ct-primary-rear"><path d="M90 59L167 26" fill="none" stroke="#49372b" stroke-width="12" stroke-linecap="square"/><path d="M90 59L167 26" fill="none" stroke="#cda16c" stroke-width="9" stroke-linecap="square"/><path d="M90 59L167 26" fill="none" stroke="#f1d6a6" stroke-width="1.4"/><g class="scada-power-circuit " data-conducting="true"><path d="M90 59L167 26" fill="none" stroke="#8d9eaa" stroke-width="0" stroke-linejoin="round"/>
+    <path class="scada-electrical-flow scada-power-motion" d="M90 59L167 26" fill="none" stroke="#ffd38a" stroke-width="1.6" stroke-dasharray="3 7"/></g></g>
+    <path class="scada-ct-core" d="M90 19a36 40 0 1 1 0 80a36 40 0 1 1 0-80Zm0 17a19 23 0 1 0 0 46a19 23 0 1 0 0-46Z" fill="url(#scada-gallery-current-transformer-base-active-steel)" fill-rule="evenodd" stroke="#a9d1dc" stroke-width="1.6"/>
+    <path d="M90 25a30 34 0 1 1 0 68a30 34 0 1 1 0-68" fill="none" stroke="#284f65" stroke-width="7"/>
+    <path d="M90 34a21 25 0 1 1 0 50a21 25 0 1 1 0-50" fill="none" stroke="#0d2b3d" stroke-width="2.4"/>
+    <g class="scada-ct-secondary-winding" fill="none" stroke="#deb77f" stroke-width="2.5" stroke-linecap="round">
+      <path d="M84 22q6-4 12 0v14q-6 4-12 0Z" transform="rotate(28 90 59)"/><path d="M84 22q6-4 12 0v14q-6 4-12 0Z" transform="rotate(42 90 59)"/><path d="M84 22q6-4 12 0v14q-6 4-12 0Z" transform="rotate(56 90 59)"/><path d="M84 22q6-4 12 0v14q-6 4-12 0Z" transform="rotate(70 90 59)"/><path d="M84 22q6-4 12 0v14q-6 4-12 0Z" transform="rotate(84 90 59)"/>
+    </g>
+    <g class="scada-power-magnetic" data-conducting="true" style="opacity:0.432"><path class="scada-power-motion scada-power-field-pulse scada-ct-flux" d="M64 40a29 33 0 0 0 16 50" fill="none" stroke="#77e9dd" stroke-width="1.4" stroke-dasharray="3 5"/></g>
+    <g class="scada-ct-primary scada-ct-primary-front"><path d="M13 92L90 59" fill="none" stroke="#49372b" stroke-width="12" stroke-linecap="square"/><path d="M13 92L90 59" fill="none" stroke="#cda16c" stroke-width="9" stroke-linecap="square"/><path d="M13 92L90 59" fill="none" stroke="#f1d6a6" stroke-width="1.4"/><g class="scada-power-circuit " data-conducting="true"><path d="M13 92L90 59" fill="none" stroke="#8d9eaa" stroke-width="0" stroke-linejoin="round"/>
+    <path class="scada-electrical-flow scada-power-motion" d="M13 92L90 59" fill="none" stroke="#ffd38a" stroke-width="1.6" stroke-dasharray="3 7"/></g></g>
+    <g class="scada-ct-secondary" fill="none" stroke="#83b9cb" stroke-width="2"><path d="M117 76H145V103H167M114 83H137V113H167"/></g>
+    <g class="scada-power-sensing" data-connected="true"><path class="scada-power-motion scada-power-signal" d="M117 76H145V103H167M114 83H137V113H167" fill="none" stroke="#77ead8" stroke-width="1.2" stroke-dasharray="3 5"/></g>
+    <circle cx="167" cy="103" r="4" fill="#143348" stroke="#c9d9df" stroke-width="1.8"/><circle cx="167" cy="113" r="4" fill="#143348" stroke="#c9d9df" stroke-width="1.8"/>
+    <text class="scada-power-detail-label" x="19" y="110">P1</text><text class="scada-power-detail-label" x="147" y="17">P2</text>
+    <text class="scada-power-detail-label" x="144" y="126">S1 · S2</text>
+    
+  </g></g></svg></g></g><g data-scada-gauge="value"><text class="gallery-code" x="90" y="288" font-size="10">VALUE</text><rect x="155" y="282" width="145" height="5" rx="2.5" fill="#153c50" stroke="#537d90" stroke-width="0.6"/><rect x="155" y="282" width="60.9" height="5" rx="2.5" fill="#63e6d9"/><text class="gallery-code" x="385" y="288" font-size="10" text-anchor="end">42 idx</text></g><text class="gallery-label" x="20" y="328" font-size="12" style="fill:#bdeee6">Active illustrative preview</text><text class="gallery-code" x="20" y="346" font-size="10">current-transformer</text></svg>

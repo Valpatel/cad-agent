@@ -42,6 +42,7 @@ flowchart TD
 | File | What it tests |
 |---|---|
 | `__init__.py` | Empty: makes the folder a package, so a test here may share a file name with one in another folder |
+| [toolkit/](toolkit/README.md) | Catalogue/discovery contracts, SCADA Toolkit inventory and real browser flows |
 | `built-site.mjs` | Helper: the built site the `website-*` tests read, from `CAD_AGENT_SITE` or a fresh build of HEAD |
 | `site-diagrams-browser.mjs` | The Python site consumer of the diagram renderer, in a real browser |
 | `npm-context.mjs` | Test-only dependency resolution anchored at tools/site/package.json, without a root manifest or node_modules link |
@@ -52,17 +53,15 @@ flowchart TD
 | `test_research_figures.py` | The research charts are drawn from the tables on their pages |
 | `website-browser.mjs` | The site's pages in a real browser, served as Cloudflare Pages serves them (a reference area page's filters included) |
 | `website-build.test.mjs` | `tools/site/build-site.mjs`: what the build makes, links, redirects and headers |
-| `website-catalog-browser.mjs` | The catalogue page in a real browser |
-| `website-discovery.test.mjs` | Derived discovery identities, useful section links, shared reader/time/detail contracts and payload budget |
-| `website-catalog.test.mjs` | The catalogue and its JSON files, built from HEAD |
 | `website-diagrams.test.mjs` | `tools/site/compiler/site-diagrams.mjs`: Mermaid blocks drawn at build time |
 | `website-html.test.mjs` | `tools/site/compiler/site-html.mjs`: the sanitizer keeps our markup and drops unsafe HTML |
+| `website-preview.test.mjs` | Directory application routes preserve slash-relative modules and scenario queries under Pages-style hosting. |
 | `website-references.test.mjs` | `tools/site/compiler/site-references.mjs`: the reference pages, their JSON and llms.txt lines against the committed records, `[ref:]` links, no record in the catalogue or llms-full.txt, `docs/practice/experts.md` current |
 | `website-pages.test.mjs` | `tools/site/compiler/site-pages.mjs`: outputs placed on pages, section cards, folded reference; inert reader failure-receipt/bounds controls |
 | `website-snap-demo.test.mjs` | The landing page's snap-fit animation shows a real engagement |
 | `website-theme.test.mjs` | The light and dark colour tokens: the same tokens in both, contrast in both, no stray light-only colour, and the theme script and button on every page |
 
-Run: `node --test tests/site/website-*.test.mjs`, then `npm --prefix tools/site run test:site`; `pytest tests/site` for the Python files.
+Run: `node --test tests/site/website-*.test.mjs tests/site/toolkit/website-*.test.mjs`, then `npm --prefix tools/site run test:site`; `pytest tests/site` for the Python files.
 
 The files that read the whole site (`website-build`, `website-catalog` and the two `-browser` scripts) each build it
 from HEAD into a temporary folder, unless `CAD_AGENT_SITE` names a folder already built from HEAD

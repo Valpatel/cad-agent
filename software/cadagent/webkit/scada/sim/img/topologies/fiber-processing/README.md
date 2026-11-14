@@ -1,0 +1,16 @@
+# Fiber processing — compact topology diagrams
+
+Static SVG schematics of the first declared view. Symbols identify equipment; arrows show declared connections, not instantaneous flow or measured facility performance.
+
+[All sectors](../README.md) · [Scenario library](../../../scenarios/README.md)
+
+```mermaid
+flowchart LR
+  Sector[Sector] --> Scenario[Scenario folders]
+  Scenario --> Model[System and model]
+  Scenario --> View[Preview]
+```
+
+| Scenario | Preview |
+| --- | --- |
+| [Pulp &amp; paper](pulp-paper/README.md)<br>`pulp-paper` | <a href="pulp-paper/topology.svg"><img src="pulp-paper/topology.svg" width="360" alt="Pulp &amp; paper declared topology"></a> |

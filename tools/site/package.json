@@ -6,6 +6,7 @@
     "test:webkit-unit": "node --test ../../tests/webkit/webkit-*.test.mjs ../../tests/webkit/assembly/*.test.mjs",
     "test:assembly-guide": "node ../../tests/webkit/assembly/browser.mjs",
     "test:assembly-release": "node ../../tests/webkit/assembly/release-browser.mjs",
+    "test:stage": "node ../../tests/webkit/webkit-stage-browser.mjs",
     "test:part-table": "node ../../tests/webkit/webkit-part-table-browser.mjs",
     "test:file-viewer": "node ../../tests/webkit/webkit-file-viewer-browser.mjs && npm run test:viewer-host",
     "test:diagrams": "node ../../tests/webkit/webkit-diagrams-browser.mjs && node ../../tests/site/site-diagrams-browser.mjs",

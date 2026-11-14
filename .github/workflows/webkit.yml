@@ -93,6 +93,12 @@ jobs:
         env:
           PLAYWRIGHT_CHANNEL: chromium
           PLAYWRIGHT_BROWSER: ${{ matrix.engine }}
+      - run: npm run test:stage
+        working-directory: tools/site
+        env:
+          PLAYWRIGHT_CHANNEL: chromium
+          PLAYWRIGHT_BROWSER: ${{ matrix.engine }}
+          TEST_SOURCE_REVISION: ${{ github.sha }}
       - run: npm run test:part-table
         working-directory: tools/site
         env:

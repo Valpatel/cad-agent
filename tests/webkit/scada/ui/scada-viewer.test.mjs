@@ -13,6 +13,20 @@ const click = (window, selector, root = window.document) => {
   element.dispatchEvent(new window.MouseEvent('click', {bubbles:true})); return element;
 };
 
+test('equipment identity is explicit without a persistent pressed selection fill', () => {
+  const dom=setup(), model=new UtilityModel();
+  const viewer=new ScadaViewer({definition,adapter:createUtilityAdapter(model)}).mount(dom.window.document.querySelector('#editable'));
+  try {
+    viewer.select('pump');
+    const equipment=viewer.root.querySelector('[data-scada-equipment="pump"]');
+    assert.equal(equipment.hasAttribute('aria-pressed'),false);
+    assert.equal(equipment.querySelector('.scada-viewer-equipment-id').textContent,'pump');
+    assert.match(viewer.root.querySelector('[data-scada-picker] option[value="pump"]').textContent,/^pump · /);
+    click(dom.window,'[data-scada-diagram-control="pumpSwitch"]',viewer.root);
+    assert.equal(equipment.hasAttribute('aria-pressed'),false);
+  } finally {viewer.destroy();dom.window.close();}
+});
+
 test('diagram actions dispatch the declared asset without opening a dialog and preserve focused DOM', () => {
   const dom=setup(),{window}=dom,model=new UtilityModel();
   const viewer=new ScadaViewer({definition,adapter:createUtilityAdapter(model),selected:'tank'}).mount(window.document.querySelector('#editable'));

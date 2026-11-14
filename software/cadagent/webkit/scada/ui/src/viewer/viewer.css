@@ -42,3 +42,6 @@ html.motion-paused .scada-diagram-flow{animation-play-state:paused!important}
 /* Electrical wiring stays visually distinct from the heavier process pipework. */
 .scada-diagram-connection:is([data-medium=electrical],[data-medium=electricity]) .scada-diagram-pipe{stroke-width:4;stroke:#8a7959}
 .scada-diagram-connection:is([data-medium=electrical],[data-medium=electricity]) .scada-diagram-flow{stroke-width:2}
+
+/* Canonical equipment IDs remain visible independently of human labels. */
+.scada-viewer-equipment-id{font:600 12px/1.2 var(--mono,ui-monospace,monospace);color:#a7d8ec;max-width:100%;overflow-wrap:anywhere}

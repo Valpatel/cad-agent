@@ -6,6 +6,7 @@
 | --- | --- |
 | [components.mjs](./components.mjs) | Normalize supplied visual state, choose artwork and compose escaped accessible markup, gauges and condition cues. |
 | [components.css](./components.css) | Standalone skin, shared state gates and imports of family animation styles. |
+| [valve-position.mjs](./valve-position.mjs) | Internal supplied-position labels and palette shared by valve artwork and diagram cards. |
 | [art/](./art/README.md) | Process, manufacturing, controls, agriculture and legacy twin geometry. |
 | [power/](./power/README.md) | Energy, electrical, generator and conceptual nuclear geometry. |
 

@@ -1,6 +1,7 @@
 /** Original generation, heat-transfer and renewable-energy illustrations.
  * Every quantity is supplied visual state. No engineering model lives here. */
 import {clamp, prefix, steel, liquid, shadow, feet, pipe, wire, fan, indicator, damageArt} from './primitives.mjs';
+import {getValvePosition} from '../valve-position.mjs';
 
 const flowLane = (value, markup, extra = '') => `<g class="scada-power-flow-lane ${extra}" data-flowing="${clamp(value) > 0}" style="--scada-power-flow-opacity:${(.12 + clamp(value) * .0088).toFixed(3)}">${markup}</g>`;
 const heatGlow = (x, y, rx, ry, heat) => `<ellipse cx="${x}" cy="${y}" rx="${rx}" ry="${ry}" fill="#ffae70" opacity="${(clamp(heat) * .0025).toFixed(3)}"/>`;
@@ -85,10 +86,12 @@ function radiator(id, state) {
 
 function regulator(id, state) {
   const opening = state.open === false ? 0 : clamp(state.opening,100), needle = -60+clamp(state.pressure,45)*1.2;
+  const position = getValvePosition('fuel-pressure-regulator',state);
   return `${shadow()}${feet([54,128],101,22)}
     ${flowLane(opening > 0 ? state.flow : 0, pipe('M8 85H171', {width:13}))}
-    <path d="M59 68H118V102H59Z" fill="${steel(id)}" stroke="#a9d0da" stroke-width="1.6"/>
-    <path d="M64 73l25 12 24-12v23L89 85 64 96Z" fill="#163b4f" stroke="#7fc7cc"/>
+    <path class="scada-valve-body" d="M59 68H118V102H59Z" fill="${position.fill}" stroke="${position.color}" stroke-width="3"/>
+    <path d="M64 73l25 12 24-12v23L89 85 64 96Z" fill="#163b4f" stroke="#c1e3e4"/>
+    <path class="scada-valve-disc" d="M85 76h9v21h-9Z" fill="${position.color}" style="transform:translateY(${-opening*.23}px)"/>
     <path d="M90 75V43" stroke="#a5cbd5" stroke-width="5"/>
     <g transform="translate(0 ${-opening*.065})"><path d="M62 44a28 18 0 0 1 56 0Z" fill="#315f77" stroke="#a9cfd8" stroke-width="1.5"/><path d="M69 47h42" stroke="#96cbd8" stroke-width="3"/></g>
     <path d="M116 71h24V47" fill="none" stroke="#7db4c4" stroke-width="3"/>
@@ -130,15 +133,16 @@ function reservoir(id, state) {
 
 function intakeGate(id, state) {
   const opening = state.open === false ? 0 : clamp(state.opening,100);
+  const position = getValvePosition('intake-gate',state);
   return `${shadow()}<path d="M29 121V28H145V121" fill="none" stroke="#6f97aa" stroke-width="9"/>
     <path d="M29 27H145" stroke="#b3cfd9" stroke-width="3"/>
-    <path d="M41 52H133V118H41Z" fill="#103344" stroke="#4d7e90"/>
+    <path class="scada-valve-body" d="M41 52H133V118H41Z" fill="${position.fill}" stroke="${position.color}" stroke-width="3"/>
     ${flowLane(opening, `<path class="scada-power-motion scada-energy-flow" d="M11 102H169m-158 10h158" fill="none" stroke="#58d7c6" stroke-width="3" stroke-dasharray="7 10"/>`)}
     <defs><clipPath id="${id}-gate-clip"><path d="M35 28H139V119H35Z"/></clipPath></defs>
-    <g clip-path="url(#${id}-gate-clip)"><g transform="translate(0 ${-opening*.68})"><path d="M39 47H135V119H39Z" fill="${steel(id)}" stroke="#b1d2db" stroke-width="1.6"/><path d="M43 57h88m-88 16h88m-88 16h88m-88 16h88" stroke="#3b657d" stroke-width="4"/></g></g>
+    <g clip-path="url(#${id}-gate-clip)"><g class="scada-valve-disc" style="transform:translateY(${-opening*.68}px)"><path d="M39 47H135V119H39Z" fill="${steel(id)}" stroke="${position.color}" stroke-width="3"/><path d="M43 57h88m-88 16h88m-88 16h88m-88 16h88" stroke="${position.color}" stroke-width="4"/></g></g>
     <path d="M87 13V${50-opening*.23}" stroke="#b5d4da" stroke-width="5"/>
     <ellipse cx="87" cy="14" rx="24" ry="5" fill="#1c4255" stroke="#9ccbd4" stroke-width="2"/>
-    <path d="M65 14h44M87 8v12" stroke="#a3d2d8" stroke-width="1.5"/>${indicator(117,8,28)}`;
+    <path d="M65 14h44M87 8v12" stroke="#a3d2d8" stroke-width="1.5"/>`;
 }
 
 function hydroTurbine(id, state, reversible = false) {
@@ -280,8 +284,7 @@ export function renderEnergyArt(type, {id = 'scada-energy', state = {}} = {}) {
   if(type==='fuel-pressure-regulator'&&damage==='leaking')anchor={x:110,y:79,medium:'gas'};
   if(type==='intake-gate')anchor=damage==='obstructed'?{x:87,y:108}:damage==='stuck'?{x:87,y:23}:{x:87,y:Math.max(40,83-(state.open===false?0:clamp(state.opening,100))*.5)};
   return `<g class="scada-power-art scada-energy-art" data-power-type="${type}" data-power-speed-zero="${speed===0}" data-power-drive-blocked="${driveBlocked}" style="--scada-power-cycle:${(4.6-speed*.036).toFixed(2)}s;--scada-power-load:${clamp(state.load,60)/100}">
-    ${DRAWINGS[type](instance,state)}
-    ${damageArt(damage,anchor)}
+    ${DRAWINGS[type](instance,state)}${damageArt(damage,anchor)}
   </g>`;
 }
 

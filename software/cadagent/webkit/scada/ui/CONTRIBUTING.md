@@ -1,6 +1,6 @@
 # Contributing to SCADA UI
 
-Read [README.md](README.md), [STYLE_GUIDE.md](STYLE_GUIDE.md) and the relevant [API](docs/API.md) / [system contract](docs/SYSTEM_FORMAT.md). The [component skill](https://github.com/Valpatel/cad-agent/blob/dev/.agents/skills/scada-component-authoring/SKILL.md) and [agent prompts](AGENT_PROMPTS.md) give repeatable authoring tasks. This private package retains its existing terms; packaging does not grant a new license.
+Read [README.md](README.md), [STYLE_GUIDE.md](STYLE_GUIDE.md) and the relevant [API](docs/API.md) / [system contract](docs/SYSTEM_FORMAT.md). The [component skill](https://github.com/Valpatel/cad-agent/blob/dev/.agents/skills/scada-component-authoring/SKILL.md) and [agent prompts](AGENT_PROMPTS.md) give repeatable authoring tasks. This package is [MIT-licensed](LICENSE.txt); its private publication flag prevents accidental npm publication and does not change that license.
 
 ## Ownership
 

@@ -10,6 +10,7 @@ Generated previews from canonical equipment artwork and supplied illustrative st
 | --- | --- | --- |
 | [toolbar.jpg](toolbar.jpg) | <a href="toolbar.jpg"><img src="toolbar.jpg" width="240" alt="toolbar"></a> | toolbar<br>Fixed illustrative preview |
 | [dialog.jpg](dialog.jpg) | <a href="dialog.jpg"><img src="dialog.jpg" width="240" alt="dialog"></a> | dialog<br>Fixed illustrative preview |
+| [popover.jpg](popover.jpg) | <a href="popover.jpg"><img src="popover.jpg" width="240" alt="popover"></a> | popover<br>Fixed illustrative preview |
 | [statusbar.jpg](statusbar.jpg) | <a href="statusbar.jpg"><img src="statusbar.jpg" width="240" alt="statusbar"></a> | statusbar<br>Fixed illustrative preview |
 | [buttons.jpg](buttons.jpg) | <a href="buttons.jpg"><img src="buttons.jpg" width="240" alt="buttons"></a> | buttons<br>Fixed illustrative preview |
 | [panels.jpg](panels.jpg) | <a href="panels.jpg"><img src="panels.jpg" width="240" alt="panels"></a> | panels<br>Fixed illustrative preview |

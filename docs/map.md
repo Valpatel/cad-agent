@@ -412,7 +412,7 @@ Guides explain how to use the toolkit. Folder maps lead into its code, tests and
 </details>
 
 <details>
-<summary>docs — 53 folders</summary>
+<summary>docs — 54 folders</summary>
 
 <details>
 <summary><code>docs/README.md</code> — 1 folders</summary>
@@ -580,6 +580,19 @@ Guides explain how to use the toolkit. Folder maps lead into its code, tests and
 | Folder |
 |---|
 | `docs/img` |
+
+</details>
+
+<details>
+<summary><code>docs/img/architecture/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-docs/d-img/d-architecture/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/docs/img/architecture/README.md)
+
+- Each folder has its own human map; recorded data retains its producer-owned layout and historical contents.
+
+| Folder |
+|---|
+| `docs/img/architecture` |
 
 </details>
 
@@ -1106,7 +1119,7 @@ Guides explain how to use the toolkit. Folder maps lead into its code, tests and
 </details>
 
 <details>
-<summary>software — 1184 folders</summary>
+<summary>software — 1185 folders</summary>
 
 <details>
 <summary><code>software/README.md</code> — 1 folders</summary>
@@ -4576,6 +4589,19 @@ Guides explain how to use the toolkit. Folder maps lead into its code, tests and
 | Folder |
 |---|
 | `software/cadagent/webkit/scada/ui/img/states/operating` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/scada/ui/img/states/valve-position/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-ui/d-img/d-states/d-valve-position/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/states/valve-position/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/scada/ui/img/states/valve-position` |
 
 </details>
 

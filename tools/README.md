@@ -2,6 +2,11 @@
 
 Build the site, generate figures, maintain releases and audit the toolkit. Engineering code lives in [software/cadagent](../software/cadagent/README.md).
 
+<picture>
+  <source media="(prefers-reduced-motion: reduce)" srcset="../docs/img/architecture/site-publication-still.svg">
+  <img src="../docs/img/architecture/site-publication.svg" alt="Owned sources pass through the compiler to dist and publication." width="480">
+</picture>
+
 The arrows show the artifacts these tools produce and the checks that consume them.
 
 Reviewed browser runtime and site build

@@ -34,7 +34,6 @@
     <path d="M141 104H171" fill="none" stroke="#80adbd" stroke-width="10" stroke-linejoin="round" style="fill: none; stroke: rgb(128, 173, 189); stroke-width: 10px; stroke-linejoin: round;"/>
     <path d="M141 104H171" fill="none" stroke="#65f6d0" stroke-width="2" stroke-dasharray="4 8" style="fill: none; stroke: rgb(101, 246, 208); stroke-width: 2px; stroke-dasharray: 4px, 8px; opacity: 0.472;"/></g>
     <path d="M22 31q9-18 18 0m7 0q12-21 23 0" fill="#294b5d" stroke="#638794" stroke-width="1.4" style="fill: rgb(41, 75, 93); stroke: rgb(99, 135, 148); stroke-width: 1.4px;"/>
-
   </g></g></svg></svg></g>
 <text x="90" y="98" font-size="14" text-anchor="middle" font-weight="600" data-label="upper">Finite upper reservoir</text>
 </g>
@@ -67,7 +66,6 @@
     <path d="M43 115h20m-20 5h14" stroke="#75f2ce" stroke-width="1.5" style="stroke: rgb(117, 242, 206); stroke-width: 1.5px;"/>
     <circle cx="63" cy="121" r="1.5" fill="#8affd6" style="fill: rgb(138, 255, 214);"/>
   </g>
-
   </g></g></svg></svg></g>
 <text x="90" y="98" font-size="14" text-anchor="middle" font-weight="600" data-label="unit">Reversible</text>
 <text x="90" y="116" font-size="14" text-anchor="middle" font-weight="600" data-label="unit">pump-turbine</text>
@@ -93,7 +91,6 @@
     <path d="M141 104H171" fill="none" stroke="#80adbd" stroke-width="10" stroke-linejoin="round" style="fill: none; stroke: rgb(128, 173, 189); stroke-width: 10px; stroke-linejoin: round;"/>
     <path d="M141 104H171" fill="none" stroke="#65f6d0" stroke-width="2" stroke-dasharray="4 8" style="fill: none; stroke: rgb(101, 246, 208); stroke-width: 2px; stroke-dasharray: 4px, 8px; opacity: 0.472;"/></g>
     <path d="M22 31q9-18 18 0m7 0q12-21 23 0" fill="#294b5d" stroke="#638794" stroke-width="1.4" style="fill: rgb(41, 75, 93); stroke: rgb(99, 135, 148); stroke-width: 1.4px;"/>
-
   </g></g></svg></svg></g>
 <text x="90" y="98" font-size="14" text-anchor="middle" font-weight="600" data-label="lower">Finite lower reservoir</text>
 </g>

@@ -18,8 +18,8 @@ flowchart TD
 | [audio.test.mjs](audio.test.mjs) | One opt-in audio context, alarm acknowledgement, mute/pause/hidden behavior and disposal |
 | [search.test.mjs](search.test.mjs) | Search aliases, independent facets and component discovery |
 | [selection.test.mjs](selection.test.mjs) | Scenario/type/variant identity and explicit fallback |
-| [equipment-model.test.mjs](equipment-model.test.mjs) | Loaded equation implementations, provider identity, canonical equipment tags and current accepted configuration |
-| [inspection-browser.mjs](inspection-browser.mjs) | Real compact-popover gestures, canonical IDs, camera anchoring, draft isolation and exact-equipment equation details; called by the main browser harness |
+| [equipment-model.test.mjs](equipment-model.test.mjs) | Active equation source, provider identity, equipment tags and accepted configuration |
+| [inspection-browser.mjs](inspection-browser.mjs) | Equipment IDs, quick controls, camera anchors, drafts and detailed settings |
 | [wastewater.test.mjs](wastewater.test.mjs) | Connected pump/valve/generator faults, repair, readonly adapter, overload and deterministic snapshot replay |
 | [browser.mjs](browser.mjs) | Real controls, independent views, direct v2 read-only command capability, observer lifetime, sound, imports and contained viewport behavior |
 
@@ -46,6 +46,9 @@ selects the scratch screenshot/receipt directory (default
 and module serving, set `SCADA_BASE_URL` to its preview origin. The default
 serves the canonical toolkit files through the shared test-only HTTP server.
 
+<details>
+<summary>Browser evidence and interaction coverage</summary>
+
 The fault test downloads the actual browser session and rehydrates that export
 to check connected load power; it does not reach into a hidden page model.
 The direct v2 adapter case mounts a separate public model/viewer consumer in the
@@ -61,5 +64,7 @@ equations and current model configuration behind the Details & model action.
 
 The draft-isolation case mounts a separate consumer through the public model and
 viewer APIs; it does not expose the Explorer session through a test-only hook.
+
+</details>
 
 [SCADA tests](../README.md) · [Explorer source](../../../../software/cadagent/webkit/scada/explorer/README.md)

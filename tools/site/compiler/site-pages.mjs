@@ -55,7 +55,7 @@ export function fold(html, { rows = FOLD_ROWS, lines = FOLD_LINES } = {}) {
   // An authored disclosure already owns its title and visibility. Preserve it whole, including nested
   // disclosures, so opening an equipment or API reference exposes its table/code with one action.
   // Comments are opaque: markup examples inside them must not alter the disclosure nesting.
-  const tags = /<!--[\s\S]*?-->|<\/?details\b(?:[^>"']|"[^"]*"|'[^']*')*>/gi;
+  const tags = /<!--[\s\S]*?-->|<\/?details(?=[\s/>])(?:[^>"']|"[^"]*"|'[^']*')*>/gi;
   const chunks = [];
   let cursor = 0, depth = 0;
   for (const tag of html.matchAll(tags)) {

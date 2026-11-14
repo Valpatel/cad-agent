@@ -151,6 +151,8 @@ test('authored references open with one action and automatic folding is idempote
   const comment = '<!-- <details><summary>Example only</summary> -->';
   assert.equal(fold(comment + authored + table + code), comment + authored + fold(table) + fold(code),
     'comment markup does not hide the subsequent ordinary references from automatic folding');
+  assert.equal(fold('<details-card>' + table + '</details-card>'), '<details-card>' + fold(table) + '</details-card>',
+    'a similarly named custom element is not a native disclosure');
   const once = fold(table + code);
   assert.equal(fold(once), once, 'a second compiler pass must not introduce another click');
 });

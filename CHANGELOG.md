@@ -9,6 +9,11 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
 
 ## Unreleased
 
+## v0.44.1 (2026-11-14)
+
+**Changed**
+- Clarify toolkit, viewer and agent documentation journeys; replace stale feature-branch guidance with shipped source owners and explain current handoffs with reproducible animated SVGs and static alternatives. No runtime API changes.
+
 ## v0.44.0 (2026-11-14)
 
 **New**

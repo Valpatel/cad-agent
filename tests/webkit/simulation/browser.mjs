@@ -1,6 +1,7 @@
 /** Real recorded solver poses through the shared stage, controls and disposable host. */
 import assert from 'node:assert/strict';
-import {mkdir,writeFile} from 'node:fs/promises';
+import {mkdir,writeFile,readFile} from 'node:fs/promises';
+import {createHash} from 'node:crypto';
 import {chromium,webkit} from '../../site/npm-context.mjs';
 import {serveWebkit} from '../webkit-server.mjs';
 
@@ -10,6 +11,9 @@ const site=process.env.REPLAY_BASE_URL?null:await serveWebkit(new Map([['/favico
 const base=process.env.REPLAY_BASE_URL||site.url;
 const out=process.env.TEST_OUTPUT||'/tmp/cad-agent-robot-replay';await mkdir(out,{recursive:true});
 const errors=[],cases=[];
+const hash=bytes=>createHash('sha256').update(bytes).digest('hex');
+const runtimePaths=['simulation/replay.js','simulation/viewer.js','simulation/scene.js','simulation/page.js','simulation/viewer.html','simulation/viewer.css','simulation/examples/two-link-arm/recording.json','simulation/examples/two-link-arm/receipt.json','model/stage.js','host/viewer-host.js','host/viewer-host.css','host/stage-controls.js','ui/theme.js','ui/theme.css'];
+const provenance={harnessSha256:hash(await readFile(new URL(import.meta.url))),runtimeHashes:Object.fromEntries(await Promise.all(runtimePaths.map(async name=>[name,hash(await readFile(new URL('../../../software/cadagent/webkit/'+name,import.meta.url)))])))};
 try{
   for(const width of [390,1100,3440])for(const theme of ['light','dark']){
     const context=await browser.newContext({viewport:{width,height:width===3440?1440:900},colorScheme:theme,reducedMotion:'reduce'});
@@ -63,7 +67,21 @@ try{
     assert.equal(cleanup.disposed,true);assert.equal(cleanup.canvas,0);assert.equal(cleanup.sceneDetached,true);assert.ok(cleanup.meshes>0);assert.equal(cleanup.geometries,cleanup.meshes);assert.equal(cleanup.materials,cleanup.meshes);
     cases.push({width,theme,geom,pose:'all recorded world transforms match independent oracle',cleanup});await context.close();
   }
+  const context=await browser.newContext({viewport:{width:1100,height:900},reducedMotion:'reduce'}),page=await context.newPage();
+  page.on('pageerror',e=>errors.push(e.message));
+  await page.route('**/simulation/examples/two-link-arm/recording.json',route=>route.fulfill({status:200,contentType:'application/json',body:'{}'}));
+  await page.goto(base+'/kit/simulation/viewer.html');await page.waitForFunction(()=>document.body.dataset.ready==='error');
+  assert.match(await page.locator('.cad-viewer-message').innerText(),/SHA-256 mismatch/);assert.equal(await page.locator('#replay canvas').count(),0);
+  await page.unroute('**/simulation/examples/two-link-arm/recording.json');await page.getByRole('button',{name:'Retry viewer',exact:true}).click();
+  await page.waitForFunction(()=>document.body.dataset.ready==='1');assert.equal(await page.locator('#replay canvas').count(),1);
+  cases.push({name:'corrupt recording refuses to render; retry restores verified example'});
+  const aborted=await page.evaluate(async()=>{
+    const {createReplayViewer}=await import('./viewer.js'),container=document.createElement('div'),lifetime=new AbortController();document.body.append(container);
+    const viewer=createReplayViewer(container,{recordingUrl:new URL('./examples/two-link-arm/recording.json',location.href),signal:lifetime.signal});lifetime.abort();
+    const ready=await viewer.ready,count=container.childElementCount;viewer.dispose();container.remove();return{ready,count};
+  });
+  assert.deepEqual(aborted,{ready:false,count:0});cases.push({name:'aborted pending load leaves no host or canvas'});await context.close();
   assert.deepEqual(errors,[]);
-  await writeFile(`${out}/${engine.name()}.json`,JSON.stringify({engine:engine.name(),base,sourceRevision:process.env.TEST_SOURCE_REVISION||'unrecorded',cases,errors},null,2));
+  await writeFile(`${out}/${engine.name()}.json`,JSON.stringify({engine:engine.name(),base,sourceRevision:process.env.TEST_SOURCE_REVISION||'unrecorded',...provenance,cases,errors},null,2));
   console.log(`${engine.name()}: ${cases.length} recorded replay layout/theme/controls/pose/disposal cases passed`);
 }finally{await browser.close();await site?.close();}

@@ -28,6 +28,10 @@ def test_committed_recording_receipt_binds_every_source_and_artifact():
     assert len(recording["frames"]) == 501
     assert recording["frames"][0]["time_s"] == 0
     assert recording["frames"][-1]["time_s"] == 10
+    capture = json.loads((BUNDLE / "preview.json").read_bytes())
+    for path, expected in capture["sources"].items():
+        assert hashlib.sha256((ROOT / path).read_bytes()).hexdigest() == expected, path
+    assert hashlib.sha256((BUNDLE / capture["artifact"]["path"]).read_bytes()).hexdigest() == capture["artifact"]["sha256"]
 
 
 def test_actual_solver_recording_preserves_link_length_and_responds_to_mass(tmp_path):

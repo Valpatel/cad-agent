@@ -85,7 +85,7 @@ flowchart TD
   `tools/` script, the package whose output the script draws or checks (`tools/figures/motion_figures.py` → `mechanical/`),
   or `repo/` for the repo's own tooling and `site/` for the site build. A new folder is a new package or area: add it
   to `AREAS` in `repo/test_layout.py` and to this table, with its README and `__init__.py`.
-- **Paths:** a direct Python domain test such as `tests/geometry/test_export.py` is two folders below the repo root: `ROOT = Path(__file__).resolve().parents[2]`, and the
+- **Paths:** a direct Python domain test such as `tests/geometry/test_step_export.py` is two folders below the repo root: `ROOT = Path(__file__).resolve().parents[2]`, and the
   shared fixtures are `Path(__file__).resolve().parents[1] / "fixtures"`. In Node, `path.resolve(import.meta.dirname,
   '../..')` for a Node file at that depth. Nested owners must resolve from their actual depth.
 - **Helpers** shared within a folder live in it (`simulation/cfd_fixtures.py`); import them relatively

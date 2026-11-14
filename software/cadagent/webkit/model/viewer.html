@@ -33,7 +33,7 @@
     } catch { document.getElementById('back').removeAttribute('href'); }
   }
   const lifetime = new AbortController();
-  window.addEventListener('pagehide', () => lifetime.abort(), {once:true});
+  window.addEventListener('pagehide', event => { if (!event.persisted) lifetime.abort(); }, {signal:lifetime.signal});
   const panel = document.getElementById('panel'), status = document.createElement('p');
   status.className = 'hud-note'; status.setAttribute('role','status'); status.textContent = 'Loading model…'; panel.append(status);
   const onProgress = text => { status.textContent = text; };

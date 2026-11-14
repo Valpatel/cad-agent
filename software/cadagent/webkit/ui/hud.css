@@ -9,7 +9,7 @@
 :root {
   --void: #060609; --bg: #0a0a0f; --surface-1: var(--card); --surface-2: var(--soft); --surface-3: var(--soft-3); --hairline: var(--line-3);
   --text: var(--ink); --text-dim: var(--text-1); --muted-2: var(--faint); --dim: var(--faint); --dimmer: var(--line-3);
-  --cyan: var(--accent); --cyan-dim: var(--link); --amber: var(--warn); --mint: var(--ok); --magenta: var(--bad); --purple: #a855f7;
+  --cyan: var(--accent); --cyan-dim: var(--link); --amber: var(--warn); --mint: var(--teal); --magenta: var(--bad); --purple: #a855f7;
   --glow-06: rgba(0, 240, 255, 0.06); --glow-12: rgba(0, 240, 255, 0.12); --glow-30: rgba(0, 240, 255, 0.30);
   --font-ui: 'Inter', system-ui, sans-serif; --font-mono: 'JetBrains Mono', 'Fira Code', ui-monospace, monospace;
   --panel-w: 360px;

@@ -18,6 +18,15 @@ Every tracked cad-agent issue has **exactly one** of these scope labels:
 | `scope:bounded` | Finite feature, investigation, maintenance task, design proposal or release with observable acceptance. | Its stated deliverable and evidence are complete. Split further when the remaining work is no longer one deliverable. |
 | `scope:quick-fix` | Small, understood repair with a known cause, narrow affected surface and direct verification. | The repair and its focused checks pass. Small wording or a desired deadline does not make an unknown investigation quick. |
 
+Scope, pending decisions and affected areas classify different aspects of the same issue:
+
+```mermaid
+flowchart TD
+    S["One scope"] --> I["Issue labels"]
+    D["Design<br/>pending?"] -->|"stage"| I
+    A["Areas +<br/>context"] --> I
+```
+
 Use the stage and area labels independently of scope:
 
 | Label | Apply when | Remove when |
@@ -40,6 +49,11 @@ Examples:
   and bounded until the wheel and static publication evidence pass.
 
 ## Maintaining labels
+
+Read the current record before each change, preserve unrelated labels, and verify the resulting scope and stage.
+
+<details>
+<summary>Maintenance steps, commands and backlog queries</summary>
 
 1. **Create:** search existing issues, read their latest comments and linked changes, then choose the one scope
    that fits the intended remaining outcome. Add pending stage and relevant areas without clearing other labels.
@@ -86,11 +100,25 @@ The two-area query requires both labels. For a full backlog review, enumerate ev
 and verify the total), check for multiple scope labels as well as missing ones, and read issue comments before
 changing stage. A search result alone is not evidence that a design is still pending.
 
+</details>
+
 ## Design-review proposals
 
 Use a bounded design issue when a decision needs its own deliverable. A program can track the broader direction
 without making every implementation task wait for an all-encompassing redesign. Keep proposals grounded in the
 current repository; identify a proposed interface as proposed until code and verification exist.
+
+```mermaid
+flowchart TD
+    E["Current evidence"] --> P["Options + boundaries"]
+    P --> D{"Decision ready?"}
+    D -->|"revise"| P
+    D -->|"accepted"| A["Planning acceptance"]
+    A --> I["Linked implementation<br/>+ runtime evidence"]
+```
+
+<details>
+<summary>Proposal checklist and acceptance template</summary>
 
 A proposal includes:
 
@@ -99,24 +127,18 @@ A proposal includes:
 2. **Alternatives:** the minimal repair or existing mechanism, the recommended option and plausible alternatives;
    explain tradeoffs, rejected options and why the added complexity is justified.
 3. **Boundaries and contracts:** what owns source data, identity/revisions, domain state, view state, storage,
-   authentication and effects as relevant. State inputs/outputs, lifetimes, compatibility and explicit exclusions.
+   authentication and effects as relevant. State inputs/outputs, lifetimes, model/API versions and explicit exclusions.
    Avoid a universal framework unless several concrete consumers establish the need.
 4. **Mermaid diagrams:** show the relevant current and proposed flow or ownership, including data/evidence
    handoffs and dependency direction. Label proposed elements; diagrams should clarify actual boundaries rather
    than just repeat a list of component names.
-5. **Dependencies and migration:** link parent/related issues and prerequisite decisions, describe incremental PR
-   boundaries, rollback/compatibility, packaging/distribution and rights/provenance constraints where applicable.
+5. **Dependencies and delivery:** link parent/related issues and prerequisite decisions; describe incremental PR
+   boundaries, affected consumers, packaging/distribution and rights/provenance constraints where applicable.
+   Repair consumers directly when paths or contracts change. Track unresolved breaks in bounded issues with
+   completion checks; do not add compatibility facades, generated aliases or permanent path-change guides.
 6. **Two distinct acceptance sections:** specify evidence for completing the design review separately from the
    later implementation and runtime evidence. Put future work in linked implementation issues when the design
    closes. A document, mockup or approved decision does not prove that a feature runs.
-
-```mermaid
-flowchart LR
-    E["Current source and observed behavior"] --> P["Proposed options and boundaries"]
-    P --> D["Design decision and planning acceptance"]
-    D --> I["Linked implementation deliverables"]
-    I --> V["Runtime checks and project evidence"]
-```
 
 Suggested additions to the [ordinary issue template](SKILL.md#issue-template):
 
@@ -124,15 +146,17 @@ Suggested additions to the [ordinary issue template](SKILL.md#issue-template):
 **Current evidence:** <source/revision, observed behavior, assumptions>
 **Alternatives and recommendation:** <tradeoffs and reason>
 **Boundaries:** <owners, contracts, exclusions; Mermaid diagrams above>
-**Dependencies and migration:** <linked prerequisites, staged changes and compatibility>
+**Dependencies and delivery:** <linked prerequisites, staged changes and affected consumers>
 
 **Planning acceptance — closes this design issue**
 - [ ] <decision recorded with reasons and unresolved limitations>
-- [ ] <contracts, migration and implementation issue boundaries are reviewable>
+- [ ] <contracts, consumer repairs and implementation issue boundaries are reviewable>
 
 **Later implementation evidence — tracked in linked issues**
 - [ ] <observable runtime behavior and validation; not claimed complete by this proposal>
 ```
+
+</details>
 
 Write for future maintainers: outcome, evidence, decision, limitations and next action. Do not add owner quotations,
 timestamped chat summaries or session-origin stories. Preserve technical provenance that establishes freshness or

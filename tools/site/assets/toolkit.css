@@ -29,7 +29,7 @@
 .toolkit-card .button,.toolkit-card-actions{margin-top:auto}
 .toolkit-image-link{display:block;line-height:0;background:var(--soft)}
 .toolkit-image-link img,.toolkit-card>img{display:block;width:100%;height:auto;aspect-ratio:4/3;object-fit:contain}
-.toolkit-example .toolkit-image-link img,.toolkit-feature>img{aspect-ratio:3/2;object-fit:cover}
+.toolkit-example .toolkit-image-link img{aspect-ratio:3/2;object-fit:cover}
 .toolkit-card-actions{display:flex;flex-wrap:wrap;align-items:center;gap:16px;width:100%;padding-top:6px}
 .toolkit-shell button,.toolkit-preview button{min-height:44px;border:1px solid var(--line-3);border-radius:var(--pill);background:var(--soft);color:var(--ink);padding:9px 14px;font:600 15px/1.4 var(--font);cursor:pointer}
 .toolkit-shell button:hover,.toolkit-preview button:hover{background:var(--soft-2)}
@@ -68,6 +68,17 @@
 .toolkit-preview label:has(input[type=checkbox]){display:flex;align-items:center;gap:12px;min-height:44px}
 .toolkit-preview input[type=checkbox]{width:22px;height:22px;min-height:0;accent-color:var(--teal)}
 .toolkit-preview-error{color:var(--bad)}
-@media(max-width:1050px){.toolkit-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.toolkit-filters{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.toolkit-capabilities{grid-template-columns:1fr 1fr}.toolkit-feature{grid-column:1/-1}.toolkit-feature-row{grid-template-columns:1fr}}
+@media(max-width:1050px){.toolkit-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.toolkit-filters{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.toolkit-capabilities{grid-template-columns:1fr 1fr}.toolkit-feature-row{grid-template-columns:1fr}}
 @media(max-width:650px){.toolkit-shell{padding-top:24px}.toolkit-grid,.toolkit-capabilities{grid-template-columns:1fr}.toolkit-stats{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.toolkit-stats>div{padding:14px}.toolkit-filters,[data-scada-browser=simulations] .toolkit-filters{grid-template-columns:1fr;padding:16px}.toolkit-preview-grid{grid-template-columns:1fr}.toolkit-preview{padding:18px}.toolkit-preview-heading h2{font-size:23px}.toolkit-tabs{gap:4px}.toolkit-tabs a{padding:9px;font-size:15px}.toolkit-feature-row,.toolkit-roadmap{padding:18px}.toolkit-heading h1{font-size:38px}.toolkit-preview-art{min-height:240px}}
 @media(prefers-reduced-motion:reduce){.toolkit-shell *, .toolkit-preview *{scroll-behavior:auto!important;animation:none!important;transition:none!important}}
+
+/* Capability previews remain readable while the shared shell can span a wide display. */
+.toolkit-capabilities{grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr))}
+.toolkit-capability .toolkit-image-link{aspect-ratio:16/10;overflow:hidden}
+.toolkit-capability .toolkit-image-link img{aspect-ratio:16/10;object-fit:cover}
+.toolkit-capability .toolkit-image-link img.toolkit-contain{object-fit:contain}
+.toolkit-capability .toolkit-card-actions{gap:14px}
+.toolkit-model-stage{--cad-model-font:var(--font);--cad-model-mono:var(--mono);--cad-model-fg:var(--ink);--cad-model-chip:var(--glass);--cad-model-line:var(--line-3);--cad-model-chip-on:var(--cream);--cad-model-focus:var(--orange);height:clamp(420px,72dvh,1000px);aspect-ratio:auto;max-width:none}
+@media(max-width:650px){.toolkit-capabilities{grid-template-columns:minmax(0,1fr)}.toolkit-model-stage{height:clamp(440px,120vw,640px)}}
+.toolkit-model-stage .cad-model-btn{min-height:44px;font-size:14px}.toolkit-model-stage .cad-model-label,.toolkit-model-stage .cad-model-status{font-size:12px}
+@media(min-width:1500px){.toolkit-capabilities{grid-template-columns:repeat(4,minmax(0,1fr))}}

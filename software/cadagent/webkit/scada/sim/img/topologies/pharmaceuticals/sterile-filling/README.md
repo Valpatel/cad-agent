@@ -2,7 +2,7 @@
 
 [Pharmaceuticals](../README.md) · [All sectors](../../README.md)
 
-Static SVG schematics of the first declared view. Symbols identify equipment; arrows show declared connections, not instantaneous flow or measured facility performance.
+Static SVG schematics of a declared view, selected by the catalog topologyView when present. Symbols identify equipment; arrows show declared connections, not instantaneous flow or measured facility performance.
 
 <a href="topology.svg"><img src="topology.svg" width="900" alt="Sterile-filling concept declared topology"></a>
 
@@ -14,7 +14,7 @@ flowchart LR
 
 | File or source | Purpose |
 | --- | --- |
-| [Preview](topology.svg) | Compact declared first-view topology |
+| [Preview](topology.svg) | Static declared `process` view |
 | [Scenario documentation](../../../../scenarios/sterile-filling/README.md) | Equipment roles, focused views and editable assumptions |
 | [System JSON](../../../../scenarios/sterile-filling/system.json) | Equipment, ports, connections and layouts |
 | [Model JSON](../../../../scenarios/sterile-filling/model.json) | Replaceable behavior and initial values |

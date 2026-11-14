@@ -20,6 +20,7 @@ flowchart TD
 | [website-toolkit.test.mjs](website-toolkit.test.mjs) | Equipment, variants, state fields, scenario assets and malformed metadata rejection. |
 | [website-catalog-browser.mjs](website-catalog-browser.mjs) | Explore, catalogue, reader and Toolkit flows in Chromium and WebKit. |
 | [toolkit-browser.mjs](toolkit-browser.mjs) | Toolkit filters, native fallback, responsive layouts and actual state rendering. |
+| [toolkit-examples-browser.mjs](toolkit-examples-browser.mjs) | Capability thumbnails and native links at phone, desktop and ultrawide widths; actual model, file, build-guide and calculator launch controls. |
 
 Run from the repository root:
 

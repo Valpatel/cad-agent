@@ -2,7 +2,7 @@
 
 [Construction materials](../README.md) · [All sectors](../../README.md)
 
-Static SVG schematics of the first declared view. Symbols identify equipment; arrows show declared connections, not instantaneous flow or measured facility performance.
+Static SVG schematics of a declared view, selected by the catalog topologyView when present. Symbols identify equipment; arrows show declared connections, not instantaneous flow or measured facility performance.
 
 <a href="topology.svg"><img src="topology.svg" width="900" alt="Concrete batching declared topology"></a>
 
@@ -14,7 +14,7 @@ flowchart LR
 
 | File or source | Purpose |
 | --- | --- |
-| [Preview](topology.svg) | Compact declared first-view topology |
+| [Preview](topology.svg) | Static declared `process` view |
 | [Scenario documentation](../../../../scenarios/concrete-batching/README.md) | Equipment roles, focused views and editable assumptions |
 | [System JSON](../../../../scenarios/concrete-batching/system.json) | Equipment, ports, connections and layouts |
 | [Model JSON](../../../../scenarios/concrete-batching/model.json) | Replaceable behavior and initial values |

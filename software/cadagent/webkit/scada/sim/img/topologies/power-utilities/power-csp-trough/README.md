@@ -2,7 +2,7 @@
 
 [Power & utilities](../README.md) · [All sectors](../../README.md)
 
-Static SVG schematics of the first declared view. Symbols identify equipment; arrows show declared connections, not instantaneous flow or measured facility performance.
+Static SVG schematics of a declared view, selected by the catalog topologyView when present. Symbols identify equipment; arrows show declared connections, not instantaneous flow or measured facility performance.
 
 <a href="topology.svg"><img src="topology.svg" width="900" alt="Parabolic-trough solar plant declared topology"></a>
 
@@ -14,7 +14,7 @@ flowchart LR
 
 | File or source | Purpose |
 | --- | --- |
-| [Preview](topology.svg) | Compact declared first-view topology |
+| [Preview](topology.svg) | Static declared `field` view |
 | [Scenario documentation](../../../../scenarios/power-csp-trough/README.md) | Equipment roles, focused views and editable assumptions |
 | [System JSON](../../../../scenarios/power-csp-trough/system.json) | Equipment, ports, connections and layouts |
 | [Model JSON](../../../../scenarios/power-csp-trough/model.json) | Replaceable behavior and initial values |

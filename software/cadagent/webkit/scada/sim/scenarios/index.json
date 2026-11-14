@@ -6,7 +6,7 @@
       "id": "wastewater-digester",
       "title": "Wastewater & biogas digital twin",
       "sector": "Water & utilities",
-      "description": "Explore an illustrative wastewater process, shared sludge digestion, biogas storage, generator and flare. All views observe the same editable model.",
+      "description": "Operate treatment, sludge, biogas and power branches from one connected plant, with instrument taps and PLC-controlled valves. All views share editable illustrative equations.",
       "tags": [
         "wastewater",
         "anaerobic digestion",
@@ -27,6 +27,10 @@
       ],
       "views": [
         {
+          "id": "overview",
+          "label": "Whole plant"
+        },
+        {
           "id": "treatment",
           "label": "Water treatment"
         },
@@ -36,7 +40,7 @@
         },
         {
           "id": "power-control",
-          "label": "Power & control"
+          "label": "Power & instruments"
         }
       ],
       "experiments": [
@@ -122,6 +126,51 @@
           ],
           "expected": "The electrical load loses its connected supply. The flare remains a separate branch of the gas process.",
           "limitation": "No automatic safety logic or real emergency sequence is implied."
+        },
+        {
+          "id": "close-chp-fuel",
+          "title": "Isolate CHP fuel",
+          "commands": [
+            {
+              "action": "setOpen",
+              "arguments": {
+                "equipment": "chpValve",
+                "value": false
+              }
+            }
+          ],
+          "expected": "The CHP fuel flow and connected electrical output stop; the separately valved flare branch remains available.",
+          "limitation": "The response proves editable command, measurement and connection plumbing; it is not a validated control or operating procedure."
+        },
+        {
+          "id": "lose-plant-plc",
+          "title": "Lose the plant PLC",
+          "commands": [
+            {
+              "action": "setEnabled",
+              "arguments": {
+                "equipment": "controller",
+                "value": false
+              }
+            }
+          ],
+          "expected": "Field I/O loses upstream communication and all three commanded valves stop transferring. Local pump and generator enable settings remain unchanged.",
+          "limitation": "The response proves editable command, measurement and connection plumbing; it is not a validated control or operating procedure."
+        },
+        {
+          "id": "close-digestate",
+          "title": "Close the digestate outlet",
+          "commands": [
+            {
+              "action": "setOpen",
+              "arguments": {
+                "equipment": "digestateValve",
+                "value": false
+              }
+            }
+          ],
+          "expected": "Digestate discharge stops while digester stock and pressure indices respond to the changed branch acceptance.",
+          "limitation": "The response proves editable command, measurement and connection plumbing; it is not a validated control or operating procedure."
         }
       ],
       "previewTypes": [
@@ -131,27 +180,53 @@
       ],
       "componentTypes": [
         "clarifier",
+        "control-valve",
         "digester",
         "filter",
         "flare",
+        "flow-meter",
+        "gas-analyzer",
         "gas-holder",
         "gas-treatment",
         "gate-valve",
         "generator",
+        "level-sensor",
         "motor",
         "plc-rack",
         "pressure-transmitter",
         "reactor",
+        "remote-io",
         "submersible-pump",
-        "tank"
+        "tank",
+        "temperature-sensor"
       ],
       "componentVariants": [],
-      "processAssetCount": 14,
-      "utilityAssetCount": 3,
+      "processAssetCount": 20,
+      "utilityAssetCount": 8,
       "measurements": [
         {
           "sensor": "pressure",
           "asset": "digester"
+        },
+        {
+          "sensor": "inletFlow",
+          "asset": "liftPump"
+        },
+        {
+          "sensor": "effluentFlow",
+          "asset": "effluentValve"
+        },
+        {
+          "sensor": "digesterTemperature",
+          "asset": "digester"
+        },
+        {
+          "sensor": "digesterLevel",
+          "asset": "digester"
+        },
+        {
+          "sensor": "gasQuality",
+          "asset": "gasClean"
         }
       ],
       "searchTerms": [
@@ -170,13 +245,14 @@
         "wastewater",
         "anaerobic-digestion",
         "biogas-chp"
-      ]
+      ],
+      "topologyView": "treatment"
     },
     {
       "id": "winery",
       "title": "Winery",
       "sector": "Food & beverage",
-      "description": "Follow grape handling, extraction, fermentation vessels and bottling, with a separately labeled illustrative effluent-energy branch.",
+      "description": "Operate receiving, fermentation, cellar and packaging branches with instrument taps, local pump controls and PLC-controlled transfer valves.",
       "tags": [
         "fermentation",
         "liquid transfer",
@@ -199,15 +275,19 @@
       "views": [
         {
           "id": "process",
-          "label": "Main process"
+          "label": "Winery overview"
         },
         {
-          "id": "utilities",
-          "label": "Utilities & control"
+          "id": "fermentation",
+          "label": "Fermentation & cellar"
         },
         {
           "id": "finishing",
-          "label": "Finishing & storage"
+          "label": "Bottling & packaging"
+        },
+        {
+          "id": "utilities",
+          "label": "Power & instruments"
         }
       ],
       "experiments": [
@@ -293,6 +373,36 @@
           ],
           "expected": "Explicitly supplied equipment loses power availability. Inspect both process and utility views to see the shared dependency.",
           "limitation": "No electrical protection coordination, grid dynamics or real isolation procedure is modeled."
+        },
+        {
+          "id": "isolate-must-feed",
+          "title": "Isolate fermenter feed",
+          "commands": [
+            {
+              "action": "setOpen",
+              "arguments": {
+                "equipment": "mustValve",
+                "value": false
+              }
+            }
+          ],
+          "expected": "Must transfer into the fermenter stops and FT-101 responds, while stored cellar inventory remains available downstream.",
+          "limitation": "The response proves editable command, measurement and connection plumbing; it is not a validated control or operating procedure."
+        },
+        {
+          "id": "lose-winery-plc",
+          "title": "Lose winery control",
+          "commands": [
+            {
+              "action": "setEnabled",
+              "arguments": {
+                "equipment": "controller",
+                "value": false
+              }
+            }
+          ],
+          "expected": "Remote I/O becomes unavailable and the three controlled transfer branches stop. Manual enable settings and retained inventories remain visible.",
+          "limitation": "The response proves editable command, measurement and connection plumbing; it is not a validated control or operating procedure."
         }
       ],
       "previewTypes": [
@@ -301,28 +411,49 @@
         "separator"
       ],
       "componentTypes": [
+        "control-valve",
         "conveyor",
         "crusher",
         "digester",
         "filling-line",
         "filter",
         "flare",
+        "flow-meter",
         "gate-valve",
         "generator",
+        "level-sensor",
         "packaging-line",
         "plc-rack",
         "pressure-transmitter",
         "pump",
         "reactor",
+        "remote-io",
         "separator",
-        "tank"
+        "tank",
+        "temperature-sensor"
       ],
-      "processAssetCount": 10,
-      "utilityAssetCount": 5,
+      "processAssetCount": 16,
+      "utilityAssetCount": 7,
       "measurements": [
         {
           "sensor": "pressure",
           "asset": "mustTransfer"
+        },
+        {
+          "sensor": "mustFlow",
+          "asset": "mustTransfer"
+        },
+        {
+          "sensor": "fermenterTemperature",
+          "asset": "fermenter"
+        },
+        {
+          "sensor": "fermenterLevel",
+          "asset": "fermenter"
+        },
+        {
+          "sensor": "cellarLevel",
+          "asset": "aging"
         }
       ],
       "searchTerms": [
@@ -332,13 +463,14 @@
         "grapes",
         "vineyard"
       ],
-      "componentVariants": []
+      "componentVariants": [],
+      "topologyView": "fermentation"
     },
     {
       "id": "brewery",
       "title": "Brewery",
       "sector": "Food & beverage",
-      "description": "Move grain through milling, mash separation, cooling, fermentation and packaging. Effluent and heat service remain independent utility branches.",
+      "description": "Operate brewhouse, cooling, fermentation and filling branches with instrument taps, a wort pump and PLC-controlled valves.",
       "tags": [
         "grain handling",
         "fermentation",
@@ -361,15 +493,19 @@
       "views": [
         {
           "id": "process",
-          "label": "Main process"
+          "label": "Brewery overview"
         },
         {
-          "id": "utilities",
-          "label": "Utilities & control"
+          "id": "brewhouse",
+          "label": "Brewhouse & cooling"
         },
         {
           "id": "finishing",
-          "label": "Finishing & storage"
+          "label": "Fermentation & filling"
+        },
+        {
+          "id": "utilities",
+          "label": "Power & instruments"
         }
       ],
       "experiments": [
@@ -440,6 +576,36 @@
           ],
           "expected": "Explicitly supplied equipment loses power availability. Inspect both process and utility views to see the shared dependency.",
           "limitation": "No electrical protection coordination, grid dynamics or real isolation procedure is modeled."
+        },
+        {
+          "id": "isolate-kettle",
+          "title": "Close the kettle outlet",
+          "commands": [
+            {
+              "action": "setOpen",
+              "arguments": {
+                "equipment": "kettleValve",
+                "value": false
+              }
+            }
+          ],
+          "expected": "The kettle discharge path stops while retained downstream inventory remains in the same model.",
+          "limitation": "The response proves editable command, measurement and connection plumbing; it is not a validated control or operating procedure."
+        },
+        {
+          "id": "lose-brewery-plc",
+          "title": "Lose brewery control",
+          "commands": [
+            {
+              "action": "setEnabled",
+              "arguments": {
+                "equipment": "controller",
+                "value": false
+              }
+            }
+          ],
+          "expected": "Remote I/O and the three commanded valve paths become unavailable without resetting temperatures, inventories or local pump commands.",
+          "limitation": "The response proves editable command, measurement and connection plumbing; it is not a validated control or operating procedure."
         }
       ],
       "previewTypes": [
@@ -450,26 +616,45 @@
       "componentTypes": [
         "aeration-basin",
         "boiler",
+        "control-valve",
         "filling-line",
         "filter",
+        "flow-meter",
+        "gate-valve",
         "generator",
         "grinding-mill",
         "heat-exchanger",
+        "level-sensor",
         "mixing-tank",
         "network-switch",
         "packaging-line",
         "plc-rack",
+        "pressure-transmitter",
+        "pump",
         "reactor",
+        "remote-io",
         "silo",
         "tank",
         "temperature-sensor"
       ],
-      "processAssetCount": 10,
-      "utilityAssetCount": 6,
+      "processAssetCount": 18,
+      "utilityAssetCount": 7,
       "measurements": [
         {
           "sensor": "temperature",
           "asset": "cooler"
+        },
+        {
+          "sensor": "wortFlow",
+          "asset": "transferPump"
+        },
+        {
+          "sensor": "fermenterLevel",
+          "asset": "fermenter"
+        },
+        {
+          "sensor": "brewPressure",
+          "asset": "transferPump"
         }
       ],
       "searchTerms": [
@@ -478,7 +663,8 @@
         "brewing beer",
         "breweries"
       ],
-      "componentVariants": []
+      "componentVariants": [],
+      "topologyView": "brewhouse"
     },
     {
       "id": "fortune-cookies",
@@ -3784,7 +3970,7 @@
       "id": "power-hydro-impoundment",
       "title": "Impoundment hydropower",
       "sector": "Power & utilities",
-      "description": "Upper reservoir → intake gate/penstock → water turbine → tailwater. A distinct shaft link drives the alternator and transformer; excitation is not a governor.",
+      "description": "Upper reservoir \u2192 intake gate/penstock \u2192 water turbine \u2192 tailwater. A distinct shaft link drives the alternator and transformer; excitation is not a governor.",
       "system": "power-hydro-impoundment/system.json",
       "model": "power-hydro-impoundment/model.json",
       "processSteps": [
@@ -3940,7 +4126,7 @@
       "id": "power-hydro-diversion",
       "title": "Diversion hydropower",
       "sector": "Power & utilities",
-      "description": "Explicit river-source boundary → gated diversion/penstock → turbine → downstream return boundary. The source is a river reach, not a fictitious impoundment dam.",
+      "description": "Explicit river-source boundary \u2192 gated diversion/penstock \u2192 turbine \u2192 downstream return boundary. The source is a river reach, not a fictitious impoundment dam.",
       "system": "power-hydro-diversion/system.json",
       "model": "power-hydro-diversion/model.json",
       "processSteps": [
@@ -4305,11 +4491,11 @@
       "system": "power-nuclear-pwr/system.json",
       "model": "power-nuclear-pwr/model.json",
       "processSteps": [
-        "PWR core · primary water",
+        "PWR core \u00b7 primary water",
         "Primary-water circulator",
         "Isolated nuclear steam generator",
         "Primary-circuit pressurizer",
-        "Containment context · no safety claim"
+        "Containment context \u00b7 no safety claim"
       ],
       "views": [
         {
@@ -4381,7 +4567,7 @@
       "experiments": [
         {
           "id": "stop-source",
-          "title": "Stop PWR core · primary water",
+          "title": "Stop PWR core \u00b7 primary water",
           "commands": [
             {
               "action": "setEnabled",
@@ -4491,11 +4677,11 @@
       "system": "power-nuclear-phwr/system.json",
       "model": "power-nuclear-phwr/model.json",
       "processSteps": [
-        "PHWR calandria · heavy water",
+        "PHWR calandria \u00b7 heavy water",
         "Primary heavy-water circulator",
         "Isolated nuclear steam generator",
         "Primary-circuit pressurizer",
-        "Containment context · no safety claim"
+        "Containment context \u00b7 no safety claim"
       ],
       "views": [
         {
@@ -4569,7 +4755,7 @@
       "experiments": [
         {
           "id": "stop-source",
-          "title": "Stop PHWR calandria · heavy water",
+          "title": "Stop PHWR calandria \u00b7 heavy water",
           "commands": [
             {
               "action": "setEnabled",
@@ -4681,7 +4867,7 @@
         "Solid-fuel helium-cooled core",
         "Primary helium circulator",
         "Isolated nuclear steam generator",
-        "Containment context · no safety claim"
+        "Containment context \u00b7 no safety claim"
       ],
       "views": [
         {
@@ -4864,7 +5050,7 @@
         "Isolated nuclear steam generator",
         "Primary / intermediate sodium exchanger",
         "Intermediate sodium circulator",
-        "Containment context · no safety claim"
+        "Containment context \u00b7 no safety claim"
       ],
       "views": [
         {
@@ -5051,7 +5237,7 @@
         "Isolated nuclear steam generator",
         "Primary / intermediate salt exchanger",
         "Intermediate salt circulator",
-        "Containment context · no safety claim"
+        "Containment context \u00b7 no safety claim"
       ],
       "views": [
         {
@@ -5239,8 +5425,8 @@
       "processSteps": [
         "Direct-steam BWR vessel",
         "Vessel recirculation pump",
-        "Rod position · fictional heat command",
-        "Containment context · no safety claim"
+        "Rod position \u00b7 fictional heat command",
+        "Containment context \u00b7 no safety claim"
       ],
       "views": [
         {
@@ -5582,7 +5768,7 @@
       "id": "power-ng-engine-chp",
       "title": "Natural-gas engine CHP",
       "sector": "Power & utilities",
-      "description": "External natural-gas supply → pressure regulation → packaged gas genset. Electrical output and recovered heat serve separate paths; excess heat has a separate rejection path.",
+      "description": "External natural-gas supply \u2192 pressure regulation \u2192 packaged gas genset. Electrical output and recovered heat serve separate paths; excess heat has a separate rejection path.",
       "system": "power-ng-engine-chp/system.json",
       "model": "power-ng-engine-chp/model.json",
       "processSteps": [
@@ -5747,7 +5933,7 @@
       "id": "power-diesel-standby",
       "title": "Diesel standby supply",
       "sector": "Power & utilities",
-      "description": "Explicit liquid-fuel tank/day supply → diesel packaged generator; external utility supply and standby source connect to different transfer-switch inputs before critical loads.",
+      "description": "Explicit liquid-fuel tank/day supply \u2192 diesel packaged generator; external utility supply and standby source connect to different transfer-switch inputs before critical loads.",
       "system": "power-diesel-standby/system.json",
       "model": "power-diesel-standby/model.json",
       "processSteps": [
@@ -5914,7 +6100,7 @@
       "id": "power-gasoline-portable",
       "title": "Portable gasoline generator",
       "sector": "Power & utilities",
-      "description": "Explicit small liquid-fuel supply → portable gasoline genset → isolated breaker and demonstration load. No utility backfeed connection is drawn.",
+      "description": "Explicit small liquid-fuel supply \u2192 portable gasoline genset \u2192 isolated breaker and demonstration load. No utility backfeed connection is drawn.",
       "system": "power-gasoline-portable/system.json",
       "model": "power-gasoline-portable/model.json",
       "processSteps": [
@@ -5924,7 +6110,7 @@
         "Explicit station-service boundary",
         "Shared plant controller",
         "Explicit combustion-air boundary",
-        "Spare DC rectifier · intentionally disabled"
+        "Spare DC rectifier \u00b7 intentionally disabled"
       ],
       "views": [
         {
@@ -7552,7 +7738,7 @@
         "Explicit natural-gas supply",
         "Fuel-gas pressure regulator",
         "Explicit oxidant-air boundary",
-        "Fuel-cell stack · separate inputs and outputs",
+        "Fuel-cell stack \u00b7 separate inputs and outputs",
         "Explicit product-water discharge"
       ],
       "views": [
@@ -7625,7 +7811,7 @@
         },
         {
           "id": "inject-fault",
-          "title": "Fault Fuel-cell stack · separate inputs and outputs",
+          "title": "Fault Fuel-cell stack \u00b7 separate inputs and outputs",
           "commands": [
             {
               "action": "setFault",
@@ -8173,7 +8359,7 @@
       "processSteps": [
         "Finite stored DC energy",
         "Bidirectional battery converter",
-        "Common AC bus · import / storage / export",
+        "Common AC bus \u00b7 import / storage / export",
         "Bidirectional AC collection bay"
       ],
       "views": [
@@ -8390,7 +8576,7 @@
         "Explicit natural-gas supply",
         "Fuel-gas pressure regulator",
         "Local natural-gas genset",
-        "Common AC bus · import / storage / export",
+        "Common AC bus \u00b7 import / storage / export",
         "Local AC connection bay",
         "Explicit combustion-air boundary",
         "Explicit combustion-exhaust boundary"
@@ -8646,7 +8832,7 @@
         "aquaculture"
       ],
       "processSteps": [
-        "Fish tank · water loop",
+        "Fish tank \u00b7 water loop",
         "Mechanical solids filter",
         "Flood/drain media bed",
         "Shared return sump",
@@ -9477,9 +9663,9 @@
         "Mist distribution pump",
         "Nozzle protection filter",
         "Root-chamber mist manifold",
-        "Root chamber · tier A",
-        "Root chamber · tier B",
-        "Dissolved oxygen · illustrative index"
+        "Root chamber \u00b7 tier A",
+        "Root chamber \u00b7 tier B",
+        "Dissolved oxygen \u00b7 illustrative index"
       ],
       "views": [
         {

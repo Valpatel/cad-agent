@@ -14,10 +14,10 @@ flowchart TD
 | `__init__.py` | Empty test-package marker |
 | `guide.test.mjs` | Pure validator/controller and bounded request counterexamples |
 | `playback.test.mjs` | Explicit order, absolute authored poses, bounded timing, pause/loop/navigation and ownership rejection |
-| `browser.mjs` | Real scene/material/coordinate/loading/lifecycle controls in each browser engine |
+| `browser.mjs` | Real scene/material/coordinate/loading/lifecycle controls; stored/system theme contrast, phone HUD geometry, loading/errors, native toggle preservation of guide, selection, materials and camera; actual browser history restoration |
 | `release-browser.mjs` | Real extracted ZIP, two frozen fixtures/WIP, pinned local runtime, no-script fallback and corrupted entry/model/mesh controls |
 
-Run through the existing site npm scripts. See the [feature test matrix](../../../docs/practice/assembly-guide-testing.md) for pending versus verified results.
+Run through the existing site npm scripts. Chromium uses the full pinned browser in headless mode and must demonstrate a native `pageshow.persisted` return with the same scene, guide and camera; an ordinary reload cannot satisfy that check. WebKit records whether it restored or reloaded and verifies the ready viewer in either case. See the [feature test matrix](../../../docs/practice/assembly-guide-testing.md) for pending versus verified results.
 
 [Browser tests](../README.md)
 

@@ -1,7 +1,7 @@
 ---
 name: repository-documentation
 description: Use when maintaining cad-agent folder maps, source-owned diagrams, reference/skill navigation or the generated SCADA gallery and scenario documentation.
-license: UNLICENSED
+license: MIT
 metadata:
   requires: "node npm"
   optional: "scada-browser"
@@ -84,4 +84,4 @@ The [local-use guide](../../../docs/practice/scada/local-use.md) explains source
 runtime consumers. [Resources and growth](../../../docs/practice/scada/resources-and-growth.md)
 keeps reference metadata, mirrored bytes and source ownership distinct.
 
-[Skill map](README.md) · [All skills](../README.md) · [Retained terms](../../../software/cadagent/webkit/scada/LICENSE.txt)
+[Skill map](README.md) · [All skills](../README.md) · [MIT license](../../../software/cadagent/webkit/scada/LICENSE.txt)

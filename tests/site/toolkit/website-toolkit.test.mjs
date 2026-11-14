@@ -2,7 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {existsSync, readFileSync} from 'node:fs';
 import path from 'node:path';
-import {SCADA_INPUTS, TOOLKIT_ROUTES, scadaToolkitModel, toolkitPages, toolkitFullText} from '../../../tools/site/compiler/site-toolkit.mjs';
+import {execFileSync} from 'node:child_process';
+import {SCADA_INPUTS, TOOLKIT_ROUTES, scadaToolkitModel, toolkitPages, toolkitFullText, toolkitCapabilities} from '../../../tools/site/compiler/site-toolkit.mjs';
 import {matchesToolkitCard} from '../../../tools/site/assets/toolkit.js';
 import {sourceLicenseResolver} from '../../../tools/site/compiler/site-catalog.mjs';
 
@@ -23,7 +24,7 @@ test('real inventory exposes every equipment type, declared variant/state and ta
   assert.equal(model.counts.equipment,inputs.components.components.length);
   assert.equal(model.elements.length,inputs.gallery.symbols.length+inputs.gallery.states.length);
   assert.equal(model.simulations.length,inputs.scenarios.scenarios.length);
-  assert.equal(model.license,'UNLICENSED');
+  assert.equal(model.license,'MIT');
   for(const item of model.elements)assert.ok(item.image.startsWith('/kit/scada/ui/img/'));
   for(const item of model.simulations){assert.ok(item.href.startsWith('/kit/scada/explorer/index.html?scenario='));assert.ok(item.image.startsWith('/kit/scada/sim/img/'));}
   const pages=toolkitPages(model);
@@ -80,6 +81,22 @@ test('filters combine words, category and entry kind without altering catalogue 
   assert.equal(matchesToolkitCard({search:'<script>',category:'x'},{query:'<script>'}),true,'search is plain text, never HTML or code');
 });
 
+test('SCADA human documentation and agent workflows use the existing rendered site owners',()=>{
+  const {pages}=toolkitPages(scadaToolkitModel(fixture()));
+  for(const page of pages.filter(page=>page.url.startsWith('/toolkit/scada'))) {
+    assert.match(page.body,/MIT-licensed/);
+    assert.doesNotMatch(page.body,/UNLICENSED|href="\/kit\/scada\/[^"#?]*\.md/);
+    assert.match(page.body,/href="\/repo\/folders\/d-docs\/d-practice\/d-scada\/README">Use &(?:amp;)? extend/);
+  }
+  const overview=pages.find(page=>page.url==='/toolkit/scada');
+  for(const name of ['component-authoring','system-authoring','model-adaptation','viewer-review','distribution-review']) {
+    assert.ok(overview.body.includes(`/skills/scada-${name}/SKILL`));
+    assert.ok(overview.markdown.includes(`/skills/scada-${name}/SKILL`));
+  }
+  assert.match(overview.body,/href="\/docs\/agent-workflow">For agents/);
+  for(const owner of ['ui','sim'])assert.ok(overview.body.includes(`/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-${owner}/README`));
+});
+
 test('combined Toolkit agent text binds every local link to its published origin without rewriting examples',()=>{
   const pages=toolkitPages(scadaToolkitModel(fixture())).pages;
   const full=toolkitFullText(pages,'https://cad.example');
@@ -104,4 +121,51 @@ test('source licence overrides preserve package terms without relabelling unrela
   assert.equal(license('docs/toolkit.md'),'MIT');
   for(const records of [null,{},[{prefix:'../outside/',license:'MIT'}],[{prefix:'docs/',license:''}],
     [{prefix:'docs/',license:'MIT'},{prefix:'docs/',license:'UNLICENSED'}]])assert.throws(()=>sourceLicenseResolver(records),/licen[cs]e|license_overrides/);
+});
+
+
+test('capabilities open owned working examples, with real previews and explicit planned boundaries',()=>{
+  const inputs=Object.fromEntries(Object.entries(SCADA_INPUTS).map(([key,file])=>[key,read(file)]));
+  const has=file=>existsSync(path.join(root,file));
+  const model=scadaToolkitModel({...inputs,has});
+  const cards=toolkitCapabilities(model,{has,catalog:[{id:'demo-fourbar-animator',url:'https://cad-agent.valpatel.com/docs/linkages#try-it-the-four-bar-animator'}]});
+  assert.equal(cards.find(card=>card.id==='mechanisms').href,'/docs/linkages#try-it-the-four-bar-animator');
+  assert.throws(()=>toolkitCapabilities(model,{catalog:[{id:'demo-fourbar-animator',url:'https://external.invalid/demo'}]}),/must be locally published/);
+  assert.deepEqual(cards.map(card=>card.id),['scada-elements','scada-simulations','models','robot-replay','files','assembly','mechanisms','calculators']);
+  const replay=cards.find(card=>card.id==='robot-replay');
+  assert.match(replay.description,/real MuJoCo run of an illustrative two-link arm/);
+  assert.equal(replay.href,'/kit/simulation/viewer.html');
+  assert.ok(replay.docs.startsWith('/repo/folders/'));
+  for(const card of cards) {
+    assert.ok(card.image.startsWith('/') && card.alt.length>20,card.id);
+    assert.ok(card.href.startsWith('/') && card.action.length>3 && card.docs.startsWith('/'),card.id);
+    assert.doesNotMatch(card.href,/^#|javascript:|https?:/);
+  }
+  const result=toolkitPages(model,{has});
+  const overview=result.pages.find(page=>page.url==='/toolkit');
+  assert.equal((overview.body.match(/data-toolkit-launch/g)||[]).length,cards.length);
+  for(const card of cards) assert.ok(overview.markdown.includes(card.href));
+  assert.match(overview.body,/PCB layer review, electrical-panel diagrams and harness views are planned/);
+  const models=result.pages.find(page=>page.url==='/toolkit/models');
+  assert.match(models.body,/<cad-model[^>]*src="\/web\/models\/gyropup.json"/);
+  assert.match(models.body,/not a robot dynamics simulation/);
+  assert.deepEqual(models.css,['/kit/model/model.css']);
+  assert.throws(()=>toolkitPages(model,{has:file=>has(file) && !file.endsWith('file-review.webp')}),/missing example asset.*file-review.webp/);
+  assert.throws(()=>toolkitPages(model,{has:file=>has(file) && !file.endsWith('model/viewer.html')}),/missing example asset.*model\/viewer.html/);
+  assert.throws(()=>toolkitPages(model,{has:file=>has(file) && !file.endsWith('two-link-arm/preview.webp')}),/missing example asset.*two-link-arm\/preview.webp/);
+});
+
+test('published assembly example preserves the complete source-bound fixture closure',()=>{
+  const owner='tools/site/assets/toolkit/assembly/';
+  const source='tests/fixtures/assembly-plan/';
+  const guide=read(owner+'guide.json'), view=read(owner+'view.json');
+  for(const name of ['guide.json',guide.model.file,guide.assembly_plan.file,...view.parts.map(part=>part.file)]) {
+    assert.deepEqual(readFileSync(path.join(root,owner,name)),readFileSync(path.join(root,source,name)),name);
+  }
+  assert.equal(guide.snapshot.source_commit,'1'.repeat(40),'Synthetic input identity is retained');
+  const manifest=read('tools/site/assets/toolkit/SOURCE.json');
+  assert.equal(manifest.schema,'cad-agent.toolkit-examples/1');
+  assert.equal(Object.keys(manifest.copies).length,8);
+  assert.match(manifest.scope,/no physical or project qualification/);
+  execFileSync(process.execPath,['tools/site/figures/toolkit-examples.mjs','--check'],{cwd:root,stdio:'pipe'});
 });

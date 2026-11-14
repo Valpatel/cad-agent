@@ -27,8 +27,8 @@
     "software/cadagent/webkit/scada/sim/scenarios/aquaponics-media-bed/system.json": "78f503b0baead3ff4c3a8eb1f3b868b156fab74a0589e21eb883d226b5852642",
     "software/cadagent/webkit/scada/sim/scenarios/biopharma-fermentation/model.json": "515e813653a5130b8830a5e8c156760f3af099fc22543cc3960c9bf75414d394",
     "software/cadagent/webkit/scada/sim/scenarios/biopharma-fermentation/system.json": "043c54e2e7552fd281c591310060db8de998b1b3c1fdd10df347eb900eb0cb3b",
-    "software/cadagent/webkit/scada/sim/scenarios/brewery/model.json": "23fd7a230d0ff2ffc11ab99d3b127f1fa781a328149e26cda1e4ebbd4174caec",
-    "software/cadagent/webkit/scada/sim/scenarios/brewery/system.json": "688bf5df79f984f06fa0fbd522b4d34d3603aa1f3f9167dc4410580917f66c79",
+    "software/cadagent/webkit/scada/sim/scenarios/brewery/model.json": "a7a44a11a5d5a8d50dfba06bd3f919b56072e8ad06f718dfd5d33070f7694beb",
+    "software/cadagent/webkit/scada/sim/scenarios/brewery/system.json": "b3a00baa0d5693fc071dca72bab0225d8b22e5bf711ced699ae8ad3de6d94963",
     "software/cadagent/webkit/scada/sim/scenarios/carbonated-beverages/model.json": "194b851476c5f164a06f7e4a1b2cefd7a29c248b8a30db20ff5123da5a4abc86",
     "software/cadagent/webkit/scada/sim/scenarios/carbonated-beverages/system.json": "994c724b5fa6647db78f5f6b5c7e11643fcc4fe7938e21944bb4df426a1fab43",
     "software/cadagent/webkit/scada/sim/scenarios/cement/model.json": "d1168d767e57baadaecdf5625fab989c234e9e72f8a5cdc644fa651efefb145e",
@@ -49,7 +49,7 @@
     "software/cadagent/webkit/scada/sim/scenarios/hydroponics-ebb-flow/system.json": "820d566f30912f05e103a34156abf8722341a4263b87436b72e105f879a66cd7",
     "software/cadagent/webkit/scada/sim/scenarios/hydroponics-nft/model.json": "045e76e36a81137af619d14ca316232a7127a1677645060a4f322e30855fbf52",
     "software/cadagent/webkit/scada/sim/scenarios/hydroponics-nft/system.json": "6b276fef885f43b220bdde06a10941a6aa613bed9fcb5c42ceed23f994075742",
-    "software/cadagent/webkit/scada/sim/scenarios/index.json": "96d824b31317dcfe8088b1bbf5c5ded21acfc1d6d20025885d71ca9bbb87c1e9",
+    "software/cadagent/webkit/scada/sim/scenarios/index.json": "16bf0061724df7027a0d3db8d4a0553dc8bee8e852c2526fc042511978bfc823",
     "software/cadagent/webkit/scada/sim/scenarios/indoor-aeroponics/model.json": "e552362f01bd27564335ff6eb49375762bb2f93d555fed7994dde48e60324ae7",
     "software/cadagent/webkit/scada/sim/scenarios/indoor-aeroponics/system.json": "aec3a5cb63f2293b48640abdb5df4cf5d8a4a40d3dedda7fc6d1ea0805011792",
     "software/cadagent/webkit/scada/sim/scenarios/industrial-detergent/model.json": "b0027e1338f600cb07bee17b8db4a89675c426711ed668418b793203f7956108",
@@ -140,10 +140,10 @@
     "software/cadagent/webkit/scada/sim/scenarios/sterile-filling/system.json": "230c13cc69caff1928358ed52c4d6aed557c9c3be32ea36ec9f2f4a6db75bf07",
     "software/cadagent/webkit/scada/sim/scenarios/tablets/model.json": "aa50cbab2e1f312a0a93ddc54b2060a7ac7a2d03d37c28a344bd4353006ef2a7",
     "software/cadagent/webkit/scada/sim/scenarios/tablets/system.json": "554d26afda550592b675c246624cfaf03f5f5a59e9637b6d3be85cbb6d7e7f1a",
-    "software/cadagent/webkit/scada/sim/scenarios/wastewater-digester/model.json": "de0bce5e0bb09f74ad4e3cd2104bca19848bf7ffecd1cd07fbbf0b5a8d1f0f85",
-    "software/cadagent/webkit/scada/sim/scenarios/wastewater-digester/system.json": "32ba2b6c35a4a1a8e8544e72467e0f39dddc371bc0768c8a69ac969db454fa31",
-    "software/cadagent/webkit/scada/sim/scenarios/winery/model.json": "5d69288356914f610617d1f55e139dc484e10020cc88aad9668edcc0dd3951e1",
-    "software/cadagent/webkit/scada/sim/scenarios/winery/system.json": "5b34ef9975887e5ebe4348d1465cfe0ecf98e43a8da3f1d5a20a09fcde9b0da9",
+    "software/cadagent/webkit/scada/sim/scenarios/wastewater-digester/model.json": "2a916b2351cf75b2b280c20848c02b1b00d3253295b8d99eeaf5e44e7fa69037",
+    "software/cadagent/webkit/scada/sim/scenarios/wastewater-digester/system.json": "b058ec04a6afd016def2a40d80331a3c0d94b11b23d75ec4f74b1bfae67314a6",
+    "software/cadagent/webkit/scada/sim/scenarios/winery/model.json": "e2e6161938bd5ea7e9923a9233be5089133cd82af9f38784018d2dec9150adb0",
+    "software/cadagent/webkit/scada/sim/scenarios/winery/system.json": "18824d874aca60adbbc73f934ca600bca3b064faed2f0a3211c9c42c27a034a9",
     "software/cadagent/webkit/scada/sim/examples/equation-models/heater-bench.mjs": "ee0f6adff8a60b7501c315ccc76d25058021a5d77fa786d1c66ebe38446b5cba",
     "software/cadagent/webkit/scada/sim/examples/equation-models/pump-bench.mjs": "796519288c6ee2a6d6fa1dd86e5dc327ee9521ecab4956c7720744decd9d8276",
     "software/cadagent/webkit/scada/sim/examples/equation-models/pump-parameters.json": "d7b91d4d148c761387388170de32b246e9d14b024a66b2357547c9d5179dc275",
@@ -153,15 +153,15 @@
     "software/cadagent/webkit/scada/sim/examples/model-switching/bench.mjs": "cb074dcac44c6c22ef0688c5abb1f1ed2cb76d99094b2d7884f0850f69aa2e71",
     "software/cadagent/webkit/scada/sim/examples/model-switching/index.html": "95c6cb3be582242d8c211d40c33e1a903033554d0e02f7abf1ee66af383483cb",
     "software/cadagent/webkit/scada/sim/examples/model-switching/main.mjs": "a0154594f7d2b4a8178708fea92f0355e8d719d3ec46b845fa43787fbf767836",
-    "software/cadagent/webkit/scada/sim/examples/model-switching/styles.css": "fbcdf6da77f1d806d599a932a914a692df68e37e3edc178b4f36dad45707f156",
+    "software/cadagent/webkit/scada/sim/examples/model-switching/styles.css": "7ae768f4a627e1418f3d9c0ba87ec4c850923430af8d145e18d40db4dc359993",
     "software/cadagent/webkit/scada/sim/examples/model-switching/system.json": "da880bbece64b0e5da801f513a73e17fb8251d5dc57ac926ab6fe1f84c0da88a",
-    "software/cadagent/webkit/scada/explorer/index.html": "9141c4f7524c13af23dc5aaba017333bb4b7f82488ddffe976eb3f8ebbd56704",
-    "software/cadagent/webkit/scada/explorer/main.mjs": "cf98ec971884d5e59c0b4aab99914abcc6f1a8e237ea53d6d12eabe65835c5c3",
+    "software/cadagent/webkit/scada/explorer/index.html": "d0bb337cd74218059739272aee1c87575d008e12755a194824db33048a68a0aa",
+    "software/cadagent/webkit/scada/explorer/main.mjs": "4dff780743cbd3d8c6fe893d860868e76f1636d79cff4fb388f5873da4afaf87",
     "software/cadagent/webkit/scada/explorer/model-editor.mjs": "4e887bb9896bb7bf1e23d30984773903cba0a860116c1b405c806fb966a99061",
     "software/cadagent/webkit/scada/explorer/search.mjs": "904fc7534c27ba62a257050bdcd68b12e0beaa61f0cb43ddfca23130bbdbf700",
     "software/cadagent/webkit/scada/explorer/selection.mjs": "a513e7bf6545805e8cc8efa0ee4c20b68ebe04ac28cf2eb56e92073044a7ad7a",
     "software/cadagent/webkit/scada/explorer/sound.mjs": "35b5fb0ea8f76d42477ef6ce75284da2e0064e466da5c08c7253f2088b2e49d5",
-    "software/cadagent/webkit/scada/explorer/styles.css": "3bc08c6b37e09b0a38944ccb56d31e44d32751a941d5e236e98c630bd5e3cf74",
+    "software/cadagent/webkit/scada/explorer/styles.css": "8974f0738939732ff533618c54d938f5ded5faef19b1913943fc49d25439219e",
     "software/cadagent/webkit/scada/ui/src/catalog/definitions/agriculture.mjs": "499d3bbf17783f3e6994e9cb9f5ce33a7995c336e948bb1e51131b3e1b7bb1c3",
     "software/cadagent/webkit/scada/ui/src/catalog/definitions/industrial.mjs": "9e00d1b0246ebce249a1d577541eeeed4f751b4207178761fd8d0b0e190af575",
     "software/cadagent/webkit/scada/ui/src/catalog/definitions/power.mjs": "91a40bc3f3626018b6ab046c222f23e701cc52cf0835946a897c10d0aea1ab48",
@@ -169,7 +169,7 @@
     "software/cadagent/webkit/scada/ui/src/catalog/registry.mjs": "41ade040fa118a07758a757ca903885377393ebb5053cdf7d63a05bbbd1c64e9",
     "software/cadagent/webkit/scada/ui/src/catalog/selection.mjs": "84e4ee4508a707c21ffb277735d93940d0a1f70f25b6832c0b4e46c941658226",
     "software/cadagent/webkit/scada/ui/src/catalog/utility-variants.mjs": "7cc4fcbbec4e3e749eacdbd14150772e21843c29bcdaebc58363c15967af1458",
-    "software/cadagent/webkit/scada/ui/src/contracts/system-definition.mjs": "99f247b1cca2c7a207197c28de0b7a6a8f92dae9724c842338888965f1d1599e",
+    "software/cadagent/webkit/scada/ui/src/contracts/system-definition.mjs": "45a5ddd87ec69952c09e0522774acdd20c86ea7d73f852a21807bde18f4232cb",
     "software/cadagent/webkit/scada/ui/src/index.mjs": "5cad33b47f700fdbf86cf5bd27ac78b45d9d1736a37aff5d97b72baca48e8481",
     "software/cadagent/webkit/scada/ui/src/metadata.mjs": "d5e1b713e8b0e49973df520a07f44d66f3b3b7cd6539734bf2aed96524318c0b",
     "software/cadagent/webkit/scada/ui/src/styles.css": "6f80066f25761d5b379553e21a52f5db344c726c693bebb449b25dde5f8f949a",
@@ -192,13 +192,19 @@
     "software/cadagent/webkit/scada/ui/src/symbols/power/nuclear.mjs": "b669848e4bad9eb88e058941e57c3d9df733353c524634a700c22ee8c056e1c4",
     "software/cadagent/webkit/scada/ui/src/symbols/power/power.css": "61ef55ffc564a2cb9b6f7b1b96e7b3b938131ff4d811fa6a0b143b0e52accabf",
     "software/cadagent/webkit/scada/ui/src/symbols/power/primitives.mjs": "fda1571381fc728b315cc09701ef76be5c921f8eb12670c54614019c3a4a4f79",
-    "software/cadagent/webkit/scada/ui/src/viewer/camera.mjs": "7f605bd3676000c99db8fd89e653410b03cb11b6fda0e5e10b61131740c8880b",
-    "software/cadagent/webkit/scada/ui/src/viewer/viewer.css": "bb0cc5abb96379872649d1ce88e10ca979721180eb80da7873d626ffce3f543a",
-    "software/cadagent/webkit/scada/ui/src/viewer/viewer.mjs": "ceeb9735373404d0e761e7574f00e2b517dd1762e57fe94e803c02d3a2238de4",
+    "software/cadagent/webkit/scada/ui/src/viewer/camera.mjs": "cafafc6b51100907108cd9c8e4cd85d8620769ca0c13b90f7959ba7cb0916273",
+    "software/cadagent/webkit/scada/ui/src/viewer/process-layout.mjs": "f19c06cc6d086d63f880f9dfbe4db41c5a2143ab4b169bb63a06f000ebfc292d",
+    "software/cadagent/webkit/scada/ui/src/viewer/viewer.css": "6991b3250b7a67785ab091a95baaf195f1d8cc031feadf8001206c203ee88c5b",
+    "software/cadagent/webkit/scada/ui/src/viewer/viewer.mjs": "7f31b768417688bf204c61be98ad0ea560efee789aadb2fe789a73d4c13bea65",
     "software/cadagent/webkit/scada/ui/src/workspace/workspace.css": "ab34edc9ab0e19d181b50a7cb33c8f33f406113d195dd367728f16688e05fafd",
-    "software/cadagent/webkit/scada/ui/src/workspace/workspace.mjs": "c7e1561841fe5af19b041f1da66ae1a502976496e54731218cfeb048d5f17085"
+    "software/cadagent/webkit/scada/ui/src/workspace/workspace.mjs": "c7e1561841fe5af19b041f1da66ae1a502976496e54731218cfeb048d5f17085",
+    "software/cadagent/webkit/ui/theme.js": "bec818983711f705b48f9df993ed4ee53a82093f1f750252103d0c1f8366b0e2",
+    "software/cadagent/webkit/ui/theme.css": "370dfb29b28c760d48332316651492d0853c3e3aa9bc355e8a7edb1a4b12cf47",
+    "software/cadagent/webkit/vendor/fonts/fonts.css": "8d4d4568d1e6d4942045dadc47aae800a5cc759245bdd3c742e665072865afd4",
+    "software/cadagent/webkit/vendor/fonts/inter.woff2": "3100e775e8616cd2611beecfa23a4263d7037586789b43f035236a2e6fbd4c62",
+    "software/cadagent/webkit/vendor/fonts/jetbrains-mono.woff2": "83c005d49d8a6a50474c73a5a36ac0468076e9c4a29da7bdb14995d80560a5be"
   },
-  "generator_sha256": "7e0aa001b50cefddf2d61143b10acfb7005eb213b3f054c31b16454d4d73d2bb",
+  "generator_sha256": "edc29ed6516dcf08241dcde2bd95fcb63f2890fc494e22c98ccd7ea0b7061844",
   "capture_helper_sha256": "2d767c6b3ab41936f2d199969612c12150c228e8259c30623fccf72d95bf1ffa",
   "capture": {
     "renderer": "Chromium software rendering, sRGB",
@@ -211,41 +217,41 @@
     "model_minutes": 0,
     "running": false,
     "animation_frame_ms": 1200,
-    "crop": "Actual contained viewer after Zoom to fit; overview scale depends on the viewport and declared diagram bounds."
+    "crop": "Actual contained viewer after Zoom to fit; overview scale and eligible process-chain projection depend on the viewport; card sizes and port identities remain authored."
   },
   "scenarios": [
     {
       "id": "wastewater-digester",
       "title": "Wastewater & biogas digital twin",
       "sector": "Water & utilities",
-      "view": "treatment",
+      "view": "overview",
       "system": "wastewater-digester/system.json",
       "model": "wastewater-digester/model.json",
-      "components": 17,
+      "components": 28,
       "camera_coverage": {
         "worldSize": {
-          "width": 1160,
-          "height": 660
+          "width": 2660,
+          "height": 1020
         },
         "layoutSize": {
-          "width": 1160,
-          "height": 660
+          "width": 2660,
+          "height": 1020
         },
         "viewportSize": {
-          "width": 1318,
-          "height": 758
+          "width": 1361,
+          "height": 1021
         },
         "camera": {
-          "x": 79,
-          "y": 75,
-          "zoom": 1,
+          "x": 12,
+          "y": 280.1578947368421,
+          "zoom": 0.5026315789473684,
           "fitted": true
         },
         "canvasRect": {
-          "x": 79,
-          "y": 75,
-          "width": 1160,
-          "height": 660
+          "x": 12,
+          "y": 280.15789794921875,
+          "width": 1337.0001220703125,
+          "height": 512.6842651367188
         },
         "finite": true,
         "layoutMatchesWorld": true,
@@ -253,11 +259,33 @@
         "canvasOverflowPx": 0,
         "renderedIds": [
           "aeration",
+          "chp",
+          "chpValve",
           "clarifier",
+          "controller",
+          "digestate",
+          "digestateValve",
+          "digester",
+          "digesterLevel",
+          "digesterTemperature",
           "effluent",
+          "effluentFlow",
+          "effluentValve",
+          "flare",
+          "flareValve",
+          "gasClean",
+          "gasHolder",
+          "gasQuality",
           "influent",
+          "inletFlow",
+          "inletValve",
           "liftPump",
-          "screen"
+          "loads",
+          "pressure",
+          "remoteIO",
+          "screen",
+          "sludgeValve",
+          "standby"
         ],
         "clippedIds": [],
         "clippedLabelIds": [],
@@ -265,18 +293,45 @@
         "maxOverflowPx": 0,
         "expectedIds": [
           "aeration",
+          "chp",
+          "chpValve",
           "clarifier",
+          "controller",
+          "digestate",
+          "digestateValve",
+          "digester",
+          "digesterLevel",
+          "digesterTemperature",
           "effluent",
+          "effluentFlow",
+          "effluentValve",
+          "flare",
+          "flareValve",
+          "gasClean",
+          "gasHolder",
+          "gasQuality",
           "influent",
+          "inletFlow",
+          "inletValve",
           "liftPump",
-          "screen"
-        ]
+          "loads",
+          "pressure",
+          "remoteIO",
+          "screen",
+          "sludgeValve",
+          "standby"
+        ],
+        "authoredWorldSize": {
+          "width": 2660,
+          "height": 1020
+        },
+        "layoutProjection": null
       },
       "path": "img/thumbnails/water-utilities/wastewater-digester/preview.jpg",
-      "width": 1354,
-      "height": 975,
-      "bytes": 108192,
-      "sha256": "86d77d834b51ab0826d8db7f8ebe19909e898072643f630afcd086cecd29e036"
+      "width": 1398,
+      "height": 1173,
+      "bytes": 167107,
+      "sha256": "3c7e4548f4ea5f5d34c06a58f3cc72024cb9c5b160620debd48c532e87671cdd"
     },
     {
       "id": "winery",
@@ -285,31 +340,31 @@
       "view": "process",
       "system": "winery/system.json",
       "model": "winery/model.json",
-      "components": 15,
+      "components": 23,
       "camera_coverage": {
         "worldSize": {
-          "width": 1280,
-          "height": 940
+          "width": 2400,
+          "height": 960
         },
         "layoutSize": {
-          "width": 1280,
-          "height": 940
+          "width": 2400,
+          "height": 960
         },
         "viewportSize": {
-          "width": 1318,
-          "height": 758
+          "width": 1361,
+          "height": 1045
         },
         "camera": {
-          "x": 194.6595744680851,
-          "y": 64,
-          "zoom": 0.725531914893617,
+          "x": 12,
+          "y": 281.09999999999997,
+          "zoom": 0.5570833333333334,
           "fitted": true
         },
         "canvasRect": {
-          "x": 194.65957641601562,
-          "y": 64,
-          "width": 928.680908203125,
-          "height": 682
+          "x": 12,
+          "y": 281.0999755859375,
+          "width": 1337,
+          "height": 534.800048828125
         },
         "finite": true,
         "layoutMatchesWorld": true,
@@ -317,14 +372,27 @@
         "canvasOverflowPx": 0,
         "renderedIds": [
           "aging",
+          "biogasFlare",
           "bottler",
+          "cellarLevel",
+          "cellarValve",
+          "controller",
           "crusher",
+          "effluent",
           "extraction",
           "fermenter",
+          "fermenterLevel",
+          "fermenterTemperature",
+          "fillValve",
           "grapeIntake",
+          "mustFlow",
           "mustTransfer",
+          "mustValve",
           "packer",
           "polishing",
+          "power",
+          "pressure",
+          "remoteIO",
           "transferValve"
         ],
         "clippedIds": [],
@@ -333,22 +401,40 @@
         "maxOverflowPx": 0,
         "expectedIds": [
           "aging",
+          "biogasFlare",
           "bottler",
+          "cellarLevel",
+          "cellarValve",
+          "controller",
           "crusher",
+          "effluent",
           "extraction",
           "fermenter",
+          "fermenterLevel",
+          "fermenterTemperature",
+          "fillValve",
           "grapeIntake",
+          "mustFlow",
           "mustTransfer",
+          "mustValve",
           "packer",
           "polishing",
+          "power",
+          "pressure",
+          "remoteIO",
           "transferValve"
-        ]
+        ],
+        "authoredWorldSize": {
+          "width": 2400,
+          "height": 960
+        },
+        "layoutProjection": null
       },
       "path": "img/thumbnails/food-beverage/winery/preview.jpg",
-      "width": 1354,
-      "height": 975,
-      "bytes": 111678,
-      "sha256": "f13c41c95d36917c59e55522e915544d35ba34e8cb14eb16fdd94d524433c5c8"
+      "width": 1398,
+      "height": 1196,
+      "bytes": 174006,
+      "sha256": "a7a7f045d9f1b548d32af05cee788e392bf1667b171d484a27d3b6ed08d27946"
     },
     {
       "id": "brewery",
@@ -357,70 +443,105 @@
       "view": "process",
       "system": "brewery/system.json",
       "model": "brewery/model.json",
-      "components": 16,
+      "components": 25,
       "camera_coverage": {
         "worldSize": {
-          "width": 1280,
-          "height": 940
+          "width": 2680,
+          "height": 960
         },
         "layoutSize": {
-          "width": 1280,
-          "height": 940
+          "width": 2680,
+          "height": 960
         },
         "viewportSize": {
-          "width": 1318,
-          "height": 758
+          "width": 1361,
+          "height": 1045
         },
         "camera": {
-          "x": 194.6595744680851,
-          "y": 64,
-          "zoom": 0.725531914893617,
+          "x": 12,
+          "y": 309.03731343283584,
+          "zoom": 0.4988805970149254,
           "fitted": true
         },
         "canvasRect": {
-          "x": 194.65957641601562,
-          "y": 64,
-          "width": 928.680908203125,
-          "height": 682
+          "x": 12,
+          "y": 309.037353515625,
+          "width": 1337,
+          "height": 478.92529296875
         },
         "finite": true,
         "layoutMatchesWorld": true,
         "dimensionsMatchScale": true,
         "canvasOverflowPx": 0,
         "renderedIds": [
+          "brewPressure",
           "conditioning",
+          "controller",
           "cooler",
+          "effluent",
           "fermenter",
+          "fermenterLevel",
+          "fermenterValve",
+          "fillValve",
           "filler",
           "grainSilo",
+          "heatService",
           "kettle",
+          "kettleValve",
           "lauter",
           "mash",
+          "mashValve",
           "mill",
-          "packer"
+          "network",
+          "packer",
+          "power",
+          "remoteIO",
+          "temperature",
+          "transferPump",
+          "wortFlow"
         ],
         "clippedIds": [],
         "clippedLabelIds": [],
         "controlOverlapIds": [],
         "maxOverflowPx": 0,
         "expectedIds": [
+          "brewPressure",
           "conditioning",
+          "controller",
           "cooler",
+          "effluent",
           "fermenter",
+          "fermenterLevel",
+          "fermenterValve",
+          "fillValve",
           "filler",
           "grainSilo",
+          "heatService",
           "kettle",
+          "kettleValve",
           "lauter",
           "mash",
+          "mashValve",
           "mill",
-          "packer"
-        ]
+          "network",
+          "packer",
+          "power",
+          "remoteIO",
+          "temperature",
+          "transferPump",
+          "wortFlow"
+        ],
+        "authoredWorldSize": {
+          "width": 2680,
+          "height": 960
+        },
+        "layoutProjection": null
       },
       "path": "img/thumbnails/food-beverage/brewery/preview.jpg",
-      "width": 1354,
-      "height": 975,
-      "bytes": 110560,
-      "sha256": "2929f57f27e6714523f53c5fc094cb5619f239a531c3dfd0d8aba474bd7f2d43"
+      "width": 1398,
+      "height": 1196,
+      "bytes": 176358,
+      "sha256": "5233a01d9769a31dc3a7b33e6458bc2a7d6684e70372575c7c2d7c3ed41b7ad5"
     },
     {
       "id": "fortune-cookies",
@@ -432,28 +553,28 @@
       "components": 15,
       "camera_coverage": {
         "worldSize": {
-          "width": 1280,
-          "height": 940
+          "width": 920,
+          "height": 870
         },
         "layoutSize": {
-          "width": 1280,
-          "height": 940
+          "width": 920,
+          "height": 870
         },
         "viewportSize": {
-          "width": 1318,
-          "height": 758
+          "width": 1361,
+          "height": 1045
         },
         "camera": {
-          "x": 194.6595744680851,
-          "y": 64,
-          "zoom": 0.725531914893617,
+          "x": 168.15517241379314,
+          "y": 64.00000000000006,
+          "zoom": 1.1137931034482758,
           "fitted": true
         },
         "canvasRect": {
-          "x": 194.65957641601562,
+          "x": 168.15516662597656,
           "y": 64,
-          "width": 928.680908203125,
-          "height": 682
+          "width": 1024.689697265625,
+          "height": 969
         },
         "finite": true,
         "layoutMatchesWorld": true,
@@ -484,13 +605,22 @@
           "oven",
           "packer",
           "transfer"
-        ]
+        ],
+        "authoredWorldSize": {
+          "width": 1280,
+          "height": 940
+        },
+        "layoutProjection": {
+          "kind": "process-chain",
+          "columns": 3,
+          "rows": 3
+        }
       },
       "path": "img/thumbnails/food-beverage/fortune-cookies/preview.jpg",
-      "width": 1354,
-      "height": 975,
-      "bytes": 111605,
-      "sha256": "f606627eb1b9af18913138df5a0096de90806d7b4865008ffc02bf38bf2cb637"
+      "width": 1398,
+      "height": 1196,
+      "bytes": 178723,
+      "sha256": "63976a54175f4727569eeea3d54054f7c4fc42ea8759ec1624fd81525136c208"
     },
     {
       "id": "shampoo",
@@ -510,20 +640,20 @@
           "height": 940
         },
         "viewportSize": {
-          "width": 1318,
-          "height": 758
+          "width": 1361,
+          "height": 1021
         },
         "camera": {
-          "x": 194.6595744680851,
-          "y": 64,
-          "zoom": 0.725531914893617,
+          "x": 37.09574468085111,
+          "y": 64.00000000000006,
+          "zoom": 1.0053191489361701,
           "fitted": true
         },
         "canvasRect": {
-          "x": 194.65957641601562,
+          "x": 37.09574890136719,
           "y": 64,
-          "width": 928.680908203125,
-          "height": 682
+          "width": 1286.8084716796875,
+          "height": 945
         },
         "finite": true,
         "layoutMatchesWorld": true,
@@ -556,13 +686,18 @@
           "polish",
           "temperatureLoop",
           "water"
-        ]
+        ],
+        "authoredWorldSize": {
+          "width": 1280,
+          "height": 940
+        },
+        "layoutProjection": null
       },
       "path": "img/thumbnails/consumer-products/shampoo/preview.jpg",
-      "width": 1354,
-      "height": 975,
-      "bytes": 113344,
-      "sha256": "7b17dbea5f1826a35b3d026ee95ce2e35ae22e227d67c5c6c01e1d1081cac657"
+      "width": 1398,
+      "height": 1173,
+      "bytes": 157925,
+      "sha256": "11171621021d08f86b33b3329d5879fca2a0b393252443a82f6e4259ed229932"
     },
     {
       "id": "carbonated-beverages",
@@ -582,20 +717,20 @@
           "height": 940
         },
         "viewportSize": {
-          "width": 1318,
-          "height": 758
+          "width": 1361,
+          "height": 1021
         },
         "camera": {
-          "x": 194.6595744680851,
-          "y": 64,
-          "zoom": 0.725531914893617,
+          "x": 37.09574468085111,
+          "y": 64.00000000000006,
+          "zoom": 1.0053191489361701,
           "fitted": true
         },
         "canvasRect": {
-          "x": 194.65957641601562,
+          "x": 37.09574890136719,
           "y": 64,
-          "width": 928.680908203125,
-          "height": 682
+          "width": 1286.8084716796875,
+          "height": 945
         },
         "finite": true,
         "layoutMatchesWorld": true,
@@ -632,13 +767,18 @@
           "water",
           "waterFilter",
           "waterPump"
-        ]
+        ],
+        "authoredWorldSize": {
+          "width": 1280,
+          "height": 940
+        },
+        "layoutProjection": null
       },
       "path": "img/thumbnails/food-beverage/carbonated-beverages/preview.jpg",
-      "width": 1354,
-      "height": 975,
-      "bytes": 117914,
-      "sha256": "065b61eee2bf42e1964ac395836075db7e2023f702f3b2f98ddf06e5479ad9ae"
+      "width": 1398,
+      "height": 1173,
+      "bytes": 165395,
+      "sha256": "dbbb18a75ecbf5795a9181e5f1b176872aae8bdd29b4ca78f42d16a124871d79"
     },
     {
       "id": "dairy",
@@ -650,28 +790,28 @@
       "components": 13,
       "camera_coverage": {
         "worldSize": {
-          "width": 1280,
-          "height": 940
+          "width": 920,
+          "height": 870
         },
         "layoutSize": {
-          "width": 1280,
-          "height": 940
+          "width": 920,
+          "height": 870
         },
         "viewportSize": {
-          "width": 1318,
-          "height": 758
+          "width": 1361,
+          "height": 1045
         },
         "camera": {
-          "x": 194.6595744680851,
-          "y": 64,
-          "zoom": 0.725531914893617,
+          "x": 168.15517241379314,
+          "y": 64.00000000000006,
+          "zoom": 1.1137931034482758,
           "fitted": true
         },
         "canvasRect": {
-          "x": 194.65957641601562,
+          "x": 168.15516662597656,
           "y": 64,
-          "width": 928.680908203125,
-          "height": 682
+          "width": 1024.689697265625,
+          "height": 969
         },
         "finite": true,
         "layoutMatchesWorld": true,
@@ -702,13 +842,22 @@
           "receiving",
           "separator",
           "strainer"
-        ]
+        ],
+        "authoredWorldSize": {
+          "width": 1280,
+          "height": 940
+        },
+        "layoutProjection": {
+          "kind": "process-chain",
+          "columns": 3,
+          "rows": 3
+        }
       },
       "path": "img/thumbnails/food-beverage/dairy/preview.jpg",
-      "width": 1354,
-      "height": 975,
-      "bytes": 106230,
-      "sha256": "88540e83e84b816b3948e93ede9106f780e23330cc47700b00b2942059b3de70"
+      "width": 1398,
+      "height": 1196,
+      "bytes": 170390,
+      "sha256": "d47b4e9aca264091329dfa54f08c68389081684e55a6ea4b6820230140991ac2"
     },
     {
       "id": "fruit-juice",
@@ -720,28 +869,28 @@
       "components": 14,
       "camera_coverage": {
         "worldSize": {
-          "width": 1280,
-          "height": 940
+          "width": 1220,
+          "height": 870
         },
         "layoutSize": {
-          "width": 1280,
-          "height": 940
+          "width": 1220,
+          "height": 870
         },
         "viewportSize": {
-          "width": 1318,
-          "height": 758
+          "width": 1361,
+          "height": 1045
         },
         "camera": {
-          "x": 194.6595744680851,
-          "y": 64,
-          "zoom": 0.725531914893617,
+          "x": 12,
+          "y": 71.78278688524591,
+          "zoom": 1.0959016393442622,
           "fitted": true
         },
         "canvasRect": {
-          "x": 194.65957641601562,
-          "y": 64,
-          "width": 928.680908203125,
-          "height": 682
+          "x": 12,
+          "y": 71.78277587890625,
+          "width": 1337,
+          "height": 953.4343872070312
         },
         "finite": true,
         "layoutMatchesWorld": true,
@@ -774,13 +923,22 @@
           "intake",
           "packer",
           "polish"
-        ]
+        ],
+        "authoredWorldSize": {
+          "width": 1280,
+          "height": 940
+        },
+        "layoutProjection": {
+          "kind": "process-chain",
+          "columns": 4,
+          "rows": 3
+        }
       },
       "path": "img/thumbnails/food-beverage/fruit-juice/preview.jpg",
-      "width": 1354,
-      "height": 975,
-      "bytes": 113042,
-      "sha256": "3679cd0a34bf19932dd481b65a723a11720bdcfd0463706c835328f282f9dff3"
+      "width": 1398,
+      "height": 1196,
+      "bytes": 179910,
+      "sha256": "e51e442f433b2bc4e2bb4c4ff46cfed949cb11e8084f3e705b37f5fb219bd11b"
     },
     {
       "id": "pharma-oral-liquid",
@@ -800,20 +958,20 @@
           "height": 940
         },
         "viewportSize": {
-          "width": 1318,
-          "height": 758
+          "width": 1361,
+          "height": 1021
         },
         "camera": {
-          "x": 194.6595744680851,
-          "y": 64,
-          "zoom": 0.725531914893617,
+          "x": 37.09574468085111,
+          "y": 64.00000000000006,
+          "zoom": 1.0053191489361701,
           "fitted": true
         },
         "canvasRect": {
-          "x": 194.65957641601562,
+          "x": 37.09574890136719,
           "y": 64,
-          "width": 928.680908203125,
-          "height": 682
+          "width": 1286.8084716796875,
+          "height": 945
         },
         "finite": true,
         "layoutMatchesWorld": true,
@@ -850,13 +1008,18 @@
           "transfer",
           "transferPipe",
           "water"
-        ]
+        ],
+        "authoredWorldSize": {
+          "width": 1280,
+          "height": 940
+        },
+        "layoutProjection": null
       },
       "path": "img/thumbnails/pharmaceuticals/pharma-oral-liquid/preview.jpg",
-      "width": 1354,
-      "height": 975,
-      "bytes": 118629,
-      "sha256": "df78593878996cbab38b8cb5a4f10e7c3b2920397ab029fc8007f61c849bafa0"
+      "width": 1398,
+      "height": 1173,
+      "bytes": 166533,
+      "sha256": "7e34f9ff51c9adeea9f21f1b573059e1c419336e483ac3e30bf2e3686e881c78"
     },
     {
       "id": "tablets",
@@ -868,28 +1031,28 @@
       "components": 15,
       "camera_coverage": {
         "worldSize": {
-          "width": 1280,
-          "height": 940
+          "width": 1220,
+          "height": 870
         },
         "layoutSize": {
-          "width": 1280,
-          "height": 940
+          "width": 1220,
+          "height": 870
         },
         "viewportSize": {
-          "width": 1318,
-          "height": 758
+          "width": 1361,
+          "height": 1021
         },
         "camera": {
-          "x": 194.6595744680851,
+          "x": 17.913793103448256,
           "y": 64,
-          "zoom": 0.725531914893617,
+          "zoom": 1.0862068965517242,
           "fitted": true
         },
         "canvasRect": {
-          "x": 194.65957641601562,
+          "x": 17.913795471191406,
           "y": 64,
-          "width": 928.680908203125,
-          "height": 682
+          "width": 1325.1724853515625,
+          "height": 945
         },
         "finite": true,
         "layoutMatchesWorld": true,
@@ -924,13 +1087,22 @@
           "press",
           "screen",
           "weighing"
-        ]
+        ],
+        "authoredWorldSize": {
+          "width": 1280,
+          "height": 940
+        },
+        "layoutProjection": {
+          "kind": "process-chain",
+          "columns": 4,
+          "rows": 3
+        }
       },
       "path": "img/thumbnails/pharmaceuticals/tablets/preview.jpg",
-      "width": 1354,
-      "height": 975,
-      "bytes": 118302,
-      "sha256": "689d9af3043ac92c218b4bbbf25a053c61ac0d6b3e6182b7c55abc1eb78413b7"
+      "width": 1398,
+      "height": 1173,
+      "bytes": 186594,
+      "sha256": "1198c85a8597e88ad495ae795428bb3f20f67cdec8dbe5d236545fb4b947945f"
     },
     {
       "id": "biopharma-fermentation",
@@ -942,28 +1114,28 @@
       "components": 14,
       "camera_coverage": {
         "worldSize": {
-          "width": 1280,
-          "height": 940
+          "width": 920,
+          "height": 870
         },
         "layoutSize": {
-          "width": 1280,
-          "height": 940
+          "width": 920,
+          "height": 870
         },
         "viewportSize": {
-          "width": 1318,
-          "height": 758
+          "width": 1361,
+          "height": 1021
         },
         "camera": {
-          "x": 194.6595744680851,
+          "x": 180.84482758620686,
           "y": 64,
-          "zoom": 0.725531914893617,
+          "zoom": 1.0862068965517242,
           "fitted": true
         },
         "canvasRect": {
-          "x": 194.65957641601562,
+          "x": 180.84483337402344,
           "y": 64,
-          "width": 928.680908203125,
-          "height": 682
+          "width": 999.310302734375,
+          "height": 945
         },
         "finite": true,
         "layoutMatchesWorld": true,
@@ -994,13 +1166,22 @@
           "mediaFeed",
           "membranes",
           "separator"
-        ]
+        ],
+        "authoredWorldSize": {
+          "width": 1280,
+          "height": 940
+        },
+        "layoutProjection": {
+          "kind": "process-chain",
+          "columns": 3,
+          "rows": 3
+        }
       },
       "path": "img/thumbnails/biopharma/biopharma-fermentation/preview.jpg",
-      "width": 1354,
-      "height": 975,
-      "bytes": 108165,
-      "sha256": "9df1562b0df6877783375a1629181c05ad3cb50df21bbc5e0293d054baa7ff34"
+      "width": 1398,
+      "height": 1173,
+      "bytes": 164421,
+      "sha256": "b03986c3fdcb0c4fd603bdade4ba090be7e277013a53da1bfe36b746c0f980a0"
     },
     {
       "id": "sterile-filling",
@@ -1012,28 +1193,28 @@
       "components": 14,
       "camera_coverage": {
         "worldSize": {
-          "width": 1280,
-          "height": 940
+          "width": 920,
+          "height": 870
         },
         "layoutSize": {
-          "width": 1280,
-          "height": 940
+          "width": 920,
+          "height": 870
         },
         "viewportSize": {
-          "width": 1318,
-          "height": 758
+          "width": 1361,
+          "height": 1021
         },
         "camera": {
-          "x": 194.6595744680851,
+          "x": 180.84482758620686,
           "y": 64,
-          "zoom": 0.725531914893617,
+          "zoom": 1.0862068965517242,
           "fitted": true
         },
         "canvasRect": {
-          "x": 194.65957641601562,
+          "x": 180.84483337402344,
           "y": 64,
-          "width": 928.680908203125,
-          "height": 682
+          "width": 999.310302734375,
+          "height": 945
         },
         "finite": true,
         "layoutMatchesWorld": true,
@@ -1064,13 +1245,22 @@
           "pump",
           "solution",
           "valve"
-        ]
+        ],
+        "authoredWorldSize": {
+          "width": 1280,
+          "height": 940
+        },
+        "layoutProjection": {
+          "kind": "process-chain",
+          "columns": 3,
+          "rows": 3
+        }
       },
       "path": "img/thumbnails/pharmaceuticals/sterile-filling/preview.jpg",
-      "width": 1354,
-      "height": 975,
-      "bytes": 109204,
-      "sha256": "21e59cd8b52a6acbe2ddc57846954a76e426fe30b7d2b58abdb22df08232c5d5"
+      "width": 1398,
+      "height": 1173,
+      "bytes": 167774,
+      "sha256": "04a699fb2d2f2bab84be0211ffc5918ba7aa597bfa1e98419c845cd2196ecd25"
     },
     {
       "id": "paint-blending",
@@ -1090,20 +1280,20 @@
           "height": 940
         },
         "viewportSize": {
-          "width": 1318,
-          "height": 758
+          "width": 1361,
+          "height": 1045
         },
         "camera": {
-          "x": 194.6595744680851,
+          "x": 20.755319148936223,
           "y": 64,
-          "zoom": 0.725531914893617,
+          "zoom": 1.0308510638297872,
           "fitted": true
         },
         "canvasRect": {
-          "x": 194.65957641601562,
+          "x": 20.75531768798828,
           "y": 64,
-          "width": 928.680908203125,
-          "height": 682
+          "width": 1319.4892578125,
+          "height": 969
         },
         "finite": true,
         "layoutMatchesWorld": true,
@@ -1134,13 +1324,18 @@
           "packer",
           "pigment",
           "tint"
-        ]
+        ],
+        "authoredWorldSize": {
+          "width": 1280,
+          "height": 940
+        },
+        "layoutProjection": null
       },
       "path": "img/thumbnails/chemicals/paint-blending/preview.jpg",
-      "width": 1354,
-      "height": 975,
-      "bytes": 108520,
-      "sha256": "4ae587246b4422de9be8f68c5df87ac5b69565ad6db6cbcaa9f678ba3a6f5189"
+      "width": 1398,
+      "height": 1196,
+      "bytes": 152329,
+      "sha256": "f7b5aca9329d1c1bcc20b5709b1c5216b0ef683e950e1f3c1fb7bde189c0907d"
     },
     {
       "id": "industrial-detergent",
@@ -1160,20 +1355,20 @@
           "height": 940
         },
         "viewportSize": {
-          "width": 1318,
-          "height": 758
+          "width": 1361,
+          "height": 1021
         },
         "camera": {
-          "x": 194.6595744680851,
-          "y": 64,
-          "zoom": 0.725531914893617,
+          "x": 37.09574468085111,
+          "y": 64.00000000000006,
+          "zoom": 1.0053191489361701,
           "fitted": true
         },
         "canvasRect": {
-          "x": 194.65957641601562,
+          "x": 37.09574890136719,
           "y": 64,
-          "width": 928.680908203125,
-          "height": 682
+          "width": 1286.8084716796875,
+          "height": 945
         },
         "finite": true,
         "layoutMatchesWorld": true,
@@ -1208,13 +1403,18 @@
           "packer",
           "valve",
           "water"
-        ]
+        ],
+        "authoredWorldSize": {
+          "width": 1280,
+          "height": 940
+        },
+        "layoutProjection": null
       },
       "path": "img/thumbnails/chemicals/industrial-detergent/preview.jpg",
-      "width": 1354,
-      "height": 975,
-      "bytes": 115390,
-      "sha256": "940d3a0b7c7366e8230a255529bdb11f086f8bb7a7cbdbbc5d7ad9059f5cc892"
+      "width": 1398,
+      "height": 1173,
+      "bytes": 161681,
+      "sha256": "ca70755cf33f08ff03b31f2d74a5537d004d6d8b913c77238992b715a46fb1b3"
     },
     {
       "id": "polymer-extrusion",
@@ -1226,28 +1426,28 @@
       "components": 15,
       "camera_coverage": {
         "worldSize": {
-          "width": 1280,
-          "height": 940
+          "width": 1220,
+          "height": 870
         },
         "layoutSize": {
-          "width": 1280,
-          "height": 940
+          "width": 1220,
+          "height": 870
         },
         "viewportSize": {
-          "width": 1318,
-          "height": 758
+          "width": 1361,
+          "height": 1045
         },
         "camera": {
-          "x": 194.6595744680851,
-          "y": 64,
-          "zoom": 0.725531914893617,
+          "x": 12,
+          "y": 71.78278688524591,
+          "zoom": 1.0959016393442622,
           "fitted": true
         },
         "canvasRect": {
-          "x": 194.65957641601562,
-          "y": 64,
-          "width": 928.680908203125,
-          "height": 682
+          "x": 12,
+          "y": 71.78277587890625,
+          "width": 1337,
+          "height": 953.4343872070312
         },
         "finite": true,
         "layoutMatchesWorld": true,
@@ -1280,13 +1480,22 @@
           "hopper",
           "packer",
           "resin"
-        ]
+        ],
+        "authoredWorldSize": {
+          "width": 1280,
+          "height": 940
+        },
+        "layoutProjection": {
+          "kind": "process-chain",
+          "columns": 4,
+          "rows": 3
+        }
       },
       "path": "img/thumbnails/materials/polymer-extrusion/preview.jpg",
-      "width": 1354,
-      "height": 975,
-      "bytes": 115190,
-      "sha256": "37bd0b0bb756a9d723ab7d52a0dce64597f64ddc8c4eae39dcd4f0d7ab3b4d27"
+      "width": 1398,
+      "height": 1196,
+      "bytes": 181160,
+      "sha256": "ba6a179b9e53b8b2926f3ee5010f7843eb62b98b5bffb939e39498e5f0c11d19"
     },
     {
       "id": "concrete-batching",
@@ -1306,20 +1515,20 @@
           "height": 940
         },
         "viewportSize": {
-          "width": 1318,
-          "height": 758
+          "width": 1361,
+          "height": 1045
         },
         "camera": {
-          "x": 194.6595744680851,
+          "x": 20.755319148936223,
           "y": 64,
-          "zoom": 0.725531914893617,
+          "zoom": 1.0308510638297872,
           "fitted": true
         },
         "canvasRect": {
-          "x": 194.65957641601562,
+          "x": 20.75531768798828,
           "y": 64,
-          "width": 928.680908203125,
-          "height": 682
+          "width": 1319.4892578125,
+          "height": 969
         },
         "finite": true,
         "layoutMatchesWorld": true,
@@ -1352,13 +1561,18 @@
           "transfer",
           "water",
           "waterPump"
-        ]
+        ],
+        "authoredWorldSize": {
+          "width": 1280,
+          "height": 940
+        },
+        "layoutProjection": null
       },
       "path": "img/thumbnails/construction-materials/concrete-batching/preview.jpg",
-      "width": 1354,
-      "height": 975,
-      "bytes": 115080,
-      "sha256": "a7b25faa79de38689b03176c4e79a9c7e61f313e3834857d257453873bc0bc4c"
+      "width": 1398,
+      "height": 1196,
+      "bytes": 161586,
+      "sha256": "cd08bf8e4dfc3471b8c8adde14cfca92cb2d0bfb4588f80890124718134a94c7"
     },
     {
       "id": "cement",
@@ -1370,28 +1584,28 @@
       "components": 14,
       "camera_coverage": {
         "worldSize": {
-          "width": 1280,
-          "height": 940
+          "width": 920,
+          "height": 870
         },
         "layoutSize": {
-          "width": 1280,
-          "height": 940
+          "width": 920,
+          "height": 870
         },
         "viewportSize": {
-          "width": 1318,
-          "height": 758
+          "width": 1361,
+          "height": 1021
         },
         "camera": {
-          "x": 194.6595744680851,
+          "x": 180.84482758620686,
           "y": 64,
-          "zoom": 0.725531914893617,
+          "zoom": 1.0862068965517242,
           "fitted": true
         },
         "canvasRect": {
-          "x": 194.65957641601562,
+          "x": 180.84483337402344,
           "y": 64,
-          "width": 928.680908203125,
-          "height": 682
+          "width": 999.310302734375,
+          "height": 945
         },
         "finite": true,
         "layoutMatchesWorld": true,
@@ -1422,13 +1636,22 @@
           "preheater",
           "rawMill",
           "silo"
-        ]
+        ],
+        "authoredWorldSize": {
+          "width": 1280,
+          "height": 940
+        },
+        "layoutProjection": {
+          "kind": "process-chain",
+          "columns": 3,
+          "rows": 3
+        }
       },
       "path": "img/thumbnails/construction-materials/cement/preview.jpg",
-      "width": 1354,
-      "height": 975,
-      "bytes": 110672,
-      "sha256": "a51ae5014acf186ab45c1245cecd2b7230b6827427a3ae5f49ddfddf97c2f506"
+      "width": 1398,
+      "height": 1173,
+      "bytes": 169539,
+      "sha256": "5483bed3e3664d0a939fa78354878538dfb8a0b6ca15c02e1b57948a698321bd"
     },
     {
       "id": "mineral-crushing",
@@ -1440,28 +1663,28 @@
       "components": 14,
       "camera_coverage": {
         "worldSize": {
-          "width": 1280,
-          "height": 940
+          "width": 920,
+          "height": 870
         },
         "layoutSize": {
-          "width": 1280,
-          "height": 940
+          "width": 920,
+          "height": 870
         },
         "viewportSize": {
-          "width": 1318,
-          "height": 758
+          "width": 1361,
+          "height": 1045
         },
         "camera": {
-          "x": 194.6595744680851,
-          "y": 64,
-          "zoom": 0.725531914893617,
+          "x": 168.15517241379314,
+          "y": 64.00000000000006,
+          "zoom": 1.1137931034482758,
           "fitted": true
         },
         "canvasRect": {
-          "x": 194.65957641601562,
+          "x": 168.15516662597656,
           "y": 64,
-          "width": 928.680908203125,
-          "height": 682
+          "width": 1024.689697265625,
+          "height": 969
         },
         "finite": true,
         "layoutMatchesWorld": true,
@@ -1492,13 +1715,22 @@
           "secondary",
           "surge",
           "transfer"
-        ]
+        ],
+        "authoredWorldSize": {
+          "width": 1280,
+          "height": 940
+        },
+        "layoutProjection": {
+          "kind": "process-chain",
+          "columns": 3,
+          "rows": 3
+        }
       },
       "path": "img/thumbnails/mineral-processing/mineral-crushing/preview.jpg",
-      "width": 1354,
-      "height": 975,
-      "bytes": 109592,
-      "sha256": "67b8835b4f2ac2d45ba638dbbebedbea9281d41124197a87e7c8c0458856397b"
+      "width": 1398,
+      "height": 1196,
+      "bytes": 177593,
+      "sha256": "566b99f1a016e2ba8f63f1a94ebc84dfc262bf44e33571e70ae0447a8c5fc90e"
     },
     {
       "id": "mineral-flotation",
@@ -1510,28 +1742,28 @@
       "components": 13,
       "camera_coverage": {
         "worldSize": {
-          "width": 1280,
-          "height": 940
+          "width": 920,
+          "height": 870
         },
         "layoutSize": {
-          "width": 1280,
-          "height": 940
+          "width": 920,
+          "height": 870
         },
         "viewportSize": {
-          "width": 1318,
-          "height": 758
+          "width": 1361,
+          "height": 1045
         },
         "camera": {
-          "x": 194.6595744680851,
-          "y": 64,
-          "zoom": 0.725531914893617,
+          "x": 168.15517241379314,
+          "y": 64.00000000000006,
+          "zoom": 1.1137931034482758,
           "fitted": true
         },
         "canvasRect": {
-          "x": 194.65957641601562,
+          "x": 168.15516662597656,
           "y": 64,
-          "width": 928.680908203125,
-          "height": 682
+          "width": 1024.689697265625,
+          "height": 969
         },
         "finite": true,
         "layoutMatchesWorld": true,
@@ -1562,13 +1794,22 @@
           "rougher",
           "slurry",
           "thickener"
-        ]
+        ],
+        "authoredWorldSize": {
+          "width": 1280,
+          "height": 940
+        },
+        "layoutProjection": {
+          "kind": "process-chain",
+          "columns": 3,
+          "rows": 3
+        }
       },
       "path": "img/thumbnails/mineral-processing/mineral-flotation/preview.jpg",
-      "width": 1354,
-      "height": 975,
-      "bytes": 109544,
-      "sha256": "1ff86ba58040c9be1058f9505644c4a066e59a234c83c62f2d1d248b9e533018"
+      "width": 1398,
+      "height": 1196,
+      "bytes": 171664,
+      "sha256": "fcce85cdc9e7d4a7f0a6065c66c469f06474e750d02890d603fa475e44cd865e"
     },
     {
       "id": "metal-finishing",
@@ -1580,28 +1821,28 @@
       "components": 14,
       "camera_coverage": {
         "worldSize": {
-          "width": 1280,
-          "height": 660
+          "width": 1220,
+          "height": 590
         },
         "layoutSize": {
-          "width": 1280,
-          "height": 660
+          "width": 1220,
+          "height": 590
         },
         "viewportSize": {
-          "width": 1318,
-          "height": 758
+          "width": 1361,
+          "height": 1021
         },
         "camera": {
-          "x": 19,
-          "y": 75,
-          "zoom": 1,
+          "x": 12,
+          "y": 213.20901639344265,
+          "zoom": 1.0959016393442622,
           "fitted": true
         },
         "canvasRect": {
-          "x": 19,
-          "y": 75,
-          "width": 1280,
-          "height": 660
+          "x": 12,
+          "y": 213.208984375,
+          "width": 1337,
+          "height": 646.58203125
         },
         "finite": true,
         "layoutMatchesWorld": true,
@@ -1630,13 +1871,22 @@
           "rinseOne",
           "rinseTwo",
           "treatment"
-        ]
+        ],
+        "authoredWorldSize": {
+          "width": 1280,
+          "height": 660
+        },
+        "layoutProjection": {
+          "kind": "process-chain",
+          "columns": 4,
+          "rows": 2
+        }
       },
       "path": "img/thumbnails/surface-treatment/metal-finishing/preview.jpg",
-      "width": 1354,
-      "height": 975,
-      "bytes": 117734,
-      "sha256": "b2b24ace50c3d062176c396e427fe00955efb0ea4c68f0095290c33ee099fce8"
+      "width": 1398,
+      "height": 1173,
+      "bytes": 150601,
+      "sha256": "b1f964e59476de8b339edabf7f779318860b20ea597f18ba30bcf00649e85e6d"
     },
     {
       "id": "pulp-paper",
@@ -1648,28 +1898,28 @@
       "components": 16,
       "camera_coverage": {
         "worldSize": {
-          "width": 1280,
-          "height": 940
+          "width": 1220,
+          "height": 870
         },
         "layoutSize": {
-          "width": 1280,
-          "height": 940
+          "width": 1220,
+          "height": 870
         },
         "viewportSize": {
-          "width": 1318,
-          "height": 758
+          "width": 1361,
+          "height": 1045
         },
         "camera": {
-          "x": 194.6595744680851,
-          "y": 64,
-          "zoom": 0.725531914893617,
+          "x": 12,
+          "y": 71.78278688524591,
+          "zoom": 1.0959016393442622,
           "fitted": true
         },
         "canvasRect": {
-          "x": 194.65957641601562,
-          "y": 64,
-          "width": 928.680908203125,
-          "height": 682
+          "x": 12,
+          "y": 71.78277587890625,
+          "width": 1337,
+          "height": 953.4343872070312
         },
         "finite": true,
         "layoutMatchesWorld": true,
@@ -1702,13 +1952,22 @@
           "refiner",
           "screen",
           "stock"
-        ]
+        ],
+        "authoredWorldSize": {
+          "width": 1280,
+          "height": 940
+        },
+        "layoutProjection": {
+          "kind": "process-chain",
+          "columns": 4,
+          "rows": 3
+        }
       },
       "path": "img/thumbnails/fiber-processing/pulp-paper/preview.jpg",
-      "width": 1354,
-      "height": 975,
-      "bytes": 114433,
-      "sha256": "96f4c6ffa7e529316a156f05c365c758d46cc202035535bbda6bbdd73dd7c99c"
+      "width": 1398,
+      "height": 1196,
+      "bytes": 180768,
+      "sha256": "4d96aa9d79545b8ea207b1e47f92f8c75c41b7d42f2d238f61854d92b73318b5"
     },
     {
       "id": "power-gas-simple-cycle",
@@ -1728,20 +1987,20 @@
           "height": 660
         },
         "viewportSize": {
-          "width": 1318,
-          "height": 758
+          "width": 1361,
+          "height": 1021
         },
         "camera": {
-          "x": 169,
-          "y": 75,
-          "zoom": 1,
+          "x": 12,
+          "y": 86.28571428571428,
+          "zoom": 1.3642857142857143,
           "fitted": true
         },
         "canvasRect": {
-          "x": 169,
-          "y": 75,
-          "width": 980,
-          "height": 660
+          "x": 12,
+          "y": 86.28570556640625,
+          "width": 1337,
+          "height": 900.4286499023438
         },
         "finite": true,
         "layoutMatchesWorld": true,
@@ -1764,13 +2023,18 @@
           "fuel",
           "regulator",
           "turbine"
-        ]
+        ],
+        "authoredWorldSize": {
+          "width": 980,
+          "height": 660
+        },
+        "layoutProjection": null
       },
       "path": "img/thumbnails/power-utilities/power-gas-simple-cycle/preview.jpg",
-      "width": 1354,
-      "height": 975,
-      "bytes": 107688,
-      "sha256": "a80ddf4ed1806d9679ba9526bb4bedd4b7da7b876f14a6def11ce95ae57bfb0f"
+      "width": 1398,
+      "height": 1173,
+      "bytes": 144274,
+      "sha256": "6b4ac21a4989a4921f7393cacd30efbf1d10e9e8a131129bf8d443b6f45c23bd"
     },
     {
       "id": "power-gas-combined-cycle",
@@ -1790,20 +2054,20 @@
           "height": 660
         },
         "viewportSize": {
-          "width": 1318,
-          "height": 758
+          "width": 1361,
+          "height": 969
         },
         "camera": {
-          "x": 169,
-          "y": 75,
-          "zoom": 1,
+          "x": 17.5151515151515,
+          "y": 64,
+          "zoom": 1.353030303030303,
           "fitted": true
         },
         "canvasRect": {
-          "x": 169,
-          "y": 75,
-          "width": 980,
-          "height": 660
+          "x": 17.515151977539062,
+          "y": 64,
+          "width": 1325.9697265625,
+          "height": 893
         },
         "finite": true,
         "layoutMatchesWorld": true,
@@ -1828,13 +2092,18 @@
           "fuel",
           "gasTurbine",
           "regulator"
-        ]
+        ],
+        "authoredWorldSize": {
+          "width": 980,
+          "height": 660
+        },
+        "layoutProjection": null
       },
       "path": "img/thumbnails/power-utilities/power-gas-combined-cycle/preview.jpg",
-      "width": 1354,
-      "height": 975,
-      "bytes": 119065,
-      "sha256": "c5f9e4b704dbeacb9de26a66f2cb5db44aefbe06e1c41a4a396be9540874bb33"
+      "width": 1398,
+      "height": 1173,
+      "bytes": 154294,
+      "sha256": "ef1b3905b05bd9edf407aa603cd3cbfac50b5aeafa2eea8db043c0d6d2b55e4b"
     },
     {
       "id": "power-coal-steam",
@@ -1854,20 +2123,20 @@
           "height": 940
         },
         "viewportSize": {
-          "width": 1318,
-          "height": 758
+          "width": 1361,
+          "height": 1021
         },
         "camera": {
-          "x": 303.48936170212767,
-          "y": 64,
-          "zoom": 0.725531914893617,
+          "x": 187.8936170212766,
+          "y": 64.00000000000006,
+          "zoom": 1.0053191489361701,
           "fitted": true
         },
         "canvasRect": {
-          "x": 303.4893493652344,
+          "x": 187.89361572265625,
           "y": 64,
-          "width": 711.021240234375,
-          "height": 682
+          "width": 985.2127075195312,
+          "height": 945
         },
         "finite": true,
         "layoutMatchesWorld": true,
@@ -1894,13 +2163,18 @@
           "fuel",
           "prepare",
           "stack"
-        ]
+        ],
+        "authoredWorldSize": {
+          "width": 980,
+          "height": 940
+        },
+        "layoutProjection": null
       },
       "path": "img/thumbnails/power-utilities/power-coal-steam/preview.jpg",
-      "width": 1354,
-      "height": 975,
-      "bytes": 109869,
-      "sha256": "75924e79f2d1e9f1d41dec197fffd4248001c403c33542b3428fe6e48b86fb88"
+      "width": 1398,
+      "height": 1173,
+      "bytes": 148545,
+      "sha256": "fa948b95ba47c2fa393918545c4e8917672ab0d2e2937e083a302469f2562110"
     },
     {
       "id": "power-biomass-chp",
@@ -1920,20 +2194,20 @@
           "height": 940
         },
         "viewportSize": {
-          "width": 1318,
-          "height": 758
+          "width": 1361,
+          "height": 1021
         },
         "camera": {
-          "x": 303.48936170212767,
-          "y": 64,
-          "zoom": 0.725531914893617,
+          "x": 187.8936170212766,
+          "y": 64.00000000000006,
+          "zoom": 1.0053191489361701,
           "fitted": true
         },
         "canvasRect": {
-          "x": 303.4893493652344,
+          "x": 187.89361572265625,
           "y": 64,
-          "width": 711.021240234375,
-          "height": 682
+          "width": 985.2127075195312,
+          "height": 945
         },
         "finite": true,
         "layoutMatchesWorld": true,
@@ -1960,13 +2234,18 @@
           "fuel",
           "prepare",
           "stack"
-        ]
+        ],
+        "authoredWorldSize": {
+          "width": 980,
+          "height": 940
+        },
+        "layoutProjection": null
       },
       "path": "img/thumbnails/power-utilities/power-biomass-chp/preview.jpg",
-      "width": 1354,
-      "height": 975,
-      "bytes": 110565,
-      "sha256": "7fe28d29686df5300acf50505772cce5252d1260644130edcc0e9d17ce782e45"
+      "width": 1398,
+      "height": 1173,
+      "bytes": 149338,
+      "sha256": "8ef59b2c471058fa49e6df25a2cb6332bbb101b31603b6b2563122d53041977c"
     },
     {
       "id": "power-hydro-impoundment",
@@ -1986,20 +2265,20 @@
           "height": 660
         },
         "viewportSize": {
-          "width": 1318,
-          "height": 758
+          "width": 1361,
+          "height": 1045
         },
         "camera": {
-          "x": 169,
-          "y": 75,
-          "zoom": 1,
+          "x": 12,
+          "y": 98.28571428571428,
+          "zoom": 1.3642857142857143,
           "fitted": true
         },
         "canvasRect": {
-          "x": 169,
-          "y": 75,
-          "width": 980,
-          "height": 660
+          "x": 12,
+          "y": 98.28570556640625,
+          "width": 1337,
+          "height": 900.4286499023438
         },
         "finite": true,
         "layoutMatchesWorld": true,
@@ -2024,13 +2303,18 @@
           "runner",
           "tailwater",
           "upstream"
-        ]
+        ],
+        "authoredWorldSize": {
+          "width": 980,
+          "height": 660
+        },
+        "layoutProjection": null
       },
       "path": "img/thumbnails/power-utilities/power-hydro-impoundment/preview.jpg",
-      "width": 1354,
-      "height": 975,
-      "bytes": 109076,
-      "sha256": "cb3fbb055d8f55566fd0a15fd71e1fb41ec296ca0ba097396fd4bf3f8d947123"
+      "width": 1398,
+      "height": 1196,
+      "bytes": 147465,
+      "sha256": "0c7db6444dd55ed1f5394d3697e3686036bf0aa335c60ded44b9b9541da0b4a8"
     },
     {
       "id": "power-hydro-diversion",
@@ -2050,20 +2334,20 @@
           "height": 660
         },
         "viewportSize": {
-          "width": 1318,
-          "height": 758
+          "width": 1361,
+          "height": 1021
         },
         "camera": {
-          "x": 169,
-          "y": 75,
-          "zoom": 1,
+          "x": 12,
+          "y": 86.28571428571428,
+          "zoom": 1.3642857142857143,
           "fitted": true
         },
         "canvasRect": {
-          "x": 169,
-          "y": 75,
-          "width": 980,
-          "height": 660
+          "x": 12,
+          "y": 86.28570556640625,
+          "width": 1337,
+          "height": 900.4286499023438
         },
         "finite": true,
         "layoutMatchesWorld": true,
@@ -2086,13 +2370,18 @@
           "runner",
           "tailwater",
           "upstream"
-        ]
+        ],
+        "authoredWorldSize": {
+          "width": 980,
+          "height": 660
+        },
+        "layoutProjection": null
       },
       "path": "img/thumbnails/power-utilities/power-hydro-diversion/preview.jpg",
-      "width": 1354,
-      "height": 975,
-      "bytes": 104899,
-      "sha256": "0408be7280a2e61b562ab3516bf630a54827592a200890a9715459ee2eb22235"
+      "width": 1398,
+      "height": 1173,
+      "bytes": 139914,
+      "sha256": "e2f38fede2ddd7e3cbad9ea005a1c27a16de671ccdc41e2b8d6c640d8c0eb197"
     },
     {
       "id": "power-pumped-storage",
@@ -2112,20 +2401,20 @@
           "height": 380
         },
         "viewportSize": {
-          "width": 1318,
-          "height": 758
+          "width": 1361,
+          "height": 1021
         },
         "camera": {
-          "x": 169,
-          "y": 215,
-          "zoom": 1,
+          "x": 12,
+          "y": 277.2857142857143,
+          "zoom": 1.3642857142857143,
           "fitted": true
         },
         "canvasRect": {
-          "x": 169,
-          "y": 215,
-          "width": 980,
-          "height": 380
+          "x": 12,
+          "y": 277.28570556640625,
+          "width": 1337,
+          "height": 518.4286499023438
         },
         "finite": true,
         "layoutMatchesWorld": true,
@@ -2144,13 +2433,18 @@
           "lower",
           "unit",
           "upper"
-        ]
+        ],
+        "authoredWorldSize": {
+          "width": 980,
+          "height": 380
+        },
+        "layoutProjection": null
       },
       "path": "img/thumbnails/power-utilities/power-pumped-storage/preview.jpg",
-      "width": 1354,
-      "height": 975,
-      "bytes": 93713,
-      "sha256": "ec1c766672393f2bcbdb935ef6aee8bd0b0da2ef4c42447504dc523e7338720e"
+      "width": 1398,
+      "height": 1173,
+      "bytes": 123400,
+      "sha256": "46ca920311f86fd4221f955176d6a24ddab873b512b274cbcbd68fb21db1a50e"
     },
     {
       "id": "power-nuclear-pwr",
@@ -2170,20 +2464,20 @@
           "height": 660
         },
         "viewportSize": {
-          "width": 1318,
-          "height": 758
+          "width": 1361,
+          "height": 969
         },
         "camera": {
-          "x": 169,
-          "y": 75,
-          "zoom": 1,
+          "x": 17.5151515151515,
+          "y": 64,
+          "zoom": 1.353030303030303,
           "fitted": true
         },
         "canvasRect": {
-          "x": 169,
-          "y": 75,
-          "width": 980,
-          "height": 660
+          "x": 17.515151977539062,
+          "y": 64,
+          "width": 1325.9697265625,
+          "height": 893
         },
         "finite": true,
         "layoutMatchesWorld": true,
@@ -2206,13 +2500,18 @@
           "pressurizer",
           "primaryPump",
           "steamGenerator"
-        ]
+        ],
+        "authoredWorldSize": {
+          "width": 980,
+          "height": 660
+        },
+        "layoutProjection": null
       },
       "path": "img/thumbnails/power-utilities/power-nuclear-pwr/preview.jpg",
-      "width": 1354,
-      "height": 975,
-      "bytes": 119094,
-      "sha256": "b96f3557c421bf50e8e2c134c70b12edee2f89ca33a0dda3610a10e4f60dc3c2"
+      "width": 1398,
+      "height": 1173,
+      "bytes": 155335,
+      "sha256": "2546e113ecd82207f3745e0ec3144648f6b2788f6297dd096c90c06ceaa3d84f"
     },
     {
       "id": "power-nuclear-phwr",
@@ -2232,20 +2531,20 @@
           "height": 660
         },
         "viewportSize": {
-          "width": 1318,
-          "height": 758
+          "width": 1361,
+          "height": 969
         },
         "camera": {
-          "x": 169,
-          "y": 75,
-          "zoom": 1,
+          "x": 17.5151515151515,
+          "y": 64,
+          "zoom": 1.353030303030303,
           "fitted": true
         },
         "canvasRect": {
-          "x": 169,
-          "y": 75,
-          "width": 980,
-          "height": 660
+          "x": 17.515151977539062,
+          "y": 64,
+          "width": 1325.9697265625,
+          "height": 893
         },
         "finite": true,
         "layoutMatchesWorld": true,
@@ -2268,13 +2567,18 @@
           "pressurizer",
           "primaryPump",
           "steamGenerator"
-        ]
+        ],
+        "authoredWorldSize": {
+          "width": 980,
+          "height": 660
+        },
+        "layoutProjection": null
       },
       "path": "img/thumbnails/power-utilities/power-nuclear-phwr/preview.jpg",
-      "width": 1354,
-      "height": 975,
-      "bytes": 120675,
-      "sha256": "981cc6f66e384f98bdba654264b34f37974e38a9365ae14c96c1dd0847ca6b4d"
+      "width": 1398,
+      "height": 1173,
+      "bytes": 157812,
+      "sha256": "5d389dfaaf4ddf6d3861766ece69e46eaf98fa58d2768b15ad2163bee9562945"
     },
     {
       "id": "power-nuclear-htgr",
@@ -2294,20 +2598,20 @@
           "height": 660
         },
         "viewportSize": {
-          "width": 1318,
-          "height": 758
+          "width": 1361,
+          "height": 992
         },
         "camera": {
-          "x": 169,
-          "y": 75,
-          "zoom": 1,
+          "x": 12,
+          "y": 71.78571428571428,
+          "zoom": 1.3642857142857143,
           "fitted": true
         },
         "canvasRect": {
-          "x": 169,
-          "y": 75,
-          "width": 980,
-          "height": 660
+          "x": 12,
+          "y": 71.78570556640625,
+          "width": 1337,
+          "height": 900.4286499023438
         },
         "finite": true,
         "layoutMatchesWorld": true,
@@ -2328,13 +2632,18 @@
           "core",
           "primaryPump",
           "steamGenerator"
-        ]
+        ],
+        "authoredWorldSize": {
+          "width": 980,
+          "height": 660
+        },
+        "layoutProjection": null
       },
       "path": "img/thumbnails/power-utilities/power-nuclear-htgr/preview.jpg",
-      "width": 1354,
-      "height": 975,
-      "bytes": 109696,
-      "sha256": "2caa1485f724150da6b124a496146a0317bfc3d858ea82c6d4fd13874615b131"
+      "width": 1398,
+      "height": 1196,
+      "bytes": 144598,
+      "sha256": "e318d47017dce610dc927e4df90ebe9cb2940e58eb20bf43c76efa1114a50722"
     },
     {
       "id": "power-nuclear-sodium-fast",
@@ -2354,20 +2663,20 @@
           "height": 660
         },
         "viewportSize": {
-          "width": 1318,
-          "height": 758
+          "width": 1361,
+          "height": 969
         },
         "camera": {
-          "x": 169,
-          "y": 75,
-          "zoom": 1,
+          "x": 17.5151515151515,
+          "y": 64,
+          "zoom": 1.353030303030303,
           "fitted": true
         },
         "canvasRect": {
-          "x": 169,
-          "y": 75,
-          "width": 980,
-          "height": 660
+          "x": 17.515151977539062,
+          "y": 64,
+          "width": 1325.9697265625,
+          "height": 893
         },
         "finite": true,
         "layoutMatchesWorld": true,
@@ -2392,13 +2701,18 @@
           "intermediatePump",
           "primaryPump",
           "steamGenerator"
-        ]
+        ],
+        "authoredWorldSize": {
+          "width": 980,
+          "height": 660
+        },
+        "layoutProjection": null
       },
       "path": "img/thumbnails/power-utilities/power-nuclear-sodium-fast/preview.jpg",
-      "width": 1354,
-      "height": 975,
-      "bytes": 130694,
-      "sha256": "4ce99b13978d8eb6f718fef4bbe782ac5503fb588599b1c1b9b430c5fc97b175"
+      "width": 1398,
+      "height": 1173,
+      "bytes": 169656,
+      "sha256": "e563fa79aadb30fbadb0d93edd247e71627ead7d20758053c616f8ad1e759cc7"
     },
     {
       "id": "power-nuclear-molten-salt",
@@ -2418,20 +2732,20 @@
           "height": 660
         },
         "viewportSize": {
-          "width": 1318,
-          "height": 758
+          "width": 1361,
+          "height": 969
         },
         "camera": {
-          "x": 169,
-          "y": 75,
-          "zoom": 1,
+          "x": 17.5151515151515,
+          "y": 64,
+          "zoom": 1.353030303030303,
           "fitted": true
         },
         "canvasRect": {
-          "x": 169,
-          "y": 75,
-          "width": 980,
-          "height": 660
+          "x": 17.515151977539062,
+          "y": 64,
+          "width": 1325.9697265625,
+          "height": 893
         },
         "finite": true,
         "layoutMatchesWorld": true,
@@ -2456,13 +2770,18 @@
           "intermediatePump",
           "primaryPump",
           "steamGenerator"
-        ]
+        ],
+        "authoredWorldSize": {
+          "width": 980,
+          "height": 660
+        },
+        "layoutProjection": null
       },
       "path": "img/thumbnails/power-utilities/power-nuclear-molten-salt/preview.jpg",
-      "width": 1354,
-      "height": 975,
-      "bytes": 128111,
-      "sha256": "7a90b7c52d8b0da783375c0914e6af8c37259ad0535f99fbb60d1cbeff8961d5"
+      "width": 1398,
+      "height": 1173,
+      "bytes": 166434,
+      "sha256": "418abf4776bcc04a873f2f17086000aecb49d6804695e77f9c98243527997c49"
     },
     {
       "id": "power-nuclear-bwr",
@@ -2482,20 +2801,20 @@
           "height": 660
         },
         "viewportSize": {
-          "width": 1318,
-          "height": 758
+          "width": 1361,
+          "height": 969
         },
         "camera": {
-          "x": 169,
-          "y": 75,
-          "zoom": 1,
+          "x": 17.5151515151515,
+          "y": 64,
+          "zoom": 1.353030303030303,
           "fitted": true
         },
         "canvasRect": {
-          "x": 169,
-          "y": 75,
-          "width": 980,
-          "height": 660
+          "x": 17.515151977539062,
+          "y": 64,
+          "width": 1325.9697265625,
+          "height": 893
         },
         "finite": true,
         "layoutMatchesWorld": true,
@@ -2516,13 +2835,18 @@
           "core",
           "recirc",
           "rods"
-        ]
+        ],
+        "authoredWorldSize": {
+          "width": 980,
+          "height": 660
+        },
+        "layoutProjection": null
       },
       "path": "img/thumbnails/power-utilities/power-nuclear-bwr/preview.jpg",
-      "width": 1354,
-      "height": 975,
-      "bytes": 107652,
-      "sha256": "4df262597eb65c9bcaa19b52d858553d0e101b80837f87bd85774326865d8df7"
+      "width": 1398,
+      "height": 1173,
+      "bytes": 140518,
+      "sha256": "55c786b7890402e914faa1c286d5830d7722a1372e498eabc07862f59ad09a12"
     },
     {
       "id": "power-nuclear-lw-smr",
@@ -2542,20 +2866,20 @@
           "height": 940
         },
         "viewportSize": {
-          "width": 1318,
-          "height": 758
+          "width": 1361,
+          "height": 1021
         },
         "camera": {
-          "x": 194.6595744680851,
-          "y": 64,
-          "zoom": 0.725531914893617,
+          "x": 37.09574468085111,
+          "y": 64.00000000000006,
+          "zoom": 1.0053191489361701,
           "fitted": true
         },
         "canvasRect": {
-          "x": 194.65957641601562,
+          "x": 37.09574890136719,
           "y": 64,
-          "width": 928.680908203125,
-          "height": 682
+          "width": 1286.8084716796875,
+          "height": 945
         },
         "finite": true,
         "layoutMatchesWorld": true,
@@ -2586,13 +2910,18 @@
           "aRods",
           "aSG",
           "aTurbine"
-        ]
+        ],
+        "authoredWorldSize": {
+          "width": 1280,
+          "height": 940
+        },
+        "layoutProjection": null
       },
       "path": "img/thumbnails/power-utilities/power-nuclear-lw-smr/preview.jpg",
-      "width": 1354,
-      "height": 975,
-      "bytes": 126625,
-      "sha256": "553e666ea34442a79c2875eee89ebc60bb559329ba6b031f7514fff932b56570"
+      "width": 1398,
+      "height": 1173,
+      "bytes": 173694,
+      "sha256": "bc452a6164a78c20f00ec781e51e7b7bebf48cd79ba4ef2c36b1a71388c32880"
     },
     {
       "id": "power-ng-engine-chp",
@@ -2612,20 +2941,20 @@
           "height": 660
         },
         "viewportSize": {
-          "width": 1318,
-          "height": 758
+          "width": 1361,
+          "height": 1021
         },
         "camera": {
-          "x": 169,
-          "y": 75,
-          "zoom": 1,
+          "x": 12,
+          "y": 86.28571428571428,
+          "zoom": 1.3642857142857143,
           "fitted": true
         },
         "canvasRect": {
-          "x": 169,
-          "y": 75,
-          "width": 980,
-          "height": 660
+          "x": 12,
+          "y": 86.28570556640625,
+          "width": 1337,
+          "height": 900.4286499023438
         },
         "finite": true,
         "layoutMatchesWorld": true,
@@ -2648,13 +2977,18 @@
           "fuel",
           "regulator",
           "stack"
-        ]
+        ],
+        "authoredWorldSize": {
+          "width": 980,
+          "height": 660
+        },
+        "layoutProjection": null
       },
       "path": "img/thumbnails/power-utilities/power-ng-engine-chp/preview.jpg",
-      "width": 1354,
-      "height": 975,
-      "bytes": 112434,
-      "sha256": "4b28a0b4af190905183d0dc10a06e1f72a25696a57c15d33144f46308a11dc1b"
+      "width": 1398,
+      "height": 1173,
+      "bytes": 149414,
+      "sha256": "1c7ac4f23ef87f93453b197d3c4f7ccf541a8f0a83427bb141ff0e8af77e588f"
     },
     {
       "id": "power-diesel-standby",
@@ -2674,20 +3008,20 @@
           "height": 660
         },
         "viewportSize": {
-          "width": 1318,
-          "height": 758
+          "width": 1361,
+          "height": 1021
         },
         "camera": {
-          "x": 169,
-          "y": 75,
-          "zoom": 1,
+          "x": 12,
+          "y": 86.28571428571428,
+          "zoom": 1.3642857142857143,
           "fitted": true
         },
         "canvasRect": {
-          "x": 169,
-          "y": 75,
-          "width": 980,
-          "height": 660
+          "x": 12,
+          "y": 86.28570556640625,
+          "width": 1337,
+          "height": 900.4286499023438
         },
         "finite": true,
         "layoutMatchesWorld": true,
@@ -2710,13 +3044,18 @@
           "grid",
           "load",
           "transfer"
-        ]
+        ],
+        "authoredWorldSize": {
+          "width": 980,
+          "height": 660
+        },
+        "layoutProjection": null
       },
       "path": "img/thumbnails/power-utilities/power-diesel-standby/preview.jpg",
-      "width": 1354,
-      "height": 975,
-      "bytes": 110780,
-      "sha256": "cb400bce2b75ad844abbf80ee7d29afda47344e98348ce629f8b62a2e534e9e9"
+      "width": 1398,
+      "height": 1173,
+      "bytes": 144981,
+      "sha256": "ffdd7319242cd66aaf71aafadf659b0ad795573b52d38080a7105ad97a90b0e9"
     },
     {
       "id": "power-gasoline-portable",
@@ -2736,20 +3075,20 @@
           "height": 940
         },
         "viewportSize": {
-          "width": 1318,
-          "height": 758
+          "width": 1361,
+          "height": 1045
         },
         "camera": {
-          "x": 303.48936170212767,
+          "x": 175.38297872340428,
           "y": 64,
-          "zoom": 0.725531914893617,
+          "zoom": 1.0308510638297872,
           "fitted": true
         },
         "canvasRect": {
-          "x": 303.4893493652344,
+          "x": 175.3829803466797,
           "y": 64,
-          "width": 711.021240234375,
-          "height": 682
+          "width": 1010.2339477539062,
+          "height": 969
         },
         "finite": true,
         "layoutMatchesWorld": true,
@@ -2776,13 +3115,18 @@
           "load",
           "plc",
           "station"
-        ]
+        ],
+        "authoredWorldSize": {
+          "width": 980,
+          "height": 940
+        },
+        "layoutProjection": null
       },
       "path": "img/thumbnails/power-utilities/power-gasoline-portable/preview.jpg",
-      "width": 1354,
-      "height": 975,
-      "bytes": 106103,
-      "sha256": "e41d67f6295d60e08e6bf81926531ef6b2a20cd438318824db17a4d0fe51271e"
+      "width": 1398,
+      "height": 1196,
+      "bytes": 144946,
+      "sha256": "413af6d4c5236bad98260beb20f00341b8c78006921a1d5a9190976b148e0637"
     },
     {
       "id": "power-substation-distribution",
@@ -2802,20 +3146,20 @@
           "height": 660
         },
         "viewportSize": {
-          "width": 1318,
-          "height": 758
+          "width": 1361,
+          "height": 969
         },
         "camera": {
-          "x": 169,
-          "y": 75,
-          "zoom": 1,
+          "x": 17.5151515151515,
+          "y": 64,
+          "zoom": 1.353030303030303,
           "fitted": true
         },
         "canvasRect": {
-          "x": 169,
-          "y": 75,
-          "width": 980,
-          "height": 660
+          "x": 17.515151977539062,
+          "y": 64,
+          "width": 1325.9697265625,
+          "height": 893
         },
         "finite": true,
         "layoutMatchesWorld": true,
@@ -2838,13 +3182,18 @@
           "incoming",
           "isolator",
           "stepdown"
-        ]
+        ],
+        "authoredWorldSize": {
+          "width": 980,
+          "height": 660
+        },
+        "layoutProjection": null
       },
       "path": "img/thumbnails/power-utilities/power-substation-distribution/preview.jpg",
-      "width": 1354,
-      "height": 975,
-      "bytes": 111848,
-      "sha256": "92967148c5ed23400e9162641686bd9c637148d7eb47d2cec264cff8ea9cc16a"
+      "width": 1398,
+      "height": 1173,
+      "bytes": 143118,
+      "sha256": "48cbf51b1eb035e7a26e71023ce51275736cdfe22916c623e28e6ecfb71092d6"
     },
     {
       "id": "power-substation-gsu",
@@ -2864,20 +3213,20 @@
           "height": 660
         },
         "viewportSize": {
-          "width": 1318,
-          "height": 758
+          "width": 1361,
+          "height": 1021
         },
         "camera": {
-          "x": 169,
-          "y": 75,
-          "zoom": 1,
+          "x": 12,
+          "y": 86.28571428571428,
+          "zoom": 1.3642857142857143,
           "fitted": true
         },
         "canvasRect": {
-          "x": 169,
-          "y": 75,
-          "width": 980,
-          "height": 660
+          "x": 12,
+          "y": 86.28570556640625,
+          "width": 1337,
+          "height": 900.4286499023438
         },
         "finite": true,
         "layoutMatchesWorld": true,
@@ -2898,13 +3247,18 @@
           "alternatorField",
           "primeMover",
           "transformer"
-        ]
+        ],
+        "authoredWorldSize": {
+          "width": 980,
+          "height": 660
+        },
+        "layoutProjection": null
       },
       "path": "img/thumbnails/power-utilities/power-substation-gsu/preview.jpg",
-      "width": 1354,
-      "height": 975,
-      "bytes": 102761,
-      "sha256": "0e98c779224f06ac625549457aa6acdd0620a3b26fc6970484bc141cbb44f324"
+      "width": 1398,
+      "height": 1173,
+      "bytes": 134608,
+      "sha256": "d46082aebc08cb4f0257e47880ac067aaf8eaebb24d045fadce7518723884755"
     },
     {
       "id": "power-substation-gis",
@@ -2924,20 +3278,20 @@
           "height": 660
         },
         "viewportSize": {
-          "width": 1318,
-          "height": 758
+          "width": 1361,
+          "height": 1021
         },
         "camera": {
-          "x": 169,
-          "y": 75,
-          "zoom": 1,
+          "x": 12,
+          "y": 86.28571428571428,
+          "zoom": 1.3642857142857143,
           "fitted": true
         },
         "canvasRect": {
-          "x": 169,
-          "y": 75,
-          "width": 980,
-          "height": 660
+          "x": 12,
+          "y": 86.28570556640625,
+          "width": 1337,
+          "height": 900.4286499023438
         },
         "finite": true,
         "layoutMatchesWorld": true,
@@ -2958,13 +3312,18 @@
           "gis",
           "grid",
           "transformer"
-        ]
+        ],
+        "authoredWorldSize": {
+          "width": 980,
+          "height": 660
+        },
+        "layoutProjection": null
       },
       "path": "img/thumbnails/power-utilities/power-substation-gis/preview.jpg",
-      "width": 1354,
-      "height": 975,
-      "bytes": 99379,
-      "sha256": "b29a6ecee1229c3923c6ace555b36e3c4993059793cc4b699edb73f1bc469601"
+      "width": 1398,
+      "height": 1173,
+      "bytes": 130742,
+      "sha256": "ff1850200f082483e90c82a22745605d6202485381370467a98e5e0690d7f62d"
     },
     {
       "id": "power-hvdc-interface",
@@ -2984,20 +3343,20 @@
           "height": 380
         },
         "viewportSize": {
-          "width": 1318,
-          "height": 758
+          "width": 1361,
+          "height": 1021
         },
         "camera": {
-          "x": 169,
-          "y": 215,
-          "zoom": 1,
+          "x": 12,
+          "y": 277.2857142857143,
+          "zoom": 1.3642857142857143,
           "fitted": true
         },
         "canvasRect": {
-          "x": 169,
-          "y": 215,
-          "width": 980,
-          "height": 380
+          "x": 12,
+          "y": 277.28570556640625,
+          "width": 1337,
+          "height": 518.4286499023438
         },
         "finite": true,
         "layoutMatchesWorld": true,
@@ -3016,13 +3375,18 @@
           "dcIsolator",
           "rectifier",
           "source"
-        ]
+        ],
+        "authoredWorldSize": {
+          "width": 980,
+          "height": 380
+        },
+        "layoutProjection": null
       },
       "path": "img/thumbnails/power-utilities/power-hvdc-interface/preview.jpg",
-      "width": 1354,
-      "height": 975,
-      "bytes": 93228,
-      "sha256": "4a4681d65eae0bde2b8465a80b71304f36450b3e4be4e07ac603d251f03bd152"
+      "width": 1398,
+      "height": 1173,
+      "bytes": 122241,
+      "sha256": "65579fa3b559354c9c522f5b68572f3ed42a6913be94d60b000d709cc5353224"
     },
     {
       "id": "power-solar-pv",
@@ -3042,20 +3406,20 @@
           "height": 660
         },
         "viewportSize": {
-          "width": 1318,
-          "height": 758
+          "width": 1361,
+          "height": 1045
         },
         "camera": {
-          "x": 169,
-          "y": 75,
-          "zoom": 1,
+          "x": 12,
+          "y": 98.28571428571428,
+          "zoom": 1.3642857142857143,
           "fitted": true
         },
         "canvasRect": {
-          "x": 169,
-          "y": 75,
-          "width": 980,
-          "height": 660
+          "x": 12,
+          "y": 98.28570556640625,
+          "width": 1337,
+          "height": 900.4286499023438
         },
         "finite": true,
         "layoutMatchesWorld": true,
@@ -3076,13 +3440,18 @@
           "arrayB",
           "inverter",
           "isolator"
-        ]
+        ],
+        "authoredWorldSize": {
+          "width": 980,
+          "height": 660
+        },
+        "layoutProjection": null
       },
       "path": "img/thumbnails/power-utilities/power-solar-pv/preview.jpg",
-      "width": 1354,
-      "height": 975,
-      "bytes": 102444,
-      "sha256": "9a87718aad58dd219eb02f4ec5ee2e7fc242e8f68c5c7fe142cd8bbd05a32bb3"
+      "width": 1398,
+      "height": 1196,
+      "bytes": 138381,
+      "sha256": "e4354bb52b08ce83bd82b0e14ec84160505eb86e2d00c478acd03d4a49cb00d6"
     },
     {
       "id": "power-wind-collection",
@@ -3102,20 +3471,20 @@
           "height": 380
         },
         "viewportSize": {
-          "width": 1318,
-          "height": 758
+          "width": 1361,
+          "height": 1045
         },
         "camera": {
-          "x": 169,
-          "y": 215,
-          "zoom": 1,
+          "x": 12,
+          "y": 289.2857142857143,
+          "zoom": 1.3642857142857143,
           "fitted": true
         },
         "canvasRect": {
-          "x": 169,
-          "y": 215,
-          "width": 980,
-          "height": 380
+          "x": 12,
+          "y": 289.28570556640625,
+          "width": 1337,
+          "height": 518.4286499023438
         },
         "finite": true,
         "layoutMatchesWorld": true,
@@ -3134,13 +3503,18 @@
           "collection",
           "deviceA",
           "deviceB"
-        ]
+        ],
+        "authoredWorldSize": {
+          "width": 980,
+          "height": 380
+        },
+        "layoutProjection": null
       },
       "path": "img/thumbnails/power-utilities/power-wind-collection/preview.jpg",
-      "width": 1354,
-      "height": 975,
-      "bytes": 95753,
-      "sha256": "f3cc55b72fe74ad8bb154b462d43521ef91725be705ffa8f5ca214d7e763ba7d"
+      "width": 1398,
+      "height": 1196,
+      "bytes": 124845,
+      "sha256": "2358fa2fccec12c3496eb6df23b3864a2585930914be76e986c8549b860d7f87"
     },
     {
       "id": "power-tidal-current",
@@ -3160,20 +3534,20 @@
           "height": 380
         },
         "viewportSize": {
-          "width": 1318,
-          "height": 758
+          "width": 1361,
+          "height": 1021
         },
         "camera": {
-          "x": 169,
-          "y": 215,
-          "zoom": 1,
+          "x": 12,
+          "y": 277.2857142857143,
+          "zoom": 1.3642857142857143,
           "fitted": true
         },
         "canvasRect": {
-          "x": 169,
-          "y": 215,
-          "width": 980,
-          "height": 380
+          "x": 12,
+          "y": 277.28570556640625,
+          "width": 1337,
+          "height": 518.4286499023438
         },
         "finite": true,
         "layoutMatchesWorld": true,
@@ -3192,13 +3566,18 @@
           "collection",
           "deviceA",
           "deviceB"
-        ]
+        ],
+        "authoredWorldSize": {
+          "width": 980,
+          "height": 380
+        },
+        "layoutProjection": null
       },
       "path": "img/thumbnails/power-utilities/power-tidal-current/preview.jpg",
-      "width": 1354,
-      "height": 975,
-      "bytes": 96580,
-      "sha256": "f1d532155f3657280b6aeec83a8969e5654873038bf812a541c5ef59e7f57787"
+      "width": 1398,
+      "height": 1173,
+      "bytes": 125460,
+      "sha256": "4351c9a2accaf0e4959f4df49d610d7bfc2aeae389b96388145c59ec5f4986ef"
     },
     {
       "id": "power-wave-point-absorber",
@@ -3218,20 +3597,20 @@
           "height": 380
         },
         "viewportSize": {
-          "width": 1318,
-          "height": 758
+          "width": 1361,
+          "height": 1045
         },
         "camera": {
-          "x": 169,
-          "y": 215,
-          "zoom": 1,
+          "x": 12,
+          "y": 289.2857142857143,
+          "zoom": 1.3642857142857143,
           "fitted": true
         },
         "canvasRect": {
-          "x": 169,
-          "y": 215,
-          "width": 980,
-          "height": 380
+          "x": 12,
+          "y": 289.28570556640625,
+          "width": 1337,
+          "height": 518.4286499023438
         },
         "finite": true,
         "layoutMatchesWorld": true,
@@ -3250,13 +3629,18 @@
           "collection",
           "deviceA",
           "deviceB"
-        ]
+        ],
+        "authoredWorldSize": {
+          "width": 980,
+          "height": 380
+        },
+        "layoutProjection": null
       },
       "path": "img/thumbnails/power-utilities/power-wave-point-absorber/preview.jpg",
-      "width": 1354,
-      "height": 975,
-      "bytes": 96699,
-      "sha256": "e7e64a97432a0df7a3c4e146428ad27fff04a07b0fd2f67f15f8f567d0625d7f"
+      "width": 1398,
+      "height": 1196,
+      "bytes": 125613,
+      "sha256": "19dbb0b177fd391bff737916969d9caa38dbcf4bbfa632c18d7cb279f31fe5a0"
     },
     {
       "id": "power-csp-tower",
@@ -3276,20 +3660,20 @@
           "height": 660
         },
         "viewportSize": {
-          "width": 1318,
-          "height": 758
+          "width": 1361,
+          "height": 1045
         },
         "camera": {
-          "x": 169,
-          "y": 75,
-          "zoom": 1,
+          "x": 12,
+          "y": 98.28571428571428,
+          "zoom": 1.3642857142857143,
           "fitted": true
         },
         "canvasRect": {
-          "x": 169,
-          "y": 75,
-          "width": 980,
-          "height": 660
+          "x": 12,
+          "y": 98.28570556640625,
+          "width": 1337,
+          "height": 900.4286499023438
         },
         "finite": true,
         "layoutMatchesWorld": true,
@@ -3314,13 +3698,18 @@
           "mirrorA",
           "mirrorB",
           "station"
-        ]
+        ],
+        "authoredWorldSize": {
+          "width": 980,
+          "height": 660
+        },
+        "layoutProjection": null
       },
       "path": "img/thumbnails/power-utilities/power-csp-tower/preview.jpg",
-      "width": 1354,
-      "height": 975,
-      "bytes": 122030,
-      "sha256": "b55db294cc121766ac7acf8ff4dfaf43f80b39c8d2a66151566810cf013ee5d9"
+      "width": 1398,
+      "height": 1196,
+      "bytes": 162321,
+      "sha256": "61d37e9465f00cce169de012e78cf58e3bef4945d215287a25723336c31bc78a"
     },
     {
       "id": "power-csp-trough",
@@ -3340,20 +3729,20 @@
           "height": 660
         },
         "viewportSize": {
-          "width": 1318,
-          "height": 758
+          "width": 1361,
+          "height": 1045
         },
         "camera": {
-          "x": 169,
-          "y": 75,
-          "zoom": 1,
+          "x": 12,
+          "y": 98.28571428571428,
+          "zoom": 1.3642857142857143,
           "fitted": true
         },
         "canvasRect": {
-          "x": 169,
-          "y": 75,
-          "width": 980,
-          "height": 660
+          "x": 12,
+          "y": 98.28570556640625,
+          "width": 1337,
+          "height": 900.4286499023438
         },
         "finite": true,
         "layoutMatchesWorld": true,
@@ -3378,13 +3767,18 @@
           "dcService",
           "hotStore",
           "station"
-        ]
+        ],
+        "authoredWorldSize": {
+          "width": 980,
+          "height": 660
+        },
+        "layoutProjection": null
       },
       "path": "img/thumbnails/power-utilities/power-csp-trough/preview.jpg",
-      "width": 1354,
-      "height": 975,
-      "bytes": 122016,
-      "sha256": "5364bd0eaa6db4793969fdcec0ce937a8789e251b111872f72ff8771cd822f01"
+      "width": 1398,
+      "height": 1196,
+      "bytes": 164788,
+      "sha256": "0bc17b985a0ac71457cc325b07e0d9d91e7811be7a82cc9a00c839f3b248a5c4"
     },
     {
       "id": "power-fuel-cell",
@@ -3404,20 +3798,20 @@
           "height": 660
         },
         "viewportSize": {
-          "width": 1318,
-          "height": 758
+          "width": 1361,
+          "height": 1045
         },
         "camera": {
-          "x": 169,
-          "y": 75,
-          "zoom": 1,
+          "x": 12,
+          "y": 98.28571428571428,
+          "zoom": 1.3642857142857143,
           "fitted": true
         },
         "canvasRect": {
-          "x": 169,
-          "y": 75,
-          "width": 980,
-          "height": 660
+          "x": 12,
+          "y": 98.28570556640625,
+          "width": 1337,
+          "height": 900.4286499023438
         },
         "finite": true,
         "layoutMatchesWorld": true,
@@ -3440,13 +3834,18 @@
           "regulator",
           "stack",
           "water"
-        ]
+        ],
+        "authoredWorldSize": {
+          "width": 980,
+          "height": 660
+        },
+        "layoutProjection": null
       },
       "path": "img/thumbnails/power-utilities/power-fuel-cell/preview.jpg",
-      "width": 1354,
-      "height": 975,
-      "bytes": 109271,
-      "sha256": "91e3e47b3c59e4d1b4e9de8f3a7dfc725824dc704c239de6edbd6d496dd73c79"
+      "width": 1398,
+      "height": 1196,
+      "bytes": 147552,
+      "sha256": "a29e5aad3f79c2039d80c429887321aac4cbae9d0864c8c2a8e7eb54c4e86317"
     },
     {
       "id": "power-geothermal-flash",
@@ -3466,20 +3865,20 @@
           "height": 380
         },
         "viewportSize": {
-          "width": 1318,
-          "height": 758
+          "width": 1361,
+          "height": 969
         },
         "camera": {
-          "x": 169,
-          "y": 215,
-          "zoom": 1,
+          "x": 12,
+          "y": 251.28571428571428,
+          "zoom": 1.3642857142857143,
           "fitted": true
         },
         "canvasRect": {
-          "x": 169,
-          "y": 215,
-          "width": 980,
-          "height": 380
+          "x": 12,
+          "y": 251.28570556640625,
+          "width": 1337,
+          "height": 518.4286499023438
         },
         "finite": true,
         "layoutMatchesWorld": true,
@@ -3498,13 +3897,18 @@
           "flash",
           "return",
           "well"
-        ]
+        ],
+        "authoredWorldSize": {
+          "width": 980,
+          "height": 380
+        },
+        "layoutProjection": null
       },
       "path": "img/thumbnails/power-utilities/power-geothermal-flash/preview.jpg",
-      "width": 1354,
-      "height": 975,
-      "bytes": 101672,
-      "sha256": "55aba93641814aac72e8391e94532dddd0c1c20512c14be5021ac3ce89b176d2"
+      "width": 1398,
+      "height": 1173,
+      "bytes": 131869,
+      "sha256": "301855779a0e565503d82e3ba3d233992cf96c1ab33946fe0e40b9d84fae8cab"
     },
     {
       "id": "power-geothermal-binary",
@@ -3524,20 +3928,20 @@
           "height": 380
         },
         "viewportSize": {
-          "width": 1318,
-          "height": 758
+          "width": 1361,
+          "height": 1021
         },
         "camera": {
-          "x": 169,
-          "y": 215,
-          "zoom": 1,
+          "x": 12,
+          "y": 277.2857142857143,
+          "zoom": 1.3642857142857143,
           "fitted": true
         },
         "canvasRect": {
-          "x": 169,
-          "y": 215,
-          "width": 980,
-          "height": 380
+          "x": 12,
+          "y": 277.28570556640625,
+          "width": 1337,
+          "height": 518.4286499023438
         },
         "finite": true,
         "layoutMatchesWorld": true,
@@ -3556,13 +3960,18 @@
           "exchange",
           "return",
           "well"
-        ]
+        ],
+        "authoredWorldSize": {
+          "width": 980,
+          "height": 380
+        },
+        "layoutProjection": null
       },
       "path": "img/thumbnails/power-utilities/power-geothermal-binary/preview.jpg",
-      "width": 1354,
-      "height": 975,
-      "bytes": 100434,
-      "sha256": "f8546e6c29e1ab476e03804adad028617ac3581a644d44a21c9219955bd8f8c0"
+      "width": 1398,
+      "height": 1173,
+      "bytes": 131736,
+      "sha256": "c9ef3f5ae1a013bfe27dd29117718e5396563de5a278a6e204cecc25f86f79db"
     },
     {
       "id": "power-geothermal-dry-steam",
@@ -3582,20 +3991,20 @@
           "height": 380
         },
         "viewportSize": {
-          "width": 1318,
-          "height": 758
+          "width": 1361,
+          "height": 1045
         },
         "camera": {
-          "x": 169,
-          "y": 215,
-          "zoom": 1,
+          "x": 12,
+          "y": 289.2857142857143,
+          "zoom": 1.3642857142857143,
           "fitted": true
         },
         "canvasRect": {
-          "x": 169,
-          "y": 215,
-          "width": 980,
-          "height": 380
+          "x": 12,
+          "y": 289.28570556640625,
+          "width": 1337,
+          "height": 518.4286499023438
         },
         "finite": true,
         "layoutMatchesWorld": true,
@@ -3614,13 +4023,18 @@
           "condenser",
           "turbine",
           "well"
-        ]
+        ],
+        "authoredWorldSize": {
+          "width": 980,
+          "height": 380
+        },
+        "layoutProjection": null
       },
       "path": "img/thumbnails/power-utilities/power-geothermal-dry-steam/preview.jpg",
-      "width": 1354,
-      "height": 975,
-      "bytes": 94501,
-      "sha256": "49ec8065b37c31aff9d240c95741e04c81145d956ac35edab57c2215a82f560e"
+      "width": 1398,
+      "height": 1196,
+      "bytes": 125069,
+      "sha256": "ab79732e2ac430747647c72f7a5fb0bbaf25fedd1f68a4b5b7c934e36fc9e2e1"
     },
     {
       "id": "power-battery-storage",
@@ -3640,20 +4054,20 @@
           "height": 660
         },
         "viewportSize": {
-          "width": 1318,
-          "height": 758
+          "width": 1361,
+          "height": 1045
         },
         "camera": {
-          "x": 169,
-          "y": 75,
-          "zoom": 1,
+          "x": 12,
+          "y": 98.28571428571428,
+          "zoom": 1.3642857142857143,
           "fitted": true
         },
         "canvasRect": {
-          "x": 169,
-          "y": 75,
-          "width": 980,
-          "height": 660
+          "x": 12,
+          "y": 98.28570556640625,
+          "width": 1337,
+          "height": 900.4286499023438
         },
         "finite": true,
         "layoutMatchesWorld": true,
@@ -3674,13 +4088,18 @@
           "battery",
           "bay",
           "converter"
-        ]
+        ],
+        "authoredWorldSize": {
+          "width": 980,
+          "height": 660
+        },
+        "layoutProjection": null
       },
       "path": "img/thumbnails/power-utilities/power-battery-storage/preview.jpg",
-      "width": 1354,
-      "height": 975,
-      "bytes": 103059,
-      "sha256": "2e0816ace4c4aac4b741ff73be641c84a730b921d845319f14824af6033ef07c"
+      "width": 1398,
+      "height": 1196,
+      "bytes": 136698,
+      "sha256": "d8dde73d94e9e93cb663729bcbdd275c3293de0694e2621299d26210db75d00f"
     },
     {
       "id": "power-hybrid-microgrid",
@@ -3700,20 +4119,20 @@
           "height": 940
         },
         "viewportSize": {
-          "width": 1318,
-          "height": 758
+          "width": 1361,
+          "height": 969
         },
         "camera": {
-          "x": 194.6595744680851,
+          "x": 72.5,
           "y": 64,
-          "zoom": 0.725531914893617,
+          "zoom": 0.95,
           "fitted": true
         },
         "canvasRect": {
-          "x": 194.65957641601562,
+          "x": 72.5,
           "y": 64,
-          "width": 928.680908203125,
-          "height": 682
+          "width": 1216,
+          "height": 893
         },
         "finite": true,
         "layoutMatchesWorld": true,
@@ -3744,13 +4163,18 @@
           "pv",
           "pvInverter",
           "regulator"
-        ]
+        ],
+        "authoredWorldSize": {
+          "width": 1280,
+          "height": 940
+        },
+        "layoutProjection": null
       },
       "path": "img/thumbnails/power-utilities/power-hybrid-microgrid/preview.jpg",
-      "width": 1354,
-      "height": 975,
-      "bytes": 121171,
-      "sha256": "bf8c1d0847cd37f2d8eaf7176ec64418fb8e6705c12e7c888c6560ceb0d9d26b"
+      "width": 1398,
+      "height": 1173,
+      "bytes": 158224,
+      "sha256": "2b10e03ac9485ba481054a02f938e0e08f2b73e1a870b98de4b9336105e94178"
     },
     {
       "id": "aquaponics-media-bed",
@@ -3770,20 +4194,20 @@
           "height": 660
         },
         "viewportSize": {
-          "width": 1318,
-          "height": 758
+          "width": 1361,
+          "height": 1045
         },
         "camera": {
-          "x": 169,
-          "y": 75,
-          "zoom": 1,
+          "x": 12,
+          "y": 98.28571428571428,
+          "zoom": 1.3642857142857143,
           "fitted": true
         },
         "canvasRect": {
-          "x": 169,
-          "y": 75,
-          "width": 980,
-          "height": 660
+          "x": 12,
+          "y": 98.28570556640625,
+          "width": 1337,
+          "height": 900.4286499023438
         },
         "finite": true,
         "layoutMatchesWorld": true,
@@ -3806,13 +4230,18 @@
           "returnPump",
           "solidsFilter",
           "sump"
-        ]
+        ],
+        "authoredWorldSize": {
+          "width": 980,
+          "height": 660
+        },
+        "layoutProjection": null
       },
       "path": "img/thumbnails/agriculture-aquaculture/aquaponics-media-bed/preview.jpg",
-      "width": 1354,
-      "height": 975,
-      "bytes": 112146,
-      "sha256": "6b31e52ac752db8aaae145285c5b56751af64e504f748b0a0027db0ae9b52345"
+      "width": 1398,
+      "height": 1196,
+      "bytes": 151927,
+      "sha256": "771c3e2db5cf9dd30e988797da49565faa2d1da22bfca55044518335d718f3ef"
     },
     {
       "id": "aquaponics-dwc",
@@ -3832,20 +4261,20 @@
           "height": 940
         },
         "viewportSize": {
-          "width": 1318,
-          "height": 758
+          "width": 1361,
+          "height": 1045
         },
         "camera": {
-          "x": 303.48936170212767,
+          "x": 175.38297872340428,
           "y": 64,
-          "zoom": 0.725531914893617,
+          "zoom": 1.0308510638297872,
           "fitted": true
         },
         "canvasRect": {
-          "x": 303.4893493652344,
+          "x": 175.3829803466797,
           "y": 64,
-          "width": 711.021240234375,
-          "height": 682
+          "width": 1010.2339477539062,
+          "height": 969
         },
         "finite": true,
         "layoutMatchesWorld": true,
@@ -3874,13 +4303,18 @@
           "returnPump",
           "solidsFilter",
           "sump"
-        ]
+        ],
+        "authoredWorldSize": {
+          "width": 980,
+          "height": 940
+        },
+        "layoutProjection": null
       },
       "path": "img/thumbnails/agriculture-aquaculture/aquaponics-dwc/preview.jpg",
-      "width": 1354,
-      "height": 975,
-      "bytes": 111721,
-      "sha256": "4ff75ffd35d7587b823b416b99bb232b71d07306e558400a0ec41fe510e0d82f"
+      "width": 1398,
+      "height": 1196,
+      "bytes": 156642,
+      "sha256": "40491e5dbc45e75ade081ec2b5aae35088be9bc9596ef3512dac626c49a5b28f"
     },
     {
       "id": "hydroponics-nft",
@@ -3900,20 +4334,20 @@
           "height": 940
         },
         "viewportSize": {
-          "width": 1318,
-          "height": 758
+          "width": 1361,
+          "height": 1045
         },
         "camera": {
-          "x": 303.48936170212767,
+          "x": 175.38297872340428,
           "y": 64,
-          "zoom": 0.725531914893617,
+          "zoom": 1.0308510638297872,
           "fitted": true
         },
         "canvasRect": {
-          "x": 303.4893493652344,
+          "x": 175.3829803466797,
           "y": 64,
-          "width": 711.021240234375,
-          "height": 682
+          "width": 1010.2339477539062,
+          "height": 969
         },
         "finite": true,
         "layoutMatchesWorld": true,
@@ -3942,13 +4376,18 @@
           "supplyPump",
           "valveA",
           "valveB"
-        ]
+        ],
+        "authoredWorldSize": {
+          "width": 980,
+          "height": 940
+        },
+        "layoutProjection": null
       },
       "path": "img/thumbnails/agriculture-aquaculture/hydroponics-nft/preview.jpg",
-      "width": 1354,
-      "height": 975,
-      "bytes": 112804,
-      "sha256": "2e260da848bbb39511053276a3deb56f2356b6fcd25eccfc2bc304c826c1938f"
+      "width": 1398,
+      "height": 1196,
+      "bytes": 156763,
+      "sha256": "ef44cf0dc2de1fd92a9518506b0be3a31881c55d6fbbf9ecca4f1cbcbfa22b60"
     },
     {
       "id": "hydroponics-ebb-flow",
@@ -3968,20 +4407,20 @@
           "height": 940
         },
         "viewportSize": {
-          "width": 1318,
-          "height": 758
+          "width": 1361,
+          "height": 1045
         },
         "camera": {
-          "x": 303.48936170212767,
+          "x": 175.38297872340428,
           "y": 64,
-          "zoom": 0.725531914893617,
+          "zoom": 1.0308510638297872,
           "fitted": true
         },
         "canvasRect": {
-          "x": 303.4893493652344,
+          "x": 175.3829803466797,
           "y": 64,
-          "width": 711.021240234375,
-          "height": 682
+          "width": 1010.2339477539062,
+          "height": 969
         },
         "finite": true,
         "layoutMatchesWorld": true,
@@ -4008,13 +4447,18 @@
           "reservoir",
           "tableA",
           "tableB"
-        ]
+        ],
+        "authoredWorldSize": {
+          "width": 980,
+          "height": 940
+        },
+        "layoutProjection": null
       },
       "path": "img/thumbnails/agriculture-aquaculture/hydroponics-ebb-flow/preview.jpg",
-      "width": 1354,
-      "height": 975,
-      "bytes": 106945,
-      "sha256": "c52d6400eef5e7170d75ae34f2a13393e18d5368ccf9655ed0e604f7d87bfe78"
+      "width": 1398,
+      "height": 1196,
+      "bytes": 149343,
+      "sha256": "40266e13461f5bf2c97fb347b8937951f2c994639632d37526678290714cd854"
     },
     {
       "id": "greenhouse-drip",
@@ -4034,20 +4478,20 @@
           "height": 940
         },
         "viewportSize": {
-          "width": 1318,
-          "height": 758
+          "width": 1361,
+          "height": 1045
         },
         "camera": {
-          "x": 303.48936170212767,
+          "x": 175.38297872340428,
           "y": 64,
-          "zoom": 0.725531914893617,
+          "zoom": 1.0308510638297872,
           "fitted": true
         },
         "canvasRect": {
-          "x": 303.4893493652344,
+          "x": 175.3829803466797,
           "y": 64,
-          "width": 711.021240234375,
-          "height": 682
+          "width": 1010.2339477539062,
+          "height": 969
         },
         "finite": true,
         "layoutMatchesWorld": true,
@@ -4076,13 +4520,18 @@
           "returnPump",
           "rowA",
           "rowB"
-        ]
+        ],
+        "authoredWorldSize": {
+          "width": 980,
+          "height": 940
+        },
+        "layoutProjection": null
       },
       "path": "img/thumbnails/agriculture-aquaculture/greenhouse-drip/preview.jpg",
-      "width": 1354,
-      "height": 975,
-      "bytes": 116432,
-      "sha256": "380ed03b4dd18a9655d42a760d9405a0ec84f709ad548ea83443772ba3cdf946"
+      "width": 1398,
+      "height": 1196,
+      "bytes": 162269,
+      "sha256": "f0bec428f92202d3aa774a6179e686943393f0724e340306e6f1327fce691436"
     },
     {
       "id": "indoor-aeroponics",
@@ -4102,20 +4551,20 @@
           "height": 940
         },
         "viewportSize": {
-          "width": 1318,
-          "height": 758
+          "width": 1361,
+          "height": 1045
         },
         "camera": {
-          "x": 303.48936170212767,
+          "x": 175.38297872340428,
           "y": 64,
-          "zoom": 0.725531914893617,
+          "zoom": 1.0308510638297872,
           "fitted": true
         },
         "canvasRect": {
-          "x": 303.4893493652344,
+          "x": 175.3829803466797,
           "y": 64,
-          "width": 711.021240234375,
-          "height": 682
+          "width": 1010.2339477539062,
+          "height": 969
         },
         "finite": true,
         "layoutMatchesWorld": true,
@@ -4142,13 +4591,18 @@
           "mistPump",
           "reservoir",
           "waterProbe"
-        ]
+        ],
+        "authoredWorldSize": {
+          "width": 980,
+          "height": 940
+        },
+        "layoutProjection": null
       },
       "path": "img/thumbnails/agriculture-aquaculture/indoor-aeroponics/preview.jpg",
-      "width": 1354,
-      "height": 975,
-      "bytes": 113718,
-      "sha256": "678ac5b838d86ac9c1d4b004a914936e05221e8bc773c02d74873cdd005a158c"
+      "width": 1398,
+      "height": 1196,
+      "bytes": 157178,
+      "sha256": "7074556611ede181f9d86202bd03a2e9d472538075dcd6585e6b3b75da19912a"
     },
     {
       "id": "electric-batch-oven",
@@ -4168,20 +4622,20 @@
           "height": 360
         },
         "viewportSize": {
-          "width": 1318,
-          "height": 758
+          "width": 1361,
+          "height": 1045
         },
         "camera": {
-          "x": 199,
-          "y": 225,
-          "zoom": 1,
+          "x": 12,
+          "y": 286.9130434782609,
+          "zoom": 1.4532608695652174,
           "fitted": true
         },
         "canvasRect": {
-          "x": 199,
-          "y": 225,
-          "width": 920,
-          "height": 360
+          "x": 12,
+          "y": 286.9130859375,
+          "width": 1337,
+          "height": 523.1739501953125
         },
         "finite": true,
         "layoutMatchesWorld": true,
@@ -4200,21 +4654,26 @@
           "breaker",
           "oven",
           "supply"
-        ]
+        ],
+        "authoredWorldSize": {
+          "width": 920,
+          "height": 360
+        },
+        "layoutProjection": null
       },
       "path": "img/thumbnails/manufacturing-thermal-processing/electric-batch-oven/preview.jpg",
-      "width": 1354,
-      "height": 975,
-      "bytes": 89529,
-      "sha256": "c94e3270185f7f80cec48c232748a10d317c3da6772809f16b875342245ea6f7"
+      "width": 1398,
+      "height": 1196,
+      "bytes": 122191,
+      "sha256": "d45474b6bf0b73178dc05b2654e38399c498ba35baafbd5ccdd84f933d32d0a9"
     }
   ],
   "contact_sheet": {
     "path": "img/thumbnails/contact-sheet.jpg",
     "width": 2000,
-    "height": 6426,
-    "bytes": 1406971,
-    "sha256": "a0ff612c5ad7c14da41b567b715a2515e9a55f04426eb33b8fd301b7ecea7149"
+    "height": 7389,
+    "bytes": 1795484,
+    "sha256": "94a54c1ea5a3686aff56558b9f76aa8c50ed812f5e5a730ebd5549092795484a"
   },
-  "capture_implementation_sha256": "7ce20b5672d6e5af2dec7ed0ce2bbb0fd4e4f0a7af5fbff3ce04439770760a5e"
+  "capture_implementation_sha256": "6be498cb860d8db344613576ad3934e3cafd137268f52a549d7b20cf6d77dc42"
 }

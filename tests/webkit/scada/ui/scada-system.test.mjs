@@ -75,6 +75,22 @@ test('geometry and control bounds are finite, positive, coherent and inside the 
   invalid(d=>d.controls[0].min=0,'control');
 });
 
+test('diagram actions explicitly name one component toggle and reject ambiguous declarations',()=>{
+  const input=fixture(); input.controls[0].diagram={whenTrue:'Stop',whenFalse:'Start'};
+  const normalized=valid(input); assert.deepEqual(normalized.controls[0].diagram,input.controls[0].diagram);
+  for(const change of [
+    d=>delete d.controls[0].component,
+    d=>d.controls[0].kind='button',
+    d=>d.controls[0].diagram.whenTrue='',
+    d=>d.controls[0].diagram.whenFalse='x'.repeat(41),
+    d=>d.controls[0].diagram.extra=true,
+    d=>d.controls.push({...d.controls[0],id:'anotherToggle'}),
+  ]){
+    const candidate=structuredClone(input);change(candidate);
+    assert.equal(validateSystemDefinition(candidate).ok,false,JSON.stringify(candidate.controls));
+  }
+});
+
 test('authored visual fields and state bindings use the registry, not coercion or expressions',()=>{
   invalid(d=>d.components[0].state.active='true','state_type');
   invalid(d=>d.components[1].state.level=101,'state_type');

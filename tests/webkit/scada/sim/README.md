@@ -19,6 +19,7 @@ flowchart TD
 | [scenarios/](scenarios/README.md) | Catalog and agriculture scenario integration tests. |
 | [Baseline fixtures](../../../fixtures/scada/README.md) | Frozen original model checkpoints and provenance. |
 | [metadata.test.mjs](metadata.test.mjs) | Deterministic metadata and read-only stale/missing output checks. |
+| [package.test.mjs](package.test.mjs) | Complete MIT terms, preserved source identity and the actual offline-installed simulation package. |
 | [rack-oven.test.mjs](rack-oven.test.mjs) | Electric rack-oven heating, retained energy and switching isolation. |
 | [scada-circuit-conservation.test.mjs](scada-circuit-conservation.test.mjs) | Material/energy conservation, reversible pumping and thermal transport. |
 | [scada-sim-v2.test.mjs](scada-sim-v2.test.mjs) | All base/variant models, finite stores, circuits, command and restore contracts. |

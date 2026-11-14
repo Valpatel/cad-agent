@@ -1,5 +1,9 @@
+import {toolkitExampleChecks} from './toolkit-examples-browser.mjs';
+import {expect} from '../npm-context.mjs';
 /** Toolkit uses the same site frame, local assets and browser/error recorder as Explore. */
 export async function toolkitBrowserChecks({open,fail}) {
+  await toolkitExampleChecks({open,fail});
+  await scadaNativeNavigationChecks({open,fail});
   for(const width of [320,1366]) for(const color of ['light','dark']) {
     const {page,done}=await open('/toolkit/scada/elements?q=pump&category=rotating&kind=equipment',{width,color});
     try {
@@ -37,7 +41,10 @@ export async function toolkitBrowserChecks({open,fail}) {
       const load=page.locator('[data-scada-state-fields] [name="load"]');
       if(await load.count()) {await load.fill('25');await load.press('Enter');if(!await page.locator('.toolkit-preview').isVisible())fail('Toolkit preview','Enter submitted the state form as navigation');await load.fill('');await running.check();if((await art.getAttribute('style')).includes('NaN'))fail('Toolkit preview','empty numeric input poisoned the renderer');}
       await page.keyboard.press('Escape');
-      if(!await button.evaluate(el=>el===document.activeElement))fail('Toolkit preview','closing the modal lost keyboard focus');
+      // Native close events restore focus asynchronously after the Escape key event.
+      await expect(page.locator('.toolkit-preview')).not.toBeVisible();
+      await expect(art).toHaveCount(0); // Preview teardown proves the close handler finished.
+      await expect(button,'closing the modal restores its opening button').toBeFocused();
       await page.getByRole('searchbox').fill('no-matching-equipment-123');
       if(await visible.count()||!await page.locator('[data-scada-empty]').isVisible())fail('Toolkit empty state','no-match state was not announced');
       await page.getByRole('button',{name:'Clear filters'}).click();
@@ -71,4 +78,37 @@ export async function toolkitBrowserChecks({open,fail}) {
     await button.click();await retry.page.locator('[data-scada-preview-art] [data-scada-type="pump"]').waitFor();
     await retry.page.keyboard.press('Escape');
   } finally {await retry.done();}
+}
+
+/** Human documentation shares the existing frame; raw assets remain direct downloads. */
+export async function scadaNativeNavigationChecks({open,fail}) {
+  for(const options of [{width:320,color:'light',js:true},{width:1366,color:'dark',js:false}]) {
+    for(const route of ['/toolkit/scada','/toolkit/scada/elements','/toolkit/scada/simulations']) {
+      const {page,done}=await open(route,options);
+      try {
+        const nav=page.getByRole('navigation',{name:'Main'});
+        if(await nav.getByRole('link',{name:'Toolkit',exact:true}).getAttribute('aria-current')!=='page')fail('SCADA native frame',`${route}: Toolkit is not the current main section`);
+        // The shared compact header intentionally hides secondary links; the overview's agent section stays usable.
+        const agents=nav.locator('a').filter({hasText:'For agents'});
+        if(await agents.getAttribute('href')!=='/docs/agent-workflow'||options.width>=650&&!await agents.isVisible())fail('SCADA native frame',`${route}: shared agent entrypoint missing`);
+        if(!/MIT-licensed/.test(await page.locator('.toolkit-license').textContent()))fail('SCADA terms',`${route}: project-owned terms are stale`);
+        if(await page.locator('.toolkit-shell a[href^="/kit/scada/"][href$=".md"]').count())fail('SCADA native guides',`${route}: human documentation exits to raw Markdown`);
+        if(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1))fail('SCADA native frame',`${route} @${options.width}: horizontal overflow`);
+        if(route!=='/toolkit/scada')continue;
+        for(const label of ['Use & extend','UI library','Models & equations','Local setup & packaging','Replace equations','For agents']) {
+          const link=page.locator('.toolkit-shell').getByRole('link',{name:label,exact:true});
+          const destination=new URL(await link.getAttribute('href'),page.url());
+          await link.scrollIntoViewIfNeeded();await link.focus();
+          if(options.js)await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+          else await link.screenshot(); // Paint the focused native link without scheduling disabled page script.
+          await Promise.all([page.waitForURL(url=>url.origin===destination.origin&&url.pathname===destination.pathname,{waitUntil:'domcontentloaded'}),link.press('Enter')]);
+          await page.getByRole('navigation',{name:'Main'}).waitFor();
+          if(!await page.getByRole('navigation',{name:'Main'}).getByRole('link',{name:'Toolkit',exact:true}).isVisible())fail('SCADA native guides',`${label}: shared navigation disappeared`);
+          if(!await page.locator('.site-footer').getByRole('link',{name:'Valpatel Software LLC',exact:true}).count())fail('SCADA native guides',`${label}: shared attribution disappeared`);
+          await page.goBack({waitUntil:'domcontentloaded'});
+          await page.getByRole('heading',{name:'Build a living system.',exact:true}).waitFor();
+        }
+      } finally {await done();}
+    }
+  }
 }

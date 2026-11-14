@@ -68,4 +68,4 @@ A runtime tarball, full source checkout, generated website and live deployment a
 
 ## Completion evidence
 
-Report the API or visual change, canonical files and generated outputs, tests run, browser states inspected and remaining limitations. Preserve retained terms, the single source owner and candid model assumptions. See [GALLERY_EXPORT.md](docs/GALLERY_EXPORT.md) for exporter design and [state coverage](docs/STATE_COVERAGE.md) for recorded gaps.
+Report the API or visual change, canonical files and generated outputs, tests run, browser states inspected and remaining limitations. Preserve the MIT license and third-party notices, the single source owner and candid model assumptions. See [GALLERY_EXPORT.md](docs/GALLERY_EXPORT.md) for exporter design and [state coverage](docs/STATE_COVERAGE.md) for recorded gaps.

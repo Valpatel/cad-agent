@@ -1,0 +1,449 @@
+{
+  "format": "scada-placeholder-model",
+  "version": 1,
+  "scenarioId": "brewery",
+  "seed": 4101,
+  "components": {
+    "grainSilo": {
+      "kind": "source",
+      "parameters": {
+        "capacity": 90,
+        "response": 0.3,
+        "demand": 1,
+        "loss": 0.03,
+        "pressureGain": 4,
+        "heatGain": 0,
+        "warningAt": 78,
+        "damageRate": 0.4
+      },
+      "initial": {
+        "enabled": true,
+        "level": 80,
+        "open": true,
+        "load": 55,
+        "inventory": 80,
+        "temperature": 30,
+        "pressure": 15,
+        "failed": false
+      },
+      "assumptions": [
+        "Grain receiving silo uses normalized demonstration parameters, not a manufacturer curve or industry operating recipe.",
+        "Nominal electrical demand is intentionally small relative to the demonstration supply so a healthy plant starts with headroom.",
+        "This explicit source is externally replenished at the model boundary. Its visual starting level is maintained; it is not a finite intermediate inventory."
+      ]
+    },
+    "mill": {
+      "kind": "processor",
+      "parameters": {
+        "capacity": 75,
+        "response": 0.3,
+        "demand": 4,
+        "loss": 0.03,
+        "pressureGain": 4,
+        "heatGain": 0,
+        "warningAt": 78,
+        "damageRate": 0.4
+      },
+      "initial": {
+        "enabled": true,
+        "level": 45,
+        "open": true,
+        "load": 55,
+        "inventory": 45,
+        "temperature": 30,
+        "pressure": 15,
+        "failed": false
+      },
+      "assumptions": [
+        "Grain mill uses normalized demonstration parameters, not a manufacturer curve or industry operating recipe.",
+        "Nominal electrical demand is intentionally small relative to the demonstration supply so a healthy plant starts with headroom."
+      ]
+    },
+    "mash": {
+      "kind": "processor",
+      "parameters": {
+        "capacity": 75,
+        "response": 0.3,
+        "demand": 4,
+        "loss": 0.03,
+        "pressureGain": 4,
+        "heatGain": 0,
+        "warningAt": 78,
+        "damageRate": 0.4
+      },
+      "initial": {
+        "enabled": true,
+        "level": 45,
+        "open": true,
+        "load": 55,
+        "inventory": 45,
+        "temperature": 30,
+        "pressure": 15,
+        "failed": false
+      },
+      "assumptions": [
+        "Mash vessel uses normalized demonstration parameters, not a manufacturer curve or industry operating recipe.",
+        "Nominal electrical demand is intentionally small relative to the demonstration supply so a healthy plant starts with headroom."
+      ]
+    },
+    "lauter": {
+      "kind": "processor",
+      "parameters": {
+        "capacity": 75,
+        "response": 0.3,
+        "demand": 4,
+        "loss": 0.03,
+        "pressureGain": 4,
+        "heatGain": 0,
+        "warningAt": 78,
+        "damageRate": 0.4
+      },
+      "initial": {
+        "enabled": true,
+        "level": 45,
+        "open": true,
+        "load": 55,
+        "inventory": 45,
+        "temperature": 30,
+        "pressure": 15,
+        "failed": false
+      },
+      "assumptions": [
+        "Lauter separation uses normalized demonstration parameters, not a manufacturer curve or industry operating recipe.",
+        "Nominal electrical demand is intentionally small relative to the demonstration supply so a healthy plant starts with headroom."
+      ]
+    },
+    "kettle": {
+      "kind": "processor",
+      "parameters": {
+        "capacity": 75,
+        "response": 0.3,
+        "demand": 4,
+        "loss": 0.03,
+        "pressureGain": 4,
+        "heatGain": 0,
+        "warningAt": 78,
+        "damageRate": 0.4
+      },
+      "initial": {
+        "enabled": true,
+        "level": 45,
+        "open": true,
+        "load": 55,
+        "inventory": 45,
+        "temperature": 30,
+        "pressure": 15,
+        "failed": false
+      },
+      "assumptions": [
+        "Brew kettle uses normalized demonstration parameters, not a manufacturer curve or industry operating recipe.",
+        "Nominal electrical demand is intentionally small relative to the demonstration supply so a healthy plant starts with headroom."
+      ]
+    },
+    "cooler": {
+      "kind": "heater",
+      "parameters": {
+        "capacity": 75,
+        "response": 0.3,
+        "demand": 5,
+        "loss": 0.03,
+        "pressureGain": 4,
+        "heatGain": 15,
+        "warningAt": 78,
+        "damageRate": 0.4
+      },
+      "initial": {
+        "enabled": true,
+        "level": 45,
+        "open": true,
+        "load": 55,
+        "inventory": 45,
+        "temperature": 30,
+        "pressure": 15,
+        "failed": false
+      },
+      "assumptions": [
+        "Wort heat exchanger uses normalized demonstration parameters, not a manufacturer curve or industry operating recipe.",
+        "Nominal electrical demand is intentionally small relative to the demonstration supply so a healthy plant starts with headroom."
+      ]
+    },
+    "fermenter": {
+      "kind": "processor",
+      "parameters": {
+        "capacity": 75,
+        "response": 0.3,
+        "demand": 4,
+        "loss": 0.03,
+        "pressureGain": 4,
+        "heatGain": 0,
+        "warningAt": 78,
+        "damageRate": 0.4
+      },
+      "initial": {
+        "enabled": true,
+        "level": 45,
+        "open": true,
+        "load": 55,
+        "inventory": 45,
+        "temperature": 30,
+        "pressure": 15,
+        "failed": false
+      },
+      "assumptions": [
+        "Fermentation vessel uses normalized demonstration parameters, not a manufacturer curve or industry operating recipe.",
+        "Nominal electrical demand is intentionally small relative to the demonstration supply so a healthy plant starts with headroom."
+      ]
+    },
+    "conditioning": {
+      "kind": "storage",
+      "parameters": {
+        "capacity": 75,
+        "response": 0.3,
+        "demand": 1,
+        "loss": 0.03,
+        "pressureGain": 4,
+        "heatGain": 0,
+        "warningAt": 78,
+        "damageRate": 0.4
+      },
+      "initial": {
+        "enabled": true,
+        "level": 45,
+        "open": true,
+        "load": 55,
+        "inventory": 45,
+        "temperature": 30,
+        "pressure": 15,
+        "failed": false
+      },
+      "assumptions": [
+        "Conditioning buffer uses normalized demonstration parameters, not a manufacturer curve or industry operating recipe.",
+        "Nominal electrical demand is intentionally small relative to the demonstration supply so a healthy plant starts with headroom."
+      ]
+    },
+    "filler": {
+      "kind": "processor",
+      "parameters": {
+        "capacity": 75,
+        "response": 0.3,
+        "demand": 4,
+        "loss": 0.03,
+        "pressureGain": 4,
+        "heatGain": 0,
+        "warningAt": 78,
+        "damageRate": 0.4
+      },
+      "initial": {
+        "enabled": true,
+        "level": 45,
+        "open": true,
+        "load": 55,
+        "inventory": 45,
+        "temperature": 30,
+        "pressure": 15,
+        "failed": false
+      },
+      "assumptions": [
+        "Container filling uses normalized demonstration parameters, not a manufacturer curve or industry operating recipe.",
+        "Nominal electrical demand is intentionally small relative to the demonstration supply so a healthy plant starts with headroom."
+      ]
+    },
+    "packer": {
+      "kind": "sink",
+      "parameters": {
+        "capacity": 75,
+        "response": 0.3,
+        "demand": 3,
+        "loss": 0.03,
+        "pressureGain": 4,
+        "heatGain": 0,
+        "warningAt": 78,
+        "damageRate": 0.4
+      },
+      "initial": {
+        "enabled": true,
+        "level": 45,
+        "open": true,
+        "load": 55,
+        "inventory": 45,
+        "temperature": 30,
+        "pressure": 15,
+        "failed": false
+      },
+      "assumptions": [
+        "Case packing uses normalized demonstration parameters, not a manufacturer curve or industry operating recipe.",
+        "Nominal electrical demand is intentionally small relative to the demonstration supply so a healthy plant starts with headroom.",
+        "This explicit sink transfers product out of the model boundary; it does not accumulate a hidden storage inventory."
+      ]
+    },
+    "heatService": {
+      "kind": "heater",
+      "parameters": {
+        "capacity": 75,
+        "response": 0.3,
+        "demand": 5,
+        "loss": 0.03,
+        "pressureGain": 4,
+        "heatGain": 15,
+        "warningAt": 78,
+        "damageRate": 0.4
+      },
+      "initial": {
+        "enabled": true,
+        "level": 45,
+        "open": true,
+        "load": 55,
+        "inventory": 45,
+        "temperature": 30,
+        "pressure": 15,
+        "failed": false
+      },
+      "assumptions": [
+        "Illustrative heat service uses normalized demonstration parameters, not a manufacturer curve or industry operating recipe.",
+        "Nominal electrical demand is intentionally small relative to the demonstration supply so a healthy plant starts with headroom."
+      ]
+    },
+    "effluent": {
+      "kind": "processor",
+      "parameters": {
+        "capacity": 75,
+        "response": 0.3,
+        "demand": 4,
+        "loss": 0.03,
+        "pressureGain": 4,
+        "heatGain": 0,
+        "warningAt": 78,
+        "damageRate": 0.4
+      },
+      "initial": {
+        "enabled": true,
+        "level": 45,
+        "open": true,
+        "load": 55,
+        "inventory": 45,
+        "temperature": 30,
+        "pressure": 15,
+        "failed": false
+      },
+      "assumptions": [
+        "Effluent aeration basin uses normalized demonstration parameters, not a manufacturer curve or industry operating recipe.",
+        "Nominal electrical demand is intentionally small relative to the demonstration supply so a healthy plant starts with headroom."
+      ]
+    },
+    "power": {
+      "kind": "generator",
+      "parameters": {
+        "capacity": 100,
+        "response": 0.3,
+        "demand": 0,
+        "loss": 0.03,
+        "pressureGain": 4,
+        "heatGain": 0,
+        "warningAt": 90,
+        "damageRate": 0.4
+      },
+      "initial": {
+        "enabled": true,
+        "level": 80,
+        "open": true,
+        "load": 75,
+        "inventory": 80,
+        "temperature": 30,
+        "pressure": 15,
+        "failed": false
+      },
+      "assumptions": [
+        "Demonstration site power uses normalized demonstration parameters, not a manufacturer curve or industry operating recipe.",
+        "Nominal electrical demand is intentionally small relative to the demonstration supply so a healthy plant starts with headroom."
+      ]
+    },
+    "controller": {
+      "kind": "controller",
+      "parameters": {
+        "capacity": 75,
+        "response": 0.3,
+        "demand": 1,
+        "loss": 0.03,
+        "pressureGain": 4,
+        "heatGain": 0,
+        "warningAt": 78,
+        "damageRate": 0.4
+      },
+      "initial": {
+        "enabled": true,
+        "level": 45,
+        "open": true,
+        "load": 20,
+        "inventory": 45,
+        "temperature": 30,
+        "pressure": 15,
+        "failed": false
+      },
+      "assumptions": [
+        "Brew-house controller uses normalized demonstration parameters, not a manufacturer curve or industry operating recipe.",
+        "Nominal electrical demand is intentionally small relative to the demonstration supply so a healthy plant starts with headroom."
+      ]
+    },
+    "network": {
+      "kind": "network",
+      "parameters": {
+        "capacity": 75,
+        "response": 0.3,
+        "demand": 1,
+        "loss": 0.03,
+        "pressureGain": 4,
+        "heatGain": 0,
+        "warningAt": 78,
+        "damageRate": 0.4
+      },
+      "initial": {
+        "enabled": true,
+        "level": 45,
+        "open": true,
+        "load": 20,
+        "inventory": 45,
+        "temperature": 30,
+        "pressure": 15,
+        "failed": false
+      },
+      "assumptions": [
+        "Control network switch uses normalized demonstration parameters, not a manufacturer curve or industry operating recipe.",
+        "Nominal electrical demand is intentionally small relative to the demonstration supply so a healthy plant starts with headroom."
+      ]
+    },
+    "temperature": {
+      "kind": "sensor",
+      "parameters": {
+        "capacity": 75,
+        "response": 0.3,
+        "demand": 0.5,
+        "loss": 0.03,
+        "pressureGain": 4,
+        "heatGain": 0,
+        "warningAt": 78,
+        "damageRate": 0.4
+      },
+      "initial": {
+        "enabled": true,
+        "level": 45,
+        "open": true,
+        "load": 20,
+        "inventory": 45,
+        "temperature": 30,
+        "pressure": 15,
+        "failed": false
+      },
+      "assumptions": [
+        "Cooling outlet monitor uses normalized demonstration parameters, not a manufacturer curve or industry operating recipe.",
+        "Nominal electrical demand is intentionally small relative to the demonstration supply so a healthy plant starts with headroom."
+      ]
+    }
+  },
+  "assumptions": [
+    "Move grain through milling, mash separation, cooling, fermentation and packaging. Effluent and heat service remain independent utility branches.",
+    "All quantities are editable normalized placeholders. Stage names do not supply a production recipe, validated quality criterion or real protection setting.",
+    "Material, electrical, thermal, data and measurement connections have separate roles. The external model owns one shared state and clock for every view.",
+    "Repair clears component damage; it does not undo intentionally changed load, valves, capacity or other operating inputs.",
+    "Optional utility skids illustrate dependency plumbing and are not claims about standard industry equipment or energy performance."
+  ]
+}

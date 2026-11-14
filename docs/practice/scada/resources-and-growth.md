@@ -32,6 +32,19 @@ SCADA's [visual](../../../software/cadagent/webkit/scada/ui/docs/VISUAL_REFERENC
 guides record sources and applicability. They are physically included with the
 library, alongside the assumptions and known limitations they inform.
 
+A reference's local availability is an evidence state, not a consequence of listing its URL.
+
+```mermaid
+flowchart TD
+  R["Reference metadata"] --> Q{"Bytes and rights<br/>verified locally?"}
+  Q -->|"Yes"| L["Offline source available"]
+  Q -->|"No"| M["Metadata only"]
+  classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+  classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
+  class R,Q here
+  class L,M near
+```
+
 Cad-agent's existing [reference engine](../../../software/cadagent/review/references.py)
 and [upstream registry](../../../software/vendor/upstreams/README.md) distinguish
 catalogued, read/studied, checked and physically evidenced knowledge. Keep that
@@ -59,6 +72,9 @@ for immutable documents/artifacts and `repositories/<stable-id>/` for actual Git
 mirrors. This is a storage recommendation, not an implemented acquisition command.
 Private local absolute paths never belong in the public reference catalog.
 
+<details>
+<summary>Requirements for a future reference materializer</summary>
+
 A future materializer should consume the existing stable reference/upstream IDs,
 record source URL/revision or edition, exact SHA-256/commit, acquisition result,
 notice/rights disposition and local availability, and verify bytes before use.
@@ -75,6 +91,8 @@ When that capability is implemented, prove actual local files and offline querie
 with the network disabled and the original source checkout unavailable where
 appropriate. This separates complete local source ownership from unfinished
 external-resource acquisition.
+
+</details>
 
 ## A repeatable growth loop
 

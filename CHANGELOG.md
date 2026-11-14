@@ -9,6 +9,29 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
 
 ## Unreleased
 
+## v0.43.0 (2026-11-14)
+
+**New**
+- Toolkit capability cards now include owned previews and direct examples for 3D CAD review, recorded robot simulation, original-file viewing, assembly instructions, linkage motion and engineering calculators alongside SCADA. The published assembly example includes its complete source-bound fixture; planned review modes remain clearly identified (#704).
+- Add an inspectable recorded MuJoCo arm simulation with play/pause, time scrubbing, speed and Fit; reusable bounded pose playback, editable illustrative inputs, solver/source receipts and a portable browser example.
+- SCADA equipment can expose a declared valve or motor toggle directly on the diagram, using the same adapter and inspector controls. Missing readings disable the action and read-only observers cannot command equipment.
+- Wastewater, winery and brewery examples now include connected plant overviews, measurement taps, branch valves, PLC/remote I/O and focused views of the same model. Their documented normalized assumptions remain editable; valve isolation and PLC loss have tested downstream effects.
+
+**Changed**
+- Give the SCADA Explorer a fluid desktop workspace and the same local-font, light/dark palette and persisted theme controls as the public Toolkit, while preserving mobile document scrolling and standalone copied-kit operation.
+- Fit simple process chains into balanced rows on wide displays, preserving equipment identities, port connections and manually positioned cameras; complex diagrams keep their authored layouts.
+- Put zoom in, zoom out, readable scale and Fit in one screen-space SCADA camera toolbar, shared by direct cameras and managed viewers (#705).
+- Standalone CAD and assembly viewers follow the shared application theme, with readable controls in both palettes; explicit original-file theme overrides and scoped embedded-viewer APIs remain available.
+- Project-owned SCADA libraries, artwork, scenarios, maintenance tools and agent skills now use MIT, with complete licenses in portable packages and unchanged third-party notices (#713).
+- SCADA Toolkit documentation stays in the shared cad-agent navigation, with native library maps, local setup and canonical agent workflows (#713).
+
+**Fixed**
+- Use wide and ultrawide displays for site collections, document figures/tables and contained viewer examples while keeping prose readable. Compose the homepage introduction beside its artwork on wide screens, with bounded artwork and model-view heights (#703).
+- SCADA native controls follow the current application palette in WebKit. Switching views mounts a new SVG canvas atomically so tank and equipment gradient fills remain visible; ordinary model ticks preserve animation, focus and camera state.
+
+**Projects must change**
+- Direct diagram controls are optional; existing system definitions retain their inspectors. Saved sessions for the previous wastewater, winery and brewery topologies are rejected without changing the current session. Start a new session for those expanded examples; no compatibility model or runtime alias is added.
+
 ## v0.42.0 (2026-11-14)
 
 **New**

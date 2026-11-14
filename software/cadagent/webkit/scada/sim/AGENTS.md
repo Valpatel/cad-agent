@@ -2,7 +2,7 @@
 
 Read [the package map](./README.md), [source owners](./src/README.md),
 [model API](./docs/MODEL-API.md) and [scenario map](./scenarios/README.md) before editing.
-The repository [AGENTS.md](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/AGENTS.md) remains the shared policy.
+The repository [AGENTS.md](https://github.com/Valpatel/cad-agent/blob/dev/AGENTS.md) and [SCADA domain instructions](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/AGENTS.md) define the shared workflow and local boundaries.
 
 - Keep the engine headless. Importing it starts no clock; hosts choose explicit
   stepping or the optional injected-timer `start`/`stop` lifecycle. Rendering,

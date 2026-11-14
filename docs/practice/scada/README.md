@@ -38,7 +38,7 @@ share one session. The host owns sound permission and the clock.
 
 Cad-agent contains the maintained source, examples, schemas, galleries, generators,
 tests and agent procedures. No old-repository checkout, remote import or hosted
-image dependency is required. The SCADA packages retain their
-[declared terms](../../../software/cadagent/webkit/scada/LICENSE.txt).
+image dependency is required. Project-owned SCADA source, artwork and documentation use the
+[MIT license](../../../software/cadagent/webkit/scada/LICENSE.txt).
 
 [Practice map](../README.md) · [SCADA owner map](../../../software/cadagent/webkit/scada/README.md)

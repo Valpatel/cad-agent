@@ -11,7 +11,7 @@ import path from 'node:path';
 import { promisify } from 'node:util';
 import { createHash } from 'node:crypto';
 import { headersFor, parseHeaders } from '../../tools/site/preview-site.mjs';
-import { createPublication, selectPages, folderMapSources } from '../../tools/site/publication.mjs';
+import { createPublication, selectPages, folderMapSources, folderMapPath } from '../../tools/site/publication.mjs';
 import { builtSite } from './built-site.mjs';
 import {markdown as mapMarkdown} from '../../tools/site/compiler/site-repo-map.mjs';
 
@@ -39,13 +39,20 @@ const ids = async f => idsIn(await readFile(path.join(out, f), 'utf8'));
 
 test('only committed files are published, byte for byte', async () => {
   const prefix = 'tools/site/assets/';
-  const sources = git('ls-tree', '-r', '-z', '--name-only', 'HEAD', prefix).split('\0').filter(f => f && f !== prefix + 'README.md');
+  const owned = git('ls-tree', '-r', '-z', '--name-only', 'HEAD', prefix).split('\0').filter(Boolean);
+  const sources = owned.filter(f => !f.endsWith('/README.md'));
   const assets = new Map(sources.map(f => ['web/' + f.slice(prefix.length), f]));
   const generated=new Map([['web/topic-icons.svg',topicSprite(YAML.parse(git('show','HEAD:docs/areas.yaml')))]]);
   for(const [file,expected] of generated)assert.equal(await readFile(path.join(out,file),'utf8'),expected,'generated topic art matches committed taxonomy');
   const webOut = files.filter(f => f.startsWith('web/') && f !== 'web/snap-demo.css' && !generated.has(f));
   assert.deepEqual(webOut.sort(), [...assets.keys()].sort());
   for (const [publicFile, source] of assets) assert.ok((await readFile(path.join(out, publicFile))).equals(execFileSync('git', ['show', `HEAD:${source}`], { cwd: root })), publicFile);
+  for (const source of owned.filter(f => f.endsWith('/README.md'))) {
+    const twin = folderMapPath(source);
+    assert.ok(files.includes(twin), `${source} keeps its compiled Markdown owner map`);
+    assert.ok(files.includes(twin.replace(/\.md$/, '.html')), `${source} keeps its native owner page`);
+    assert.ok(!files.includes('web/' + source.slice(prefix.length)), `${source} is not duplicated with broken source-relative links`);
+  }
 });
 
 // Plant a page over a real one in a scratch worktree. The real page's figures (docs/pages.yaml) would look for its

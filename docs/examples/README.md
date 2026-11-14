@@ -14,6 +14,7 @@ flowchart TD
 
 | Example | Purpose |
 |---|---|
+| [robot-replay](robot-replay/README.md) | Actual MuJoCo arm recording, editable assumptions and reusable browser playback |
 | [numbered-coupons](numbered-coupons/README.md) | Uniquely stamped physical fit coupons, immutable source/artifact identity and a strict native project plate; no printer operation |
 | [starter-box](starter-box/README.md) | The checkout and wheel starter copied by `cad-agent init` |
 | [explore-two-wheel](explore-two-wheel/README.md) | Compare design alternatives with the existing evaluator |

@@ -366,7 +366,7 @@ test('wide geometry accepts a flexible shell with readable cards, bounded prose 
     wideFixture('/', { hero: { width: 1560, height: 780, loaded: true } }),
     wideFixture('/toolkit/scada/elements', { cards: Array.from({ length: 7 }, (_, i) => ({ x: i * 450, y: 400, width: 430 })) }),
     wideFixture('/docs/toolkit', { document: { width: 2600 }, paragraphs: [{ width: 760 }, { width: 120 }], table: { width: 2600 } }),
-    wideFixture('/explore'),
+    wideFixture('/explore', { groupArea: { width: 3000 }, groups: Array.from({ length: 4 }, (_, i) => ({ x: i * 750, y: 400, width: 730 })) }),
   ]) assert.deepEqual(wideGeometryProblems(m), [], m.route);
 });
 test('wide geometry rejects the old narrow shell, three giant cards and a vertically stretched hero', () => {
@@ -387,4 +387,6 @@ test('wide geometry rejects stretched prose, capped document visuals, overflow a
   assert.match(wideGeometryProblems(wideFixture('/', { shells: {}, hero: null })).join(';'), /missing main shell/);
   assert.match(wideGeometryProblems(wideFixture('/toolkit/scada/elements', { cards: [] })).join(';'), /gallery has 0 columns/);
   assert.match(wideGeometryProblems(wideFixture('/docs/toolkit', { document: { width: 2600 }, paragraphs: [], table: { width: 2600 } })).join(';'), /missing substantial/);
+  const groups = Array.from({ length: 4 }, (_, i) => ({ x: i * 375, y: 400, width: 350 }));
+  assert.match(wideGeometryProblems(wideFixture('/explore', { groups, groupArea: { width: 3000 } })).join(';'), /group row leaves/);
 });

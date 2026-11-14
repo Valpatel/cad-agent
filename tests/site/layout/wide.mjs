@@ -31,6 +31,11 @@ export function wideGeometryProblems(m) {
     else if (m.paragraphs.some(p => !finite(p.width) || p.width > 960)) problems.push('narrative paragraphs exceed the 960px readability budget');
     if (!finite(m.table?.width) || m.table.width < m.document?.width * .9) problems.push('document table frame does not use the flexible visual column');
   }
+  if (m.route === '/explore') {
+    const firstRow = (m.groups || []).filter(group => Math.abs(group.y - m.groups[0]?.y) <= 1);
+    const used = firstRow.length ? Math.max(...firstRow.map(group => group.x + group.width)) - Math.min(...firstRow.map(group => group.x)) : 0;
+    if (!finite(m.groupArea?.width) || used < m.groupArea.width * .85) problems.push('Explore group row leaves more than 15% of its results area unused');
+  }
   if (m.route === '/') {
     const limit = Math.min(900, height * .85);
     if (!m.hero?.loaded || !finite(m.hero.width) || !finite(m.hero.height)) problems.push('missing or unloaded homepage artwork');
@@ -54,6 +59,8 @@ export function wideGeometrySnapshot(route) {
     overflow: document.documentElement.scrollWidth - innerWidth,
     shells: { header: box(document.querySelector('.site-header .wrap')), main: box(document.querySelector('main.wrap, main > .wrap')) },
     cards: route === '/toolkit/scada/elements' ? [...document.querySelectorAll('.toolkit-grid .toolkit-card')].filter(visible).map(box) : [],
+    groups: route === '/explore' ? [...document.querySelectorAll('.discover-group')].filter(visible).map(box) : [],
+    groupArea: box(document.querySelector('.discover-groups') || document.querySelector('#discover-results')),
     document: box(document.querySelector('.doc-main')),
     paragraphs: [...document.querySelectorAll('.prose > p')].filter(el => visible(el) && el.textContent.trim().length >= 100 && !el.querySelector('img,picture,svg,canvas,video,table')).slice(0, 5).map(box),
     table: box([...document.querySelectorAll('.prose .table-scroll')].find(visible)),
@@ -72,11 +79,12 @@ async function settled(page) {
 // Each mutation is restored before the page closes, even if measuring it fails.
 async function defectControl(page, route, kind, expected) {
   await page.evaluate(kind => {
-    const selector = kind === 'shell' ? '.site-header .wrap, main.wrap, main > .wrap' : kind === 'gallery' ? '.toolkit-grid' : '.learning-art img';
+    const selector = kind === 'shell' ? '.site-header .wrap, main.wrap, main > .wrap' : kind === 'gallery' ? '.toolkit-grid' : kind === 'groups' ? '.discover-groups' : '.learning-art img';
     window.__wideControl = [...document.querySelectorAll(selector)].map(el => [el, el.getAttribute('style')]);
     for (const [el] of window.__wideControl) {
       if (kind === 'shell') { el.style.setProperty('width', '1240px', 'important'); el.style.setProperty('max-width', '1240px', 'important'); }
       else if (kind === 'gallery') el.style.setProperty('grid-template-columns', 'repeat(3,minmax(0,1fr))', 'important');
+      else if (kind === 'groups') el.style.setProperty('grid-template-columns', 'repeat(8,minmax(0,1fr))', 'important');
       else { el.style.setProperty('height', '1672px', 'important'); el.style.setProperty('max-height', 'none', 'important'); }
     }
   }, kind);
@@ -117,6 +125,7 @@ export async function wideLayoutProblems(browser, base, { onMeasurement = () => 
               seen.push(...await defectControl(page, route, 'hero', /artwork is/));
             }
             if (route === '/toolkit/scada/elements') seen.push(...await defectControl(page, route, 'gallery', /gallery has 3 columns/));
+            if (route === '/explore') seen.push(...await defectControl(page, route, 'groups', /Explore group row leaves/));
           }
         } catch (error) { seen.push(error.message); }
         finally { await page.close(); }

@@ -69,8 +69,7 @@ flowchart TD
 ```
 
 - **A cleaner structure over time, never pre-built.** A folder splits into domain subfolders only once it is
-  cluttered. The new folder gets a README map; source moves preserve public addresses or declare their redirects
-  and checkout compatibility window ([migration path](#migration-path)).
+  cluttered. The new folder gets a README map; source moves repair consumers directly; published URLs follow the separate publication contract ([migration path](#migration-path)).
   - The maintainer agents make these moves as part of the work; a contributor is never asked to reorganise.
   - `tests/repo/test_layout.py` caps root entries and blocks new over-limit folders; existing clutter exceptions warn (#276).
 - **The site follows the repo.**
@@ -345,9 +344,9 @@ Existing content moves in small batches, never in one big reorganisation (#145):
    - If its public URL stays the same, update the source map and actual path consumers. The published page still
      answers directly at its established address; it does not need a redirect to itself.
    - If a public URL changes, retain a permanent rule in `tools/site/compiler/site-redirects.txt`, for the page and
-     its Markdown twin, with a target that the build actually publishes. Keep any promised source-path stub for
-     its declared compatibility window; the numbered lesson stubs expired at v0.6.0, but their 301s remain.
-   - State checkout-path changes and compatibility windows in the CHANGELOG. v0.22.0 moved the old knowledge roots
+     its Markdown twin, with a target that the build actually publishes. Do not recreate source-path stubs or compatibility folders. Existing public URL redirects are a
+     separate site contract; the numbered lesson source stubs expired at v0.6.0.
+   - State required consumer changes in the CHANGELOG and track unresolved repairs in bounded issues. v0.22.0 moved the old knowledge roots
      into `docs/` without recreating them as stub folders; scripts using those source paths must update.
    - Update every reference and `docs/areas.yaml`, and give each new folder a README and map (#113).
 5. **As jobs land:** `evals/jobs/` fills in area by area, starting with areas at `tooling`, since those have something

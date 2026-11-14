@@ -4,17 +4,21 @@ Reusable viewers, controls and document enhancements for CAD, assembly instructi
 analysis and engineering calculations. Plain ES modules run in an application or
 standalone page and work with the kit's pinned local dependencies.
 
+The application supplies data and owns any simulation clock. Shared-host adoption is explicit;
+SCADA and FEA retain their own integration contracts. Arrows below show composition, not a universal renderer.
+
 ```mermaid
-flowchart LR
-  App[App] --> Host[Host]
-  Host --> Views[Viewers]
-  Views --> Assets[Assets]
-  App --> UI[Controls]
+flowchart TD
+  App[Application] --> Host[Contained host]
+  Host --> Model[Model + file viewers]
+  Host --> Replay[Recorded replay]
+  App --> Scada[SCADA session + views]
+  App --> FEA[Standalone FEA viewer]
 ```
 
 | Owner | Responsibility |
 | --- | --- |
-| [host/](host/README.md) | Renderer-independent frame, accessible controls, mount/dispose and two real 3D adapters. |
+| [host/](host/README.md) | Renderer-independent frame, accessible controls, mount/dispose for model, file and recorded-replay consumers. |
 | [scada/](scada/README.md) | Process symbols, shared diagram views, headless models, equation providers and owned galleries/examples |
 | [model/](model/README.md) | Ordinary assembly/STL viewer, inline packed model element and shared 3D stage. |
 | [files/](files/README.md) | Original CAD file viewer, parsers, workers and themes. |

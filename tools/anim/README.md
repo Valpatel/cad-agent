@@ -40,6 +40,7 @@ flowchart TD
 | [gyropup-leg.scene.json](gyropup-leg.scene.json) | Recorded leg drawing input; not the current homepage model. |
 | [snap-engagement.yaml](snap-engagement.yaml) | Calculator-derived snap scene configuration. |
 | [snap-engagement.scene.json](snap-engagement.scene.json) | Recorded snap engagement drawing input. |
+| [documentation_flows.py](documentation_flows.py) | Conceptual workflow SVGs with explicit source owners and reduced-motion alternatives; supports `--check`. |
 | [made_with_badge.py](made_with_badge.py) | Original vector badge around the project emblem. |
 | [repository_map.py](repository_map.py) | Original decorative robot-factory cinematic. |
 

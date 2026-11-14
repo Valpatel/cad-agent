@@ -14,6 +14,7 @@ flowchart TD
 
 | File or folder | Purpose |
 |---|---|
+| [architecture/](architecture/README.md) | Source-owned workflow explanations and static alternatives. |
 | [bearings/](bearings/README.md) | Bearing models, vectors and calculator charts. |
 | [cfd/](cfd/README.md) | Recorded CFD result pictures. |
 | [compliant/](compliant/README.md) | Compliant mechanism and cantilever diagrams. |

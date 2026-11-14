@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="480" height="350" viewBox="0 0 480 350" role="img" aria-labelledby="title desc"><title id="title">What a check establishes</title><desc id="desc">Conceptual handoffs, not measured simulation. 1. Known inputs: Fixtures and assumptions. Source: tests/fixtures/README.md. 2. Execute the subject: CLI, model or browser. Source: tests/README.md. 3. Compare results: References and failures. Source: tests/repo/README.md. 4. Keep the evidence: Source, result and limits. Source: docs/validation/README.md</desc>
+<style>text{font-family:system-ui,sans-serif;fill:#e9f5fb}.detail{fill:#b7d1de;font-size:14px}.flow{stroke:#3de0d4;stroke-width:3;stroke-dasharray:6 8;fill:none}.flow{animation:flow 2.8s linear infinite}@keyframes flow{to{stroke-dashoffset:-28}}@media(prefers-reduced-motion:reduce){.flow{animation:none}}</style>
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#3de0d4"/></marker></defs>
+<rect width="480" height="350" rx="18" fill="#091a29"/>
+<text x="24" y="34" font-size="22" font-weight="700">What a check establishes</text>
+<path class="flow" d="M218 125H258 M362 170V202 M262 251H222" marker-end="url(#arrow)"/>
+<rect x="20" y="80" width="198" height="90" rx="12" fill="#132f43" stroke="#4e8499"/>
+<circle cx="39" cy="100" r="11" fill="#265269"/><text x="39" y="105" text-anchor="middle" font-size="14">1</text>
+<text x="32" y="129" font-size="18" font-weight="600">Known inputs</text>
+<text class="detail" x="32" y="152">Fixtures and assumptions</text>
+<rect x="262" y="80" width="198" height="90" rx="12" fill="#132f43" stroke="#4e8499"/>
+<circle cx="281" cy="100" r="11" fill="#265269"/><text x="281" y="105" text-anchor="middle" font-size="14">2</text>
+<text x="274" y="129" font-size="18" font-weight="600">Execute the subject</text>
+<text class="detail" x="274" y="152">CLI, model or browser</text>
+<rect x="262" y="206" width="198" height="90" rx="12" fill="#132f43" stroke="#4e8499"/>
+<circle cx="281" cy="226" r="11" fill="#265269"/><text x="281" y="231" text-anchor="middle" font-size="14">3</text>
+<text x="274" y="255" font-size="18" font-weight="600">Compare results</text>
+<text class="detail" x="274" y="278">References and failures</text>
+<rect x="20" y="206" width="198" height="90" rx="12" fill="#132f43" stroke="#4e8499"/>
+<circle cx="39" cy="226" r="11" fill="#265269"/><text x="39" y="231" text-anchor="middle" font-size="14">4</text>
+<text x="32" y="255" font-size="18" font-weight="600">Keep the evidence</text>
+<text class="detail" x="32" y="278">Source, result and limits</text>
+<text class="detail" x="24" y="326">A passing test is evidence within its stated scope.</text>
+</svg>

@@ -85,3 +85,16 @@ runtime consumers. [Resources and growth](../../../docs/practice/scada/resources
 keeps reference metadata, mirrored bytes and source ownership distinct.
 
 [Skill map](README.md) · [All skills](../README.md) · [MIT license](../../../software/cadagent/webkit/scada/LICENSE.txt)
+
+## Repository-wide prose sweeps
+
+Start with tracked Markdown and the existing owner map. Distinguish maintained guides, generated maps/galleries,
+pinned upstream documentation and immutable history. Record the scope and scan results in the work issue; do not
+claim every paragraph was read because the link checker passed. Follow the main reader journeys into each domain,
+compare capability/status claims with actual entry points, and search for obsolete branch, proposal and path guidance.
+Repair factual drift in the current owner. Reconcile architecture findings with existing issues before opening another.
+
+For workflow illustrations, reuse the owned animation tooling and the
+[animated explanation rules](../../../docs/practice/style-guide.md#animated-explanations).
+Keep still alternatives and meaningful labels, test SVG image-mode rendering, and separate conceptual handoffs from
+measured engineering evidence. A diagram must not imply that a planned shared host or model adapter already exists.

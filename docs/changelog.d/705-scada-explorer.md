@@ -1,0 +1,2 @@
+- Give the SCADA Explorer a fluid desktop workspace and the same local-font, light/dark palette and persisted theme controls as the public Toolkit, while preserving mobile document scrolling and standalone copied-kit operation.
+- Fit simple process chains into balanced rows on wide displays, preserving equipment identities, port connections and manually positioned cameras; complex diagrams keep their authored layouts.

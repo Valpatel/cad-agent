@@ -13,6 +13,34 @@ const click = (window, selector, root = window.document) => {
   element.dispatchEvent(new window.MouseEvent('click', {bubbles:true})); return element;
 };
 
+test('viewer fit ceiling reaches every layout and rejects invalid options before reading the model', () => {
+  const dom = setup(), root = dom.window.document.querySelector('#editable');
+  let reads = 0, subscriptions = 0;
+  const adapter = {getSnapshot:() => { reads++; return {}; }, subscribe:() => { subscriptions++; return () => subscriptions--; }};
+  const options = {adapter,equipment:[{id:'pump',type:'pump'}],views:[
+    {id:'water',width:1000,height:500,nodes:[{id:'pump',x:100,y:100,w:160,h:160}]},
+    {id:'detail',width:500,height:400,nodes:[{id:'pump',x:100,y:100,w:160,h:160}]},
+  ]};
+  const original = root.outerHTML;
+  for (const fitMaxZoom of [0,-1,3.01,NaN,Infinity,-Infinity,null,'2',true]) {
+    assert.throws(() => new ScadaViewer({...options,fitMaxZoom}), /fitMaxZoom/);
+    assert.equal(reads,0); assert.equal(subscriptions,0); assert.equal(root.outerHTML,original);
+  }
+  for (const [fitOptions,expected] of [[{},1],[{fitMaxZoom:2},2]]) {
+    const viewer = new ScadaViewer({...options,...fitOptions}).mount(root);
+    try {
+      Object.defineProperties(viewer.camera.viewport,{clientWidth:{value:4000},clientHeight:{value:2200}});
+      viewer.camera.refresh(); assert.equal(viewer.zoom,expected);
+      viewer.setView('detail'); assert.equal(viewer.zoom,expected);
+      viewer.setZoom(2.5); assert.equal(viewer.zoom,2.5);
+      viewer.fit(); assert.equal(viewer.zoom,expected);
+      assert.equal(viewer.camera.state.fitted,true);
+    } finally { viewer.destroy(); }
+    assert.equal(subscriptions,0);
+  }
+  dom.window.close();
+});
+
 test('portable definition normalizes without mutation and geometry resolves ports with escaped labels', () => {
   const original = structuredClone(definition), normalized = normalizeViewerDefinition(definition);
   assert.equal(normalized.views.length, 2);
@@ -198,4 +226,39 @@ test('invalid focused drafts and their in-dialog feedback survive unrelated adap
     assert.equal(input.hasAttribute('aria-invalid'), false);
     assert.equal(viewer.root.querySelector('dialog [data-scada-viewer-dialog-error]').hidden, true);
   } finally { viewer.destroy(); model.stop(); dom.window.close(); }
+});
+
+test('opt-in process layout fits the viewport while manual camera, selection and shared adapter remain independent', async () => {
+  const document = JSON.parse(fs.readFileSync(new URL('../../../../software/cadagent/webkit/scada/sim/scenarios/winery/system.json',import.meta.url)));
+  const original = structuredClone(document), dom=setup(), snapshot={running:false,session:'unchanged'};
+  let subscriptions=0, commands=0, reads=0;
+  const adapter={getSnapshot:()=>{reads++;return snapshot;},subscribe:()=>{subscriptions++;return()=>subscriptions--;},dispatch:()=>commands++};
+  const primary=new ScadaViewer({definition:document,adapter,fitMaxZoom:1.5,responsiveLayout:'process-chain'}).mount(dom.window.document.querySelector('#editable'));
+  const observer=new ScadaViewer({definition:document,adapter:{getSnapshot:adapter.getSnapshot,subscribe:adapter.subscribe},fitMaxZoom:1.5,responsiveLayout:'process-chain'}).mount(dom.window.document.querySelector('#monitor'));
+  try {
+    let width=3320,height=950;
+    for(const viewer of [primary,observer])Object.defineProperties(viewer.camera.viewport,{clientWidth:{get:()=>width},clientHeight:{get:()=>height}});
+    primary.select('crusher');
+    const beforeReads=reads;
+    primary.camera.refresh();observer.camera.refresh();await Promise.resolve();await Promise.resolve();
+    assert.equal(primary.view.layoutProjection.columns,5);assert.equal(observer.view.layoutProjection.columns,5);
+    assert.equal(primary.selected,'crusher');assert.equal(primary.snapshot,snapshot);assert.equal(observer.snapshot,snapshot);
+    assert.equal(reads,beforeReads,'presentation projection does not request a model reset or snapshot');
+    assert.equal(subscriptions,2);assert.equal(commands,0);assert.equal(observer.readOnly,true);
+    primary.setZoom(1.2);primary.camera.panBy(25,-10);
+    const manual=primary.camera.state,oldView=primary.view;
+    const worldCenter={x:(width/2-manual.x)/manual.zoom,y:(height/2-manual.y)/manual.zoom};
+    width=1100;height=1000;primary.camera.refresh();observer.camera.refresh();await Promise.resolve();await Promise.resolve();
+    assert.equal(primary.view,oldView,'manual resize keeps the chosen arrangement');
+    const after=primary.camera.state;
+    assert.equal(after.zoom,manual.zoom);assert.equal(after.fitted,false);
+    assert.equal((width/2-after.x)/after.zoom,worldCenter.x);assert.equal((height/2-after.y)/after.zoom,worldCenter.y);
+    assert.notEqual(observer.view.width,oldView.width,'fitted observer can adapt independently');
+    primary.fit();await Promise.resolve();await Promise.resolve();
+    assert.equal(primary.camera.state.fitted,true);assert.equal(primary.view.width,observer.view.width);
+    assert.equal(primary.selected,'crusher');assert.deepEqual(document,original);assert.equal(commands,0);assert.equal(subscriptions,2);
+    width=3320;height=950;primary.camera.refresh();primary.destroy();await Promise.resolve();assert.equal(subscriptions,1);
+    assert.equal(observer.snapshot,snapshot);
+  } finally {primary.destroy();observer.destroy();dom.window.close();}
+  assert.equal(subscriptions,0);
 });

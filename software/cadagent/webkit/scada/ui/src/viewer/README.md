@@ -18,6 +18,7 @@ flowchart TD
 | Source | Ownership |
 | --- | --- |
 | [viewer.mjs](./viewer.mjs) | Pure diagram geometry renderer and adapter-driven selection, inspection and command controller. Public camera re-export. |
+| [process-layout.mjs](./process-layout.mjs) | Pure, opt-in process-chain geometry projection. Retains identities and declared ports; complex authored diagrams are left intact. |
 | [camera.mjs](./camera.mjs) | DOM-only 2D pan/zoom, fit, pointer/touch/keyboard navigation, screen-space recovery control and resize/lifecycle cleanup. No imports or model dependencies. |
 | [viewer.css](./viewer.css) | Bounded viewport, diagram appearance and camera controls. Ordinary page and inspector scrolling remain available. |
 

@@ -41,6 +41,13 @@ Keep CSS within `.scada-component`, `.scada-workspace` or the viewer's own names
 
 Compare additions with the [thumbnail contact sheet](./img/thumbnails/contact-sheet.jpg) and inspect at least one small card, a large modal preview and the actual system view. A clean large screenshot does not prove the small version is legible.
 
+The Explorer’s application chrome consumes the shared web-kit `ui/theme.css` and
+`ui/theme.js` palette/preference contract and locally bundled fonts. Keep site
+build assets out of library imports. A host may keep the process artwork on its
+dark surface in either application theme; the surrounding controls and dialogs
+must retain readable contrast and follow the chosen theme. Fitted overview text
+scales with the diagram; inspectors remain readable at the application text size.
+
 ## State is explicit
 
 Use the [per-component coverage review](./docs/STATE_COVERAGE.md) as the current

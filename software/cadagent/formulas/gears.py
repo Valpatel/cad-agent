@@ -4,9 +4,16 @@
     spur = fx.spur_tooth_bending(torque=2.0, module=2e-3, teeth=18, face_width=0.012)      # stress at the root, Pa
     bevel = fx.bevel_tooth_bending(torque=2.0, module=2e-3, teeth=18, mate_teeth=36, face_width=0.012)
     bevel["stress"], bevel["force_large_end"], bevel["force_mean"], bevel["cone_factor"]
+    fx.module_from_diametral_pitch(12)       # 0.0021167: metres (2.1167 mm), ready for the functions here
 
-Lengths in metres, forces in newtons, torques in newton metres, stresses in pascals and angles in radians. The
-module is in metres too (a 2 mm module is ``2e-3``); ``module_from_diametral_pitch`` converts an inch-series pitch.
+Lengths in metres, forces in newtons, torques in newton metres, stresses in pascals and angles in radians.
+
+**The module is in metres**: a 2 mm module is ``2e-3``, and ``module_from_diametral_pitch`` returns metres. This is
+not the convention of the gear solids in ``cadagent.mechanical.gears``, which, like the rest of cad-agent's CAD
+geometry, take the module and every length in millimetres: divide a module in millimetres by 1000 before it comes
+here. Nothing checks the magnitude, because a module of 2 m is a valid input, so a module passed in millimetres
+gives a stress a million times too low (megapascals read as pascals) without an error.
+
 Teeth are standard full depth without profile shift: addendum one module, dedendum 1.25 modules. Bevel gears are
 straight-toothed on shafts at 90 degrees, with the module, the pitch diameter and the cone distance all measured at
 the large end, as gear makers quote them.
@@ -94,6 +101,9 @@ _NO_ALLOWABLE = ("the result is a stress, not a verdict: the allowable is the ca
 _TREDGOLD = ("Tredgold's approximation: the tooth form at the large end is that of a spur gear on the developed "
              "back cone")
 _SLIDES = " (equation, table and example numbers as the 9th edition prints them)"
+_M = "m (metres, not millimetres: a 2 mm module is 2e-3)"
+_M_LARGE_END = "m (metres, not millimetres: a 2 mm module is 2e-3; at the large end)"
+_RACK_RATIO = 1e150       # a finite ratio above this is a rack: its square would overflow a float
 
 
 def _positive(name: str, v: Any) -> float:
@@ -139,98 +149,126 @@ def _face_on_cone(face_width: Any, cone_distance: Any) -> Tuple[float, float]:
 
 # ----------------------------------------------------------------------------- geometry: spur gears
 
-@formula(units={"diametral_pitch": "teeth per inch of pitch diameter"}, returns="module, m",
+@formula(units={"diametral_pitch": "teeth per inch of pitch diameter"},
+         returns="module, m (metres, not millimetres: P = 12 gives 0.0021167)",
          limits=("a definition: the module is the pitch diameter per tooth, the diametral pitch is teeth per inch "
                  "of pitch diameter, so m = 25.4 mm / P; a gear cut to one series only approximates the other",),
          source=cite("shigley", "Chapter 13, 'Nomenclature': Eqs. (13-1) and (13-2), P = N / d and m = d / N"
                      + _SLIDES))
 def module_from_diametral_pitch(diametral_pitch: float) -> float:
-    """Module of a gear from its diametral pitch: m = 0.0254 / P, in metres."""
+    """Module of a gear from its diametral pitch: m = 0.0254 / P. The result is in METRES (P = 12 gives 0.0021167,
+    which is 2.1167 mm), the unit every function of this module takes; the gear solids of
+    ``cadagent.mechanical.gears`` take millimetres instead, so multiply by 1000 for them."""
     return INCH / _positive("diametral_pitch", diametral_pitch)
 
 
-@formula(units={"module": "m"}, returns="diametral pitch, teeth per inch of pitch diameter",
+@formula(units={"module": _M}, returns="diametral pitch, teeth per inch of pitch diameter",
          limits=("a definition, P = 25.4 mm / m; a gear cut to one series only approximates the other",),
          source=cite("shigley", "Chapter 13, 'Nomenclature': Eqs. (13-1) and (13-2), P = N / d and m = d / N"
                      + _SLIDES))
 def diametral_pitch_from_module(module: float) -> float:
-    """Diametral pitch of a gear from its module: P = 0.0254 / m, in teeth per inch."""
+    """Diametral pitch of a gear from its module: P = 0.0254 / m, in teeth per inch.
+    ``module`` is in metres (2 mm is ``2e-3``), not millimetres."""
     return INCH / _positive("module", module)
 
 
-@formula(units={"module": "m", "teeth": "count"}, returns="pitch diameter, m",
+@formula(units={"module": _M, "teeth": "count"}, returns="pitch diameter, m",
          limits=("the standard (cutting) pitch circle; a pair mounted at another centre distance runs on other "
                  "operating pitch circles", "for a bevel gear, the large end"),
          source=cite("shigley", "Chapter 13, 'Nomenclature': Eq. (13-2), m = d / N" + _SLIDES))
 def gear_pitch_diameter(module: float, teeth: int) -> float:
-    """Pitch diameter of a gear: d = m N."""
+    """Pitch diameter of a gear: d = m N. ``module`` is in metres (2 mm is ``2e-3``), not millimetres."""
     return _positive("module", module) * _teeth("teeth", teeth)
 
 
-@formula(units={"module": "m", "teeth_pinion": "count", "teeth_gear": "count"}, returns="centre distance, m",
+@formula(units={"module": _M, "teeth_pinion": "count", "teeth_gear": "count"}, returns="centre distance, m",
          limits=(_EXTERNAL, "teeth without profile shift; real pairs are mounted slightly wider for backlash"),
          source=cite("shigley", "Chapter 13, Example 13-1: the centre distance (dP + dG) / 2" + _SLIDES))
 def gear_centre_distance(module: float, teeth_pinion: int, teeth_gear: int) -> float:
-    """Centre distance of an external spur pair: C = m (N1 + N2) / 2."""
+    """Centre distance of an external spur pair: C = m (N1 + N2) / 2.
+    ``module`` is in metres (2 mm is ``2e-3``), not millimetres."""
     return _positive("module", module) * (_teeth("teeth_pinion", teeth_pinion) + _teeth("teeth_gear", teeth_gear)) / 2
 
 
-@formula(units={"module": "m", "teeth": "count", "addendum": "modules (1 for full-depth teeth)"},
+@formula(units={"module": _M, "teeth": "count", "addendum": "modules (1 for full-depth teeth)"},
          returns="tip (addendum, outside) diameter, m", limits=(_FULL_DEPTH, "an external spur gear"),
          source=cite("shigley", "Chapter 13, Table 13-1 (standard tooth systems for spur gears): addendum 1 m"
                      + _SLIDES))
 def gear_tip_diameter(module: float, teeth: int, addendum: float = ADDENDUM) -> float:
-    """Tip diameter of an external spur gear: da = m (N + 2 a), a = 1 for full-depth teeth."""
+    """Tip diameter of an external spur gear: da = m (N + 2 a), a = 1 for full-depth teeth.
+    ``module`` is in metres (2 mm is ``2e-3``), not millimetres."""
     return _positive("module", module) * (_teeth("teeth", teeth) + 2 * _positive("addendum", addendum))
 
 
-@formula(units={"module": "m", "teeth": "count", "dedendum": "modules (1.25 for full-depth teeth)"},
+@formula(units={"module": _M, "teeth": "count", "dedendum": "modules (1.25 for full-depth teeth)"},
          returns="root (dedendum) diameter, m",
          limits=(_FULL_DEPTH, "an external spur gear; teeth to be shaved or ground have a dedendum of 1.35 modules",
                  "the root circle only: the fillet's shape and any undercut depend on the cutter"),
          source=cite("shigley", "Chapter 13, Table 13-1 (standard tooth systems for spur gears): dedendum 1.25 m"
                      + _SLIDES))
 def gear_root_diameter(module: float, teeth: int, dedendum: float = DEDENDUM) -> float:
-    """Root diameter of an external spur gear: df = m (N - 2 b), b = 1.25 for full-depth teeth."""
+    """Root diameter of an external spur gear: df = m (N - 2 b), b = 1.25 for full-depth teeth.
+    ``module`` is in metres (2 mm is ``2e-3``), not millimetres."""
     df = _positive("module", module) * (_teeth("teeth", teeth) - 2 * _positive("dedendum", dedendum))
     if df <= 0:
         raise ValueError(f"{teeth!r} teeth with a dedendum of {dedendum!r} modules leave no root circle")
     return df
 
 
-@formula(units={"module": "m", "teeth": "count", "pressure_angle": "rad (20 degrees by default)"},
+@formula(units={"module": _M, "teeth": "count", "pressure_angle": "rad (20 degrees by default)"},
          returns="base circle diameter, m", limits=("an involute tooth cut at this pressure angle",),
          source=cite("shigley", "Chapter 13, 'Involute Properties' and Example 13-1: rb = r cos(phi)" + _SLIDES))
 def gear_base_diameter(module: float, teeth: int, pressure_angle: float = PRESSURE_ANGLE) -> float:
-    """Base circle diameter of an involute gear: db = m N cos(phi)."""
+    """Base circle diameter of an involute gear: db = m N cos(phi).
+    ``module`` is in metres (2 mm is ``2e-3``), not millimetres."""
     return gear_pitch_diameter(module, teeth) * math.cos(_pressure_angle(pressure_angle))
 
 
-@formula(units={"module": "m", "teeth_pinion": "count", "teeth_gear": "count",
+@formula(units={"module": _M, "teeth_pinion": "count", "teeth_gear": "count",
                 "pressure_angle": "rad (20 degrees by default)", "addendum": "modules (1 for full-depth teeth)"},
          returns="contact ratio (the mean number of tooth pairs in contact)",
          limits=(_EXTERNAL, _FULL_DEPTH,
-                 "rigid, perfect involutes with no interference: where a tip would reach past the mate's base "
-                 "circle (see gear_min_teeth) the real path of contact is shorter than this",
+                 "rigid, perfect involutes. The path of contact is cut off at the interference points, where the "
+                 "line of action touches the two base circles: no involute exists inside a base circle, so a tip "
+                 "that reaches past the mate's interference point adds no contact",
+                 "a result that was cut off belongs to a pair that interferes: it runs only undercut or with "
+                 "profile shift, neither of which is modelled, and the number is then the most such a pair could "
+                 "have, not a rating. A pair interferes when the pinion has fewer teeth than "
+                 "gear_min_teeth(pressure_angle, teeth_gear / teeth_pinion, addendum)['bound']",
                  "a pair should have a contact ratio of at least about 1.2"),
-         source=cite("shigley", "Chapter 13, 'Contact Ratio': Eq. (13-9), mc = Lab / (p cos(phi))" + _SLIDES))
+         source=cite("shigley", "Chapter 13, 'Contact Ratio': Eq. (13-9), mc = Lab / (p cos(phi)), and "
+                     "'Interference': the points of tangency of the line of action with the base circles"
+                     + _SLIDES))
 def gear_contact_ratio(module: float, teeth_pinion: int, teeth_gear: int, pressure_angle: float = PRESSURE_ANGLE,
                        addendum: float = ADDENDUM) -> float:
     """Contact ratio of an external spur pair: the length of the path of contact along the line of action, between
     the two tip circles, over the base pitch: mc = (sqrt(ra1^2 - rb1^2) + sqrt(ra2^2 - rb2^2) - C sin(phi)) /
-    (pi m cos(phi))."""
+    (pi m cos(phi)).
+
+    The result is clipped at the interference points. Each square root is the distance along the line of action
+    from one gear's base-circle tangent point to its own tip circle; it cannot count past the other gear's tangent
+    point, C sin(phi) away, because no involute exists inside a base circle. So each term is taken as
+    min(sqrt(ra^2 - rb^2), C sin(phi)). A pair free of interference is not affected. A pair that interferes (a
+    pinion of fewer teeth than ``gear_min_teeth(pressure_angle, teeth_gear / teeth_pinion, addendum)["bound"]``)
+    gets the clipped, lower value: 12 and 60 teeth at 20 degrees give 1.405, where the unclipped formula would say
+    1.603. Such a pair runs only undercut or with profile shift, which this does not model, so the clipped number
+    is the most it could have and is no sign that the pair is sound: check the tooth counts with ``gear_min_teeth``
+    or ``gear_max_mate_teeth``. ``module`` is in metres (2 mm is ``2e-3``), not millimetres; the ratio does not
+    depend on it."""
     m, phi = _positive("module", module), _pressure_angle(pressure_angle)
     a = _positive("addendum", addendum)
     n1, n2 = _teeth("teeth_pinion", teeth_pinion), _teeth("teeth_gear", teeth_gear)
-    path = -m * (n1 + n2) / 2 * math.sin(phi)
+    between_tangent_points = m * (n1 + n2) / 2 * math.sin(phi)         # C sin(phi): one interference point to the other
+    path = -between_tangent_points
     for n in (n1, n2):
         tip, base = m * (n + 2 * a) / 2, m * n * math.cos(phi) / 2
-        path += math.sqrt(tip * tip - base * base)
+        path += min(math.sqrt(tip * tip - base * base), between_tangent_points)
     return path / (math.pi * m * math.cos(phi))
 
 
 @formula(units={"pressure_angle": "rad (20 degrees by default)",
-                "ratio": "teeth of the mate over teeth of the pinion, 1 or more; math.inf for a rack",
+                "ratio": "teeth of the mate over teeth of the pinion, 1 or more; math.inf for a rack (a finite "
+                         "ratio above 1e150 is taken as a rack too)",
                 "addendum": "modules (1 for full-depth teeth, 0.8 for stub teeth)"},
          returns="dict: bound (the least tooth count as a real number) and teeth (the least whole count)",
          limits=("interference between the mating teeth of a pair: the mate's tip must not reach below the pinion's "
@@ -249,7 +287,7 @@ def gear_min_teeth(pressure_angle: float = PRESSURE_ANGLE, ratio: float = math.i
     k = _positive("addendum", addendum)
     if isinstance(ratio, bool) or not isinstance(ratio, (int, float)) or math.isnan(ratio) or ratio < 1:
         raise ValueError(f"ratio is the mate's teeth over the pinion's, 1 or more (math.inf for a rack), not {ratio!r}")
-    if math.isinf(ratio):
+    if ratio > _RACK_RATIO:          # math.inf, or a finite ratio whose square would overflow: the rack limit
         bound = 2 * k / s2
     else:
         bound = 2 * k / ((1 + 2 * ratio) * s2) * (ratio + math.sqrt(ratio * ratio + (1 + 2 * ratio) * s2))
@@ -299,13 +337,13 @@ def bevel_pitch_angles(teeth_pinion: int, teeth_gear: int) -> Dict[str, float]:
     return {"pinion": math.atan2(n1, n2), "gear": math.atan2(n2, n1)}
 
 
-@formula(units={"module": "m (at the large end)", "teeth_pinion": "count", "teeth_gear": "count"},
+@formula(units={"module": _M_LARGE_END, "teeth_pinion": "count", "teeth_gear": "count"},
          returns="cone distance (the slant height of the pitch cone), m", limits=(_RIGHT_ANGLE, _LARGE_END),
          source=cite("khurmi", "Section 30.7 (strength of bevel gears): L = sqrt((DG / 2)^2 + (DP / 2)^2)") + "; "
                 + cite("shigley", "Chapter 15, Eq. (15-25), A0 = dP / (2 sin(gamma))" + _SLIDES))
 def bevel_cone_distance(module: float, teeth_pinion: int, teeth_gear: int) -> float:
     """Cone distance of a straight bevel pair on shafts at 90 degrees, from the apex to the large end of the teeth:
-    L = (m / 2) sqrt(NP^2 + NG^2)."""
+    L = (m / 2) sqrt(NP^2 + NG^2). ``module`` is in metres (2 mm is ``2e-3``), not millimetres."""
     return _positive("module", module) / 2 * math.hypot(_teeth("teeth_pinion", teeth_pinion),
                                                          _teeth("teeth_gear", teeth_gear))
 
@@ -314,28 +352,39 @@ def bevel_cone_distance(module: float, teeth_pinion: int, teeth_gear: int) -> fl
                 "cone_distance": "m"},
          returns="mean pitch radius, at the middle of the face, m",
          limits=(_LARGE_END, "the middle of the face width, where the resultant tooth force is taken to act; the "
-                 "true resultant of a load spread along a tapered tooth sits slightly further out"),
+                 "true resultant of a load spread along a tapered tooth sits slightly further out",
+                 "the pitch radius d / 2 is L sin(gamma), so it cannot exceed the cone distance: a larger one "
+                 "raises"),
          source=cite("khurmi", "Section 30.8 (forces acting on a bevel gear): Rm = (L - b / 2) DP / (2 L)"))
 def bevel_mean_radius(pitch_diameter: float, face_width: float, cone_distance: float) -> float:
     """Mean pitch radius of a straight bevel gear: Rm = (L - b / 2) d / (2 L), which is d / 2 - (b / 2) sin(gamma)."""
     d = _positive("pitch_diameter", pitch_diameter)
     b, cone = _face_on_cone(face_width, cone_distance)
+    if d / 2 > cone * (1 + 1e-9):
+        raise ValueError(f"pitch_diameter {d!r} gives a pitch radius above the cone distance {cone!r}: the pitch "
+                         "radius is the cone distance times the sine of the pitch angle, so it cannot be larger "
+                         "(are both at the large end, in the same unit?)")
     return (cone - b / 2) * d / (2 * cone)
 
 
-@formula(units={"cone_distance": "m", "module": "m (at the large end)"},
-         returns="dict: third_of_cone (L / 3, m), ten_modules (10 m, m) and maximum (the smaller of the two, m)",
+@formula(units={"cone_distance": "m", "module": _M_LARGE_END},
+         returns="dict: three_tenths_of_cone (0.3 L, m), ten_modules (10 m, m) and maximum (the smaller of the two, "
+                 "m)",
          limits=("recommendations, not limits of strength: past them the added face is at the small end, where the "
                  "teeth are small, hard to cut and carry little, and the Lewis cone factor's dropped term grows",
-                 "Shigley prints 0.3 of the cone distance rather than one third; Khurmi and Gupta also give 6.3 to "
-                 "9.5 modules as the usual range"),
-         source=cite("shigley", "Chapter 15, Eq. (15-24), F = min(0.3 A0, 10 / Pd)" + _SLIDES) + "; "
-                + cite("khurmi", "Section 30.7 (strength of bevel gears), note 2: the ratio L / b should not exceed 3"))
+                 "Shigley's rule as printed: 0.3 of the cone distance (not one third) and 10 / Pd, which is ten "
+                 "modules",
+                 "Khurmi and Gupta (Section 30.7, note 2) give 6.3 to 9.5 modules as the usual face width; their "
+                 "sentence on the cone distance, 'the ratio L / b should not exceed 3', reads as printed the "
+                 "other way round from this limit (a face of at least a third of the cone), so it is not used "
+                 "here"),
+         source=cite("shigley", "Chapter 15, Eq. (15-24), F = min(0.3 A0, 10 / Pd)" + _SLIDES))
 def bevel_face_width_limits(cone_distance: float, module: float) -> Dict[str, float]:
-    """Largest face width commonly recommended for a straight bevel gear: a third of the cone distance, and ten
-    modules, whichever is smaller."""
-    third, ten = _positive("cone_distance", cone_distance) / 3, 10 * _positive("module", module)
-    return {"third_of_cone": third, "ten_modules": ten, "maximum": min(third, ten)}
+    """Largest face width commonly recommended for a straight bevel gear, by Shigley's rule: 0.3 of the cone
+    distance, and ten modules, whichever is smaller. ``cone_distance`` and ``module`` are in metres (a 2 mm module
+    is ``2e-3``), not millimetres."""
+    cone_limit, ten = 0.3 * _positive("cone_distance", cone_distance), 10 * _positive("module", module)
+    return {"three_tenths_of_cone": cone_limit, "ten_modules": ten, "maximum": min(cone_limit, ten)}
 
 
 @formula(units={"teeth": "count", "pitch_angle": "rad (the gear's own pitch cone angle)"},
@@ -429,7 +478,8 @@ def _table_for(pressure_angle: float, table: Optional[str]) -> Tuple[str, float,
                  "row at 1 / N = 0); the tables give three figures and the interpolation adds none",
                  "below the table's first row (12 teeth in Shigley's, 10 in Boston Gear's) it raises: such teeth "
                  "are undercut and their form depends on the cutter",
-                 "the two 20 degree tables differ by up to 0.003, about 1 %"),
+                 "the two 20 degree tables differ by up to 0.003, about 1 %, at the tooth counts both tabulate; "
+                 "where only one has a row the other is interpolated and they differ by more, 0.006 at 400 teeth"),
          source=cite("shigley", "Chapter 14, Table 14-2 (values of the Lewis form factor Y: a normal pressure angle "
                      "of 20 degrees, full-depth teeth)" + _SLIDES) + "; "
                 + cite("boston-gear-spur", "p. 311, Table I (tooth form factor Y), columns for 14-1/2 degree and 20 "
@@ -491,7 +541,7 @@ def _velocity_factor(v: Any) -> float:
     return v
 
 
-@formula(units={"force": "N (tangential, at the pitch circle)", "face_width": "m", "module": "m",
+@formula(units={"force": "N (tangential, at the pitch circle)", "face_width": "m", "module": _M,
                 "form_factor": "Lewis form factor Y (lewis_form_factor)",
                 "velocity_factor": "Kv, 1 or more (gear_velocity_factor); 1 for a static load"},
          returns="bending stress at the root of the tooth, Pa",
@@ -502,7 +552,8 @@ def _velocity_factor(v: Any) -> float:
                      "checked on Example 14-1" + _SLIDES))
 def lewis_bending_stress(force: float, face_width: float, module: float, form_factor: float,
                          velocity_factor: float = 1.0) -> float:
-    """Lewis bending stress of a spur gear tooth: sigma = Kv Wt / (b m Y)."""
+    """Lewis bending stress of a spur gear tooth: sigma = Kv Wt / (b m Y). ``module`` and ``face_width`` are in
+    metres (a 2 mm module is ``2e-3``): in millimetres the stress comes out a million times too low."""
     return (_velocity_factor(velocity_factor) * abs(_number("force", force))
             / (_positive("face_width", face_width) * _positive("module", module)
                * _positive("form_factor", form_factor)))
@@ -512,8 +563,8 @@ def lewis_bending_stress(force: float, face_width: float, module: float, form_fa
          returns="cone (bevel) factor (L - b) / L, between 0 and 1",
          limits=("it comes from applying the Lewis equation to thin slices of the tapered tooth and adding their "
                  "torques: the exact sum is 1 - b / L + b^2 / (3 L^2), and the last term is dropped, which "
-                 "understates the strength by at most 5.3 % for a face up to a third of the cone distance and "
-                 "grows fast past it",
+                 "understates the strength by 4.1 % at a face of 0.3 of the cone distance (the limit of "
+                 "bevel_face_width_limits), by 5.3 % at a third, and grows fast past that",
                  "every slice at the same root stress, which needs the mounting to keep the teeth in line along "
                  "the whole face"),
          source=cite("khurmi", "Section 30.7 (strength of bevel gears), note 1: the factor (L - b) / L, the bevel "
@@ -526,7 +577,7 @@ def bevel_cone_factor(face_width: float, cone_distance: float) -> float:
 
 
 @formula(units={"force": "N (tangential, at the LARGE-END pitch radius: torque / (pitch diameter / 2))",
-                "face_width": "m (along the pitch cone)", "module": "m (at the large end)",
+                "face_width": "m (along the pitch cone)", "module": _M_LARGE_END,
                 "form_factor": "Lewis form factor Y at the VIRTUAL number of teeth (bevel_virtual_teeth)",
                 "cone_distance": "m",
                 "velocity_factor": "Kv, 1 or more (gear_velocity_factor at the large end's speed); 1 for a static "
@@ -543,12 +594,13 @@ def bevel_cone_factor(face_width: float, cone_distance: float) -> float:
 def lewis_bevel_bending_stress(force: float, face_width: float, module: float, form_factor: float,
                                cone_distance: float, velocity_factor: float = 1.0) -> float:
     """Lewis bending stress of a straight bevel gear tooth: sigma = Kv Wt L / (b m Y' (L - b)), the spur equation
-    over the cone factor, with the force at the large-end pitch radius and Y' at the virtual number of teeth."""
+    over the cone factor, with the force at the large-end pitch radius and Y' at the virtual number of teeth.
+    ``module``, ``face_width`` and ``cone_distance`` are in metres (a 2 mm module is ``2e-3``), not millimetres."""
     return (lewis_bending_stress(force, face_width, module, form_factor, velocity_factor)
             / bevel_cone_factor(face_width, cone_distance))
 
 
-@formula(units={"torque": "N m (on this gear)", "module": "m", "teeth": "count", "face_width": "m",
+@formula(units={"torque": "N m (on this gear)", "module": _M, "teeth": "count", "face_width": "m",
                 "pressure_angle": "rad: 20 degrees (the default) or 14.5 degrees",
                 "velocity_factor": "Kv, 1 or more; 1 for a static load", "table": "as lewis_form_factor"},
          returns="dict: stress (Pa), force (tangential at the pitch circle, N), radial (N), pitch_diameter (m), "
@@ -561,7 +613,9 @@ def spur_tooth_bending(torque: float, module: float, teeth: int, face_width: flo
                        pressure_angle: float = PRESSURE_ANGLE, velocity_factor: float = 1.0,
                        table: Optional[str] = None) -> Dict[str, float]:
     """Lewis bending stress of a spur gear tooth from the torque on the gear: the force at the pitch circle, the
-    tabulated form factor, and sigma = Kv Wt / (b m Y)."""
+    tabulated form factor, and sigma = Kv Wt / (b m Y). ``module`` and ``face_width`` are in metres (a 2 mm module
+    is ``2e-3``): passed in millimetres, as the gear solids of ``cadagent.mechanical.gears`` take them, the stress
+    comes out a million times too low and nothing raises."""
     d = gear_pitch_diameter(module, teeth)
     forces = spur_gear_forces(torque, d, pressure_angle)
     y = lewis_form_factor(teeth, pressure_angle, table)
@@ -571,7 +625,7 @@ def spur_tooth_bending(torque: float, module: float, teeth: int, face_width: flo
             "velocity_factor": kv}
 
 
-@formula(units={"torque": "N m (on this gear)", "module": "m (at the large end)", "teeth": "count (this gear)",
+@formula(units={"torque": "N m (on this gear)", "module": _M_LARGE_END, "teeth": "count (this gear)",
                 "mate_teeth": "count (the gear it meshes with)", "face_width": "m (along the pitch cone)",
                 "pressure_angle": "rad: 20 degrees (the default) or 14.5 degrees",
                 "velocity_factor": "Kv, 1 or more; 1 for a static load", "table": "as lewis_form_factor"},
@@ -579,7 +633,7 @@ def spur_tooth_bending(torque: float, module: float, teeth: int, face_width: flo
                  "force_mean, radial and axial (at the mean pitch radius, for shafts and bearings, N); "
                  "pitch_diameter, mean_radius, cone_distance and face_width_limit (m); pitch_angle (rad); "
                  "virtual_teeth, form_factor, cone_factor, velocity_factor; and face_width_ok (bool: within the "
-                 "recommended limit)",
+                 "recommended limit, Shigley's min(0.3 L, 10 m))",
          limits=(_LEWIS, _NOT_AGMA, _NO_ALLOWABLE, _TREDGOLD, _RIGHT_ANGLE, _LARGE_END,
                  _FULL_DEPTH + "; 14.5 and 20 degree teeth only. Bevel teeth are often cut with a long-addendum "
                  "pinion, whose form factor the makers tabulate separately and which this does not use",
@@ -594,7 +648,9 @@ def bevel_tooth_bending(torque: float, module: float, teeth: int, mate_teeth: in
                         table: Optional[str] = None) -> Dict[str, Any]:
     """Lewis bending stress of a straight bevel gear tooth from the torque on the gear, with every radius kept
     apart: the force at the large-end pitch radius, the form factor at the virtual tooth number and the cone factor
-    give the stress; the forces at the mean radius are returned for the shaft and its bearings."""
+    give the stress; the forces at the mean radius are returned for the shaft and its bearings. ``module`` and
+    ``face_width`` are in metres (a 2 mm module is ``2e-3``): passed in millimetres the stress comes out a million
+    times too low and nothing raises. ``face_width_limit`` is Shigley's min(0.3 L, 10 m)."""
     d = gear_pitch_diameter(module, teeth)
     gamma = bevel_pitch_angles(teeth, mate_teeth)["pinion"]         # this gear's own angle: atan(teeth / mate_teeth)
     cone = bevel_cone_distance(module, teeth, mate_teeth)

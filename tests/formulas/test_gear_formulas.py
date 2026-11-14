@@ -5,8 +5,10 @@ Gear's Table I, Khurmi and Gupta's Sections 30.6 to 30.8) or a derivation writte
 the tip circles, slices of a tapered bevel tooth, the statics of the tooth forces).
 
 Where they were read: Shigley's examples, equations and Table 14-2 in the publisher's lecture slides for the 9th
-edition (Chapters 13, 14 and 15), not in the book; Boston Gear's own PDF; Khurmi and Gupta's 14th edition as a scan.
-docs/research/references.yaml records each reading.
+edition (Chapters 13, 14 and 15), not in the book; Boston Gear's own PDF; Khurmi and Gupta's 14th edition as the OCR
+text of a scan, not in a printed copy. docs/research/references.yaml records each reading.
+
+Lengths are in metres here, the module too: ``2e-3`` is a 2 mm module.
 """
 import math
 
@@ -55,6 +57,28 @@ def test_module_and_diametral_pitch_convert_both_ways():
         assert fx.diametral_pitch_from_module(fx.module_from_diametral_pitch(p)) == pytest.approx(p)
 
 
+def test_the_module_is_in_metres_and_every_function_that_takes_one_says_so():
+    """The gear solids (cadagent.mechanical.gears) take millimetres; these formulas take metres, and nothing can
+    tell a 2 m module from a 2 mm one passed in millimetres. So the unit is stated where a caller reads it: the
+    registry's units, each docstring and the module's own. A diametral pitch of 12 is a module of 2.1167 mm, which
+    module_from_diametral_pitch returns as 0.0021167; with it an 18-tooth gear of 12 mm face under 2 N m is at
+    13.4 MPa. The same module passed as 2.1167 would read 13.4 Pa."""
+    m = fx.module_from_diametral_pitch(12)
+    assert m == pytest.approx(2.1167e-3, rel=1e-4)
+    assert fx.spur_tooth_bending(2.0, m, 18, 0.012)["stress"] == pytest.approx(13.38e6, rel=1e-3)
+    assert fx.spur_tooth_bending(2.0, m * 1000, 18, 0.012)["stress"] == pytest.approx(13.38, rel=1e-3)   # the trap
+    takes_a_module = [n for n in GEAR_FORMULAS if "module" in fx.REGISTRY[n].units]
+    assert len(takes_a_module) == 13
+    for name in takes_a_module:
+        assert "metres, not millimetres" in fx.REGISTRY[name].units["module"], name
+        assert "metres" in " ".join(getattr(fx, name).__doc__.split()), name
+    assert "metres, not millimetres" in fx.REGISTRY["module_from_diametral_pitch"].returns
+    assert "METRES" in fx.module_from_diametral_pitch.__doc__
+    module_doc = " ".join(gears.__doc__.split())
+    assert "The module is in metres" in module_doc and "cadagent.mechanical.gears" in module_doc
+    assert "millimetres" in module_doc
+
+
 def test_shigley_example_13_1_pitch_diameters_centre_distance_and_base_circles():
     """Example 13-1: a 16-tooth pinion and a 40-tooth gear, diametral pitch 2, pressure angle 20 degrees. The book
     gives p = 1.57 in, dP = 8 in, dG = 20 in, C = 14 in, rb = 3.76 in (pinion) and 9.40 in (gear)."""
@@ -79,10 +103,14 @@ def test_tip_and_root_diameters_of_full_depth_teeth():
         fx.gear_root_diameter(2e-3, 3, dedendum=1.5)
 
 
-def _path_of_contact(m, n1, n2, phi):
+def _path_of_contact(m, n1, n2, phi, clip=False):
     """The path of contact by construction, not by the closed form: the pinion's centre at the origin, the gear's
     at (0, C), the pitch point between them, and the line of action through it at the pressure angle. Contact
-    starts where the line meets the gear's tip circle and ends where it meets the pinion's."""
+    starts where the line meets the gear's tip circle and ends where it meets the pinion's.
+
+    With ``clip`` it cannot start before the pinion's interference point or end after the gear's: the feet of the
+    perpendiculars from the two centres to the line of action, where it touches the base circles. From the pitch
+    point they are r1 sin(phi) and r2 sin(phi) away."""
     r1, r2 = m * n1 / 2, m * n2 / 2
     pitch_point, direction = (0.0, r1), (math.cos(phi), math.sin(phi))
 
@@ -96,7 +124,16 @@ def _path_of_contact(m, n1, n2, phi):
         return out
     # the pinion's tip circle is met on the side where the line of action leaves the pinion's base circle; the
     # gear's on the other side: of each circle's two crossings, the shorter reach is that side
-    return min(reach((0.0, 0.0), r1 + m)) + min(reach((0.0, r1 + r2), r2 + m))
+    recess, approach = min(reach((0.0, 0.0), r1 + m)), min(reach((0.0, r1 + r2), r2 + m))
+    if clip:
+        # the feet of the perpendiculars, found as points and measured from the pitch point: no closed form
+        feet = []
+        for centre in ((0.0, 0.0), (0.0, r1 + r2)):
+            t = (centre[0] - pitch_point[0]) * direction[0] + (centre[1] - pitch_point[1]) * direction[1]
+            feet.append(abs(t))
+        assert feet[0] == pytest.approx(r1 * math.sin(phi)) and feet[1] == pytest.approx(r2 * math.sin(phi))
+        recess, approach = min(recess, feet[1]), min(approach, feet[0])
+    return recess + approach
 
 
 @pytest.mark.parametrize("n1, n2, phi", [(16, 40, DEG20), (18, 18, DEG20), (20, 100, DEG20), (32, 48, DEG14_5),
@@ -109,6 +146,52 @@ def test_contact_ratio_against_the_path_of_contact_constructed_from_the_tip_circ
     assert fx.gear_contact_ratio(m, n2, n1, phi) == pytest.approx(expected, rel=1e-12)       # symmetric
 
 
+def _unclipped_contact_ratio(n1, n2, phi):
+    """Eq. (13-9) with the path between the two tip circles and nothing cut off, in modules."""
+    path = -(n1 + n2) / 2 * math.sin(phi)
+    for n in (n1, n2):
+        path += math.sqrt(((n + 2) / 2) ** 2 - (n * math.cos(phi) / 2) ** 2)
+    return path / (math.pi * math.cos(phi))
+
+
+@pytest.mark.parametrize("n1, n2, clipped, unclipped", [(12, 60, 1.405, 1.603), (10, 40, 1.264, 1.542),
+                                                        (8, 80, 1.117, 1.566)])
+def test_contact_ratio_is_cut_off_at_the_interference_points(n1, n2, clipped, unclipped):
+    """20 degree full-depth pairs whose pinion is below gear_min_teeth for the ratio: the gear's tip reaches past
+    the point where the line of action touches the pinion's base circle. Contact cannot start before that point,
+    so the path is shorter than the tip circles alone give. By hand for 12 and 60 teeth, in modules: C sin(phi) =
+    36 sin 20 = 12.313; the gear's term sqrt(31^2 - 28.191^2) = 12.895 is past it and is cut to 12.313; the
+    pinion's is sqrt(7^2 - 5.638^2) = 4.149; so the path is 4.149 and mc = 4.149 / (pi cos 20) = 1.405, not the
+    (4.149 + 12.895 - 12.313) / 2.952 = 1.603 of the uncut formula."""
+    m = 2e-3
+    assert n1 < fx.gear_min_teeth(DEG20, ratio=n2 / n1)["bound"]                  # the pair interferes
+    got = fx.gear_contact_ratio(m, n1, n2, DEG20)
+    assert got == pytest.approx(clipped, abs=5e-4)
+    assert _unclipped_contact_ratio(n1, n2, DEG20) == pytest.approx(unclipped, abs=5e-4) and got < unclipped
+    # the same by construction: the line of action cut at the feet of the perpendiculars from the two centres
+    assert got == pytest.approx(_path_of_contact(m, n1, n2, DEG20, clip=True) / (math.pi * m * math.cos(DEG20)),
+                                rel=1e-12)
+    assert _path_of_contact(m, n1, n2, DEG20) / (math.pi * m * math.cos(DEG20)) == pytest.approx(unclipped, abs=5e-4)
+    assert fx.gear_contact_ratio(m, n2, n1, DEG20) == pytest.approx(got, rel=1e-12)       # symmetric
+    assert fx.gear_contact_ratio(7 * m, n1, n2, DEG20) == pytest.approx(got, rel=1e-12)   # scale-free
+
+
+def test_contact_ratio_of_a_pair_free_of_interference_is_not_cut_off():
+    """13 and 16 teeth is the largest mate a 13-tooth pinion takes at 20 degrees, and 18 teeth run with any gear:
+    neither tip passes an interference point, and the result is Eq. (13-9) unchanged: 1.471 and 1.732."""
+    for n1, n2, value in ((13, 16, 1.471), (18, 300, 1.732), (16, 40, 1.606)):
+        assert n1 >= fx.gear_min_teeth(DEG20, ratio=n2 / n1)["bound"]
+        got = fx.gear_contact_ratio(2e-3, n1, n2, DEG20)
+        assert got == pytest.approx(_unclipped_contact_ratio(n1, n2, DEG20), rel=1e-12)
+        assert got == pytest.approx(value, abs=5e-4)
+    # the cut starts from nothing at the limit: one tooth over a 13-tooth pinion's largest mate takes off 0.004
+    just_over, uncut = fx.gear_contact_ratio(2e-3, 13, 17, DEG20), _unclipped_contact_ratio(13, 17, DEG20)
+    assert 0 < uncut - just_over < 0.005
+    # a tall enough addendum cuts both ends: the path is then the whole distance between the interference points
+    assert fx.gear_contact_ratio(2e-3, 12, 12, DEG20, addendum=3.0) == pytest.approx(
+        12 * math.sin(DEG20) / (math.pi * math.cos(DEG20)))
+
+
 def test_contact_ratio_of_shigleys_example_gears_by_hand():
     """The 16 and 40 tooth gears of Example 13-1 (P = 2, 20 degrees), worked by hand in inches: tip radii 4.5 and
     10.5, base radii 3.759 and 9.397, C sin(phi) = 4.788, so Lab = 2.474 + 4.685 - 4.788 = 2.371 in; the base pitch
@@ -116,8 +199,15 @@ def test_contact_ratio_of_shigleys_example_gears_by_hand():
     mc = fx.gear_contact_ratio(fx.module_from_diametral_pitch(2), 16, 40, DEG20)
     assert mc == pytest.approx(2.371 / 1.476, rel=1e-3) and mc > fx.MIN_CONTACT_RATIO == 1.2
     # a higher pressure angle shortens the path of contact; more teeth lengthen it
-    assert fx.gear_contact_ratio(1e-3, 16, 40, math.radians(25)) < mc < fx.gear_contact_ratio(1e-3, 16, 40, DEG14_5)
+    assert fx.gear_contact_ratio(1e-3, 16, 40, math.radians(25)) < mc
     assert fx.gear_contact_ratio(1e-3, 30, 80, DEG20) > mc
+    by_angle = [fx.gear_contact_ratio(1e-3, 32, 80, a) for a in (math.radians(25), DEG20, DEG14_5)]
+    assert by_angle == sorted(by_angle) and by_angle[2] > 2          # 32 teeth clear a rack even at 14.5 degrees
+    # at 14.5 degrees these 16 teeth interfere with the 40 (the least there is 27 for this ratio), so the lower
+    # angle does not lengthen their contact: it is cut off, to 1.51
+    assert 16 < fx.gear_min_teeth(DEG14_5, ratio=2.5)["bound"] < 27
+    assert fx.gear_contact_ratio(1e-3, 16, 40, DEG14_5) == pytest.approx(1.507, abs=5e-4)
+    assert fx.gear_contact_ratio(1e-3, 16, 40, DEG14_5) < mc < _unclipped_contact_ratio(16, 40, DEG14_5)
 
 
 def test_least_tooth_counts_without_interference_as_shigley_gives_them():
@@ -134,6 +224,11 @@ def test_least_tooth_counts_without_interference_as_shigley_gives_them():
     assert bounds == sorted(bounds) and bounds[-2] == pytest.approx(bounds[-1], rel=1e-5)
     assert fx.gear_min_teeth(DEG14_5)["teeth"] == 32 and fx.gear_min_teeth(math.radians(25))["teeth"] == 12
     assert fx.gear_min_teeth(DEG20, addendum=0.8)["teeth"] == 14
+    # a huge finite ratio is a rack: its square would overflow a float, and the bound is the rack's to 16 figures
+    # long before that
+    rack = fx.gear_min_teeth(DEG20)
+    for huge in (1e12, 1e149, 1e150, 1e151, 1e154, 1e155, 1e200, 1.7e308):
+        assert fx.gear_min_teeth(DEG20, ratio=huge) == {"bound": pytest.approx(rack["bound"], rel=1e-9), "teeth": 18}
 
 
 def test_largest_mate_as_shigleys_table_gives_it():
@@ -183,15 +278,41 @@ def test_cone_distance_from_either_gear_and_the_mean_radius_of_example_13_8():
         fx.gear_pitch_diameter(m, 15) / 2 - face / 2 * math.sin(a["pinion"]))
 
 
+def test_mean_radius_refuses_a_pitch_radius_above_the_cone_distance():
+    """The pitch radius is L sin(gamma), so d / 2 cannot exceed the cone distance: a 1 m pitch diameter on a 40 mm
+    cone is not a gear."""
+    with pytest.raises(ValueError, match="above the cone distance"):
+        fx.bevel_mean_radius(1.0, 0.01, 0.04)
+    with pytest.raises(ValueError, match="above the cone distance"):
+        fx.bevel_mean_radius(0.0801, 0.01, 0.04)
+    # at the limit the gear is a flat crown gear (gamma = 90 degrees): the mean radius is L - b / 2
+    assert fx.bevel_mean_radius(0.08, 0.01, 0.04) == pytest.approx(0.035)
+    # every pair bevel_cone_distance makes passes, down to the most lopsided
+    for n1, n2 in ((3, 3), (3, 500), (500, 3), (20, 20)):
+        cone = fx.bevel_cone_distance(2e-3, n1, n2)
+        assert fx.bevel_mean_radius(fx.gear_pitch_diameter(2e-3, n1), cone / 4, cone) > 0
+
+
 def test_bevel_face_width_limits():
-    """Shigley Eq. (15-24): F = min(0.3 A0, 10 / Pd); Khurmi: L / b not above 3. A 2 mm module, 18 and 36 teeth:
-    L = 40.25 mm, a third is 13.4 mm, ten modules are 20 mm; a mitre pair of 60 teeth is limited by the modules."""
+    """Shigley Eq. (15-24): F = min(0.3 A0, 10 / Pd), and 10 / Pd is ten modules. A 2 mm module, 18 and 36 teeth:
+    L = 40.25 mm, 0.3 of it is 12.07 mm, ten modules are 20 mm; a mitre pair of 60 teeth is limited by the modules.
+
+    Khurmi and Gupta's sentence on the same ratio ('the ratio L / b should not exceed 3') reads the other way round
+    as printed, so the function does not cite it for this limit and uses Shigley's 0.3, not one third."""
     limits = fx.bevel_face_width_limits(fx.bevel_cone_distance(2e-3, 18, 36), 2e-3)
-    assert limits == {"third_of_cone": pytest.approx(0.0134164), "ten_modules": pytest.approx(0.020),
-                      "maximum": pytest.approx(0.0134164)}
+    assert limits == {"three_tenths_of_cone": pytest.approx(0.0120748, abs=5e-8), "ten_modules": pytest.approx(0.020),
+                      "maximum": pytest.approx(0.0120748, abs=5e-8)}
+    assert limits["maximum"] == pytest.approx(0.3 * 0.040249224)
     long_cone = fx.bevel_face_width_limits(fx.bevel_cone_distance(2e-3, 60, 60), 2e-3)
     assert long_cone["maximum"] == long_cone["ten_modules"] == pytest.approx(0.020)
-    assert long_cone["third_of_cone"] == pytest.approx(0.02 * math.sqrt(2)) and long_cone["third_of_cone"] > 0.020
+    assert long_cone["three_tenths_of_cone"] == pytest.approx(0.3 * 0.06 * math.sqrt(2))
+    assert long_cone["three_tenths_of_cone"] > 0.020
+    # in Shigley's own units: A0 = 2.372 in and Pd = 5 teeth/in (Example 13-8's pair) give min(0.712, 2) in
+    inch_pair = fx.bevel_face_width_limits(math.hypot(1.5, 4.5) * INCH, fx.module_from_diametral_pitch(5))
+    assert inch_pair["ten_modules"] / INCH == pytest.approx(10 / 5)
+    assert inch_pair["maximum"] / INCH == pytest.approx(0.3 * 4.743, abs=5e-4)
+    source = fx.REGISTRY["bevel_face_width_limits"].source
+    assert "Shigley" in source and "15-24" in source and "Khurmi" not in source
 
 
 def test_virtual_teeth_are_the_teeth_of_the_developed_back_cone():
@@ -259,22 +380,55 @@ def test_bevel_forces_are_the_normal_force_resolved():
 
 # ----------------------------------------------------------------------------- the Lewis form factor
 
+# Shigley's Table 14-2, every row. Typed here from the table as the 9th edition's Chapter 14 slides show it (an
+# image, read by eye on 2026-11-14 in a second reading, separate from the one cadagent.formulas.gears was typed
+# from), in the table's own layout: its left half, then its right half. Not copied from the implementation.
+RACK = math.inf
+SHIGLEY_TABLE_14_2 = """
+    12 0.245    13 0.261    14 0.277    15 0.290    16 0.296    17 0.303    18 0.309
+    19 0.314    20 0.322    21 0.328    22 0.331    24 0.337    26 0.346
+    28 0.353    30 0.359    34 0.371    38 0.384    43 0.397    50 0.409    60 0.422
+    75 0.435    100 0.447   150 0.460   300 0.472   400 0.480   Rack 0.485
+"""
+# Boston Gear's Table I, every row: number of teeth, 14-1/2 degree full depth, 20 degree full depth. Typed here
+# from the text of the catalogue PDF (page 311, read again on 2026-11-14), row by row as the page prints them.
+BOSTON_TABLE_I = """
+    10 0.176 0.201      11 0.192 0.226      12 0.210 0.245      13 0.223 0.264      14 0.236 0.276
+    15 0.245 0.289      16 0.255 0.295      17 0.264 0.302      18 0.270 0.308      19 0.277 0.314
+    20 0.283 0.320      22 0.292 0.330      24 0.302 0.337      26 0.308 0.344      28 0.314 0.352
+    30 0.318 0.358      32 0.322 0.364      34 0.325 0.370      36 0.329 0.377      38 0.332 0.383
+    40 0.336 0.389      45 0.340 0.399      50 0.346 0.408      55 0.352 0.415      60 0.355 0.421
+    65 0.358 0.425      70 0.360 0.429      75 0.361 0.433      80 0.363 0.436      90 0.366 0.442
+    100 0.368 0.446     150 0.375 0.458     200 0.378 0.463     300 0.382 0.471     Rack 0.390 0.484
+"""
+
+
+def _rows(text, width):
+    words = [RACK if w == "Rack" else float(w) for w in text.split()]
+    assert len(words) % width == 0
+    return [tuple(words[i:i + width]) for i in range(0, len(words), width)]
+
+
 def test_lewis_form_factors_as_shigley_table_14_2_prints_them():
-    """Shigley's Table 14-2 (20 degrees, full depth), spot values read from the table."""
-    for teeth, y in ((12, 0.245), (13, 0.261), (16, 0.296), (17, 0.303), (20, 0.322), (26, 0.346), (30, 0.359),
-                     (50, 0.409), (100, 0.447), (300, 0.472), (400, 0.480), (math.inf, 0.485)):
-        assert fx.lewis_form_factor(teeth) == fx.lewis_form_factor(teeth, DEG20, "shigley") == y
-    assert len(fx.LEWIS_FORM_FACTORS["shigley"][20.0]) == 26
+    """Shigley's Table 14-2 (20 degrees, full depth): all 26 rows, against the table typed above."""
+    printed = _rows(SHIGLEY_TABLE_14_2, 2)
+    assert len(printed) == 26
+    for teeth, y in printed:
+        assert fx.lewis_form_factor(teeth) == fx.lewis_form_factor(teeth, DEG20, "shigley") == y, teeth
+    assert list(fx.LEWIS_FORM_FACTORS["shigley"][20.0]) == printed
+    assert set(fx.LEWIS_FORM_FACTORS["shigley"]) == {20.0}
 
 
 def test_lewis_form_factors_as_boston_gear_table_i_prints_them():
-    """Boston Gear's Table I, both columns, spot values read from the catalogue page."""
-    for teeth, y145, y20 in ((10, 0.176, 0.201), (12, 0.210, 0.245), (15, 0.245, 0.289), (20, 0.283, 0.320),
-                             (30, 0.318, 0.358), (40, 0.336, 0.389), (60, 0.355, 0.421), (100, 0.368, 0.446),
-                             (300, 0.382, 0.471), (math.inf, 0.390, 0.484)):
-        assert fx.lewis_form_factor(teeth, DEG14_5) == fx.lewis_form_factor(teeth, DEG14_5, "boston") == y145
-        assert fx.lewis_form_factor(teeth, DEG20, "boston") == y20
-    assert all(len(rows) == 35 for rows in fx.LEWIS_FORM_FACTORS["boston"].values())
+    """Boston Gear's Table I: all 35 rows of both columns, against the table typed above."""
+    printed = _rows(BOSTON_TABLE_I, 3)
+    assert len(printed) == 35
+    for teeth, y145, y20 in printed:
+        assert fx.lewis_form_factor(teeth, DEG14_5) == fx.lewis_form_factor(teeth, DEG14_5, "boston") == y145, teeth
+        assert fx.lewis_form_factor(teeth, DEG20, "boston") == y20, teeth
+    assert list(fx.LEWIS_FORM_FACTORS["boston"][14.5]) == [(n, y) for n, y, _ in printed]
+    assert list(fx.LEWIS_FORM_FACTORS["boston"][20.0]) == [(n, y) for n, _, y in printed]
+    assert set(fx.LEWIS_FORM_FACTORS["boston"]) == {14.5, 20.0}
 
 
 def test_every_form_factor_table_rises_with_the_tooth_count_and_the_two_20_degree_tables_agree():
@@ -286,8 +440,15 @@ def test_every_form_factor_table_rises_with_the_tooth_count_and_the_two_20_degre
     shigley = dict(fx.LEWIS_FORM_FACTORS["shigley"][20.0])
     boston = dict(fx.LEWIS_FORM_FACTORS["boston"][20.0])
     common = set(shigley) & set(boston)
-    assert len(common) >= 20
-    assert max(abs(shigley[n] - boston[n]) for n in common) <= 0.003 + 1e-12
+    assert len(common) == 23
+    # at the tooth counts both tabulate they differ by up to 0.003 ...
+    assert max(abs(shigley[n] - boston[n]) for n in common) == pytest.approx(0.003)
+    # ... but not everywhere: where only one has a row the other is interpolated, and at Shigley's 400 teeth
+    # Boston Gear's column (300, then the rack) reads 0.00575 lower
+    assert fx.lewis_form_factor(400, DEG20, "boston") == pytest.approx(0.471 + 0.013 * 0.25)
+    worst = max(abs(fx.lewis_form_factor(n) - fx.lewis_form_factor(n, DEG20, "boston"))
+                for n in sorted(set(shigley) | set(boston)) if n >= 12)
+    assert worst == pytest.approx(0.00575) and 0.003 < worst < 0.006
     # a 20 degree tooth is thicker at the root than a 14.5 degree one, at every tooth count
     assert all(y20 > y145 for (_, y145), (_, y20) in zip(fx.LEWIS_FORM_FACTORS["boston"][14.5],
                                                          fx.LEWIS_FORM_FACTORS["boston"][20.0]))
@@ -397,7 +558,8 @@ def _bevel_capacity_by_slices(stress, module, form_factor, cone, face, slices=20
 @pytest.mark.parametrize("face_over_cone", [0.05, 0.2, 0.3, 1 / 3])
 def test_bevel_cone_factor_against_slices_of_the_tapered_tooth(face_over_cone):
     """Khurmi's bevel factor (L - b) / L is the sliced tooth's 1 - b/L + b^2 / (3 L^2) without its last term, so it
-    reads a little low: by 5.3 % at the limiting face of a third of the cone distance, less on a shorter face."""
+    reads a little low: by 4.1 % at the recommended limit of 0.3 of the cone distance, by 5.3 % at a third, less on
+    a shorter face."""
     stress, m, y, cone = 50e6, 2e-3, 0.32, 0.040
     face = face_over_cone * cone
     sliced = _bevel_capacity_by_slices(stress, m, y, cone, face)
@@ -408,6 +570,8 @@ def test_bevel_cone_factor_against_slices_of_the_tapered_tooth(face_over_cone):
     assert 1 - lewis / sliced == pytest.approx((face_over_cone ** 2 / 3) / (1 - face_over_cone
                                                                              + face_over_cone ** 2 / 3))
     assert 1 - lewis / sliced <= 0.0527
+    if face_over_cone == 0.3:
+        assert 1 - lewis / sliced == pytest.approx(0.0411, abs=5e-5)
     # the stress function is that force turned round
     assert fx.lewis_bevel_bending_stress(lewis, face, m, y, cone) == pytest.approx(stress)
 
@@ -450,7 +614,7 @@ def test_bevel_tooth_bending_by_hand():
     assert r["force_mean"] == pytest.approx(130.6, abs=0.05)
     assert r["radial"] == pytest.approx(130.576 * math.tan(DEG20) * math.cos(r["pitch_angle"]), rel=1e-4)
     assert r["axial"] == pytest.approx(130.576 * math.tan(DEG20) * math.sin(r["pitch_angle"]), rel=1e-4)
-    assert r["face_width_limit"] == pytest.approx(0.040249 / 3, abs=1e-6) and r["face_width_ok"] is True
+    assert r["face_width_limit"] == pytest.approx(0.3 * 0.040249, abs=1e-6) and r["face_width_ok"] is True
     assert r["velocity_factor"] == 1.0
     # the same from the parts
     assert r["stress"] == pytest.approx(fx.lewis_bevel_bending_stress(
@@ -477,10 +641,16 @@ def test_the_two_usual_bevel_mistakes_give_other_numbers():
 
 def test_bevel_tooth_bending_flags_a_face_past_the_recommended_limit_and_takes_the_other_table():
     wide = fx.bevel_tooth_bending(torque=2.0, module=2e-3, teeth=18, mate_teeth=36, face_width=0.016)
-    assert wide["face_width_ok"] is False and wide["face_width_limit"] == pytest.approx(0.0134164)
+    assert wide["face_width_ok"] is False and wide["face_width_limit"] == pytest.approx(0.0120748, abs=5e-8)
     at_limit = fx.bevel_tooth_bending(torque=2.0, module=2e-3, teeth=18, mate_teeth=36,
                                       face_width=wide["face_width_limit"])
-    assert at_limit["face_width_ok"] is True and at_limit["cone_factor"] == pytest.approx(2 / 3)
+    assert at_limit["face_width_ok"] is True and at_limit["cone_factor"] == pytest.approx(0.7)
+    # the flag follows the cited rule, 0.3 of the cone distance: a face between 0.3 L and L / 3 is past it
+    between = fx.bevel_tooth_bending(torque=2.0, module=2e-3, teeth=18, mate_teeth=36, face_width=0.32 * 0.040249224)
+    assert between["face_width_ok"] is False
+    # a long cone is limited by the ten modules instead
+    mitre = fx.bevel_tooth_bending(torque=2.0, module=2e-3, teeth=60, mate_teeth=60, face_width=0.021)
+    assert mitre["face_width_limit"] == pytest.approx(0.020) and mitre["face_width_ok"] is False
     old = fx.bevel_tooth_bending(torque=2.0, module=2e-3, teeth=18, mate_teeth=36, face_width=0.012,
                                  pressure_angle=DEG14_5, velocity_factor=1.3)
     assert old["form_factor"] == pytest.approx(fx.lewis_form_factor(old["virtual_teeth"], DEG14_5, "boston"))

@@ -25,7 +25,7 @@ flowchart TD
 | `test_formulas.py` | `cadagent.formulas` against worked examples from the cited sources, or derivations written out here |
 | `test_rivet_formulas.py` | Riveted joints: MIL-HDBK-5J's shear and bearing tables and Abbud's worked lap joints |
 | `test_weld_formulas.py` | Fillet welds: Shigley's Examples 9-2 and 9-4 and Tables 9-1 and 9-2, AISC 360-16's factors, and equilibrium of the line method |
-| `test_gear_formulas.py` | Spur and straight bevel gears: Shigley's Examples 13-1, 13-8 and 14-1, its Table 14-2 and Boston Gear's Table I, the contact path constructed from the tip circles, and a tapered bevel tooth in slices |
+| `test_gear_formulas.py` | Spur and straight bevel gears: Shigley's Examples 13-1, 13-8 and 14-1, every row of its Table 14-2 and of Boston Gear's Table I, the contact path constructed from the tip circles and cut off at the interference points, and a tapered bevel tooth in slices |
 | `test_inserts_formulas.py` | Threaded inserts and compression limiters: golden vectors and an independent derivation |
 | `test_torsion_snap_boss.py` | The torsion-bar snap and the screw in a printed boss, against Saint-Venant and thread statics |
 

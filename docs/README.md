@@ -1,12 +1,18 @@
 # Guides
 
-<img src="img/hero/repository-map.svg" alt="A conceptual learning workshop: study, try, test, review and learn" width="640">
+<picture>
+  <source media="(prefers-reduced-motion: reduce)" srcset="img/architecture/toolkit-workflow-still.svg">
+  <img src="img/architecture/toolkit-workflow.svg" alt="Project inputs pass through domain methods to result artifacts and human review." width="480">
+</picture>
 
 Choose a task, then follow its method, sources and checks. [The topic tree](areas.yaml) is the complete index.
 
 | I want to… | Start here |
 |---|---|
 | Choose a guide collection | [Mechanical design](mechanical/README.md), [design and review practice](practice/README.md), [worked examples](examples/README.md) |
+| Operate a process simulation | [SCADA guide](practice/scada/README.md), [equipment library](../software/cadagent/webkit/scada/ui/README.md), [example systems](../software/cadagent/webkit/scada/sim/scenarios/README.md) |
+| Embed viewers or build instructions | [Browser toolkit](../software/cadagent/webkit/README.md), [contained hosts](../software/cadagent/webkit/host/README.md), [assembly guides](../software/cadagent/webkit/assembly/README.md), [recorded robot playback](../software/cadagent/webkit/simulation/README.md) |
+| Find a source owner | [Repository map](map.md), [software domains](../software/cadagent/README.md), [agent kit](../.agents/README.md) |
 | Design and check a part | [Toolkit and project format](toolkit.md), [design dossier](practice/dossier.md), [integrity gates](practice/gates.md) |
 | Choose a joint or mechanism | [Inserts](mechanical/inserts.md), [printed joints](mechanical/printed-joints.md), [snap fits](mechanical/compliant.md), [bearings](mechanical/bearings.md), [linkages](mechanical/linkages.md) |
 | Make sheet-metal parts | [Sheet-metal hardware](sheet-metal-hardware.md), [source survey](research/manufacturing/sheet-metal.md) |

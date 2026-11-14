@@ -59,6 +59,12 @@ Required top-level fields are `format`, `version`, `system`, `components` and `v
 
 IDs begin with a letter and contain only letters, digits, underscores and dashes, up to 100 characters. Each ID must be unique within its registry. View placements refer to component IDs, never to a separately copied equipment state. Numeric coordinates are finite, nonnegative canvas units; widths and heights are positive. The runtime limits collection size and JSON depth to keep malformed imports bounded.
 
+Equipment IDs are visible schematic tags: show the raw `component.id` on the
+diagram, beside its name in selectors and in both quick and full inspection.
+Keep that ID stable when labels, view order or layout change; never derive it
+from a display label or array index. Bindings, commands and model configuration
+must refer to the same equipment identity across every view.
+
 ## Equipment and bindings
 
 An equipment instance may include an optional `variant` string registered for its
@@ -173,17 +179,24 @@ Partial views may route toward canonical equipment that is not placed on that vi
 
 A command has `id`, `label`, `action`, optional `component`, and optional JSON-object `arguments`. The action is an adapter-defined identifier, not executable source. A control has `id`, `label`, `kind`, `command`, optional `component` and optional `binding`. Toggles and ranges require a binding for their current value. Ranges also require finite `min < max`; positive `step` defaults to 1. Buttons cannot have numeric bounds.
 
+Declare `control.component` for equipment-specific quick controls. The quick
+popover includes only controls explicitly scoped to that canonical ID; full
+details also includes global controls without a component. Both levels use the
+same declared commands and adapter validation. Popover placement, details
+callbacks and focus behavior are viewer/host concerns, not new JSON fields.
+
 A component-specific toggle can opt into a direct diagram button with
 `diagram: {whenTrue, whenFalse}`. Each label names the **next action** for the
 current boolean reading: a valve uses `{"whenTrue":"Close","whenFalse":"Open"}`.
-Only one direct action is allowed per component; detailed controls remain in its
-inspector. Labels are plain text, at most 40 characters. The viewer forwards the
+Only one direct action is allowed per component; additional controls belong in
+quick inspection or full details. Labels are plain text, at most 40 characters. The viewer forwards the
 same declared command with the opposite boolean and never interprets equipment
 types, action names or physical equations. Bind the operator's switch state,
 such as `enabled` or `open`, rather than flow or visual activity: an enabled pump
 may have no flow. Missing/wrong-type readings disable the action; read-only
 adapters omit direct actions. Rejected commands display the adapter's error and
-retain the last accepted state. Clicking the artwork still opens the inspector.
+retain the last accepted state. Clicking the artwork opens the nonmodal quick
+panel; **Details & model** opens the full inspection surface.
 
 For a toggle or range, the viewer dispatches the referenced command with `arguments.value` set to the new boolean or numeric value. Buttons retain the command's arguments. For the example above:
 

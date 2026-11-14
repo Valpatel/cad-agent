@@ -46,7 +46,6 @@
     <path d="M141 104H171" fill="none" stroke="#80adbd" stroke-width="10" stroke-linejoin="round" style="fill: none; stroke: rgb(128, 173, 189); stroke-width: 10px; stroke-linejoin: round;"/>
     <path d="M141 104H171" fill="none" stroke="#65f6d0" stroke-width="2" stroke-dasharray="4 8" style="fill: none; stroke: rgb(101, 246, 208); stroke-width: 2px; stroke-dasharray: 4px, 8px; opacity: 0.472;"/></g>
     <path d="M22 31q9-18 18 0m7 0q12-21 23 0" fill="#294b5d" stroke="#638794" stroke-width="1.4" style="fill: rgb(41, 75, 93); stroke: rgb(99, 135, 148); stroke-width: 1.4px;"/>
-
   </g></g></svg></svg></g>
 <text x="90" y="98" font-size="14" text-anchor="middle" font-weight="600" data-label="riverInflow">Explicit river inflow</text>
 <text x="90" y="116" font-size="14" text-anchor="middle" font-weight="600" data-label="riverInflow">boundary</text>
@@ -72,7 +71,6 @@
     <path d="M141 104H171" fill="none" stroke="#80adbd" stroke-width="10" stroke-linejoin="round" style="fill: none; stroke: rgb(128, 173, 189); stroke-width: 10px; stroke-linejoin: round;"/>
     <path d="M141 104H171" fill="none" stroke="#65f6d0" stroke-width="2" stroke-dasharray="4 8" style="fill: none; stroke: rgb(101, 246, 208); stroke-width: 2px; stroke-dasharray: 4px, 8px; opacity: 0.472;"/></g>
     <path d="M22 31q9-18 18 0m7 0q12-21 23 0" fill="#294b5d" stroke="#638794" stroke-width="1.4" style="fill: rgb(41, 75, 93); stroke: rgb(99, 135, 148); stroke-width: 1.4px;"/>
-
   </g></g></svg></svg></g>
 <text x="90" y="98" font-size="14" text-anchor="middle" font-weight="600" data-label="upstream">Upper reservoir</text>
 </g>
@@ -86,19 +84,14 @@
  </defs><ellipse cx="90" cy="75" rx="83" ry="59" fill="url(#scada-topology-power-hydro-impoundment-gate-glow)" style="fill: url(&quot;#scada-topology-power-hydro-impoundment-gate-glow&quot;);"/><ellipse cx="90" cy="128" rx="67" ry="5" fill="#030d19" opacity=".65" style="fill: rgb(3, 13, 25); opacity: 0.65;"/><g><g data-power-type="intake-gate" data-power-speed-zero="false" data-power-drive-blocked="false">
     <ellipse cx="90" cy="125" rx="68" ry="4.5" fill="#020d18" opacity=".72" style="fill: rgb(2, 13, 24); opacity: 0.72;"/><path d="M29 121V28H145V121" fill="none" stroke="#6f97aa" stroke-width="9" style="fill: none; stroke: rgb(111, 151, 170); stroke-width: 9px;"/>
     <path d="M29 27H145" stroke="#b3cfd9" stroke-width="3" style="stroke: rgb(179, 207, 217); stroke-width: 3px;"/>
-    <path d="M41 52H133V118H41Z" fill="#103344" stroke="#4d7e90" style="fill: rgb(16, 51, 68); stroke: rgb(77, 126, 144);"/>
+    <path d="M41 52H133V118H41Z" fill="#16563f" stroke="#62ffbc" stroke-width="3" style="fill: rgb(22, 86, 63); stroke: rgb(98, 255, 188); stroke-width: 3px;"/>
     <g data-flowing="true"><path d="M11 102H169m-158 10h158" fill="none" stroke="#58d7c6" stroke-width="3" stroke-dasharray="7 10" style="fill: none; stroke: rgb(88, 215, 198); stroke-width: 3px; stroke-dasharray: 7px, 10px;"/></g>
     <defs><clipPath id="scada-topology-power-hydro-impoundment-gate-gate-clip"><path d="M35 28H139V119H35Z"/></clipPath></defs>
-    <g clip-path="url(#scada-topology-power-hydro-impoundment-gate-gate-clip)" style="clip-path: url(&quot;#scada-topology-power-hydro-impoundment-gate-gate-clip&quot;);"><g transform="translate(0 -68)" style="transform: matrix(1, 0, 0, 1, 0, -68);"><path d="M39 47H135V119H39Z" fill="url(#scada-topology-power-hydro-impoundment-gate-steel)" stroke="#b1d2db" stroke-width="1.6" style="fill: url(&quot;#scada-topology-power-hydro-impoundment-gate-steel&quot;); stroke: rgb(177, 210, 219); stroke-width: 1.6px;"/><path d="M43 57h88m-88 16h88m-88 16h88m-88 16h88" stroke="#3b657d" stroke-width="4" style="stroke: rgb(59, 101, 125); stroke-width: 4px;"/></g></g>
+    <g clip-path="url(#scada-topology-power-hydro-impoundment-gate-gate-clip)" style="clip-path: url(&quot;#scada-topology-power-hydro-impoundment-gate-gate-clip&quot;);"><g style="transform: matrix(1, 0, 0, 1, 0, -68);"><path d="M39 47H135V119H39Z" fill="url(#scada-topology-power-hydro-impoundment-gate-steel)" stroke="#62ffbc" stroke-width="3" style="fill: url(&quot;#scada-topology-power-hydro-impoundment-gate-steel&quot;); stroke: rgb(98, 255, 188); stroke-width: 3px;"/><path d="M43 57h88m-88 16h88m-88 16h88m-88 16h88" stroke="#62ffbc" stroke-width="4" style="stroke: rgb(98, 255, 188); stroke-width: 4px;"/></g></g>
     <path d="M87 13V27" stroke="#b5d4da" stroke-width="5" style="stroke: rgb(181, 212, 218); stroke-width: 5px;"/>
     <ellipse cx="87" cy="14" rx="24" ry="5" fill="#1c4255" stroke="#9ccbd4" stroke-width="2" style="fill: rgb(28, 66, 85); stroke: rgb(156, 203, 212); stroke-width: 2px;"/>
-    <path d="M65 14h44M87 8v12" stroke="#a3d2d8" stroke-width="1.5" style="stroke: rgb(163, 210, 216); stroke-width: 1.5px;"/><g>
-    <rect x="117" y="8" width="28" height="15" rx="2" fill="#082633" stroke="#77a8bc" style="fill: rgb(8, 38, 51); stroke: rgb(119, 168, 188);"/>
-    <path d="M121 13h20m-20 5h14" stroke="#75f2ce" stroke-width="1.5" style="stroke: rgb(117, 242, 206); stroke-width: 1.5px;"/>
-    <circle cx="141" cy="19" r="1.5" fill="#8affd6" style="fill: rgb(138, 255, 214);"/>
-  </g>
-
-  </g></g></svg></svg></g>
+    <path d="M65 14h44M87 8v12" stroke="#a3d2d8" stroke-width="1.5" style="stroke: rgb(163, 210, 216); stroke-width: 1.5px;"/>
+  </g></g><g data-valve-position="open"><rect x="112" y="2" width="64" height="21" rx="4" fill="#0b202e" stroke="#62ffbc" stroke-width="1.2" style="fill: rgb(11, 32, 46); stroke: rgb(98, 255, 188); stroke-width: 1.2px;"/><text x="144" y="14" text-anchor="middle" fill="#62ffbc" style="fill: rgb(98, 255, 188); display: block; font-size: 9px; font-weight: 700; text-anchor: middle;">OPEN</text><path d="M120 18h48" stroke="#405b69" stroke-width="2" style="stroke: rgb(64, 91, 105); stroke-width: 2px;"/><path d="M120 18h48" stroke="#62ffbc" stroke-width="2" style="stroke: rgb(98, 255, 188); stroke-width: 2px;"/></g></svg></svg></g>
 <text x="90" y="98" font-size="14" text-anchor="middle" font-weight="600" data-label="gate">Intake gate</text>
 </g>
 <g data-node="penstock" transform="translate(583.0 244)"><title>Water penstock — penstock / pipe</title>
@@ -140,7 +133,6 @@
     <path d="M43 115h20m-20 5h14" stroke="#75f2ce" stroke-width="1.5" style="stroke: rgb(117, 242, 206); stroke-width: 1.5px;"/>
     <circle cx="63" cy="121" r="1.5" fill="#8affd6" style="fill: rgb(138, 255, 214);"/>
   </g>
-
   </g></g></svg></svg></g>
 <text x="90" y="98" font-size="14" text-anchor="middle" font-weight="600" data-label="runner">Water turbine / shaft</text>
 <text x="90" y="116" font-size="14" text-anchor="middle" font-weight="600" data-label="runner">output</text>
@@ -166,7 +158,6 @@
     <path d="M141 104H171" fill="none" stroke="#80adbd" stroke-width="10" stroke-linejoin="round" style="fill: none; stroke: rgb(128, 173, 189); stroke-width: 10px; stroke-linejoin: round;"/>
     <path d="M141 104H171" fill="none" stroke="#65f6d0" stroke-width="2" stroke-dasharray="4 8" style="fill: none; stroke: rgb(101, 246, 208); stroke-width: 2px; stroke-dasharray: 4px, 8px; opacity: 0.472;"/></g>
     <path d="M22 31q9-18 18 0m7 0q12-21 23 0" fill="#294b5d" stroke="#638794" stroke-width="1.4" style="fill: rgb(41, 75, 93); stroke: rgb(99, 135, 148); stroke-width: 1.4px;"/>
-
   </g></g></svg></svg></g>
 <text x="90" y="98" font-size="14" text-anchor="middle" font-weight="600" data-label="tailwater">Explicit downstream</text>
 <text x="90" y="116" font-size="14" text-anchor="middle" font-weight="600" data-label="tailwater">river boundary</text>

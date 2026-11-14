@@ -37,7 +37,6 @@
     <g data-flowing="true"><path d="M99 39h23V115h43" fill="none" stroke="#8d9eaa" stroke-width="3" stroke-linejoin="round" style="fill: none; stroke: rgb(141, 158, 170); stroke-width: 3px; stroke-linejoin: round;"/>
     <path d="M99 39h23V115h43" fill="none" stroke="#ffd38a" stroke-width="1.6" stroke-dasharray="3 7" style="fill: none; stroke: rgb(255, 211, 138); stroke-width: 1.6px; stroke-dasharray: 3px, 7px; opacity: 0.648;"/></g>
 
-
   </g></g></svg></svg></g>
 <text x="90" y="98" font-size="14" text-anchor="middle" font-weight="600" data-label="deviceA">Wave buoy / takeoff A</text>
 </g>
@@ -64,7 +63,6 @@
     <path d="M99 39h23V115h43" fill="none" stroke="#7b9cab" stroke-width="3" style="fill: none; stroke: rgb(123, 156, 171); stroke-width: 3px;"/>
     <g data-flowing="true"><path d="M99 39h23V115h43" fill="none" stroke="#8d9eaa" stroke-width="3" stroke-linejoin="round" style="fill: none; stroke: rgb(141, 158, 170); stroke-width: 3px; stroke-linejoin: round;"/>
     <path d="M99 39h23V115h43" fill="none" stroke="#ffd38a" stroke-width="1.6" stroke-dasharray="3 7" style="fill: none; stroke: rgb(255, 211, 138); stroke-width: 1.6px; stroke-dasharray: 3px, 7px; opacity: 0.648;"/></g>
-
 
   </g></g></svg></svg></g>
 <text x="90" y="98" font-size="14" text-anchor="middle" font-weight="600" data-label="deviceB">Wave buoy / takeoff B</text>

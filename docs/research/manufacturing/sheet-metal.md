@@ -651,7 +651,7 @@ flowchart TD
     Y["process-profiles.yaml<br/>rules + shop_tables"] --> P["manufacturing.process<br/>rules_for · limits"]
     P --> B["sheet_metal.bend<br/>check_bends"]
     P --> D["the sheet DFM<br/>check"]
-    P --> J["clinch and rivet<br/>checks (PR B)"]
+    P --> J["clinch and rivet<br/>checks"]
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
     classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
@@ -661,19 +661,19 @@ flowchart TD
 ```
 
 *Where the rules go. Each arrow means "read by". The DFM check takes only the generic rules, beside the shop's bend
-row for the stock (read by default; `shop=False` drops it). The orange box is the next step, not yet merged.*
+row for the stock (read by default; `shop=False` drops it). The clinch and rivet checks are implemented in `cadagent.mechanical.clinch` and `cadagent.mechanical.rivets`.*
 
 <details>
-<summary>The six planned checks: what the sources say and where each stands</summary>
+<summary>The six checks: source rules and current toolkit status</summary>
 
-| Planned check | What the sources say | Status |
+| Check | What the sources say | Status |
 |---|---|---|
 | Minimum flange | 4T (Protolabs, Davis) is too short on SendCutSend's thin stock (7–9.5T) | `sheet_metal.bend` uses the shop row first; `check_bends` fails below it and warns below the strictest generic rule |
 | Hole to bend | Six rules, each on its own datum or none (§B4); SendCutSend: half the die width | `feature_to_bend` checks each on its datum; the die width is not in the tables |
 | R ≥ T | Fails SendCutSend's own 5052 radii; unsafe for 6061 and 2024 | `sheet_metal.bend` reads the shop's R |
 | Bend relief | SendCutSend's feed gives a depth per stock | `check_bends`: depth from the row, else the strictest rule; width from the strictest generic rule |
-| Clinch hardware near an edge or a bend | PEM: C/L to edge from the outside of the bend radius; SendCutSend: BA/2 + N from the bend centre. On one datum they are the same rule, since the outside of the radius lies BA/2 from the bend centre on the flat | Rules `sm-clinch-*`, both written from the bend centre line; the check is #283's PR B |
-| Rivet edge distance and pitch | 2D edge (POP, FAA, NASA nominal), 1.5D minimum; 3D pitch (FAA), 4D nominal | Rules `sm-rivet-*`; the check is #283's PR B |
+| Clinch hardware near an edge or a bend | PEM: C/L to edge from the outside of the bend radius; SendCutSend: BA/2 + N from the bend centre. On one datum they are the same rule, since the outside of the radius lies BA/2 from the bend centre on the flat | Rules `sm-clinch-*`; implemented by `clinch.check_placement`, with datum and material limits retained |
+| Rivet edge distance and pitch | 2D edge (POP, FAA, NASA nominal), 1.5D minimum; 3D pitch (FAA), 4D nominal | Rules `sm-rivet-*`; implemented by `rivets.check_joint`, with declared geometry and load assumptions |
 
 </details>
 
@@ -701,9 +701,9 @@ the other rows come from a separate survey on the same day and were not re-opene
 
 </details>
 
-No open-source tool measures a sheet-metal part against DFM rules (hole to bend, flange length, radius against a
-shop table). That checker, on top of build123d's face map and the cited rules above, is the real gap. The small
-pieces cad-agent would add are a K table by R/T with an ANSI/DIN switch, and the shop-profile reader.
+The recorded survey did not identify an adopted automatic CAD-to-rule DFM checker. Current cad-agent
+rule/profile checks are described in §B12; this is distinct from extracting all required geometry
+from an arbitrary imported sheet-metal part. Reassess upstream capabilities before adopting a new tool.
 
 ## B14. Not verified, and next steps
 
@@ -716,9 +716,9 @@ Not opened, so not cited (see `unverified` in [`references.yaml`](../references.
 - Standards content: DIN 6935, ISO 2768-1 (paid). The Aluminum Association bend-radius tables were not found.
 - SendCutSend's material pages and its min/max charts: their numbers come from the feeds instead.
 
-Next (#283):
-- The clinch and rivet checks with golden vectors (PR B).
-- The parts catalogue and the skill for the bent plate + PEM + rivet pattern: [the page](../../sheet-metal-hardware.md).
+Current implementation and maintenance:
+- [Clinch checks](../../../software/cadagent/mechanical/clinch.py) and [rivet checks](../../../software/cadagent/mechanical/rivets.py) have focused tests in [test_clinch.py](../../../tests/mechanical/test_clinch.py) and [test_rivets.py](../../../tests/mechanical/test_rivets.py).
+- Use the shipped parts catalogue and skill through [sheet-metal hardware](../../sheet-metal-hardware.md).
 - Re-fetch the SendCutSend feeds before relying on any value here; they change.
 
 <details>

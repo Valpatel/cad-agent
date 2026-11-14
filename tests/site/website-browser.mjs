@@ -764,6 +764,7 @@ try {
 async function headerProblems() {
   const problems = [];
   const evidence = await mkdtemp(path.join(tmpdir(), 'cad-agent-header-'));
+  const requiredControls = ['.wordmark', 'nav a[href="/explore"]', 'nav a[href="/toolkit"]', 'nav .pill-link', '.theme-toggle'];
   const widths = [320, 340, 359, 360, 361, 379, 380, 381, 390, 409, 410, 411, 429, 430, 431,
     459, 479, 480, 481, 600, 759, 760, 761, 800, 850, 900, 999, 1000, 1001, 1049, 1050, 1051, 1366];
   for (const colorScheme of ['light', 'dark']) {
@@ -771,7 +772,7 @@ async function headerProblems() {
     try {
       await page.goto(base + '/catalog');
       await page.evaluate(() => document.fonts.ready);
-      const measure = () => page.evaluate(() => {
+      const measure = () => page.evaluate(requiredControls => {
         const out = [];
         const shown = el => {
           if (!el || !el.getBoundingClientRect().width || !el.getBoundingClientRect().height) return false;
@@ -782,7 +783,7 @@ async function headerProblems() {
           }
           return true;
         };
-        for (const selector of ['.wordmark', 'nav a[href="/explore"]', 'nav a[href="/toolkit"]', 'nav .pill-link', '.theme-toggle']) {
+        for (const selector of requiredControls) {
           if (!shown(document.querySelector('.site-header ' + selector))) out.push(`missing visible ${selector}`);
         }
         const controls = [...document.querySelectorAll('.site-header .wordmark,.site-header nav a,.site-header button')].filter(shown);
@@ -822,7 +823,7 @@ async function headerProblems() {
             return { name: el.getAttribute('class'), display: getComputedStyle(el).display,
               left: rect.left, right: rect.right, width: rect.width, height: rect.height };
           }) };
-      });
+      }, requiredControls);
       // Capture the requested viewport's paint before reading its geometry. A failed 320px WebKit frame
       // reported the preceding 390px rectangles, while its following PNG already painted the fitting header.
       // This is one paint per case, never a wait/retry until the header fits; every real bound stays strict.
@@ -859,7 +860,8 @@ async function headerProblems() {
         }, [property, value]);
         try {
           const hidden = await paintedMeasure(`hidden-${property}`);
-          if (hidden.problems.filter(p => p.startsWith('missing visible ')).length !== 4) {
+          const missing = hidden.problems.filter(p => p.startsWith('missing visible '));
+          if (missing.length !== requiredControls.length || requiredControls.some(selector => !missing.includes(`missing visible ${selector}`))) {
             problems.push(`header ${colorScheme}: ${property} control accepted invisible navigation`);
           }
         } finally {
@@ -1475,6 +1477,8 @@ async function folderMapPhoneProblems(page, where) {
     if (measured.wide && measured.focusable && measured.scrollable && !checkedKeyboard) {
       checkedKeyboard = true;
       await view.evaluate(v => { v.scrollLeft = 0; });
+      // Reveal the target before focusing it, so native vertical focus scrolling does not overlap this key test.
+      await view.scrollIntoViewIfNeeded();
       await view.focus();
       await page.keyboard.press('ArrowRight');
       // Poll from the test process: page-context animation-frame polling misses native scrolling when

@@ -1,6 +1,7 @@
 /** Framework-neutral SCADA presentation. Models, clocks and persistence belong
  * to the injected adapter. HTML returned by render hooks is trusted host code. */
 import {ScadaCamera} from './camera.mjs';
+import {projectProcessLayout} from './process-layout.mjs';
 export {ScadaCamera} from './camera.mjs';
 import {renderScadaComponent} from '../symbols/components.mjs';
 import {ScadaWorkspace, renderScadaDialog} from '../workspace/workspace.mjs';
@@ -155,12 +156,14 @@ let nextViewerId = 0;
  * commands and model state; destroying a viewer never stops or destroys it.
  */
 export class ScadaViewer {
+  #projection = null; #projectionPending = false;
   #adapter; #equipment; #views; #commands; #controls; #hooks; #options;
   #viewId; #selected; #zoom; #zoomRequested = false; #fitMaxZoom; #snapshot; #root = null; #workspace = null; #camera = null; #cameraView = null;
   #unsubscribe = null; #listeners = []; #managed = true; #error = ''; #fieldErrors = new Map(); #revision = 0; #attachmentEpoch = 0; #scope;
 
   constructor(options = {}) {
-    const {adapter, definition, hooks = {}, fitMaxZoom = 1} = options;
+    const {adapter, definition, hooks = {}, fitMaxZoom = 1, responsiveLayout = null} = options;
+    if (responsiveLayout !== null && responsiveLayout !== 'process-chain') throw new TypeError('responsiveLayout must be null or process-chain.');
     if (!adapter || typeof adapter.getSnapshot !== 'function' || typeof adapter.subscribe !== 'function' || (adapter.dispatch != null && typeof adapter.dispatch !== 'function')) throw new TypeError('A viewer adapter needs getSnapshot(), subscribe(), and optional dispatch().');
     if (typeof fitMaxZoom !== 'number' || !Number.isFinite(fitMaxZoom) || fitMaxZoom <= 0 || fitMaxZoom > 3) throw new RangeError('fitMaxZoom must be a finite positive number up to 3.');
     this.#fitMaxZoom = fitMaxZoom;
@@ -183,7 +186,7 @@ export class ScadaViewer {
     this.#snapshot = adapter.getSnapshot();
   }
   get snapshot() { return this.#snapshot; }
-  get view() { return this.#views.find(view => view.id === this.#viewId); }
+  get view() { return this.#projection?.id === this.#viewId ? this.#projection : this.#views.find(view => view.id === this.#viewId); }
   get selected() { return this.#selected; }
   get zoom() { return this.#zoom; }
   get root() { return this.#root; }
@@ -267,10 +270,27 @@ export class ScadaViewer {
           if (camera.fitted) this.#zoomRequested = false;
           this.#zoom = camera.zoom; this.#cameraControls();
           if (zoomChanged) this.#hooks.zoomChange?.({zoom:camera.zoom, viewer:this, reason});
+          if (camera.fitted && ['resize','fit'].includes(reason)) this.#scheduleProjection();
         }});
     } else this.#camera.setSize(width,height,{fit:changedView});
     this.#cameraView = this.#viewId;
     this.#zoom = this.#camera.state.zoom; this.#cameraControls();
+  }
+  #scheduleProjection() {
+    if (this.#options.responsiveLayout !== 'process-chain' || this.#projectionPending) return;
+    this.#projectionPending = true;
+    const epoch = this.#attachmentEpoch;
+    queueMicrotask(() => {
+      this.#projectionPending = false;
+      if (epoch !== this.#attachmentEpoch || !this.#root || !this.#camera?.state.fitted) return;
+      const viewport = this.#camera.viewport, authored = this.#views.find(view => view.id === this.#viewId);
+      const next = projectProcessLayout(authored,{width:viewport.clientWidth,height:viewport.clientHeight,fitMaxZoom:this.#fitMaxZoom});
+      const current = this.view;
+      if (next.width === current.width && next.height === current.height &&
+          next.layoutProjection?.columns === current.layoutProjection?.columns) return;
+      this.#projection = next === authored ? null : next;
+      this.#paint();
+    });
   }
   refresh(reason = 'refresh', event = null) {
     this.#snapshot = this.#adapter.getSnapshot(); this.#revision++;
@@ -296,7 +316,7 @@ export class ScadaViewer {
   setView(id) {
     if (!this.#views.some(view => view.id === id)) throw new RangeError(`Unknown view: ${id}`);
     if (id === this.#viewId) return this;
-    this.closeInspector(); this.#viewId = id;
+    this.closeInspector(); this.#projection = null; this.#viewId = id;
     this.#hooks.viewChange?.({id, viewer:this}); this.refresh('view');
     return this;
   }

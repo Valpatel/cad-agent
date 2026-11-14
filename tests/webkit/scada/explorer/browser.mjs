@@ -103,9 +103,37 @@ try{
       assert.ok(fit.x>=0&&fit.y>=0&&fit.x+fit.width<=width&&fit.y+fit.height<=height,'Fit is outside the window');
       assert.equal(await page.evaluate(()=>document.documentElement.scrollHeight<=innerHeight+1),true);
       const zoom=Number(await viewport.getAttribute('data-camera-zoom'));assert.ok(zoom>0&&zoom<=1.5);
-      if(scenario==='wastewater-digester'&&width===3440)assert.ok(zoom>1,'The explicit host fit policy must use extra room');
+      if(width===3440){
+        assert.ok(zoom>1,'The explicit host fit policy must use extra room');
+        const occupied=await viewport.locator('[data-scada-equipment]').evaluateAll(nodes=>{
+          const rects=nodes.map(node=>node.getBoundingClientRect());
+          return {span:Math.max(...rects.map(r=>r.right))-Math.min(...rects.map(r=>r.left)),minimumWidth:Math.min(...rects.map(r=>r.width)),rows:new Set(rects.map(r=>Math.round(r.top))).size};
+        });
+        assert.ok(occupied.span/bounds.width>(scenario==='winery'?.6:.75),`${scenario}: equipment leaves the wide canvas unused ${JSON.stringify(occupied)}`);
+        assert.ok(occupied.minimumWidth>290,'Fitted equipment must remain readable');
+        assert.equal(occupied.rows,scenario==='winery'?2:1);
+      }
       await noHorizontalOverflow();await shot(`${scenario}-${colorScheme}-${width}`);
     }
+    await page.setViewportSize({width:1440,height:1100});await page.emulateMedia({colorScheme:'light'});
+    await page.goto(`${baseURL}/kit/scada/explorer/index.html?scenario=wastewater-digester`);
+    await expect(page.locator('#industry-lab')).toHaveAttribute('aria-busy','false');await paused();
+  });
+  await check('tall desktop toolbar stays stable and short landscape retains page scrolling with contained pan/zoom',async()=>{
+    await page.setViewportSize({width:1440,height:1600});
+    await page.goto(`${baseURL}/kit/scada/explorer/index.html?scenario=hydroponics-ebb-flow`);
+    await expect(page.locator('#industry-lab')).toHaveAttribute('aria-busy','false');await paused();
+    await page.locator('#lab-viewer [data-scada-zoom=fit]').click();
+    const stable=await page.locator('#lab-viewer [data-scada-zoom=fit]').evaluate(async element=>{
+      const boxes=[];for(let i=0;i<12;i++){await new Promise(requestAnimationFrame);const r=element.getBoundingClientRect();boxes.push([r.x,r.y,r.width,r.height]);}return boxes;
+    });
+    assert.ok(stable.every(box=>box.every((value,index)=>Math.abs(value-stable[0][index])<.5)),'Fitted percentage must not cause toolbar resize feedback');
+    await page.setViewportSize({width:844,height:390});
+    await viewportContract('#lab-viewer [data-scada-scroll]');await noHorizontalOverflow();
+    assert.equal(await page.evaluate(()=>document.documentElement.scrollHeight>innerHeight),true);
+    await page.locator('#lab-viewer [data-scada-camera-fit]').click();
+    await open('faults');await expect(page.locator('#industry-faults-dialog')).toBeVisible();await close();
+    await shot('short-landscape');
     await page.setViewportSize({width:1440,height:1100});await page.emulateMedia({colorScheme:'light'});
     await page.goto(`${baseURL}/kit/scada/explorer/index.html?scenario=wastewater-digester`);
     await expect(page.locator('#industry-lab')).toHaveAttribute('aria-busy','false');await paused();

@@ -42,6 +42,7 @@ body{margin:0;background:var(--grid-bg),var(--cream)}
 #lab-viewer .scada-viewer-tabs{padding-bottom:4px}
 #lab-viewer .scada-viewer-tabs button{font-weight:650;font-size:15px}
 #lab-viewer .scada-viewer-toolbar{padding:12px 0}
+#lab-viewer [data-scada-zoom="reset"]{width:72px;flex:none;font-variant-numeric:tabular-nums}
 #lab-viewer .scada-diagram-scroll{width:100%;height:clamp(240px,60dvh,760px);max-height:none;min-height:0;overflow:hidden;background-image:radial-gradient(circle,#2c4c5e6b .65px,transparent .8px),radial-gradient(ellipse at 45% 40%,#153344,#081523 70%);background-size:18px 18px,auto}
 #lab-viewer .scada-viewer-equipment{box-shadow:0 8px 18px #020d1670}
 #lab-viewer .scada-viewer-equipment:hover{border-color:#89ead7;background:linear-gradient(150deg,#194554,#123247)}

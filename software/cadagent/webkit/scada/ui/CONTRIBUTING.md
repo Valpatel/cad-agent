@@ -32,7 +32,7 @@ Catalog and contracts must not import renderers, controllers or the host. Render
 ## Commands from the checkout root
 
 ```sh
-npm --prefix tools/webkit/scada ci
+npm --prefix tools/webkit/scada ci --ignore-scripts
 npm --prefix tools/webkit/scada run build:schema
 npm --prefix tools/webkit/scada run build:metadata
 npm --prefix tools/webkit/scada run check:schema

@@ -149,6 +149,10 @@ jobs:
         working-directory: tools/site
       - run: npm ci --ignore-scripts
         working-directory: tools/webkit/scada
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        if: matrix.engine == 'chromium'
+        with:
+          python-version: '3.12'
       - name: Check SCADA models, contracts and generated registries
         if: matrix.engine == 'chromium'
         working-directory: tools/webkit/scada
@@ -157,10 +161,6 @@ jobs:
           npm run check:schema
           npm run check:metadata
           npm run check:default-baseline
-      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
-        if: matrix.engine == 'chromium'
-        with:
-          python-version: '3.12'
       - name: Check SCADA gallery and scenario provenance
         if: matrix.engine == 'chromium'
         working-directory: tools/webkit/scada

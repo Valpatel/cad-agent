@@ -6,6 +6,7 @@ import {fileURLToPath} from 'node:url';
 const root=SIM;
 function python(source){
   const result=spawnSync('python',['-c',source],{cwd:root,encoding:'utf8'});
+  assert.ifError(result.error);
   assert.equal(result.status,0,result.stderr||result.stdout);
 }
 const setup=`import sys,json,copy,importlib.util

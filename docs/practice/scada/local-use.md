@@ -47,7 +47,7 @@ not only the source package.
 The shared maintenance owner declares its own Node dependencies and lockfile:
 
 ```sh
-npm --prefix tools/webkit/scada ci
+npm --prefix tools/webkit/scada ci --ignore-scripts
 npm --prefix tools/webkit/scada test
 npm --prefix tools/webkit/scada run check:schema
 npm --prefix tools/webkit/scada run check:metadata

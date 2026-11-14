@@ -3,10 +3,14 @@
 Run python3 tools/anim/documentation_flows.py [--check]. Stdlib only.
 """
 import argparse
+import sys
 from html import escape
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT / 'software'))
+from cadagent.publish.anim import svg
+
 OUT = ROOT / 'docs/img/architecture'
 # Label, explanation, source owner. Arrows mean the documented handoff, not imports.
 SCENES = {
@@ -40,7 +44,7 @@ SCENES = {
 def render(title, subtitle, nodes, still=False):
     desc = '. '.join(f'{i+1}. {label}: {detail}. Source: {source}' for i,(label,detail,source) in enumerate(nodes))
     parts = [f'<svg xmlns="http://www.w3.org/2000/svg" width="480" height="350" viewBox="0 0 480 350" role="img" aria-labelledby="title desc"><title id="title">{escape(title)}</title><desc id="desc">Conceptual handoffs, not measured simulation. {escape(desc)}</desc>',
-      '<style>text{font-family:system-ui,sans-serif;fill:#e9f5fb}.detail{fill:#b7d1de;font-size:14px}.flow{stroke:#3de0d4;stroke-width:3;stroke-dasharray:6 8;fill:none}' + ('' if still else '.flow{animation:flow 2.8s linear infinite}@keyframes flow{to{stroke-dashoffset:-28}}@media(prefers-reduced-motion:reduce){.flow{animation:none}}') + '</style>',
+      '<style>text{font-family:system-ui,sans-serif;fill:#e9f5fb}.detail{fill:#b7d1de;font-size:14px}.flow{stroke:#3de0d4;stroke-width:3;stroke-dasharray:6 8;fill:none}' + ('' if still else '.flow{animation:flow 2.8s linear infinite}@keyframes flow{to{stroke-dashoffset:-28}}' + svg.REDUCED_MOTION) + '</style>',
       '<defs><marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#3de0d4"/></marker></defs>',
       '<rect width="480" height="350" rx="18" fill="#091a29"/>',
       f'<text x="24" y="34" font-size="22" font-weight="700">{escape(title)}</text>',

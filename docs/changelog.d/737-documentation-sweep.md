@@ -1,2 +1,0 @@
-**Changed**
-- Clarify toolkit, viewer and agent documentation journeys; replace stale feature-branch guidance with shipped source owners and explain current handoffs with reproducible animated SVGs and static alternatives. No runtime API changes.

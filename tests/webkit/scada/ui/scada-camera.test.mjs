@@ -34,12 +34,37 @@ test('direct or staged worlds fit below screen-space controls, without scroll co
     assert.equal(viewport.style.touchAction,'none');
     assert.equal(canvas.style.transform,'translate(76px, 64px) scale(0.324)');
     const fit = viewport.querySelector('[data-scada-camera-fit]');
-    assert.equal(fit.parentElement,viewport);
-    assert.equal(fit.textContent,'Zoom to fit');
-    assert.equal(fit.hasAttribute('data-scada-zoom'),false,'legacy toolbar selector stays unique');
+    assert.equal(fit.closest('[data-scada-camera-controls]').parentElement,viewport);
+    assert.equal(fit.textContent,'Fit');
+    assert.equal(fit.getAttribute('aria-label'),'Zoom to fit');
+    assert.equal(viewport.querySelectorAll('[data-scada-zoom]').length,4);
+    assert.equal(viewport.querySelectorAll('[data-scada-zoom=fit]').length,1,'one canonical in-view Fit action');
     if (stage) assert.equal(viewport.querySelector('[data-scada-stage]').style.width,'100%');
     camera.destroy(); fixture.window.close();
   }
+});
+
+test('one in-view toolbar owns zoom/reset/Fit without dispatching a host click or starting a drag', () => {
+  const fixture=setup(),{viewport,window,pointer}=fixture,camera=fixture.mount();
+  const toolbar=viewport.querySelector('[data-scada-camera-controls]');
+  assert.equal(toolbar.getAttribute('role'),'group');assert.equal(toolbar.getAttribute('aria-label'),'Diagram camera');
+  let hostClicks=0;viewport.parentElement.addEventListener('click',()=>hostClicks++);
+  const action=name=>toolbar.querySelector(`[data-scada-zoom=${name}]`);
+  action('reset').click();near(camera.state.zoom,1);assert.equal(action('reset').textContent,'100%');
+  action('in').click();near(camera.state.zoom,1.25);assert.equal(action('reset').textContent,'125%');
+  action('out').click();near(camera.state.zoom,1);
+  for(const button of toolbar.querySelectorAll('button')){
+    assert.ok(button.getAttribute('aria-label'));const before=camera.state;
+    pointer(button,'pointerdown');pointer(window,'pointermove',{x:140,y:160});pointer(window,'pointerup');
+    assert.deepEqual(camera.state,before,'camera controls never begin a world drag');
+  }
+  action('fit').click();near(camera.state.zoom,.324);assert.equal(camera.state.fitted,true);
+  assert.equal(hostClicks,0,'camera commands are consumed exactly once');
+  Object.defineProperty(toolbar,'offsetHeight',{value:92});camera.fit();
+  near(camera.state.y,112);near(camera.state.zoom,.276);
+  assert.ok(camera.state.y+1000*camera.state.zoom<=fixture.size.height-12);
+  const button=action('in'),before=camera.state;camera.destroy();button.click();assert.deepEqual(camera.state,before);
+  assert.equal(viewport.querySelector('[data-scada-camera-controls]'),null);window.close();
 });
 
 test('ultrawide fit can enlarge a world up to the explicit ceiling while the default stays at 100%', () => {

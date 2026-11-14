@@ -556,12 +556,12 @@ A riveted seam therefore costs a few cents a rivet, against about $0.77 for each
 
 - **Rules:** the `sm-clinch-*` and `sm-rivet-*` rules in [`process-profiles.yaml`](../process-profiles.yaml) cite these
   sources. SendCutSend's limits are a shop profile, used only when a caller names it.
-- **Next, the checks (#283, PR B):**
+- **Implemented checks:**
   - a clinch-hardware check: sheet hardness, hole, thickness by shank, and distances to edges, bends and other parts
     (`cadagent.mechanical.clinch`);
   - a rivet-joint check: grip band, hole, edge, pitch, shear, bearing and tear-out, with the vectors above as tests
-    (`cadagent.mechanical.rivets`, the first of these).
-- **The catalogue and skill (#283, PR C):**
+    (`cadagent.mechanical.rivets`).
+- **Implemented catalogue and skill:**
   - [`sheet-hardware.yaml`](../sheet-hardware.yaml), read by `cadagent.mechanical.sheet_hardware`: the PEM parts and
     rivets the checks know, with dated prices, stock and where to buy
     ([the page](../../sheet-metal-hardware.md));

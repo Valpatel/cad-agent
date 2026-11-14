@@ -184,14 +184,23 @@ export function validateSystemDefinition(input) {
     for (const [ri,route] of routes.entries()) { const rp=`${path}/routes/${ri}`; if (!object(route,rp,['connection','points'],['connection','points'])) continue; ref(route.connection,connectionIds,`${rp}/connection`,'connection'); const points=list(route.points,`${rp}/points`,1000); if (points.length<2) add(`${rp}/points`,'required','A route needs at least two points.'); for (const [pi,point] of points.entries()) if (object(point,`${rp}/points/${pi}`,['x','y'],['x','y'])) { number(point.x,`${rp}/points/${pi}/x`,0,plain(item.canvas)?item.canvas.width:1000000); number(point.y,`${rp}/points/${pi}/y`,0,plain(item.canvas)?item.canvas.height:1000000); } }
   }
   for (const [index,item] of commands.entries()) { const path=`/commands/${index}`; if (!object(item,path,['id','label','component','action','arguments'],['id','label','action'])) continue; text(item.label,`${path}/label`,256); id(item.action,`${path}/action`); if (own(item,'component')) ref(item.component,componentIds,`${path}/component`,'component'); if (!own(item,'arguments')) item.arguments={}; if (!plain(item.arguments)) add(`${path}/arguments`,'type','Command arguments must be a JSON object.'); }
+  const diagramControls = new Set();
   for (const [index,item] of controls.entries()) {
     const path=`/controls/${index}`;
-    if (!object(item,path,['id','label','command','component','kind','binding','min','max','step'],['id','label','command','kind'])) continue;
+    if (!object(item,path,['id','label','command','component','kind','binding','min','max','step','diagram'],['id','label','command','kind'])) continue;
     text(item.label,`${path}/label`,256); ref(item.command,commandIds,`${path}/command`,'command'); if (own(item,'component')) ref(item.component,componentIds,`${path}/component`,'component');
     if (!['button','toggle','range'].includes(item.kind)) add(`${path}/kind`,'enum','Unknown control kind.');
     if (own(item,'binding')) binding(item.binding,`${path}/binding`); else if (['toggle','range'].includes(item.kind)) add(`${path}/binding`,'required','Value controls require an explicit binding.');
     if (item.kind==='range') { for (const key of ['min','max']) number(item[key],`${path}/${key}`,-1000000000,1000000000); if (!own(item,'step')) item.step=1; number(item.step,`${path}/step`,Number.MIN_VALUE,1000000000); if (item.min>=item.max) add(path,'range','Range min must be less than max.'); }
     else for (const key of ['min','max','step']) if (own(item,key)) add(`${path}/${key}`,'control','Numeric bounds belong only to range controls.');
+    if (own(item,'diagram')) {
+      if (item.kind !== 'toggle' || !own(item,'component')) add(`${path}/diagram`,'control','Diagram actions require a component-specific toggle.');
+      if (object(item.diagram,`${path}/diagram`,['whenTrue','whenFalse'],['whenTrue','whenFalse'])) {
+        for (const key of ['whenTrue','whenFalse']) text(item.diagram[key],`${path}/diagram/${key}`,40);
+      }
+      if (diagramControls.has(item.component)) add(`${path}/diagram`,'control','An equipment item can have only one diagram action.');
+      diagramControls.add(item.component);
+    }
   }
   return errors.length ? {ok:false,errors} : {ok:true,definition:freeze(definition)};
 }

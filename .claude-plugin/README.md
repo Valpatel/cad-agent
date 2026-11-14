@@ -26,6 +26,5 @@ flowchart TD
 
 [Repository](../README.md) · [Agent kit](../.agents/README.md). This map does not add a plugin hook or alter its declared roles.
 
-The surrounding toolkit uses MIT; the SCADA-derived skills retain the terms in
-[the SCADA notice](../software/cadagent/webkit/scada/LICENSE.txt). The manifest declares
-this mixed scope explicitly; installation does not grant additional rights.
+The canonical agent kit, including the SCADA skills, uses the repository’s
+[MIT license](../LICENSE). Third-party resources retain their own notices and terms.

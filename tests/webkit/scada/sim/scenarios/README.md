@@ -11,6 +11,7 @@ flowchart TD
 | File or folder | Purpose |
 | --- | --- |
 | [scada-agriculture-scenarios.test.mjs](scada-agriculture-scenarios.test.mjs) | Agriculture resource conservation, branch isolation and observation identity. |
+| [scada-plant-operations.test.mjs](scada-plant-operations.test.mjs) | Connected wastewater, winery and brewery overview routes, instrument readings, valve isolation, PLC/I/O loss and deterministic sessions. |
 | [scada-scenarios.test.mjs](scada-scenarios.test.mjs) | Complete catalog coverage, runnable definitions, shared views and commands. |
 
 [Runtime library map](../../../../../software/cadagent/webkit/scada/README.md) · [Parent map](../README.md)

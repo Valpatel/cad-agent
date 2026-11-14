@@ -4,6 +4,22 @@ The runtime is divided by responsibility, with ordinary ES modules and explicit
 adapters. A browser viewer does not own a second solver, and a model does not
 import the DOM, artwork, audio or hosting.
 
+The host owns lifecycle and command authority; views borrow the same model session.
+
+```mermaid
+flowchart TD
+  H["Explorer host"] -->|"commands + ticks"| M["Headless model"]
+  H -->|"session adapter"| V["UI views"]
+  M -->|"snapshots"| V
+  V -->|"user intent"| H
+  classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+  classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
+  class H,M,V here
+```
+
+<details>
+<summary>Source owners and responsibilities</summary>
+
 | Owner | Responsibility |
 | --- | --- |
 | `software/cadagent/webkit/scada/ui/` | Equipment descriptors and SVG states, system validation, viewer/controller, workspace controls, styles and image gallery |
@@ -12,6 +28,8 @@ import the DOM, artwork, audio or hosting.
 | `tools/webkit/scada/` | Schema/metadata, gallery, topology, scenario documentation and capture producers |
 | `tests/webkit/scada/` | UI/model/adapter/scenario and browser regression evidence |
 | `.agents/skills/scada-*/` | Repeatable authoring, model replacement, visual review and consumer verification |
+
+</details>
 
 Each owner has a README leading to its files, child domains and related tools.
 API and format guides stay beside their libraries so a source extraction has its
@@ -41,7 +59,20 @@ not advance, reset or destroy the session. Both v1 and v2 read-only adapters omi
 
 ## Replace equations or the complete engine
 
-The model library implements two replacement seams today:
+The model library implements two replacement seams today. Either customize the
+example engine's equations or supply the viewer adapter from an external solver.
+
+```mermaid
+flowchart TD
+  C["Model configuration"] -->|"registered binding"| P["Equation provider"]
+  P -->|"rates + owned state"| K["Example engine"]
+  K --> A["Viewer adapter"]
+  X["External solver"] --> A
+  classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+  classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
+  class C,P,K,A here
+  class X near
+```
 
 - Trusted `equationProviders` select supported constitutive laws and owned state
   through data-only bindings. Pure evaluation can repeat during solving; state

@@ -12,14 +12,16 @@ const center = points => ({x:(points[0].x + points[1].x) / 2, y:(points[0].y + p
 const distance = points => Math.hypot(points[1].x - points[0].x, points[1].y - points[0].y);
 
 export class ScadaCamera {
-  #viewport; #canvas; #stage; #width; #height; #onChange; #fitButton;
+  #viewport; #canvas; #stage; #width; #height; #onChange; #controls; #zoomButton; #fitMaxZoom;
   #state = {x:0, y:0, zoom:1, fitted:true};
   #size = {width:0, height:0}; #listeners = []; #restore = []; #observer;
   #pointers = new Map(); #dragging = false; #suppressClick = false; #destroyed = false;
 
   constructor({viewport, canvas = viewport?.querySelector('[data-scada-canvas]'), stage,
-    width, height, fitOnMount = true, state, onChange} = {}) {
+    width, height, fitOnMount = true, fitMaxZoom = 1, state, onChange} = {}) {
     if (!viewport?.ownerDocument || !canvas?.style || viewport === canvas || !viewport.contains(canvas)) throw new TypeError('A camera needs a viewport containing its canvas.');
+    this.#fitMaxZoom = positive(fitMaxZoom, 'fitMaxZoom');
+    if (this.#fitMaxZoom > 3) throw new RangeError('fitMaxZoom must not exceed 3.');
     this.#width = positive(width ?? Number(canvas.dataset.scadaWidth), 'Canvas width');
     this.#height = positive(height ?? Number(canvas.dataset.scadaHeight), 'Canvas height');
     if (stage && (!viewport.contains(stage) || !stage.contains(canvas) || stage === canvas || stage === viewport)) throw new TypeError('The optional stage must contain the canvas inside the viewport.');
@@ -33,12 +35,21 @@ export class ScadaCamera {
     this.#remember(canvas, ['position','left','top','width','height','min-width','margin','transform','transform-origin'], []);
     if (this.#stage) this.#remember(this.#stage, ['position','width','height','min-width','min-height','overflow'], []);
     if (!viewport.hasAttribute('tabindex')) viewport.tabIndex = 0;
-    this.#fitButton = viewport.ownerDocument.createElement('button');
-    this.#fitButton.type = 'button'; this.#fitButton.className = 'scada-camera-fit';
-    this.#fitButton.setAttribute('data-scada-camera-controls', '');
-    this.#fitButton.setAttribute('data-scada-camera-fit', '');
-    this.#fitButton.textContent = 'Zoom to fit';
-    this.#fitButton.title = 'Show the complete diagram (Home or F)';
+    this.#controls = viewport.ownerDocument.createElement('div');
+    this.#controls.className = 'scada-camera-controls';
+    this.#controls.setAttribute('data-scada-camera-controls', '');
+    this.#controls.setAttribute('role', 'group');
+    this.#controls.setAttribute('aria-label', 'Diagram camera');
+    for (const [action, text, label] of [['fit','Fit','Zoom to fit'], ['out','−','Zoom diagram out'],
+      ['reset','100%','Reset diagram zoom to 100 percent'], ['in','+','Zoom diagram in']]) {
+      const button = viewport.ownerDocument.createElement('button');
+      button.type = 'button'; button.textContent = text;
+      button.setAttribute('data-scada-zoom', action); button.setAttribute('aria-label', label);
+      button.title = action === 'fit' ? 'Show the complete diagram (Home or F)' : label;
+      this.#controls.append(button);
+      if (action === 'fit') { button.className = 'scada-camera-fit'; button.setAttribute('data-scada-camera-fit', ''); }
+      if (action === 'reset') this.#zoomButton = button;
+    }
     this.#listen('pointerdown', event => this.#pointerDown(event));
     // Retain click targets until a drag starts, but still see an early release
     // outside the viewport before pointer capture has become necessary.
@@ -48,8 +59,14 @@ export class ScadaCamera {
     this.#listen('pointercancel', event => this.#pointerEnd(event), undefined, window);
     this.#listen('lostpointercapture', event => { if (event.target === viewport) this.#pointerEnd(event); });
     this.#listen('click', event => {
-      if (this.#suppressClick && event.detail !== 0) { event.preventDefault(); event.stopImmediatePropagation(); }
-      else if (this.#fitButton.contains(event.target)) { event.preventDefault(); event.stopPropagation(); this.fit(); }
+      const control = event.target.closest?.('[data-scada-zoom]');
+      if (control && this.#controls.contains(control)) {
+        event.preventDefault(); event.stopPropagation();
+        const action = control.dataset.scadaZoom;
+        if (action === 'fit') this.fit();
+        else if (action === 'reset') this.setZoom(1);
+        else this.zoomBy(action === 'in' ? 1.25 : .8);
+      } else if (this.#suppressClick && event.detail !== 0) { event.preventDefault(); event.stopImmediatePropagation(); }
     }, true);
     this.#listen('dragstart', event => event.preventDefault());
     this.#listen('wheel', event => this.#wheel(event), {passive:false});
@@ -87,22 +104,26 @@ export class ScadaCamera {
     const rect = this.#viewport.getBoundingClientRect();
     return {width:this.#viewport.clientWidth || rect.width, height:this.#viewport.clientHeight || rect.height};
   }
+  #controlTop() { return Math.max(64, this.#controls.offsetHeight + 20); }
   #fitScale() {
     if (!this.#size.width || !this.#size.height) return 0;
     // Leave a screen-space strip for recovery controls, plus a 12px edge gap.
-    return Math.min(1, Math.max(1,this.#size.width - 24) / this.#width, Math.max(1,this.#size.height - 76) / this.#height);
+    return Math.min(this.#fitMaxZoom, Math.max(1,this.#size.width - 24) / this.#width, Math.max(1,this.#size.height - this.#controlTop() - 12) / this.#height);
   }
   #fitState() {
     if (!this.#size.width || !this.#size.height) return {...this.#state, fitted:true};
     const zoom = this.#fitScale();
-    return {zoom, x:(this.#size.width - this.#width * zoom) / 2, y:(this.#size.height - this.#height * zoom + 52) / 2, fitted:true};
+    return {zoom, x:(this.#size.width - this.#width * zoom) / 2, y:(this.#size.height - this.#height * zoom + this.#controlTop() - 12) / 2, fitted:true};
   }
   #apply(reason) {
     if (this.#destroyed) return this;
     const {x,y,zoom,fitted} = this.#state, viewport = this.#viewport;
     Object.assign(viewport.style, {overflow:'clip', position:'relative', touchAction:'none', userSelect:'none', cursor:this.#dragging ? 'grabbing' : 'grab'});
     viewport.setAttribute('data-scada-camera', '');
-    if (this.#fitButton.parentElement !== viewport) viewport.append(this.#fitButton);
+    if (this.#controls.parentElement !== viewport) viewport.append(this.#controls);
+    this.#zoomButton.textContent = `${Math.round(zoom * 100)}%`;
+    this.#zoomButton.setAttribute('aria-label', `Zoom ${Math.round(zoom * 100)} percent; reset to 100 percent`);
+    this.#zoomButton.title = `Current zoom ${Math.round(zoom * 100)}%; return to 100% scale`;
     for (const [name, value] of Object.entries({x,y,zoom,fitted,dragging:this.#dragging})) viewport.setAttribute(`data-camera-${name}`, String(value));
     if (this.#stage) Object.assign(this.#stage.style, {position:'relative', width:'100%', height:'100%', minWidth:'0', minHeight:'0', overflow:'visible'});
     Object.assign(this.#canvas.style, {position:'absolute', left:'0', top:'0', width:`${this.#width}px`, minWidth:`${this.#width}px`, height:`${this.#height}px`, margin:'0', transform:`translate(${x}px, ${y}px) scale(${zoom})`, transformOrigin:'top left'});
@@ -154,7 +175,7 @@ export class ScadaCamera {
   #pointerDown(event) {
     if (event.button !== 0 && event.pointerType !== 'touch') return;
     if (!this.#pointers.size) { this.#suppressClick = false; this.#dragging = false; }
-    if (this.#fitButton.contains(event.target)) return;
+    if (this.#controls.contains(event.target)) return;
     const point = this.#point(event);
     this.#pointers.set(event.pointerId, {...point, start:point});
     if (this.#pointers.size > 1) {
@@ -206,7 +227,7 @@ export class ScadaCamera {
     if (!this.#canvas.contains(element) || element === this.#canvas || this.#pointers.size) return;
     const bounds = element.getBoundingClientRect(), viewport = this.#viewport.getBoundingClientRect();
     if (!bounds.width || !bounds.height) return;
-    const padding = 12, left = viewport.left + this.#viewport.clientLeft + padding, top = viewport.top + this.#viewport.clientTop + 64;
+    const padding = 12, left = viewport.left + this.#viewport.clientLeft + padding, top = viewport.top + this.#viewport.clientTop + this.#controlTop();
     const right = left + this.#size.width - padding * 2, bottom = viewport.top + this.#viewport.clientTop + this.#size.height - padding;
     const offset = (start, end, min, max) => end - start > max - min ? (min + max - start - end) / 2 : start < min ? min - start : end > max ? max - end : 0;
     const dx = offset(bounds.left,bounds.right,left,right), dy = offset(bounds.top,bounds.bottom,top,bottom);
@@ -219,7 +240,7 @@ export class ScadaCamera {
     this.#listeners = [];
     for (const id of this.#pointers.keys()) { try { this.#viewport.releasePointerCapture?.(id); } catch { /* Not captured. */ } }
     this.#pointers.clear();
-    this.#fitButton.remove();
+    this.#controls.remove();
     for (const restore of this.#restore.reverse()) restore();
     this.#restore = [];
   }

@@ -1,7 +1,7 @@
 ---
 name: scada-viewer-review
 description: Use when visually testing SCADA equipment states, animation, diagrams, inspectors, controls, audio or shared model-session behavior in a real browser.
-license: UNLICENSED
+license: MIT
 metadata:
   requires: "node npm scada-browser"
 ---
@@ -27,8 +27,17 @@ Read the [style guide](../../../software/cadagent/webkit/scada/ui/STYLE_GUIDE.md
    Name historical/resumed evidence separately from fresh checks.
 2. Select a meaningful state matrix: off/on, idle/zero, low/normal/high, unavailable,
    connected/disconnected, open/closed, warning, supported damage and recovery.
-   Include small cards, full diagrams and equipment inspectors. Add phone and short
-   landscape sizes for layout changes. Name omitted cases rather than claiming all.
+   Include small cards, full diagrams and equipment inspectors. For layout changes,
+   add phone, short landscape, ordinary desktop and ultrawide windows. Measure the
+   actual fitted artwork as well as its containing frame; preserve manual camera
+   focus during resize. Check both application themes, persisted choices, system
+   preference changes and direct/copied-kit entry. Name omitted cases rather than
+   claiming all.
+3. Verify a single in-view camera toolbar owns zoom, readable/reset scale and Fit,
+   with visible focus and at least 44 px targets. Measure inspector action and
+   toggle text against their actual surfaces in both themes, including pressed,
+   unpressed and hovered states; require at least 4.5:1 for normal text and status
+   spans. Wait for the camera's resize update before comparing manual world focus.
 
 Compare visible output against model evidence, and test the interaction path in
 the opposite direction. A moving symbol alone does not establish either contract.
@@ -86,4 +95,4 @@ new artwork to [component authoring](../scada-component-authoring/SKILL.md), and
 composition to [system authoring](../scada-system-authoring/SKILL.md). Refresh owned
 image outputs only after the relevant runtime source is stable.
 
-[Skill map](README.md) · [All skills](../README.md) · [Retained terms](../../../software/cadagent/webkit/scada/LICENSE.txt)
+[Skill map](README.md) · [All skills](../README.md) · [MIT license](../../../software/cadagent/webkit/scada/LICENSE.txt)

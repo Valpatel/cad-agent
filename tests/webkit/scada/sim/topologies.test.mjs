@@ -14,28 +14,30 @@ from pathlib import Path
 package=Path('.')
 tools=Path(${JSON.stringify(TOOLS)})
 sys.path.insert(0,str(tools/'sim/topology'))
-from layout import layout,validate_layout
+from layout import layout,validate_layout,select_view
 `;
 test('every scenario topology preserves routed identities and avoids cards, shared lines and crossings',()=>python(setup+`
 for entry in json.loads((package/'scenarios/index.json').read_text())['scenarios']:
  system=json.loads((package/'scenarios'/entry['system']).read_text())
  for height in [132,150,168]:
-  graph=layout(system,node_height=height)
-  report=validate_layout(graph,system)
+  view=select_view(system,entry.get('topologyView'))
+  graph=layout(system,view,node_height=height)
+  report=validate_layout(graph,system,view)
   assert not report['crossings'],entry['id']
 `));
 test('topology validation rejects a changed connection and a route entering equipment',()=>python(setup+`
 system=json.loads((package/'scenarios/winery/system.json').read_text())
-graph=layout(system)
+view=select_view(system,'fermentation')
+graph=layout(system,view)
 changed=copy.deepcopy(graph)
 changed['routes'][0]['to']['component']='aging'
-try:validate_layout(changed,system)
+try:validate_layout(changed,system,view)
 except AssertionError:pass
 else:raise AssertionError('Changed endpoint was accepted')
 changed=copy.deepcopy(graph)
 node=changed['nodes'][1]
 changed['routes'][0]['points'][-1]={'x':node['x']+20,'y':node['y']+20}
-try:validate_layout(changed,system)
+try:validate_layout(changed,system,view)
 except AssertionError:pass
 else:raise AssertionError('Route entering a card was accepted')
 `));
@@ -76,4 +78,15 @@ for kind in ['topologies','thumbnails']:
  for folder in [package/'img'/kind,*[p for p in (package/'img'/kind).rglob('*') if p.is_dir()]]:
   assert (folder/'README.md').is_file(),str(folder)
   assert len([p for p in folder.iterdir() if p.is_file()])<=20,str(folder)
+`));
+
+test('static view selection is explicit, bounded and leaves the live initial view unchanged',()=>python(setup+`
+system=json.loads((package/'scenarios/wastewater-digester/system.json').read_text())
+assert select_view(system)['id']=='overview'
+assert select_view(system,'treatment')['id']=='treatment'
+for invalid in ['',{},False,'missing']:
+ try:select_view(system,invalid)
+ except ValueError:pass
+ else:raise AssertionError('Invalid static view was accepted')
+assert system['views'][0]['id']=='overview'
 `));

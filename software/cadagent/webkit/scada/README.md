@@ -24,8 +24,8 @@ flowchart TD
 | [sim/](sim/README.md) | Independent v1/v2 engines, replaceable equations, model/snapshot schemas, scenarios and the model library's [image gallery](sim/img/README.md) |
 | [explorer/](explorer/README.md) | Runnable host: scenario selection, one clock/session, editable assumptions, faults, sound and shared views |
 | [AGENTS.md](AGENTS.md) | Domain boundaries and maintenance rules |
-| [LICENSE.txt](LICENSE.txt) | Retained SCADA package terms and authorized integration scope |
-| [SOURCE.json](SOURCE.json) | Source identity, retained terms and local ownership |
+| [LICENSE.txt](LICENSE.txt) | MIT license for project-owned SCADA code, artwork and documentation |
+| [SOURCE.json](SOURCE.json) | Source identity, licensing authorization and local ownership |
 
 <a href="ui/img/README.md"><img src="ui/img/symbols/automation/plc-rack/default.svg" width="220" alt="Animated PLC rack from the SCADA equipment library"></a>
 <a href="sim/img/README.md"><img src="sim/img/thumbnails/food-beverage/winery/preview.jpg" width="320" alt="An illustrative winery process rendered by the shared viewer"></a>
@@ -36,6 +36,8 @@ Serve the copied web kit over HTTP(S) and open `scada/explorer/index.html`.
 The public Toolkit presents equipment and simulations under `/toolkit/scada/`.
 The code, symbols, scenario data and maintenance sources are physically present
 here; the historical development repository is not needed to run or maintain them.
+
+Project-owned SCADA source, symbols, scenarios and documentation use the [MIT license](LICENSE.txt), like the rest of cad-agent. Third-party dependencies and external publications retain their own terms.
 
 The two libraries retain their public package names and source exports. Their
 `img/` folders stay with the libraries. Generators live under the repository's

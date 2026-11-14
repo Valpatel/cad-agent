@@ -1,7 +1,7 @@
 ---
 name: scada-model-adaptation
 description: Use when replacing SCADA equations, calibrating model parameters from evidence or connecting an external solver while preserving shared viewer and snapshot contracts.
-license: UNLICENSED
+license: MIT
 metadata:
   requires: "node npm"
   optional: "scada-browser"
@@ -95,4 +95,4 @@ flowchart TD
     adapter correctness, packaging and live publication. No broad accuracy claim
     follows from transferring a working illustrative model.
 
-[Skill map](README.md) · [All skills](../README.md) · [Retained terms](../../../software/cadagent/webkit/scada/LICENSE.txt)
+[Skill map](README.md) · [All skills](../README.md) · [MIT license](../../../software/cadagent/webkit/scada/LICENSE.txt)

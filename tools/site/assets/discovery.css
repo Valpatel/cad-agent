@@ -23,11 +23,17 @@ cad-gallery.discovery:not([data-ready]) [data-item][data-over]{display:list-item
 
 /* The browsing overview is a short visual map; focused queries keep their full-width result flow. */
 .discover-demos>a{grid-template-columns:140px minmax(0,1fr)}.discover-demos img{width:140px;height:90px}
-.discovery[data-ready][data-overview]:not([data-filtered]) #discover-results{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 24px;align-content:start}
-.discovery[data-ready][data-overview]:not([data-filtered]) #discover-results>:not([data-group]){grid-column:1/-1}
+.discovery[data-ready][data-overview]:not([data-filtered]) .discover-groups{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 24px;align-content:start}
+@media(min-width:1500px){
+  .discovery[data-ready][data-overview]:not([data-filtered]) .discover-groups{grid-template-columns:repeat(auto-fit,minmax(340px,1fr))}
+  .discover-results{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:0 24px;align-items:start}
+  .discover-demos>a{grid-template-columns:minmax(140px,.6fr) minmax(0,1fr);font-size:16px}
+  .discover-demos img{width:100%;height:clamp(100px,12vw,210px)}
+  .discover-demos span{font-size:14px}
+}
 .discovery[data-ready][data-overview]:not([data-filtered]) [data-group=demos]{display:none}
 @media(max-width:1100px){.discover-demos{display:flex;overflow-x:auto;padding-bottom:8px}.discover-demos>a{flex:0 0 310px;grid-template-columns:140px minmax(0,1fr)}.discover-demos img{width:140px;height:90px}}
-@media(max-width:760px){.discovery[data-ready][data-overview]:not([data-filtered]) #discover-results{grid-template-columns:minmax(0,1fr)}.discover-demos>a{flex-basis:300px}}
+@media(max-width:760px){.discovery[data-ready][data-overview]:not([data-filtered]) .discover-groups{grid-template-columns:minmax(0,1fr)}.discover-demos>a{flex-basis:300px}}
 /* Browser-default placeholder alpha is not a theme contrast token. */
 .discover-search input::placeholder{color:var(--muted);opacity:1}
 /* One taxonomy remains present while moving from results into an article. */

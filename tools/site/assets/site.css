@@ -2,18 +2,8 @@
    bright: a warm-white page, sunny yellow, sky blue, coral and mint, round corners and soft shadows. Dark is
    valpatel.com's mission-control style: a near-black void with a faint hairline grid, cyan hairlines and corner
    brackets on panels, mono telemetry labels, neon only on small things. cad-agent's orange is the second accent in both. */
-@import url('/kit/vendor/fonts/fonts.css');
-/* Colour tokens: the light set, then the dark one, which the reader's system picks (prefers-color-scheme) unless they
-   chose a theme with the header's button (web/theme.js sets data-theme on <html>). The two dark blocks are the same
-   declarations (tests/site/website-build.test.mjs checks). --shadow is an RGB triple for rgb(var(--shadow)/alpha);
-   --image is the frame behind pictures drawn on white. --round scales every corner radius and --pill is a pill's
-   radius (round in light, a squared tag in dark); --grid-bg and --hud-corners are the dark theme's decorative layers,
-   none in the light one. The terminal boxes (--term) stay dark in both themes. */
-:root{--cream:#fffbf3;--glass:#fffbf3e8;--card:#fff;--soft:#fff7e8;--soft-2:#eef6ff;--soft-3:#f2f3fa;--ink:#1d2350;--muted:#4f5677;--text-2:#4a5172;--faint:#5a6182;--eyebrow:#0a63a6;--line:#ebe4d4;--line-2:#dfd7c6;--line-3:#7d84a3;--line-soft:#f0ebdf;--code:#f6f1e4;--orange:#b43c0b;--link:#0a5fa3;--teal:#0a7354;--focus:#1570c4;--shadow:29 35 80;--hi:#ffffffd0;--peach:#fff1e8;--peach-2:#ffe4d6;--peach-line:#ffbea0;--green:#d4f6e6;--green-2:#e8faf2;--green-line:#96e2c0;--yellow:#ffeb9e;--yellow-line:#f3c93c;--blue:#dcefff;--blue-line:#a6d2fa;--sky-a:#e4f4ff;--sky-b:#b5dcfb;--sky-ink:#173f68;--brown:#7e3412;--rung:#f1e5d8;--chosen:#1d2350;--grey:#eeede8;--glyph-bg:#ffffffd9;--image:#fff;--pill-line:#1d235030;--text-1:#2b3260;--line-dash:#c4b9a2;--mission-o:#ffe3d4;--mission-b-a:#e8f5ff;--mission-b-b:#c6e5ff;--mission-y-a:#fff6cf;--mission-y-b:#ffe68a;--ok:#13995a;--warn:#835200;--bad:#c42a52;--accent:#0a63a6;--band:#e3f2ff;--band-tile:#fff;--band-line:#c4e0fa;--band-ink:#1d2350;--band-text:#3e4568;--band-muted:#4f5677;--band-hi:#b43c0b;--band-code:#eef6ff;--band-code-fg:#0a5fa3;--term:#1d2350;--term-line:#1d2350;--term-fg:#eef1ff;--term-hi:#ffd257;--term-ok:#9ff0c8;--ticker:#ffe27a;--ticker-line:#f3c93c;--closing:#ffeb9e;--frame-line:#7fb7e655;--round:1.2;--pill:999px;--grid-bg:none;--hud-corners:none;--dot-glow:0 0 0 4px #13995a24;--marker:#ffe27a;--dot-anim:none;color-scheme:light}
-@media(prefers-color-scheme:dark){:root:not([data-theme=light]){--cream:#0a0a0f;--glass:#0a0a0fde;--card:#0e0e14;--soft:#12121a;--soft-2:#14141f;--soft-3:#1a1a2e;--ink:#eef2f8;--muted:#98a2b5;--text-2:#aab3c3;--faint:#8a94a8;--eyebrow:#00d8e8;--line:#00f0ff17;--line-2:#00f0ff2e;--line-3:#2b8794;--line-soft:#00f0ff12;--code:#12121a;--orange:#ff8a4c;--link:#4fe6f2;--teal:#2fe3ef;--focus:#00f0ff;--shadow:0 0 0;--hi:#00f0ff0a;--peach:#0e0e14;--peach-2:#211521;--peach-line:#ff8a4c3d;--green:#0b1d1a;--green-2:#0c1517;--green-line:#05ffa133;--yellow:#1c1b10;--yellow-line:#fcee0a40;--blue:#0b1a24;--blue-line:#00f0ff40;--sky-a:#10101a;--sky-b:#07070b;--sky-ink:#a5e9f0;--brown:#ffb38a;--rung:#1f1f30;--chosen:#0b3842;--grey:#191922;--glyph-bg:#00000066;--image:#eef1f5;--pill-line:#00f0ff38;--text-1:#c8d0dc;--line-dash:#1d5d66;--mission-o:#0e0e14;--mission-b-a:#0e0e14;--mission-b-b:#101019;--mission-y-a:#0e0e14;--mission-y-b:#101019;--ok:#05ffa1;--warn:#fcee0a;--bad:#ff2a6d;--accent:#00f0ff;--band:#0b0b11;--band-tile:#0e0e14;--band-line:#00f0ff21;--band-ink:#eef2f8;--band-text:#b4bdcc;--band-muted:#98a2b5;--band-hi:#ff8a4c;--band-code:#05050a;--band-code-fg:#4fe6f2;--term:#05050a;--term-line:#00f0ff33;--term-fg:#c8d0dc;--term-hi:#ffb38a;--term-ok:#05ffa1;--ticker:#0e0e14;--ticker-line:#00f0ff2e;--closing:#0e0e14;--frame-line:#00f0ff2e;--round:.25;--pill:4px;--grid-bg:linear-gradient(#00f0ff09 1px,transparent 1px) 0 0/48px 48px,linear-gradient(90deg,#00f0ff09 1px,transparent 1px) 0 0/48px 48px;--hud-corners:linear-gradient(#00f0ffa6,#00f0ffa6) left top/16px 1px no-repeat,linear-gradient(#00f0ffa6,#00f0ffa6) left top/1px 16px no-repeat,linear-gradient(#00f0ffa6,#00f0ffa6) right bottom/16px 1px no-repeat,linear-gradient(#00f0ffa6,#00f0ffa6) right bottom/1px 16px no-repeat;--dot-glow:0 0 0 3px #05ffa11f,0 0 10px #05ffa1a6;--marker:#0000;--dot-anim:dot-breathe 2.8s ease-in-out infinite;color-scheme:dark}}
-:root[data-theme=dark]{--cream:#0a0a0f;--glass:#0a0a0fde;--card:#0e0e14;--soft:#12121a;--soft-2:#14141f;--soft-3:#1a1a2e;--ink:#eef2f8;--muted:#98a2b5;--text-2:#aab3c3;--faint:#8a94a8;--eyebrow:#00d8e8;--line:#00f0ff17;--line-2:#00f0ff2e;--line-3:#2b8794;--line-soft:#00f0ff12;--code:#12121a;--orange:#ff8a4c;--link:#4fe6f2;--teal:#2fe3ef;--focus:#00f0ff;--shadow:0 0 0;--hi:#00f0ff0a;--peach:#0e0e14;--peach-2:#211521;--peach-line:#ff8a4c3d;--green:#0b1d1a;--green-2:#0c1517;--green-line:#05ffa133;--yellow:#1c1b10;--yellow-line:#fcee0a40;--blue:#0b1a24;--blue-line:#00f0ff40;--sky-a:#10101a;--sky-b:#07070b;--sky-ink:#a5e9f0;--brown:#ffb38a;--rung:#1f1f30;--chosen:#0b3842;--grey:#191922;--glyph-bg:#00000066;--image:#eef1f5;--pill-line:#00f0ff38;--text-1:#c8d0dc;--line-dash:#1d5d66;--mission-o:#0e0e14;--mission-b-a:#0e0e14;--mission-b-b:#101019;--mission-y-a:#0e0e14;--mission-y-b:#101019;--ok:#05ffa1;--warn:#fcee0a;--bad:#ff2a6d;--accent:#00f0ff;--band:#0b0b11;--band-tile:#0e0e14;--band-line:#00f0ff21;--band-ink:#eef2f8;--band-text:#b4bdcc;--band-muted:#98a2b5;--band-hi:#ff8a4c;--band-code:#05050a;--band-code-fg:#4fe6f2;--term:#05050a;--term-line:#00f0ff33;--term-fg:#c8d0dc;--term-hi:#ffb38a;--term-ok:#05ffa1;--ticker:#0e0e14;--ticker-line:#00f0ff2e;--closing:#0e0e14;--frame-line:#00f0ff2e;--round:.25;--pill:4px;--grid-bg:linear-gradient(#00f0ff09 1px,transparent 1px) 0 0/48px 48px,linear-gradient(90deg,#00f0ff09 1px,transparent 1px) 0 0/48px 48px;--hud-corners:linear-gradient(#00f0ffa6,#00f0ffa6) left top/16px 1px no-repeat,linear-gradient(#00f0ffa6,#00f0ffa6) left top/1px 16px no-repeat,linear-gradient(#00f0ffa6,#00f0ffa6) right bottom/16px 1px no-repeat,linear-gradient(#00f0ffa6,#00f0ffa6) right bottom/1px 16px no-repeat;--dot-glow:0 0 0 3px #05ffa11f,0 0 10px #05ffa1a6;--marker:#0000;--dot-anim:dot-breathe 2.8s ease-in-out infinite;color-scheme:dark}
-:root{--font:'Inter',system-ui,sans-serif;--mono:'JetBrains Mono',ui-monospace,monospace;--cad-copy-ok-bg:#1f7a47;
-font-family:var(--font);color:var(--ink);background:var(--cream);scroll-behavior:smooth;scroll-padding-top:90px}
+@import url('/kit/ui/theme.css');
+:root{font-family:var(--font);color:var(--ink);background:var(--cream);scroll-behavior:smooth;scroll-padding-top:90px}
 body{background:var(--grid-bg),var(--cream)}
 *{box-sizing:border-box}body{margin:0;overflow-wrap:break-word}a{color:inherit;text-underline-offset:5px}
 a:focus-visible,button:focus-visible,input:focus-visible,summary:focus-visible{outline:3px solid var(--focus);outline-offset:4px}
@@ -32,13 +22,6 @@ img,svg,video{max-width:100%}img{height:auto}
 .site-header nav a{text-decoration:none;padding:10px 0;white-space:nowrap}
 .site-header nav a:hover,.site-header nav a[aria-current]{color:var(--orange)}
 .site-header nav .pill-link{border:1px solid var(--ink);padding:10px 20px;border-radius:var(--pill)}
-/* the theme button (web/theme.js): the system's theme until the reader picks; hidden without script, which it needs */
-.theme-toggle{display:inline-grid;place-items:center;flex:none;width:40px;height:40px;padding:0;border:1px solid var(--line-2);border-radius:50%;
-  background:var(--card);color:var(--ink);cursor:pointer}
-/* Reserve the button's responsive box before startup, without showing or focusing an inactive control. */
-.theme-toggle:hover{border-color:var(--ink)}.theme-toggle[hidden]{display:inline-grid;visibility:hidden}
-.theme-toggle svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
-.theme-toggle .moon,[aria-pressed=true]>.sun{display:none}[aria-pressed=true]>.moon{display:block}
 .eyebrow{font:650 11px/1.7 var(--mono);letter-spacing:.11em;margin:0 0 22px;text-transform:uppercase;color:var(--eyebrow)}
 .status-dot{display:inline-block;width:7px;height:7px;background:var(--ok);border-radius:50%;margin-right:8px;box-shadow:var(--dot-glow);animation:var(--dot-anim)}
 @keyframes dot-breathe{50%{opacity:.55}}
@@ -253,8 +236,14 @@ cad-nav,.doc-rail{--cad-nav-font:13px/1.5 var(--font);--cad-nav-fg:var(--ink);--
 .doc-rail{display:none;font:13px/1.5 var(--font)}
 .doc-rail-title{margin:0 0 8px;font-weight:700;font-size:.78em;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
 @media(min-width:1100px){.doc-layout{display:grid;grid-template-columns:260px minmax(0,1fr);gap:52px;align-items:start}cad-nav{margin-top:28px;align-self:stretch}}
-@media(min-width:1500px){body:has(.doc-layout) .wrap{width:min(1500px,calc(100% - 96px))}
-  .doc-layout{grid-template-columns:260px minmax(0,880px) minmax(200px,1fr);gap:48px}
+/* Wide displays give collections and engineering surfaces the available space.
+   Reading measure belongs to prose, rather than limiting the whole application. */
+@media(min-width:1500px){.wrap{width:calc(100% - clamp(96px,6vw,192px))}
+  .doc-layout{grid-template-columns:260px minmax(0,1fr) 240px;gap:clamp(28px,2vw,48px)}
+  .doc-main{max-width:none}
+  .doc-main .prose :where(p,ul,ol,blockquote):not(:has(img,picture,svg,canvas,video,table)){max-width:80ch}
+  .doc-main .prose>:is(h1,h2,h3,h4){max-width:32ch}
+  .doc-main :is(cad-cantilever,cad-fourbar,cad-fan-curve,cad-torsion-snap,cad-printed-boss){max-width:1200px}
   .doc-rail{display:block;position:sticky;top:96px;max-height:calc(100vh - 112px);overflow:auto;margin-top:28px;padding-right:4px;scrollbar-width:thin}
   cad-nav .cad-nav-panel .cad-nav-outline{display:none}}
 /* On paper: no page tree (kit/documents/nav.css) and no right-hand outline, so the article keeps the whole width, not the tree's column */

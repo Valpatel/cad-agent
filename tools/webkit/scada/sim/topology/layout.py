@@ -6,6 +6,7 @@ identity. No process model, SVG renderer or external layout program is used.
 """
 from heapq import heappop, heappush
 from itertools import count
+from functools import lru_cache
 
 SIDES = ('right', 'bottom', 'left', 'top')
 OFFSETS = (0, -14, 14, -28, 28, -42, 42, -56, 56)
@@ -98,8 +99,10 @@ def _route(edge, nodes, grid_x, grid_y, used_ports, previous):
                 blocked.add((ix, iy))
     serial = count()
     queue, costs, back, origin = [], {}, {}, {}
+    @lru_cache(maxsize=None)
     def heuristic(ix, iy):
         return min(abs(xs[ix] - x) + abs(ys[iy] - y) + target['bias'] for (gx, gy), target in goals.items() for x, y in [(xs[gx], ys[gy])])
+    @lru_cache(maxsize=None)
     def penalty(a, b):
         amount = 0
         for old in previous:
@@ -191,13 +194,29 @@ def _diagnostics(nodes, routed):
     return {'node_collisions': collisions, 'edge_overlaps': overlaps, 'crossings': crossings}
 
 
+def select_view(system, view_id=None):
+    """Choose an explicitly authored static view without changing live defaults."""
+    if view_id is None:
+        return system['views'][0]
+    if not isinstance(view_id, str) or not view_id:
+        raise ValueError('topologyView must name a nonempty declared view ID')
+    for view in system['views']:
+        if view['id'] == view_id:
+            return view
+    raise ValueError('topologyView does not name a declared view: ' + view_id)
+
+
 def layout(system, view=None, *, node_width=180, node_height=132, width=900, top=78, row_gap=34):
     """Return compact nodes/routes, exact edge identity and geometric diagnostics."""
     view = view or system['views'][0]
     placements = view['placements']
     xs, ys = sorted({p['x'] for p in placements}), sorted({p['y'] for p in placements})
-    if not placements or len(xs) > 4:
-        raise ValueError('Review topology layout for an empty or wider-than-four-column view')
+    if not placements:
+        raise ValueError('Topology layout needs at least one equipment placement')
+    # Keep card typography and routing clearance on authored wide views.
+    # The SVG can be inspected at full size; thumbnail width does not change it.
+    if len(xs) > 4:
+        width = max(width, 52 + node_width + (len(xs) - 1) * (node_width + 43))
     if node_width <= 0 or node_height <= 0 or row_gap < 2 * CLEARANCE + 4 or width < len(xs) * node_width + (len(xs) - 1) * 20 + 24:
         raise ValueError('Topology dimensions leave insufficient routing clearance')
     column_step = min(223, (width - 52 - node_width) / max(1, len(xs) - 1))

@@ -1,0 +1,2821 @@
+{
+  "$schema": "../../../scada-ui/schema/scada-system.schema.json",
+  "format": "scada-system",
+  "version": 1,
+  "system": {
+    "id": "brewery",
+    "label": "Brewery",
+    "description": "Move grain through milling, mash separation, cooling, fermentation and packaging. Effluent and heat service remain independent utility branches."
+  },
+  "components": [
+    {
+      "id": "grainSilo",
+      "type": "silo",
+      "label": "Grain receiving silo",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "level": 55,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/grainSilo/active",
+        "running": "/components/grainSilo/running",
+        "fault": "/components/grainSilo/fault",
+        "status": "/components/grainSilo/status",
+        "level": "/components/grainSilo/level",
+        "damage": "/components/grainSilo/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "fill",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "discharge",
+          "side": "right",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "mill",
+      "type": "grinding-mill",
+      "label": "Grain mill",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/mill/active",
+        "running": "/components/mill/running",
+        "fault": "/components/mill/fault",
+        "status": "/components/mill/status",
+        "load": "/components/mill/load",
+        "speed": "/components/mill/speed",
+        "damage": "/components/mill/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "supply",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "mash",
+      "type": "mixing-tank",
+      "label": "Mash vessel",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "level": 55,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/mash/active",
+        "running": "/components/mash/running",
+        "fault": "/components/mash/fault",
+        "status": "/components/mash/status",
+        "level": "/components/mash/level",
+        "damage": "/components/mash/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "drive",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "lauter",
+      "type": "filter",
+      "label": "Lauter separation",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/lauter/active",
+        "running": "/components/lauter/running",
+        "fault": "/components/lauter/fault",
+        "status": "/components/lauter/status",
+        "load": "/components/lauter/load",
+        "damage": "/components/lauter/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "backwash",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "kettle",
+      "type": "reactor",
+      "label": "Brew kettle",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "level": 55,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/kettle/active",
+        "running": "/components/kettle/running",
+        "fault": "/components/kettle/fault",
+        "status": "/components/kettle/status",
+        "level": "/components/kettle/level",
+        "damage": "/components/kettle/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "vent",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "gas-inlet",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "cooler",
+      "type": "heat-exchanger",
+      "label": "Wort heat exchanger",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "temperature": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/cooler/active",
+        "running": "/components/cooler/running",
+        "fault": "/components/cooler/fault",
+        "status": "/components/cooler/status",
+        "load": "/components/cooler/load",
+        "temperature": "/components/cooler/temperature",
+        "damage": "/components/cooler/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "hot-in",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "hot-out",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "cold-in",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "cold-out",
+          "side": "right",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "fermenter",
+      "type": "reactor",
+      "label": "Fermentation vessel",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "level": 55,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/fermenter/active",
+        "running": "/components/fermenter/running",
+        "fault": "/components/fermenter/fault",
+        "status": "/components/fermenter/status",
+        "level": "/components/fermenter/level",
+        "damage": "/components/fermenter/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "vent",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "gas-inlet",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "conditioning",
+      "type": "tank",
+      "label": "Conditioning buffer",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "level": 55,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/conditioning/active",
+        "running": "/components/conditioning/running",
+        "fault": "/components/conditioning/fault",
+        "status": "/components/conditioning/status",
+        "level": "/components/conditioning/level",
+        "damage": "/components/conditioning/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "filler",
+      "type": "filling-line",
+      "label": "Container filling",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/filler/active",
+        "running": "/components/filler/running",
+        "fault": "/components/filler/fault",
+        "status": "/components/filler/status",
+        "load": "/components/filler/load",
+        "speed": "/components/filler/speed",
+        "damage": "/components/filler/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "supply",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "packer",
+      "type": "packaging-line",
+      "label": "Case packing",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/packer/active",
+        "running": "/components/packer/running",
+        "fault": "/components/packer/fault",
+        "status": "/components/packer/status",
+        "load": "/components/packer/load",
+        "speed": "/components/packer/speed",
+        "damage": "/components/packer/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "supply",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "heatService",
+      "type": "boiler",
+      "label": "Illustrative heat service",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "temperature": 180,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/heatService/active",
+        "running": "/components/heatService/running",
+        "fault": "/components/heatService/fault",
+        "status": "/components/heatService/status",
+        "load": "/components/heatService/load",
+        "temperature": "/components/heatService/temperature",
+        "damage": "/components/heatService/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "fuel",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "heat",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "exhaust",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "steam",
+          "side": "right",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "effluent",
+      "type": "aeration-basin",
+      "label": "Effluent aeration basin",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "level": 55,
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/effluent/active",
+        "running": "/components/effluent/running",
+        "fault": "/components/effluent/fault",
+        "status": "/components/effluent/status",
+        "level": "/components/effluent/level",
+        "load": "/components/effluent/load",
+        "damage": "/components/effluent/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "supply",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "air",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "power",
+      "type": "generator",
+      "label": "Demonstration site power",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/power/active",
+        "running": "/components/power/running",
+        "fault": "/components/power/fault",
+        "status": "/components/power/status",
+        "load": "/components/power/load",
+        "speed": "/components/power/speed",
+        "damage": "/components/power/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "fuel",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "output",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "exhaust",
+          "side": "right",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "controller",
+      "type": "plc-rack",
+      "label": "Brew-house controller",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "connected": true,
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/controller/active",
+        "running": "/components/controller/running",
+        "fault": "/components/controller/fault",
+        "status": "/components/controller/status",
+        "connected": "/components/controller/connected",
+        "load": "/components/controller/load",
+        "damage": "/components/controller/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "power",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "network",
+      "type": "network-switch",
+      "label": "Control network switch",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "connected": true,
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/network/active",
+        "running": "/components/network/running",
+        "fault": "/components/network/fault",
+        "status": "/components/network/status",
+        "connected": "/components/network/connected",
+        "load": "/components/network/load",
+        "damage": "/components/network/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "power",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "temperature",
+      "type": "temperature-sensor",
+      "label": "Cooling outlet monitor",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "value": 42,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/temperature/active",
+        "running": "/components/temperature/running",
+        "fault": "/components/temperature/fault",
+        "status": "/components/temperature/status",
+        "value": "/components/temperature/value",
+        "damage": "/components/temperature/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "process",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "signal",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "power",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "grainSilo-to-mill",
+      "from": {
+        "component": "grainSilo",
+        "port": "discharge"
+      },
+      "to": {
+        "component": "mill",
+        "port": "inlet"
+      },
+      "medium": "solids",
+      "flowBinding": "/flows/grainSilo-to-mill",
+      "label": "Grain receiving silo \u2192 Grain mill"
+    },
+    {
+      "id": "mill-to-mash",
+      "from": {
+        "component": "mill",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "mash",
+        "port": "inlet"
+      },
+      "medium": "solids",
+      "flowBinding": "/flows/mill-to-mash",
+      "label": "Grain mill \u2192 Mash vessel"
+    },
+    {
+      "id": "mash-to-lauter",
+      "from": {
+        "component": "mash",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "lauter",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "flowBinding": "/flows/mash-to-lauter",
+      "label": "Mash vessel \u2192 Lauter separation"
+    },
+    {
+      "id": "lauter-to-kettle",
+      "from": {
+        "component": "lauter",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "kettle",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "flowBinding": "/flows/lauter-to-kettle",
+      "label": "Lauter separation \u2192 Brew kettle"
+    },
+    {
+      "id": "kettle-to-cooler",
+      "from": {
+        "component": "kettle",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "cooler",
+        "port": "hot-in"
+      },
+      "medium": "liquid",
+      "flowBinding": "/flows/kettle-to-cooler",
+      "label": "Brew kettle \u2192 Wort heat exchanger"
+    },
+    {
+      "id": "cooler-to-fermenter",
+      "from": {
+        "component": "cooler",
+        "port": "hot-out"
+      },
+      "to": {
+        "component": "fermenter",
+        "port": "inlet"
+      },
+      "medium": "thermal-fluid",
+      "flowBinding": "/flows/cooler-to-fermenter",
+      "label": "Wort heat exchanger \u2192 Fermentation vessel"
+    },
+    {
+      "id": "fermenter-to-conditioning",
+      "from": {
+        "component": "fermenter",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "conditioning",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "flowBinding": "/flows/fermenter-to-conditioning",
+      "label": "Fermentation vessel \u2192 Conditioning buffer"
+    },
+    {
+      "id": "conditioning-to-filler",
+      "from": {
+        "component": "conditioning",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "filler",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "flowBinding": "/flows/conditioning-to-filler",
+      "label": "Conditioning buffer \u2192 Container filling"
+    },
+    {
+      "id": "filler-to-packer",
+      "from": {
+        "component": "filler",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "packer",
+        "port": "inlet"
+      },
+      "medium": "product",
+      "flowBinding": "/flows/filler-to-packer",
+      "label": "Container filling \u2192 Case packing"
+    },
+    {
+      "id": "lauter-to-effluent",
+      "from": {
+        "component": "lauter",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "effluent",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "flowBinding": "/flows/lauter-to-effluent",
+      "label": "Lauter separation \u2192 Effluent aeration basin"
+    },
+    {
+      "id": "heatService-to-cooler",
+      "from": {
+        "component": "heatService",
+        "port": "heat"
+      },
+      "to": {
+        "component": "cooler",
+        "port": "hot-in"
+      },
+      "medium": "thermal",
+      "flowBinding": "/flows/heatService-to-cooler",
+      "label": "Illustrative heat service \u2192 Wort heat exchanger"
+    },
+    {
+      "id": "power-to-mill",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "mill",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-mill",
+      "label": "Demonstration site power \u2192 Grain mill"
+    },
+    {
+      "id": "power-to-mash",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "mash",
+        "port": "drive"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-mash",
+      "label": "Demonstration site power \u2192 Mash vessel"
+    },
+    {
+      "id": "power-to-filler",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "filler",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-filler",
+      "label": "Demonstration site power \u2192 Container filling"
+    },
+    {
+      "id": "power-to-packer",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "packer",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-packer",
+      "label": "Demonstration site power \u2192 Case packing"
+    },
+    {
+      "id": "power-to-effluent",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "effluent",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-effluent",
+      "label": "Demonstration site power \u2192 Effluent aeration basin"
+    },
+    {
+      "id": "power-to-controller",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "controller",
+        "port": "power"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-controller",
+      "label": "Demonstration site power \u2192 Brew-house controller"
+    },
+    {
+      "id": "power-to-network",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "network",
+        "port": "power"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-network",
+      "label": "Demonstration site power \u2192 Control network switch"
+    },
+    {
+      "id": "power-to-temperature",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "temperature",
+        "port": "power"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-temperature",
+      "label": "Demonstration site power \u2192 Cooling outlet monitor"
+    },
+    {
+      "id": "network-to-controller",
+      "from": {
+        "component": "network",
+        "port": "uplink"
+      },
+      "to": {
+        "component": "controller",
+        "port": "network"
+      },
+      "medium": "data",
+      "flowBinding": "/flows/network-to-controller",
+      "label": "Control network switch \u2192 Brew-house controller"
+    },
+    {
+      "id": "cooler-to-temperature",
+      "from": {
+        "component": "cooler",
+        "port": "hot-out"
+      },
+      "to": {
+        "component": "temperature",
+        "port": "process"
+      },
+      "medium": "measurement",
+      "flowBinding": "/flows/cooler-to-temperature",
+      "label": "Wort heat exchanger \u2192 Cooling outlet monitor"
+    },
+    {
+      "id": "temperature-to-controller",
+      "from": {
+        "component": "temperature",
+        "port": "signal"
+      },
+      "to": {
+        "component": "controller",
+        "port": "network"
+      },
+      "medium": "data",
+      "flowBinding": "/flows/temperature-to-controller",
+      "label": "Cooling outlet monitor \u2192 Brew-house controller"
+    }
+  ],
+  "views": [
+    {
+      "id": "process",
+      "label": "Main process",
+      "canvas": {
+        "width": 1280,
+        "height": 940
+      },
+      "placements": [
+        {
+          "component": "grainSilo",
+          "x": 60,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "mill",
+          "x": 360,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "mash",
+          "x": 660,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "lauter",
+          "x": 960,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "kettle",
+          "x": 960,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "cooler",
+          "x": 660,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "fermenter",
+          "x": 360,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "conditioning",
+          "x": 60,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "filler",
+          "x": 60,
+          "y": 620,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "packer",
+          "x": 360,
+          "y": 620,
+          "width": 200,
+          "height": 190
+        }
+      ],
+      "routes": [
+        {
+          "connection": "grainSilo-to-mill",
+          "points": [
+            {
+              "x": 260,
+              "y": 155
+            },
+            {
+              "x": 360,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "mill-to-mash",
+          "points": [
+            {
+              "x": 560,
+              "y": 155
+            },
+            {
+              "x": 660,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "mash-to-lauter",
+          "points": [
+            {
+              "x": 860,
+              "y": 155
+            },
+            {
+              "x": 960,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "lauter-to-kettle",
+          "points": [
+            {
+              "x": 1060,
+              "y": 250
+            },
+            {
+              "x": 1060,
+              "y": 340
+            }
+          ]
+        },
+        {
+          "connection": "kettle-to-cooler",
+          "points": [
+            {
+              "x": 960,
+              "y": 435
+            },
+            {
+              "x": 860,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "cooler-to-fermenter",
+          "points": [
+            {
+              "x": 660,
+              "y": 435
+            },
+            {
+              "x": 560,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "fermenter-to-conditioning",
+          "points": [
+            {
+              "x": 360,
+              "y": 435
+            },
+            {
+              "x": 260,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "conditioning-to-filler",
+          "points": [
+            {
+              "x": 160,
+              "y": 530
+            },
+            {
+              "x": 160,
+              "y": 620
+            }
+          ]
+        },
+        {
+          "connection": "filler-to-packer",
+          "points": [
+            {
+              "x": 260,
+              "y": 715
+            },
+            {
+              "x": 360,
+              "y": 715
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "utilities",
+      "label": "Utilities & control",
+      "canvas": {
+        "width": 980,
+        "height": 940
+      },
+      "placements": [
+        {
+          "component": "heatService",
+          "x": 60,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "effluent",
+          "x": 360,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "power",
+          "x": 660,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "controller",
+          "x": 660,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "network",
+          "x": 360,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "temperature",
+          "x": 60,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "lauter",
+          "x": 60,
+          "y": 620,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "filler",
+          "x": 360,
+          "y": 620,
+          "width": 200,
+          "height": 190
+        }
+      ],
+      "routes": [
+        {
+          "connection": "lauter-to-effluent",
+          "points": [
+            {
+              "x": 160,
+              "y": 620
+            },
+            {
+              "x": 160,
+              "y": 554
+            },
+            {
+              "x": 284,
+              "y": 554
+            },
+            {
+              "x": 284,
+              "y": 274
+            },
+            {
+              "x": 460,
+              "y": 274
+            },
+            {
+              "x": 460,
+              "y": 250
+            }
+          ]
+        },
+        {
+          "connection": "power-to-filler",
+          "points": [
+            {
+              "x": 760,
+              "y": 250
+            },
+            {
+              "x": 760,
+              "y": 316
+            },
+            {
+              "x": 636,
+              "y": 316
+            },
+            {
+              "x": 636,
+              "y": 596
+            },
+            {
+              "x": 460,
+              "y": 596
+            },
+            {
+              "x": 460,
+              "y": 620
+            }
+          ]
+        },
+        {
+          "connection": "power-to-effluent",
+          "points": [
+            {
+              "x": 660,
+              "y": 155
+            },
+            {
+              "x": 560,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "power-to-controller",
+          "points": [
+            {
+              "x": 760,
+              "y": 250
+            },
+            {
+              "x": 760,
+              "y": 340
+            }
+          ]
+        },
+        {
+          "connection": "power-to-network",
+          "points": [
+            {
+              "x": 660,
+              "y": 155
+            },
+            {
+              "x": 636,
+              "y": 155
+            },
+            {
+              "x": 636,
+              "y": 316
+            },
+            {
+              "x": 584,
+              "y": 316
+            },
+            {
+              "x": 584,
+              "y": 435
+            },
+            {
+              "x": 560,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "power-to-temperature",
+          "points": [
+            {
+              "x": 660,
+              "y": 155
+            },
+            {
+              "x": 636,
+              "y": 155
+            },
+            {
+              "x": 636,
+              "y": 316
+            },
+            {
+              "x": 284,
+              "y": 316
+            },
+            {
+              "x": 284,
+              "y": 435
+            },
+            {
+              "x": 260,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "network-to-controller",
+          "points": [
+            {
+              "x": 560,
+              "y": 435
+            },
+            {
+              "x": 660,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "temperature-to-controller",
+          "points": [
+            {
+              "x": 260,
+              "y": 435
+            },
+            {
+              "x": 336,
+              "y": 435
+            },
+            {
+              "x": 336,
+              "y": 316
+            },
+            {
+              "x": 636,
+              "y": 316
+            },
+            {
+              "x": 636,
+              "y": 435
+            },
+            {
+              "x": 660,
+              "y": 435
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "finishing",
+      "label": "Finishing & storage",
+      "canvas": {
+        "width": 980,
+        "height": 940
+      },
+      "placements": [
+        {
+          "component": "cooler",
+          "x": 60,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "fermenter",
+          "x": 360,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "conditioning",
+          "x": 660,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "filler",
+          "x": 660,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "packer",
+          "x": 360,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "controller",
+          "x": 60,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "temperature",
+          "x": 60,
+          "y": 620,
+          "width": 200,
+          "height": 190
+        }
+      ],
+      "routes": [
+        {
+          "connection": "cooler-to-fermenter",
+          "points": [
+            {
+              "x": 260,
+              "y": 155
+            },
+            {
+              "x": 360,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "fermenter-to-conditioning",
+          "points": [
+            {
+              "x": 560,
+              "y": 155
+            },
+            {
+              "x": 660,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "conditioning-to-filler",
+          "points": [
+            {
+              "x": 760,
+              "y": 250
+            },
+            {
+              "x": 760,
+              "y": 340
+            }
+          ]
+        },
+        {
+          "connection": "filler-to-packer",
+          "points": [
+            {
+              "x": 660,
+              "y": 435
+            },
+            {
+              "x": 560,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "cooler-to-temperature",
+          "points": [
+            {
+              "x": 160,
+              "y": 250
+            },
+            {
+              "x": 160,
+              "y": 316
+            },
+            {
+              "x": 36,
+              "y": 316
+            },
+            {
+              "x": 36,
+              "y": 596
+            },
+            {
+              "x": 160,
+              "y": 596
+            },
+            {
+              "x": 160,
+              "y": 620
+            }
+          ]
+        },
+        {
+          "connection": "temperature-to-controller",
+          "points": [
+            {
+              "x": 160,
+              "y": 620
+            },
+            {
+              "x": 160,
+              "y": 530
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "commands": [
+    {
+      "id": "grainSilo-enabled",
+      "label": "Grain receiving silo \u00b7 Enabled",
+      "component": "grainSilo",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "grainSilo"
+      }
+    },
+    {
+      "id": "grainSilo-load",
+      "label": "Grain receiving silo \u00b7 Requested load",
+      "component": "grainSilo",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "grainSilo"
+      }
+    },
+    {
+      "id": "grainSilo-fault",
+      "label": "Grain receiving silo \u00b7 Injected failure",
+      "component": "grainSilo",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "grainSilo"
+      }
+    },
+    {
+      "id": "grainSilo-repair",
+      "label": "Repair Grain receiving silo",
+      "component": "grainSilo",
+      "action": "repair",
+      "arguments": {
+        "equipment": "grainSilo"
+      }
+    },
+    {
+      "id": "mill-enabled",
+      "label": "Grain mill \u00b7 Enabled",
+      "component": "mill",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "mill"
+      }
+    },
+    {
+      "id": "mill-load",
+      "label": "Grain mill \u00b7 Requested load",
+      "component": "mill",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "mill"
+      }
+    },
+    {
+      "id": "mill-fault",
+      "label": "Grain mill \u00b7 Injected failure",
+      "component": "mill",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "mill"
+      }
+    },
+    {
+      "id": "mill-repair",
+      "label": "Repair Grain mill",
+      "component": "mill",
+      "action": "repair",
+      "arguments": {
+        "equipment": "mill"
+      }
+    },
+    {
+      "id": "mash-enabled",
+      "label": "Mash vessel \u00b7 Enabled",
+      "component": "mash",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "mash"
+      }
+    },
+    {
+      "id": "mash-load",
+      "label": "Mash vessel \u00b7 Requested load",
+      "component": "mash",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "mash"
+      }
+    },
+    {
+      "id": "mash-fault",
+      "label": "Mash vessel \u00b7 Injected failure",
+      "component": "mash",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "mash"
+      }
+    },
+    {
+      "id": "mash-repair",
+      "label": "Repair Mash vessel",
+      "component": "mash",
+      "action": "repair",
+      "arguments": {
+        "equipment": "mash"
+      }
+    },
+    {
+      "id": "lauter-enabled",
+      "label": "Lauter separation \u00b7 Enabled",
+      "component": "lauter",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "lauter"
+      }
+    },
+    {
+      "id": "lauter-load",
+      "label": "Lauter separation \u00b7 Requested load",
+      "component": "lauter",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "lauter"
+      }
+    },
+    {
+      "id": "lauter-fault",
+      "label": "Lauter separation \u00b7 Injected failure",
+      "component": "lauter",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "lauter"
+      }
+    },
+    {
+      "id": "lauter-repair",
+      "label": "Repair Lauter separation",
+      "component": "lauter",
+      "action": "repair",
+      "arguments": {
+        "equipment": "lauter"
+      }
+    },
+    {
+      "id": "kettle-enabled",
+      "label": "Brew kettle \u00b7 Enabled",
+      "component": "kettle",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "kettle"
+      }
+    },
+    {
+      "id": "kettle-load",
+      "label": "Brew kettle \u00b7 Requested load",
+      "component": "kettle",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "kettle"
+      }
+    },
+    {
+      "id": "kettle-fault",
+      "label": "Brew kettle \u00b7 Injected failure",
+      "component": "kettle",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "kettle"
+      }
+    },
+    {
+      "id": "kettle-repair",
+      "label": "Repair Brew kettle",
+      "component": "kettle",
+      "action": "repair",
+      "arguments": {
+        "equipment": "kettle"
+      }
+    },
+    {
+      "id": "cooler-enabled",
+      "label": "Wort heat exchanger \u00b7 Enabled",
+      "component": "cooler",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "cooler"
+      }
+    },
+    {
+      "id": "cooler-load",
+      "label": "Wort heat exchanger \u00b7 Requested load",
+      "component": "cooler",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "cooler"
+      }
+    },
+    {
+      "id": "cooler-fault",
+      "label": "Wort heat exchanger \u00b7 Injected failure",
+      "component": "cooler",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "cooler"
+      }
+    },
+    {
+      "id": "cooler-repair",
+      "label": "Repair Wort heat exchanger",
+      "component": "cooler",
+      "action": "repair",
+      "arguments": {
+        "equipment": "cooler"
+      }
+    },
+    {
+      "id": "fermenter-enabled",
+      "label": "Fermentation vessel \u00b7 Enabled",
+      "component": "fermenter",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "fermenter"
+      }
+    },
+    {
+      "id": "fermenter-load",
+      "label": "Fermentation vessel \u00b7 Requested load",
+      "component": "fermenter",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "fermenter"
+      }
+    },
+    {
+      "id": "fermenter-fault",
+      "label": "Fermentation vessel \u00b7 Injected failure",
+      "component": "fermenter",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "fermenter"
+      }
+    },
+    {
+      "id": "fermenter-repair",
+      "label": "Repair Fermentation vessel",
+      "component": "fermenter",
+      "action": "repair",
+      "arguments": {
+        "equipment": "fermenter"
+      }
+    },
+    {
+      "id": "conditioning-enabled",
+      "label": "Conditioning buffer \u00b7 Enabled",
+      "component": "conditioning",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "conditioning"
+      }
+    },
+    {
+      "id": "conditioning-load",
+      "label": "Conditioning buffer \u00b7 Requested load",
+      "component": "conditioning",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "conditioning"
+      }
+    },
+    {
+      "id": "conditioning-fault",
+      "label": "Conditioning buffer \u00b7 Injected failure",
+      "component": "conditioning",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "conditioning"
+      }
+    },
+    {
+      "id": "conditioning-repair",
+      "label": "Repair Conditioning buffer",
+      "component": "conditioning",
+      "action": "repair",
+      "arguments": {
+        "equipment": "conditioning"
+      }
+    },
+    {
+      "id": "filler-enabled",
+      "label": "Container filling \u00b7 Enabled",
+      "component": "filler",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "filler"
+      }
+    },
+    {
+      "id": "filler-load",
+      "label": "Container filling \u00b7 Requested load",
+      "component": "filler",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "filler"
+      }
+    },
+    {
+      "id": "filler-fault",
+      "label": "Container filling \u00b7 Injected failure",
+      "component": "filler",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "filler"
+      }
+    },
+    {
+      "id": "filler-repair",
+      "label": "Repair Container filling",
+      "component": "filler",
+      "action": "repair",
+      "arguments": {
+        "equipment": "filler"
+      }
+    },
+    {
+      "id": "packer-enabled",
+      "label": "Case packing \u00b7 Enabled",
+      "component": "packer",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "packer"
+      }
+    },
+    {
+      "id": "packer-load",
+      "label": "Case packing \u00b7 Requested load",
+      "component": "packer",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "packer"
+      }
+    },
+    {
+      "id": "packer-fault",
+      "label": "Case packing \u00b7 Injected failure",
+      "component": "packer",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "packer"
+      }
+    },
+    {
+      "id": "packer-repair",
+      "label": "Repair Case packing",
+      "component": "packer",
+      "action": "repair",
+      "arguments": {
+        "equipment": "packer"
+      }
+    },
+    {
+      "id": "heatService-enabled",
+      "label": "Illustrative heat service \u00b7 Enabled",
+      "component": "heatService",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "heatService"
+      }
+    },
+    {
+      "id": "heatService-load",
+      "label": "Illustrative heat service \u00b7 Requested load",
+      "component": "heatService",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "heatService"
+      }
+    },
+    {
+      "id": "heatService-fault",
+      "label": "Illustrative heat service \u00b7 Injected failure",
+      "component": "heatService",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "heatService"
+      }
+    },
+    {
+      "id": "heatService-repair",
+      "label": "Repair Illustrative heat service",
+      "component": "heatService",
+      "action": "repair",
+      "arguments": {
+        "equipment": "heatService"
+      }
+    },
+    {
+      "id": "effluent-enabled",
+      "label": "Effluent aeration basin \u00b7 Enabled",
+      "component": "effluent",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "effluent"
+      }
+    },
+    {
+      "id": "effluent-load",
+      "label": "Effluent aeration basin \u00b7 Requested load",
+      "component": "effluent",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "effluent"
+      }
+    },
+    {
+      "id": "effluent-fault",
+      "label": "Effluent aeration basin \u00b7 Injected failure",
+      "component": "effluent",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "effluent"
+      }
+    },
+    {
+      "id": "effluent-repair",
+      "label": "Repair Effluent aeration basin",
+      "component": "effluent",
+      "action": "repair",
+      "arguments": {
+        "equipment": "effluent"
+      }
+    },
+    {
+      "id": "power-enabled",
+      "label": "Demonstration site power \u00b7 Enabled",
+      "component": "power",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "power"
+      }
+    },
+    {
+      "id": "power-load",
+      "label": "Demonstration site power \u00b7 Requested load",
+      "component": "power",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "power"
+      }
+    },
+    {
+      "id": "power-fault",
+      "label": "Demonstration site power \u00b7 Injected failure",
+      "component": "power",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "power"
+      }
+    },
+    {
+      "id": "power-repair",
+      "label": "Repair Demonstration site power",
+      "component": "power",
+      "action": "repair",
+      "arguments": {
+        "equipment": "power"
+      }
+    },
+    {
+      "id": "controller-enabled",
+      "label": "Brew-house controller \u00b7 Enabled",
+      "component": "controller",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "controller"
+      }
+    },
+    {
+      "id": "controller-load",
+      "label": "Brew-house controller \u00b7 Requested load",
+      "component": "controller",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "controller"
+      }
+    },
+    {
+      "id": "controller-fault",
+      "label": "Brew-house controller \u00b7 Injected failure",
+      "component": "controller",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "controller"
+      }
+    },
+    {
+      "id": "controller-repair",
+      "label": "Repair Brew-house controller",
+      "component": "controller",
+      "action": "repair",
+      "arguments": {
+        "equipment": "controller"
+      }
+    },
+    {
+      "id": "network-enabled",
+      "label": "Control network switch \u00b7 Enabled",
+      "component": "network",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "network"
+      }
+    },
+    {
+      "id": "network-load",
+      "label": "Control network switch \u00b7 Requested load",
+      "component": "network",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "network"
+      }
+    },
+    {
+      "id": "network-fault",
+      "label": "Control network switch \u00b7 Injected failure",
+      "component": "network",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "network"
+      }
+    },
+    {
+      "id": "network-repair",
+      "label": "Repair Control network switch",
+      "component": "network",
+      "action": "repair",
+      "arguments": {
+        "equipment": "network"
+      }
+    },
+    {
+      "id": "temperature-enabled",
+      "label": "Cooling outlet monitor \u00b7 Enabled",
+      "component": "temperature",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "temperature"
+      }
+    },
+    {
+      "id": "temperature-load",
+      "label": "Cooling outlet monitor \u00b7 Requested load",
+      "component": "temperature",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "temperature"
+      }
+    },
+    {
+      "id": "temperature-fault",
+      "label": "Cooling outlet monitor \u00b7 Injected failure",
+      "component": "temperature",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "temperature"
+      }
+    },
+    {
+      "id": "temperature-repair",
+      "label": "Repair Cooling outlet monitor",
+      "component": "temperature",
+      "action": "repair",
+      "arguments": {
+        "equipment": "temperature"
+      }
+    },
+    {
+      "id": "plant-setRunning",
+      "label": "Run the shared plant",
+      "action": "setRunning",
+      "arguments": {}
+    },
+    {
+      "id": "plant-step",
+      "label": "Advance one model step",
+      "action": "step",
+      "arguments": {
+        "value": 1
+      }
+    },
+    {
+      "id": "plant-reset",
+      "label": "Reset dynamics \u00b7 keep edited parameters",
+      "action": "reset",
+      "arguments": {}
+    }
+  ],
+  "controls": [
+    {
+      "id": "grainSilo-enabled-control",
+      "label": "Enabled",
+      "component": "grainSilo",
+      "kind": "toggle",
+      "command": "grainSilo-enabled",
+      "binding": "/controls/grainSilo/enabled"
+    },
+    {
+      "id": "grainSilo-load-control",
+      "label": "Requested load",
+      "component": "grainSilo",
+      "kind": "range",
+      "command": "grainSilo-load",
+      "binding": "/controls/grainSilo/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "grainSilo-fault-control",
+      "label": "Injected failure",
+      "component": "grainSilo",
+      "kind": "toggle",
+      "command": "grainSilo-fault",
+      "binding": "/controls/grainSilo/fault"
+    },
+    {
+      "id": "grainSilo-repair-control",
+      "label": "Repair component",
+      "component": "grainSilo",
+      "kind": "button",
+      "command": "grainSilo-repair"
+    },
+    {
+      "id": "mill-enabled-control",
+      "label": "Enabled",
+      "component": "mill",
+      "kind": "toggle",
+      "command": "mill-enabled",
+      "binding": "/controls/mill/enabled"
+    },
+    {
+      "id": "mill-load-control",
+      "label": "Requested load",
+      "component": "mill",
+      "kind": "range",
+      "command": "mill-load",
+      "binding": "/controls/mill/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "mill-fault-control",
+      "label": "Injected failure",
+      "component": "mill",
+      "kind": "toggle",
+      "command": "mill-fault",
+      "binding": "/controls/mill/fault"
+    },
+    {
+      "id": "mill-repair-control",
+      "label": "Repair component",
+      "component": "mill",
+      "kind": "button",
+      "command": "mill-repair"
+    },
+    {
+      "id": "mash-enabled-control",
+      "label": "Enabled",
+      "component": "mash",
+      "kind": "toggle",
+      "command": "mash-enabled",
+      "binding": "/controls/mash/enabled"
+    },
+    {
+      "id": "mash-load-control",
+      "label": "Requested load",
+      "component": "mash",
+      "kind": "range",
+      "command": "mash-load",
+      "binding": "/controls/mash/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "mash-fault-control",
+      "label": "Injected failure",
+      "component": "mash",
+      "kind": "toggle",
+      "command": "mash-fault",
+      "binding": "/controls/mash/fault"
+    },
+    {
+      "id": "mash-repair-control",
+      "label": "Repair component",
+      "component": "mash",
+      "kind": "button",
+      "command": "mash-repair"
+    },
+    {
+      "id": "lauter-enabled-control",
+      "label": "Enabled",
+      "component": "lauter",
+      "kind": "toggle",
+      "command": "lauter-enabled",
+      "binding": "/controls/lauter/enabled"
+    },
+    {
+      "id": "lauter-load-control",
+      "label": "Requested load",
+      "component": "lauter",
+      "kind": "range",
+      "command": "lauter-load",
+      "binding": "/controls/lauter/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "lauter-fault-control",
+      "label": "Injected failure",
+      "component": "lauter",
+      "kind": "toggle",
+      "command": "lauter-fault",
+      "binding": "/controls/lauter/fault"
+    },
+    {
+      "id": "lauter-repair-control",
+      "label": "Repair component",
+      "component": "lauter",
+      "kind": "button",
+      "command": "lauter-repair"
+    },
+    {
+      "id": "kettle-enabled-control",
+      "label": "Enabled",
+      "component": "kettle",
+      "kind": "toggle",
+      "command": "kettle-enabled",
+      "binding": "/controls/kettle/enabled"
+    },
+    {
+      "id": "kettle-load-control",
+      "label": "Requested load",
+      "component": "kettle",
+      "kind": "range",
+      "command": "kettle-load",
+      "binding": "/controls/kettle/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "kettle-fault-control",
+      "label": "Injected failure",
+      "component": "kettle",
+      "kind": "toggle",
+      "command": "kettle-fault",
+      "binding": "/controls/kettle/fault"
+    },
+    {
+      "id": "kettle-repair-control",
+      "label": "Repair component",
+      "component": "kettle",
+      "kind": "button",
+      "command": "kettle-repair"
+    },
+    {
+      "id": "cooler-enabled-control",
+      "label": "Enabled",
+      "component": "cooler",
+      "kind": "toggle",
+      "command": "cooler-enabled",
+      "binding": "/controls/cooler/enabled"
+    },
+    {
+      "id": "cooler-load-control",
+      "label": "Requested load",
+      "component": "cooler",
+      "kind": "range",
+      "command": "cooler-load",
+      "binding": "/controls/cooler/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "cooler-fault-control",
+      "label": "Injected failure",
+      "component": "cooler",
+      "kind": "toggle",
+      "command": "cooler-fault",
+      "binding": "/controls/cooler/fault"
+    },
+    {
+      "id": "cooler-repair-control",
+      "label": "Repair component",
+      "component": "cooler",
+      "kind": "button",
+      "command": "cooler-repair"
+    },
+    {
+      "id": "fermenter-enabled-control",
+      "label": "Enabled",
+      "component": "fermenter",
+      "kind": "toggle",
+      "command": "fermenter-enabled",
+      "binding": "/controls/fermenter/enabled"
+    },
+    {
+      "id": "fermenter-load-control",
+      "label": "Requested load",
+      "component": "fermenter",
+      "kind": "range",
+      "command": "fermenter-load",
+      "binding": "/controls/fermenter/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "fermenter-fault-control",
+      "label": "Injected failure",
+      "component": "fermenter",
+      "kind": "toggle",
+      "command": "fermenter-fault",
+      "binding": "/controls/fermenter/fault"
+    },
+    {
+      "id": "fermenter-repair-control",
+      "label": "Repair component",
+      "component": "fermenter",
+      "kind": "button",
+      "command": "fermenter-repair"
+    },
+    {
+      "id": "conditioning-enabled-control",
+      "label": "Enabled",
+      "component": "conditioning",
+      "kind": "toggle",
+      "command": "conditioning-enabled",
+      "binding": "/controls/conditioning/enabled"
+    },
+    {
+      "id": "conditioning-load-control",
+      "label": "Requested load",
+      "component": "conditioning",
+      "kind": "range",
+      "command": "conditioning-load",
+      "binding": "/controls/conditioning/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "conditioning-fault-control",
+      "label": "Injected failure",
+      "component": "conditioning",
+      "kind": "toggle",
+      "command": "conditioning-fault",
+      "binding": "/controls/conditioning/fault"
+    },
+    {
+      "id": "conditioning-repair-control",
+      "label": "Repair component",
+      "component": "conditioning",
+      "kind": "button",
+      "command": "conditioning-repair"
+    },
+    {
+      "id": "filler-enabled-control",
+      "label": "Enabled",
+      "component": "filler",
+      "kind": "toggle",
+      "command": "filler-enabled",
+      "binding": "/controls/filler/enabled"
+    },
+    {
+      "id": "filler-load-control",
+      "label": "Requested load",
+      "component": "filler",
+      "kind": "range",
+      "command": "filler-load",
+      "binding": "/controls/filler/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "filler-fault-control",
+      "label": "Injected failure",
+      "component": "filler",
+      "kind": "toggle",
+      "command": "filler-fault",
+      "binding": "/controls/filler/fault"
+    },
+    {
+      "id": "filler-repair-control",
+      "label": "Repair component",
+      "component": "filler",
+      "kind": "button",
+      "command": "filler-repair"
+    },
+    {
+      "id": "packer-enabled-control",
+      "label": "Enabled",
+      "component": "packer",
+      "kind": "toggle",
+      "command": "packer-enabled",
+      "binding": "/controls/packer/enabled"
+    },
+    {
+      "id": "packer-load-control",
+      "label": "Requested load",
+      "component": "packer",
+      "kind": "range",
+      "command": "packer-load",
+      "binding": "/controls/packer/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "packer-fault-control",
+      "label": "Injected failure",
+      "component": "packer",
+      "kind": "toggle",
+      "command": "packer-fault",
+      "binding": "/controls/packer/fault"
+    },
+    {
+      "id": "packer-repair-control",
+      "label": "Repair component",
+      "component": "packer",
+      "kind": "button",
+      "command": "packer-repair"
+    },
+    {
+      "id": "heatService-enabled-control",
+      "label": "Enabled",
+      "component": "heatService",
+      "kind": "toggle",
+      "command": "heatService-enabled",
+      "binding": "/controls/heatService/enabled"
+    },
+    {
+      "id": "heatService-load-control",
+      "label": "Requested load",
+      "component": "heatService",
+      "kind": "range",
+      "command": "heatService-load",
+      "binding": "/controls/heatService/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "heatService-fault-control",
+      "label": "Injected failure",
+      "component": "heatService",
+      "kind": "toggle",
+      "command": "heatService-fault",
+      "binding": "/controls/heatService/fault"
+    },
+    {
+      "id": "heatService-repair-control",
+      "label": "Repair component",
+      "component": "heatService",
+      "kind": "button",
+      "command": "heatService-repair"
+    },
+    {
+      "id": "effluent-enabled-control",
+      "label": "Enabled",
+      "component": "effluent",
+      "kind": "toggle",
+      "command": "effluent-enabled",
+      "binding": "/controls/effluent/enabled"
+    },
+    {
+      "id": "effluent-load-control",
+      "label": "Requested load",
+      "component": "effluent",
+      "kind": "range",
+      "command": "effluent-load",
+      "binding": "/controls/effluent/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "effluent-fault-control",
+      "label": "Injected failure",
+      "component": "effluent",
+      "kind": "toggle",
+      "command": "effluent-fault",
+      "binding": "/controls/effluent/fault"
+    },
+    {
+      "id": "effluent-repair-control",
+      "label": "Repair component",
+      "component": "effluent",
+      "kind": "button",
+      "command": "effluent-repair"
+    },
+    {
+      "id": "power-enabled-control",
+      "label": "Enabled",
+      "component": "power",
+      "kind": "toggle",
+      "command": "power-enabled",
+      "binding": "/controls/power/enabled"
+    },
+    {
+      "id": "power-load-control",
+      "label": "Requested load",
+      "component": "power",
+      "kind": "range",
+      "command": "power-load",
+      "binding": "/controls/power/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "power-fault-control",
+      "label": "Injected failure",
+      "component": "power",
+      "kind": "toggle",
+      "command": "power-fault",
+      "binding": "/controls/power/fault"
+    },
+    {
+      "id": "power-repair-control",
+      "label": "Repair component",
+      "component": "power",
+      "kind": "button",
+      "command": "power-repair"
+    },
+    {
+      "id": "controller-enabled-control",
+      "label": "Enabled",
+      "component": "controller",
+      "kind": "toggle",
+      "command": "controller-enabled",
+      "binding": "/controls/controller/enabled"
+    },
+    {
+      "id": "controller-load-control",
+      "label": "Requested load",
+      "component": "controller",
+      "kind": "range",
+      "command": "controller-load",
+      "binding": "/controls/controller/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "controller-fault-control",
+      "label": "Injected failure",
+      "component": "controller",
+      "kind": "toggle",
+      "command": "controller-fault",
+      "binding": "/controls/controller/fault"
+    },
+    {
+      "id": "controller-repair-control",
+      "label": "Repair component",
+      "component": "controller",
+      "kind": "button",
+      "command": "controller-repair"
+    },
+    {
+      "id": "network-enabled-control",
+      "label": "Enabled",
+      "component": "network",
+      "kind": "toggle",
+      "command": "network-enabled",
+      "binding": "/controls/network/enabled"
+    },
+    {
+      "id": "network-load-control",
+      "label": "Requested load",
+      "component": "network",
+      "kind": "range",
+      "command": "network-load",
+      "binding": "/controls/network/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "network-fault-control",
+      "label": "Injected failure",
+      "component": "network",
+      "kind": "toggle",
+      "command": "network-fault",
+      "binding": "/controls/network/fault"
+    },
+    {
+      "id": "network-repair-control",
+      "label": "Repair component",
+      "component": "network",
+      "kind": "button",
+      "command": "network-repair"
+    },
+    {
+      "id": "temperature-enabled-control",
+      "label": "Enabled",
+      "component": "temperature",
+      "kind": "toggle",
+      "command": "temperature-enabled",
+      "binding": "/controls/temperature/enabled"
+    },
+    {
+      "id": "temperature-load-control",
+      "label": "Requested load",
+      "component": "temperature",
+      "kind": "range",
+      "command": "temperature-load",
+      "binding": "/controls/temperature/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "temperature-fault-control",
+      "label": "Injected failure",
+      "component": "temperature",
+      "kind": "toggle",
+      "command": "temperature-fault",
+      "binding": "/controls/temperature/fault"
+    },
+    {
+      "id": "temperature-repair-control",
+      "label": "Repair component",
+      "component": "temperature",
+      "kind": "button",
+      "command": "temperature-repair"
+    },
+    {
+      "id": "plant-setRunning-control",
+      "label": "Run the shared plant",
+      "kind": "toggle",
+      "command": "plant-setRunning",
+      "binding": "/running"
+    },
+    {
+      "id": "plant-step-control",
+      "label": "Advance one model step",
+      "kind": "button",
+      "command": "plant-step"
+    },
+    {
+      "id": "plant-reset-control",
+      "label": "Reset dynamics \u00b7 keep edited parameters",
+      "kind": "button",
+      "command": "plant-reset"
+    }
+  ],
+  "units": {
+    "flow": "normalized flow units",
+    "inventory": "normalized inventory units",
+    "load": "% requested demonstration load",
+    "pressure": "normalized pressure index",
+    "temperature": "normalized model thermal index; artwork displays an illustrative range"
+  },
+  "provenance": [
+    {
+      "id": "demo-model",
+      "label": "Editable placeholder model",
+      "kind": "assumed",
+      "description": "Family-level normalized behavior for UI experimentation; no calibrated industry process, safety envelope or recipe."
+    },
+    {
+      "id": "assumed-topology",
+      "label": "Illustrative editable routing",
+      "kind": "illustrative",
+      "description": "Industry-inspired stage names and interfaces. This is not a verified plant P&ID, wiring diagram or production design."
+    }
+  ],
+  "assumptions": [
+    {
+      "id": "nominalCapacity",
+      "label": "Default normalized stage capacity",
+      "value": 75,
+      "unit": "normalized units",
+      "provenance": "demo-model"
+    },
+    {
+      "id": "warningIndex",
+      "label": "Demonstration warning threshold",
+      "value": 78,
+      "unit": "normalized index",
+      "provenance": "demo-model"
+    },
+    {
+      "id": "optionalUtilities",
+      "label": "Utility equipment is illustrative and may be optional",
+      "value": true,
+      "provenance": "assumed-topology"
+    }
+  ]
+}

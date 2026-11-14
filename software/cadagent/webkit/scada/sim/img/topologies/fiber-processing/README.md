@@ -1,6 +1,6 @@
 # Fiber processing — compact topology diagrams
 
-Static SVG schematics of the first declared view. Symbols identify equipment; arrows show declared connections, not instantaneous flow or measured facility performance.
+Static SVG schematics of a declared view, selected by the catalog topologyView when present. Symbols identify equipment; arrows show declared connections, not instantaneous flow or measured facility performance.
 
 [All sectors](../README.md) · [Scenario library](../../../scenarios/README.md)
 

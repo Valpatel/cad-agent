@@ -5,7 +5,7 @@
   "system": {
     "id": "brewery",
     "label": "Brewery",
-    "description": "Move grain through milling, mash separation, cooling, fermentation and packaging. Effluent and heat service remain independent utility branches."
+    "description": "Operate brewhouse, cooling, fermentation and filling branches with instrument taps, a wort pump and PLC-controlled valves."
   },
   "components": [
     {
@@ -254,7 +254,7 @@
         },
         {
           "id": "hot-out",
-          "side": "right",
+          "side": "bottom",
           "offset": 0.5
         },
         {
@@ -296,12 +296,12 @@
       "ports": [
         {
           "id": "inlet",
-          "side": "left",
+          "side": "right",
           "offset": 0.5
         },
         {
           "id": "outlet",
-          "side": "right",
+          "side": "left",
           "offset": 0.5
         },
         {
@@ -343,12 +343,12 @@
       "ports": [
         {
           "id": "inlet",
-          "side": "left",
+          "side": "right",
           "offset": 0.5
         },
         {
           "id": "outlet",
-          "side": "right",
+          "side": "left",
           "offset": 0.5
         }
       ]
@@ -382,12 +382,12 @@
       "ports": [
         {
           "id": "inlet",
-          "side": "left",
+          "side": "right",
           "offset": 0.5
         },
         {
           "id": "outlet",
-          "side": "right",
+          "side": "left",
           "offset": 0.5
         },
         {
@@ -426,12 +426,12 @@
       "ports": [
         {
           "id": "inlet",
-          "side": "left",
+          "side": "right",
           "offset": 0.5
         },
         {
           "id": "outlet",
-          "side": "right",
+          "side": "left",
           "offset": 0.5
         },
         {
@@ -614,6 +614,16 @@
           "id": "power",
           "side": "left",
           "offset": 0.5
+        },
+        {
+          "id": "network",
+          "side": "top",
+          "offset": 0.5
+        },
+        {
+          "id": "io",
+          "side": "right",
+          "offset": 0.5
         }
       ]
     },
@@ -648,13 +658,18 @@
           "id": "power",
           "side": "left",
           "offset": 0.5
+        },
+        {
+          "id": "uplink",
+          "side": "right",
+          "offset": 0.5
         }
       ]
     },
     {
       "id": "temperature",
       "type": "temperature-sensor",
-      "label": "Cooling outlet monitor",
+      "label": "TT-201 Wort temperature",
       "state": {
         "active": false,
         "running": false,
@@ -683,7 +698,7 @@
         },
         {
           "id": "signal",
-          "side": "right",
+          "side": "left",
           "offset": 0.5
         },
         {
@@ -691,6 +706,414 @@
           "side": "left",
           "offset": 0.5
         }
+      ],
+      "units": {
+        "value": "normalized index",
+        "level": "normalized index"
+      }
+    },
+    {
+      "id": "mashValve",
+      "type": "control-valve",
+      "label": "FCV-101 Mash transfer",
+      "state": {
+        "active": true,
+        "running": true,
+        "fault": false,
+        "status": "normal",
+        "open": true,
+        "opening": 100,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/mashValve/active",
+        "running": "/components/mashValve/running",
+        "fault": "/components/mashValve/fault",
+        "status": "/components/mashValve/status",
+        "open": "/components/mashValve/open",
+        "opening": "/components/mashValve/opening",
+        "damage": "/components/mashValve/damage"
+      },
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "control",
+          "side": "bottom",
+          "offset": 0.5
+        }
+      ],
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ]
+    },
+    {
+      "id": "kettleValve",
+      "type": "gate-valve",
+      "label": "XV-201 Kettle outlet",
+      "state": {
+        "active": true,
+        "running": true,
+        "fault": false,
+        "status": "normal",
+        "open": true,
+        "opening": 100,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/kettleValve/active",
+        "running": "/components/kettleValve/running",
+        "fault": "/components/kettleValve/fault",
+        "status": "/components/kettleValve/status",
+        "open": "/components/kettleValve/open",
+        "opening": "/components/kettleValve/opening",
+        "damage": "/components/kettleValve/damage"
+      },
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        }
+      ],
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ]
+    },
+    {
+      "id": "transferPump",
+      "type": "pump",
+      "label": "P-201 Wort transfer",
+      "state": {
+        "active": true,
+        "running": true,
+        "fault": false,
+        "status": "normal",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/transferPump/active",
+        "running": "/components/transferPump/running",
+        "fault": "/components/transferPump/fault",
+        "status": "/components/transferPump/status",
+        "load": "/components/transferPump/load",
+        "speed": "/components/transferPump/speed",
+        "damage": "/components/transferPump/damage"
+      },
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "top",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "drive",
+          "side": "left",
+          "offset": 0.5
+        }
+      ],
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ]
+    },
+    {
+      "id": "fermenterValve",
+      "type": "control-valve",
+      "label": "FCV-202 Fermenter feed",
+      "state": {
+        "active": true,
+        "running": true,
+        "fault": false,
+        "status": "normal",
+        "open": true,
+        "opening": 100,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/fermenterValve/active",
+        "running": "/components/fermenterValve/running",
+        "fault": "/components/fermenterValve/fault",
+        "status": "/components/fermenterValve/status",
+        "open": "/components/fermenterValve/open",
+        "opening": "/components/fermenterValve/opening",
+        "damage": "/components/fermenterValve/damage"
+      },
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "control",
+          "side": "bottom",
+          "offset": 0.5
+        }
+      ],
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ]
+    },
+    {
+      "id": "fillValve",
+      "type": "control-valve",
+      "label": "FCV-301 Filling feed",
+      "state": {
+        "active": true,
+        "running": true,
+        "fault": false,
+        "status": "normal",
+        "open": true,
+        "opening": 100,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/fillValve/active",
+        "running": "/components/fillValve/running",
+        "fault": "/components/fillValve/fault",
+        "status": "/components/fillValve/status",
+        "open": "/components/fillValve/open",
+        "opening": "/components/fillValve/opening",
+        "damage": "/components/fillValve/damage"
+      },
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "control",
+          "side": "bottom",
+          "offset": 0.5
+        }
+      ],
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ]
+    },
+    {
+      "id": "wortFlow",
+      "type": "flow-meter",
+      "label": "FT-201 Wort flow",
+      "state": {
+        "active": true,
+        "running": true,
+        "fault": false,
+        "status": "normal",
+        "value": 42,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/wortFlow/active",
+        "running": "/components/wortFlow/running",
+        "fault": "/components/wortFlow/fault",
+        "status": "/components/wortFlow/status",
+        "value": "/components/wortFlow/value",
+        "damage": "/components/wortFlow/damage"
+      },
+      "ports": [
+        {
+          "id": "process",
+          "side": "top",
+          "offset": 0.5
+        },
+        {
+          "id": "signal",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "power",
+          "side": "left",
+          "offset": 0.8
+        }
+      ],
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "units": {
+        "value": "normalized index",
+        "level": "normalized index"
+      }
+    },
+    {
+      "id": "fermenterLevel",
+      "type": "level-sensor",
+      "label": "LT-202 Fermenter level",
+      "state": {
+        "active": true,
+        "running": true,
+        "fault": false,
+        "status": "normal",
+        "level": 55,
+        "value": 42,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/fermenterLevel/active",
+        "running": "/components/fermenterLevel/running",
+        "fault": "/components/fermenterLevel/fault",
+        "status": "/components/fermenterLevel/status",
+        "level": "/components/fermenterLevel/level",
+        "value": "/components/fermenterLevel/value",
+        "damage": "/components/fermenterLevel/damage"
+      },
+      "ports": [
+        {
+          "id": "process",
+          "side": "top",
+          "offset": 0.5
+        },
+        {
+          "id": "signal",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "power",
+          "side": "left",
+          "offset": 0.8
+        }
+      ],
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "units": {
+        "value": "normalized index",
+        "level": "normalized index"
+      }
+    },
+    {
+      "id": "brewPressure",
+      "type": "pressure-transmitter",
+      "label": "PT-201 Wort pressure",
+      "state": {
+        "active": true,
+        "running": true,
+        "fault": false,
+        "status": "normal",
+        "value": 42,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/brewPressure/active",
+        "running": "/components/brewPressure/running",
+        "fault": "/components/brewPressure/fault",
+        "status": "/components/brewPressure/status",
+        "value": "/components/brewPressure/value",
+        "damage": "/components/brewPressure/damage"
+      },
+      "ports": [
+        {
+          "id": "process",
+          "side": "top",
+          "offset": 0.5
+        },
+        {
+          "id": "signal",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "power",
+          "side": "left",
+          "offset": 0.8
+        }
+      ],
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "units": {
+        "value": "normalized index",
+        "level": "normalized index"
+      }
+    },
+    {
+      "id": "remoteIO",
+      "type": "remote-io",
+      "label": "RIO-01 Field I/O",
+      "state": {
+        "active": true,
+        "running": true,
+        "fault": false,
+        "status": "normal",
+        "connected": true,
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/remoteIO/active",
+        "running": "/components/remoteIO/running",
+        "fault": "/components/remoteIO/fault",
+        "status": "/components/remoteIO/status",
+        "connected": "/components/remoteIO/connected",
+        "load": "/components/remoteIO/load",
+        "damage": "/components/remoteIO/damage"
+      },
+      "ports": [
+        {
+          "id": "network",
+          "side": "bottom",
+          "offset": 0.5
+        },
+        {
+          "id": "power",
+          "side": "left",
+          "offset": 0.8
+        },
+        {
+          "id": "inputs",
+          "side": "bottom",
+          "offset": 0.5
+        },
+        {
+          "id": "outputs",
+          "side": "bottom",
+          "offset": 0.5
+        }
+      ],
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
       ]
     }
   ],
@@ -724,20 +1147,6 @@
       "label": "Grain mill \u2192 Mash vessel"
     },
     {
-      "id": "mash-to-lauter",
-      "from": {
-        "component": "mash",
-        "port": "outlet"
-      },
-      "to": {
-        "component": "lauter",
-        "port": "inlet"
-      },
-      "medium": "liquid",
-      "flowBinding": "/flows/mash-to-lauter",
-      "label": "Mash vessel \u2192 Lauter separation"
-    },
-    {
       "id": "lauter-to-kettle",
       "from": {
         "component": "lauter",
@@ -752,34 +1161,6 @@
       "label": "Lauter separation \u2192 Brew kettle"
     },
     {
-      "id": "kettle-to-cooler",
-      "from": {
-        "component": "kettle",
-        "port": "outlet"
-      },
-      "to": {
-        "component": "cooler",
-        "port": "hot-in"
-      },
-      "medium": "liquid",
-      "flowBinding": "/flows/kettle-to-cooler",
-      "label": "Brew kettle \u2192 Wort heat exchanger"
-    },
-    {
-      "id": "cooler-to-fermenter",
-      "from": {
-        "component": "cooler",
-        "port": "hot-out"
-      },
-      "to": {
-        "component": "fermenter",
-        "port": "inlet"
-      },
-      "medium": "thermal-fluid",
-      "flowBinding": "/flows/cooler-to-fermenter",
-      "label": "Wort heat exchanger \u2192 Fermentation vessel"
-    },
-    {
       "id": "fermenter-to-conditioning",
       "from": {
         "component": "fermenter",
@@ -792,20 +1173,6 @@
       "medium": "liquid",
       "flowBinding": "/flows/fermenter-to-conditioning",
       "label": "Fermentation vessel \u2192 Conditioning buffer"
-    },
-    {
-      "id": "conditioning-to-filler",
-      "from": {
-        "component": "conditioning",
-        "port": "outlet"
-      },
-      "to": {
-        "component": "filler",
-        "port": "inlet"
-      },
-      "medium": "liquid",
-      "flowBinding": "/flows/conditioning-to-filler",
-      "label": "Conditioning buffer \u2192 Container filling"
     },
     {
       "id": "filler-to-packer",
@@ -1002,86 +1369,527 @@
       "medium": "data",
       "flowBinding": "/flows/temperature-to-controller",
       "label": "Cooling outlet monitor \u2192 Brew-house controller"
+    },
+    {
+      "id": "mash-to-mashValve",
+      "from": {
+        "component": "mash",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "mashValve",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "label": "Mash vessel \u2192 Lauter separation",
+      "flowBinding": "/flows/mash-to-mashValve"
+    },
+    {
+      "id": "mashValve-to-lauter",
+      "from": {
+        "component": "mashValve",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "lauter",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "label": "Mash vessel \u2192 Lauter separation",
+      "flowBinding": "/flows/mashValve-to-lauter"
+    },
+    {
+      "id": "kettle-to-kettleValve",
+      "from": {
+        "component": "kettle",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "kettleValve",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "label": "Brew kettle \u2192 Wort heat exchanger",
+      "flowBinding": "/flows/kettle-to-kettleValve"
+    },
+    {
+      "id": "kettleValve-to-cooler",
+      "from": {
+        "component": "kettleValve",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "cooler",
+        "port": "hot-in"
+      },
+      "medium": "liquid",
+      "label": "Brew kettle \u2192 Wort heat exchanger",
+      "flowBinding": "/flows/kettleValve-to-cooler"
+    },
+    {
+      "id": "cooler-to-transferPump",
+      "from": {
+        "component": "cooler",
+        "port": "hot-out"
+      },
+      "to": {
+        "component": "transferPump",
+        "port": "inlet"
+      },
+      "medium": "thermal-fluid",
+      "label": "Wort heat exchanger \u2192 Fermentation vessel",
+      "flowBinding": "/flows/cooler-to-transferPump"
+    },
+    {
+      "id": "transferPump-to-fermenterValve",
+      "from": {
+        "component": "transferPump",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "fermenterValve",
+        "port": "inlet"
+      },
+      "medium": "thermal-fluid",
+      "label": "Wort heat exchanger \u2192 Fermentation vessel",
+      "flowBinding": "/flows/transferPump-to-fermenterValve"
+    },
+    {
+      "id": "fermenterValve-to-fermenter",
+      "from": {
+        "component": "fermenterValve",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "fermenter",
+        "port": "inlet"
+      },
+      "medium": "thermal-fluid",
+      "label": "Wort heat exchanger \u2192 Fermentation vessel",
+      "flowBinding": "/flows/fermenterValve-to-fermenter"
+    },
+    {
+      "id": "conditioning-to-fillValve",
+      "from": {
+        "component": "conditioning",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "fillValve",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "label": "Conditioning buffer \u2192 Container filling",
+      "flowBinding": "/flows/conditioning-to-fillValve"
+    },
+    {
+      "id": "fillValve-to-filler",
+      "from": {
+        "component": "fillValve",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "filler",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "label": "Conditioning buffer \u2192 Container filling",
+      "flowBinding": "/flows/fillValve-to-filler"
+    },
+    {
+      "id": "power-to-transferPump",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "transferPump",
+        "port": "drive"
+      },
+      "medium": "electricity",
+      "label": "Pump drive supply",
+      "flowBinding": "/flows/power-to-transferPump"
+    },
+    {
+      "id": "transferPump-to-wortFlow",
+      "from": {
+        "component": "transferPump",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "wortFlow",
+        "port": "process"
+      },
+      "medium": "measurement",
+      "label": "FT-201 Wort flow measurement",
+      "flowBinding": "/flows/transferPump-to-wortFlow"
+    },
+    {
+      "id": "wortFlow-to-controller",
+      "from": {
+        "component": "wortFlow",
+        "port": "signal"
+      },
+      "to": {
+        "component": "controller",
+        "port": "network"
+      },
+      "medium": "data",
+      "label": "FT-201 Wort flow telemetry",
+      "flowBinding": "/flows/wortFlow-to-controller"
+    },
+    {
+      "id": "power-to-wortFlow",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "wortFlow",
+        "port": "power"
+      },
+      "medium": "electricity",
+      "label": "Instrument supply",
+      "flowBinding": "/flows/power-to-wortFlow"
+    },
+    {
+      "id": "fermenter-to-fermenterLevel",
+      "from": {
+        "component": "fermenter",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "fermenterLevel",
+        "port": "process"
+      },
+      "medium": "measurement",
+      "label": "LT-202 Fermenter level measurement",
+      "flowBinding": "/flows/fermenter-to-fermenterLevel"
+    },
+    {
+      "id": "fermenterLevel-to-controller",
+      "from": {
+        "component": "fermenterLevel",
+        "port": "signal"
+      },
+      "to": {
+        "component": "controller",
+        "port": "network"
+      },
+      "medium": "data",
+      "label": "LT-202 Fermenter level telemetry",
+      "flowBinding": "/flows/fermenterLevel-to-controller"
+    },
+    {
+      "id": "power-to-fermenterLevel",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "fermenterLevel",
+        "port": "power"
+      },
+      "medium": "electricity",
+      "label": "Instrument supply",
+      "flowBinding": "/flows/power-to-fermenterLevel"
+    },
+    {
+      "id": "transferPump-to-brewPressure",
+      "from": {
+        "component": "transferPump",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "brewPressure",
+        "port": "process"
+      },
+      "medium": "measurement",
+      "label": "PT-201 Wort pressure measurement",
+      "flowBinding": "/flows/transferPump-to-brewPressure"
+    },
+    {
+      "id": "brewPressure-to-controller",
+      "from": {
+        "component": "brewPressure",
+        "port": "signal"
+      },
+      "to": {
+        "component": "controller",
+        "port": "network"
+      },
+      "medium": "data",
+      "label": "PT-201 Wort pressure telemetry",
+      "flowBinding": "/flows/brewPressure-to-controller"
+    },
+    {
+      "id": "power-to-brewPressure",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "brewPressure",
+        "port": "power"
+      },
+      "medium": "electricity",
+      "label": "Instrument supply",
+      "flowBinding": "/flows/power-to-brewPressure"
+    },
+    {
+      "id": "power-to-remoteIO",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "remoteIO",
+        "port": "power"
+      },
+      "medium": "electricity",
+      "label": "I/O supply",
+      "flowBinding": "/flows/power-to-remoteIO"
+    },
+    {
+      "id": "controller-to-remoteIO",
+      "from": {
+        "component": "controller",
+        "port": "io"
+      },
+      "to": {
+        "component": "remoteIO",
+        "port": "network"
+      },
+      "medium": "data",
+      "label": "PLC field commands",
+      "flowBinding": "/flows/controller-to-remoteIO"
+    },
+    {
+      "id": "remoteIO-to-mashValve",
+      "from": {
+        "component": "remoteIO",
+        "port": "outputs"
+      },
+      "to": {
+        "component": "mashValve",
+        "port": "control"
+      },
+      "medium": "data",
+      "label": "Valve command",
+      "flowBinding": "/flows/remoteIO-to-mashValve"
+    },
+    {
+      "id": "remoteIO-to-fermenterValve",
+      "from": {
+        "component": "remoteIO",
+        "port": "outputs"
+      },
+      "to": {
+        "component": "fermenterValve",
+        "port": "control"
+      },
+      "medium": "data",
+      "label": "Valve command",
+      "flowBinding": "/flows/remoteIO-to-fermenterValve"
+    },
+    {
+      "id": "remoteIO-to-fillValve",
+      "from": {
+        "component": "remoteIO",
+        "port": "outputs"
+      },
+      "to": {
+        "component": "fillValve",
+        "port": "control"
+      },
+      "medium": "data",
+      "label": "Valve command",
+      "flowBinding": "/flows/remoteIO-to-fillValve"
     }
   ],
   "views": [
     {
       "id": "process",
-      "label": "Main process",
+      "label": "Brewery overview",
       "canvas": {
-        "width": 1280,
-        "height": 940
+        "width": 2680,
+        "height": 960
       },
       "placements": [
         {
           "component": "grainSilo",
           "x": 60,
-          "y": 60,
-          "width": 200,
-          "height": 190
+          "y": 90,
+          "width": 210,
+          "height": 176
         },
         {
           "component": "mill",
-          "x": 360,
-          "y": 60,
-          "width": 200,
-          "height": 190
+          "x": 350,
+          "y": 90,
+          "width": 210,
+          "height": 176
         },
         {
           "component": "mash",
-          "x": 660,
-          "y": 60,
-          "width": 200,
-          "height": 190
+          "x": 640,
+          "y": 90,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "mashValve",
+          "x": 930,
+          "y": 90,
+          "width": 210,
+          "height": 176
         },
         {
           "component": "lauter",
-          "x": 960,
-          "y": 60,
-          "width": 200,
-          "height": 190
+          "x": 1220,
+          "y": 90,
+          "width": 210,
+          "height": 176
         },
         {
           "component": "kettle",
-          "x": 960,
-          "y": 340,
-          "width": 200,
-          "height": 190
+          "x": 1510,
+          "y": 90,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "kettleValve",
+          "x": 1800,
+          "y": 90,
+          "width": 210,
+          "height": 176
         },
         {
           "component": "cooler",
-          "x": 660,
-          "y": 340,
-          "width": 200,
-          "height": 190
+          "x": 2090,
+          "y": 90,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "controller",
+          "x": 60,
+          "y": 380,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "remoteIO",
+          "x": 350,
+          "y": 380,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "wortFlow",
+          "x": 1830,
+          "y": 550,
+          "width": 160,
+          "height": 120
+        },
+        {
+          "component": "brewPressure",
+          "x": 2320,
+          "y": 550,
+          "width": 160,
+          "height": 120
+        },
+        {
+          "component": "temperature",
+          "x": 2090,
+          "y": 300,
+          "width": 160,
+          "height": 120
+        },
+        {
+          "component": "fermenterLevel",
+          "x": 1510,
+          "y": 550,
+          "width": 160,
+          "height": 120
+        },
+        {
+          "component": "heatService",
+          "x": 640,
+          "y": 380,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "effluent",
+          "x": 930,
+          "y": 380,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "power",
+          "x": 60,
+          "y": 690,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "network",
+          "x": 1220,
+          "y": 380,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "transferPump",
+          "x": 2090,
+          "y": 690,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "fermenterValve",
+          "x": 1800,
+          "y": 690,
+          "width": 210,
+          "height": 176
         },
         {
           "component": "fermenter",
-          "x": 360,
-          "y": 340,
-          "width": 200,
-          "height": 190
+          "x": 1510,
+          "y": 690,
+          "width": 210,
+          "height": 176
         },
         {
           "component": "conditioning",
-          "x": 60,
-          "y": 340,
-          "width": 200,
-          "height": 190
+          "x": 1220,
+          "y": 690,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "fillValve",
+          "x": 930,
+          "y": 690,
+          "width": 210,
+          "height": 176
         },
         {
           "component": "filler",
-          "x": 60,
-          "y": 620,
-          "width": 200,
-          "height": 190
+          "x": 640,
+          "y": 690,
+          "width": 210,
+          "height": 176
         },
         {
           "component": "packer",
-          "x": 360,
-          "y": 620,
-          "width": 200,
-          "height": 190
+          "x": 350,
+          "y": 690,
+          "width": 210,
+          "height": 176
         }
       ],
       "routes": [
@@ -1089,12 +1897,12 @@
           "connection": "grainSilo-to-mill",
           "points": [
             {
-              "x": 260,
-              "y": 155
+              "x": 270,
+              "y": 178.0
             },
             {
-              "x": 360,
-              "y": 155
+              "x": 350,
+              "y": 178.0
             }
           ]
         },
@@ -1103,24 +1911,11 @@
           "points": [
             {
               "x": 560,
-              "y": 155
+              "y": 178.0
             },
             {
-              "x": 660,
-              "y": 155
-            }
-          ]
-        },
-        {
-          "connection": "mash-to-lauter",
-          "points": [
-            {
-              "x": 860,
-              "y": 155
-            },
-            {
-              "x": 960,
-              "y": 155
+              "x": 640,
+              "y": 178.0
             }
           ]
         },
@@ -1128,38 +1923,12 @@
           "connection": "lauter-to-kettle",
           "points": [
             {
-              "x": 1060,
-              "y": 250
+              "x": 1430,
+              "y": 178.0
             },
             {
-              "x": 1060,
-              "y": 340
-            }
-          ]
-        },
-        {
-          "connection": "kettle-to-cooler",
-          "points": [
-            {
-              "x": 960,
-              "y": 435
-            },
-            {
-              "x": 860,
-              "y": 435
-            }
-          ]
-        },
-        {
-          "connection": "cooler-to-fermenter",
-          "points": [
-            {
-              "x": 660,
-              "y": 435
-            },
-            {
-              "x": 560,
-              "y": 435
+              "x": 1510,
+              "y": 178.0
             }
           ]
         },
@@ -1167,25 +1936,12 @@
           "connection": "fermenter-to-conditioning",
           "points": [
             {
-              "x": 360,
-              "y": 435
+              "x": 1510,
+              "y": 778.0
             },
             {
-              "x": 260,
-              "y": 435
-            }
-          ]
-        },
-        {
-          "connection": "conditioning-to-filler",
-          "points": [
-            {
-              "x": 160,
-              "y": 530
-            },
-            {
-              "x": 160,
-              "y": 620
+              "x": 1430,
+              "y": 778.0
             }
           ]
         },
@@ -1193,377 +1949,203 @@
           "connection": "filler-to-packer",
           "points": [
             {
-              "x": 260,
-              "y": 715
+              "x": 640,
+              "y": 778.0
             },
             {
-              "x": 360,
-              "y": 715
+              "x": 560,
+              "y": 778.0
             }
           ]
-        }
-      ]
-    },
-    {
-      "id": "utilities",
-      "label": "Utilities & control",
-      "canvas": {
-        "width": 980,
-        "height": 940
-      },
-      "placements": [
-        {
-          "component": "heatService",
-          "x": 60,
-          "y": 60,
-          "width": 200,
-          "height": 190
         },
-        {
-          "component": "effluent",
-          "x": 360,
-          "y": 60,
-          "width": 200,
-          "height": 190
-        },
-        {
-          "component": "power",
-          "x": 660,
-          "y": 60,
-          "width": 200,
-          "height": 190
-        },
-        {
-          "component": "controller",
-          "x": 660,
-          "y": 340,
-          "width": 200,
-          "height": 190
-        },
-        {
-          "component": "network",
-          "x": 360,
-          "y": 340,
-          "width": 200,
-          "height": 190
-        },
-        {
-          "component": "temperature",
-          "x": 60,
-          "y": 340,
-          "width": 200,
-          "height": 190
-        },
-        {
-          "component": "lauter",
-          "x": 60,
-          "y": 620,
-          "width": 200,
-          "height": 190
-        },
-        {
-          "component": "filler",
-          "x": 360,
-          "y": 620,
-          "width": 200,
-          "height": 190
-        }
-      ],
-      "routes": [
         {
           "connection": "lauter-to-effluent",
           "points": [
             {
-              "x": 160,
-              "y": 620
+              "x": 1430,
+              "y": 178.0
             },
             {
-              "x": 160,
-              "y": 554
+              "x": 1446,
+              "y": 178.0
             },
             {
-              "x": 284,
-              "y": 554
+              "x": 1446,
+              "y": 364
             },
             {
-              "x": 284,
-              "y": 274
+              "x": 914,
+              "y": 364
             },
             {
-              "x": 460,
-              "y": 274
+              "x": 914,
+              "y": 468.0
             },
             {
-              "x": 460,
-              "y": 250
+              "x": 930,
+              "y": 468.0
             }
           ]
         },
         {
-          "connection": "power-to-filler",
+          "connection": "heatService-to-cooler",
           "points": [
             {
-              "x": 760,
-              "y": 250
+              "x": 850,
+              "y": 468.0
             },
             {
-              "x": 760,
-              "y": 316
+              "x": 866,
+              "y": 468.0
             },
             {
-              "x": 636,
-              "y": 316
+              "x": 866,
+              "y": 282
             },
             {
-              "x": 636,
-              "y": 596
+              "x": 2074,
+              "y": 282
             },
             {
-              "x": 460,
-              "y": 596
+              "x": 2074,
+              "y": 178.0
             },
             {
-              "x": 460,
-              "y": 620
+              "x": 2090,
+              "y": 178.0
             }
           ]
         },
         {
-          "connection": "power-to-effluent",
+          "connection": "mash-to-mashValve",
           "points": [
             {
-              "x": 660,
-              "y": 155
+              "x": 850,
+              "y": 178.0
             },
             {
-              "x": 560,
-              "y": 155
+              "x": 930,
+              "y": 178.0
             }
           ]
         },
         {
-          "connection": "power-to-controller",
+          "connection": "mashValve-to-lauter",
           "points": [
             {
-              "x": 760,
-              "y": 250
+              "x": 1140,
+              "y": 178.0
             },
             {
-              "x": 760,
-              "y": 340
+              "x": 1220,
+              "y": 178.0
             }
           ]
         },
         {
-          "connection": "power-to-network",
+          "connection": "kettle-to-kettleValve",
           "points": [
             {
-              "x": 660,
-              "y": 155
+              "x": 1720,
+              "y": 178.0
             },
             {
-              "x": 636,
-              "y": 155
-            },
-            {
-              "x": 636,
-              "y": 316
-            },
-            {
-              "x": 584,
-              "y": 316
-            },
-            {
-              "x": 584,
-              "y": 435
-            },
-            {
-              "x": 560,
-              "y": 435
+              "x": 1800,
+              "y": 178.0
             }
           ]
         },
         {
-          "connection": "power-to-temperature",
+          "connection": "kettleValve-to-cooler",
           "points": [
             {
-              "x": 660,
-              "y": 155
+              "x": 2010,
+              "y": 178.0
             },
             {
-              "x": 636,
-              "y": 155
-            },
-            {
-              "x": 636,
-              "y": 316
-            },
-            {
-              "x": 284,
-              "y": 316
-            },
-            {
-              "x": 284,
-              "y": 435
-            },
-            {
-              "x": 260,
-              "y": 435
+              "x": 2090,
+              "y": 178.0
             }
           ]
         },
         {
-          "connection": "network-to-controller",
+          "connection": "cooler-to-transferPump",
           "points": [
             {
-              "x": 560,
-              "y": 435
+              "x": 2195.0,
+              "y": 266
             },
             {
-              "x": 660,
-              "y": 435
+              "x": 2195.0,
+              "y": 282
+            },
+            {
+              "x": 2266,
+              "y": 282
+            },
+            {
+              "x": 2266,
+              "y": 674
+            },
+            {
+              "x": 2195.0,
+              "y": 674
+            },
+            {
+              "x": 2195.0,
+              "y": 690
             }
           ]
         },
         {
-          "connection": "temperature-to-controller",
+          "connection": "transferPump-to-fermenterValve",
           "points": [
             {
-              "x": 260,
-              "y": 435
+              "x": 2090,
+              "y": 778.0
             },
             {
-              "x": 336,
-              "y": 435
-            },
-            {
-              "x": 336,
-              "y": 316
-            },
-            {
-              "x": 636,
-              "y": 316
-            },
-            {
-              "x": 636,
-              "y": 435
-            },
-            {
-              "x": 660,
-              "y": 435
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "id": "finishing",
-      "label": "Finishing & storage",
-      "canvas": {
-        "width": 980,
-        "height": 940
-      },
-      "placements": [
-        {
-          "component": "cooler",
-          "x": 60,
-          "y": 60,
-          "width": 200,
-          "height": 190
-        },
-        {
-          "component": "fermenter",
-          "x": 360,
-          "y": 60,
-          "width": 200,
-          "height": 190
-        },
-        {
-          "component": "conditioning",
-          "x": 660,
-          "y": 60,
-          "width": 200,
-          "height": 190
-        },
-        {
-          "component": "filler",
-          "x": 660,
-          "y": 340,
-          "width": 200,
-          "height": 190
-        },
-        {
-          "component": "packer",
-          "x": 360,
-          "y": 340,
-          "width": 200,
-          "height": 190
-        },
-        {
-          "component": "controller",
-          "x": 60,
-          "y": 340,
-          "width": 200,
-          "height": 190
-        },
-        {
-          "component": "temperature",
-          "x": 60,
-          "y": 620,
-          "width": 200,
-          "height": 190
-        }
-      ],
-      "routes": [
-        {
-          "connection": "cooler-to-fermenter",
-          "points": [
-            {
-              "x": 260,
-              "y": 155
-            },
-            {
-              "x": 360,
-              "y": 155
+              "x": 2010,
+              "y": 778.0
             }
           ]
         },
         {
-          "connection": "fermenter-to-conditioning",
+          "connection": "fermenterValve-to-fermenter",
           "points": [
             {
-              "x": 560,
-              "y": 155
+              "x": 1800,
+              "y": 778.0
             },
             {
-              "x": 660,
-              "y": 155
+              "x": 1720,
+              "y": 778.0
             }
           ]
         },
         {
-          "connection": "conditioning-to-filler",
+          "connection": "conditioning-to-fillValve",
           "points": [
             {
-              "x": 760,
-              "y": 250
+              "x": 1220,
+              "y": 778.0
             },
             {
-              "x": 760,
-              "y": 340
+              "x": 1140,
+              "y": 778.0
             }
           ]
         },
         {
-          "connection": "filler-to-packer",
+          "connection": "fillValve-to-filler",
           "points": [
             {
-              "x": 660,
-              "y": 435
+              "x": 930,
+              "y": 778.0
             },
             {
-              "x": 560,
-              "y": 435
+              "x": 850,
+              "y": 778.0
             }
           ]
         },
@@ -1571,28 +2153,174 @@
           "connection": "cooler-to-temperature",
           "points": [
             {
-              "x": 160,
-              "y": 250
+              "x": 2195.0,
+              "y": 266
             },
             {
-              "x": 160,
-              "y": 316
+              "x": 2195.0,
+              "y": 282
             },
             {
-              "x": 36,
-              "y": 316
+              "x": 2074,
+              "y": 282
             },
             {
-              "x": 36,
-              "y": 596
+              "x": 2074,
+              "y": 360.0
             },
             {
-              "x": 160,
-              "y": 596
+              "x": 2090,
+              "y": 360.0
+            }
+          ]
+        },
+        {
+          "connection": "transferPump-to-wortFlow",
+          "points": [
+            {
+              "x": 2090,
+              "y": 778.0
             },
             {
-              "x": 160,
-              "y": 620
+              "x": 2074,
+              "y": 778.0
+            },
+            {
+              "x": 2074,
+              "y": 534
+            },
+            {
+              "x": 1910.0,
+              "y": 534
+            },
+            {
+              "x": 1910.0,
+              "y": 550
+            }
+          ]
+        },
+        {
+          "connection": "fermenter-to-fermenterLevel",
+          "points": [
+            {
+              "x": 1510,
+              "y": 778.0
+            },
+            {
+              "x": 1494,
+              "y": 778.0
+            },
+            {
+              "x": 1494,
+              "y": 534
+            },
+            {
+              "x": 1590.0,
+              "y": 534
+            },
+            {
+              "x": 1590.0,
+              "y": 550
+            }
+          ]
+        },
+        {
+          "connection": "transferPump-to-brewPressure",
+          "points": [
+            {
+              "x": 2090,
+              "y": 778.0
+            },
+            {
+              "x": 2074,
+              "y": 778.0
+            },
+            {
+              "x": 2074,
+              "y": 534
+            },
+            {
+              "x": 2400.0,
+              "y": 534
+            },
+            {
+              "x": 2400.0,
+              "y": 550
+            }
+          ]
+        },
+        {
+          "connection": "power-to-controller",
+          "points": [
+            {
+              "x": 270,
+              "y": 778.0
+            },
+            {
+              "x": 286,
+              "y": 778.0
+            },
+            {
+              "x": 286,
+              "y": 572
+            },
+            {
+              "x": 44,
+              "y": 572
+            },
+            {
+              "x": 44,
+              "y": 468.0
+            },
+            {
+              "x": 60,
+              "y": 468.0
+            }
+          ]
+        },
+        {
+          "connection": "power-to-remoteIO",
+          "points": [
+            {
+              "x": 270,
+              "y": 778.0
+            },
+            {
+              "x": 334,
+              "y": 778.0
+            },
+            {
+              "x": 334,
+              "y": 520.8
+            },
+            {
+              "x": 350,
+              "y": 520.8
+            }
+          ]
+        },
+        {
+          "connection": "network-to-controller",
+          "points": [
+            {
+              "x": 1430,
+              "y": 468.0
+            },
+            {
+              "x": 1446,
+              "y": 468.0
+            },
+            {
+              "x": 1446,
+              "y": 360.0
+            },
+            {
+              "x": 165.0,
+              "y": 360.0
+            },
+            {
+              "x": 165.0,
+              "y": 380
             }
           ]
         },
@@ -1600,12 +2328,2154 @@
           "connection": "temperature-to-controller",
           "points": [
             {
-              "x": 160,
-              "y": 620
+              "x": 2090,
+              "y": 360.0
             },
             {
-              "x": 160,
-              "y": 530
+              "x": 2074,
+              "y": 360.0
+            },
+            {
+              "x": 2074,
+              "y": 348
+            },
+            {
+              "x": 165.0,
+              "y": 348
+            },
+            {
+              "x": 165.0,
+              "y": 380
+            }
+          ]
+        },
+        {
+          "connection": "wortFlow-to-controller",
+          "points": [
+            {
+              "x": 1830,
+              "y": 610.0
+            },
+            {
+              "x": 1814,
+              "y": 610.0
+            },
+            {
+              "x": 1814,
+              "y": 364
+            },
+            {
+              "x": 165.0,
+              "y": 364
+            },
+            {
+              "x": 165.0,
+              "y": 380
+            }
+          ]
+        },
+        {
+          "connection": "fermenterLevel-to-controller",
+          "points": [
+            {
+              "x": 1510,
+              "y": 610.0
+            },
+            {
+              "x": 302,
+              "y": 610.0
+            },
+            {
+              "x": 302,
+              "y": 364
+            },
+            {
+              "x": 165.0,
+              "y": 364
+            },
+            {
+              "x": 165.0,
+              "y": 380
+            }
+          ]
+        },
+        {
+          "connection": "brewPressure-to-controller",
+          "points": [
+            {
+              "x": 2320,
+              "y": 610.0
+            },
+            {
+              "x": 2006,
+              "y": 610.0
+            },
+            {
+              "x": 2006,
+              "y": 298
+            },
+            {
+              "x": 165.0,
+              "y": 298
+            },
+            {
+              "x": 165.0,
+              "y": 380
+            }
+          ]
+        },
+        {
+          "connection": "controller-to-remoteIO",
+          "points": [
+            {
+              "x": 270,
+              "y": 468.0
+            },
+            {
+              "x": 286,
+              "y": 468.0
+            },
+            {
+              "x": 286,
+              "y": 572
+            },
+            {
+              "x": 455.0,
+              "y": 572
+            },
+            {
+              "x": 455.0,
+              "y": 556
+            }
+          ]
+        },
+        {
+          "connection": "remoteIO-to-mashValve",
+          "points": [
+            {
+              "x": 455.0,
+              "y": 556
+            },
+            {
+              "x": 455.0,
+              "y": 572
+            },
+            {
+              "x": 898,
+              "y": 572
+            },
+            {
+              "x": 898,
+              "y": 284
+            },
+            {
+              "x": 1035.0,
+              "y": 284
+            },
+            {
+              "x": 1035.0,
+              "y": 266
+            }
+          ]
+        },
+        {
+          "connection": "remoteIO-to-fermenterValve",
+          "points": [
+            {
+              "x": 455.0,
+              "y": 556
+            },
+            {
+              "x": 455.0,
+              "y": 572
+            },
+            {
+              "x": 576,
+              "y": 572
+            },
+            {
+              "x": 576,
+              "y": 882
+            },
+            {
+              "x": 1905.0,
+              "y": 882
+            },
+            {
+              "x": 1905.0,
+              "y": 866
+            }
+          ]
+        },
+        {
+          "connection": "remoteIO-to-fillValve",
+          "points": [
+            {
+              "x": 455.0,
+              "y": 556
+            },
+            {
+              "x": 455.0,
+              "y": 674
+            },
+            {
+              "x": 914,
+              "y": 674
+            },
+            {
+              "x": 914,
+              "y": 882
+            },
+            {
+              "x": 1035.0,
+              "y": 882
+            },
+            {
+              "x": 1035.0,
+              "y": 866
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "brewhouse",
+      "label": "Brewhouse & cooling",
+      "canvas": {
+        "width": 2400,
+        "height": 680
+      },
+      "placements": [
+        {
+          "component": "grainSilo",
+          "x": 60,
+          "y": 100,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "mill",
+          "x": 350,
+          "y": 100,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "mash",
+          "x": 640,
+          "y": 100,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "mashValve",
+          "x": 930,
+          "y": 100,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "lauter",
+          "x": 1220,
+          "y": 100,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "kettle",
+          "x": 1510,
+          "y": 100,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "kettleValve",
+          "x": 1800,
+          "y": 100,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "cooler",
+          "x": 2090,
+          "y": 100,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "controller",
+          "x": 60,
+          "y": 410,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "remoteIO",
+          "x": 350,
+          "y": 410,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "heatService",
+          "x": 1220,
+          "y": 410,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "temperature",
+          "x": 1800,
+          "y": 410,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "effluent",
+          "x": 2090,
+          "y": 410,
+          "width": 210,
+          "height": 176
+        }
+      ],
+      "routes": [
+        {
+          "connection": "grainSilo-to-mill",
+          "points": [
+            {
+              "x": 270,
+              "y": 188.0
+            },
+            {
+              "x": 350,
+              "y": 188.0
+            }
+          ]
+        },
+        {
+          "connection": "mill-to-mash",
+          "points": [
+            {
+              "x": 560,
+              "y": 188.0
+            },
+            {
+              "x": 640,
+              "y": 188.0
+            }
+          ]
+        },
+        {
+          "connection": "lauter-to-kettle",
+          "points": [
+            {
+              "x": 1430,
+              "y": 188.0
+            },
+            {
+              "x": 1510,
+              "y": 188.0
+            }
+          ]
+        },
+        {
+          "connection": "lauter-to-effluent",
+          "points": [
+            {
+              "x": 1430,
+              "y": 188.0
+            },
+            {
+              "x": 1446,
+              "y": 188.0
+            },
+            {
+              "x": 1446,
+              "y": 394
+            },
+            {
+              "x": 2074,
+              "y": 394
+            },
+            {
+              "x": 2074,
+              "y": 498.0
+            },
+            {
+              "x": 2090,
+              "y": 498.0
+            }
+          ]
+        },
+        {
+          "connection": "heatService-to-cooler",
+          "points": [
+            {
+              "x": 1430,
+              "y": 498.0
+            },
+            {
+              "x": 1446,
+              "y": 498.0
+            },
+            {
+              "x": 1446,
+              "y": 378
+            },
+            {
+              "x": 2074,
+              "y": 378
+            },
+            {
+              "x": 2074,
+              "y": 188.0
+            },
+            {
+              "x": 2090,
+              "y": 188.0
+            }
+          ]
+        },
+        {
+          "connection": "mash-to-mashValve",
+          "points": [
+            {
+              "x": 850,
+              "y": 188.0
+            },
+            {
+              "x": 930,
+              "y": 188.0
+            }
+          ]
+        },
+        {
+          "connection": "mashValve-to-lauter",
+          "points": [
+            {
+              "x": 1140,
+              "y": 188.0
+            },
+            {
+              "x": 1220,
+              "y": 188.0
+            }
+          ]
+        },
+        {
+          "connection": "kettle-to-kettleValve",
+          "points": [
+            {
+              "x": 1720,
+              "y": 188.0
+            },
+            {
+              "x": 1800,
+              "y": 188.0
+            }
+          ]
+        },
+        {
+          "connection": "kettleValve-to-cooler",
+          "points": [
+            {
+              "x": 2010,
+              "y": 188.0
+            },
+            {
+              "x": 2090,
+              "y": 188.0
+            }
+          ]
+        },
+        {
+          "connection": "cooler-to-temperature",
+          "points": [
+            {
+              "x": 2195.0,
+              "y": 276
+            },
+            {
+              "x": 2195.0,
+              "y": 292
+            },
+            {
+              "x": 1784,
+              "y": 292
+            },
+            {
+              "x": 1784,
+              "y": 498.0
+            },
+            {
+              "x": 1800,
+              "y": 498.0
+            }
+          ]
+        },
+        {
+          "connection": "temperature-to-controller",
+          "points": [
+            {
+              "x": 1800,
+              "y": 498.0
+            },
+            {
+              "x": 1462,
+              "y": 498.0
+            },
+            {
+              "x": 1462,
+              "y": 394
+            },
+            {
+              "x": 165.0,
+              "y": 394
+            },
+            {
+              "x": 165.0,
+              "y": 410
+            }
+          ]
+        },
+        {
+          "connection": "controller-to-remoteIO",
+          "points": [
+            {
+              "x": 270,
+              "y": 498.0
+            },
+            {
+              "x": 286,
+              "y": 498.0
+            },
+            {
+              "x": 286,
+              "y": 602
+            },
+            {
+              "x": 455.0,
+              "y": 602
+            },
+            {
+              "x": 455.0,
+              "y": 586
+            }
+          ]
+        },
+        {
+          "connection": "remoteIO-to-mashValve",
+          "points": [
+            {
+              "x": 455.0,
+              "y": 586
+            },
+            {
+              "x": 455.0,
+              "y": 602
+            },
+            {
+              "x": 1035.0,
+              "y": 602
+            },
+            {
+              "x": 1035.0,
+              "y": 276
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "finishing",
+      "label": "Fermentation & filling",
+      "canvas": {
+        "width": 2100,
+        "height": 680
+      },
+      "placements": [
+        {
+          "component": "transferPump",
+          "x": 1800,
+          "y": 100,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "fermenterValve",
+          "x": 1510,
+          "y": 100,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "fermenter",
+          "x": 1220,
+          "y": 100,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "conditioning",
+          "x": 930,
+          "y": 100,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "fillValve",
+          "x": 640,
+          "y": 100,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "filler",
+          "x": 350,
+          "y": 100,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "packer",
+          "x": 60,
+          "y": 100,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "controller",
+          "x": 60,
+          "y": 410,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "remoteIO",
+          "x": 350,
+          "y": 410,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "wortFlow",
+          "x": 640,
+          "y": 410,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "brewPressure",
+          "x": 930,
+          "y": 410,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "fermenterLevel",
+          "x": 1220,
+          "y": 410,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "power",
+          "x": 1800,
+          "y": 410,
+          "width": 210,
+          "height": 176
+        }
+      ],
+      "routes": [
+        {
+          "connection": "fermenter-to-conditioning",
+          "points": [
+            {
+              "x": 1220,
+              "y": 188.0
+            },
+            {
+              "x": 1140,
+              "y": 188.0
+            }
+          ]
+        },
+        {
+          "connection": "filler-to-packer",
+          "points": [
+            {
+              "x": 350,
+              "y": 188.0
+            },
+            {
+              "x": 270,
+              "y": 188.0
+            }
+          ]
+        },
+        {
+          "connection": "transferPump-to-fermenterValve",
+          "points": [
+            {
+              "x": 1800,
+              "y": 188.0
+            },
+            {
+              "x": 1720,
+              "y": 188.0
+            }
+          ]
+        },
+        {
+          "connection": "fermenterValve-to-fermenter",
+          "points": [
+            {
+              "x": 1510,
+              "y": 188.0
+            },
+            {
+              "x": 1430,
+              "y": 188.0
+            }
+          ]
+        },
+        {
+          "connection": "conditioning-to-fillValve",
+          "points": [
+            {
+              "x": 930,
+              "y": 188.0
+            },
+            {
+              "x": 850,
+              "y": 188.0
+            }
+          ]
+        },
+        {
+          "connection": "fillValve-to-filler",
+          "points": [
+            {
+              "x": 640,
+              "y": 188.0
+            },
+            {
+              "x": 560,
+              "y": 188.0
+            }
+          ]
+        },
+        {
+          "connection": "transferPump-to-wortFlow",
+          "points": [
+            {
+              "x": 1800,
+              "y": 188.0
+            },
+            {
+              "x": 1784,
+              "y": 188.0
+            },
+            {
+              "x": 1784,
+              "y": 394
+            },
+            {
+              "x": 745.0,
+              "y": 394
+            },
+            {
+              "x": 745.0,
+              "y": 410
+            }
+          ]
+        },
+        {
+          "connection": "fermenter-to-fermenterLevel",
+          "points": [
+            {
+              "x": 1220,
+              "y": 188.0
+            },
+            {
+              "x": 1204,
+              "y": 188.0
+            },
+            {
+              "x": 1204,
+              "y": 394
+            },
+            {
+              "x": 1325.0,
+              "y": 394
+            },
+            {
+              "x": 1325.0,
+              "y": 410
+            }
+          ]
+        },
+        {
+          "connection": "transferPump-to-brewPressure",
+          "points": [
+            {
+              "x": 1800,
+              "y": 188.0
+            },
+            {
+              "x": 1784,
+              "y": 188.0
+            },
+            {
+              "x": 1784,
+              "y": 292
+            },
+            {
+              "x": 1035.0,
+              "y": 292
+            },
+            {
+              "x": 1035.0,
+              "y": 410
+            }
+          ]
+        },
+        {
+          "connection": "power-to-filler",
+          "points": [
+            {
+              "x": 2010,
+              "y": 498.0
+            },
+            {
+              "x": 2026,
+              "y": 498.0
+            },
+            {
+              "x": 2026,
+              "y": 308
+            },
+            {
+              "x": 334,
+              "y": 308
+            },
+            {
+              "x": 334,
+              "y": 188.0
+            },
+            {
+              "x": 350,
+              "y": 188.0
+            }
+          ]
+        },
+        {
+          "connection": "power-to-packer",
+          "points": [
+            {
+              "x": 2010,
+              "y": 498.0
+            },
+            {
+              "x": 2026,
+              "y": 498.0
+            },
+            {
+              "x": 2026,
+              "y": 378
+            },
+            {
+              "x": 44,
+              "y": 378
+            },
+            {
+              "x": 44,
+              "y": 188.0
+            },
+            {
+              "x": 60,
+              "y": 188.0
+            }
+          ]
+        },
+        {
+          "connection": "power-to-controller",
+          "points": [
+            {
+              "x": 2010,
+              "y": 498.0
+            },
+            {
+              "x": 2026,
+              "y": 498.0
+            },
+            {
+              "x": 2026,
+              "y": 602
+            },
+            {
+              "x": 44,
+              "y": 602
+            },
+            {
+              "x": 44,
+              "y": 498.0
+            },
+            {
+              "x": 60,
+              "y": 498.0
+            }
+          ]
+        },
+        {
+          "connection": "power-to-transferPump",
+          "points": [
+            {
+              "x": 2010,
+              "y": 498.0
+            },
+            {
+              "x": 2042,
+              "y": 498.0
+            },
+            {
+              "x": 2042,
+              "y": 292
+            },
+            {
+              "x": 1784,
+              "y": 292
+            },
+            {
+              "x": 1784,
+              "y": 188.0
+            },
+            {
+              "x": 1800,
+              "y": 188.0
+            }
+          ]
+        },
+        {
+          "connection": "power-to-wortFlow",
+          "points": [
+            {
+              "x": 2010,
+              "y": 498.0
+            },
+            {
+              "x": 2026,
+              "y": 498.0
+            },
+            {
+              "x": 2026,
+              "y": 618
+            },
+            {
+              "x": 624,
+              "y": 618
+            },
+            {
+              "x": 624,
+              "y": 550.8
+            },
+            {
+              "x": 640,
+              "y": 550.8
+            }
+          ]
+        },
+        {
+          "connection": "power-to-fermenterLevel",
+          "points": [
+            {
+              "x": 2010,
+              "y": 498.0
+            },
+            {
+              "x": 2026,
+              "y": 498.0
+            },
+            {
+              "x": 2026,
+              "y": 660
+            },
+            {
+              "x": 1204,
+              "y": 660
+            },
+            {
+              "x": 1204,
+              "y": 550.8
+            },
+            {
+              "x": 1220,
+              "y": 550.8
+            }
+          ]
+        },
+        {
+          "connection": "power-to-brewPressure",
+          "points": [
+            {
+              "x": 2010,
+              "y": 498.0
+            },
+            {
+              "x": 2026,
+              "y": 498.0
+            },
+            {
+              "x": 2026,
+              "y": 602
+            },
+            {
+              "x": 914,
+              "y": 602
+            },
+            {
+              "x": 914,
+              "y": 550.8
+            },
+            {
+              "x": 930,
+              "y": 550.8
+            }
+          ]
+        },
+        {
+          "connection": "power-to-remoteIO",
+          "points": [
+            {
+              "x": 2010,
+              "y": 498.0
+            },
+            {
+              "x": 2042,
+              "y": 498.0
+            },
+            {
+              "x": 2042,
+              "y": 660
+            },
+            {
+              "x": 334,
+              "y": 660
+            },
+            {
+              "x": 334,
+              "y": 550.8
+            },
+            {
+              "x": 350,
+              "y": 550.8
+            }
+          ]
+        },
+        {
+          "connection": "wortFlow-to-controller",
+          "points": [
+            {
+              "x": 640,
+              "y": 498.0
+            },
+            {
+              "x": 624,
+              "y": 498.0
+            },
+            {
+              "x": 624,
+              "y": 394
+            },
+            {
+              "x": 165.0,
+              "y": 394
+            },
+            {
+              "x": 165.0,
+              "y": 410
+            }
+          ]
+        },
+        {
+          "connection": "fermenterLevel-to-controller",
+          "points": [
+            {
+              "x": 1220,
+              "y": 498.0
+            },
+            {
+              "x": 1204,
+              "y": 498.0
+            },
+            {
+              "x": 1204,
+              "y": 394
+            },
+            {
+              "x": 165.0,
+              "y": 394
+            },
+            {
+              "x": 165.0,
+              "y": 410
+            }
+          ]
+        },
+        {
+          "connection": "brewPressure-to-controller",
+          "points": [
+            {
+              "x": 930,
+              "y": 498.0
+            },
+            {
+              "x": 914,
+              "y": 498.0
+            },
+            {
+              "x": 914,
+              "y": 378
+            },
+            {
+              "x": 165.0,
+              "y": 378
+            },
+            {
+              "x": 165.0,
+              "y": 410
+            }
+          ]
+        },
+        {
+          "connection": "controller-to-remoteIO",
+          "points": [
+            {
+              "x": 270,
+              "y": 498.0
+            },
+            {
+              "x": 286,
+              "y": 498.0
+            },
+            {
+              "x": 286,
+              "y": 602
+            },
+            {
+              "x": 455.0,
+              "y": 602
+            },
+            {
+              "x": 455.0,
+              "y": 586
+            }
+          ]
+        },
+        {
+          "connection": "remoteIO-to-fermenterValve",
+          "points": [
+            {
+              "x": 455.0,
+              "y": 586
+            },
+            {
+              "x": 455.0,
+              "y": 602
+            },
+            {
+              "x": 576,
+              "y": 602
+            },
+            {
+              "x": 576,
+              "y": 292
+            },
+            {
+              "x": 1615.0,
+              "y": 292
+            },
+            {
+              "x": 1615.0,
+              "y": 276
+            }
+          ]
+        },
+        {
+          "connection": "remoteIO-to-fillValve",
+          "points": [
+            {
+              "x": 455.0,
+              "y": 586
+            },
+            {
+              "x": 455.0,
+              "y": 602
+            },
+            {
+              "x": 608,
+              "y": 602
+            },
+            {
+              "x": 608,
+              "y": 292
+            },
+            {
+              "x": 745.0,
+              "y": 292
+            },
+            {
+              "x": 745.0,
+              "y": 276
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "utilities",
+      "label": "Power & instruments",
+      "canvas": {
+        "width": 2240,
+        "height": 960
+      },
+      "placements": [
+        {
+          "component": "power",
+          "x": 60,
+          "y": 80,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "mill",
+          "x": 370,
+          "y": 80,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "mash",
+          "x": 680,
+          "y": 80,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "transferPump",
+          "x": 990,
+          "y": 80,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "filler",
+          "x": 1300,
+          "y": 80,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "packer",
+          "x": 1610,
+          "y": 80,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "effluent",
+          "x": 1920,
+          "y": 80,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "network",
+          "x": 60,
+          "y": 380,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "wortFlow",
+          "x": 370,
+          "y": 380,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "brewPressure",
+          "x": 680,
+          "y": 380,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "temperature",
+          "x": 990,
+          "y": 380,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "fermenterLevel",
+          "x": 1300,
+          "y": 380,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "cooler",
+          "x": 1610,
+          "y": 380,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "heatService",
+          "x": 1920,
+          "y": 380,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "controller",
+          "x": 370,
+          "y": 690,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "remoteIO",
+          "x": 680,
+          "y": 690,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "mashValve",
+          "x": 990,
+          "y": 690,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "fermenterValve",
+          "x": 1300,
+          "y": 690,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "fillValve",
+          "x": 1610,
+          "y": 690,
+          "width": 210,
+          "height": 176
+        }
+      ],
+      "routes": [
+        {
+          "connection": "mill-to-mash",
+          "points": [
+            {
+              "x": 580,
+              "y": 168.0
+            },
+            {
+              "x": 680,
+              "y": 168.0
+            }
+          ]
+        },
+        {
+          "connection": "filler-to-packer",
+          "points": [
+            {
+              "x": 1300,
+              "y": 168.0
+            },
+            {
+              "x": 1284,
+              "y": 168.0
+            },
+            {
+              "x": 1284,
+              "y": 64
+            },
+            {
+              "x": 1836,
+              "y": 64
+            },
+            {
+              "x": 1836,
+              "y": 168.0
+            },
+            {
+              "x": 1820,
+              "y": 168.0
+            }
+          ]
+        },
+        {
+          "connection": "heatService-to-cooler",
+          "points": [
+            {
+              "x": 2130,
+              "y": 468.0
+            },
+            {
+              "x": 2146,
+              "y": 468.0
+            },
+            {
+              "x": 2146,
+              "y": 364
+            },
+            {
+              "x": 1594,
+              "y": 364
+            },
+            {
+              "x": 1594,
+              "y": 468.0
+            },
+            {
+              "x": 1610,
+              "y": 468.0
+            }
+          ]
+        },
+        {
+          "connection": "mash-to-mashValve",
+          "points": [
+            {
+              "x": 890,
+              "y": 168.0
+            },
+            {
+              "x": 906,
+              "y": 168.0
+            },
+            {
+              "x": 906,
+              "y": 778.0
+            },
+            {
+              "x": 990,
+              "y": 778.0
+            }
+          ]
+        },
+        {
+          "connection": "cooler-to-transferPump",
+          "points": [
+            {
+              "x": 1715.0,
+              "y": 556
+            },
+            {
+              "x": 1715.0,
+              "y": 572
+            },
+            {
+              "x": 1216,
+              "y": 572
+            },
+            {
+              "x": 1216,
+              "y": 64
+            },
+            {
+              "x": 1095.0,
+              "y": 64
+            },
+            {
+              "x": 1095.0,
+              "y": 80
+            }
+          ]
+        },
+        {
+          "connection": "transferPump-to-fermenterValve",
+          "points": [
+            {
+              "x": 990,
+              "y": 168.0
+            },
+            {
+              "x": 974,
+              "y": 168.0
+            },
+            {
+              "x": 974,
+              "y": 674
+            },
+            {
+              "x": 1526,
+              "y": 674
+            },
+            {
+              "x": 1526,
+              "y": 778.0
+            },
+            {
+              "x": 1510,
+              "y": 778.0
+            }
+          ]
+        },
+        {
+          "connection": "fillValve-to-filler",
+          "points": [
+            {
+              "x": 1610,
+              "y": 778.0
+            },
+            {
+              "x": 1594,
+              "y": 778.0
+            },
+            {
+              "x": 1594,
+              "y": 168.0
+            },
+            {
+              "x": 1510,
+              "y": 168.0
+            }
+          ]
+        },
+        {
+          "connection": "cooler-to-temperature",
+          "points": [
+            {
+              "x": 1715.0,
+              "y": 556
+            },
+            {
+              "x": 1715.0,
+              "y": 588
+            },
+            {
+              "x": 974,
+              "y": 588
+            },
+            {
+              "x": 974,
+              "y": 468.0
+            },
+            {
+              "x": 990,
+              "y": 468.0
+            }
+          ]
+        },
+        {
+          "connection": "transferPump-to-wortFlow",
+          "points": [
+            {
+              "x": 990,
+              "y": 168.0
+            },
+            {
+              "x": 922,
+              "y": 168.0
+            },
+            {
+              "x": 922,
+              "y": 364
+            },
+            {
+              "x": 475.0,
+              "y": 364
+            },
+            {
+              "x": 475.0,
+              "y": 380
+            }
+          ]
+        },
+        {
+          "connection": "transferPump-to-brewPressure",
+          "points": [
+            {
+              "x": 990,
+              "y": 168.0
+            },
+            {
+              "x": 974,
+              "y": 168.0
+            },
+            {
+              "x": 974,
+              "y": 272
+            },
+            {
+              "x": 785.0,
+              "y": 272
+            },
+            {
+              "x": 785.0,
+              "y": 380
+            }
+          ]
+        },
+        {
+          "connection": "power-to-mill",
+          "points": [
+            {
+              "x": 270,
+              "y": 168.0
+            },
+            {
+              "x": 370,
+              "y": 168.0
+            }
+          ]
+        },
+        {
+          "connection": "power-to-mash",
+          "points": [
+            {
+              "x": 270,
+              "y": 168.0
+            },
+            {
+              "x": 286,
+              "y": 168.0
+            },
+            {
+              "x": 286,
+              "y": 64
+            },
+            {
+              "x": 664,
+              "y": 64
+            },
+            {
+              "x": 664,
+              "y": 168.0
+            },
+            {
+              "x": 680,
+              "y": 168.0
+            }
+          ]
+        },
+        {
+          "connection": "power-to-filler",
+          "points": [
+            {
+              "x": 270,
+              "y": 168.0
+            },
+            {
+              "x": 286,
+              "y": 168.0
+            },
+            {
+              "x": 286,
+              "y": 288
+            },
+            {
+              "x": 1284,
+              "y": 288
+            },
+            {
+              "x": 1284,
+              "y": 168.0
+            },
+            {
+              "x": 1300,
+              "y": 168.0
+            }
+          ]
+        },
+        {
+          "connection": "power-to-packer",
+          "points": [
+            {
+              "x": 270,
+              "y": 168.0
+            },
+            {
+              "x": 286,
+              "y": 168.0
+            },
+            {
+              "x": 286,
+              "y": 48
+            },
+            {
+              "x": 1594,
+              "y": 48
+            },
+            {
+              "x": 1594,
+              "y": 168.0
+            },
+            {
+              "x": 1610,
+              "y": 168.0
+            }
+          ]
+        },
+        {
+          "connection": "power-to-effluent",
+          "points": [
+            {
+              "x": 270,
+              "y": 168.0
+            },
+            {
+              "x": 286,
+              "y": 168.0
+            },
+            {
+              "x": 286,
+              "y": 272
+            },
+            {
+              "x": 1904,
+              "y": 272
+            },
+            {
+              "x": 1904,
+              "y": 168.0
+            },
+            {
+              "x": 1920,
+              "y": 168.0
+            }
+          ]
+        },
+        {
+          "connection": "power-to-controller",
+          "points": [
+            {
+              "x": 270,
+              "y": 168.0
+            },
+            {
+              "x": 354,
+              "y": 168.0
+            },
+            {
+              "x": 354,
+              "y": 778.0
+            },
+            {
+              "x": 370,
+              "y": 778.0
+            }
+          ]
+        },
+        {
+          "connection": "power-to-network",
+          "points": [
+            {
+              "x": 270,
+              "y": 168.0
+            },
+            {
+              "x": 286,
+              "y": 168.0
+            },
+            {
+              "x": 286,
+              "y": 272
+            },
+            {
+              "x": 44,
+              "y": 272
+            },
+            {
+              "x": 44,
+              "y": 468.0
+            },
+            {
+              "x": 60,
+              "y": 468.0
+            }
+          ]
+        },
+        {
+          "connection": "power-to-temperature",
+          "points": [
+            {
+              "x": 270,
+              "y": 168.0
+            },
+            {
+              "x": 302,
+              "y": 168.0
+            },
+            {
+              "x": 302,
+              "y": 348
+            },
+            {
+              "x": 974,
+              "y": 348
+            },
+            {
+              "x": 974,
+              "y": 468.0
+            },
+            {
+              "x": 990,
+              "y": 468.0
+            }
+          ]
+        },
+        {
+          "connection": "power-to-transferPump",
+          "points": [
+            {
+              "x": 270,
+              "y": 168.0
+            },
+            {
+              "x": 302,
+              "y": 168.0
+            },
+            {
+              "x": 302,
+              "y": 64
+            },
+            {
+              "x": 974,
+              "y": 64
+            },
+            {
+              "x": 974,
+              "y": 168.0
+            },
+            {
+              "x": 990,
+              "y": 168.0
+            }
+          ]
+        },
+        {
+          "connection": "power-to-wortFlow",
+          "points": [
+            {
+              "x": 270,
+              "y": 168.0
+            },
+            {
+              "x": 338,
+              "y": 168.0
+            },
+            {
+              "x": 338,
+              "y": 520.8
+            },
+            {
+              "x": 370,
+              "y": 520.8
+            }
+          ]
+        },
+        {
+          "connection": "power-to-fermenterLevel",
+          "points": [
+            {
+              "x": 270,
+              "y": 168.0
+            },
+            {
+              "x": 286,
+              "y": 168.0
+            },
+            {
+              "x": 286,
+              "y": 364
+            },
+            {
+              "x": 1284,
+              "y": 364
+            },
+            {
+              "x": 1284,
+              "y": 520.8
+            },
+            {
+              "x": 1300,
+              "y": 520.8
+            }
+          ]
+        },
+        {
+          "connection": "power-to-brewPressure",
+          "points": [
+            {
+              "x": 270,
+              "y": 168.0
+            },
+            {
+              "x": 302,
+              "y": 168.0
+            },
+            {
+              "x": 302,
+              "y": 272
+            },
+            {
+              "x": 664,
+              "y": 272
+            },
+            {
+              "x": 664,
+              "y": 520.8
+            },
+            {
+              "x": 680,
+              "y": 520.8
+            }
+          ]
+        },
+        {
+          "connection": "power-to-remoteIO",
+          "points": [
+            {
+              "x": 270,
+              "y": 168.0
+            },
+            {
+              "x": 286,
+              "y": 168.0
+            },
+            {
+              "x": 286,
+              "y": 674
+            },
+            {
+              "x": 664,
+              "y": 674
+            },
+            {
+              "x": 664,
+              "y": 830.8
+            },
+            {
+              "x": 680,
+              "y": 830.8
+            }
+          ]
+        },
+        {
+          "connection": "network-to-controller",
+          "points": [
+            {
+              "x": 270,
+              "y": 468.0
+            },
+            {
+              "x": 286,
+              "y": 468.0
+            },
+            {
+              "x": 286,
+              "y": 572
+            },
+            {
+              "x": 475.0,
+              "y": 572
+            },
+            {
+              "x": 475.0,
+              "y": 690
+            }
+          ]
+        },
+        {
+          "connection": "temperature-to-controller",
+          "points": [
+            {
+              "x": 990,
+              "y": 468.0
+            },
+            {
+              "x": 922,
+              "y": 468.0
+            },
+            {
+              "x": 922,
+              "y": 658
+            },
+            {
+              "x": 475.0,
+              "y": 658
+            },
+            {
+              "x": 475.0,
+              "y": 690
+            }
+          ]
+        },
+        {
+          "connection": "wortFlow-to-controller",
+          "points": [
+            {
+              "x": 370,
+              "y": 468.0
+            },
+            {
+              "x": 354,
+              "y": 468.0
+            },
+            {
+              "x": 354,
+              "y": 674
+            },
+            {
+              "x": 475.0,
+              "y": 674
+            },
+            {
+              "x": 475.0,
+              "y": 690
+            }
+          ]
+        },
+        {
+          "connection": "fermenterLevel-to-controller",
+          "points": [
+            {
+              "x": 1300,
+              "y": 468.0
+            },
+            {
+              "x": 1284,
+              "y": 468.0
+            },
+            {
+              "x": 1284,
+              "y": 572
+            },
+            {
+              "x": 475.0,
+              "y": 572
+            },
+            {
+              "x": 475.0,
+              "y": 690
+            }
+          ]
+        },
+        {
+          "connection": "brewPressure-to-controller",
+          "points": [
+            {
+              "x": 680,
+              "y": 468.0
+            },
+            {
+              "x": 664,
+              "y": 468.0
+            },
+            {
+              "x": 664,
+              "y": 674
+            },
+            {
+              "x": 475.0,
+              "y": 674
+            },
+            {
+              "x": 475.0,
+              "y": 690
+            }
+          ]
+        },
+        {
+          "connection": "controller-to-remoteIO",
+          "points": [
+            {
+              "x": 580,
+              "y": 778.0
+            },
+            {
+              "x": 596,
+              "y": 778.0
+            },
+            {
+              "x": 596,
+              "y": 882
+            },
+            {
+              "x": 785.0,
+              "y": 882
+            },
+            {
+              "x": 785.0,
+              "y": 866
+            }
+          ]
+        },
+        {
+          "connection": "remoteIO-to-mashValve",
+          "points": [
+            {
+              "x": 785.0,
+              "y": 866
+            },
+            {
+              "x": 785.0,
+              "y": 882
+            },
+            {
+              "x": 1095.0,
+              "y": 882
+            },
+            {
+              "x": 1095.0,
+              "y": 866
+            }
+          ]
+        },
+        {
+          "connection": "remoteIO-to-fermenterValve",
+          "points": [
+            {
+              "x": 785.0,
+              "y": 866
+            },
+            {
+              "x": 785.0,
+              "y": 882
+            },
+            {
+              "x": 1405.0,
+              "y": 882
+            },
+            {
+              "x": 1405.0,
+              "y": 866
+            }
+          ]
+        },
+        {
+          "connection": "remoteIO-to-fillValve",
+          "points": [
+            {
+              "x": 785.0,
+              "y": 866
+            },
+            {
+              "x": 785.0,
+              "y": 898
+            },
+            {
+              "x": 1715.0,
+              "y": 898
+            },
+            {
+              "x": 1715.0,
+              "y": 866
             }
           ]
         }
@@ -2208,6 +5078,366 @@
       "label": "Reset dynamics \u00b7 keep edited parameters",
       "action": "reset",
       "arguments": {}
+    },
+    {
+      "id": "mashValve-enabled",
+      "label": "Enabled \u00b7 mashValve",
+      "component": "mashValve",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "mashValve"
+      }
+    },
+    {
+      "id": "mashValve-open",
+      "label": "Open valve \u00b7 mashValve",
+      "component": "mashValve",
+      "action": "setOpen",
+      "arguments": {
+        "equipment": "mashValve"
+      }
+    },
+    {
+      "id": "mashValve-load",
+      "label": "Opening \u00b7 mashValve",
+      "component": "mashValve",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "mashValve"
+      }
+    },
+    {
+      "id": "mashValve-fault",
+      "label": "Injected failure \u00b7 mashValve",
+      "component": "mashValve",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "mashValve"
+      }
+    },
+    {
+      "id": "mashValve-repair",
+      "label": "Repair equipment \u00b7 mashValve",
+      "component": "mashValve",
+      "action": "repair",
+      "arguments": {
+        "equipment": "mashValve"
+      }
+    },
+    {
+      "id": "kettleValve-enabled",
+      "label": "Enabled \u00b7 kettleValve",
+      "component": "kettleValve",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "kettleValve"
+      }
+    },
+    {
+      "id": "kettleValve-open",
+      "label": "Open valve \u00b7 kettleValve",
+      "component": "kettleValve",
+      "action": "setOpen",
+      "arguments": {
+        "equipment": "kettleValve"
+      }
+    },
+    {
+      "id": "kettleValve-load",
+      "label": "Opening \u00b7 kettleValve",
+      "component": "kettleValve",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "kettleValve"
+      }
+    },
+    {
+      "id": "kettleValve-fault",
+      "label": "Injected failure \u00b7 kettleValve",
+      "component": "kettleValve",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "kettleValve"
+      }
+    },
+    {
+      "id": "kettleValve-repair",
+      "label": "Repair equipment \u00b7 kettleValve",
+      "component": "kettleValve",
+      "action": "repair",
+      "arguments": {
+        "equipment": "kettleValve"
+      }
+    },
+    {
+      "id": "transferPump-enabled",
+      "label": "Enabled \u00b7 transferPump",
+      "component": "transferPump",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "transferPump"
+      }
+    },
+    {
+      "id": "transferPump-load",
+      "label": "Requested load \u00b7 transferPump",
+      "component": "transferPump",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "transferPump"
+      }
+    },
+    {
+      "id": "transferPump-fault",
+      "label": "Injected failure \u00b7 transferPump",
+      "component": "transferPump",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "transferPump"
+      }
+    },
+    {
+      "id": "transferPump-repair",
+      "label": "Repair equipment \u00b7 transferPump",
+      "component": "transferPump",
+      "action": "repair",
+      "arguments": {
+        "equipment": "transferPump"
+      }
+    },
+    {
+      "id": "fermenterValve-enabled",
+      "label": "Enabled \u00b7 fermenterValve",
+      "component": "fermenterValve",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "fermenterValve"
+      }
+    },
+    {
+      "id": "fermenterValve-open",
+      "label": "Open valve \u00b7 fermenterValve",
+      "component": "fermenterValve",
+      "action": "setOpen",
+      "arguments": {
+        "equipment": "fermenterValve"
+      }
+    },
+    {
+      "id": "fermenterValve-load",
+      "label": "Opening \u00b7 fermenterValve",
+      "component": "fermenterValve",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "fermenterValve"
+      }
+    },
+    {
+      "id": "fermenterValve-fault",
+      "label": "Injected failure \u00b7 fermenterValve",
+      "component": "fermenterValve",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "fermenterValve"
+      }
+    },
+    {
+      "id": "fermenterValve-repair",
+      "label": "Repair equipment \u00b7 fermenterValve",
+      "component": "fermenterValve",
+      "action": "repair",
+      "arguments": {
+        "equipment": "fermenterValve"
+      }
+    },
+    {
+      "id": "fillValve-enabled",
+      "label": "Enabled \u00b7 fillValve",
+      "component": "fillValve",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "fillValve"
+      }
+    },
+    {
+      "id": "fillValve-open",
+      "label": "Open valve \u00b7 fillValve",
+      "component": "fillValve",
+      "action": "setOpen",
+      "arguments": {
+        "equipment": "fillValve"
+      }
+    },
+    {
+      "id": "fillValve-load",
+      "label": "Opening \u00b7 fillValve",
+      "component": "fillValve",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "fillValve"
+      }
+    },
+    {
+      "id": "fillValve-fault",
+      "label": "Injected failure \u00b7 fillValve",
+      "component": "fillValve",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "fillValve"
+      }
+    },
+    {
+      "id": "fillValve-repair",
+      "label": "Repair equipment \u00b7 fillValve",
+      "component": "fillValve",
+      "action": "repair",
+      "arguments": {
+        "equipment": "fillValve"
+      }
+    },
+    {
+      "id": "wortFlow-enabled",
+      "label": "Enabled \u00b7 wortFlow",
+      "component": "wortFlow",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "wortFlow"
+      }
+    },
+    {
+      "id": "wortFlow-load",
+      "label": "Requested load \u00b7 wortFlow",
+      "component": "wortFlow",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "wortFlow"
+      }
+    },
+    {
+      "id": "wortFlow-fault",
+      "label": "Injected failure \u00b7 wortFlow",
+      "component": "wortFlow",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "wortFlow"
+      }
+    },
+    {
+      "id": "wortFlow-repair",
+      "label": "Repair equipment \u00b7 wortFlow",
+      "component": "wortFlow",
+      "action": "repair",
+      "arguments": {
+        "equipment": "wortFlow"
+      }
+    },
+    {
+      "id": "fermenterLevel-enabled",
+      "label": "Enabled \u00b7 fermenterLevel",
+      "component": "fermenterLevel",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "fermenterLevel"
+      }
+    },
+    {
+      "id": "fermenterLevel-load",
+      "label": "Requested load \u00b7 fermenterLevel",
+      "component": "fermenterLevel",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "fermenterLevel"
+      }
+    },
+    {
+      "id": "fermenterLevel-fault",
+      "label": "Injected failure \u00b7 fermenterLevel",
+      "component": "fermenterLevel",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "fermenterLevel"
+      }
+    },
+    {
+      "id": "fermenterLevel-repair",
+      "label": "Repair equipment \u00b7 fermenterLevel",
+      "component": "fermenterLevel",
+      "action": "repair",
+      "arguments": {
+        "equipment": "fermenterLevel"
+      }
+    },
+    {
+      "id": "brewPressure-enabled",
+      "label": "Enabled \u00b7 brewPressure",
+      "component": "brewPressure",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "brewPressure"
+      }
+    },
+    {
+      "id": "brewPressure-load",
+      "label": "Requested load \u00b7 brewPressure",
+      "component": "brewPressure",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "brewPressure"
+      }
+    },
+    {
+      "id": "brewPressure-fault",
+      "label": "Injected failure \u00b7 brewPressure",
+      "component": "brewPressure",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "brewPressure"
+      }
+    },
+    {
+      "id": "brewPressure-repair",
+      "label": "Repair equipment \u00b7 brewPressure",
+      "component": "brewPressure",
+      "action": "repair",
+      "arguments": {
+        "equipment": "brewPressure"
+      }
+    },
+    {
+      "id": "remoteIO-enabled",
+      "label": "Enabled \u00b7 remoteIO",
+      "component": "remoteIO",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "remoteIO"
+      }
+    },
+    {
+      "id": "remoteIO-load",
+      "label": "Requested load \u00b7 remoteIO",
+      "component": "remoteIO",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "remoteIO"
+      }
+    },
+    {
+      "id": "remoteIO-fault",
+      "label": "Injected failure \u00b7 remoteIO",
+      "component": "remoteIO",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "remoteIO"
+      }
+    },
+    {
+      "id": "remoteIO-repair",
+      "label": "Repair equipment \u00b7 remoteIO",
+      "component": "remoteIO",
+      "action": "repair",
+      "arguments": {
+        "equipment": "remoteIO"
+      }
     }
   ],
   "controls": [
@@ -2625,7 +5855,11 @@
       "component": "power",
       "kind": "toggle",
       "command": "power-enabled",
-      "binding": "/controls/power/enabled"
+      "binding": "/controls/power/enabled",
+      "diagram": {
+        "whenTrue": "Stop",
+        "whenFalse": "Start"
+      }
     },
     {
       "id": "power-load-control",
@@ -2773,6 +6007,364 @@
       "label": "Reset dynamics \u00b7 keep edited parameters",
       "kind": "button",
       "command": "plant-reset"
+    },
+    {
+      "id": "mashValve-enabled-control",
+      "label": "Enabled",
+      "component": "mashValve",
+      "kind": "toggle",
+      "command": "mashValve-enabled",
+      "binding": "/controls/mashValve/enabled"
+    },
+    {
+      "id": "mashValve-open-control",
+      "label": "Open valve",
+      "component": "mashValve",
+      "kind": "toggle",
+      "command": "mashValve-open",
+      "binding": "/controls/mashValve/open",
+      "diagram": {
+        "whenTrue": "Close",
+        "whenFalse": "Open"
+      }
+    },
+    {
+      "id": "mashValve-load-control",
+      "label": "Opening",
+      "component": "mashValve",
+      "kind": "range",
+      "command": "mashValve-load",
+      "binding": "/controls/mashValve/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "mashValve-fault-control",
+      "label": "Injected failure",
+      "component": "mashValve",
+      "kind": "toggle",
+      "command": "mashValve-fault",
+      "binding": "/controls/mashValve/fault"
+    },
+    {
+      "id": "mashValve-repair-control",
+      "label": "Repair equipment",
+      "component": "mashValve",
+      "kind": "button",
+      "command": "mashValve-repair"
+    },
+    {
+      "id": "kettleValve-enabled-control",
+      "label": "Enabled",
+      "component": "kettleValve",
+      "kind": "toggle",
+      "command": "kettleValve-enabled",
+      "binding": "/controls/kettleValve/enabled"
+    },
+    {
+      "id": "kettleValve-open-control",
+      "label": "Open valve",
+      "component": "kettleValve",
+      "kind": "toggle",
+      "command": "kettleValve-open",
+      "binding": "/controls/kettleValve/open",
+      "diagram": {
+        "whenTrue": "Close",
+        "whenFalse": "Open"
+      }
+    },
+    {
+      "id": "kettleValve-load-control",
+      "label": "Opening",
+      "component": "kettleValve",
+      "kind": "range",
+      "command": "kettleValve-load",
+      "binding": "/controls/kettleValve/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "kettleValve-fault-control",
+      "label": "Injected failure",
+      "component": "kettleValve",
+      "kind": "toggle",
+      "command": "kettleValve-fault",
+      "binding": "/controls/kettleValve/fault"
+    },
+    {
+      "id": "kettleValve-repair-control",
+      "label": "Repair equipment",
+      "component": "kettleValve",
+      "kind": "button",
+      "command": "kettleValve-repair"
+    },
+    {
+      "id": "transferPump-enabled-control",
+      "label": "Enabled",
+      "component": "transferPump",
+      "kind": "toggle",
+      "command": "transferPump-enabled",
+      "binding": "/controls/transferPump/enabled",
+      "diagram": {
+        "whenTrue": "Stop",
+        "whenFalse": "Start"
+      }
+    },
+    {
+      "id": "transferPump-load-control",
+      "label": "Requested load",
+      "component": "transferPump",
+      "kind": "range",
+      "command": "transferPump-load",
+      "binding": "/controls/transferPump/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "transferPump-fault-control",
+      "label": "Injected failure",
+      "component": "transferPump",
+      "kind": "toggle",
+      "command": "transferPump-fault",
+      "binding": "/controls/transferPump/fault"
+    },
+    {
+      "id": "transferPump-repair-control",
+      "label": "Repair equipment",
+      "component": "transferPump",
+      "kind": "button",
+      "command": "transferPump-repair"
+    },
+    {
+      "id": "fermenterValve-enabled-control",
+      "label": "Enabled",
+      "component": "fermenterValve",
+      "kind": "toggle",
+      "command": "fermenterValve-enabled",
+      "binding": "/controls/fermenterValve/enabled"
+    },
+    {
+      "id": "fermenterValve-open-control",
+      "label": "Open valve",
+      "component": "fermenterValve",
+      "kind": "toggle",
+      "command": "fermenterValve-open",
+      "binding": "/controls/fermenterValve/open",
+      "diagram": {
+        "whenTrue": "Close",
+        "whenFalse": "Open"
+      }
+    },
+    {
+      "id": "fermenterValve-load-control",
+      "label": "Opening",
+      "component": "fermenterValve",
+      "kind": "range",
+      "command": "fermenterValve-load",
+      "binding": "/controls/fermenterValve/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "fermenterValve-fault-control",
+      "label": "Injected failure",
+      "component": "fermenterValve",
+      "kind": "toggle",
+      "command": "fermenterValve-fault",
+      "binding": "/controls/fermenterValve/fault"
+    },
+    {
+      "id": "fermenterValve-repair-control",
+      "label": "Repair equipment",
+      "component": "fermenterValve",
+      "kind": "button",
+      "command": "fermenterValve-repair"
+    },
+    {
+      "id": "fillValve-enabled-control",
+      "label": "Enabled",
+      "component": "fillValve",
+      "kind": "toggle",
+      "command": "fillValve-enabled",
+      "binding": "/controls/fillValve/enabled"
+    },
+    {
+      "id": "fillValve-open-control",
+      "label": "Open valve",
+      "component": "fillValve",
+      "kind": "toggle",
+      "command": "fillValve-open",
+      "binding": "/controls/fillValve/open",
+      "diagram": {
+        "whenTrue": "Close",
+        "whenFalse": "Open"
+      }
+    },
+    {
+      "id": "fillValve-load-control",
+      "label": "Opening",
+      "component": "fillValve",
+      "kind": "range",
+      "command": "fillValve-load",
+      "binding": "/controls/fillValve/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "fillValve-fault-control",
+      "label": "Injected failure",
+      "component": "fillValve",
+      "kind": "toggle",
+      "command": "fillValve-fault",
+      "binding": "/controls/fillValve/fault"
+    },
+    {
+      "id": "fillValve-repair-control",
+      "label": "Repair equipment",
+      "component": "fillValve",
+      "kind": "button",
+      "command": "fillValve-repair"
+    },
+    {
+      "id": "wortFlow-enabled-control",
+      "label": "Enabled",
+      "component": "wortFlow",
+      "kind": "toggle",
+      "command": "wortFlow-enabled",
+      "binding": "/controls/wortFlow/enabled"
+    },
+    {
+      "id": "wortFlow-load-control",
+      "label": "Requested load",
+      "component": "wortFlow",
+      "kind": "range",
+      "command": "wortFlow-load",
+      "binding": "/controls/wortFlow/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "wortFlow-fault-control",
+      "label": "Injected failure",
+      "component": "wortFlow",
+      "kind": "toggle",
+      "command": "wortFlow-fault",
+      "binding": "/controls/wortFlow/fault"
+    },
+    {
+      "id": "wortFlow-repair-control",
+      "label": "Repair equipment",
+      "component": "wortFlow",
+      "kind": "button",
+      "command": "wortFlow-repair"
+    },
+    {
+      "id": "fermenterLevel-enabled-control",
+      "label": "Enabled",
+      "component": "fermenterLevel",
+      "kind": "toggle",
+      "command": "fermenterLevel-enabled",
+      "binding": "/controls/fermenterLevel/enabled"
+    },
+    {
+      "id": "fermenterLevel-load-control",
+      "label": "Requested load",
+      "component": "fermenterLevel",
+      "kind": "range",
+      "command": "fermenterLevel-load",
+      "binding": "/controls/fermenterLevel/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "fermenterLevel-fault-control",
+      "label": "Injected failure",
+      "component": "fermenterLevel",
+      "kind": "toggle",
+      "command": "fermenterLevel-fault",
+      "binding": "/controls/fermenterLevel/fault"
+    },
+    {
+      "id": "fermenterLevel-repair-control",
+      "label": "Repair equipment",
+      "component": "fermenterLevel",
+      "kind": "button",
+      "command": "fermenterLevel-repair"
+    },
+    {
+      "id": "brewPressure-enabled-control",
+      "label": "Enabled",
+      "component": "brewPressure",
+      "kind": "toggle",
+      "command": "brewPressure-enabled",
+      "binding": "/controls/brewPressure/enabled"
+    },
+    {
+      "id": "brewPressure-load-control",
+      "label": "Requested load",
+      "component": "brewPressure",
+      "kind": "range",
+      "command": "brewPressure-load",
+      "binding": "/controls/brewPressure/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "brewPressure-fault-control",
+      "label": "Injected failure",
+      "component": "brewPressure",
+      "kind": "toggle",
+      "command": "brewPressure-fault",
+      "binding": "/controls/brewPressure/fault"
+    },
+    {
+      "id": "brewPressure-repair-control",
+      "label": "Repair equipment",
+      "component": "brewPressure",
+      "kind": "button",
+      "command": "brewPressure-repair"
+    },
+    {
+      "id": "remoteIO-enabled-control",
+      "label": "Enabled",
+      "component": "remoteIO",
+      "kind": "toggle",
+      "command": "remoteIO-enabled",
+      "binding": "/controls/remoteIO/enabled"
+    },
+    {
+      "id": "remoteIO-load-control",
+      "label": "Requested load",
+      "component": "remoteIO",
+      "kind": "range",
+      "command": "remoteIO-load",
+      "binding": "/controls/remoteIO/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "remoteIO-fault-control",
+      "label": "Injected failure",
+      "component": "remoteIO",
+      "kind": "toggle",
+      "command": "remoteIO-fault",
+      "binding": "/controls/remoteIO/fault"
+    },
+    {
+      "id": "remoteIO-repair-control",
+      "label": "Repair equipment",
+      "component": "remoteIO",
+      "kind": "button",
+      "command": "remoteIO-repair"
     }
   ],
   "units": {
@@ -2816,6 +6408,12 @@
       "label": "Utility equipment is illustrative and may be optional",
       "value": true,
       "provenance": "assumed-topology"
+    },
+    {
+      "id": "instrumentation",
+      "label": "Instrumentation and PLC behavior",
+      "value": "Measurement taps and normalized valve gating only; no calibrated process recipe or safety logic",
+      "provenance": "demo-model"
     }
   ]
 }

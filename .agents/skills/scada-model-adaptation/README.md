@@ -14,4 +14,4 @@ flowchart TD
 | --- | --- |
 | [SKILL.md](SKILL.md) | Applicability, real prerequisites, source owners, procedure and acceptance evidence |
 
-[All skills](../README.md) · [SCADA owner](../../../software/cadagent/webkit/scada/README.md) · [Retained terms](../../../software/cadagent/webkit/scada/LICENSE.txt)
+[All skills](../README.md) · [SCADA owner](../../../software/cadagent/webkit/scada/README.md) · [MIT license](../../../software/cadagent/webkit/scada/LICENSE.txt)

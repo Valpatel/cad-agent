@@ -22,4 +22,8 @@ flowchart LR
 | [file-mesh-worker.js](file-mesh-worker.js) | Bounded mesh-format parsing worker. |
 | [file-step-worker.js](file-step-worker.js) | Bounded STEP parsing worker and decoder resources. |
 
+The standalone page follows the shared [application theme](../ui/README.md), including saved choices and
+system changes. An explicit `?theme=light`, `dark` or `auto` keeps its own mode and hides the page toggle.
+Embedded `createFileViewer` instances retain their scoped theme options and do not read application preferences.
+
 [Web kit](../README.md)

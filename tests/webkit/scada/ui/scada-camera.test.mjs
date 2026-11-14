@@ -34,12 +34,86 @@ test('direct or staged worlds fit below screen-space controls, without scroll co
     assert.equal(viewport.style.touchAction,'none');
     assert.equal(canvas.style.transform,'translate(76px, 64px) scale(0.324)');
     const fit = viewport.querySelector('[data-scada-camera-fit]');
-    assert.equal(fit.parentElement,viewport);
-    assert.equal(fit.textContent,'Zoom to fit');
-    assert.equal(fit.hasAttribute('data-scada-zoom'),false,'legacy toolbar selector stays unique');
+    assert.equal(fit.closest('[data-scada-camera-controls]').parentElement,viewport);
+    assert.equal(fit.textContent,'Fit');
+    assert.equal(fit.getAttribute('aria-label'),'Zoom to fit');
+    assert.equal(viewport.querySelectorAll('[data-scada-zoom]').length,4);
+    assert.equal(viewport.querySelectorAll('[data-scada-zoom=fit]').length,1,'one canonical in-view Fit action');
     if (stage) assert.equal(viewport.querySelector('[data-scada-stage]').style.width,'100%');
     camera.destroy(); fixture.window.close();
   }
+});
+
+test('one in-view toolbar owns zoom/reset/Fit without dispatching a host click or starting a drag', () => {
+  const fixture=setup(),{viewport,window,pointer}=fixture,camera=fixture.mount();
+  const toolbar=viewport.querySelector('[data-scada-camera-controls]');
+  assert.equal(toolbar.getAttribute('role'),'group');assert.equal(toolbar.getAttribute('aria-label'),'Diagram camera');
+  let hostClicks=0;viewport.parentElement.addEventListener('click',()=>hostClicks++);
+  const action=name=>toolbar.querySelector(`[data-scada-zoom=${name}]`);
+  action('reset').click();near(camera.state.zoom,1);assert.equal(action('reset').textContent,'100%');
+  action('in').click();near(camera.state.zoom,1.25);assert.equal(action('reset').textContent,'125%');
+  action('out').click();near(camera.state.zoom,1);
+  for(const button of toolbar.querySelectorAll('button')){
+    assert.ok(button.getAttribute('aria-label'));const before=camera.state;
+    pointer(button,'pointerdown');pointer(window,'pointermove',{x:140,y:160});pointer(window,'pointerup');
+    assert.deepEqual(camera.state,before,'camera controls never begin a world drag');
+  }
+  action('fit').click();near(camera.state.zoom,.324);assert.equal(camera.state.fitted,true);
+  assert.equal(hostClicks,0,'camera commands are consumed exactly once');
+  Object.defineProperty(toolbar,'offsetHeight',{value:92});camera.fit();
+  near(camera.state.y,112);near(camera.state.zoom,.276);
+  assert.ok(camera.state.y+1000*camera.state.zoom<=fixture.size.height-12);
+  const button=action('in'),before=camera.state;camera.destroy();button.click();assert.deepEqual(camera.state,before);
+  assert.equal(viewport.querySelector('[data-scada-camera-controls]'),null);window.close();
+});
+
+test('ultrawide fit can enlarge a world up to the explicit ceiling while the default stays at 100%', () => {
+  for (const [options,expected] of [[{},1],[{fitMaxZoom:1.5},1.5],[{fitMaxZoom:2},2],[{fitMaxZoom:3},3],[{fitMaxZoom:.025},.025]]) {
+    const fixture = setup({width:6200,height:3200}), camera = fixture.mount(options);
+    const {x,y,zoom,fitted} = camera.state;
+    near(zoom,expected); assert.equal(fitted,true);
+    assert.ok(x >= 12 && x + 2000*zoom <= fixture.size.width - 12);
+    assert.ok(y >= 64 && y + 1000*zoom <= fixture.size.height - 12);
+    camera.setZoom(3); assert.equal(camera.state.zoom,3,'fit ceiling does not cap manual zoom');
+    fixture.viewport.querySelector('[data-scada-camera-fit]').click();
+    near(camera.state.zoom,expected);
+    camera.destroy(); fixture.window.close();
+  }
+});
+
+test('enlarged fit still shrinks to smaller viewports and manual resize retains zoom and world center', () => {
+  const fixture = setup({width:6200,height:3200}), {size,observers} = fixture, camera = fixture.mount({fitMaxZoom:2});
+  assert.equal(camera.state.zoom,2);
+  size.width=1600; size.height=900; observers[0].callback();
+  near(camera.state.zoom,1576/2000);
+  assert.equal(camera.state.fitted,true);
+  assert.ok(camera.state.y >= 64 && camera.state.y + 1000*camera.state.zoom <= size.height - 12);
+  size.width=1600; size.height=400; observers[0].callback();
+  near(camera.state.zoom,324/1000); near(camera.state.y,64);
+  camera.setZoom(2.5); camera.panBy(70,-35);
+  const before = camera.state, worldCenter = {x:(800-before.x)/before.zoom,y:(200-before.y)/before.zoom};
+  size.width=1200; size.height=600; observers[0].callback();
+  assert.equal(camera.state.zoom,2.5); assert.equal(camera.state.fitted,false);
+  near((600-camera.state.x)/camera.state.zoom,worldCenter.x);
+  near((300-camera.state.y)/camera.state.zoom,worldCenter.y);
+  camera.destroy(); fixture.window.close();
+});
+
+test('invalid fit ceilings fail before DOM changes, listeners or observers are installed', () => {
+  const fixture = setup(), {window,viewport,observers} = fixture, before = viewport.outerHTML;
+  let listeners = 0, callbacks = 0;
+  for (const target of [window,viewport]) {
+    const add = target.addEventListener.bind(target);
+    target.addEventListener = (...args) => { listeners++; return add(...args); };
+  }
+  for (const fitMaxZoom of [0,-1,3.01,NaN,Infinity,-Infinity,null,'2',true]) {
+    assert.throws(() => fixture.mount({fitMaxZoom,onChange:() => callbacks++}), /fitMaxZoom/);
+    assert.equal(viewport.outerHTML,before);
+    assert.equal(observers.length,0);
+    assert.equal(listeners,0);
+    assert.equal(callbacks,0);
+  }
+  window.close();
 });
 
 test('pointer-anchored zoom preserves the world point and huge fitted layouts zoom out monotonically', () => {

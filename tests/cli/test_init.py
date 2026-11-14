@@ -183,9 +183,14 @@ def _wheel_smoke(tmp_path):
         metadata_paths = [name for name in names if name.endswith(".dist-info/METADATA")]
         assert len(metadata_paths) == 1
         metadata = BytesParser().parsebytes(wheel.read(metadata_paths[0]))
-        assert metadata["License"] == "MIT AND LicenseRef-SCADA-Retained-Terms"
+        assert metadata["License"] == "MIT"
         for notice in ("LICENSE.txt", "ui/LICENSE.txt", "sim/LICENSE.txt"):
-            assert "UNLICENSED" in wheel.read(f"cadagent/webkit/scada/{notice}").decode()
+            assert wheel.read(f"cadagent/webkit/scada/{notice}") == (source / "LICENSE").read_bytes()
+        third_party_notices = [p for p in (sdk_source / "vendor").rglob("*")
+                               if p.is_file() and ("LICENSE" in p.name.upper() or "NOTICE" in p.name.upper())]
+        assert third_party_notices, "the installed SDK must retain third-party rights notices"
+        for notice in third_party_notices:
+            assert wheel.read("cadagent/webkit/" + notice.relative_to(sdk_source).as_posix()) == notice.read_bytes()
         pardiso = [Requirement(r) for r in metadata.get_all("Requires-Dist", []) if Requirement(r).name == "pypardiso"]
         assert len(pardiso) == 1 and pardiso[0].marker is not None
         for system, machine, expected_pardiso in (("Linux", "x86_64", True), ("Windows", "AMD64", True),
@@ -281,7 +286,29 @@ console.log('installed copied SCADA PASS: all symbols, scenarios, commands and r
     equations = json.loads(run([node, copied_sdk / "scada/sim/examples/equation-models/run.mjs"]).stdout)
     assert equations["replay"] == "exact saved-state continuation verified"
     assert len(equations["results"]) == 4
-    print("installed copied SCADA PASS: full bytes, retained terms, all scenarios and swappable equations")
+    print("installed copied SCADA PASS: full bytes, MIT and third-party notices, all scenarios and swappable equations")
+    replay_probe = """import assert from 'node:assert/strict';
+import {readFileSync, existsSync} from 'node:fs';
+import {createHash} from 'node:crypto';
+import {pathToFileURL} from 'node:url';
+const root = pathToFileURL(process.argv[1] + '/');
+const read = name => JSON.parse(readFileSync(new URL(name, root), 'utf8'));
+const {validateRecording, samplePose, createPlayback} = await import(new URL('replay.js', root));
+const recording = validateRecording(read('examples/two-link-arm/recording.json'));
+const receipt = read('examples/two-link-arm/receipt.json');
+assert.equal(recording.duration, 10); assert.equal(recording.frames.length, 501);
+assert.equal(receipt.engine.name, 'MuJoCo');
+for (const [name, hash] of Object.entries(receipt.artifacts))
+  assert.equal(createHash('sha256').update(readFileSync(new URL('examples/two-link-arm/' + name, root))).digest('hex'), hash);
+const initial = samplePose(recording, 0), later = samplePose(recording, 3.2);
+assert.deepEqual(initial[0], later[0]); assert.notDeepEqual(initial[2], later[2]);
+const clock = createPlayback(recording); clock.play(); clock.advance(.1); assert.equal(clock.state().time, .1); clock.dispose();
+for (const name of ['viewer.html', 'viewer.js', 'viewer.css', 'scene.js', 'page.js', 'examples/two-link-arm/preview.webp', 'examples/two-link-arm/README.md'])
+  assert.ok(existsSync(new URL(name, root)), name);
+console.log('installed copied robot replay PASS');"""
+    replay = run([node, "--input-type=module", "-e", replay_probe, copied_sdk / "simulation"])
+    assert "installed copied robot replay PASS" in replay.stdout
+    print("installed copied robot replay PASS: recorded poses, solver hashes, interpolation and clock")
     # Profiles must be installed data, resolving real nested files with no checkout fallback.
     profile_probe = """import json
 from cadagent.publish.runtime import capture_profile

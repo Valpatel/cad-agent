@@ -1,7 +1,7 @@
 ---
 name: scada-system-authoring
 description: Use when defining a SCADA process, adding an example simulation, composing multiple layouts over one model or integrating a supported model adapter.
-license: UNLICENSED
+license: MIT
 metadata:
   requires: "node npm"
   optional: "scada-browser"
@@ -57,6 +57,11 @@ flowchart TD
    persistence, sound and destruction. A view only subscribes. Both v1 and v2
    read-only adapters omit `dispatch`; expose no writable controls, and test that
    observation never advances or resets the model.
+   Put frequent valve/pump commands directly on the diagram with the explicit
+   toggle `diagram: {whenTrue, whenFalse}` contract. Bind commanded switch state,
+   keep detailed faults/parameters in the inspector, and verify actual downstream
+   effects and unavailable/read-only behavior. A flagship overview should expose
+   connected branches; focused layouts reorganize those same equipment IDs.
 6. Add `sim/scenarios/<id>/{system,model}.json` and its entry in authored
    `sim/scenarios/index.json`. Keep the canonical host in
    [explorer/](../../../software/cadagent/webkit/scada/explorer/README.md).
@@ -86,4 +91,4 @@ flowchart TD
    evidence and missing physics. A topology SVG and a paused JPEG are useful
    previews; neither proves live interaction or engineering qualification.
 
-[Skill map](README.md) · [All skills](../README.md) · [Retained terms](../../../software/cadagent/webkit/scada/LICENSE.txt)
+[Skill map](README.md) · [All skills](../README.md) · [MIT license](../../../software/cadagent/webkit/scada/LICENSE.txt)

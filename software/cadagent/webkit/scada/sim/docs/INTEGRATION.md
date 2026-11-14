@@ -25,7 +25,7 @@ complete external network solver can instead implement the adapter directly.
 
 Neither package has to know your application framework. Importing either package creates no process clock or hardware connection. The UI never creates its own model per diagram view.
 
-For a local integration, copy or install the `ui/` and `sim/` source packages. Their manifests are private and `UNLICENSED`; a tarball is a distribution format and grants no additional license rights. Runtime module graphs are package-owned. Development tools and tests are repository-owned outside the runtime packages.
+For a local integration, copy or install the `ui/` and `sim/` source packages. Their project-owned source is MIT-licensed. The private manifest flag prevents accidental npm publication; it does not restrict reuse under the included license. Runtime module graphs are package-owned. Development tools and tests are repository-owned outside the runtime packages.
 
 The [Explorer](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/explorer/README.md) is a separate source owner beside both libraries. Serve `software/cadagent/webkit/` to use `/scada/explorer/`, or use the compiled site's `/kit/scada/explorer/`. The application owns the clock, navigation, browser file IO and audio. There is no generated Explorer copy inside `sim/examples/`.
 

@@ -30,9 +30,9 @@ positions are authored teaching assumptions, not measured facility specification
 
 ## Topology: Air, fuel & turbine
 
-<a href="../../img/topologies/power-utilities/power-gas-simple-cycle/topology.svg"><img src="../../img/topologies/power-utilities/power-gas-simple-cycle/topology.svg" width="900" alt="Simple-cycle gas turbine compact equipment-symbol topology of its first focused view"></a>
+<a href="../../img/topologies/power-utilities/power-gas-simple-cycle/topology.svg"><img src="../../img/topologies/power-utilities/power-gas-simple-cycle/topology.svg" width="900" alt="Simple-cycle gas turbine compact equipment-symbol topology of the selected focused view"></a>
 
-**Legend:** equipment symbols identify the first focused view's assets; connectors
+**Legend:** equipment symbols identify the selected focused view's assets; connectors
 show declared relationships between them. The SVG is a compact schematic with
 illustrative icon states, not a live snapshot or a prediction of instantaneous
 flow. [system.json](system.json) retains full port identities, other views and

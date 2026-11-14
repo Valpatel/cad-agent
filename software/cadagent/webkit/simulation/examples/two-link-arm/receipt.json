@@ -1,0 +1,147 @@
+{
+  "artifacts": {
+    "model.xml": "a53b35dbc64ef4035f02336d8d7d5d209ddfb7f0808139195976297acbc532bf",
+    "recording.json": "c090649e245efee73d4f55a4a765cf691061833bbcc6bf211fde143e6ca3535a"
+  },
+  "configuration": {
+    "assumptions": [
+      "Original illustrative fixed-base two-link arm; dimensions, masses, friction and controls are editable estimates, not measurements.",
+      "Rigid links use uniform-box mass properties; decorative joint and tool shapes do not add payload inertia.",
+      "Ideal hinge joints and bounded torque motors; no backlash, flexibility, thermal limits, motor electrical model or collision-avoidance controller.",
+      "Joint PD torque follows sinusoidal targets without gravity compensation; recorded poses are solver output, not commanded targets.",
+      "The browser interpolates sampled poses only. This does not establish physical fit, strength, control safety or Gyropup performance."
+    ],
+    "base_height_m": 0.18,
+    "base_radius_m": 0.13,
+    "duration_s": 10,
+    "gravity_m_s2": [
+      0,
+      0,
+      -9.81
+    ],
+    "initial_joint_rad": [
+      -0.5,
+      0.9
+    ],
+    "joint_damping_nms_rad": [
+      0.08,
+      0.05
+    ],
+    "joint_range_rad": [
+      -1.75,
+      1.75
+    ],
+    "kd_nms_rad": [
+      7,
+      4
+    ],
+    "kp_nm_rad": [
+      70,
+      45
+    ],
+    "link_depths_m": [
+      0.09,
+      0.075
+    ],
+    "link_lengths_m": [
+      0.38,
+      0.3
+    ],
+    "link_masses_kg": [
+      1.2,
+      0.7
+    ],
+    "link_widths_m": [
+      0.075,
+      0.06
+    ],
+    "sample_hz": 50,
+    "shoulder_height_m": 0.22,
+    "target_amplitude_rad": [
+      0.55,
+      0.45
+    ],
+    "target_frequency_hz": [
+      0.18,
+      0.27
+    ],
+    "target_offset_rad": [
+      -0.35,
+      1.0
+    ],
+    "target_phase_rad": [
+      0,
+      1.2
+    ],
+    "timestep_s": 0.002,
+    "title": "Two-link arm · recorded simulation",
+    "torque_limit_nm": [
+      22,
+      12
+    ]
+  },
+  "effective_settings": {
+    "completed_steps": 5000,
+    "duration_s": 10.0,
+    "frame_count": 501,
+    "gravity_m_s2": [
+      0.0,
+      0.0,
+      -9.81
+    ],
+    "integrator": "implicitfast",
+    "iterations": 50,
+    "randomness": "none; deterministic sinusoidal joint PD targets",
+    "sample_hz": 50,
+    "solver": "Newton",
+    "timestep_s": 0.002,
+    "tolerance": 1e-10
+  },
+  "engine": {
+    "name": "MuJoCo",
+    "version": "3.3.7"
+  },
+  "kind": "recorded simulation replay",
+  "limits": [
+    "Original illustrative fixed-base two-link arm; dimensions, masses, friction and controls are editable estimates, not measurements.",
+    "Rigid links use uniform-box mass properties; decorative joint and tool shapes do not add payload inertia.",
+    "Ideal hinge joints and bounded torque motors; no backlash, flexibility, thermal limits, motor electrical model or collision-avoidance controller.",
+    "Joint PD torque follows sinusoidal targets without gravity compensation; recorded poses are solver output, not commanded targets.",
+    "The browser interpolates sampled poses only. This does not establish physical fit, strength, control safety or Gyropup performance."
+  ],
+  "observations": {
+    "max_joint_speed_rad_s": [
+      1.4065918767367072,
+      4.881453345445329
+    ],
+    "max_target_error_rad": [
+      0.1705663425951922,
+      0.5194175886852518
+    ],
+    "peak_applied_torque_nm": [
+      15.378547227313357,
+      12.0
+    ],
+    "solver_warning_counts": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ]
+  },
+  "references": [
+    "https://mujoco.readthedocs.io/en/3.3.7/APIreference/APIfunctions.html#mj-step",
+    "https://mujoco.readthedocs.io/en/3.3.7/APIreference/APIfunctions.html#mj-forward",
+    "https://mujoco.readthedocs.io/en/3.3.7/APIreference/APItypes.html#mjdata",
+    "https://mujoco.readthedocs.io/en/3.3.7/XMLreference.html#body-inertial"
+  ],
+  "schema": "cad-agent.simulation-receipt/1",
+  "sources": {
+    "docs/examples/robot-replay/config.json": "5c0c89d4521aadc839553c7dfd048fe105fa43abf77cf2b6f28232c5b3908dcf",
+    "docs/examples/robot-replay/produce.py": "a3d2e3c6763a4b8354a29b19dfb24013634d3b3f9d31d23bae3b1c5064d8f670"
+  }
+}

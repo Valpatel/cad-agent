@@ -1,4 +1,4 @@
-import {UI, TOOLS, TESTS} from '../../../../tools/webkit/scada/paths.mjs';
+import {REPO, UI, TOOLS, TESTS} from '../../../../tools/webkit/scada/paths.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {mkdtemp,readFile,writeFile,mkdir,cp,rm,readdir} from 'node:fs/promises';
@@ -47,7 +47,7 @@ test('the actual npm tarball installs offline and exposes a self-contained publi
     import manifest from '@valpatel/scada-ui/package.json' with {type:'json'};
     assert.equal(manifest.version,${JSON.stringify(packageManifest.version)});
     assert.equal(manifest.private,true);
-    assert.equal(manifest.license,'UNLICENSED');
+    assert.equal(manifest.license,'MIT');
     assert.equal(library.SCADA_COMPONENTS.length,${SCADA_COMPONENTS.length});
     assert.strictEqual(metadata.SCADA_COMPONENTS,library.SCADA_COMPONENTS);
     assert.strictEqual(components.renderScadaComponent,library.renderScadaComponent);
@@ -94,6 +94,7 @@ test('the actual npm tarball installs offline and exposes a self-contained publi
   const installed=join(consumer,'node_modules/@valpatel/scada-ui');
   const manifest=JSON.parse(await readFile(join(installed,'package.json'),'utf8'));
   assert.equal(manifest.dependencies,undefined,'the UI package has no runtime npm dependencies');
+  assert.deepEqual(await readFile(join(installed,'LICENSE.txt')),await readFile(join(REPO,'LICENSE')),'installed UI consumers receive the complete project MIT grant');
   const visited=new Set();
   async function visitStyles(filename){
    const path=resolve(installed,filename);

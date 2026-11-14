@@ -93,7 +93,7 @@ flowchart TD
 
 ```bash
 PYTHONPATH=software python -m pytest -q                    # everything Python; or one folder: pytest tests/review
-node --test tests/webkit/*.test.mjs tests/site/website-*.test.mjs
+node --test tests/webkit/*.test.mjs tests/webkit/files/*.test.mjs tests/webkit/assembly/*.test.mjs tests/site/website-*.test.mjs
 npm --prefix tools/site run test:site && npm --prefix tools/site run test:part-table && npm --prefix tools/site run test:file-viewer && npm --prefix tools/site run test:diagrams
 ```
 

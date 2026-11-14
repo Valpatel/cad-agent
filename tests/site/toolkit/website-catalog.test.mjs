@@ -255,19 +255,64 @@ test('every cover is used once and no dense figure is a cover', async () => {
 test('Toolkit is a native capability with package terms and the same catalogue identity', async () => {
   for(const id of ['scada-elements','scada-simulations']) {
     const entry=catalog.items.find(i=>i.id==='demo-'+id);
-    assert.ok(entry,id);assert.equal(entry.kind,'demo');assert.equal(entry.status,'ours');assert.equal(entry.license,'UNLICENSED');
+    assert.ok(entry,id);assert.equal(entry.kind,'demo');assert.equal(entry.status,'ours');assert.equal(entry.license,'MIT');
     assert.ok(entry.url.startsWith(ORIGIN+'/toolkit/scada/'));
   }
   const toolkit=await json('toolkit/scada/catalog.json');
   assert.equal(toolkit.schema,'cad-agent-scada-browser/1');
+  assert.equal(toolkit.license,'MIT');
   assert.equal(toolkit.simulations[0].id,'wastewater-digester');
-  for(const route of ['toolkit','toolkit/scada','toolkit/scada/elements','toolkit/scada/simulations']) {
+  for(const route of ['toolkit','toolkit/scada','toolkit/scada/elements','toolkit/scada/simulations','toolkit/models']) {
     const html=await readFile(path.join(out,route+'.html'),'utf8');
     assert.ok(html.includes(`<link rel="canonical" href="${ORIGIN}/${route}">`));
     assert.ok(html.includes('href="/toolkit" data-keep aria-current="page"'));
     assert.doesNotMatch(html,/<iframe\b|digester-insight|chatgpt\.site/);
+    assert.doesNotMatch(html,/UNLICENSED|including the transferred SCADA libraries/);
     assert.ok((await readFile(path.join(out,route+'.md'),'utf8')).startsWith('# '));
   }
+});
+
+test('SCADA guides and skills resolve inside the published shared site frame',async()=>{
+  const html=await readFile(path.join(out,'toolkit/scada.html'),'utf8');
+  assert.doesNotMatch(html,/href="\/kit\/scada\/[^"#?]*\.md/);
+  const destinations=new Set([...html.matchAll(/href="([^"#]+)"/g)].map(match=>match[1]).filter(href=>href.startsWith('/repo/folders/')||href.startsWith('/skills/scada-')||href.startsWith('/docs/scada/')));
+  assert.ok(destinations.size>=9,'library maps, local guide and all five domain skills are discoverable');
+  for(const guide of ['architecture','local-use','resources-and-growth'])destinations.add(`/docs/scada/${guide}`);
+  for(const href of destinations) {
+    const target=await readFile(local(href)+'.html','utf8');
+    assert.match(target,/aria-label="Main"/);
+    assert.match(target,/href="\/toolkit"/);
+    assert.match(target,/href="\/docs\/agent-workflow"/);
+    assert.match(target,/Valpatel Software LLC/);
+  }
+});
+
+test('Toolkit working-example cards resolve to published local pages and complete owned assets', async () => {
+  const overview=await readFile(path.join(out,'toolkit.html'),'utf8');
+  const cards=[...overview.matchAll(/<article[^>]*data-toolkit-capability="([^"]+)"[^>]*>([\s\S]*?)<\/article>/g)];
+  assert.equal(cards.length,8);
+  for(const [,id,body] of cards) {
+    const image=body.match(/<img[^>]*src="([^"]+)"/)[1];
+    assert.ok(existsSync(local(image)),`${id} preview`);
+    const href=body.match(/data-toolkit-launch href="([^"]+)"/)[1].replaceAll('&amp;','&');
+    assert.ok(href.startsWith('/') && !href.startsWith('//'),`${id} must stay on the current site`);
+    const route=local(href), target=existsSync(route)?route:route+'.html';
+    assert.ok(existsSync(target),`${id} destination ${href}`);
+    const guideHref=body.match(/<a href="([^"]+)">(?:Guide|All simulations)<\/a>/)[1];
+    const guideTarget=local(guideHref);
+    assert.ok(existsSync(guideTarget)||existsSync(guideTarget+'.html'),`${id} guide destination ${guideHref}`);
+    const url=new URL(href,ORIGIN);
+    if(url.hash) assert.ok((await readFile(target,'utf8')).includes(`id="${url.hash.slice(1)}"`),`${id} destination anchor`);
+    for(const key of ['guide','file']) if(url.searchParams.has(key)) assert.ok(existsSync(local(url.searchParams.get(key))),`${id} input asset`);
+  }
+  const guide=await json('web/toolkit/assembly/guide.json'),view=await json('web/toolkit/assembly/view.json');
+  for(const binding of [guide.model,guide.assembly_plan,...view.parts]) {
+    const bytes=await readFile(path.join(out,'web/toolkit/assembly',binding.file));
+    assert.equal(createHash('sha256').update(bytes).digest('hex'),binding.sha256,binding.file);
+  }
+  const model=await readFile(path.join(out,'toolkit/models.html'),'utf8');
+  assert.match(model,/href="\/kit\/model\/model.css"/);
+  assert.match(model,/<cad-model[^>]*src="\/web\/models\/gyropup.json"/);
 });
 
 test('compare draws what the tool printed: the front over every objective, the lower bound kept, labels clear', async () => {

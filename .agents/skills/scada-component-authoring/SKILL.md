@@ -1,7 +1,7 @@
 ---
 name: scada-component-authoring
 description: Use when adding or repairing a SCADA equipment symbol, variant, visual state, animation, schema entry or its reusable gallery preview.
-license: UNLICENSED
+license: MIT
 metadata:
   requires: "node npm"
   optional: "scada-browser"
@@ -80,4 +80,4 @@ flowchart TD
    states, source identity and limits. Use [documentation maintenance](../repository-documentation/SKILL.md)
    for hierarchy and browseability. Existing coverage is not fresh proof for changed art.
 
-[Skill map](README.md) · [All skills](../README.md) · [Retained terms](../../../software/cadagent/webkit/scada/LICENSE.txt)
+[Skill map](README.md) · [All skills](../README.md) · [MIT license](../../../software/cadagent/webkit/scada/LICENSE.txt)

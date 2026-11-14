@@ -1,11 +1,11 @@
-import {lowContrast} from './site-outline.mjs';
+import {lowContrast} from './layout/outline.mjs';
 /** Load cad-agent.valpatel.com pages in a real browser, served the way Cloudflare Pages serves them (pretty URLs and
  * the _headers file, including the Content-Security-Policy), at phone and desktop widths.
  * Fails on console errors, CSP violations, failed or third-party requests, sideways scrolling, a phone header without
  * the Explore link or with overlapping visible controls, a hero animation that is not running (or still running under reduced motion), a catalogue
  * filter that hides results without saying so, and a diagram wider than the article column at 1100 px (the narrowest
  * width with the page tree), so no reader has to scroll a diagram sideways on a desktop, a wall of text: a stretch
- * of a page with nothing to look at longer than one and a half screens (tests/site/site-walls.mjs, #179), and diagrams that
+ * of a page with nothing to look at longer than one and a half screens (tests/site/layout/walls.mjs, #179), and diagrams that
  * move the page while it loads or need script to show (#132: the build draws them). Also the page tree's fold on
  * phones with nav.js loaded, late, blocked, failing or off, and outline jumps (foldProblems and jumpProblems, below). */
 import assert from 'node:assert/strict';
@@ -16,9 +16,10 @@ import path from 'node:path';
 import { chromium, webkit, expect } from './npm-context.mjs';
 import { builtSite } from './built-site.mjs';
 import { folderMapPath } from '../../tools/site/publication.mjs';
-import { reducedHeroProblems, repositoryHeroProblems, homepageModelProblems, learningPictureProblems, homepageLateDrawProblems, resultImageMotionProblems } from './site-motion.mjs';
-import { outlineEntryState, scrollOutline, sameSectionOutlineProblems, readerBoundaryProblems, readerOutlineClickProblems, readerOverflowProblems } from './site-outline.mjs';
-import { VIEWPORT, VISUAL, WALL_CLEARED, WALL_LIMIT, longestStretch, plantedScript, longCitationProblems } from './site-walls.mjs';
+import { reducedHeroProblems, repositoryHeroProblems, homepageModelProblems, learningPictureProblems, homepageLateDrawProblems, resultImageMotionProblems } from './layout/motion.mjs';
+import { outlineEntryState, scrollOutline, sameSectionOutlineProblems, readerBoundaryProblems, readerOutlineClickProblems, readerOverflowProblems } from './layout/outline.mjs';
+import { VIEWPORT, VISUAL, WALL_CLEARED, WALL_LIMIT, longestStretch, plantedScript, longCitationProblems } from './layout/walls.mjs';
+import { wideLayoutProblems } from './layout/wide.mjs';
 
 const root = path.resolve(import.meta.dirname, '../..');
 const site = await builtSite('cad-agent-website-browser-', { stdio: 'inherit' });   // CAD_AGENT_SITE, or a fresh build of HEAD
@@ -81,6 +82,7 @@ try {
   const parts = [
     ['README image motion', () => repositoryHeroProblems(browser, base)],
     ['long citation reflow', () => longCitationProblems(browser, base)],
+    ['wide layouts', () => wideLayoutProblems(browser, base)],
     ['header', headerProblems],          // painted text can collide even when the flex boxes and page do not overflow
     ['cantilever', cantileverProblems],  // the snap-arm explorer on /docs/compliant (#137), below
     ['fold', foldProblems],              // the page tree's fold on phones, with and without nav.js (#134)
@@ -1753,7 +1755,7 @@ async function themeProblems() {
           await page.evaluate(() => document.querySelectorAll('.cad-copy-btn').forEach(x => { if (x.dataset.was) x.dataset.state = x.dataset.was; else delete x.dataset.state; delete x.dataset.was; x.style.transition = ''; }));
         }
         if (how === 'button') {
-          // remembered on the next page (web/theme.js runs ahead of the stylesheets: tests/site/website-theme.test.mjs)
+          // remembered on the next page (kit/ui/theme.js runs ahead of the stylesheets: tests/site/website-theme.test.mjs)
           await page.goto(base + '/docs/toolkit', { waitUntil: 'load' });
           const next = await state(page);
           if (next.chosen !== theme || next.scheme !== theme) out.push(`${where}: the choice is not kept on the next page (${next.chosen}, ${next.scheme})`);

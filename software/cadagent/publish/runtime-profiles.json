@@ -75,7 +75,7 @@
         },
         "ui/theme.js": {
           "requires": [],
-          "sha256": "4167b92c8dff380e354387182c21ff64ecaa6014065233d871b427a915659993"
+          "sha256": "bec818983711f705b48f9df993ed4ee53a82093f1f750252103d0c1f8366b0e2"
         },
         "vendor/file-parsers/THREE-LICENSE.txt": {
           "requires": [],

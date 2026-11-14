@@ -17,4 +17,8 @@ flowchart LR
 | [model.js](model.js) | Inline `<cad-model>` packed-model element, lazy loading and presentation. |
 | [model.css](model.css) | Layout and states for inline model elements. |
 
+The standalone model/assembly page uses the shared [application theme](../ui/README.md) for its header,
+instructions and controls. Its theme toggle preserves the loaded model, guide step and camera; the dark
+3D stage keeps its independent rendering palette. Frozen assembly runtimes include the shared theme assets.
+
 [Web kit](../README.md)

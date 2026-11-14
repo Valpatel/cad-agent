@@ -64,4 +64,4 @@ Standalone entrypoints remain supported. Simulation clocks and command authority
 belong to the application/session, not this presentation host. Load only scoped
 host CSS in embedded pages; `hud.css` and `file-viewer.css` retain legacy page rules.
 
-[Web kit](../README.md) · [Browser tests](../../../../tests/webkit/host/README.md)
+[Web kit](../README.md) · [Browser tests](https://github.com/Valpatel/cad-agent/tree/dev/tests/webkit/host)

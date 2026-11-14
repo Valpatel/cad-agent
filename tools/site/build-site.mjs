@@ -692,9 +692,9 @@ export const CSP = `default-src 'self'; script-src 'self' ${[...inlineHashes].so
 // Cloudflare Pages redirects: each moved page and its Markdown twin, to the new path.
 await writeFile(path.join(out, '_redirects'), redirects.flatMap(([from, to]) =>
   [`/${from.replace(/\.md$/, '')} /${publicPath(to).replace(/\.md$/, '')} 301`, `/${from} /${publicPath(to)} 301`]).join('\n') + (redirects.length ? '\n' : ''));
-// The kit's own pages (kit/*.html) are copied byte for byte from the kit, so they cannot carry a canonical <link>;
-// Pages sends it as a Link header instead, at the pretty URL Pages serves them on (/kit/viewer, not /kit/viewer.html).
-const kitPages = (await readdir(path.join(out, 'kit'))).filter(f => f.endsWith('.html')).sort().map(f => '/kit/' + f.replace(/\.html$/, ''));
+// The kit's own pages are copied byte for byte, so their canonical is a Link header.
+// Include nested owner folders as well as standalone entrypoints.
+const kitPages = (await htmlFiles(path.join(out, 'kit'))).sort().map(f => '/' + path.relative(out, f).split(path.sep).join('/').replace(/\/index\.html$/, '/').replace(/\.html$/, ''));
 await writeFile(path.join(out, '_headers'), [
   '/*', '  X-Content-Type-Options: nosniff', '  Referrer-Policy: strict-origin-when-cross-origin', `  Content-Security-Policy: ${CSP}`,
   '  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()', '  Cross-Origin-Opener-Policy: same-origin',

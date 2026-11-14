@@ -20,6 +20,7 @@
     const host=document.querySelector('#file-viewer'),fallback=host.querySelector('.file-bootstrap');
     const requestedTheme=new URLSearchParams(location.search).get('theme');
     const explicitTheme=['light','dark','auto'].includes(requestedTheme);
+    document.documentElement.toggleAttribute('data-file-shared-theme',!explicitTheme);
     const themeButton=document.getElementById('page-theme');
     if(explicitTheme)themeButton.remove();
     const sharedTheme=()=>{

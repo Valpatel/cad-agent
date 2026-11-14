@@ -30,9 +30,9 @@ positions are authored teaching assumptions, not measured facility specification
 
 ## Topology: Main process
 
-<a href="../../img/topologies/chemicals/industrial-detergent/topology.svg"><img src="../../img/topologies/chemicals/industrial-detergent/topology.svg" width="900" alt="Industrial detergent compact equipment-symbol topology of its first focused view"></a>
+<a href="../../img/topologies/chemicals/industrial-detergent/topology.svg"><img src="../../img/topologies/chemicals/industrial-detergent/topology.svg" width="900" alt="Industrial detergent compact equipment-symbol topology of the selected focused view"></a>
 
-**Legend:** equipment symbols identify the first focused view's assets; connectors
+**Legend:** equipment symbols identify the selected focused view's assets; connectors
 show declared relationships between them. The SVG is a compact schematic with
 illustrative icon states, not a live snapshot or a prediction of instantaneous
 flow. [system.json](system.json) retains full port identities, other views and

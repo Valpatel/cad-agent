@@ -28,11 +28,11 @@ Use the [v1 model schema](../../schema/placeholder-model-v1.schema.json) and mat
 Keep component IDs synchronized between the two JSON documents. Parameters and
 positions are authored teaching assumptions, not measured facility specifications.
 
-## Topology: Winery overview
+## Topology: Fermentation & cellar
 
-<a href="../../img/topologies/food-beverage/winery/topology.svg"><img src="../../img/topologies/food-beverage/winery/topology.svg" width="900" alt="Winery compact equipment-symbol topology of its first focused view"></a>
+<a href="../../img/topologies/food-beverage/winery/topology.svg"><img src="../../img/topologies/food-beverage/winery/topology.svg" width="900" alt="Winery compact equipment-symbol topology of the selected focused view"></a>
 
-**Legend:** equipment symbols identify the first focused view's assets; connectors
+**Legend:** equipment symbols identify the selected focused view's assets; connectors
 show declared relationships between them. The SVG is a compact schematic with
 illustrative icon states, not a live snapshot or a prediction of instantaneous
 flow. [system.json](system.json) retains full port identities, other views and
@@ -46,7 +46,7 @@ connections; [model.json](model.json) owns behavior and editable assumptions.
 | Focused view | ID | Equipment placements |
 | --- | --- | ---: |
 | Winery overview | `process` | 23 |
-| Fermentation & cellar | `fermentation` | 12 |
+| Fermentation & cellar | `fermentation` | 10 |
 | Bottling & packaging | `finishing` | 10 |
 | Power & instruments | `utilities` | 19 |
 

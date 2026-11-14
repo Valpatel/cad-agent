@@ -23,7 +23,8 @@ Experiments live in `index.json`, not in separate files. Thumbnails belong to
 [SCADA UI gallery](../../ui/img/README.md). Do not copy either into a host app.
 
 The [topology SVGs](../img/topologies/README.md) reuse those equipment symbols in
-compact schematics of each first focused view. They show declared relationships
+compact schematics of a declared focused view. `topologyView` in the catalog can
+select that static view explicitly; otherwise it uses the initial view. They show declared relationships
 with illustrative icon states; captured thumbnails separately show a model state.
 Use `npm --prefix tools/webkit/scada run topologies:generate` in the source repository to regenerate the SVGs
 from their canonical inputs, or `npm --prefix tools/webkit/scada run topologies:check` to check for drift.

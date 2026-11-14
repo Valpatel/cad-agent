@@ -10,7 +10,7 @@
     lc.stats                                       # how far past the worst corner: p99, elements and volume past 1
     st.render('exports/fea/thigh.png')             # coloured by von Mises; field=lc colours by the layer check
     st.animate('exports/fea/thigh.mp4')            # the load ramped past first failure (overstressed region black)
-    st.export_viewer('exports/fea/thigh.json')     # for the web kit's interactive viewer: kit/fea.html?case=...
+    st.export_viewer('exports/fea/thigh.json')     # for the web kit's interactive viewer: kit/fea/fea.html?case=...
 
 Units: millimetres, newtons, MPa (N/mm²), so displacements come out in mm and stresses in MPa.
 
@@ -1869,7 +1869,7 @@ class Study:
 
     # --- interactive viewer data
     def export_viewer(self, path, overload: float = 1.3, spots: int = 8) -> Path:
-        """Write the solved study for the web kit's FEA viewer (webkit/fea-viewer.js, fea.html?case=<this file>).
+        """Write the solved study for the web kit's FEA viewer (webkit/fea/fea-viewer.js, fea.html?case=<this file>).
 
         Compact JSON: the boundary surface only (vertices in mm, outward-wound triangles), with base64 float32/uint32
         arrays for the per-vertex displacement (mm, at the design load); the per-vertex von Mises stress (MPa), which

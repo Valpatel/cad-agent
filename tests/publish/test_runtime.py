@@ -38,19 +38,19 @@ def test_actual_profile_is_minimal_and_does_not_grow_with_unrelated_assets(tmp_p
     after = capture(kit, manifest)
     assert dict(after) == dict(before)
     assert after.identity == before.identity
-    assert {"viewer.html", "viewer.js", "assembly/guide.js", "stage.js", "hud.css"} <= set(after)
+    assert {"model/viewer.html", "model/viewer.js", "assembly/guide.js", "model/stage.js", "ui/hud.css"} <= set(after)
     assert "vendor/mermaid/mermaid.min.js" not in after
     assert sum(map(len, after.values())) < 1_000_000
     with pytest.raises(TypeError):
-        after.files["viewer.js"] = b"mutation"
+        after.files["model/viewer.js"] = b"mutation"
     with pytest.raises(TypeError):
         after.identity["profile"] = "changed"
-    old = after["viewer.js"]
-    (kit / "viewer.js").write_bytes(b"changed after capture")
-    assert after["viewer.js"] == old
+    old = after["model/viewer.js"]
+    (kit / "model/viewer.js").write_bytes(b"changed after capture")
+    assert after["model/viewer.js"] == old
 
 
-@pytest.mark.parametrize("name", ["viewer.js", "assembly/guide.js", "vendor/fonts/fonts.css",
+@pytest.mark.parametrize("name", ["model/viewer.js", "assembly/guide.js", "vendor/fonts/fonts.css",
                                   "vendor/fonts/inter.woff2", "assembly/NOTICE.txt", "vendor/file-parsers/THREE-LICENSE.txt"])
 @pytest.mark.parametrize("failure", ["missing", "changed"])
 def test_missing_or_tampered_runtime_fails(tmp_path, name, failure):
@@ -64,7 +64,7 @@ def test_missing_or_tampered_runtime_fails(tmp_path, name, failure):
 def test_dynamic_worker_decoder_dependencies_are_required_when_a_profile_declares_them(tmp_path):
     kit, manifest, document = fixture(tmp_path)
     files = document["profiles"]["assembly-reader"]["files"]
-    files["viewer.js"]["requires"].append("nested/worker.js")
+    files["model/viewer.js"]["requires"].append("nested/worker.js")
     for name, data, requires in (("nested/worker.js", b"// fixture worker", ["nested/decoder.wasm"]),
                                  ("nested/decoder.wasm", b"fixture decoder bytes", [])):
         target = kit / name
@@ -91,13 +91,13 @@ def test_invalid_manifest_is_rejected(tmp_path, failure):
     elif failure == "extra-field":
         profile["url"] = "https://example.com/kit"
     elif failure == "hash":
-        profile["files"]["viewer.js"]["sha256"] = True
+        profile["files"]["model/viewer.js"]["sha256"] = True
     elif failure == "missing-edge":
-        del profile["files"]["hud.css"]
+        del profile["files"]["ui/hud.css"]
     elif failure == "orphan":
         profile["files"]["unused.js"] = {"sha256": "0" * 64, "requires": []}
     elif failure == "duplicate":
-        profile["entrypoints"].append("viewer.html")
+        profile["entrypoints"].append("model/viewer.html")
     else:
         profile["entrypoints"].append("../outside" if failure == "traversal" else "/outside")
     manifest.write_text(json.dumps(document))
@@ -117,7 +117,7 @@ def test_duplicate_keys_and_unknown_profiles_fail(tmp_path):
 @pytest.mark.parametrize("directory", [False, True])
 def test_symlinked_file_or_parent_is_rejected(tmp_path, directory):
     kit, manifest, _ = fixture(tmp_path)
-    target = kit / ("assembly" if directory else "viewer.js")
+    target = kit / ("assembly" if directory else "model/viewer.js")
     moved = tmp_path / "moved"
     target.rename(moved)
     target.symlink_to(moved, target_is_directory=directory)
@@ -136,12 +136,12 @@ def test_other_profile_does_not_change_assembly_identity(tmp_path):
 def test_refresh_is_explicit_and_normal_capture_never_changes_manifest(tmp_path):
     kit, manifest, _ = fixture(tmp_path)
     before = manifest.read_bytes()
-    (kit / "viewer.js").write_bytes(b"// reviewed changed source")
+    (kit / "model/viewer.js").write_bytes(b"// reviewed changed source")
     with pytest.raises(CadConfigError, match="hash mismatch"):
         capture(kit, manifest)
     assert manifest.read_bytes() == before
     runtime.refresh_profiles(kit_dir=kit, manifest_path=manifest)
-    assert capture(kit, manifest)["viewer.js"] == b"// reviewed changed source"
+    assert capture(kit, manifest)["model/viewer.js"] == b"// reviewed changed source"
 
 
 def test_release_uses_profile_receipt_and_rejection_preserves_previous_archive(tmp_path, monkeypatch):
@@ -156,7 +156,7 @@ def test_release_uses_profile_receipt_and_rejection_preserves_previous_archive(t
     assert record["files"] == {name: hashlib.sha256(data).hexdigest() for name, data in bundle.items()}
     before = {p.relative_to(output): p.read_bytes() for p in output.rglob("*") if p.is_file()}
     zipped = first.zip_path.read_bytes()
-    (kit / "hud.css").unlink()
+    (kit / "ui/hud.css").unlink()
     with pytest.raises(CadConfigError, match="missing.*hud.css"):
         release.build_release(project, out=output, date="2026-11-13")
     assert {p.relative_to(output): p.read_bytes() for p in output.rglob("*") if p.is_file()} == before

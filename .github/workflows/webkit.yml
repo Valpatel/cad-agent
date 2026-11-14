@@ -46,7 +46,7 @@ jobs:
       # so a change to them starts an empty cache instead of carrying every old drawing along.
       - name: Key the diagram cache
         id: diagrams
-        run: echo "key=site-diagrams-playwright-1.56.1-noble-f1e7e01021efd65dd1a2c56064be399f3e4de00fd021ac561325f2bfbb2b837a-${{ hashFiles('tools/site/package-lock.json', 'tools/site/compiler/site-diagrams.mjs', 'tools/site/assets/site.css', 'software/cadagent/webkit/diagrams.*', 'software/cadagent/webkit/vendor/mermaid/**', 'software/cadagent/webkit/vendor/fonts/**') }}" >> "$GITHUB_OUTPUT"
+        run: echo "key=site-diagrams-playwright-1.56.1-noble-f1e7e01021efd65dd1a2c56064be399f3e4de00fd021ac561325f2bfbb2b837a-${{ hashFiles('tools/site/package-lock.json', 'tools/site/compiler/site-diagrams.mjs', 'tools/site/assets/site.css', 'software/cadagent/webkit/documents/diagrams.*', 'software/cadagent/webkit/vendor/mermaid/**', 'software/cadagent/webkit/vendor/fonts/**') }}" >> "$GITHUB_OUTPUT"
       - uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9   # v6.1.0
         with:
           path: .cache/site-diagrams
@@ -93,6 +93,12 @@ jobs:
         env:
           PLAYWRIGHT_CHANNEL: chromium
           PLAYWRIGHT_BROWSER: ${{ matrix.engine }}
+      - run: npm run test:stage
+        working-directory: tools/site
+        env:
+          PLAYWRIGHT_CHANNEL: chromium
+          PLAYWRIGHT_BROWSER: ${{ matrix.engine }}
+          TEST_SOURCE_REVISION: ${{ github.sha }}
       - run: npm run test:part-table
         working-directory: tools/site
         env:

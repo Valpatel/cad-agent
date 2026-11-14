@@ -235,7 +235,7 @@ print(json.dumps({"package": str(Path(cadagent.__file__).resolve()), "project": 
 const sdk = await import(pathToFileURL(process.argv[1]).href);
 if (typeof sdk.snapArm !== 'function' || sdk.SMALL_DEFLECTION !== 0.1) throw new Error('wrong installed SDK exports');
 console.log('installed SDK ESM PASS');"""
-    good_sdk = run([node, "--input-type=module", "-e", sdk_probe, sdk / "formulas.js"])
+    good_sdk = run([node, "--input-type=module", "-e", sdk_probe, sdk / "calculators/formulas.js"])
     assert "installed SDK ESM PASS" in good_sdk.stdout
     # Consume the actual copied SDK after installation and source removal. This
     # catches missing nested assets as well as imports that reach into a checkout.
@@ -306,10 +306,10 @@ console.log('installed nested reader PASS');"""
     # Only the installed scope metadata changes; source is gone, starter remains installed and module bytes match.
     (sdk / "package.json").unlink()
     assert Path(paths["declared_config"]).is_file() and not source.exists()
-    assert hashlib.sha256((sdk / "formulas.js").read_bytes()).hexdigest() == sdk_expected["formulas.js"]
-    bad_sdk = run([node, "--input-type=module", "-e", sdk_probe, sdk / "formulas.js"], check=False)
+    assert hashlib.sha256((sdk / "calculators/formulas.js").read_bytes()).hexdigest() == sdk_expected["calculators/formulas.js"]
+    bad_sdk = run([node, "--input-type=module", "-e", sdk_probe, sdk / "calculators/formulas.js"], check=False)
     assert bad_sdk.returncode != 0 and "SyntaxError" in bad_sdk.stderr and "export" in bad_sdk.stderr, (bad_sdk.stdout, bad_sdk.stderr)
-    assert str(sdk / "formulas.js") in bad_sdk.stderr and "installed SDK ESM PASS" not in bad_sdk.stdout
+    assert str(sdk / "calculators/formulas.js") in bad_sdk.stderr and "installed SDK ESM PASS" not in bad_sdk.stdout
     print(f"installed SDK scope PASS on Node {node_version}: real file-URL import and missing-metadata rejection")
     Path(paths["declared_config"]).unlink()
     rejected = outside / "missing-starter"

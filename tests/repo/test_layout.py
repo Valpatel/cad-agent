@@ -54,10 +54,7 @@ CLUTTER_LIMIT = 20
 NOT_COUNTED = re.compile(r"^software/vendor/|/vendor/|^tests/fixtures/|^docs/img/")
 # Folders over the limit today. Each one is split in a PR that touches it, and comes off this list. The list may only
 # shrink: a folder newly over the limit is split in the PR that takes it over, not added here.
-OVER_LIMIT = {
-    "software/cadagent/webkit": "browser modules served as one folder (pyproject package-data webkit/*); a split moves "
-                           "their URLs",
-}
+OVER_LIMIT = {}
 
 IMPORT = re.compile(r"^\s*(?:from|import)\s+cadagent\.([a-z_.]+)", re.M)     # cadagent.<pkg>[.<sub>...]
 FROM_TOP = re.compile(r"^\s*from\s+cadagent\s+import\s+(\([^)]*\)|[^\n]+)", re.M)  # from cadagent import a, b as c

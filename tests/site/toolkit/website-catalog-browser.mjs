@@ -112,7 +112,7 @@ async function sharedDiscoveryChecks() {
       await page.goForward(); if (await box.inputValue() !== 'disassembly') fail('Explore', 'Forward lost the deliberate query');
     } finally { await done(); }
   }
-  for (const options of [{js:false}, {block:'/kit/gallery.js'}, {block:'/web/site.js'}]) {
+  for (const options of [{js:false}, {block:'/kit/ui/gallery.js'}, {block:'/web/site.js'}]) {
     const {page, done} = await open('/explore', {width:320, ...options});
     try {
       if (await page.getByRole('link',{name:'Full catalogue',exact:true}).count()) fail('Explore fallback','competing catalogue entrance remains');
@@ -164,7 +164,7 @@ async function legacyChecks(){
    if(selected!=='tools'){await page.goBack();if(new URL(page.url()).hash!=='#'+anchor)fail('legacy hash history','Back lost '+anchor);}
   }finally{await done();}
  }
- for(const config of [{js:false},{block:'/kit/gallery.js'},{block:'/web/site.js'}]){
+ for(const config of [{js:false},{block:'/kit/ui/gallery.js'},{block:'/web/site.js'}]){
   const {page,done}=await open('/catalog?kind=tools&area=gears',config);try{
    await nativeGroups(page);const ids=(await visible(page)).sort(),expected=catalog.items.map(x=>x.id).sort();
    if(JSON.stringify(ids)!==JSON.stringify(expected))fail('legacy fallback '+JSON.stringify(config),JSON.stringify({missing:expected.filter(id=>!ids.includes(id)),unexpected:ids.filter(id=>!expected.includes(id)),groups:await page.locator('details[data-group]').evaluateAll(xs=>xs.map(e=>({group:e.dataset.group,open:e.open,visible:e.checkVisibility(),display:getComputedStyle(e).display}))),ready:await page.locator('cad-gallery').getAttribute('data-ready')}));
@@ -234,7 +234,7 @@ async function readerChecks(){
    const stamp=await page.locator('.site-footer time').evaluate(t=>({datetime:t.dateTime,text:t.textContent}));if(!/^\d{4}-\d{2}-\d{2}T/.test(stamp.datetime)||!/(?:PST|PDT)/.test(stamp.text))fail('timestamp','lost recorded instant/Pacific label');
   }finally{await done();}
  }
- for(const config of [{js:false},{block:'/kit/nav.js'},{block:'/web/site.js'}]){
+ for(const config of [{js:false},{block:'/kit/documents/nav.js'},{block:'/web/site.js'}]){
   const {page,done}=await open('/docs/toolkit',{width:390,...config});try{
    await page.locator('cad-nav .cad-nav-toggle').click();if(!await page.locator('.explore-mobile-outline a').first().isVisible())fail('reader fallback','static article outline missing');
    const link=page.locator('.explore-mobile-outline a').first();await link.click();const hash=new URL(page.url()).hash;if(!hash||!await page.locator('[id="'+decodeURIComponent(hash.slice(1))+'"]').isVisible())fail('reader fallback','native outline target unavailable');

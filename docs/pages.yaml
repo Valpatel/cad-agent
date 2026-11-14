@@ -401,14 +401,14 @@ docs/practice/web-parts.md:
       below: supplies visible header sort buttons
       img: docs/img/kit/part-table.webp
       shows: output
-      tool: kit/part-table.js
+      tool: kit/assembly/part-table.js
       on: fixture
       caption: The part table and tracker on the gate bench's 26 parts, one row per entry in its committed geometry record (19 rows; the eight balls share one), with the words of its dossier cards, sorted by size. A cell the bench does not declare says so. Nothing is marked ordered or printed; a mark stays in the reader's browser until exported.
       alt: A sortable table of the gate bench's parts with columns for part, section, what it does, size and count, and Ordered and Printed checkboxes, above export and import buttons, a search box and a sort menu showing 19 of 19 parts
     - after: validation
       img: docs/img/kit/part-table-search.webp
       shows: output
-      tool: kit/part-table.js
+      tool: kit/assembly/part-table.js
       on: fixture
       caption: The same table searched for "screw". It keeps the 9 of its 19 rows whose text names a screw (the lid, the four inserts and the four screws), says so beside the box (the kit counts rows as parts), and keeps the sort.
       alt: The gate bench's part table filtered by the search "screw", showing 9 of 19 rows, the lid, four heat-set inserts and four M3 screws
@@ -418,28 +418,28 @@ docs/practice/file-viewer.md:
     - after: behavior-and-limits
       img: docs/img/kit/file-viewer-step.webp
       shows: output
-      tool: kit/file-viewer.js
+      tool: kit/files/file-viewer.js
       on: gyropup
       caption: Gyropup's left hip motor plate, opened from its STEP file. The viewer's worker tessellated it into 7,724 triangles, 164.02 × 24.1 × 178 mm, and placed it on the floor, fitted. A visual tessellation, not a manufacturing check.
       alt: The file viewer showing a grey motor plate with a large bore and a ring of screw holes in an isometric view, with view buttons and the file's format, triangle count and size below
     - after: embedding
       img: docs/img/kit/file-viewer-front.webp
       shows: output
-      tool: kit/file-viewer.js
+      tool: kit/files/file-viewer.js
       on: gyropup
       caption: The same viewer after viewer.fit('front'). The camera moves to a standard view; the file is not loaded again.
       alt: The same motor plate seen straight from the front, its bore and screw holes in full view
     - after: product-themes
       img: docs/img/kit/file-viewer-theme.webp
       shows: output
-      tool: kit/file-viewer.js
+      tool: kit/files/file-viewer.js
       on: gyropup
       caption: The same viewer after setTheme() with the light palette below (accent #126d58, surface #fffaf2). The model, its materials and the camera stay as they were.
       alt: The same motor plate in the viewer's light theme, on a white stage with a cream header and controls
     - after: reproducing-validation
       img: docs/img/kit/file-viewer-error.webp
       shows: output
-      tool: kit/file-viewer.js
+      tool: kit/files/file-viewer.js
       on: gyropup
       caption: Broken files are part of the validation. Here, the first half of the same STEP file, cut off. The viewer says it found no surfaces it can show and offers Retry; the download link stays.
       alt: The file viewer with an error panel reading that the STEP reader could not find displayable surfaces in this file, a Retry file button, and the view buttons dimmed
@@ -465,14 +465,14 @@ docs/lessons/review/review-site-ux.md:
     - after: answer-recurring-which-part-questions-with-a-table-and-a-labelled-render
       img: docs/img/kit/part-table.webp
       shows: output
-      tool: kit/part-table.js
+      tool: kit/assembly/part-table.js
       on: fixture
       caption: The kit's part table on the gate bench's parts. Each kind of part is one row with its count, sortable and searchable, with what it does and its size.
       alt: A sortable table of the gate bench's parts with columns for part, section, what it does, size and count, and Ordered and Printed checkboxes
     - after: make-wheel-zoom-fine-enough-to-inspect-small-features
       img: docs/img/kit/file-viewer-front.webp
       shows: output
-      tool: kit/file-viewer.js
+      tool: kit/files/file-viewer.js
       on: gyropup
       caption: The shared file viewer, on Gyropup's hip motor plate. Its wheel moves the camera in small eased steps (about 1.57 percent per 120 px notch, docs/practice/file-viewer.md), so every project gets the same fine zoom.
       alt: The file viewer showing a motor plate from the front, its bore and screw holes in full view
@@ -828,7 +828,7 @@ docs/toolkit.md:
       below: Show everything the parts fit around
       img: docs/img/kit/file-viewer-step.webp
       shows: output
-      tool: kit/file-viewer.js
+      tool: kit/files/file-viewer.js
       on: gyropup
       caption: "The web kit's single-file viewer, a sibling of viewer.html: a motor plate opened from its STEP file, tessellated into 7,724 triangles, 164.02 × 24.1 × 178 mm, placed on the floor and fitted. A visual tessellation, not a manufacturing check."
       alt: The file viewer showing a grey motor plate with a large bore and a ring of screw holes in an isometric view, with view buttons and the file's format, triangle count and size below
@@ -861,7 +861,7 @@ docs/toolkit.md:
       img: docs/img/thermal/fan-curve-explorer.svg
       shows: diagram
       drawn_by: tools/site/figures/fan-curve-still.mjs
-      tool: kit/fan-curve.js
+      tool: kit/calculators/fan-curve.js
       on: example
       caption: "The balance operating_point() finds, as the fans page's explorer draws it: a fan's datasheet curve (one ebm-papst W2G115-AD15-13 at 12 V) against a system's resistance, here a system needing 12 Pa at 100 m³/h rather than a heatsink. They cross at 150 m³/h and 26.9 Pa, clear of the stall region below 132 m³/h."
       alt: "A fan's datasheet pressure-flow curve against a system curve: they cross at 150 cubic metres per hour and 26.9 Pa, clear of the shaded stall region below 132"
@@ -904,7 +904,7 @@ docs/research/simulation-tools.md:
       img: docs/img/thermal/fan-curve-explorer.svg
       shows: diagram
       drawn_by: tools/site/figures/fan-curve-still.mjs
-      tool: kit/fan-curve.js
+      tool: kit/calculators/fan-curve.js
       on: example
       caption: "A fan operating point from a datasheet curve, as (a) needs it, drawn by the fans page's explorer: one ebm-papst W2G115-AD15-13 at 12 V against a system needing 12 Pa at 100 m³/h. They cross at 150 m³/h and 26.9 Pa, clear of the stall region below 132 m³/h."
       alt: "A fan's datasheet pressure-flow curve against a system curve: they cross at 150 cubic metres per hour and 26.9 Pa, clear of the shaded stall region below 132"

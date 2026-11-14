@@ -141,7 +141,7 @@ test('code samples keep their text, and every code block has a copy button', asy
   const diagrams = (toolkit.match(/<pre><code class="language-mermaid">/g) || []).length;
   assert.ok(pres > 3 && wrapped === pres - diagrams, `${wrapped} of ${pres} code blocks have a copy button`);
   assert.match(await readFile(path.join(out, 'index.html'), 'utf8'), /<cad-copy class="agent-copy"[^>]*><pre class="agent-box"/);
-  assert.ok(files.includes('kit/copy.js'));
+  assert.ok(files.includes('kit/documents/copy.js'));
 });
 
 test('home, README and agent indexes reach the canonical checked installers (#278, #282, #322)', async () => {
@@ -339,7 +339,7 @@ test('headers: stable assets revalidate, each header has one rule, and inline sc
   const rules = parseHeaders(text);
   const vendorPaths = files.filter(f => f.startsWith('kit/vendor/')).map(f => '/' + f);
   assert.ok(vendorPaths.includes('/kit/vendor/fonts/fonts.css') && vendorPaths.includes('/kit/vendor/fonts/SOURCE.json'));
-  for (const p of ['/', '/docs/toolkit', '/docs/toolkit.md', '/llms.txt', '/install.sh', '/install.ps1', '/kit/viewer', ...vendorPaths]) {
+  for (const p of ['/', '/docs/toolkit', '/docs/toolkit.md', '/llms.txt', '/install.sh', '/install.ps1', '/kit/model/viewer', ...vendorPaths]) {
     const seen = {};
     for (const r of rules) if (r.pattern.test(p)) for (const [k] of r.headers) seen[k.toLowerCase()] = (seen[k.toLowerCase()] || 0) + 1;
     for (const [k, n] of Object.entries(seen)) assert.equal(n, 1, `${p}: ${k} is set by ${n} rules and Pages would join them`);
@@ -384,7 +384,7 @@ test('headers: stable assets revalidate, each header has one rule, and inline sc
 
 test('code samples keep their links as written (no rewriting inside code)', async () => {
   const viewer = await readFile(path.join(out, 'docs/file-viewer.html'), 'utf8');
-  assert.match(viewer, /<code[^>]*>[^<]*href="kit\/file-viewer\.html\?file=/, 'the file-viewer snippet was rewritten');
+  assert.match(viewer, /<code[^>]*>[^<]*href="kit\/files\/file-viewer\.html\?file=/, 'the file-viewer snippet was rewritten');
   for (const f of files.filter(f => f.endsWith('.html') && !f.startsWith('kit/')))
     assert.ok(!(await readFile(path.join(out, f), 'utf8')).includes('&amp;amp;'), `${f}: an entity encoded twice`);
 });
@@ -395,8 +395,8 @@ test('the snap-arm explorer is on its page with its still, and only that page lo
   assert.ok(demo, 'no <cad-cantilever> on /docs/compliant');
   assert.match(demo[1], /<img src="\/docs\/img\/compliant\/cantilever-explorer\.svg" alt="[^"]{40,}" width="640" height="250" ?\/?>/);
   const head = page.slice(0, page.indexOf('</head>'));
-  assert.match(head, /<link rel="stylesheet" href="\/kit\/cantilever\.css"><link rel="modulepreload" href="\/kit\/cantilever\.js">/);
-  for (const f of ['kit/cantilever.js', 'kit/cantilever.css', 'kit/formulas.js', 'kit/formulas-data.js', 'docs/img/compliant/cantilever-explorer.svg'])
+  assert.match(head, /<link rel="stylesheet" href="\/kit\/calculators\/cantilever\.css"><link rel="modulepreload" href="\/kit\/calculators\/cantilever\.js">/);
+  for (const f of ['kit/calculators/cantilever.js', 'kit/calculators/cantilever.css', 'kit/calculators/formulas.js', 'kit/calculators/formulas-data.js', 'docs/img/compliant/cantilever-explorer.svg'])
     assert.ok(files.includes(f), `${f} is not published`);
   assert.doesNotMatch(await readFile(path.join(out, 'docs/toolkit.html'), 'utf8'), /cantilever\.(css|js)/);
 });
@@ -408,9 +408,9 @@ test('the four-bar animator is on its pages with its still, and only those pages
     assert.ok(demo, `no <cad-fourbar> on /docs/${name}`);
     assert.match(demo[1], /<img src="\/docs\/img\/formulas\/fourbar-animator\.svg" alt="[^"]{40,}" width="640" height="320" ?\/?>/);
     const head = page.slice(0, page.indexOf('</head>'));
-    assert.match(head, /<link rel="stylesheet" href="\/kit\/fourbar\.css"><link rel="modulepreload" href="\/kit\/fourbar\.js">/);
+    assert.match(head, /<link rel="stylesheet" href="\/kit\/calculators\/fourbar\.css"><link rel="modulepreload" href="\/kit\/calculators\/fourbar\.js">/);
   }
-  for (const f of ['kit/fourbar.js', 'kit/fourbar.css', 'kit/formulas.js', 'docs/img/formulas/fourbar-animator.svg'])
+  for (const f of ['kit/calculators/fourbar.js', 'kit/calculators/fourbar.css', 'kit/calculators/formulas.js', 'docs/img/formulas/fourbar-animator.svg'])
     assert.ok(files.includes(f), `${f} is not published`);
   assert.doesNotMatch(await readFile(path.join(out, 'docs/compliant.html'), 'utf8'), /fourbar\.(css|js)/);
 });
@@ -422,9 +422,9 @@ test('the fan-curve explorer is on its pages with its still, and only those page
     assert.ok(demo, `no <cad-fan-curve> on /docs/${name}`);
     assert.match(demo[1], /<img src="\/docs\/img\/thermal\/fan-curve-explorer\.svg" alt="[^"]{40,}" width="640" height="340" ?\/?>/);
     const head = page.slice(0, page.indexOf('</head>'));
-    assert.match(head, /<link rel="stylesheet" href="\/kit\/fan-curve\.css"><link rel="modulepreload" href="\/kit\/fan-curve\.js">/);
+    assert.match(head, /<link rel="stylesheet" href="\/kit\/calculators\/fan-curve\.css"><link rel="modulepreload" href="\/kit\/calculators\/fan-curve\.js">/);
   }
-  for (const f of ['kit/fan-curve.js', 'kit/fan-curve.css', 'kit/formulas.js', 'kit/formulas-data.js', 'docs/img/thermal/fan-curve-explorer.svg'])
+  for (const f of ['kit/calculators/fan-curve.js', 'kit/calculators/fan-curve.css', 'kit/calculators/formulas.js', 'kit/calculators/formulas-data.js', 'docs/img/thermal/fan-curve-explorer.svg'])
     assert.ok(files.includes(f), `${f} is not published`);
   for (const other of ['compliant', 'linkages'])
     assert.doesNotMatch(await readFile(path.join(out, `docs/${other}.html`), 'utf8'), /fan-curve\.(css|js)/);
@@ -441,8 +441,8 @@ test('the torsion-snap and screw-boss explorers are on their pages with their st
     assert.ok(demo, `no <${tag}> on /docs/${name}`);
     assert.match(demo[1], new RegExp(`<img src="/docs/img/${still}\\.svg" alt="[^"]{40,}" width="640" height="${height}" ?/?>`));
     const head = page.slice(0, page.indexOf('</head>'));
-    assert.ok(head.includes(`<link rel="stylesheet" href="/kit/${file}.css"><link rel="modulepreload" href="/kit/${file}.js">`), `${name}: ${file} kit files`);
-    for (const f of [`kit/${file}.js`, `kit/${file}.css`, `docs/img/${still}.svg`]) assert.ok(files.includes(f), `${f} is not published`);
+    assert.ok(head.includes(`<link rel="stylesheet" href="/kit/calculators/${file}.css"><link rel="modulepreload" href="/kit/calculators/${file}.js">`), `${name}: ${file} kit files`);
+    for (const f of [`kit/calculators/${file}.js`, `kit/calculators/${file}.css`, `docs/img/${still}.svg`]) assert.ok(files.includes(f), `${f} is not published`);
     for (const other of ['fans', 'linkages', name === 'compliant' ? 'screw-bosses' : 'compliant'])
       assert.doesNotMatch(await readFile(path.join(out, `docs/${other}.html`), 'utf8'), new RegExp(`${file}\\.(css|js)`));
   }
@@ -479,12 +479,12 @@ test('doc pages carry the page tree, with this page marked', async () => {
   const catalog = JSON.parse(await readFile(path.join(out, 'catalog.json'), 'utf8'));
   for (const doc of catalog.items.filter(i => i.markdown && i.status === 'ours' && ['doc', 'lesson', 'skill', 'agent', 'research'].includes(i.type)))
     assert.ok(nav.includes(`href="${doc.url.replace('https://cad-agent.valpatel.com', '')}"`), `${doc.name} is missing from the page tree`);
-  assert.ok(files.includes('kit/nav.js') && files.includes('kit/nav.css'));
+  assert.ok(files.includes('kit/documents/nav.js') && files.includes('kit/documents/nav.css'));
   // Written out in full, so the first paint is final and it works without script: a landmark, the fold (a native
   // <details>, closed: phones open it with or without nav.js), the filter, and this page's outline (every h2/h3 with an
   // id) under it, again in the right-hand column.
   assert.match(toolkit, /<cad-nav [^>]*role="navigation" aria-label="Explore topics and pages"/);
-  assert.match(toolkit, /<link rel="stylesheet" href="\/kit\/nav\.css">/);
+  assert.match(toolkit, /<link rel="stylesheet" href="\/kit\/documents\/nav\.css">/);
   assert.match(nav, /^<details class="cad-nav-fold"><summary class="cad-nav-toggle">Explore topics<\/summary><div class="cad-nav-panel">/);
   assert.match(nav, /<\/div><\/details>$/, 'the fold holds the whole panel and nothing else');
   assert.doesNotMatch(nav, /<button[^>]*class="cad-nav-toggle"/, 'tree toggle remains native');
@@ -760,7 +760,7 @@ test('with --client-diagrams (as on a machine with no browser) the blocks stay f
   const page = await readFile(path.join(draft, 'docs/style-guide.html'), 'utf8');
   assert.equal((page.match(/<pre><code class="language-mermaid">/g) || []).length, 3);
   assert.doesNotMatch(page, /<figure class="cad-diagram"/);
-  assert.match(page, /<script type="module" src="\/web\/site\.js"><\/script>/, 'site.js still starts kit/diagrams.js');
+  assert.match(page, /<script type="module" src="\/web\/site\.js"><\/script>/, 'site.js still starts kit/documents/diagrams.js');
 });
 
 test('no page refers to a lesson by its old number', () => {
@@ -798,7 +798,7 @@ test('every page names its cad-agent.valpatel.com address as canonical, and the 
     assert.ok(resolve(canon[0].slice(origin.length)), `${f}: its canonical ${canon[0]} is not a published page`);
     checked.push(f);
   }
-  assert.ok(checked.includes('index.html') && checked.includes('catalog.html') && checked.includes('kit/viewer.html') && checked.length > 40,
+  assert.ok(checked.includes('index.html') && checked.includes('catalog.html') && checked.includes('kit/model/viewer.html') && checked.length > 40,
     `checked ${checked.length} pages`);
 });
 

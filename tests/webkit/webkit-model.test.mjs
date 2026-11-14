@@ -1,11 +1,11 @@
-/** kit/model.js, the <cad-model> element's decoder, against the reference (cadagent.publish.view.unpack_model): the packed
+/** kit/model/model.js, the <cad-model> element's decoder, against the reference (cadagent.publish.view.unpack_model): the packed
  * fixture decodes to what Python decodes, and the site's committed Gyropup model decodes whole and in place (#179). */
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import test from 'node:test';
-import { decodeModel, inflate, partLabel, planMeshHashes } from '../../software/cadagent/webkit/model.js';
+import { decodeModel, inflate, partLabel, planMeshHashes } from '../../software/cadagent/webkit/model/model.js';
 
 const root = path.resolve(import.meta.dirname, '../..');
 const load = async (json) => {
@@ -137,7 +137,7 @@ test('J501 showcase includes the real board mesh with bounded render-only simpli
 });
 
 test('loading counts actual received bytes without mixing compressed and decoded totals', async () => {
-  const { modelBytes, transferTotal } = await import('../../software/cadagent/webkit/model.js');
+  const { modelBytes, transferTotal } = await import('../../software/cadagent/webkit/model/model.js');
   const body = new Uint8Array(40).fill(7);
   for (const headers of [{}, {'content-length':'40'}, {'content-length':'5','content-encoding':'gzip'}, {'content-length':'5'}, {'content-length':'no'}]) {
     const response = new Response(body, {headers}), progress=[];
@@ -156,7 +156,7 @@ test('J501 poster is bound to the actual source and shared renderer', async () =
   const receipt=JSON.parse(await readFile(path.join(root,'tools/site/assets/models/j501-source.json'),'utf8'));
   const digest=b=>createHash('sha256').update(b).digest('hex');
   assert.equal(receipt.poster.model_sha256, digest(await readFile(path.join(root,'tools/site/assets/models/j501.json'))));
-  assert.equal(receipt.poster.renderer_sha256, digest(await readFile(path.join(root,'software/cadagent/webkit/model.js'))));
+  assert.equal(receipt.poster.renderer_sha256, digest(await readFile(path.join(root,'software/cadagent/webkit/model/model.js'))));
   assert.equal(receipt.poster.sha256, digest(await readFile(path.join(root,receipt.poster.file))));
   assert.equal(receipt.poster.actual_parts, 23);
   assert.equal(receipt.poster.canvases, 1);

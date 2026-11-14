@@ -101,7 +101,7 @@ box-shadow:inset 0 1px 1px var(--hi),inset 0 0 0 1px var(--frame-line),0 24px 48
    part of its background, so no text sits on one */
 .use-card::after,.fits-ours::after,.mission::after,.reel-tile::after,body .cad-diagram[data-theme=dark]::after{content:"";position:absolute;inset:-1px;border-radius:inherit;background:var(--hud-corners);pointer-events:none}
 /* the snap demo animation is generated from its geometry: tools/snap-demo.mjs → /web/snap-demo.css */
-/* home: the 3D model leads (kit/model.css draws it; the poster holds its box from the first paint) */
+/* home: the 3D model leads (kit/model/model.css draws it; the poster holds its box from the first paint) */
 .visually-hidden{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
 .hero-3d{grid-template-columns:minmax(0,.86fr) minmax(0,1.14fr);grid-template-areas:"head model" "actions model";align-items:start;gap:0 48px;padding:40px 0 56px}
 .hero-3d .hero-head{grid-area:head;align-self:end;padding-top:24px}.hero-3d .hero-actions{grid-area:actions;min-width:0}
@@ -237,10 +237,10 @@ border:1px solid var(--line-2);box-shadow:inset 0 1px 0 var(--hi),0 12px 24px rg
 .band-green ul{padding-left:18px;margin:12px 0 0}
 .closing{background:var(--closing);border-radius:calc(32px*var(--round));padding:56px 32px;text-align:center;margin-bottom:72px;box-shadow:inset 0 1px 0 var(--hi),0 14px 30px rgb(var(--shadow)/.05)}
 .closing .actions{justify-content:center;margin-top:26px}
-/* catalogue: web/catalog.css (the page) and kit/gallery.css (its behaviour) */
+/* catalogue: web/catalog.css (the page) and kit/ui/gallery.css (its behaviour) */
 /* documents */
 .doc{max-width:900px;padding:24px 0 40px}
-/* doc pages (kit <cad-nav>, kit/nav.css): one column on phones, with a "Pages and contents" toggle; from 1100px the
+/* doc pages (kit <cad-nav>, kit/documents/nav.css): one column on phones, with a "Pages and contents" toggle; from 1100px the
    page tree and this page's outline on the left; from 1500px also "On this page" on the right, the page wider */
 .skip-link{position:absolute;left:12px;top:-60px;z-index:20;padding:10px 16px;border-radius:calc(10px*var(--round));background:var(--ink);color:var(--cream);font-weight:700}
 .skip-link:focus{top:12px}
@@ -256,7 +256,7 @@ cad-nav,.doc-rail{--cad-nav-font:13px/1.5 var(--font);--cad-nav-fg:var(--ink);--
   .doc-layout{grid-template-columns:260px minmax(0,880px) minmax(200px,1fr);gap:48px}
   .doc-rail{display:block;position:sticky;top:96px;max-height:calc(100vh - 112px);overflow:auto;margin-top:28px;padding-right:4px;scrollbar-width:thin}
   cad-nav .cad-nav-panel .cad-nav-outline{display:none}}
-/* On paper: no page tree (kit/nav.css) and no right-hand outline, so the article keeps the whole width, not the tree's column */
+/* On paper: no page tree (kit/documents/nav.css) and no right-hand outline, so the article keeps the whole width, not the tree's column */
 @media print{.doc-layout{display:block}.doc-rail{display:none}}
 .crumbs{font:11px/1.7 var(--mono);letter-spacing:.04em;color:var(--muted);margin:20px 0 0}
 .prose{font-size:15px;line-height:1.8;overflow-wrap:anywhere}
@@ -284,7 +284,7 @@ cad-gallery{--cad-gallery-muted:var(--faint);--cad-gallery-chip-bg:var(--soft-3)
 @media(prefers-color-scheme:dark){:root:not([data-theme=light]) .cad-diagram[data-theme-only=light]{display:none}
   :root:not([data-theme=light]) .cad-diagram[data-theme-only=dark]{display:block}}
 :root[data-theme=dark] .cad-diagram[data-theme-only=light]{display:none}:root[data-theme=dark] .cad-diagram[data-theme-only=dark]{display:block}
-/* body: kit/diagrams.css loads after this file, and its rule has the same specificity */
+/* body: kit/documents/diagrams.css loads after this file, and its rule has the same specificity */
 body .cad-diagram[data-theme=dark]{position:relative;background:var(--card);border-color:var(--line-2)}
 cad-copy{--cad-copy-font:var(--font);--cad-copy-fg:var(--ink);--cad-copy-bg:var(--cream);--cad-copy-border:var(--line-3);--cad-copy-focus:var(--orange);--cad-copy-warn-bg:var(--peach-2);margin:16px 0}
 /* Text and its background switch together: interpolating light and dark colours crosses unreadable mid-tones. */

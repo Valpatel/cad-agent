@@ -70,7 +70,7 @@ try {
     assert.deepEqual(before.map(p => p.visible), [true, false, false]);
     await page.getByRole('button', { name: 'Next', exact: true }).click();
     const after = await page.evaluate(async () => {
-      const THREE = await import(new URL('./vendor/three/three.module.min.js', location.href).href);
+      const THREE = await import(new URL('../vendor/three/three.module.min.js', location.href).href);
       const v = window.__viewer; v.stage.root.updateMatrixWorld(true);
       return v.parts.map(p => ({ visible: p.mesh.visible, position: p.mesh.position.toArray(), world: p.mesh.getWorldPosition(new THREE.Vector3()).toArray(), opacity: p.mesh.material.opacity }));
     });

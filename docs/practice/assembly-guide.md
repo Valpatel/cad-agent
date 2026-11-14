@@ -1,6 +1,6 @@
 # Version-bound assembly instructions
 
-Assembly instructions extend the existing `cad-agent view` meshes and `webkit/viewer.js`, not a second renderer.
+Assembly instructions extend the existing `cad-agent view` meshes and `webkit/model/viewer.js`, not a second renderer.
 The instruction controller changes presentation only. It does not prove assembly order, tool access, physical fit,
 fastener engagement or build qualification. Those claims retain their own source-bound checks.
 
@@ -75,7 +75,7 @@ another release or from current WIP.
 
 ```js
 import {loadGuide, createGuideController} from './kit/assembly/guide.js';
-import {createViewer} from './kit/viewer.js';
+import {createViewer} from './kit/model/viewer.js';
 const loaded = await loadGuide(guideURL, {signal, assetRoot: bundleURL});
 const viewer = await createViewer({app, panel, title,
   manifestUrl: loaded.manifestUrl, manifest: loaded.manifest,

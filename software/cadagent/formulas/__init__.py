@@ -12,7 +12,7 @@
     fx.catalogue()                                          # every formula: units, limits, source
 
 Agents call these instead of re-deriving them; the website's demonstrations call the browser port of the same
-functions (``webkit/formulas.js``), and ``tools/formula_vectors.py --check`` keeps the two in step. A closed form is
+functions (``webkit/calculators/formulas.js``), and ``tools/formula_vectors.py --check`` keeps the two in step. A closed form is
 not proof of fit or strength: each result holds only within the limits it states, and a printed part is weaker
 across its layers than any isotropic formula assumes. Test the part. See docs/formulas.md.
 """

@@ -1,0 +1,24 @@
+/* <cad-model> styles (kit/model/model.js). Link in <head>, so the box has its final size from the first paint. Kit rules sit
+ * in :where() (zero specificity): a page's own rules or the --cad-model-* custom properties win. */
+:where(cad-model){display:block;position:relative;overflow:hidden;aspect-ratio:var(--cad-model-ratio,6/5);
+  font:600 12px/1.2 var(--cad-model-font,system-ui,sans-serif);color:var(--cad-model-fg,#173d3c);-webkit-user-select:none;user-select:none}
+:where(cad-model) > .cad-model-poster{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;transition:opacity .5s .2s}
+:where(cad-model) > .cad-model-canvas{position:absolute;inset:0;width:100%;height:100%;opacity:0;transition:opacity .5s;cursor:grab}
+:where(cad-model) > .cad-model-canvas:active{cursor:grabbing}
+:where(cad-model.cad-model-live) > .cad-model-canvas{opacity:1}
+:where(cad-model.cad-model-live) > .cad-model-poster{opacity:0}
+:where(cad-model) .cad-model-ui{position:absolute;left:12px;right:12px;bottom:12px;display:flex;gap:8px;align-items:center;pointer-events:none}
+:where(cad-model) .cad-model-label{margin:0 auto 0 0;padding:7px 12px;border-radius:999px;background:var(--cad-model-chip,#fffdf5d9);
+  font-family:var(--cad-model-mono,ui-monospace,monospace);font-weight:600;font-size:11px;letter-spacing:.02em;max-width:60%;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+:where(cad-model) .cad-model-btn{pointer-events:auto;min-height:36px;padding:0 14px;border-radius:999px;cursor:pointer;font:inherit;
+  color:inherit;background:var(--cad-model-chip,#fffdf5e6);border:1px solid var(--cad-model-line,#6f8a80)}
+:where(cad-model) .cad-model-btn:hover{border-color:currentColor}
+:where(cad-model) .cad-model-btn[aria-pressed=true]{background:var(--cad-model-fg,#173d3c);color:var(--cad-model-chip-on,#fffdf5);border-color:var(--cad-model-fg,#173d3c)}
+:where(cad-model) .cad-model-btn:focus-visible{outline:2px solid var(--cad-model-focus,#bd3a12);outline-offset:2px}
+:where(cad-model) .cad-model-load{position:absolute;left:50%;bottom:16px;transform:translateX(-50%)}
+:where(cad-model) [hidden]{display:none}
+@media(pointer:coarse){:where(cad-model) .cad-model-btn{min-height:44px}}
+@media(prefers-reduced-motion:reduce){:where(cad-model) > *{transition:none!important}}
+/* Each viewer owns its transfer/stage status; unknown/compressed transfer totals stay indeterminate. */
+cad-model .cad-model-status{position:absolute;left:12px;right:12px;bottom:12px;z-index:4;display:grid;gap:6px;padding:9px 12px;border:1px solid var(--cad-model-line,#cad5d0);border-radius:9px;background:var(--cad-model-chip,#fffdf5ed);color:var(--cad-model-fg,#173d3c);font:11px/1.4 var(--cad-model-mono,monospace);pointer-events:none}cad-model .cad-model-status progress{width:100%;height:5px;accent-color:var(--cad-model-focus,#bd3a12)}cad-model[data-state=ready] .cad-model-status{left:12px;right:auto;bottom:54px;padding:5px 9px}cad-model .cad-model-retry{min-height:44px;pointer-events:auto;justify-self:start;border:1px solid currentColor;border-radius:5px;background:transparent;color:inherit;padding:5px 8px;font:inherit;cursor:pointer}

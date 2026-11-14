@@ -190,7 +190,7 @@ const feedbackBox = (title, url, file) => `<aside class="feedback" aria-label="F
 const KIT_DEMOS = { 'cad-cantilever': 'cantilever', 'cad-fourbar': 'fourbar', 'cad-fan-curve': 'fan-curve',
   'cad-torsion-snap': 'torsion-snap', 'cad-printed-boss': 'printed-boss' };
 const kitDemos = body => Object.entries(KIT_DEMOS).filter(([tag]) => body.includes(`<${tag}`))
-  .map(([, f]) => `<link rel="stylesheet" href="/kit/${f}.css"><link rel="modulepreload" href="/kit/${f}.js">`).join('');
+  .map(([, f]) => `<link rel="stylesheet" href="/kit/calculators/${f}.css"><link rel="modulepreload" href="/kit/calculators/${f}.js">`).join('');
 // The theme button (web/theme.js shows it and keeps aria-pressed true while the page is dark).
 const THEME_BUTTON = '<button type="button" class="theme-toggle" aria-pressed="false" title="Dark theme" hidden><span class="visually-hidden">Dark theme</span>' +
   '<svg class="sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>' +
@@ -201,7 +201,7 @@ function frame({ title, body, md, description = LEDE, current = '', page = 'doc'
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${esc(title === TAGLINE ? 'cad-agent · ' + TAGLINE : title + ' · cad-agent')}</title>
 <meta name="description" content="${esc(description)}">${current ? `<link rel="canonical" href="${esc(ORIGIN + current)}">` : ''}
-<script src="/web/theme.js"></script><link rel="icon" href="/web/icon.svg"><link rel="preload" href="/kit/vendor/fonts/inter.woff2" as="font" type="font/woff2" crossorigin><link rel="preload" href="/kit/vendor/fonts/jetbrains-mono.woff2" as="font" type="font/woff2" crossorigin><link rel="stylesheet" href="/web/site.css"><link rel="stylesheet" href="/kit/diagrams.css">${css.map(c => `<link rel="stylesheet" href="${c}">`).join('')}${kitDemos(body)}
+<script src="/web/theme.js"></script><link rel="icon" href="/web/icon.svg"><link rel="preload" href="/kit/vendor/fonts/inter.woff2" as="font" type="font/woff2" crossorigin><link rel="preload" href="/kit/vendor/fonts/jetbrains-mono.woff2" as="font" type="font/woff2" crossorigin><link rel="stylesheet" href="/web/site.css"><link rel="stylesheet" href="/kit/documents/diagrams.css">${css.map(c => `<link rel="stylesheet" href="${c}">`).join('')}${kitDemos(body)}
 ${md ? `<link rel="alternate" type="text/markdown" href="${esc(md)}" title="Markdown for agents">` : ''}
 <link rel="alternate" type="text/plain" href="/llms.txt" title="llms.txt"></head>
 <body class="${page}-page"><!--email_off--><a class="skip-link" href="#main:content">Skip to content</a><header class="site-header"><div class="wrap"><a class="wordmark" href="/"><img src="/web/icon.svg" alt="" width="34" height="34">cad-agent<b>.</b></a>
@@ -349,7 +349,7 @@ for (const p of allPages) {
     `<li class="h${h.level}"><a href="#${esc(encodeURIComponent(h.id))}">${h.text}</a></li>`).join('')}</ol>`;
   const nav = readerNav({areas:areaTree,pages,pageURL,current:pageURL(p.file),outlineHTML:outline('',true)});
   const rail = heads.length < 2 ? '' : `<nav class="doc-rail" aria-labelledby="rail-title"><p class="doc-rail-title" id="rail-title">On this page</p>${outline(' cad-nav-rail', false)}</nav>`;
-  docPages.push([dest, frame({ title: p.title, body: `<div class="doc-layout explore-reader">${nav}<div class="doc-main" id="main:content" tabindex="-1">${crumbs}<article class="prose">${html}</article>` + feedbackBox(p.title, pageURL(p.file), p.file) + `</div>${rail}</div>`, md: '/' + publicPath(p.file), description: p.summary, current: pageURL(p.file), updated: lastChange(p.file), css: ['/kit/nav.css', '/web/catalog.css', '/web/discovery.css', ...(html.includes('class="ref-cite') ? ['/web/references.css'] : [])] })]);
+  docPages.push([dest, frame({ title: p.title, body: `<div class="doc-layout explore-reader">${nav}<div class="doc-main" id="main:content" tabindex="-1">${crumbs}<article class="prose">${html}</article>` + feedbackBox(p.title, pageURL(p.file), p.file) + `</div>${rail}</div>`, md: '/' + publicPath(p.file), description: p.summary, current: pageURL(p.file), updated: lastChange(p.file), css: ['/kit/documents/nav.css', '/web/catalog.css', '/web/discovery.css', ...(html.includes('class="ref-cite') ? ['/web/references.css'] : [])] })]);
   visuals.set(p.file, (html.match(VISUAL) || []).length);
   p.html = html;                                                      // the catalogue takes each page's first figure
   p.updated = lastChange(p.file);
@@ -359,7 +359,7 @@ for (const p of allPages) await writeFile(path.join(out, publicPath(p.file)), tw
 placeVisuals.checkLinks(file => pages.find(q => q.file === file)?.html);   // band tiles' links to other pages' headings
 // Every Mermaid block drawn once in each of the site's themes and written into its page as two finished figures, which
 // web/site.css shows one of (#305). A block left as it is (no browser, or one Mermaid cannot draw) is drawn by
-// kit/diagrams.js in the reader's browser, in the page's theme.
+// kit/documents/diagrams.js in the reader's browser, in the page's theme.
 const drawIn = theme => drawDiagrams(docPages.map(([, html]) => html), {
   kit: f => readBuf(`software/cadagent/webkit/${f}`), site: f => readBuf(`${ASSETS}/${f}`), theme, client: CLIENT_DIAGRAMS,
   cacheDir: process.env.CAD_AGENT_DIAGRAM_CACHE || path.join(toolsHere, '.cache', 'site-diagrams'),
@@ -397,11 +397,11 @@ const lessonCount = pages.filter(p => p.section === 'lessons' && !/(?:^|\/)READM
 // A derived search view: no new source identity and no mutation of the catalogue/reference machine feeds.
 const discovery = discoveryModel({ catalog, pages, references: refModel, ORIGIN, revision, pageURL });
 await writeFile(path.join(out, 'discovery.json'), JSON.stringify(discovery) + '\n');
-await writeFile(path.join(out,'catalog.html'),frame({title:'Explore',current:'/catalog',page:'discovery',body:discoveryHTML(discovery,{areas:areaTree,pages,pageURL,catalog,legacy:true}),css:['/kit/gallery.css','/kit/nav.css','/web/catalog.css','/web/discovery.css']}));
+await writeFile(path.join(out,'catalog.html'),frame({title:'Explore',current:'/catalog',page:'discovery',body:discoveryHTML(discovery,{areas:areaTree,pages,pageURL,catalog,legacy:true}),css:['/kit/ui/gallery.css','/kit/documents/nav.css','/web/catalog.css','/web/discovery.css']}));
 await writeFile(path.join(out, 'explore.html'), frame({ title: 'Explore', current: '/explore', page: 'discovery',
   description: 'Find tools, guides, practical lessons and reference records by topic.',
   body: discoveryHTML(discovery, { areas: areaTree, pages, pageURL, catalog }),
-  md: '/explore.md', css: ['/kit/gallery.css', '/web/catalog.css', '/web/discovery.css'] }));
+  md: '/explore.md', css: ['/kit/ui/gallery.css', '/web/catalog.css', '/web/discovery.css'] }));
 await writeFile(path.join(out, 'explore.md'), '# Explore hardware knowledge\n\nSearch: ' + ORIGIN + '/explore\n\n'
   + '- [Engineering toolkit](/toolkit)\n- [Command and Python API](/docs/toolkit)\n- [Reference evidence](/references)\n- [Review pitfalls](/docs/common-issues)\n- [Tool landscape](/research/landscape)\n\n'
   + 'Derived search metadata: /discovery.json. Existing source IDs, evidence and adoption decisions remain separate.\n');
@@ -420,7 +420,7 @@ for (const p of refSite.pages) {
   const outline=articleOutline(p.body),rail=outline?`<nav class="doc-rail" aria-labelledby="rail-title"><p class="doc-rail-title" id="rail-title">On this page</p>${outline.replace('class="cad-nav-outline"','class="cad-nav-outline cad-nav-rail"')}</nav>`:'';
   await mkdir(path.dirname(path.join(out, p.file)), { recursive: true });
   await writeFile(path.join(out, p.file), frame({ title: p.title, body: `<div class="doc-layout explore-reader">${readerNav({areas:areaTree,pages,pageURL,current:p.url,outlineHTML:outline})}<div class="doc-main" id="main:content" tabindex="-1">${p.body}</div>${rail}</div>`, md: '/' + p.md, description: p.description, current: p.url,
-    page: 'references', css: ['/web/references.css','/kit/nav.css','/web/catalog.css','/web/discovery.css'], updated: refsUpdated }));
+    page: 'references', css: ['/web/references.css','/kit/documents/nav.css','/web/catalog.css','/web/discovery.css'], updated: refsUpdated }));
   await writeFile(path.join(out, p.md), p.markdown);
 }
 
@@ -592,7 +592,7 @@ ${useCard}
 </div></section>
 <section class="section help-band"><div class="lead"><h2>Help us <span>improve!</span></h2><p>Found a mistake, a better tool, or a page that wasted your time? It takes a minute, and ideas we use are credited by name.</p></div>
 <div class="help-actions"><a class="button primary" href="${esc(feedbackURL('home page', '/'))}">Give feedback</a><a class="button" href="${REPO}/issues">See open issues</a><a class="button" href="/CONTRIBUTING">How to contribute</a></div></section></div>`;
-await writeFile(path.join(out, 'index.html'), frame({ title: TAGLINE, body: landing, md: '/index.md', current: '/', page: 'landing', css: ['/web/snap-demo.css', '/kit/model.css', '/web/home.css'] }));
+await writeFile(path.join(out, 'index.html'), frame({ title: TAGLINE, body: landing, md: '/index.md', current: '/', page: 'landing', css: ['/web/snap-demo.css', '/kit/model/model.css', '/web/home.css'] }));
 
 // ----------------------------------------------------------------------------- agent files
 const bySection = id => pages.filter(p => p.section === id);

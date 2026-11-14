@@ -9,7 +9,7 @@
  */
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import path from 'node:path';
-import { readState, compute, drawFourbar, summary, className } from '../../../software/cadagent/webkit/fourbar.js';
+import { readState, compute, drawFourbar, summary, className } from '../../../software/cadagent/webkit/calculators/fourbar.js';
 
 const root = path.resolve(import.meta.dirname, '../../..');
 export const PAGES = ['docs/formulas.md', 'docs/mechanical/linkages.md'];

@@ -4,10 +4,10 @@ Tests for the reusable [file viewer](../../../software/cadagent/webkit/files/REA
 
 ```mermaid
 flowchart TD
-    B["browser.mjs + theme-browser.mjs"] --> S["../webkit-server.mjs"]
-    S --> V["webkit/files/<br/>viewer + parser workers"]
-    C["corpus.mjs"] --> W["worker-node.mjs"] --> V
-    U["geometry + theme unit tests"] --> V
+    B["Browser flows<br/>+ theme checks"] --> S["HTTP fixture"]
+    S --> V["File viewer<br/>+ parser workers"]
+    C["Original corpus"] --> W["Worker runner"] --> V
+    U["Geometry / theme<br/>unit checks"] --> V
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
     classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c

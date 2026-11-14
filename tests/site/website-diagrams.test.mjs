@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import { mkdtemp, readFile, readdir, rm } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
-import { drawDiagrams, forDrawing, PALETTES, themePalette, unescapeHtml } from '../../tools/site/compiler/site-diagrams.mjs';
+import { drawDiagrams, launchChromium, forDrawing, PALETTES, themePalette, unescapeHtml } from '../../tools/site/compiler/site-diagrams.mjs';
 
 const root = path.resolve(import.meta.dirname, '../..');
 const tmp = await mkdtemp(path.join(os.tmpdir(), 'cad-agent-site-diagrams-'));
@@ -40,6 +40,32 @@ test('a block becomes a finished figure: drawn, sized, with its source, and kept
   const again = await drawDiagrams([page], { kit, site, cacheDir: dir, log, launch: () => { throw new Error('launched'); } });
   assert.deepEqual([again.stats.cached, again.stats.drawn], [1, 0]);
   assert.equal(again.draw(page), html);
+});
+
+test('shared theme dependencies are served to the drawing page and invalidate cached figures', async () => {
+  const directory=cache(),page=block(FLOW),failed=[];
+  const launch=async()=>{
+    const result=await launchChromium();assert.ok(result.browser,result.why);
+    const browser=result.browser,newContext=browser.newContext.bind(browser);
+    browser.newContext=async options=>{
+      const context=await newContext(options);
+      context.on('page',page=>page.on('requestfailed',request=>failed.push(request.url())));
+      return context;
+    };
+    return result;
+  };
+  const first=await drawDiagrams([page],{kit,site,cacheDir:directory,launch,log:quiet().log});
+  assert.equal(first.stats.drawn,1);assert.deepEqual(failed,[],'all transitive palette/font requests are served locally');
+  let reads=0;
+  const changedKit=async name=>{
+    const bytes=await kit(name);
+    if(name!=='ui/theme.css')return bytes;
+    reads++;return Buffer.concat([bytes,Buffer.from('\n:root{--cream:#fafafa}\n')]);
+  };
+  const changed=await drawDiagrams([page],{kit:changedKit,site,cacheDir:directory,launch,log:quiet().log});
+  assert.equal(reads,1);assert.equal(changed.stats.cached,0);assert.equal(changed.stats.drawn,1);
+  assert.notEqual(changed.draw(page),first.draw(page),'theme source participates in the figure identity');
+  assert.deepEqual(failed,[]);
 });
 
 test('the same source draws the same bytes in another browser session; theme and source change the drawing', async () => {

@@ -3,7 +3,7 @@
 <defs><marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#3de0d4"/></marker></defs>
 <rect width="480" height="350" rx="18" fill="#091a29"/>
 <text x="24" y="34" font-size="22" font-weight="700">From a project to review</text>
-<path class="flow" d="M218 125H258 M362 170V202 M262 251H222" marker-end="url(#arrow)"/>
+<path class="flow" d="M218 125H258" marker-end="url(#arrow)"/><path class="flow" d="M362 170V202" marker-end="url(#arrow)"/><path class="flow" d="M262 251H222" marker-end="url(#arrow)"/>
 <rect x="20" y="80" width="198" height="90" rx="12" fill="#132f43" stroke="#4e8499"/>
 <circle cx="39" cy="100" r="11" fill="#265269"/><text x="39" y="105" text-anchor="middle" font-size="14">1</text>
 <text x="32" y="129" font-size="18" font-weight="600">Project inputs</text>

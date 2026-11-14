@@ -31,8 +31,8 @@ SCENES = {
   ('Compare results', 'References and failures', 'tests/repo/README.md'),
   ('Keep the evidence', 'Source, result and limits', 'docs/validation/README.md')]),
  'scada-session': ('One process, several views', 'The host owns the session; diagrams observe its state.', [
-  ('System + model', 'IDs, connections, equations', 'software/cadagent/webkit/scada/sim/README.md'),
-  ('Shared session', 'Accept commands and steps', 'software/cadagent/webkit/scada/explorer/README.md'),
+  ('System + model', 'IDs, ports and equations', 'software/cadagent/webkit/scada/sim/README.md'),
+  ('Shared session', 'Commands and time steps', 'software/cadagent/webkit/scada/explorer/README.md'),
   ('Snapshot adapter', 'Readings and capabilities', 'software/cadagent/webkit/scada/sim/src/adapter.mjs'),
   ('Diagram views', 'Symbols and quick controls', 'software/cadagent/webkit/scada/ui/README.md')]),
 }
@@ -44,7 +44,7 @@ def render(title, subtitle, nodes, still=False):
       '<defs><marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#3de0d4"/></marker></defs>',
       '<rect width="480" height="350" rx="18" fill="#091a29"/>',
       f'<text x="24" y="34" font-size="22" font-weight="700">{escape(title)}</text>',
-      '<path class="flow" d="M218 125H258 M362 170V202 M262 251H222" marker-end="url(#arrow)"/>']
+      '<path class="flow" d="M218 125H258" marker-end="url(#arrow)"/><path class="flow" d="M362 170V202" marker-end="url(#arrow)"/><path class="flow" d="M262 251H222" marker-end="url(#arrow)"/>']
     for i,((label,detail,source),(x,y)) in enumerate(zip(nodes,[(20,80),(262,80),(262,206),(20,206)])):
         parts += [f'<rect x="{x}" y="{y}" width="198" height="90" rx="12" fill="#132f43" stroke="#4e8499"/>',
           f'<circle cx="{x+19}" cy="{y+20}" r="11" fill="#265269"/><text x="{x+19}" y="{y+25}" text-anchor="middle" font-size="14">{i+1}</text>',

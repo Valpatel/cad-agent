@@ -1477,6 +1477,8 @@ async function folderMapPhoneProblems(page, where) {
     if (measured.wide && measured.focusable && measured.scrollable && !checkedKeyboard) {
       checkedKeyboard = true;
       await view.evaluate(v => { v.scrollLeft = 0; });
+      // Reveal the target before focusing it, so native vertical focus scrolling does not overlap this key test.
+      await view.scrollIntoViewIfNeeded();
       await view.focus();
       await page.keyboard.press('ArrowRight');
       // Poll from the test process: page-context animation-frame polling misses native scrolling when

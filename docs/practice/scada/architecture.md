@@ -36,8 +36,8 @@ never creates a process, electrical or review relationship.
 The host creates one model and one clock. `ScadaViewer` consumes `getSnapshot()`,
 `subscribe(listener)` returning unsubscribe, and optional `dispatch(command)`.
 Multiple layouts/observers borrow that same model. Destroying a presentation must
-not advance, reset or destroy the session. A v1 read-only adapter omits dispatch;
-the v2 read-only adapter rejects writes. UI capability must reflect both cases.
+not advance, reset or destroy the session. Both v1 and v2 read-only adapters omit
+`dispatch`, so viewers expose commands only when the adapter supports them.
 
 ## Replace equations or the complete engine
 

@@ -358,8 +358,12 @@ def git(root, *args):
 def repo_with_base(tmp_path):
     root = checkout(tmp_path / "r")
     git(root, "init", "-q", "-b", "dev")
-    git(root, "-c", "user.email=t@t", "-c", "user.name=t", "add", "-A")
-    git(root, "-c", "user.email=t@t", "-c", "user.name=t", "commit", "-q", "-m", "base")
+    # Every commit in this disposable repository needs an identity, including
+    # checkpoints made by a test after the fixture's initial commit.
+    git(root, "config", "--local", "user.email", "audit-test@example.invalid")
+    git(root, "config", "--local", "user.name", "Audit test")
+    git(root, "add", "-A")
+    git(root, "commit", "-q", "-m", "base")
     return root
 
 

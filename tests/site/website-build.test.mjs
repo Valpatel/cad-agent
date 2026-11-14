@@ -774,7 +774,7 @@ test('every page names its cad-agent.valpatel.com address as canonical, and the 
   const checked = [];
   for (const f of html) {
     const text = await readFile(path.join(out, f), 'utf8');
-    const served = '/' + f.replace(/\.html$/, '');
+    const served = '/' + f.replace(/\/index\.html$/, '/').replace(/\.html$/, '');
     if (f.startsWith('kit/')) {  // copied byte for byte from the kit: the canonical comes as a Link header
       assert.doesNotMatch(text, /rel="canonical"/, `${f} must stay as the kit ships it`);
       const links = rules.filter(r => r.pattern.test(served)).flatMap(r => r.headers).filter(([k]) => k.toLowerCase() === 'link');

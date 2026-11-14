@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Contained engineering viewers · cad-agent</title>
+  <link rel="stylesheet" href="./viewer-host.css">
+  <style>
+    body{margin:0;background:#08131d;color:#e7f4fc;font:16px/1.5 system-ui,sans-serif}main{max-width:1500px;margin:auto;padding:32px 24px}h1{font-size:clamp(28px,4vw,46px);margin:0 0 12px;letter-spacing:-.035em}.eyebrow{color:#66e1ff;text-transform:uppercase;letter-spacing:.16em;font-size:12px}.intro{max-width:760px;color:#b4cadd}.viewers{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px;margin:28px 0}.viewer-slot{height:620px;min-width:0}.notes{max-width:760px;border-left:3px solid #66e1ff;padding-left:18px;color:#b4cadd}a{color:#66e1ff}footer{padding:24px;text-align:center;border-top:1px solid #294155}@media(max-width:760px){main{padding:24px 12px}.viewers{grid-template-columns:minmax(0,1fr)}.viewer-slot{height:490px}}
+  </style>
+  <script type="importmap">{"imports":{"three":"../vendor/three/three.module.min.js","three/addons/":"../vendor/three/addons/"}}</script>
+  <script type="module" src="./example.js"></script>
+</head>
+<body><main>
+  <p class="eyebrow">Cad-agent · shared viewer toolkit</p>
+  <h1>One workspace. Independent views.</h1>
+  <p class="intro">Inspect the same small fixture through an assembly document and its original CAD file. Each panel has its own camera, selection and inspector. The shared frame stays readable while the geometry moves.</p>
+  <div class="viewers"><section id="assembly" class="viewer-slot" aria-label="Assembly example"><p>Loading assembly…</p></section><section id="original" class="viewer-slot" aria-label="Original-file example"><p>Loading original file…</p></section></div>
+  <div class="notes"><h2>Try the controls</h2><p>Drag to orbit. Use two fingers to pan or pinch. Focus a camera and use arrow keys to orbit, Shift + arrows to pan, +/− to zoom, and Home to fit. Open the inspector for part selection and display controls.</p><p>This is a presentation example, not a mechanical qualification. Selections identify objects in the currently loaded document; they do not imply a cross-document engineering relationship.</p></div>
+  <noscript><p>JavaScript is needed for interactive viewing. <a href="./example.stl">Download the original fixture</a>.</p></noscript>
+</main><footer>Created by <a href="https://valpatel.com">Valpatel Software LLC</a></footer></body>
+</html>

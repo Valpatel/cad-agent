@@ -248,7 +248,7 @@ export function createStage(container, opts = {}) {
     applyLight();
     for (const cb of [...callbacks]) {
       try { cb(t, dt); } catch (err) {               // one bad callback must not freeze the stage
-        if (!cb.failed) { cb.failed = true; console.error(err); document.body.dataset.stageError = String(err?.stack ?? err).slice(0, 500); }
+        if (!cb.failed) { cb.failed = true; if (opts.onError) opts.onError(err); else { console.error(err); document.body.dataset.stageError = String(err?.stack ?? err).slice(0, 500); } }
       }
     }
     controls.update();

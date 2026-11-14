@@ -1002,7 +1002,7 @@ Guides explain how to use the toolkit. Folder maps lead into its code, tests and
 </details>
 
 <details>
-<summary>software — 612 folders</summary>
+<summary>software — 614 folders</summary>
 
 <details>
 <summary><code>software/README.md</code> — 1 folders</summary>
@@ -1274,6 +1274,32 @@ Guides explain how to use the toolkit. Folder maps lead into its code, tests and
 | Folder |
 |---|
 | `software/cadagent/webkit/assembly` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/files/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-files/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/files/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/files` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/host/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-host/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/host/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/host` |
 
 </details>
 
@@ -1962,7 +1988,7 @@ Guides explain how to use the toolkit. Folder maps lead into its code, tests and
 </details>
 
 <details>
-<summary>tests — 352 folders</summary>
+<summary>tests — 353 folders</summary>
 
 <details>
 <summary><code>tests/README.md</code> — 1 folders</summary>
@@ -2529,6 +2555,19 @@ Guides explain how to use the toolkit. Folder maps lead into its code, tests and
 | Folder |
 |---|
 | `tests/webkit/assembly` |
+
+</details>
+
+<details>
+<summary><code>tests/webkit/host/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-tests/d-webkit/d-host/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/tests/webkit/host/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `tests/webkit/host` |
 
 </details>
 

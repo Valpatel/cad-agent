@@ -43,7 +43,7 @@
             "vendor/three/three.module.min.js",
             "vendor/three/addons/controls/OrbitControls.js"
           ],
-          "sha256": "571cb9b531e8d1178fe2755b99af342d94c009e1333b1a700ba18d9ce4828ba2"
+          "sha256": "f8d8e6a41acf9163a1f6558776a98862693d061a7f2510711ab01c1d9655a956"
         },
         "vendor/file-parsers/THREE-LICENSE.txt": {
           "requires": [],
@@ -115,7 +115,7 @@
             "assembly/guide.js",
             "file-geometry.js"
           ],
-          "sha256": "222da922ceab7f38aa55e6555dd128b1e669a374aab61f1a3f72353b8de12a62"
+          "sha256": "dd30ff92e4f8a3f48e8ead322e06119b4f143e2e8f46d93987602220636d73c5"
         }
       },
       "notices": [

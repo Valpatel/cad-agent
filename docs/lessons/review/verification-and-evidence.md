@@ -24,8 +24,8 @@ flowchart TD
 - **Check:** Compare the parts list (BOM, analysis scripts, drawings) with the parts the build registers. Declare
   each missing one with `not_drawn(name, reason=..., near=...)` and run `cad-agent gates`: the summary's "not in the
   model" line and each verdict's `not_drawn` list must name them, and motion, assembly, connectivity, containment
-  and fasteners must read `warn`. Any statement about clearance, removal or motion that involves such a component
-  waits until it is drawn. See [gates: not in the model](../../practice/gates.md#not-in-the-model-not_drawn).
+  and fasteners must print `WARN` where they would print `PASS` (their verdict `status` is `warn`). Any statement
+  about clearance, removal or motion that involves such a component waits until it is drawn. See [gates: not in the model](../../practice/gates.md#not-in-the-model-not_drawn).
 <details><summary>Incident and source</summary>
 
 - **Incident:** A steering mechanism was modelled as envelopes: plates, a fork, a wheel and motor bodies were

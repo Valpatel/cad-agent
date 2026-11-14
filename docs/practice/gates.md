@@ -293,25 +293,44 @@ not_drawn("bevel_pinion", reason="sized in analysis/gears.py; no solid yet", nea
 not_drawn("motor_shaft", reason="vendor STEP not imported", near="motor")
 ```
 
-`name` is a dossier id that no part, fastener or cavity uses, `reason` is required (why it is not drawn, and where
-it is specified instead), and `near` names the drawn parts it sits in, on or next to (each must be a registered
-part). The declaration adds no geometry. The build writes it to the geometry record as `not_drawn: {name: {reason,
-near, declared_at}}`, only when something is declared, so a record without declarations is unchanged.
+- `name` is a dossier id that no part, fastener, cavity, joint or interface uses.
+- `reason` is required: why it is not drawn, and where it is specified instead. It is a keyword argument.
+- `near` names the drawn parts it sits in, on or next to: part names as `@part` registers them (`"ball"`), not
+  instance keys (`"ball#3"`), as one name or a list or tuple of them. Each must be a registered part. A set or a
+  dict is refused: it has no order, and the record would change from one run to the next.
 
-`cad-agent gates` then states it in every verdict it writes (`cadagent.review.gates.verdict.note_not_drawn`):
+The declaration adds no geometry. The build writes it to the geometry record as `not_drawn: {name: {reason, near,
+declared_at}}`, only when something is declared, so a record without declarations is unchanged.
+
+Every verdict made for that build then states it (`cadagent.review.gates.verdict.note_not_drawn`). The word `warn`
+appears in the places this table names, and nowhere else:
 
 | Where | What appears |
 |---|---|
 | `<gate>.json` | `not_drawn` (`[{"name", "reason", "near"}]`) and an assumption naming the components the gate did not see |
-| connectivity, containment, fasteners, motion, assembly | a `<gate>:not-drawn` check with status `warn`, so the gate reads `warn`, not `pass`; its `parts` are the `near` parts, so the review site shows it on their sections |
-| wall | the list and the assumption only: the wall of a drawn part does not depend on an absent one |
+| `<gate>.json` of connectivity, containment, fasteners, motion, assembly and of a project's own gate | a `<gate>:not-drawn` check with status `warn`, so `status` is `warn` where it was `pass`; `pass` stays `true`. Its `parts` are the `near` parts |
+| `wall.json` | the list and the assumption only, `status` unchanged: the wall of a drawn part does not depend on an absent one |
 | `<gate>.md` | a "Not in the model" section above the findings |
-| `cad-agent gates`, `check`, the report | each gate's row ends "N not drawn, not seen: ..."; `gates` prints a "not in the model" line after the counts |
+| `cad-agent gates`, each row | `WARN` in place of `PASS` for a passing gate with the `<gate>:not-drawn` check (`FAIL` stays `FAIL`; the wall row stays `PASS`), and the row ends "N not drawn, not seen: ..." |
+| `cad-agent gates`, the counts line | `2 pass (2 components not drawn), ...`: a `WARN` row still counts as a pass, and the count says so; then a "not in the model" line names the components |
+| `cad-agent check` and the report | the row stays `PASS` (the report has no warn status) and ends "N not drawn, not seen: ..." |
+| the review site | a banner on every review page naming the components; the gate's pill reads `warn`; the `<gate>:not-drawn` row is listed on the gates page and in the findings of **every** section page; the counts ("gates pass", "integrity gates pass") end "N components not drawn, not seen by any gate" |
+| the section review packet | the `<gate>:not-drawn` rows and the lint's `not-drawn` warnings are in the `findings` and the `section_checks` of every section's packet |
 | the dossier lint | one `not-drawn` warning per component ([dossier.md](dossier.md#joining-cards-and-geometry)) |
 
-A declaration never fails a gate by itself (`pass` stays true and the exit code does not change), and a failing
-gate stays failing. The table is part of the geometry digest, so declaring or removing a component makes the
-verdicts stale until the gates run again. To clear the warning, draw the component and remove the declaration.
+The site and the packets list the row on every section, not only on the sections of the `near` parts: a component
+declared without `near`, or near a part of another section, would otherwise reach no reviewer.
+
+A declaration never fails a gate by itself (`pass` stays true and no exit code changes), and a failing gate stays
+failing. The table is part of the geometry digest, with each `reason` and each `near` list: declaring or removing a
+component, or rewording a reason, makes the verdicts stale until the gates run again (the line a declaration is on
+is not part of it). To clear the warning, draw the component and remove the declaration.
+
+**Sign-off.** A reviewer record lists the components declared not drawn near the parts of its section
+(`not_drawn`, filled in by the bundle's template). A component declared later near one of those parts voids the
+review (`review-stale`), as a changed shape does, and a record written before the declaration is refused at
+submission (`stale-not-drawn`). A declaration without `near` names no section and voids no review; it still
+reaches every packet written after it.
 
 <details>
 <summary>Limits: what the declaration does not do</summary>
@@ -322,9 +341,17 @@ verdicts stale until the gates run again. To clear the warning, draw the compone
   every gate whose result depends on which solids are present warns whenever anything is declared.
 - **No stand-in volume.** The component is not given a size or a position; a gate cannot check clearance against
   it. An envelope solid registered as a part is the way to get one.
-- **A gate function called directly returns its verdict without the note,** as it returns it without `inputs`.
-  Apply it with `note_not_drawn(data, record)` (the record is `BuildResult.geometry` or the JSON), before
-  `bind_inputs`. A project's own gate does the same; a gate name outside `NOT_DRAWN_NOTE_ONLY` gets the warning.
+- **A gate called on a hand-built `Assembly` returns its verdict without the statement:** there is no build and
+  no record to read. A gate given a build (`<gate>_from_build(result, ...)`, or `Assembly.from_build(result)`
+  passed to a gate) states it before it returns and before it writes `out=`: the assembly carries the list as
+  `Assembly.not_drawn`. The wall gate takes a table of parts, not an assembly; `cad-agent gates` adds the list to
+  its verdict.
+- **A project's own gate** gets the statement from `bind_inputs(data, record)`, which applies
+  `note_not_drawn(data, record)` first; a gate name outside `NOT_DRAWN_NOTE_ONLY` gets the warning. A verdict
+  bound to the record some other way that does not name the declared components is stale (`stale_reason`), so
+  `check`, the lint and the site never count it as current.
+- **`near` is not checked against the design.** It must name registered parts; nothing tells whether the component
+  really sits there, or what else it reaches.
 
 </details>
 

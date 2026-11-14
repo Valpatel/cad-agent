@@ -286,7 +286,7 @@ if __name__ == "__main__":
 | `joint(interface, kind="revolute", *, parts=(moving, fixed), axis, range_deg=None, range_mm=None, intended_contacts=(), samples=None, follows=None, closes=None)` | `kind`: `fixed`, `revolute` (needs `range_deg`), `slider` (`range_mm`), `cylindrical` (both), `planar`, `ball`. `follows`: a joint id, `(id, multiplier)` or `(id, multiplier, offset)`. `closes`: `{"parts": (a, b), "at": point, "tol_mm": 0.1}` or a list | the axis is in assembly coordinates; `axis` may be a function of the parameters. A revolute or slider joint with `follows` is driven (its value is `multiplier × the driver's + offset`, about its own axis) and needs no range; `closes` names a point two parts share. Both are the motion gate's: [driven joints](gates.md#motion-range-interference-cadagentreviewgatesmotion) |
 | `fastener(key, *, clamps, into, at, name="", via="", tool="", length_mm, diameter_mm, thread_start_mm, thread_depth_mm, min_engagement_mm, shape=None)` | `at`: one `Axis` per screw, from the head seat in the direction the screw advances | `thread_start_mm`: seat to first engaged thread; numbers may be functions; `shape` is placed at every axis (McMaster frame: origin on the seat, +Z out of the hole) |
 | `assembly.step(order, fit, onto=None, *, direction="", tool="", fasteners=(), access_check="", note="")` | `direction`: `+X`..`-Z` or `(x, y, z)` | steps may also be written in `project.yaml`; when both exist with the same order they must agree |
-| `not_drawn(name, *, reason, near=())` | `near`: a part name or a list of them | a component of the design with no shape in this build: no geometry, so no gate sees it. `reason` is required; `name` is not a part, fastener or cavity; every `near` part is registered (checked at the build). The gates state it in every verdict: [not in the model](gates.md#not-in-the-model-not_drawn) |
+| `not_drawn(name, *, reason, near=())` | `near`: a part name or a list or tuple of them (part names as `@part` registers them, not instance keys such as `ball#3`; a set or dict is refused) | a component of the design with no shape in this build: no geometry, so no gate sees it. `reason` is required and, like `near`, a keyword; `name` is not a part, fastener, cavity or joint; every `near` part is registered (checked at the build; a bad declaration is a `RegistryError`). The gates state it in every verdict: [not in the model](gates.md#not-in-the-model-not_drawn) |
 
 </details>
 
@@ -380,7 +380,8 @@ and takes `follows` and `closes` as `joint()` does).
 
 - **`not_drawn`** is present only when the build declares components that are not drawn:
   `{"flap_spring": {"reason": "...", "near": ["hopper_flap", "hopper"], "declared_at": "cad/build.py:42"}}`. It
-  holds no geometry; the gates read it to say what they did not see.
+  holds no geometry; the gates read it to say what they did not see. `reason` and `near` are part of the gates'
+  geometry digest, so rewording a reason makes the verdicts stale.
 - **Hashes** are content hashes from one shared function, `cadagent.review.evidence.shape_content_hash(shape) -> str`
   (also exported as `cadagent.review.dossier.shape_content_hash` and `shape_sha256`): sha256 of the shape's BREP text,
   OCCT format version 1, without triangulation or normals, with the 7-digit per-shape flag lines removed. The registry
@@ -483,7 +484,7 @@ parts move with a joint.
 `Issue`s with `file:line` (the card's YAML line, or the build script's declaration line):
 
 <details>
-<summary>The join's twelve issue codes, their severity and when each is raised</summary>
+<summary>The join's thirteen issue codes, their severity and when each is raised</summary>
 
 | Code | Severity | When |
 |---|---|---|
@@ -498,7 +499,8 @@ parts move with a joint.
 | `fastener-count` | error | a card's `fasteners[].qty` differs from the axes `fastener()` places |
 | `fastener-not-registered`, `step-fastener-unregistered` | warning | declared in the card or a step, not yet in code |
 | `step-conflict` | error | a step in `project.yaml` and in code with the same order disagree |
-| `not-drawn` | warning | one per component the build declares with `not_drawn()`: it is in the design and no gate saw it; shown on the cards of its `near` parts |
+| `not-drawn` | warning | one per component the build declares with `not_drawn()`: it is in the design and no gate saw it. Its parts are the declaration's `near` parts (not names quoted in the reason); the site and the review packets list it on every section |
+| `duplicate-id` | error | a `not_drawn` name is also the id of a part, fastener, cavity, joint or interface |
 
 </details>
 
@@ -570,7 +572,7 @@ neither a known gate nor a written verdict) or the `id` of a `cad.checks` entry.
 | `review-same-actor` | error | the reviewer did not build any part of the section (`parts.<name>.actor`) and is not named as an `author` of the section, its cards or decisions; neither the reviewer nor a part's builder is `unknown` (while `gates: require_separate_reviewer`, plan §5.3) |
 | `review-builder-unknown` | warning | a current review is of a section whose parts were built by a known actor; otherwise nobody can be shown to be someone else, and the review does not count (a fresh checkout built without `CAD_AGENT_ACTOR`: the section stays `gated`, `check` still passes) |
 | `review-incomplete` | warning | a current review passes `check_record` against the dossier and the packet on disk (for a sign-off: every decision judged, every requirement traced, every question answered; for any record: no answer to a question the packet does not ask, nothing outside the section); otherwise a sign-off does not count, and a change request still counts (it voids an earlier sign-off of the same geometry) |
-| `review-stale` | warning | the latest review still matches the geometry; otherwise its sign-off no longer counts |
+| `review-stale` | warning | the latest review still matches the geometry and lists every component declared not drawn near the section's parts; otherwise its sign-off no longer counts |
 | `signoff-open-decision` | error | a section with an open decision is not signed off |
 | `geometry-missing` | warning | the geometry record exists (without it every card stays `draft`) |
 | `geometry-invalid`, `verdict-invalid` | error | the geometry record and the gate verdicts are readable |
@@ -614,6 +616,14 @@ different geometry, no record matches any more: the section falls back to `gated
 build (`built` if not), the status file shows the voided record under `invalidated` with the parts that changed, and
 the lint warns `review-stale`. A card that still says `status: signed_off` in its YAML is then `status-not-earned`:
 statuses are computed, so leave `status:` out of the cards.
+
+**So does a component declared not drawn.** A declaration changes no hash, so the record also lists (`not_drawn`)
+the components that were declared not drawn near the section's parts when the bundle was written. A component
+declared later with `near` naming a part of the section voids the review the same way (`invalidated.not_drawn`
+names it, the lint warns `review-stale`), and a record that leaves it out is refused at submission
+(`stale-not-drawn`): the reviewer signed off without knowing that part of the design was missing there. A
+declaration without `near` names no section, so it voids no review
+([gates: not in the model](gates.md#not-in-the-model-not_drawn)).
 
 ```mermaid
 flowchart TD
@@ -724,7 +734,7 @@ refused, never wiped). It needs no CAD kernel: the packet must have been rendere
 | `packet/` | the review packet's `manifest.json` and every image it names |
 | `checklist.json` | the packet's checklist (questions, `measured_only`, instructions), the decisions to judge and the requirements to trace |
 | `diff.patch` | the section's sources (the dossier directory without `reviews/`, the build scripts that declared its geometry, the parameters file, `cad-agent.yaml`) in the working tree against the base: the commit the last sign-off names (`commit`), else the commit that added that record, or `--since`; untracked files under those paths are listed in `bundle.json`. No earlier sign-off: no diff, review all of it |
-| `record-template.json` | the record to fill in: the current hashes and where they were made (`bundle.hash_platform`), one entry per question, decision and requirement, every answer `null` |
+| `record-template.json` | the record to fill in: the current hashes and where they were made (`bundle.hash_platform`), the components declared not drawn near the section's parts (`not_drawn`, when there are any), one entry per question, decision and requirement, every answer `null` |
 
 </details>
 
@@ -771,7 +781,7 @@ the rest.
 
 | Field | Rule (`validate_record`) |
 |---|---|
-| top level | `schema`, `section`, `date` (YYYY-MM-DD), `timestamp` (ISO 8601 with a zone), `actor`, `verdict`, `signed_off`, `hashes` (part → sha256 hex), `checklist`, `decisions`, `requirements`, `findings` are required; `build_actors`, `commit`, `packet`, `bundle` (an object; its `hash_platform`, if given, an object of strings), `summary`, `toolkit`, `physical_fit_verified` (false only) may be given; any other key is refused (a typo such as `signed-off` must not pass silently) |
+| top level | `schema`, `section`, `date` (YYYY-MM-DD), `timestamp` (ISO 8601 with a zone), `actor`, `verdict`, `signed_off`, `hashes` (part → sha256 hex), `checklist`, `decisions`, `requirements`, `findings` are required; `build_actors`, `commit`, `packet`, `bundle` (an object; its `hash_platform`, if given, an object of strings), `summary`, `toolkit`, `physical_fit_verified` (false only), `not_drawn` (the names of the components declared not drawn near the section's parts, from the template) may be given; any other key is refused (a typo such as `signed-off` must not pass silently) |
 | `checklist[]` | `id`; `answer` `yes`, `no` or `unclear`; `evidence` (non-empty); `views` (view ids); `image_only`: `true` when the answer rests on the images alone (then `views` is not empty and `measurements` is), `false` when a measurement backs it (then `measurements` lists it: `gate:<name>`, a check id or a packet finding id) |
 | `decisions[]` | `id`; `verdict` `justified`, `weak` or `missing_alternative`; `evidence` |
 | `requirements[]` | `id`; `traced` `yes`, `no` or `unclear`; `evidence` |
@@ -789,6 +799,7 @@ the rest.
 | Code | Refused when |
 |---|---|
 | `stale-hashes` | `hashes` is not exactly the current hash of every part of the section: **stale hashes never sign off** (nor request changes on geometry that is gone); make a new bundle |
+| `stale-not-drawn` | `not_drawn` leaves out a component the build declares not drawn near a part of the section: it was declared since the bundle; make a new bundle |
 | `same-actor` | while `gates: require_separate_reviewer`: the reviewer is `unknown`, a part's builder is `unknown`, the reviewer built a part of the section (`parts.<name>.actor`) or is the `author` of the section, a card or a decision |
 | `actor` | the record names an `actor` other than the submitting `CAD_AGENT_ACTOR` |
 | `unanswered`, `unknown-question`, `question-changed`, `unknown-view`, `unknown-measurement` | the checklist answers a question the packet does not ask, changes a question's text or bad answer, cites a view without an image or a gate the packet does not quote; a sign-off also leaves no question unanswered (`unanswered`), while a change request may stop at the first blocking flaw |

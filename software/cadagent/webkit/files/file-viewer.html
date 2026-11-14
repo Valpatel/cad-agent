@@ -46,6 +46,8 @@
         themeButton.removeAttribute('style');window.__fileViewer.root.querySelector('.file-nav').append(themeButton);
         const update=()=>{const next=sharedTheme();document.documentElement.dataset.fileTheme=next.mode;window.__fileViewer.setTheme(next);};
         document.addEventListener('cad-themechange',update);
+        // A preference may have changed while the renderer module was loading.
+        update();
       }
       fallback.remove();
     }catch(error){

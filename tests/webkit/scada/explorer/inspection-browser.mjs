@@ -183,5 +183,39 @@ export async function inspectionBrowserChecks({page,baseURL,check,shot,receipt,s
     }
   });
 
+  await check('long canonical identifiers remain readable in portable footers and both inspection levels',async()=>{
+    await page.setViewportSize({width:390,height:844});
+    const id='V'+'X'.repeat(99);
+    await page.evaluate(async id=>{
+      const {ScadaViewer}=await import('/kit/scada/ui/src/index.mjs');
+      const container=document.createElement('div');container.id='long-id-consumer';document.body.append(container);
+      const viewer=new ScadaViewer({scope:'long-id-consumer',equipment:[{id,type:'tank',label:'Tank',bindings:{level:'/level'}}],
+        views:[{id:'main',label:'Main',width:400,height:240,placements:[{component:id,x:50,y:50,width:160,height:160}]}],
+        adapter:{getSnapshot:()=>({level:20}),subscribe:()=>()=>{}}}).mount(container);
+      window.__longIdConsumer={viewer,container};
+    },id);
+    try{
+      const consumer=page.locator('#long-id-consumer');
+      const noOverflow=locator=>locator.evaluate(el=>el.scrollWidth<=el.clientWidth+1);
+      assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true);
+      const footer=consumer.locator('.scada-viewer-status>span').last();await expect(footer).toContainText(id);assert.equal(await noOverflow(footer),true);
+      await expect(consumer.locator('.scada-viewer-equipment-id')).toHaveText(id);
+      await expect(consumer.locator('[data-scada-picker] option')).toHaveText(`${id} · Tank`);
+      await consumer.locator('[data-scada-inspect]').click();
+      const quick=consumer.locator('[data-scada-popover]');await expect(quick).toBeVisible();await expect(quick.locator('.scada-inspection-id')).toHaveText(id);
+      assert.equal(await noOverflow(quick),true);assert.ok((await quick.boundingBox()).width<=360);await shot('long-id-quick-controls');
+      await quick.locator('[data-scada-details]').click();
+      const details=consumer.locator('dialog[open]');await expect(details).toBeVisible();
+      const title=details.locator('[data-scada-dialog-title]');await expect(title).toContainText(id);
+      assert.equal(await noOverflow(details),true);assert.equal(await noOverflow(title),true);
+      const close=details.locator(':scope > header [data-scada-close]'),button=await close.boundingBox(),box=await details.boundingBox();
+      assert.ok(button.width>=44&&button.height>=44&&button.x>=box.x&&button.x+button.width<=box.x+box.width);
+      assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true);await shot('long-id-detailed-controls');
+      await close.click();await expect(details).not.toBeVisible();
+    }finally{
+      await page.evaluate(()=>{window.__longIdConsumer?.viewer.destroy();window.__longIdConsumer?.container.remove();delete window.__longIdConsumer;});
+    }
+  });
+
   await page.setViewportSize({width:1440,height:1100});await page.emulateMedia({colorScheme:'light'});await reload();
 }

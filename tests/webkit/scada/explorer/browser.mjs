@@ -369,6 +369,16 @@ try{
       assert.ok(geometry.label.right<=geometry.select.left,`Speed label overlaps its field: ${JSON.stringify(geometry)}`);
       assert.ok(geometry.select.right<=geometry.right+1);assert.ok(geometry.select.height>=44&&geometry.step.height>=44);
       await noHorizontalOverflow();
+      // Long canonical ID + label options must remain native keyboard controls on narrow WebKit.
+      const picker=page.locator('#lab-viewer [data-scada-picker]');
+      const ids=await picker.locator('option').evaluateAll(options=>options.map(option=>option.value));
+      const index=ids.indexOf(await picker.inputValue()),target=ids[index>0?index-1:1];
+      await picker.focus();await page.keyboard.press('Tab');await page.keyboard.press('Shift+Tab');await expect(picker).toBeFocused();
+      assert.equal(await picker.evaluate(el=>el.matches(':focus-visible')),true);
+      await picker.press(index>0?'ArrowUp':'ArrowDown');await expect(picker).toHaveValue(target);
+      await expect(page.locator('#industry-viewer-quick-panel')).toHaveAttribute('data-scada-inspection-equipment',target);
+      await page.keyboard.press('Escape');await expect(picker).toBeFocused();
+      assert.equal(await picker.evaluate(el=>el.matches(':focus-visible')),true);await noHorizontalOverflow();
     }
     await page.setViewportSize({width:390,height:844});await page.emulateMedia({reducedMotion:'reduce'});
     await page.goto(`${baseURL}/kit/scada/explorer/index.html?scenario=wastewater-digester`);await expect(page.locator('#industry-lab')).toHaveAttribute('aria-busy','false');await paused();

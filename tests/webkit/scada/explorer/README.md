@@ -55,7 +55,8 @@ editable v2 assumptions, narrow diagrams, faults and the narrow observer. Equipm
 inspection additionally covers both themes at 320, 390, short landscape, ordinary
 desktop and 3440-pixel ultrawide sizes. The checks assert compact screen-space
 controls, nonmodal diagram access, camera anchoring, Escape focus, distinct equipment
-IDs and command targets, uncommitted same-equipment drafts, and the actual loaded
+IDs and command targets, long-ID footer and detail containment, native narrow-screen
+picker navigation, uncommitted same-equipment drafts, and the actual loaded
 equations and current model configuration behind the Details & model action.
 
 The draft-isolation case mounts a separate consumer through the public model and

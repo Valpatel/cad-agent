@@ -1,0 +1,1 @@
+- Give the SCADA Explorer a fluid application workspace that uses the available desktop window while retaining page and inspector scrolling on smaller screens.

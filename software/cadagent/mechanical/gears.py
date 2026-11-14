@@ -1,6 +1,10 @@
 """Involute gear solids: external spur gears, toothed rings and straight bevel gears, as the basic rack cuts them.
 
-Units are millimetres and degrees. A spur gear lies on the XY plane, from Z = 0 to the face width, turning about Z,
+Units are millimetres and degrees throughout, including the module. ``cadagent.formulas`` works in SI (metres), so
+convert before passing a length from one to the other. For an inch gear of diametral pitch P the module is
+``25.4 / P`` mm.
+
+A spur gear lies on the XY plane, from Z = 0 to the face width, turning about Z,
 with tooth 0 centred on +X. The tooth is the envelope of a rack cutter rolled round the pitch circle, which is what
 a hob or a rack-shaped cutter leaves:
 
@@ -24,27 +28,34 @@ degrees; tip relief, crowning or chamfers; hubs and keyways; tolerance classes; 
 teeth are theoretical. A printed gear needs its ``backlash`` and ``clearance`` tuned to the printer on a test pair,
 and a model that meshes in CAD does not prove a part that runs.
 """
+from __future__ import annotations
+
 import math
 import warnings
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from cadagent._deps import require
 
-__all__ = ['module_from_diametral_pitch', 'spur_gear_dimensions', 'gear_pair_dimensions', 'spur_gear',
-           'external_ring_gear', 'bevel_gear_dimensions', 'bevel_gear']
+__all__ = ['spur_gear_dimensions', 'gear_pair_dimensions', 'spur_gear', 'external_ring_gear',
+           'bevel_gear_dimensions', 'bevel_gear']
+
+Point = Tuple[float, float]
+MAX_SEGMENTS = 1024                 # per curve, before the chord tolerance is called unreachable
+MAX_BEVEL_FACE = 0.9                # of the cone distance: beyond it the small end is a point at the apex
 
 
-def module_from_diametral_pitch(diametral_pitch):
-    """Module in mm of an inch-system gear: 25.4 / (teeth per inch of pitch diameter)."""
-    if not diametral_pitch > 0:
-        raise ValueError('Diametral pitch must be positive')
-    return 25.4 / diametral_pitch
+def _finite(**values: Optional[float]) -> None:
+    """Refuse NaN and infinity by name; a comparison alone lets NaN through."""
+    for name, value in values.items():
+        if value is not None and not math.isfinite(value):
+            raise ValueError(f'{name.replace("_", " ").capitalize()} must be a finite number, not {value!r}')
 
 
-def _inv(angle):
+def _inv(angle: float) -> float:
     return math.tan(angle) - angle
 
 
-def _inv_inverse(value):
+def _inv_inverse(value: float) -> float:
     """The angle whose involute function is ``value`` (Newton, from a series start)."""
     angle = (3 * value) ** (1 / 3) if value > 0 else 0.0
     for _ in range(50):
@@ -55,8 +66,11 @@ def _inv_inverse(value):
     return angle
 
 
-def _sample(curve, t0, t1, tolerance):
-    """Points of ``curve(t)`` from t0 to t1 whose polygon stays within ``tolerance`` of the curve at mid-parameter."""
+def _sample(curve: Callable[[float], Point], t0: float, t1: float, tolerance: float) -> List[Point]:
+    """Points of ``curve(t)`` from t0 to t1 whose polygon stays within ``tolerance`` of the curve at mid-parameter.
+
+    Raises ``ValueError`` when ``MAX_SEGMENTS`` segments do not reach the tolerance, rather than return a coarser
+    curve than was asked for."""
     n = 4
     while True:
         ts = [t0 + (t1 - t0) * i / n for i in range(n + 1)]
@@ -69,8 +83,11 @@ def _sample(curve, t0, t1, tolerance):
                 worst = max(worst, math.hypot(mx - ax, my - ay))
             else:
                 worst = max(worst, abs((bx - ax) * (my - ay) - (by - ay) * (mx - ax)) / length)
-        if worst <= tolerance or n >= 1024:
+        if worst <= tolerance:
             return points
+        if n >= MAX_SEGMENTS:
+            raise ValueError(f'Chord tolerance {tolerance:g} mm is not reached with {MAX_SEGMENTS} segments on a '
+                             f'tooth curve (it is {worst:.3g} mm off): use a larger chord_tolerance')
         n *= 2
 
 
@@ -81,7 +98,10 @@ class _Tooth:
     2 * radius * half_angle thick on that circle.
     """
 
-    def __init__(self, module, teeth, pressure_angle, backlash, clearance, root_fillet, profile_shift):
+    def __init__(self, module: float, teeth: float, pressure_angle: float, backlash: float, clearance: float,
+                 root_fillet: Optional[float], profile_shift: float) -> None:
+        _finite(module=module, tooth_count=teeth, pressure_angle=pressure_angle, backlash_allowance=backlash,
+                clearance=clearance, root_fillet=root_fillet, profile_shift=profile_shift)
         if not module > 0:
             raise ValueError('Module must be positive')
         if not teeth >= 4:
@@ -145,25 +165,25 @@ class _Tooth:
 
     # The cutter's tip round, centre (u0, v0) in rack coordinates, as the rack rolls by angle theta round the gear:
     # the contact normal passes through the pitch point, so the envelope point lies on that line, beyond the centre.
-    def _fillet_xy(self, theta):
+    def _fillet_xy(self, theta: float) -> Point:
         w = self.u0 - self.r * theta
         sin, cos = math.sin(theta), math.cos(theta)
         scale = 1 + self.rho / math.hypot(self.v0, w)
         along, inward = w * scale, self.v0 * scale      # from the pitch point, along and into the gear
         return (self.r - inward) * sin + along * cos, (self.r - inward) * cos - along * sin
 
-    def _fillet_polar(self, theta):
+    def _fillet_polar(self, theta: float) -> Point:
         """(radius, angle from the centre of the tooth space) of the fillet point."""
         px, py = self._fillet_xy(theta)
         return math.hypot(px, py), math.atan2(px, py)
 
-    def _space_half_angle(self, radius):
+    def _space_half_angle(self, radius: float) -> float:
         """Half angle of the tooth space that the cutter's straight side leaves at ``radius`` (the involute)."""
         return self.space / (2 * self.r) - _inv(self.a) + _inv(math.acos(min(1.0, self.rb / radius)))
 
-    def _undercut_crossing(self, theta_root, theta_flank):
+    def _undercut_crossing(self, theta_root: float, theta_flank: float) -> float:
         """Where the fillet stops cutting into the involute: between the root and the end of the cutter's round."""
-        def gap(theta):
+        def gap(theta: float) -> float:
             radius, angle = self._fillet_polar(theta)
             return 1.0 if radius <= self.rb else angle - self._space_half_angle(radius)
         steps, high = 400, theta_root
@@ -177,21 +197,21 @@ class _Tooth:
             high = low
         return theta_flank
 
-    def fillet_half_angle(self, theta):
+    def fillet_half_angle(self, theta: float) -> Point:
         radius, angle = self._fillet_polar(theta)
         return radius, math.pi / self.z - angle
 
-    def involute_half_angle(self, radius):
+    def involute_half_angle(self, radius: float) -> float:
         return math.pi / self.z - self._space_half_angle(radius)
 
-    def flank(self, tolerance, place):
+    def flank(self, tolerance: float, place: Callable[[float, float], Point]) -> Tuple[List[Point], List[Point]]:
         """The lower flank of tooth 0 as two point lists, root to join and join to tip; ``place(radius, half_angle)``
         gives each point's XY, and the tolerance is measured there."""
-        def fillet(theta):
+        def fillet(theta: float) -> Point:
             radius, half = self.fillet_half_angle(theta)
             return place(radius, -half)
 
-        def involute(roll):
+        def involute(roll: float) -> Point:
             radius = self.rb * math.hypot(1.0, roll)
             return place(radius, -self.involute_half_angle(radius))
         roll_start = math.sqrt(max(self.r_start ** 2 - self.rb ** 2, 0.0)) / self.rb
@@ -200,27 +220,28 @@ class _Tooth:
                 _sample(involute, roll_start, roll_tip, tolerance))
 
 
-def _whole(teeth, what='Tooth count'):
-    if teeth != int(teeth) or teeth < 4:
-        raise ValueError(f'{what} must be a whole number of at least 4')
+def _whole(teeth: float, what: str = 'Tooth count') -> int:
+    if not math.isfinite(teeth) or teeth != int(teeth) or teeth < 4:
+        raise ValueError(f'{what} must be a whole number of at least 4, not {teeth!r}')
     return int(teeth)
 
 
-def _outline(cq, tooth, teeth, tolerance, radius_of, angle_scale, z):
+def _outline(cq: Any, tooth: _Tooth, teeth: int, tolerance: float, radius_of: Callable[[float], float],
+             angle_scale: float, z: float) -> List[Any]:
     """The closed outline of ``teeth`` teeth as edges on the plane Z = z, tooth 0 centred on +X.
 
     ``tooth`` gives the profile as (radius, half angle); a point is drawn at radius ``radius_of(radius)`` and angle
     ``angle_scale * half angle``. A spur gear draws it as it is; a bevel gear maps its back-cone development.
     """
-    def place(radius, half):
+    def place(radius: float, half: float) -> Point:
         mapped, angle = radius_of(radius), angle_scale * half
         return mapped * math.cos(angle), mapped * math.sin(angle)
 
-    def spline(points, mirror):
+    def spline(points: List[Point], mirror: bool) -> Any:
         points = [(x, -y) for x, y in reversed(points)] if mirror else points
         return cq.Edge.makeSpline([cq.Vector(x, y, z) for x, y in points])
 
-    def arc(radius, start, end):
+    def arc(radius: float, start: float, end: float) -> Any:
         angles = (start, (start + end) / 2, end)
         return cq.Edge.makeThreePointArc(*(cq.Vector(radius * math.cos(v), radius * math.sin(v), z) for v in angles))
     fillet, involute = tooth.flank(tolerance, place)
@@ -237,9 +258,12 @@ def _outline(cq, tooth, teeth, tolerance, radius_of, angle_scale, z):
     return edges
 
 
-def spur_gear_dimensions(module, teeth, *, pressure_angle=20.0, backlash=0.0, clearance=0.25, root_fillet=None,
-                         profile_shift=0.0):
+def spur_gear_dimensions(module: float, teeth: int, *, pressure_angle: float = 20.0, backlash: float = 0.0,
+                         clearance: float = 0.25, root_fillet: Optional[float] = None,
+                         profile_shift: float = 0.0) -> Dict[str, Any]:
     """Reference dimensions of one external involute gear, in mm, with whether the rack undercuts it.
+
+    ``module`` is in mm (``25.4 / P`` for an inch gear of diametral pitch P), angles are in degrees.
 
     ``backlash`` is the thinning of this gear's tooth, measured along the pitch circle (the cutter is widened; the
     root circle does not move). ``clearance`` and ``profile_shift`` are in modules: the root lies
@@ -273,8 +297,9 @@ def spur_gear_dimensions(module, teeth, *, pressure_angle=20.0, backlash=0.0, cl
     }
 
 
-def gear_pair_dimensions(module, teeth_a, teeth_b, *, pressure_angle=20.0, backlash=0.0, clearance=0.25,
-                         root_fillet=None, profile_shift_a=0.0, profile_shift_b=0.0):
+def gear_pair_dimensions(module: float, teeth_a: int, teeth_b: int, *, pressure_angle: float = 20.0,
+                         backlash: float = 0.0, clearance: float = 0.25, root_fillet: Optional[float] = None,
+                         profile_shift_a: float = 0.0, profile_shift_b: float = 0.0) -> Dict[str, Any]:
     """Centre distance and mesh figures of two external gears, with each gear's own dimensions under ``a`` and ``b``.
 
     ``centre_distance_mm`` is where the unthinned teeth mesh without play: module * (teeth_a + teeth_b) / 2 when the
@@ -334,96 +359,132 @@ def gear_pair_dimensions(module, teeth_a, teeth_b, *, pressure_angle=20.0, backl
     }
 
 
-def spur_gear(module, teeth, face_width, *, pressure_angle=20.0, bore=0.0, backlash=0.0, clearance=0.25,
-              root_fillet=None, profile_shift=0.0, chord_tolerance=0.005):
-    """An external involute spur gear as one solid: axis Z, Z = 0 to ``face_width``, tooth 0 centred on +X.
+def _warn_undercut(t: _Tooth, pressure_angle: float) -> None:
+    """Called by a public solid function, so the warning points at that function's caller."""
+    if t.undercut:
+        warnings.warn(f'{t.z}-tooth gear at {pressure_angle:g} degrees is undercut inside diameter '
+                      f'{2 * t.r_start:.3f} mm ({t.min_teeth} teeth or more avoid it); drawn as cut', stacklevel=3)
 
-    The arguments are those of :func:`spur_gear_dimensions`, which gives the diameters to place it by; ``bore`` is a
-    plain through hole (0 for none) and must lie inside the root circle. For an inch gear pass
-    ``module_from_diametral_pitch(P)``. An undercut gear is drawn undercut and raises a ``UserWarning``.
 
-    Flanks and root fillets are splines through points sampled to ``chord_tolerance`` mm; tips and roots are arcs.
-    No keyway, hub, chamfer, tip relief or crowning, and no strength check.
-    """
+def _spur_solid(t: _Tooth, face_width: float, bore: float, chord_tolerance: float) -> Any:
+    _finite(face_width=face_width, chord_tolerance=chord_tolerance)
     if not face_width > 0:
         raise ValueError('Face width must be positive')
     if not chord_tolerance > 0:
         raise ValueError('Chord tolerance must be positive')
-    t = _Tooth(module, _whole(teeth), pressure_angle, backlash, clearance, root_fillet, profile_shift)
-    if bore < 0 or bore >= 2 * t.rf:
-        raise ValueError(f'Bore must be at least 0 and smaller than the root diameter {2 * t.rf:.3f} mm')
-    if t.undercut:
-        warnings.warn(f'{t.z}-tooth gear at {pressure_angle:g} degrees is undercut inside diameter '
-                      f'{2 * t.r_start:.3f} mm ({t.min_teeth} teeth or more avoid it); drawn as cut', stacklevel=2)
     cq = require('cadquery', 'gear solid')
     edges = _outline(cq, t, t.z, chord_tolerance, lambda radius: radius, 1.0, 0.0)
     inner = [cq.Wire.makeCircle(bore / 2, cq.Vector(0, 0, 0), cq.Vector(0, 0, 1))] if bore > 0 else []
     return cq.Solid.extrudeLinear(cq.Wire.assembleEdges(edges), inner, cq.Vector(0, 0, face_width))
 
 
-def external_ring_gear(module, teeth, face_width, inner_diameter, *, min_rim=None, **options):
+def spur_gear(module: float, teeth: int, face_width: float, *, pressure_angle: float = 20.0, bore: float = 0.0,
+              backlash: float = 0.0, clearance: float = 0.25, root_fillet: Optional[float] = None,
+              profile_shift: float = 0.0, chord_tolerance: float = 0.005) -> Any:
+    """An external involute spur gear as one CadQuery solid: axis Z, Z = 0 to ``face_width``, tooth 0 centred on +X.
+
+    The arguments are those of :func:`spur_gear_dimensions`, which gives the diameters to place it by. Lengths are
+    in mm; for an inch gear of diametral pitch P pass the module ``25.4 / P``. ``bore`` is a plain through hole (0
+    for none) that must leave a wall of at least one module under the root circle: a floor that keeps the drawn gear
+    in one sound piece, not a strength rating. :func:`external_ring_gear` takes a thinner rim when asked. An
+    undercut gear is drawn undercut and raises a ``UserWarning``.
+
+    Flanks and root fillets are splines through points sampled to ``chord_tolerance`` mm; tips and roots are arcs.
+    A tolerance that 1024 segments per curve do not reach is refused. No keyway, hub, chamfer, tip relief or
+    crowning, and no strength check.
+    """
+    t = _Tooth(module, _whole(teeth), pressure_angle, backlash, clearance, root_fillet, profile_shift)
+    limit = 2 * (t.rf - t.m)
+    if not (bore == 0 or 0 < bore <= limit * (1 + 1e-12)):
+        raise ValueError(f'Bore must be 0 (none) or leave a wall of one module under the root diameter '
+                         f'{2 * t.rf:.3f} mm, so at most {max(limit, 0.0):.3f} mm, not {bore!r}; '
+                         'external_ring_gear takes a thinner rim with min_rim')
+    _warn_undercut(t, pressure_angle)
+    return _spur_solid(t, face_width, bore, chord_tolerance)
+
+
+def external_ring_gear(module: float, teeth: int, face_width: float, inner_diameter: float, *,
+                       min_rim: Optional[float] = None, pressure_angle: float = 20.0, backlash: float = 0.0,
+                       clearance: float = 0.25, root_fillet: Optional[float] = None, profile_shift: float = 0.0,
+                       chord_tolerance: float = 0.005) -> Any:
     """The teeth of :func:`spur_gear` on the outside of a ring with a plain ``inner_diameter``, as one solid.
 
     This is an external gear with a large bore (a toothed ring to bolt or press onto a drum or a turntable), not an
     internal gear. The rim between the bore and the root circle must be at least ``min_rim`` mm, by default one
     module: a floor that keeps the ring in one piece when drawn, not a strength rating. A thin rim bends under the
-    tooth load and nothing here checks that. ``options`` are the keyword arguments of :func:`spur_gear`.
+    tooth load and nothing here checks that. The other arguments are those of :func:`spur_gear`; the hole is
+    ``inner_diameter``, so there is no ``bore``.
     """
-    known = {k: options[k] for k in ('pressure_angle', 'backlash', 'clearance', 'root_fillet', 'profile_shift')
-             if k in options}
-    root = spur_gear_dimensions(module, teeth, **known)['root_diameter_mm']
-    floor = module if min_rim is None else min_rim
+    t = _Tooth(module, _whole(teeth), pressure_angle, backlash, clearance, root_fillet, profile_shift)
+    floor = t.m if min_rim is None else min_rim
+    _finite(inner_diameter=inner_diameter, minimum_rim=floor)
     if not inner_diameter > 0:
         raise ValueError('Inner diameter must be positive')
-    if floor <= 0:
+    if not floor > 0:
         raise ValueError('Minimum rim must be positive')
-    rim = (root - inner_diameter) / 2
-    if rim < floor:
+    rim = t.rf - inner_diameter / 2
+    if rim < floor * (1 - 1e-12):
         raise ValueError(f'Rim under the teeth is {rim:.3f} mm, below the minimum {floor:.3f} mm '
-                         f'(root diameter {root:.3f} mm)')
-    return spur_gear(module, teeth, face_width, bore=inner_diameter, **options)
+                         f'(root diameter {2 * t.rf:.3f} mm)')
+    _warn_undercut(t, pressure_angle)
+    return _spur_solid(t, face_width, inner_diameter, chord_tolerance)
 
 
 class _Bevel:
     """A straight bevel gear for 90 degree shafts by Tredgold's approximation: pitch apex at the origin, axis Z."""
 
-    def __init__(self, module, teeth, mate_teeth, face_width, pressure_angle, backlash, clearance, root_fillet,
-                 backing):
+    def __init__(self, module: float, teeth: int, mate_teeth: int, face_width: float, pressure_angle: float,
+                 backlash: float, clearance: float, root_fillet: Optional[float], backing: Optional[float]) -> None:
         z, mate = _whole(teeth), _whole(mate_teeth, 'Mating tooth count')
+        _finite(module=module, face_width=face_width, backing=backing)
         if not module > 0 or not face_width > 0:
             raise ValueError('Module and face width must be positive')
         self.z, self.m, self.b = z, float(module), float(face_width)
         self.delta = delta = math.atan2(z, mate)        # pitch cone half angle
         self.cone = cone = module * z / (2 * math.sin(delta))
-        if not face_width < cone:
-            raise ValueError(f'Face width must be below the cone distance {cone:.3f} mm')
+        if face_width > MAX_BEVEL_FACE * cone:
+            raise ValueError(f'Face width {face_width:g} mm is more than {MAX_BEVEL_FACE:g} of the cone distance '
+                             f'{cone:.3f} mm ({MAX_BEVEL_FACE * cone:.3f} mm): the teeth vanish toward the apex. '
+                             'Usual practice keeps it below a third')
         # The tooth form at the large end is that of a spur gear of z / cos(delta) teeth, drawn on the back cone.
         self.tooth = t = _Tooth(module, z / math.cos(delta), pressure_angle, backlash, clearance, root_fillet, 0.0)
         self.backing = module if backing is None else backing
         self.rk = t.rf - self.backing                   # back-cone radius where the flat back face starts
         self.ro = t.ra + module                         # back-cone radius where the blank ends, beyond the tips
-        if not self.backing >= 0 or not self.rk > 0:
-            raise ValueError('Backing under the root must be at least 0 and leave a back face')
+        if not self.backing >= 0:
+            raise ValueError('Backing under the root cannot be negative')
+        if not self.rk > 0:
+            raise ValueError(f'A {z}-tooth bevel gear with a {mate}-tooth mate is too small for a back face: its '
+                             f'root is {t.rf:.3f} mm from the back-cone apex (a virtual spur gear of '
+                             f'{t.z:.2f} teeth) and the backing is {self.backing:.3f} mm. Use more teeth or a '
+                             'smaller backing')
         if not self.height(self.ro) > 0:
             raise ValueError('The gear is too flat for this generator: its tips pass the plane of the apex')
         self.inner = (cone - face_width) / cone         # the small end is the large end scaled by this about the apex
 
-    def height(self, radius):
+    def height(self, radius: float) -> float:
         """Z of the point on the back cone at ``radius`` from the back-cone apex."""
         return self.cone / math.cos(self.delta) - radius * math.sin(self.delta)
 
-    def across(self, radius):
+    def across(self, radius: float) -> float:
         """Distance from the axis of that point."""
         return radius * math.cos(self.delta)
 
 
-def bevel_gear_dimensions(module, teeth, mate_teeth, face_width, *, pressure_angle=20.0, backlash=0.0,
-                          clearance=0.25, root_fillet=None, backing=None):
+_WIDE_FACE = ('face width {width:g} mm is above a third of the cone distance ({third:.3f} mm): the small-end teeth '
+              'get very fine')
+
+
+def bevel_gear_dimensions(module: float, teeth: int, mate_teeth: int, face_width: float, *,
+                          pressure_angle: float = 20.0, backlash: float = 0.0, clearance: float = 0.25,
+                          root_fillet: Optional[float] = None, backing: Optional[float] = None) -> Dict[str, Any]:
     """Reference dimensions of one straight bevel gear of a 90 degree pair, in mm, from the pitch apex at Z = 0.
 
     ``module`` is at the large end. ``pitch_angle_deg`` is atan(teeth / mate_teeth) and ``cone_distance_mm`` the
     length of the pitch cone, apex to large end. ``tooth_thickness_mm`` is the arc on the large-end pitch circle;
-    every tooth dimension shrinks in proportion to the distance from the apex. ``back_face_z_mm`` and
+    every tooth dimension shrinks in proportion to the distance from the apex, the ``backlash`` allowance with it.
+    ``face_width`` may be at most 0.9 of the cone distance; above a third of it (the usual limit) a note says so
+    and :func:`bevel_gear` warns. ``back_face_z_mm`` and
     ``front_face_z_mm`` are the flat faces of the solid, to set the mounting distance by. ``undercut`` is that of the
     virtual spur gear of ``virtual_teeth`` teeth. Geometry only: no strength statement.
     """
@@ -433,7 +494,7 @@ def bevel_gear_dimensions(module, teeth, mate_teeth, face_width, *, pressure_ang
     if t.undercut:
         notes.append(f'undercut: the virtual spur gear of {t.z:.2f} teeth is below {t.min_teeth}')
     if v.b > v.cone / 3 * (1 + 1e-9):
-        notes.append('face width is above a third of the cone distance: the small-end teeth get very fine')
+        notes.append(_WIDE_FACE.format(width=v.b, third=v.cone / 3))
     return {
         'module_mm': v.m, 'teeth': v.z, 'mate_teeth': int(mate_teeth), 'pressure_angle_deg': float(pressure_angle),
         'pitch_angle_deg': math.degrees(v.delta), 'cone_distance_mm': v.cone, 'face_width_mm': v.b,
@@ -449,8 +510,10 @@ def bevel_gear_dimensions(module, teeth, mate_teeth, face_width, *, pressure_ang
     }
 
 
-def bevel_gear(module, teeth, mate_teeth, face_width, *, pressure_angle=20.0, bore=0.0, backlash=0.0,
-               clearance=0.25, root_fillet=None, backing=None, chord_tolerance=0.005):
+def bevel_gear(module: float, teeth: int, mate_teeth: int, face_width: float, *, pressure_angle: float = 20.0,
+               bore: float = 0.0, backlash: float = 0.0, clearance: float = 0.25,
+               root_fillet: Optional[float] = None, backing: Optional[float] = None,
+               chord_tolerance: float = 0.005) -> Any:
     """A straight bevel gear for shafts at 90 degrees as one solid: pitch apex at the origin, teeth toward +Z.
 
     ``teeth`` and ``mate_teeth`` set the pitch cone; make the mate with the two swapped. The gear's axis is Z and its
@@ -462,16 +525,29 @@ def bevel_gear(module, teeth, mate_teeth, face_width, *, pressure_angle=20.0, bo
     count on the back cone, running straight to the apex, with tip and root cones through the apex. The ends are the
     back cone and the front cone, ``face_width`` apart along the pitch cone; ``backing`` mm under the root at the
     large end (one module by default) the back turns into a flat face, and the front likewise. ``bore`` is a plain
-    through hole. ``backlash`` thins the large-end tooth along its pitch circle. No hub, no keyway, no crowning or
-    tip relief, no strength check; an undercut virtual gear is drawn undercut and raises a ``UserWarning``.
+    through hole.
+
+    ``backlash`` thins the large-end tooth along its pitch circle and, like every tooth dimension, shrinks in
+    proportion toward the apex. A pair therefore has the same angular play all along the tooth, but its linear play
+    is smaller at the small end by (cone distance - face width) / cone distance: for 14 and 64 teeth of module 2
+    with an 18 mm face and a backlash of 0.05, 0.034 mm between the flanks at the small end against 0.047 mm at the
+    large end. Size the allowance for the small end.
+
+    ``face_width`` may be at most 0.9 of the cone distance; above a third of it, the usual limit, the gear is drawn
+    and a ``UserWarning`` is raised. An undercut virtual gear is drawn undercut and also raises a ``UserWarning``.
+    No hub, no keyway, no crowning or tip relief, no strength check.
     """
     v = _Bevel(module, teeth, mate_teeth, face_width, pressure_angle, backlash, clearance, root_fillet, backing)
     t = v.tooth
+    _finite(chord_tolerance=chord_tolerance)
     if not chord_tolerance > 0:
         raise ValueError('Chord tolerance must be positive')
     flat = v.across(v.rk) * v.inner                     # radius of the flat front face
-    if bore < 0 or bore >= 2 * flat:
-        raise ValueError(f'Bore must be at least 0 and smaller than the front face diameter {2 * flat:.3f} mm')
+    if not 0 <= bore < 2 * flat:
+        raise ValueError(f'Bore must be at least 0 and smaller than the front face diameter {2 * flat:.3f} mm, '
+                         f'not {bore!r}')
+    if v.b > v.cone / 3 * (1 + 1e-9):
+        warnings.warn(f'{v.z}-tooth bevel gear: ' + _WIDE_FACE.format(width=v.b, third=v.cone / 3), stacklevel=2)
     if t.undercut:
         warnings.warn(f'{v.z}-tooth bevel gear is undercut: its virtual spur gear has {t.z:.2f} teeth, below '
                       f'{t.min_teeth}; drawn as cut', stacklevel=2)

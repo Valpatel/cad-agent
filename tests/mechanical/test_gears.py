@@ -1,14 +1,19 @@
 """cadagent.mechanical.gears: the reference dimensions against closed forms written out here, and the solids
-measured: tooth count, radii, tooth thickness, play in mesh and interference, not only that they build."""
+measured: tooth count, radii, tooth thickness, play in mesh and interference, not only that they build.
+
+To keep the file quick, each gear is built once (``built``), a spur gear is measured on its flat end face (it is a
+prism, which is checked), and a bevel pair's play is measured between the teeth near the mesh.
+"""
 import math
-import time
 import warnings
 
 import pytest
 
 from cadagent.mechanical import gears
 from cadagent.mechanical.gears import (bevel_gear, bevel_gear_dimensions, external_ring_gear, gear_pair_dimensions,
-                                       module_from_diametral_pitch, spur_gear, spur_gear_dimensions)
+                                       spur_gear, spur_gear_dimensions)
+
+NAN, INF = float('nan'), float('inf')
 
 
 def inv(angle):
@@ -56,15 +61,14 @@ def test_backlash_and_profile_shift_change_the_tooth_thickness():
     assert d['root_diameter_mm'] == pytest.approx(60 - 2 * 0.85 * 3)
 
 
-def test_diametral_pitch_gives_the_module():
-    assert module_from_diametral_pitch(12) == pytest.approx(25.4 / 12)
-    assert spur_gear_dimensions(module_from_diametral_pitch(12), 16)['pitch_diameter_mm'] == pytest.approx(25.4 * 16 / 12)
-    with pytest.raises(ValueError):
-        module_from_diametral_pitch(0)
+def test_an_inch_gear_is_its_diametral_pitch_as_a_module_in_mm():
+    d = spur_gear_dimensions(25.4 / 12, 16)                       # 12 DP: the module is 25.4 / 12 mm
+    assert d['pitch_diameter_mm'] == pytest.approx(25.4 * 16 / 12)    # 16 teeth / 12 per inch, in mm
+    assert d['module_mm'] == pytest.approx(2.1167, abs=1e-4)
 
 
 def test_a_14_5_degree_16_tooth_gear_reports_its_undercut():
-    d = spur_gear_dimensions(module_from_diametral_pitch(12), 16, pressure_angle=14.5)
+    d = spur_gear_dimensions(25.4 / 12, 16, pressure_angle=14.5)
     assert d['undercut']
     assert d['min_teeth_without_undercut'] == 32                  # 2 / sin^2(14.5 deg) = 31.9
     assert d['involute_start_diameter_mm'] > d['base_diameter_mm']   # the bottom of the involute is cut away
@@ -145,6 +149,60 @@ def test_impossible_gears_are_refused(kwargs):
         spur_gear_dimensions(**kwargs)
 
 
+@pytest.mark.parametrize('value', [NAN, INF, -INF])
+def test_nan_and_infinity_are_refused_by_name(value):
+    # A comparison such as ``backlash < 0`` is false for NaN, so each number is checked for being finite first.
+    for name in ('module', 'teeth', 'pressure_angle', 'backlash', 'clearance', 'root_fillet', 'profile_shift'):
+        with pytest.raises(ValueError):
+            spur_gear_dimensions(**{**dict(module=2, teeth=20), name: value})
+    for name in ('module', 'teeth', 'mate_teeth', 'face_width', 'pressure_angle', 'backlash', 'clearance',
+                 'root_fillet', 'backing'):
+        with pytest.raises(ValueError):
+            bevel_gear_dimensions(**{**dict(module=2, teeth=16, mate_teeth=32, face_width=8), name: value})
+    with pytest.raises(ValueError, match='Profile shift must be a finite number'):
+        gear_pair_dimensions(2, 18, 40, profile_shift_b=value)
+    with pytest.raises(ValueError, match='Backlash allowance must be a finite number'):
+        spur_gear_dimensions(2, 20, backlash=value)
+    with pytest.raises(ValueError, match='Tooth count must be a whole number'):
+        spur_gear_dimensions(2, value)                            # infinity used to raise OverflowError
+
+
+def test_bad_sizes_are_refused_before_any_solid_is_made():
+    # None of these reaches the CAD kernel: the checks come first.
+    for bad in (dict(bore=NAN), dict(bore=-1), dict(face_width=NAN), dict(face_width=INF), dict(face_width=0),
+                dict(chord_tolerance=NAN), dict(chord_tolerance=0)):
+        with pytest.raises(ValueError):
+            spur_gear(**{**dict(module=2, teeth=20, face_width=5), **bad})
+    # A plain bore keeps one module of wall under the root circle (root diameter 35 mm, so 31 mm at most).
+    with pytest.raises(ValueError, match='31.000 mm'):
+        spur_gear(2, 20, 5, bore=35 - 1e-6)
+    with pytest.raises(ValueError, match='wall of one module'):
+        spur_gear(2, 20, 5, bore=31.01)
+    for bad in (dict(inner_diameter=NAN), dict(inner_diameter=0), dict(min_rim=NAN), dict(min_rim=0),
+                dict(inner_diameter=74)):                         # 0.5 mm of rim, under one module
+        with pytest.raises(ValueError):
+            external_ring_gear(**{**dict(module=2, teeth=40, face_width=8, inner_diameter=60), **bad})
+    with pytest.raises(TypeError, match="external_ring_gear.*'bore'"):   # its hole is inner_diameter
+        external_ring_gear(2, 40, 8, 60, bore=5)
+    for bad in (dict(bore=NAN), dict(bore=40), dict(chord_tolerance=NAN), dict(face_width=NAN), dict(backing=NAN),
+                dict(backing=-1)):
+        with pytest.raises(ValueError):
+            bevel_gear(**{**dict(module=2, teeth=16, mate_teeth=32, face_width=8), **bad})
+
+
+def test_bevel_face_width_and_tooth_count_limits_are_named():
+    cone = math.hypot(16, 32)                                     # module 2: half of 2 * sqrt(16^2 + 32^2)
+    assert bevel_gear_dimensions(2, 16, 32, cone / 3 - 0.01)['notes'] == []
+    assert any('third' in note for note in bevel_gear_dimensions(2, 16, 32, cone / 3 + 0.01)['notes'])
+    assert bevel_gear_dimensions(2, 16, 32, 0.9 * cone - 0.01)['face_width_mm'] == pytest.approx(0.9 * cone - 0.01)
+    for width in (0.9 * cone + 0.01, 0.999 * cone, cone, 40):
+        with pytest.raises(ValueError, match='0.9 of the cone distance'):
+            bevel_gear_dimensions(2, 16, 32, width)
+    with pytest.raises(ValueError, match='4-tooth bevel gear with a 40-tooth mate'):
+        bevel_gear_dimensions(2, 4, 40, 10)                       # no room for a back face under the root
+    assert bevel_gear_dimensions(2, 4, 40, 10, backing=0)['teeth'] == 4
+
+
 def test_bevel_reference_dimensions():
     d = bevel_gear_dimensions(2, 16, 32, 8)
     delta = math.atan(16 / 32)
@@ -174,232 +232,372 @@ def cq():
     return pytest.importorskip('cadquery')
 
 
-def turned(cq, solid, degrees):
-    return solid.rotate(cq.Vector(0, 0, 0), cq.Vector(0, 0, 1), degrees)
+@pytest.fixture(scope='module')
+def built(cq):
+    """``built(name, *args, **kwargs)``: that gear and the warnings it raised, made once for the whole file."""
+    cache = {}
+
+    def build(name, *args, **kwargs):
+        key = (name, args, tuple(sorted(kwargs.items())))
+        if key not in cache:
+            with warnings.catch_warnings(record=True) as caught:
+                warnings.simplefilter('always')
+                solid = getattr(gears, name)(*args, **kwargs)
+            cache[key] = (solid, caught)
+        return cache[key]
+    return build
+
+
+def turned(cq, shape, degrees, axis=(0, 0, 1)):
+    return shape.rotate(cq.Vector(0, 0, 0), cq.Vector(*axis), degrees)
 
 
 def common(a, b):
+    """Volume that two solids share."""
     return a.intersect(b).Volume()
 
 
-def thickness_at(cq, solid, radius, teeth, width, half=0.02):
-    """Arc tooth thickness on the circle of ``radius``, from the metal inside a thin tube there."""
-    tube = cq.Solid.makeCylinder(radius + half, width).cut(cq.Solid.makeCylinder(radius - half, width))
-    return common(solid, tube) / (teeth * 2 * half * width)
+def shared(a, b):
+    """Area that two faces in one plane share."""
+    return a.intersect(b).Area()
 
 
-def test_spur_gear_is_one_valid_solid_with_the_right_teeth_and_radii(cq):
-    teeth, width = 18, 6
-    d = spur_gear_dimensions(2, teeth)
-    gear = spur_gear(2, teeth, width, bore=8)
-    assert gear.isValid() and len(gear.Solids()) == 1
+def disc(cq, radius, hole=0.0, z=0.0):
+    """A flat disc (a ring when ``hole`` is a radius) on the plane Z = z, about the Z axis."""
+    centre, up = cq.Vector(0, 0, z), cq.Vector(0, 0, 1)
+    inner = [cq.Wire.makeCircle(hole, centre, up)] if hole else []
+    return cq.Face.makeFromWires(cq.Wire.makeCircle(radius, centre, up), inner)
+
+
+def end_face(gear, width):
+    """The Z = 0 face of a spur gear, after checking that the gear is the prism of that face."""
+    face = gear.faces('<Z')
     box = gear.BoundingBox()
     assert (box.zmin, box.zmax) == pytest.approx((0, width), abs=1e-6)
-    assert box.xmax == pytest.approx(d['tip_diameter_mm'] / 2, abs=1e-4)      # tooth 0 lies on +X
+    assert gear.faces('>Z').Area() == pytest.approx(face.Area(), rel=1e-9)
+    assert gear.Volume() == pytest.approx(face.Area() * width, rel=2e-5)      # the kernel integrates the two apart
+    return face
+
+
+def thickness_at(cq, face, radius, teeth, half=0.02, z=0.0):
+    """Arc tooth thickness on the circle of ``radius``, from the metal of a flat section inside a thin ring there."""
+    return shared(face, disc(cq, radius + half, radius - half, z)) / (teeth * 2 * half)
+
+
+def test_spur_gear_is_one_valid_solid_with_the_right_teeth_and_radii(cq, built):
+    teeth, width = 18, 6
+    d = spur_gear_dimensions(2, teeth)
+    gear, _ = built('spur_gear', 2, teeth, width, bore=8)
+    assert gear.isValid() and len(gear.Solids()) == 1
+    assert gear.BoundingBox().xmax == pytest.approx(d['tip_diameter_mm'] / 2, abs=1e-4)   # tooth 0 lies on +X
+    face = end_face(gear, width)
     # tooth count: a turn of one tooth pitch maps the gear onto itself, half a pitch does not
-    volume = gear.Volume()
-    assert common(gear, turned(cq, gear, 360 / teeth)) == pytest.approx(volume, rel=1e-6)
-    assert common(gear, turned(cq, gear, 180 / teeth)) < 0.9 * volume
-    assert common(gear, turned(cq, gear, 360 / (teeth + 1))) < 0.99 * volume
+    area = face.Area()
+    assert shared(face, turned(cq, face, 360 / teeth)) == pytest.approx(area, rel=1e-6)
+    assert shared(face, turned(cq, face, 180 / teeth)) < 0.9 * area
+    assert shared(face, turned(cq, face, 360 / (teeth + 1))) < 0.99 * area
     # root circle: a disc just inside it is all metal (less the bore), one just outside is not
     root = d['root_diameter_mm'] / 2
 
-    def disc(radius):
-        return math.pi * (radius ** 2 - 4 ** 2) * width
-    assert common(gear, cq.Solid.makeCylinder(root - 0.001, width)) == pytest.approx(disc(root - 0.001), rel=1e-6)
-    assert common(gear, cq.Solid.makeCylinder(root + 0.2, width)) < disc(root + 0.2) * 0.999
+    def ring(radius):
+        return math.pi * (radius ** 2 - 4 ** 2)
+    assert shared(face, disc(cq, root - 0.001)) == pytest.approx(ring(root - 0.001), rel=1e-6)
+    assert shared(face, disc(cq, root + 0.2)) < ring(root + 0.2) * 0.999
     # nothing outside the tip circle
     tip = d['tip_diameter_mm'] / 2
-    assert common(gear, cq.Solid.makeCylinder(tip + 1e-4, width)) == pytest.approx(volume, rel=1e-9)
-    assert common(gear, cq.Solid.makeCylinder(tip - 0.2, width)) < volume * 0.999
+    assert shared(face, disc(cq, tip + 1e-4)) == pytest.approx(area, rel=1e-9)
+    assert shared(face, disc(cq, tip - 0.2)) < area * 0.999
 
 
 @pytest.mark.parametrize('teeth,angle,backlash,shift', [(20, 20, 0.1, 0.0), (32, 14.5, 0.06, 0.0),
                                                         (18, 20, 0.0, 0.3)])
-def test_tooth_thickness_follows_the_involute(cq, teeth, angle, backlash, shift):
+def test_tooth_thickness_follows_the_involute(cq, built, teeth, angle, backlash, shift):
     module, width = 2, 4
-    gear = spur_gear(module, teeth, width, pressure_angle=angle, backlash=backlash, profile_shift=shift)
+    gear, _ = built('spur_gear', module, teeth, width, pressure_angle=angle, backlash=backlash, profile_shift=shift)
+    face = end_face(gear, width)
     d = spur_gear_dimensions(module, teeth, pressure_angle=angle, backlash=backlash, profile_shift=shift)
     pitch = module * teeth / 2
     expected = module * (math.pi / 2 + 2 * shift * math.tan(math.radians(angle))) - backlash
-    assert thickness_at(cq, gear, pitch, teeth, width) == pytest.approx(expected, abs=2e-3)
+    assert thickness_at(cq, face, pitch, teeth) == pytest.approx(expected, abs=2e-3)
     low = d['involute_start_diameter_mm'] / 2 + 0.05
     for radius in (low, d['tip_diameter_mm'] / 2 - 0.05):
-        assert thickness_at(cq, gear, radius, teeth, width) == pytest.approx(
+        assert thickness_at(cq, face, radius, teeth) == pytest.approx(
             involute_thickness(module, teeth, angle, radius, backlash, shift), abs=2e-3)
 
 
-def test_an_undercut_gear_is_drawn_undercut_and_warns(cq):
+def test_an_undercut_gear_is_drawn_undercut_and_warns(cq, built):
     module, teeth, width = 2, 16, 4
-    with pytest.warns(UserWarning, match='undercut'):
+    with pytest.warns(UserWarning, match='undercut') as raised:
         gear = spur_gear(module, teeth, width, pressure_angle=14.5)
+    assert raised[0].filename == __file__                          # the warning points at the caller
     assert gear.isValid() and len(gear.Solids()) == 1
+    face = end_face(gear, width)
     d = spur_gear_dimensions(module, teeth, pressure_angle=14.5)
     base, start = d['base_diameter_mm'] / 2, d['involute_start_diameter_mm'] / 2
     # above the crossing the flank is the involute; between the base circle and the crossing metal is missing
-    assert thickness_at(cq, gear, start + 0.05, teeth, width) == pytest.approx(
+    assert thickness_at(cq, face, start + 0.05, teeth) == pytest.approx(
         involute_thickness(module, teeth, 14.5, start + 0.05), abs=2e-3)
     inside = (base + start) / 2
-    assert thickness_at(cq, gear, inside, teeth, width, half=0.005) < involute_thickness(module, teeth, 14.5, inside) - 5e-4
+    assert (thickness_at(cq, face, inside, teeth, half=0.005)
+            < involute_thickness(module, teeth, 14.5, inside) - 5e-4)
     # the tooth is narrower at the neck than at the base circle: the mark of an undercut
-    assert thickness_at(cq, gear, base - 0.6, teeth, width) < thickness_at(cq, gear, base, teeth, width)
-    with warnings.catch_warnings():
-        warnings.simplefilter('error')
-        spur_gear(module, 32, width, pressure_angle=14.5)          # 32 teeth: no warning
+    assert thickness_at(cq, face, base - 0.6, teeth) < thickness_at(cq, face, base, teeth)
+    assert built('spur_gear', module, 32, width, pressure_angle=14.5)[1] == []   # 32 teeth: no warning
+    with pytest.warns(UserWarning, match='undercut') as raised:    # a ring warns for its own caller too
+        external_ring_gear(module, teeth, width, 20, pressure_angle=14.5)
+    assert raised[0].filename == __file__
 
 
-def test_a_gear_with_its_base_circle_above_the_root_builds(cq):
-    with pytest.warns(UserWarning):
-        gear = spur_gear(2, 10, 5)
+def test_a_gear_with_its_base_circle_above_the_root_builds(cq, built):
+    gear, raised = built('spur_gear', 2, 10, 5)
+    assert len(raised) == 1 and 'undercut' in str(raised[0].message)
     assert gear.isValid() and len(gear.Solids()) == 1
     d = spur_gear_dimensions(2, 10)
     assert d['base_diameter_mm'] > d['root_diameter_mm']
-    assert common(gear, turned(cq, gear, 36)) == pytest.approx(gear.Volume(), rel=1e-6)
+    face = end_face(gear, 5)
+    assert shared(face, turned(cq, face, 36)) == pytest.approx(face.Area(), rel=1e-6)
     sharp = spur_gear(2, 30, 5, root_fillet=0)                    # a sharp cutter corner: plain trochoid root
     full = spur_gear(2, 30, 5, root_fillet=0.47)                  # close to a full round: almost no root arc
     assert sharp.isValid() and full.isValid() and sharp.Volume() < spur_gear(2, 30, 5).Volume() < full.Volume()
 
 
-def mesh(cq, pair, a, b, turn=0.0, nudge=0.0, shift=0.0):
-    """Gear b placed against gear a (turned by ``turn`` degrees, b following), a nudged on or the centres moved."""
+def test_a_chord_tolerance_that_cannot_be_met_is_refused(cq):
+    with pytest.raises(ValueError, match='Chord tolerance 1e-09 mm is not reached'):
+        spur_gear(2, 20, 5, chord_tolerance=1e-9)
+    fine, coarse = spur_gear(2, 20, 5, chord_tolerance=1e-5), spur_gear(2, 20, 5, chord_tolerance=0.05)
+    assert fine.isValid() and coarse.isValid()
+    assert fine.Volume() == pytest.approx(spur_gear(2, 20, 5).Volume(), rel=1e-5)
+
+
+def test_the_same_arguments_give_the_same_solid(cq, built):
+    def corners(solid):
+        return sorted((v.X, v.Y, v.Z) for v in solid.Vertices())
+    for name, args, options in (('spur_gear', (2, 10, 5), {}), ('bevel_gear', WIDE_UNDERCUT_BEVEL, WIDE_OPTIONS)):
+        first, _ = built(name, *args, **options)
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')                        # both warn; tested elsewhere
+            again = getattr(gears, name)(*args, **options)
+        # The kernel's last bit varies from build to build, so the corners are compared to a nanometre.
+        assert len(corners(again)) == len(corners(first))
+        for one, other in zip(corners(again), corners(first)):
+            assert one == pytest.approx(other, abs=1e-9)
+        assert again.Volume() == pytest.approx(first.Volume(), rel=1e-12)
+    assert spur_gear_dimensions(2, 10) == spur_gear_dimensions(2, 10)
+
+
+# A 10-tooth mitre gear at 14.5 degrees: 14.1 virtual teeth where 32 avoid undercut, and a 5 mm face on a 14.14 mm
+# cone (a third is 4.71 mm). One gear is both halves of its pair.
+WIDE_UNDERCUT_BEVEL = (2, 10, 10, 5)
+WIDE_OPTIONS = dict(pressure_angle=14.5, backlash=0.05)
+PLAY_TOLERANCE = 1e-3                                              # mm, on a measured gap between flanks
+
+
+def meshed(cq, pair, a, b, turn=0.0, nudge=0.0, shift=0.0):
+    """End faces a and b in mesh: a turned by ``turn`` degrees and b following, a nudged on or the centres moved."""
     ratio = pair['a']['teeth'] / pair['b']['teeth']
     placed = turned(cq, b, pair['mesh_rotation_b_deg'] - turn * ratio).translate(
         cq.Vector(pair['centre_distance_mm'] + shift, 0, 0))
-    return common(turned(cq, a, turn + nudge), placed)
+    return turned(cq, a, turn + nudge), placed
 
 
-@pytest.mark.parametrize('teeth_a,teeth_b,angle,shift_a', [(18, 40, 20, 0.0), (16, 48, 14.5, 0.0), (16, 48, 14.5, 0.5)])
-def test_a_pair_meshes_at_the_centre_distance_with_the_backlash_it_was_given(cq, teeth_a, teeth_b, angle, shift_a):
-    module, backlash = 2, 0.05
+def flank_gap(cq, pair, a, b, **placing):
+    """Smallest distance between the two meshed end faces, measured on the teeth near the line of centres.
+
+    Only the metal within 9 mm of that line is kept (the teeth in mesh are within 5 mm of it): cutting metal away can
+    only widen a gap, so a gap that equals the expected play was measured where the teeth are closest.
+    """
+    first, second = meshed(cq, pair, a, b, **placing)
+    near = cq.Face.makePlane(20, 18, cq.Vector(pair['a']['pitch_diameter_mm'] / 2, 0, 0), cq.Vector(0, 0, 1))
+    return first.intersect(near).distance(second.intersect(near))
+
+
+@pytest.mark.parametrize('teeth_a,teeth_b,angle,shift_a', [(18, 40, 20, 0.0), (16, 48, 14.5, 0.0),
+                                                           (16, 48, 14.5, 0.5)])
+def test_a_pair_meshes_at_the_centre_distance_with_the_backlash_it_was_given(cq, built, teeth_a, teeth_b, angle,
+                                                                             shift_a):
+    module, width, backlash = 2, 4, 0.05
     options = dict(pressure_angle=angle, backlash=backlash)
     pair = gear_pair_dimensions(module, teeth_a, teeth_b, profile_shift_a=shift_a, **options)
-    with warnings.catch_warnings():
-        warnings.simplefilter('ignore')                            # the undercut pinions say so; tested above
-        a = spur_gear(module, teeth_a, 4, profile_shift=shift_a, **options)
-        b = spur_gear(module, teeth_b, 4, **options)
-    radius = module * teeth_a / 2
-    free = math.degrees(backlash / radius)                         # each gear is thinned by the backlash allowance
-    for step in range(2):                                          # two phases of one tooth pitch
-        turn = step * 360 / teeth_a / 2 * 0.8
-        assert mesh(cq, pair, a, b, turn) < 1e-6
-        for side in (1, -1):                                       # a may turn either way by the play, and no more
-            assert mesh(cq, pair, a, b, turn, nudge=side * 0.7 * free) < 1e-6
-            assert mesh(cq, pair, a, b, turn, nudge=side * 1.3 * free) > 1e-4
-    assert mesh(cq, pair, a, b, shift=-0.3) > 0.1                  # centres too close: the teeth collide
-    assert mesh(cq, pair, a, b, turn=180 / teeth_a, shift=-0.3) > 0.1
+    a = end_face(built('spur_gear', module, teeth_a, width, profile_shift=shift_a, **options)[0], width)
+    b = end_face(built('spur_gear', module, teeth_b, width, **options)[0], width)
+    pitch = 360 / teeth_a
+    for step in range(12):                                         # no metal in common anywhere in one tooth pitch
+        assert shared(*meshed(cq, pair, a, b, step * pitch / 12)) < 1e-9
+    # Each tooth is thinned by the allowance along its pitch circle, so a flank stands backlash * cos(pressure
+    # angle) off its mate, measured square to the flank, on both sides; and gear a turns by backlash / radius
+    # either way before it touches.
+    play = backlash * math.cos(math.radians(angle))
+    free = math.degrees(backlash / (module * teeth_a / 2))
+    for turn in (0.0, 0.4 * pitch):
+        assert flank_gap(cq, pair, a, b, turn=turn) == pytest.approx(play, abs=PLAY_TOLERANCE)
+        for side in (1, -1):
+            assert flank_gap(cq, pair, a, b, turn=turn, nudge=side * 0.7 * free) == pytest.approx(
+                0.3 * play, abs=PLAY_TOLERANCE)
+            assert shared(*meshed(cq, pair, a, b, turn, nudge=side * 1.3 * free)) > 2.5e-5
+    assert shared(*meshed(cq, pair, a, b, shift=-0.3)) > 0.025     # centres too close: the teeth collide
+    assert shared(*meshed(cq, pair, a, b, turn=pitch / 2, shift=-0.3)) > 0.025
 
 
-def test_teeth_without_backlash_touch_without_overlap(cq):
+def test_teeth_without_backlash_touch_without_overlap(cq, built):
     pair = gear_pair_dimensions(2, 18, 40)
-    a, b = spur_gear(2, 18, 4), spur_gear(2, 40, 4)
+    a, b = end_face(built('spur_gear', 2, 18, 4)[0], 4), end_face(built('spur_gear', 2, 40, 4)[0], 4)
     for turn in (0, 5, 10, 15):
-        assert mesh(cq, pair, a, b, turn) < 1e-4
-        assert mesh(cq, pair, a, b, turn, nudge=0.05) > 1e-3       # 0.016 mm at the pitch circle
-        assert mesh(cq, pair, a, b, turn, nudge=-0.05) > 1e-3
-    assert mesh(cq, pair, a, b, shift=-0.05) > 1e-3
+        assert shared(*meshed(cq, pair, a, b, turn)) < 2.5e-5 and flank_gap(cq, pair, a, b, turn=turn) < 1e-4
+        assert shared(*meshed(cq, pair, a, b, turn, nudge=0.05)) > 2.5e-4     # 0.016 mm at the pitch circle
+        assert shared(*meshed(cq, pair, a, b, turn, nudge=-0.05)) > 2.5e-4
+    assert shared(*meshed(cq, pair, a, b, shift=-0.05)) > 2.5e-4
 
 
-def test_ring_gear_is_the_same_teeth_on_a_ring(cq):
+def test_ring_gear_is_the_same_teeth_on_a_ring(cq, built):
     module, teeth, width, inner = 2, 40, 8, 60
     d = spur_gear_dimensions(module, teeth)
     ring = external_ring_gear(module, teeth, width, inner, backlash=0.05)
     assert ring.isValid() and len(ring.Solids()) == 1
-    solid = spur_gear(module, teeth, width, backlash=0.05)
+    solid, _ = built('spur_gear', module, teeth, width, backlash=0.05)
     assert ring.Volume() == pytest.approx(solid.Volume() - math.pi * 30 ** 2 * width, rel=1e-9)
-    assert common(ring, cq.Solid.makeCylinder(29.999, width)) == pytest.approx(0, abs=1e-6)
-    assert common(ring, turned(cq, ring, 9)) == pytest.approx(ring.Volume(), rel=1e-6)
-    assert thickness_at(cq, ring, 40, teeth, width) == pytest.approx(math.pi - 0.05, abs=2e-3)
+    face = end_face(ring, width)
+    assert shared(face, disc(cq, 29.999)) == pytest.approx(0, abs=1e-6)
+    assert shared(face, turned(cq, face, 9)) == pytest.approx(face.Area(), rel=1e-6)
+    assert thickness_at(cq, face, 40, teeth) == pytest.approx(math.pi - 0.05, abs=2e-3)
     assert d['root_diameter_mm'] == pytest.approx(75)
-    with pytest.raises(ValueError, match='Rim'):
-        external_ring_gear(module, teeth, width, 74)              # 0.5 mm of rim, under one module
-    assert external_ring_gear(module, teeth, width, 74, min_rim=0.4).isValid()
-    with pytest.raises(ValueError):
-        spur_gear(module, teeth, width, bore=75)
-    with pytest.raises(ValueError):
-        spur_gear(module, teeth, 0)
+    thin = external_ring_gear(module, teeth, width, 74, min_rim=0.4)          # 0.5 mm of rim, when asked for
+    assert thin.isValid() and len(thin.Solids()) == 1
+    assert external_ring_gear(module, teeth, width, 71).isValid()             # exactly one module of rim
 
 
-def test_a_176_tooth_gear_builds_in_seconds(cq):
-    start = time.perf_counter()
-    gear = spur_gear(1.5, 176, 10, bore=200)
-    elapsed = time.perf_counter() - start
+def test_a_176_tooth_ring_of_teeth_is_one_valid_solid(cq):
+    gear = external_ring_gear(1.5, 176, 10, 200)
     assert gear.isValid() and len(gear.Solids()) == 1
-    assert elapsed < 20                                            # 0.2 to 0.8 s on a desktop; the bound is for slow CI
     assert gear.BoundingBox().xmax == pytest.approx(1.5 * 178 / 2, abs=1e-4)
+    assert len(gear.Faces()) == 176 * 6 + 3                        # five faces a tooth, a root each, bore and ends
 
 
 # ---- straight bevel gears ------------------------------------------------------------------------------------------
 
-def test_bevel_gear_is_one_valid_solid_with_the_right_cone(cq):
-    module, teeth, mate, width = 2, 16, 32, 6
+def test_bevel_gear_is_one_valid_solid_with_the_right_cone(cq, built):
+    module, teeth, mate, width = 2, 13, 14, 6
     d = bevel_gear_dimensions(module, teeth, mate, width, backlash=0.05)
-    gear = bevel_gear(module, teeth, mate, width, backlash=0.05, bore=5)
-    assert isinstance(gear, cq.Solid) and gear.isValid()
-    volume = gear.Volume()
-    assert common(gear, turned(cq, gear, 360 / teeth)) == pytest.approx(volume, rel=1e-5)
-    assert common(gear, turned(cq, gear, 180 / teeth)) < 0.95 * volume
+    gear, raised = built('bevel_gear', module, teeth, mate, width, pressure_angle=20, backlash=0.05, bore=5)
+    assert isinstance(gear, cq.Solid) and gear.isValid() and raised == []
     box = gear.BoundingBox()
     assert box.xmax == pytest.approx(d['tip_diameter_mm'] / 2, abs=1e-3)      # the large-end tip circle
     assert box.zmax == pytest.approx(d['back_face_z_mm'], abs=1e-4)
-    # Teeth taper to the apex: on the pitch cone, the tooth is as thick as its share of the cone distance.
     delta, cone = math.radians(d['pitch_angle_deg']), d['cone_distance_mm']
-    for inset in (1.0, 5.0):
-        along, side = cone - inset, 0.04
-        r, z = along * math.sin(delta), along * math.cos(delta)
-        ring = (cq.Workplane('XZ').polyline([(r - side, z - side), (r + side, z - side), (r + side, z + side),
-                                             (r - side, z + side)]).close().revolve(360, (0, 0, 0), (0, 1, 0)).val())
-        measured = common(gear, ring) / (teeth * (2 * side) ** 2)
-        assert measured == pytest.approx((math.pi - 0.05) * along / cone, abs=3e-3)
-    # The tip and root cones pass through the apex: metal ends at the tip angle and is solid inside the root angle.
-    def cone_shell(angle_deg, z0, z1):
-        t = math.tan(math.radians(angle_deg))
-        return (cq.Workplane('XZ').polyline([(0, z0), (z0 * t, z0), (z1 * t, z1), (0, z1)]).close()
-                .revolve(360, (0, 0, 0), (0, 1, 0)).val())
-    z0, z1 = d['front_face_z_mm'] + 0.5, d['front_face_z_mm'] + 3
-    inside = cone_shell(d['root_angle_deg'] - 0.01, z0, z1).cut(cq.Solid.makeCylinder(2.5, 50))
-    assert common(gear, inside) == pytest.approx(inside.Volume(), rel=1e-6)
-    outer = common(gear, cone_shell(d['tip_angle_deg'] + 0.01, z0, z1))
-    slab = common(gear, cq.Solid.makeCylinder(60, z1 - z0, cq.Vector(0, 0, z0)))
-    assert outer == pytest.approx(slab, rel=1e-9)
-    assert common(gear, cone_shell(d['tip_angle_deg'] - 0.5, z0, z1)) < slab * 0.999
+    tip, root = math.radians(d['tip_angle_deg']), math.radians(d['root_angle_deg'])
+    # Two flat sections square to the axis, between where the root cone leaves the front cone and where the tip
+    # cone leaves the back cone, so each crosses the root, pitch and tip cones inside the face width.
+    low = (cone - width) * math.cos(root) / math.cos(root - delta)
+    high = cone * math.cos(tip) / math.cos(tip - delta)
+    assert high - low > 1
+    for z in (low + 0.25 * (high - low), low + 0.75 * (high - low)):
+        along = z / math.cos(delta)                                # where the section crosses the pitch cone
+        section = gear.intersect(disc(cq, 60, z=z))
+        area = section.Area()
+        # tooth count: a turn of one tooth pitch maps the section onto itself, half a pitch does not
+        assert shared(section, turned(cq, section, 360 / teeth)) == pytest.approx(area, rel=1e-6)
+        assert shared(section, turned(cq, section, 180 / teeth)) < 0.95 * area
+        # teeth taper to the apex: on the pitch cone, the tooth is as thick as its share of the cone distance
+        measured = thickness_at(cq, section, along * math.sin(delta), teeth, half=0.04, z=z)
+        assert measured == pytest.approx((math.pi - 0.05) * along / cone, abs=1e-3)
+        # The tip and root cones pass through the apex: metal ends at the tip angle, and is solid from the front
+        # cone (or the bore) out to the root angle and no further.
+        front = max((cone - width - z * math.cos(delta)) / math.sin(delta) + 0.01, 2.5)
+        inside = disc(cq, z * math.tan(root - math.radians(0.01)), front, z)
+        assert inside.Area() > 1 and shared(section, inside) == pytest.approx(inside.Area(), rel=1e-6)
+        beyond = disc(cq, z * math.tan(root + math.radians(0.5)), front, z)
+        assert shared(section, beyond) < 0.999 * beyond.Area()
+        assert shared(section, disc(cq, z * math.tan(tip + math.radians(0.01)), z=z)) == pytest.approx(area, rel=1e-9)
+        assert shared(section, disc(cq, z * math.tan(tip - math.radians(0.5)), z=z)) < area * 0.999
 
 
-def bevel_mesh(cq, a, b, da, db, turn=0.0, nudge=0.0, push=0.0):
-    """Gear a on +Z and gear b on +X with a common apex; b pushed toward the apex by ``push``."""
-    ratio = da['teeth'] / db['teeth']
-    placed = turned(cq, b, db['mesh_rotation_deg'] - turn * ratio).rotate(
-        cq.Vector(0, 0, 0), cq.Vector(0, 1, 0), 90).translate(cq.Vector(-push, 0, 0))
-    return common(turned(cq, a, turn + nudge), placed)
+class BevelPair:
+    """Gear a on +Z and gear b on +X with a common apex, and the teeth of each near the mesh.
+
+    A distance between two whole bevel gears takes seconds; between the slices kept here (the teeth within 5 mm of
+    the plane of the two axes) it takes a fraction. Cutting metal away can only widen a gap, so a gap that equals
+    the expected play was measured where the teeth are closest.
+    """
+
+    def __init__(self, cq, a, b, da, db):
+        self.cq, self.ratio = cq, da['teeth'] / db['teeth']
+        self.a, self.b = a, turned(cq, turned(cq, b, db['mesh_rotation_deg']), 90, (0, 1, 0))
+        reach = da['cone_distance_mm'] + 10
+        near = cq.Solid.makeBox(reach, 10, reach, cq.Vector(0, -5, 0))
+        self.near_a, self.near_b = self.a.intersect(near), self.b.intersect(near)
+
+    def placed(self, a, b, turn=0.0, nudge=0.0):
+        """a turned by ``turn`` degrees and nudged on, b following about its own axis."""
+        return turned(self.cq, a, turn + nudge), turned(self.cq, b, -turn * self.ratio, (1, 0, 0))
+
+    def gap(self, turn=0.0, nudge=0.0):
+        first, second = self.placed(self.near_a, self.near_b, turn, nudge)
+        return first.distance(second)
+
+    def overlap(self, turn=0.0, nudge=0.0):
+        """Common volume of the whole gears."""
+        return common(*self.placed(self.a, self.b, turn, nudge))
+
+    def collision(self, turn=0.0, nudge=0.0, push=0.0):
+        """Common volume of the teeth near the mesh, which is no more than that of the whole gears; b pushed toward
+        the apex by ``push``."""
+        first, second = self.placed(self.near_a, self.near_b, turn, nudge)
+        return common(first, second.translate(self.cq.Vector(-push, 0, 0)))
 
 
-@pytest.mark.parametrize('teeth_a,teeth_b,angle', [(16, 32, 20), (15, 30, 14.5)])
-def test_a_bevel_pair_meshes_at_90_degrees_with_the_backlash_it_was_given(cq, teeth_a, teeth_b, angle):
-    module, width, backlash = 2, 6, 0.05
+@pytest.mark.parametrize('teeth_a,teeth_b,width,angle,undercut', [(13, 14, 6, 20, False), (10, 10, 5, 14.5, True)])
+def test_a_bevel_pair_meshes_at_90_degrees_with_the_backlash_it_was_given(cq, built, teeth_a, teeth_b, width, angle,
+                                                                          undercut):
+    module, backlash = 2, 0.05
     options = dict(pressure_angle=angle, backlash=backlash)
     da = bevel_gear_dimensions(module, teeth_a, teeth_b, width, **options)
     db = bevel_gear_dimensions(module, teeth_b, teeth_a, width, **options)
     with warnings.catch_warnings():
-        warnings.simplefilter('ignore')
-        a = bevel_gear(module, teeth_a, teeth_b, width, **options)
-        b = bevel_gear(module, teeth_b, teeth_a, width, **options)
+        warnings.simplefilter('ignore')                            # the undercut pair warns; tested below
+        a, _ = built('bevel_gear', module, teeth_a, teeth_b, width, **options, **({} if undercut else {'bore': 5}))
+        b, _ = built('bevel_gear', module, teeth_b, teeth_a, width, **options)
+    assert da['undercut'] is undercut
+    pair = BevelPair(cq, a, b, da, db)
+    pitch = 360 / teeth_a
+    assert pair.overlap() < 1e-6
+    # The allowance shrinks with the tooth toward the apex, so the flanks are closest at the small end: there they
+    # stand backlash * cos(pressure angle) * (cone - face) / cone apart. The angular play is that of the large end.
+    play = backlash * math.cos(math.radians(angle)) * (1 - width / da['cone_distance_mm'])
     free = math.degrees(backlash / (module * teeth_a / 2))
-    assert bevel_mesh(cq, a, b, da, db) < 1e-6
-    turn = 0.3 * 360 / teeth_a
-    assert bevel_mesh(cq, a, b, da, db, turn) < 1e-6
-    for side in (1, -1):                                           # a may turn either way by the play, and no more
-        assert bevel_mesh(cq, a, b, da, db, turn, nudge=side * 0.6 * free) < 1e-6
-        assert bevel_mesh(cq, a, b, da, db, turn, nudge=side * 1.4 * free) > 1e-4
-    assert bevel_mesh(cq, a, b, da, db, push=0.3) > 0.1           # mounted too close to the apex: collision
+    assert pair.gap() == pytest.approx(play, abs=PLAY_TOLERANCE)
+    turn = 0.3 * pitch
+    # a may turn either way by the play, and no more. Tredgold's teeth are not exactly conjugate, and an undercut
+    # pair has lost part of its involute: away from the pitch point one side of the 10-tooth pair has 0.003 mm more
+    # play than the allowance (0.0005 mm for the 13 and 14 tooth pair). Never less.
+    for side in (1, -1):
+        left = pair.gap(turn, nudge=side * 0.6 * free)
+        assert 0.4 * play - PLAY_TOLERANCE < left < 0.4 * play + (4 if undercut else 1) * PLAY_TOLERANCE
+        assert pair.collision(turn, nudge=side * 1.4 * free) > 1e-4
+    assert pair.collision(push=0.3) > 0.1                          # mounted too close to the apex
 
 
-def test_an_undercut_bevel_warns(cq):
-    with pytest.warns(UserWarning, match='undercut'):
-        gear = bevel_gear(2, 12, 24, 6)
+def test_a_mitre_pair_without_backlash_touches_without_overlap(cq, built):
+    module, teeth, width = 2, 14, 6                                # one gear is both halves of a mitre pair
+    d = bevel_gear_dimensions(module, teeth, teeth, width)
+    assert d['pitch_angle_deg'] == pytest.approx(45) and d['mesh_rotation_deg'] == pytest.approx(180 / teeth)
+    gear, raised = built('bevel_gear', module, teeth, teeth, width)
+    assert raised == [] and not d['undercut']                      # 14 / cos(45 deg) = 19.8 virtual teeth
+    pair = BevelPair(cq, gear, gear, d, d)
+    turn = 0.3 * 360 / teeth
+    assert pair.overlap(turn) < 1e-4 and pair.gap(turn) < 1e-4
+    for nudge in (0.05, -0.05):                                    # 0.012 mm at the large-end pitch circle
+        assert pair.collision(turn, nudge) > 1e-3
+
+
+def test_a_wide_face_and_an_undercut_each_warn_for_the_caller(cq, built):
+    gear, raised = built('bevel_gear', *WIDE_UNDERCUT_BEVEL, **WIDE_OPTIONS)
     assert isinstance(gear, cq.Solid) and gear.isValid()
-    with pytest.raises(ValueError):
-        bevel_gear(2, 16, 32, 8, bore=40)
+    messages = sorted(str(w.message) for w in raised)
+    assert len(messages) == 2 and 'undercut' in messages[0]
+    assert 'above a third of the cone distance (4.714 mm)' in messages[1]
+    assert all(w.category is UserWarning and w.filename == __file__ for w in raised)
 
 
 def test_public_names():
-    assert set(gears.__all__) == {'module_from_diametral_pitch', 'spur_gear_dimensions', 'gear_pair_dimensions',
-                                  'spur_gear', 'external_ring_gear', 'bevel_gear_dimensions', 'bevel_gear'}
+    assert set(gears.__all__) == {'spur_gear_dimensions', 'gear_pair_dimensions', 'spur_gear', 'external_ring_gear',
+                                  'bevel_gear_dimensions', 'bevel_gear'}
+    assert not hasattr(gears, 'module_from_diametral_pitch')       # one home for it: cadagent.formulas, in metres

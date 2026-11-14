@@ -19,7 +19,7 @@ SCENES = {
   ('Choose a skill', 'Read sources and limits', '.agents/skills/README.md'),
   ('Use the toolkit', 'Produce a scoped change', 'software/cadagent/README.md'),
   ('Check the result', 'Tests and visible evidence', 'tests/README.md'),
-  ('Independent review', 'Approve or return findings', '.agents/agents/cad-pr-reviewer.md')]),
+  ('Peer review', 'Approve or return findings', '.agents/agents/cad-pr-reviewer.md')]),
  'site-publication': ('Source becomes a website', 'The generated site is an output, not the library owner.', [
   ('Owned sources', 'Guides, assets, metadata', 'docs/pages.yaml'),
   ('Site compiler', 'Select, link, render', 'tools/site/build-site.mjs'),

@@ -360,7 +360,7 @@
       "parameters": {
         "capacity": 80,
         "response": 0.35,
-        "demand": 8,
+        "demand": 4,
         "loss": 0.02,
         "pressureGain": 8,
         "heatGain": 4,
@@ -379,7 +379,8 @@
         "damage": 0
       },
       "assumptions": [
-        "Electrical loads: editable normalized demo parameters, not manufacturer or plant measurements."
+        "Electrical loads: editable normalized demo parameters, not manufacturer or plant measurements.",
+        "Nominal demand is deliberately below sustained illustrative CHP supply; the overload experiment edits this demand independently."
       ]
     },
     "standby": {
@@ -754,7 +755,7 @@
       "initial": {
         "enabled": true,
         "open": true,
-        "load": 75,
+        "load": 100,
         "level": 60,
         "inventory": 60,
         "temperature": 20,
@@ -764,7 +765,8 @@
       },
       "assumptions": [
         "RIO-01 Field I/O: editable normalized demonstration values; no measured hardware curve or calibrated instrument range.",
-        "PLC and remote-I/O data links drive the registered control-valve control inputs. Loss of PLC or I/O communication removes their modeled throughput. This is an illustrative availability gate, not a safety PLC program or validated control loop."
+        "PLC and remote-I/O data links drive the registered control-valve control inputs. Loss of PLC or I/O communication removes their modeled throughput. This is an illustrative availability gate, not a safety PLC program or validated control loop.",
+        "The generic I/O family response is held at a high normalized demand so a healthy upstream PLC leaves positive valve capacity; this is not a real I/O transfer function."
       ]
     }
   },

@@ -9,6 +9,12 @@ they read come from the dossier ([`dossier.md`](dossier.md)).
 prove that printed parts fit, move or hold: no tolerance stack, no print shrink, no deflection. Every verdict says
 `physical_fit_verified: false` and lists its assumptions.
 
+**What a pass covers.** A gate sees the shapes the build registered and nothing else. A pass says the drawn parts
+agree with the declarations; it says nothing about a component that is in the design and not in the model (a gear
+that is only numbers in an analysis script, a bought part whose model was never imported). Declare each one with
+`not_drawn(...)` and every verdict names it ([Not in the model](#not-in-the-model-not_drawn)). Nothing finds an
+omission that nobody declared, so check the parts list against the design before quoting a pass.
+
 ```mermaid
 flowchart TD
     B["build()<br/>geometry record"] --> T["relation table<br/>part pairs, cached"]
@@ -276,6 +282,52 @@ The file (`schema: cadagent.gate/1`) has `pass`, `status` (`pass`/`warn`/`fail`)
 false when any check fails **or when no check ran**. Warnings never fail the gate. At least one assumption is
 required, every exclusion needs a reason, and the file has no timestamp, so an unchanged run writes identical bytes.
 
+### Not in the model (`not_drawn`)
+
+A build script declares a component that is part of the design and has no shape in this build:
+
+```python
+from cadagent.review.dossier import not_drawn
+
+not_drawn("bevel_pinion", reason="sized in analysis/gears.py; no solid yet", near=("wheel", "fork"))
+not_drawn("motor_shaft", reason="vendor STEP not imported", near="motor")
+```
+
+`name` is a dossier id that no part, fastener or cavity uses, `reason` is required (why it is not drawn, and where
+it is specified instead), and `near` names the drawn parts it sits in, on or next to (each must be a registered
+part). The declaration adds no geometry. The build writes it to the geometry record as `not_drawn: {name: {reason,
+near, declared_at}}`, only when something is declared, so a record without declarations is unchanged.
+
+`cad-agent gates` then states it in every verdict it writes (`cadagent.review.gates.verdict.note_not_drawn`):
+
+| Where | What appears |
+|---|---|
+| `<gate>.json` | `not_drawn` (`[{"name", "reason", "near"}]`) and an assumption naming the components the gate did not see |
+| connectivity, containment, fasteners, motion, assembly | a `<gate>:not-drawn` check with status `warn`, so the gate reads `warn`, not `pass`; its `parts` are the `near` parts, so the review site shows it on their sections |
+| wall | the list and the assumption only: the wall of a drawn part does not depend on an absent one |
+| `<gate>.md` | a "Not in the model" section above the findings |
+| `cad-agent gates`, `check`, the report | each gate's row ends "N not drawn, not seen: ..."; `gates` prints a "not in the model" line after the counts |
+| the dossier lint | one `not-drawn` warning per component ([dossier.md](dossier.md#joining-cards-and-geometry)) |
+
+A declaration never fails a gate by itself (`pass` stays true and the exit code does not change), and a failing
+gate stays failing. The table is part of the geometry digest, so declaring or removing a component makes the
+verdicts stale until the gates run again. To clear the warning, draw the component and remove the declaration.
+
+<details>
+<summary>Limits: what the declaration does not do</summary>
+
+- **Only declared components appear.** No gate infers that something is missing.
+- **The warning is not limited to the `near` parts.** A gate has no geometry for the component, and `near` names
+  neighbours, not an extent: a shaft declared near a motor can still reach into the volume another part sweeps. So
+  every gate whose result depends on which solids are present warns whenever anything is declared.
+- **No stand-in volume.** The component is not given a size or a position; a gate cannot check clearance against
+  it. An envelope solid registered as a part is the way to get one.
+- **A gate function called directly returns its verdict without the note,** as it returns it without `inputs`.
+  Apply it with `note_not_drawn(data, record)` (the record is `BuildResult.geometry` or the JSON), before
+  `bind_inputs`. A project's own gate does the same; a gate name outside `NOT_DRAWN_NOTE_ONLY` gets the warning.
+
+</details>
+
 **Inputs.** `cad-agent gates` adds `inputs` to every verdict, so a verdict from an earlier build is never taken as
 current:
 
@@ -292,8 +344,9 @@ stale_reason(data, record, declarations=decl, options=opts)   # None, or why the
 
 `geometry_digest(record)` is the sha256 of the geometry record's canonical JSON without the fields that say who
 built it or where: `actor`, `parameters`, `shapes_dir`, `out_dir` and `hash` at the top level, `declared_at` and
-`file` in each part, cavity, joint, fastener, instance and step (only those fields: a part named `file` is still
-digested). A rebuild that changes a shape, a flag, a joint, a fastener or a step changes it; the same geometry
+`file` in each part, cavity, joint, fastener, instance, step and `not_drawn` entry (only those fields: a part named
+`file` is still digested). A rebuild that changes a shape, a flag, a joint, a fastener, a step or a component
+declared not drawn changes it; the same geometry
 rebuilt by someone else does not. `hashes` lets the stale message name the shapes that changed. `toolkit` records
 the cad-agent version; it is not compared (an editable install keeps one version across code changes, and a
 release would void every verdict whether its gate changed or not), so rerun the gates after an upgrade. A verdict
@@ -960,7 +1013,9 @@ cad-agent gates --dry-run               # what would run, what does not apply an
 It needs a geometry record (`exports/dossier-geometry.json`, written by the registry's `build()`): the build step
 writes it, or `cad.gates.build` names the script that `build_module` builds when the record is missing or with
 `--build`. It exits 1 when a gate fails and 2 when the project cannot be gated (no `dossier:` or `gates:` key, a
-bad configuration, no geometry record and no build).
+bad configuration, no geometry record and no build). When the record declares components that are not drawn, the
+summary ends with a "not in the model" line naming them: quote a pass together with that line
+([Not in the model](#not-in-the-model-not_drawn)).
 
 **What runs.** A gate runs when it has something to check, worked out from the record and the declarations
 without the kernel: connectivity when there are parts, containment when a card or the declarations file has a

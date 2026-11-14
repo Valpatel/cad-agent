@@ -44,7 +44,7 @@ flowchart LR
 | [motion.py](motion.py) | Sample declared joint ranges and interference. |
 | [relations.py](relations.py) | Assembly container and pairwise relation states. |
 | [run.py](run.py) | Plan and isolate the project gate runs. |
-| [verdict.py](verdict.py) | Shared pass/warn/fail record format. |
+| [verdict.py](verdict.py) | Shared pass/warn/fail record format; names the components declared not drawn. |
 | [wall.py](wall.py) | Mesh/B-rep inward-ray minimum-wall sampling. |
 
 [Parent map](../README.md)

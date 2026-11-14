@@ -17,6 +17,34 @@ flowchart TD
     class Cl out
 ```
 
+### Say which components are not in the model before quoting a gate pass
+- **Rule:** A gate passes on the model, not on the design. Before a pass is cited, list every component of the
+  design that has no solid in the build, and cite the pass together with that list. A gate that passed on a model
+  that left out the parts that mattered proves nothing about them.
+- **Check:** Compare the parts list (BOM, analysis scripts, drawings) with the parts the build registers. Declare
+  each missing one with `not_drawn(name, reason=..., near=...)` and run `cad-agent gates`: the summary's "not in the
+  model" line and each verdict's `not_drawn` list must name them, and motion, assembly, connectivity, containment
+  and fasteners must read `warn`. Any statement about clearance, removal or motion that involves such a component
+  waits until it is drawn. See [gates: not in the model](../../practice/gates.md#not-in-the-model-not_drawn).
+<details><summary>Incident and source</summary>
+
+- **Incident:** A steering mechanism was modelled as envelopes: plates, a fork, a wheel and motor bodies were
+  drawn, while its gears, shafts and bearings existed only as numbers in an analysis script. The connectivity,
+  motion and assembly gates all passed, and the project's README cited them: the motion gate turned each fork
+  through a full turn, and the assembly gate confirmed the wheel came out on one bolt. An independent review found
+  both statements false for the real design. An undrawn bevel pinion sat inside the wheel rim and blocked its
+  removal, and undrawn motor shafts hung into the volume a fork-mounted gear swept.
+- **Cause and correction:** The gates were right about the model and had no way to know what was missing from it.
+  Each verdict's general limit ("the model is checked, not the hardware") did not name the absent components, so
+  it did not travel with the quoted pass. The registry now takes a `not_drawn` declaration and every verdict
+  states it ([issue #722](https://github.com/Valpatel/cad-agent/issues/722)).
+- **Limits:** Only declared omissions appear. Nothing detects a component nobody listed, and a declared component
+  has no volume, so no clearance against it is checked until it is drawn.
+- **Source:** a project on cad-agent 0.35, reviewed 2026-11-14; `software/cadagent/review/gates/verdict.py`
+  (`note_not_drawn`), `tests/review/test_gates_cli.py`.
+
+</details>
+
 ### Prove each stage of an external connection
 - **Rule:** Authentication, subscription, fresh state, a camera grant and a decoded frame need separate evidence.
   Match replies to request identities; empty heartbeats, stale state and successful setters do not prove later stages.

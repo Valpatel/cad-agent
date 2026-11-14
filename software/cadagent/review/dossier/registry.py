@@ -2,7 +2,7 @@
 
 ::
 
-    from cadagent.review.dossier import Axis, part, cavity, joint, fastener, assembly
+    from cadagent.review.dossier import Axis, part, cavity, joint, fastener, assembly, not_drawn
 
     @part("hopper", section="S3")                 # registers the shape; joined to the YAML card by id
     def hopper(p): ...                            # returns a shape in assembly coordinates, as today
@@ -18,6 +18,8 @@
              at=lambda p: [Axis((x, y, p["flange_z"]), (0, 0, -1)) for x, y in p["flange_holes"]])
 
     assembly.step(1, fit="pan_base", onto="bench_base", direction="-Z", tool="hex_2.5", fasteners=["screw_m4x12"] * 3)
+
+    not_drawn("flap_spring", reason="sized in analysis/spring.py; no solid yet", near=("hopper_flap", "hopper"))
 
     if __name__ == "__main__":
         build()                                   # writes exports/dossier-geometry.json and exports/dossier-shapes/
@@ -46,6 +48,12 @@ saying where its hashes were made; every release leaves ``hash`` out of the gate
 Before #144 ``hash`` was the recipe string. Pass the recorded hashes along (``assembly_shapes(with_hashes=True)``); do
 not re-hash a shape loaded from its file. The shapes directory is build output and gets its own ``.gitignore``; the JSON
 is the record to commit.
+
+Not drawn. ``not_drawn(name, reason=..., near=...)`` records a component that is part of the design and has no shape
+in this build (a gear that is only numbers in an analysis script). It adds no geometry: the record lists it under
+``not_drawn``, and every gate verdict then says the gate did not see it
+(``cadagent.review.gates.verdict.note_not_drawn``). Draw the component and remove the declaration to clear it. Nothing
+finds an omission that was not declared.
 
 Scope. Module-level declarations go to the current registry (``use_registry``, else ``REGISTRY``);
 ``build_module`` gives every build a fresh one. ``root`` is the project root (``project_root``), not the cwd.
@@ -222,6 +230,15 @@ class StepDecl:
         return out
 
 
+@dataclass
+class NotDrawnDecl:
+    """A component of the design that this build does not draw: no shape, so no gate sees it."""
+    name: str
+    reason: str
+    near: List[str] = field(default_factory=list)   # the drawn parts it sits in, on or next to
+    where: str = ""
+
+
 def _caller_where() -> str:
     """file:line of the first frame outside this module (the build script's declaration)."""
     frame = sys._getframe(1)
@@ -304,8 +321,9 @@ class _Steps:
 
 
 class Registry:
-    """Collects parts, cavities, joints, fasteners and assembly steps. The module-level ``part``, ``cavity``,
-    ``joint``, ``fastener``, ``assembly.step`` and ``build`` write to the *current* registry: the one
+    """Collects parts, cavities, joints, fasteners, assembly steps and the components declared not drawn. The
+    module-level ``part``, ``cavity``, ``joint``, ``fastener``, ``assembly.step``, ``not_drawn`` and ``build`` write
+    to the *current* registry: the one
     ``use_registry()`` set, else ``cadagent.review.dossier.REGISTRY``. ``build_module()`` gives every build a fresh
     one."""
 
@@ -315,14 +333,16 @@ class Registry:
         self.joints: Dict[str, JointDecl] = {}
         self.fasteners: Dict[str, FastenerDecl] = {}
         self.steps: Dict[int, StepDecl] = {}
+        self.undrawn: Dict[str, NotDrawnDecl] = {}
         self.assembly = _Steps(self)
 
     def clear(self) -> None:
-        for table in (self.parts, self.cavities, self.joints, self.fasteners, self.steps):
+        for table in (self.parts, self.cavities, self.joints, self.fasteners, self.steps, self.undrawn):
             table.clear()
 
     def __len__(self) -> int:
-        return sum(len(t) for t in (self.parts, self.cavities, self.joints, self.fasteners, self.steps))
+        return sum(len(t) for t in (self.parts, self.cavities, self.joints, self.fasteners, self.steps,
+                                    self.undrawn))
 
     def _add(self, table: str, key: Any, decl: Any, what: str) -> None:
         items = getattr(self, table)
@@ -482,6 +502,34 @@ class Registry:
         self._add("fasteners", name, decl, f"fastener {name!r} (pass name= to tell two groups apart)")
         return decl
 
+    def not_drawn(self, name: str, *, reason: str, near: Union[str, Sequence[str]] = ()) -> NotDrawnDecl:
+        """Declare a component that is part of the design but has no shape in this build: ``name`` (a dossier id
+        that no part, fastener or cavity uses), ``reason`` (why it is not drawn, and where it is specified instead)
+        and ``near``, the drawn parts it sits in, on or next to. It adds no geometry and no gate can see it; the
+        geometry record lists it and every gate verdict says so (``docs/practice/gates.md``, "What a pass
+        covers"). ``near`` names neighbours for the reader; it is not an extent, and no gate limits its warning to
+        those parts."""
+        return self._not_drawn(name, reason=reason, near=near, where=_caller_where())
+
+    def _not_drawn(self, name: str, *, reason: str = "", near: Union[str, Sequence[str]] = (),
+                   where: str = "") -> NotDrawnDecl:
+        _check_id(name, "not_drawn name")
+        if not isinstance(reason, str) or not reason.strip():
+            raise RegistryError(f"not_drawn {name!r} needs a reason (why it is not drawn, and where it is specified)")
+        if isinstance(near, str):
+            near = [near]
+        try:
+            near = list(near or [])
+        except TypeError:
+            raise RegistryError(f"not_drawn {name!r}: near is a part name or a list of them, got {near!r}") from None
+        for n in near:
+            _check_id(n, f"not_drawn {name!r} near")
+        if name in near:
+            raise RegistryError(f"not_drawn {name!r} cannot be near itself")
+        decl = NotDrawnDecl(name=name, reason=" ".join(reason.split()), near=list(dict.fromkeys(near)), where=where)
+        self._add("undrawn", name, decl, f"not_drawn {name!r}")
+        return decl
+
     # -- the migration path
     def add_build_items(self, parts: Mapping[str, Any], items: Optional[Mapping[str, Any]] = None,
                         where: str = "") -> None:
@@ -489,7 +537,7 @@ class Registry:
         in code (a decorator) keeps its declaration; a ``print_parts()`` entry from an earlier call is replaced, so
         calling this again with new shapes records the new shapes."""
         items = dict(items or {})
-        unknown = set(items) - {"parts", "cavities", "joints", "fasteners", "assembly"}
+        unknown = set(items) - {"parts", "cavities", "joints", "fasteners", "assembly", "not_drawn"}
         if unknown:
             raise RegistryError(f"dossier_items() has unknown keys: {sorted(unknown)}")
         where = where or _caller_where()
@@ -531,6 +579,15 @@ class Registry:
             s = dict(s)
             order = s.pop("order")
             self.assembly._step(order, s.pop("fit"), s.pop("onto", None), **s, where=f"{where} (step {order})")
+        for n in items.get("not_drawn") or []:
+            if not isinstance(n, Mapping) or not n.get("name"):
+                raise RegistryError(f"dossier_items() not_drawn entry without a 'name': {n!r}")
+            n = dict(n)
+            name = n.pop("name")
+            bad = set(n) - {"reason", "near"}
+            if bad:
+                raise RegistryError(f"dossier_items() not_drawn {name!r} has unknown keys: {sorted(bad)}")
+            self._not_drawn(name, **n, where=f"{where} (not_drawn {name})")
 
     # -- building
     def build(self, params: Union[Mapping[str, Any], str, Path, None] = None, *, out_dir: Union[str, Path] = "exports",
@@ -553,6 +610,15 @@ class Registry:
         for cname in self.cavities:
             if cname in self.parts or cname in self.fasteners:
                 raise RegistryError(f"cavity name {cname!r} is also a part or fastener name; rename the cavity")
+        for name, nd in self.undrawn.items():
+            for table, what in ((self.parts, "part"), (self.fasteners, "fastener"), (self.cavities, "cavity")):
+                if name in table:
+                    raise RegistryError(f"not_drawn {name!r} ({nd.where}) is also a registered {what} "
+                                        f"({table[name].where}): a component is drawn or not drawn, not both")
+            missing = [n for n in nd.near if n not in self.parts]
+            if missing:
+                raise RegistryError(f"not_drawn {name!r} ({nd.where}) is near {', '.join(map(repr, missing))}, "
+                                    "which no part registers: near names drawn parts")
         p, param_record = _params(params, root)
         result = BuildResult(root=root, out_dir=out)
         actor = build_actor()
@@ -664,6 +730,9 @@ class Registry:
         steps = [self.steps[k] for k in sorted(self.steps)]
         geo["assembly"]["steps"] = [dict(s.to_dict(), declared_at=_rel(s.where, root)) for s in steps]
         result.steps = steps
+        if self.undrawn:                        # only when declared: a record without them keeps its bytes and digest
+            geo["not_drawn"] = {name: {"reason": nd.reason, "near": list(nd.near), "declared_at": _rel(nd.where, root)}
+                                for name, nd in self.undrawn.items()}
         result.geometry = geo
         if write:
             result.write()
@@ -1051,7 +1120,7 @@ def _copy_declarations(source: "Registry", target: "Registry", file: str) -> Non
         head = decl.where.partition(" (")[0].rpartition(":")[0]
         return bool(head) and os.path.normcase(os.path.abspath(head)) == file
 
-    for table in ("parts", "cavities", "joints", "fasteners", "steps"):
+    for table in ("parts", "cavities", "joints", "fasteners", "steps", "undrawn"):
         for key, decl in getattr(source, table).items():
             if mine(decl):
                 getattr(target, table)[key] = decl
@@ -1161,6 +1230,16 @@ def join(dossier: Any, geometry: Union[Mapping[str, Any], BuildResult]) -> List[
                 add("fastener-count", f"part {pid!r} card lists {use.qty} x {use.screws} to {use.to!r}; fastener() "
                                       f"places {sum(f.get('count', 0) for f in group)}", use.where or card.where)
     keys = {f.get("key") for f in fasteners.values()} | set(fasteners)
+    for name, nd in (geo.get("not_drawn") or {}).items():
+        nd = nd if isinstance(nd, Mapping) else {}
+        near = [str(n) for n in nd.get("near") or []]
+        add("not-drawn", f"component {name!r} of the design is not drawn"
+                         + (f" (near {', '.join(repr(n) for n in near)})" if near else "")
+                         + f": {nd.get('reason') or 'no reason recorded'}. No gate saw it; a gate pass says nothing "
+                           "about it", code_where(nd), "warning")
+        for n in near:
+            if n not in known:
+                add("unknown-part", f"not_drawn {name!r} is near {n!r}, which is not a part", code_where(nd))
     by_order = {s.order: s for s in dossier.assembly}
     for s in steps:
         w = code_where(s)
@@ -1226,6 +1305,11 @@ def joint(interface: str, kind: str = "revolute", **kwargs: Any) -> Callable:
 def fastener(key: str, **kwargs: Any) -> FastenerDecl:
     """``Registry.fastener`` on the current registry."""
     return current_registry().fastener(key, **kwargs)
+
+
+def not_drawn(name: str, **kwargs: Any) -> NotDrawnDecl:
+    """``Registry.not_drawn`` on the current registry."""
+    return current_registry().not_drawn(name, **kwargs)
 
 
 def build(params: Union[Mapping[str, Any], str, Path, None] = None, **kwargs: Any) -> BuildResult:

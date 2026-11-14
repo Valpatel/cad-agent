@@ -550,9 +550,13 @@ def cmd_gates(project: CadProject, args: argparse.Namespace) -> int:
     except GatesConfigError as exc:
         raise _Unusable(str(exc)) from exc
     width = max([len(r.gate) for r in res.rows] + [8])
+    from cadagent.review.gates.verdict import not_drawn_summary
+    caveat = not_drawn_summary(res.not_drawn)
     if dry:
         for r in res.rows:
             _say(f"  {r.status.upper() if r.status != 'na' else 'N/A':<4} {r.gate:<{width}}  {r.message}")
+        if caveat:
+            _say(f"not in the model: {caveat}")
         return 0
     for r in res.rows:
         if r.status in ("na", "skip"):
@@ -561,6 +565,8 @@ def cmd_gates(project: CadProject, args: argparse.Namespace) -> int:
     _say(f"gates: {counts['pass']} pass, {counts['fail']} fail, {counts['na']} not applicable, {counts['skip']} "
          f"skipped in {res.seconds:.1f}s" + (f" ({res.record})" if res.record else "")
          + " · checks of the CAD model, physical fit not verified")
+    if caveat:
+        _say(f"not in the model: {caveat}. A pass above does not cover what is not drawn; quote it with this line")
     if res.rows and not res.passed:
         _say(f"verdicts: {project.exports_dir / 'gates'}")
     return 0 if res.passed else 1

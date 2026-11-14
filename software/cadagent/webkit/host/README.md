@@ -5,10 +5,10 @@ Each instance owns its toolbar, loading state, inspector, keyboard focus and lif
 The ordinary assembly/STL and original-file adapters prove the same contract.
 
 ```mermaid
-flowchart LR
-  H[Scoped host] --> A[Ordinary model adapter]
-  H --> B[Original-file adapter]
-  A --> V[Existing domain viewers]
+flowchart TB
+  H[Scoped host] --> A[Model adapter]
+  H --> B[File adapter]
+  A --> V[Domain viewers]
   B --> V
 ```
 
@@ -35,6 +35,9 @@ const original = createFileHost(fileElement, { file: './part.step' });
 await Promise.all([assembly.ready, original.ready]);
 ```
 
+<details>
+<summary>Adapter lifecycle and state contract</summary>
+
 The generic `createViewerHost` in `viewer-host.js` imports no renderer. Its `mount`
 adapter receives `viewport`, `inspector`, an abort `signal` and scoped progress,
 selection and state callbacks. It returns `fit`, `dispose`, `getViewState`,
@@ -53,6 +56,8 @@ mount state is rejected, even when a URL is reused. This protects against change
 source bytes without claiming durable artifact identity. Ordinary-model part names
 and original-file `mesh:0` identifiers remain domain-local; review anchors and
 cross-artifact mappings need their own versioned identity layer.
+
+</details>
 
 The camera supports orbit/pan/pinch and visible Zoom to fit. Focus it for arrow-key
 orbit, Shift + arrows to pan, +/− zoom and Home to fit. Resizing preserves a deliberate

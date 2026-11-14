@@ -10,7 +10,7 @@ metadata:
 
 # Verify a self-contained SCADA consumer
 
-> **Needs:** `node` 22 or newer and `npm`; Python Playwright and local Chromium for SCADA browser capture and visual verification. `cad-agent agents install` says which of these this computer lacks. Without Python Playwright and local Chromium, skip that step; without the rest, do not use it.
+> **Needs:** `node` 22.22.2+, 24.15.0+, or 26+ and `npm`; Python Playwright and local Chromium for SCADA browser capture and visual verification. `cad-agent agents install` says which of these this computer lacks. Without Python Playwright and local Chromium, skip that step; without the rest, do not use it.
 
 Use the maintained cad-agent checkout. Read the [SCADA owner map](../../../software/cadagent/webkit/scada/README.md)
 and scoped instructions before editing. Follow [work tracking](../cad-work-tracking/SKILL.md),
@@ -26,6 +26,10 @@ This workflow verifies a concrete consumer or release from the maintained source
 2. Map the complete closure: runtime modules, schemas, styles, dynamic assets,
    providers, notices, optional gallery/examples, tests/tools and canonical skills.
    Keep runtime inclusion separate from source ownership. Each library keeps img/.
+   The Python wheel and full `cad-agent webkit` copy carry the complete SCADA
+   SDK, including local galleries, contextual guides, examples and package notices.
+   An assembly-guide export uses its explicit reader closure and excludes SCADA.
+   Do not create stripped SCADA metadata or an unused intermediate runtime profile.
    Preserve [package terms](../../../software/cadagent/webkit/scada/LICENSE.txt)
    and recorded authorization; an export does not grant a new license.
 3. Preserve `getSnapshot`, `subscribe` returning unsubscribe and optional dispatch,
@@ -38,7 +42,8 @@ This workflow verifies a concrete consumer or release from the maintained source
    deterministic continuation and a broken required dependency.
 5. Exercise the actual browser: two views and read-only observer, commands,
    fault/repair, disposal, keyboard/mobile Fit, reduced motion and sound policy.
-   View removal must not reset or double-tick the session. Use actual current exports and browser consumers; optional SCADA galleries must not inflate every export.
+   View removal must not reset or double-tick the session. Use actual current exports and browser consumers. Confirm that full SDK assets
+   remain available locally and assembly-only exports contain no SCADA subtree.
 6. For an authored source handoff, include generators/tests/docs/skills as well as
    runtime assets. Prove metadata/gallery regeneration and canonical skill discovery
    from the target-only checkout. A runtime tarball deliberately omitting tooling is

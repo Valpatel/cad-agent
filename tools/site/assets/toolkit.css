@@ -55,7 +55,7 @@
 .toolkit-preview-heading h2{font-size:28px;line-height:1.2;margin:6px 0}
 .toolkit-preview-heading .eyebrow{margin-bottom:0}
 .toolkit-preview-grid{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(230px,1fr);gap:24px;align-items:start}
-.toolkit-preview-art{overflow:hidden;min-height:280px;border:1px solid var(--line-2);border-radius:10px;background:var(--soft);display:grid;place-items:center;padding:16px}
+.toolkit-preview-art{overflow:hidden;min-height:280px;border:1px solid var(--line-2);border-radius:10px;background:#071522;color:#dbeef5;color-scheme:dark;display:grid;place-items:center;padding:16px}
 .toolkit-preview-art .scada-component{max-width:100%;width:100%}
 .toolkit-preview-art svg{max-width:100%;max-height:420px;display:block;margin:auto}
 [data-scada-state-fields]{display:grid;gap:13px}

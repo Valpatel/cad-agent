@@ -141,7 +141,7 @@
     "software/cadagent/webkit/scada/sim/scenarios/tablets/model.json": "aa50cbab2e1f312a0a93ddc54b2060a7ac7a2d03d37c28a344bd4353006ef2a7",
     "software/cadagent/webkit/scada/sim/scenarios/tablets/system.json": "554d26afda550592b675c246624cfaf03f5f5a59e9637b6d3be85cbb6d7e7f1a",
     "software/cadagent/webkit/scada/sim/scenarios/wastewater-digester/model.json": "de0bce5e0bb09f74ad4e3cd2104bca19848bf7ffecd1cd07fbbf0b5a8d1f0f85",
-    "software/cadagent/webkit/scada/sim/scenarios/wastewater-digester/system.json": "2e105259b5e0a9a9929ded27321ef24b7235c5b15e052f4ee8bf7d687d3e53ea",
+    "software/cadagent/webkit/scada/sim/scenarios/wastewater-digester/system.json": "32ba2b6c35a4a1a8e8544e72467e0f39dddc371bc0768c8a69ac969db454fa31",
     "software/cadagent/webkit/scada/sim/scenarios/winery/model.json": "5d69288356914f610617d1f55e139dc484e10020cc88aad9668edcc0dd3951e1",
     "software/cadagent/webkit/scada/sim/scenarios/winery/system.json": "5b34ef9975887e5ebe4348d1465cfe0ecf98e43a8da3f1d5a20a09fcde9b0da9",
     "software/cadagent/webkit/scada/sim/examples/equation-models/heater-bench.mjs": "ee0f6adff8a60b7501c315ccc76d25058021a5d77fa786d1c66ebe38446b5cba",
@@ -155,7 +155,7 @@
     "software/cadagent/webkit/scada/sim/examples/model-switching/main.mjs": "a0154594f7d2b4a8178708fea92f0355e8d719d3ec46b845fa43787fbf767836",
     "software/cadagent/webkit/scada/sim/examples/model-switching/styles.css": "fbcdf6da77f1d806d599a932a914a692df68e37e3edc178b4f36dad45707f156",
     "software/cadagent/webkit/scada/sim/examples/model-switching/system.json": "da880bbece64b0e5da801f513a73e17fb8251d5dc57ac926ab6fe1f84c0da88a",
-    "software/cadagent/webkit/scada/explorer/index.html": "b727159649ed1369094aa7904c25ed620552f59d6bf0258b65e086bc401dc768",
+    "software/cadagent/webkit/scada/explorer/index.html": "9141c4f7524c13af23dc5aaba017333bb4b7f82488ddffe976eb3f8ebbd56704",
     "software/cadagent/webkit/scada/explorer/main.mjs": "cf98ec971884d5e59c0b4aab99914abcc6f1a8e237ea53d6d12eabe65835c5c3",
     "software/cadagent/webkit/scada/explorer/model-editor.mjs": "4e887bb9896bb7bf1e23d30984773903cba0a860116c1b405c806fb966a99061",
     "software/cadagent/webkit/scada/explorer/search.mjs": "904fc7534c27ba62a257050bdcd68b12e0beaa61f0cb43ddfca23130bbdbf700",
@@ -198,7 +198,7 @@
     "software/cadagent/webkit/scada/ui/src/workspace/workspace.css": "ab34edc9ab0e19d181b50a7cb33c8f33f406113d195dd367728f16688e05fafd",
     "software/cadagent/webkit/scada/ui/src/workspace/workspace.mjs": "c7e1561841fe5af19b041f1da66ae1a502976496e54731218cfeb048d5f17085"
   },
-  "generator_sha256": "51c56be9126dbb42bb5b9896ec8de2003e3a697225436da1b12a0662ae903d83",
+  "generator_sha256": "7e0aa001b50cefddf2d61143b10acfb7005eb213b3f054c31b16454d4d73d2bb",
   "capture_helper_sha256": "2d767c6b3ab41936f2d199969612c12150c228e8259c30623fccf72d95bf1ffa",
   "capture": {
     "renderer": "Chromium software rendering, sRGB",
@@ -272,11 +272,11 @@
           "screen"
         ]
       },
-      "path": "img/thumbnails/wastewater-digester.jpg",
+      "path": "img/thumbnails/water-utilities/wastewater-digester/preview.jpg",
       "width": 1354,
       "height": 975,
-      "bytes": 108177,
-      "sha256": "50590ae3d3e3d4b2b53f4499b815e5417bdc4a0075476d7f00739a00dadf3878"
+      "bytes": 108192,
+      "sha256": "86d77d834b51ab0826d8db7f8ebe19909e898072643f630afcd086cecd29e036"
     },
     {
       "id": "winery",
@@ -344,7 +344,7 @@
           "transferValve"
         ]
       },
-      "path": "img/thumbnails/winery.jpg",
+      "path": "img/thumbnails/food-beverage/winery/preview.jpg",
       "width": 1354,
       "height": 975,
       "bytes": 111678,
@@ -416,7 +416,7 @@
           "packer"
         ]
       },
-      "path": "img/thumbnails/brewery.jpg",
+      "path": "img/thumbnails/food-beverage/brewery/preview.jpg",
       "width": 1354,
       "height": 975,
       "bytes": 110560,
@@ -486,7 +486,7 @@
           "transfer"
         ]
       },
-      "path": "img/thumbnails/fortune-cookies.jpg",
+      "path": "img/thumbnails/food-beverage/fortune-cookies/preview.jpg",
       "width": 1354,
       "height": 975,
       "bytes": 111605,
@@ -558,7 +558,7 @@
           "water"
         ]
       },
-      "path": "img/thumbnails/shampoo.jpg",
+      "path": "img/thumbnails/consumer-products/shampoo/preview.jpg",
       "width": 1354,
       "height": 975,
       "bytes": 113344,
@@ -634,7 +634,7 @@
           "waterPump"
         ]
       },
-      "path": "img/thumbnails/carbonated-beverages.jpg",
+      "path": "img/thumbnails/food-beverage/carbonated-beverages/preview.jpg",
       "width": 1354,
       "height": 975,
       "bytes": 117914,
@@ -704,7 +704,7 @@
           "strainer"
         ]
       },
-      "path": "img/thumbnails/dairy.jpg",
+      "path": "img/thumbnails/food-beverage/dairy/preview.jpg",
       "width": 1354,
       "height": 975,
       "bytes": 106230,
@@ -776,7 +776,7 @@
           "polish"
         ]
       },
-      "path": "img/thumbnails/fruit-juice.jpg",
+      "path": "img/thumbnails/food-beverage/fruit-juice/preview.jpg",
       "width": 1354,
       "height": 975,
       "bytes": 113042,
@@ -852,7 +852,7 @@
           "water"
         ]
       },
-      "path": "img/thumbnails/pharma-oral-liquid.jpg",
+      "path": "img/thumbnails/pharmaceuticals/pharma-oral-liquid/preview.jpg",
       "width": 1354,
       "height": 975,
       "bytes": 118629,
@@ -926,7 +926,7 @@
           "weighing"
         ]
       },
-      "path": "img/thumbnails/tablets.jpg",
+      "path": "img/thumbnails/pharmaceuticals/tablets/preview.jpg",
       "width": 1354,
       "height": 975,
       "bytes": 118302,
@@ -996,7 +996,7 @@
           "separator"
         ]
       },
-      "path": "img/thumbnails/biopharma-fermentation.jpg",
+      "path": "img/thumbnails/biopharma/biopharma-fermentation/preview.jpg",
       "width": 1354,
       "height": 975,
       "bytes": 108165,
@@ -1066,7 +1066,7 @@
           "valve"
         ]
       },
-      "path": "img/thumbnails/sterile-filling.jpg",
+      "path": "img/thumbnails/pharmaceuticals/sterile-filling/preview.jpg",
       "width": 1354,
       "height": 975,
       "bytes": 109204,
@@ -1136,7 +1136,7 @@
           "tint"
         ]
       },
-      "path": "img/thumbnails/paint-blending.jpg",
+      "path": "img/thumbnails/chemicals/paint-blending/preview.jpg",
       "width": 1354,
       "height": 975,
       "bytes": 108520,
@@ -1210,7 +1210,7 @@
           "water"
         ]
       },
-      "path": "img/thumbnails/industrial-detergent.jpg",
+      "path": "img/thumbnails/chemicals/industrial-detergent/preview.jpg",
       "width": 1354,
       "height": 975,
       "bytes": 115390,
@@ -1282,7 +1282,7 @@
           "resin"
         ]
       },
-      "path": "img/thumbnails/polymer-extrusion.jpg",
+      "path": "img/thumbnails/materials/polymer-extrusion/preview.jpg",
       "width": 1354,
       "height": 975,
       "bytes": 115190,
@@ -1354,7 +1354,7 @@
           "waterPump"
         ]
       },
-      "path": "img/thumbnails/concrete-batching.jpg",
+      "path": "img/thumbnails/construction-materials/concrete-batching/preview.jpg",
       "width": 1354,
       "height": 975,
       "bytes": 115080,
@@ -1424,7 +1424,7 @@
           "silo"
         ]
       },
-      "path": "img/thumbnails/cement.jpg",
+      "path": "img/thumbnails/construction-materials/cement/preview.jpg",
       "width": 1354,
       "height": 975,
       "bytes": 110672,
@@ -1494,7 +1494,7 @@
           "transfer"
         ]
       },
-      "path": "img/thumbnails/mineral-crushing.jpg",
+      "path": "img/thumbnails/mineral-processing/mineral-crushing/preview.jpg",
       "width": 1354,
       "height": 975,
       "bytes": 109592,
@@ -1564,7 +1564,7 @@
           "thickener"
         ]
       },
-      "path": "img/thumbnails/mineral-flotation.jpg",
+      "path": "img/thumbnails/mineral-processing/mineral-flotation/preview.jpg",
       "width": 1354,
       "height": 975,
       "bytes": 109544,
@@ -1632,7 +1632,7 @@
           "treatment"
         ]
       },
-      "path": "img/thumbnails/metal-finishing.jpg",
+      "path": "img/thumbnails/surface-treatment/metal-finishing/preview.jpg",
       "width": 1354,
       "height": 975,
       "bytes": 117734,
@@ -1704,7 +1704,7 @@
           "stock"
         ]
       },
-      "path": "img/thumbnails/pulp-paper.jpg",
+      "path": "img/thumbnails/fiber-processing/pulp-paper/preview.jpg",
       "width": 1354,
       "height": 975,
       "bytes": 114433,
@@ -1766,7 +1766,7 @@
           "turbine"
         ]
       },
-      "path": "img/thumbnails/power-gas-simple-cycle.jpg",
+      "path": "img/thumbnails/power-utilities/power-gas-simple-cycle/preview.jpg",
       "width": 1354,
       "height": 975,
       "bytes": 107688,
@@ -1830,7 +1830,7 @@
           "regulator"
         ]
       },
-      "path": "img/thumbnails/power-gas-combined-cycle.jpg",
+      "path": "img/thumbnails/power-utilities/power-gas-combined-cycle/preview.jpg",
       "width": 1354,
       "height": 975,
       "bytes": 119065,
@@ -1896,7 +1896,7 @@
           "stack"
         ]
       },
-      "path": "img/thumbnails/power-coal-steam.jpg",
+      "path": "img/thumbnails/power-utilities/power-coal-steam/preview.jpg",
       "width": 1354,
       "height": 975,
       "bytes": 109869,
@@ -1962,7 +1962,7 @@
           "stack"
         ]
       },
-      "path": "img/thumbnails/power-biomass-chp.jpg",
+      "path": "img/thumbnails/power-utilities/power-biomass-chp/preview.jpg",
       "width": 1354,
       "height": 975,
       "bytes": 110565,
@@ -2026,11 +2026,11 @@
           "upstream"
         ]
       },
-      "path": "img/thumbnails/power-hydro-impoundment.jpg",
+      "path": "img/thumbnails/power-utilities/power-hydro-impoundment/preview.jpg",
       "width": 1354,
       "height": 975,
-      "bytes": 109076,
-      "sha256": "cb3fbb055d8f55566fd0a15fd71e1fb41ec296ca0ba097396fd4bf3f8d947123"
+      "bytes": 109077,
+      "sha256": "f1ea9dbe39fdf80d66eb2f56b01d4cb42776f02ffbd602291aa5e49eb3c22141"
     },
     {
       "id": "power-hydro-diversion",
@@ -2088,11 +2088,11 @@
           "upstream"
         ]
       },
-      "path": "img/thumbnails/power-hydro-diversion.jpg",
+      "path": "img/thumbnails/power-utilities/power-hydro-diversion/preview.jpg",
       "width": 1354,
       "height": 975,
-      "bytes": 104898,
-      "sha256": "0b6384f65315c7dccc779cccadc2c99525334d82b3931d2f3b174694baabb487"
+      "bytes": 104899,
+      "sha256": "0408be7280a2e61b562ab3516bf630a54827592a200890a9715459ee2eb22235"
     },
     {
       "id": "power-pumped-storage",
@@ -2146,7 +2146,7 @@
           "upper"
         ]
       },
-      "path": "img/thumbnails/power-pumped-storage.jpg",
+      "path": "img/thumbnails/power-utilities/power-pumped-storage/preview.jpg",
       "width": 1354,
       "height": 975,
       "bytes": 93711,
@@ -2208,7 +2208,7 @@
           "steamGenerator"
         ]
       },
-      "path": "img/thumbnails/power-nuclear-pwr.jpg",
+      "path": "img/thumbnails/power-utilities/power-nuclear-pwr/preview.jpg",
       "width": 1354,
       "height": 975,
       "bytes": 119094,
@@ -2270,7 +2270,7 @@
           "steamGenerator"
         ]
       },
-      "path": "img/thumbnails/power-nuclear-phwr.jpg",
+      "path": "img/thumbnails/power-utilities/power-nuclear-phwr/preview.jpg",
       "width": 1354,
       "height": 975,
       "bytes": 120675,
@@ -2330,7 +2330,7 @@
           "steamGenerator"
         ]
       },
-      "path": "img/thumbnails/power-nuclear-htgr.jpg",
+      "path": "img/thumbnails/power-utilities/power-nuclear-htgr/preview.jpg",
       "width": 1354,
       "height": 975,
       "bytes": 109696,
@@ -2394,7 +2394,7 @@
           "steamGenerator"
         ]
       },
-      "path": "img/thumbnails/power-nuclear-sodium-fast.jpg",
+      "path": "img/thumbnails/power-utilities/power-nuclear-sodium-fast/preview.jpg",
       "width": 1354,
       "height": 975,
       "bytes": 130694,
@@ -2458,7 +2458,7 @@
           "steamGenerator"
         ]
       },
-      "path": "img/thumbnails/power-nuclear-molten-salt.jpg",
+      "path": "img/thumbnails/power-utilities/power-nuclear-molten-salt/preview.jpg",
       "width": 1354,
       "height": 975,
       "bytes": 128111,
@@ -2518,7 +2518,7 @@
           "rods"
         ]
       },
-      "path": "img/thumbnails/power-nuclear-bwr.jpg",
+      "path": "img/thumbnails/power-utilities/power-nuclear-bwr/preview.jpg",
       "width": 1354,
       "height": 975,
       "bytes": 107652,
@@ -2588,7 +2588,7 @@
           "aTurbine"
         ]
       },
-      "path": "img/thumbnails/power-nuclear-lw-smr.jpg",
+      "path": "img/thumbnails/power-utilities/power-nuclear-lw-smr/preview.jpg",
       "width": 1354,
       "height": 975,
       "bytes": 126625,
@@ -2650,7 +2650,7 @@
           "stack"
         ]
       },
-      "path": "img/thumbnails/power-ng-engine-chp.jpg",
+      "path": "img/thumbnails/power-utilities/power-ng-engine-chp/preview.jpg",
       "width": 1354,
       "height": 975,
       "bytes": 112434,
@@ -2712,7 +2712,7 @@
           "transfer"
         ]
       },
-      "path": "img/thumbnails/power-diesel-standby.jpg",
+      "path": "img/thumbnails/power-utilities/power-diesel-standby/preview.jpg",
       "width": 1354,
       "height": 975,
       "bytes": 110780,
@@ -2778,7 +2778,7 @@
           "station"
         ]
       },
-      "path": "img/thumbnails/power-gasoline-portable.jpg",
+      "path": "img/thumbnails/power-utilities/power-gasoline-portable/preview.jpg",
       "width": 1354,
       "height": 975,
       "bytes": 106103,
@@ -2840,7 +2840,7 @@
           "stepdown"
         ]
       },
-      "path": "img/thumbnails/power-substation-distribution.jpg",
+      "path": "img/thumbnails/power-utilities/power-substation-distribution/preview.jpg",
       "width": 1354,
       "height": 975,
       "bytes": 111832,
@@ -2900,7 +2900,7 @@
           "transformer"
         ]
       },
-      "path": "img/thumbnails/power-substation-gsu.jpg",
+      "path": "img/thumbnails/power-utilities/power-substation-gsu/preview.jpg",
       "width": 1354,
       "height": 975,
       "bytes": 102761,
@@ -2960,11 +2960,11 @@
           "transformer"
         ]
       },
-      "path": "img/thumbnails/power-substation-gis.jpg",
+      "path": "img/thumbnails/power-utilities/power-substation-gis/preview.jpg",
       "width": 1354,
       "height": 975,
-      "bytes": 99360,
-      "sha256": "be61432111a7d4b99f1ebcd1221da129d33bdd80e70ed41df330cd95f552be07"
+      "bytes": 99368,
+      "sha256": "9a87c982ceead57c9db852be2f0ad5e9772f341cf9e999742e0c7ddd9384c3fa"
     },
     {
       "id": "power-hvdc-interface",
@@ -3018,7 +3018,7 @@
           "source"
         ]
       },
-      "path": "img/thumbnails/power-hvdc-interface.jpg",
+      "path": "img/thumbnails/power-utilities/power-hvdc-interface/preview.jpg",
       "width": 1354,
       "height": 975,
       "bytes": 93230,
@@ -3078,7 +3078,7 @@
           "isolator"
         ]
       },
-      "path": "img/thumbnails/power-solar-pv.jpg",
+      "path": "img/thumbnails/power-utilities/power-solar-pv/preview.jpg",
       "width": 1354,
       "height": 975,
       "bytes": 102442,
@@ -3136,7 +3136,7 @@
           "deviceB"
         ]
       },
-      "path": "img/thumbnails/power-wind-collection.jpg",
+      "path": "img/thumbnails/power-utilities/power-wind-collection/preview.jpg",
       "width": 1354,
       "height": 975,
       "bytes": 95753,
@@ -3194,11 +3194,11 @@
           "deviceB"
         ]
       },
-      "path": "img/thumbnails/power-tidal-current.jpg",
+      "path": "img/thumbnails/power-utilities/power-tidal-current/preview.jpg",
       "width": 1354,
       "height": 975,
-      "bytes": 96581,
-      "sha256": "1461717fed11f6ff31ca1ed7b259e0c5db081bd608fde27eb2ae4387324bab38"
+      "bytes": 96580,
+      "sha256": "f1d532155f3657280b6aeec83a8969e5654873038bf812a541c5ef59e7f57787"
     },
     {
       "id": "power-wave-point-absorber",
@@ -3252,11 +3252,11 @@
           "deviceB"
         ]
       },
-      "path": "img/thumbnails/power-wave-point-absorber.jpg",
+      "path": "img/thumbnails/power-utilities/power-wave-point-absorber/preview.jpg",
       "width": 1354,
       "height": 975,
-      "bytes": 96699,
-      "sha256": "e7e64a97432a0df7a3c4e146428ad27fff04a07b0fd2f67f15f8f567d0625d7f"
+      "bytes": 96695,
+      "sha256": "d94ea5e115041b402baec78c7bcfe5db118ca3866cc99d9ad6fbead45ee796db"
     },
     {
       "id": "power-csp-tower",
@@ -3316,11 +3316,11 @@
           "station"
         ]
       },
-      "path": "img/thumbnails/power-csp-tower.jpg",
+      "path": "img/thumbnails/power-utilities/power-csp-tower/preview.jpg",
       "width": 1354,
       "height": 975,
-      "bytes": 122030,
-      "sha256": "b55db294cc121766ac7acf8ff4dfaf43f80b39c8d2a66151566810cf013ee5d9"
+      "bytes": 122053,
+      "sha256": "4090c88a1d5f3eab3c5e6e1ab778e1b908eec167373ac4fd10c49e4ee90e44b3"
     },
     {
       "id": "power-csp-trough",
@@ -3380,7 +3380,7 @@
           "station"
         ]
       },
-      "path": "img/thumbnails/power-csp-trough.jpg",
+      "path": "img/thumbnails/power-utilities/power-csp-trough/preview.jpg",
       "width": 1354,
       "height": 975,
       "bytes": 122016,
@@ -3442,7 +3442,7 @@
           "water"
         ]
       },
-      "path": "img/thumbnails/power-fuel-cell.jpg",
+      "path": "img/thumbnails/power-utilities/power-fuel-cell/preview.jpg",
       "width": 1354,
       "height": 975,
       "bytes": 109271,
@@ -3500,7 +3500,7 @@
           "well"
         ]
       },
-      "path": "img/thumbnails/power-geothermal-flash.jpg",
+      "path": "img/thumbnails/power-utilities/power-geothermal-flash/preview.jpg",
       "width": 1354,
       "height": 975,
       "bytes": 101672,
@@ -3558,11 +3558,11 @@
           "well"
         ]
       },
-      "path": "img/thumbnails/power-geothermal-binary.jpg",
+      "path": "img/thumbnails/power-utilities/power-geothermal-binary/preview.jpg",
       "width": 1354,
       "height": 975,
-      "bytes": 100466,
-      "sha256": "ac6d994c5ddb140a75519d5b6f4158dc7c773dab16d0b5344dc03d711f39d232"
+      "bytes": 100427,
+      "sha256": "8527dd0b432986b67227c808b77dba6a58534cc6119293dee117db819d6ac88c"
     },
     {
       "id": "power-geothermal-dry-steam",
@@ -3616,7 +3616,7 @@
           "well"
         ]
       },
-      "path": "img/thumbnails/power-geothermal-dry-steam.jpg",
+      "path": "img/thumbnails/power-utilities/power-geothermal-dry-steam/preview.jpg",
       "width": 1354,
       "height": 975,
       "bytes": 94501,
@@ -3676,7 +3676,7 @@
           "converter"
         ]
       },
-      "path": "img/thumbnails/power-battery-storage.jpg",
+      "path": "img/thumbnails/power-utilities/power-battery-storage/preview.jpg",
       "width": 1354,
       "height": 975,
       "bytes": 103059,
@@ -3746,7 +3746,7 @@
           "regulator"
         ]
       },
-      "path": "img/thumbnails/power-hybrid-microgrid.jpg",
+      "path": "img/thumbnails/power-utilities/power-hybrid-microgrid/preview.jpg",
       "width": 1354,
       "height": 975,
       "bytes": 121171,
@@ -3808,7 +3808,7 @@
           "sump"
         ]
       },
-      "path": "img/thumbnails/aquaponics-media-bed.jpg",
+      "path": "img/thumbnails/agriculture-aquaculture/aquaponics-media-bed/preview.jpg",
       "width": 1354,
       "height": 975,
       "bytes": 112146,
@@ -3876,7 +3876,7 @@
           "sump"
         ]
       },
-      "path": "img/thumbnails/aquaponics-dwc.jpg",
+      "path": "img/thumbnails/agriculture-aquaculture/aquaponics-dwc/preview.jpg",
       "width": 1354,
       "height": 975,
       "bytes": 111721,
@@ -3944,7 +3944,7 @@
           "valveB"
         ]
       },
-      "path": "img/thumbnails/hydroponics-nft.jpg",
+      "path": "img/thumbnails/agriculture-aquaculture/hydroponics-nft/preview.jpg",
       "width": 1354,
       "height": 975,
       "bytes": 112804,
@@ -4010,11 +4010,11 @@
           "tableB"
         ]
       },
-      "path": "img/thumbnails/hydroponics-ebb-flow.jpg",
+      "path": "img/thumbnails/agriculture-aquaculture/hydroponics-ebb-flow/preview.jpg",
       "width": 1354,
       "height": 975,
-      "bytes": 106933,
-      "sha256": "81f6016100d341ff3d85d788bffb2de0d7ad77b1a77bf5ce839f68d5d307982b"
+      "bytes": 106945,
+      "sha256": "c52d6400eef5e7170d75ae34f2a13393e18d5368ccf9655ed0e604f7d87bfe78"
     },
     {
       "id": "greenhouse-drip",
@@ -4078,7 +4078,7 @@
           "rowB"
         ]
       },
-      "path": "img/thumbnails/greenhouse-drip.jpg",
+      "path": "img/thumbnails/agriculture-aquaculture/greenhouse-drip/preview.jpg",
       "width": 1354,
       "height": 975,
       "bytes": 116432,
@@ -4144,7 +4144,7 @@
           "waterProbe"
         ]
       },
-      "path": "img/thumbnails/indoor-aeroponics.jpg",
+      "path": "img/thumbnails/agriculture-aquaculture/indoor-aeroponics/preview.jpg",
       "width": 1354,
       "height": 975,
       "bytes": 113718,
@@ -4202,19 +4202,19 @@
           "supply"
         ]
       },
-      "path": "img/thumbnails/electric-batch-oven.jpg",
+      "path": "img/thumbnails/manufacturing-thermal-processing/electric-batch-oven/preview.jpg",
       "width": 1354,
       "height": 975,
-      "bytes": 89529,
-      "sha256": "c94e3270185f7f80cec48c232748a10d317c3da6772809f16b875342245ea6f7"
+      "bytes": 89551,
+      "sha256": "0ba398b3e5079e436e65139dcaff7483b0749940f4178985e1452af50bca7dae"
     }
   ],
   "contact_sheet": {
     "path": "img/thumbnails/contact-sheet.jpg",
     "width": 2000,
     "height": 6426,
-    "bytes": 1406898,
-    "sha256": "13666589d6a9f24c5d945608fcdb74e13b0be02d80ac1cff50910bcfbd3f52ae"
+    "bytes": 1406966,
+    "sha256": "4772b550fec8c118bd66a524e4abb0550417bf5b0f8fa69ba0474c1dbf35039c"
   },
-  "capture_implementation_sha256": "8f66bb49d4c672df66053123585eb1047c7b6db249f8f9ab9c03c5504d539585"
+  "capture_implementation_sha256": "7ce20b5672d6e5af2dec7ed0ce2bbb0fd4e4f0a7af5fbff3ce04439770760a5e"
 }

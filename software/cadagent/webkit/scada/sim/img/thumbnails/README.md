@@ -1,25 +1,32 @@
-# Scenario thumbnail files
+# Captured simulation views
 
-[Parent image gallery](../README.md) · [Package owner](../../README.md) · [Scenario definitions](../../scenarios/README.md) · [Capture manifest](../../metadata/thumbnails.json)
+Real Explorer images captured after reset, pause and Zoom to fit. Values and behavior remain illustrative; overview text size is not an operating-scale readability guarantee.
 
-This folder contains **61 scenario JPEGs** and one contact sheet. Each scenario filename is its stable catalog ID: `<scenario-id>.jpg`. These are model-owned previews of the portable Explorer, captured after resetting and pausing the shared simulation and fitting the diagram.
+[Library image gallery](../README.md) · [Scenario definitions](../../scenarios/README.md) · [Generation metadata](../../metadata/thumbnails.json)
 
 ```mermaid
-flowchart TD
-  Index["Scenario catalog ID"] --> Image["scenario-id.jpg"]
-  Image --> Gallery["Parent sector gallery"]
-  Image --> Contact["contact-sheet.jpg"]
-  Receipt["metadata / thumbnails.json"] -. "source and image provenance" .-> Image
+flowchart LR
+  Catalog[Scenario definitions] --> Sectors[Sector folders]
+  Sectors --> Scenario[Stable scenario folder]
+  Scenario --> Asset[Preview and local map]
 ```
 
-| File or map | Use |
-| --- | --- |
-| [`<scenario-id>.jpg`](../README.md) | Browse the parent gallery for every image with its system/model links. |
-| [contact-sheet.jpg](contact-sheet.jpg) | Complete visual inventory at overview scale. |
-| [Explorer instructions](../../../explorer/README.md) | Open an interactive view to inspect equipment, issue commands and zoom. |
+Browse 61 scenarios in 14 sectors. Paths use `sector/scenario/preview.jpg` for captures and `sector/scenario/topology.svg` for topology maps.
 
-A fitted thumbnail is a navigation aid, not proof of operating-scale readability or model accuracy. All scenarios remain illustrative and editable. Equipment artwork and UI control captures belong to the sibling [UI image gallery](../../../ui/img/README.md).
-
-<a href="wastewater-digester.jpg"><img src="wastewater-digester.jpg" alt="Wastewater &amp; biogas digital twin initial diagram" width="640"></a>
-
-Regenerate images with `npm --prefix tools/webkit/scada run thumbnails:scenarios`; check their provenance with `npm --prefix tools/webkit/scada run thumbnails:scenarios -- --check`. The generator also owns this README. For documentation-only changes, use `--indexes-only`; it preserves the historical capture receipt and validates existing image bytes before writing maps.
+| Sector | Scenarios | Representative preview |
+| --- | ---: | --- |
+| [Agriculture &amp; aquaculture](agriculture-aquaculture/README.md) | 6 | <a href="agriculture-aquaculture/aquaponics-media-bed/preview.jpg"><img src="agriculture-aquaculture/aquaponics-media-bed/preview.jpg" width="260" alt="Media-bed aquaponics initial captured view"></a> |
+| [Biopharma](biopharma/README.md) | 1 | <a href="biopharma/biopharma-fermentation/preview.jpg"><img src="biopharma/biopharma-fermentation/preview.jpg" width="260" alt="Biopharma fermentation initial captured view"></a> |
+| [Chemicals](chemicals/README.md) | 2 | <a href="chemicals/paint-blending/preview.jpg"><img src="chemicals/paint-blending/preview.jpg" width="260" alt="Paint blending initial captured view"></a> |
+| [Construction materials](construction-materials/README.md) | 2 | <a href="construction-materials/concrete-batching/preview.jpg"><img src="construction-materials/concrete-batching/preview.jpg" width="260" alt="Concrete batching initial captured view"></a> |
+| [Consumer products](consumer-products/README.md) | 1 | <a href="consumer-products/shampoo/preview.jpg"><img src="consumer-products/shampoo/preview.jpg" width="260" alt="Shampoo blending initial captured view"></a> |
+| [Fiber processing](fiber-processing/README.md) | 1 | <a href="fiber-processing/pulp-paper/preview.jpg"><img src="fiber-processing/pulp-paper/preview.jpg" width="260" alt="Pulp &amp; paper initial captured view"></a> |
+| [Food &amp; beverage](food-beverage/README.md) | 6 | <a href="food-beverage/winery/preview.jpg"><img src="food-beverage/winery/preview.jpg" width="260" alt="Winery initial captured view"></a> |
+| [Manufacturing &amp; thermal processing](manufacturing-thermal-processing/README.md) | 1 | <a href="manufacturing-thermal-processing/electric-batch-oven/preview.jpg"><img src="manufacturing-thermal-processing/electric-batch-oven/preview.jpg" width="260" alt="Electric batch heating cell initial captured view"></a> |
+| [Materials](materials/README.md) | 1 | <a href="materials/polymer-extrusion/preview.jpg"><img src="materials/polymer-extrusion/preview.jpg" width="260" alt="Polymer extrusion initial captured view"></a> |
+| [Mineral processing](mineral-processing/README.md) | 2 | <a href="mineral-processing/mineral-crushing/preview.jpg"><img src="mineral-processing/mineral-crushing/preview.jpg" width="260" alt="Mineral crushing &amp; screening initial captured view"></a> |
+| [Pharmaceuticals](pharmaceuticals/README.md) | 3 | <a href="pharmaceuticals/pharma-oral-liquid/preview.jpg"><img src="pharmaceuticals/pharma-oral-liquid/preview.jpg" width="260" alt="Oral-liquid manufacturing initial captured view"></a> |
+| [Power &amp; utilities](power-utilities/README.md) | 33 | <a href="power-utilities/power-gas-simple-cycle/preview.jpg"><img src="power-utilities/power-gas-simple-cycle/preview.jpg" width="260" alt="Simple-cycle gas turbine initial captured view"></a> |
+| [Surface treatment](surface-treatment/README.md) | 1 | <a href="surface-treatment/metal-finishing/preview.jpg"><img src="surface-treatment/metal-finishing/preview.jpg" width="260" alt="Metal-finishing line initial captured view"></a> |
+| [Water &amp; utilities](water-utilities/README.md) | 1 | <a href="water-utilities/wastewater-digester/preview.jpg"><img src="water-utilities/wastewater-digester/preview.jpg" width="260" alt="Wastewater &amp; biogas digital twin initial captured view"></a> |
+| [Complete contact sheet](contact-sheet.jpg) | 61 | Complete visual inventory at overview scale. |

@@ -352,14 +352,13 @@ def test_node_readiness_checks_version_without_package_or_network_calls(monkeypa
             return agentkit.subprocess.CompletedProcess(cmd, code, text, '')
         monkeypatch.setattr(agentkit.subprocess, 'run', run)
 
-    for text in ('v20.18.0\n', 'unrecognized\n', ''):
+    for text in ('v20.18.0\n', 'v22.22.1\n', 'v23.11.0\n', 'v24.14.9\n', 'v25.9.0\n', 'unrecognized\n', ''):
         version(text)
-        assert '22 or newer' in agentkit._node()
-    version('v22.0.0\n')
-    assert agentkit._node() is None
-    version('v24.3.1\n')
-    assert agentkit._node() is None
-    version('v22.0.0\n', 1)
+        assert '22.22.2+' in agentkit._node()
+    for text in ('v22.22.2\n', 'v24.15.0\n', 'v26.0.0\n', 'v28.1.0\n'):
+        version(text)
+        assert agentkit._node() is None
+    version('v22.22.2\n', 1)
     assert agentkit._node() is not None
     assert all(call == ['node', '--version'] for call in calls)
 

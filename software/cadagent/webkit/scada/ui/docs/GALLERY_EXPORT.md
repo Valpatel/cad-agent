@@ -2,6 +2,16 @@
 
 `tools/webkit/scada/ui/generate-gallery.py` exports canonical component artwork as self-contained SVG images. It owns `img/symbols/`, `img/states/`, `img/README.md` and `metadata/gallery.json`. The neighboring thumbnail generator owns JPEG captures under `img/thumbnails/`; model scenario captures belong to `scada-sim/img/`.
 
+Gallery paths follow the library's equipment hierarchy. Animated artwork uses
+`img/symbols/<category>/<type>/{default|variant}.svg`; selected state comparisons
+use `img/states/<group>/<type>--<sample>.svg`. Static equipment captures use
+`img/thumbnails/equipment/<category>/<type>/{default|variant}.jpg`, while real
+viewer/workspace captures live in `img/thumbnails/workspace/`. Each populated
+folder has a generated README; variants stay beside their type rather than in
+one unbounded variants directory. Resolve exact paths from the manifests instead
+of constructing a path from a display name.
+
+
 The exporter calls the same public renderer used by applications. It copies the rendered SVG artwork and instance-scoped IDs unchanged, adapts HTML wrappers to SVG groups, and draws native SVG labels/readout rows from the renderer's gauge output. The adapter has no model, timer, external resource, `foreignObject` or image script. The card is a fixed illustrative state; CSS supplies decorative motion. It is not another equipment implementation.
 
 CSS is parsed by the declared development dependency `rrweb-cssom` and by Chromium. Browser-native selector matching retains rules relevant to that fixed state; computed animation names retain their keyframes. Conditional rules retain relevant selectors, including reduced-motion overrides. Original declaration source is written to the output. Chromium's `CSSRule.cssText` can lose a `var()`-based shorthand when a later longhand overrides it, so its serialization is never used for output. A focused regression test protects this case. Parser type/selector disagreement, unsupported rule kinds, unsupported import syntax and external/circular CSS dependencies stop the export.

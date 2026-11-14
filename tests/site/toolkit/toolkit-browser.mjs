@@ -16,6 +16,20 @@ export async function toolkitBrowserChecks({open,fail}) {
       await page.waitForFunction(()=>{const img=document.querySelector('#equipment--pump img');return img.complete&&img.naturalWidth>0;});
       const button=pump.getByRole('button',{name:'Try states'});await button.click();
       const art=page.locator('[data-scada-preview-art] [data-scada-type="pump"]');await art.waitFor();
+      const contrast=await art.evaluate(element=>{
+        const luminance=color=>{
+          const channels=color.match(/[\d.]+/g).slice(0,3).map(Number).map(n=>{const c=n/255;return c<=.04045?c/12.92:((c+.055)/1.055)**2.4;});
+          return channels[0]*.2126+channels[1]*.7152+channels[2]*.0722;
+        };
+        const labels=[...element.querySelectorAll('.scada-component-gauges span,.scada-component-gauges strong')];
+        if(!labels.length)return 0;
+        const background=luminance(getComputedStyle(element.closest('[data-scada-preview-art]')).backgroundColor);
+        return Math.min(...labels.map(label=>{
+          const foreground=luminance(getComputedStyle(label).color);
+          return (Math.max(foreground,background)+.05)/(Math.min(foreground,background)+.05);
+        }));
+      });
+      if(contrast<4.5)fail('Toolkit preview readability',`${color} gauge-label contrast ${contrast.toFixed(2)}:1`);
       const running=page.locator('[data-scada-state-fields] [name="running"]');await running.uncheck();
       if(await art.getAttribute('data-running')!=='false')fail('Toolkit preview','state field did not reach the actual renderer');
       const load=page.locator('[data-scada-state-fields] [name="load"]');

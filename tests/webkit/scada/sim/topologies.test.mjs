@@ -46,3 +46,33 @@ for content in ['<script/>','<image href="data:image/png;base64,x"/>','<foreignO
  except AssertionError:pass
  else:raise AssertionError('Unsupported SVG content was accepted: '+content)
 `));
+test('scenario gallery paths are safe, deterministic and reject sector collisions',()=>python(setup+`
+sys.path.insert(0,str(tools))
+from scada_paths import scenario_asset_path,scenario_sector_groups
+assert scenario_asset_path('thumbnails',{'id':'demo','sector':None})=='img/thumbnails/uncategorized/demo/preview.jpg'
+assert scenario_asset_path('topologies',{'id':'demo','sector':' Water & utilities '})=='img/topologies/water-utilities/demo/topology.svg'
+for entries in [[{'id':'a','sector':'A + B'},{'id':'b','sector':'A B'}],[{'id':'a','sector':'é'},{'id':'b','sector':'e'}]]:
+ try:scenario_sector_groups(entries)
+ except ValueError:pass
+ else:raise AssertionError('Ambiguous sector folders were accepted')
+for identifier in ['../outside','/outside','a/b','UPPER']:
+ try:scenario_asset_path('topologies',{'id':identifier})
+ except ValueError:pass
+ else:raise AssertionError('Unsafe scenario path was accepted')
+`));
+test('generated gallery paths resolve through sector and scenario maps without flat aliases',()=>python(setup+`
+sys.path.insert(0,str(tools))
+from scada_paths import scenario_asset_path
+for kind in ['topologies','thumbnails']:
+ manifest=json.loads((package/'metadata'/f'{kind}.json').read_text())
+ for entry in manifest['scenarios']:
+  assert entry['path']==scenario_asset_path(kind,entry),entry['id']
+  image=package/entry['path']
+  assert image.is_file()
+  assert (image.parent/'README.md').is_file()
+  assert (image.parent.parent/'README.md').is_file()
+  assert not (package/'img'/kind/(entry['id']+image.suffix)).exists()
+ for folder in [package/'img'/kind,*[p for p in (package/'img'/kind).rglob('*') if p.is_dir()]]:
+  assert (folder/'README.md').is_file(),str(folder)
+  assert len([p for p in folder.iterdir() if p.is_file()])<=20,str(folder)
+`));

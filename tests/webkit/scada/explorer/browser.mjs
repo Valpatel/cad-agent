@@ -81,7 +81,8 @@ try{
     await expect(page.locator('[data-scada-viewer]')).toHaveCount(2);
     const observer=page.locator('[data-observer-viewer]');await expect(observer.locator('[data-scada-viewer]')).toHaveAttribute('data-readonly','true');
     const before=await minutes();await page.waitForFunction(before=>parseFloat(document.querySelector('[data-kpi="time"]').textContent)>before,before);
-    assert.equal(parseFloat(await page.locator('[data-observer-time]').innerText()),await minutes());
+    const sharedTimes=await page.evaluate(()=>['[data-observer-time]','[data-kpi="time"]'].map(selector=>parseFloat(document.querySelector(selector).textContent)));
+    assert.equal(sharedTimes[0],sharedTimes[1]);
     await observer.locator('[data-scada-picker]').selectOption('chp');
     const controls=observer.locator('[data-scada-control]');assert.ok(await controls.count()>0);
     for(const control of await controls.all())await expect(control).toBeDisabled();

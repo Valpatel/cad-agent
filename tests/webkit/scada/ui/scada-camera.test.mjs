@@ -165,9 +165,10 @@ test('focus reveals offscreen equipment by camera movement without native scroll
 });
 
 test('destroy restores owned styles, removes screen controls and observers, and detaches all window handlers', () => {
-  const fixture = setup(), {window,viewport,canvas,pointer,observers} = fixture, camera = fixture.mount();
+  const fixture = setup(), {window,viewport,canvas,pointer,observers} = fixture;
+  const originalTransform = canvas.style.transform, camera = fixture.mount();
   pointer(viewport,'pointerdown'); camera.destroy(); camera.destroy();
-  assert.equal(viewport.style.overflow,'auto'); assert.equal(canvas.style.transform,'scale(.7)');
+  assert.equal(viewport.style.overflow,'auto'); assert.equal(canvas.style.transform,originalTransform);
   assert.equal(viewport.hasAttribute('data-scada-camera'),false);
   assert.equal(viewport.querySelector('[data-scada-camera-fit]'),null);
   assert.equal(observers[0].disconnected,true);
@@ -178,6 +179,7 @@ test('destroy restores owned styles, removes screen controls and observers, and 
 
 test('failed initialization cleans owned resources before rethrowing callback errors', () => {
   const fixture = setup(), {window,viewport,canvas,observers} = fixture;
+  const originalTransform = canvas.style.transform;
   let additions=0, removals=0;
   const add=window.addEventListener.bind(window), remove=window.removeEventListener.bind(window);
   window.addEventListener=(type,...args) => { if(type.startsWith('pointer')) additions++; return add(type,...args); };
@@ -186,7 +188,7 @@ test('failed initialization cleans owned resources before rethrowing callback er
   assert.equal(additions,3); assert.equal(removals,3); assert.equal(observers[0].disconnected,true);
   assert.equal(viewport.hasAttribute('data-scada-camera'),false); assert.equal(viewport.style.overflow,'auto');
   viewport.dispatchEvent(new window.WheelEvent('wheel',{bubbles:true,cancelable:true,deltaY:-100}));
-  assert.equal(canvas.style.transform,'scale(.7)'); window.close();
+  assert.equal(canvas.style.transform,originalTransform); window.close();
 });
 
 test('invalid sizes, states and foreign stages are rejected before changing mounted state', () => {

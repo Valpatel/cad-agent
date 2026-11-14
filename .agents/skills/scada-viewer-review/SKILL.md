@@ -8,7 +8,7 @@ metadata:
 
 # Review the actual SCADA viewer
 
-> **Needs:** `node` 22 or newer, `npm` and Python Playwright and local Chromium. `cad-agent agents install` says which of these this computer lacks; without them, do not use it.
+> **Needs:** `node` 22.22.2+, 24.15.0+, or 26+, `npm` and Python Playwright and local Chromium. `cad-agent agents install` says which of these this computer lacks; without them, do not use it.
 
 Use the maintained cad-agent checkout. Read the [SCADA owner map](../../../software/cadagent/webkit/scada/README.md)
 and scoped instructions before editing. Follow [work tracking](../cad-work-tracking/SKILL.md),

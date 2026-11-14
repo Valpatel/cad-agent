@@ -560,6 +560,40 @@ def test_renderer_rebuild_dependencies_need_pr_rows(repo_with_base):
     assert "| `npm:renderer-build` |" in ra.rows_markdown(run(root), ["npm:renderer-build"])
 
 
+def test_scada_maintenance_context_is_audited_and_missing_lock_cannot_hide(repo_with_base):
+    root = repo_with_base
+    directory = ra.NPM_SCADA_DIR
+    write(root, f"{directory}/package.json", json.dumps({"devDependencies": {"scada-build": "1.0.0"}}))
+    write(root, f"{directory}/package-lock.json", json.dumps({"lockfileVersion": 3, "packages": {
+        "": {"devDependencies": {"scada-build": "1.0.0"}},
+        **good_pkg("scada-build", "1.0.0", hasInstallScript=True)}}))
+    git(root, "add", directory)
+    report = run(root)
+    assert ("npm-install-script", "npm:scada-build") in checks(report, "medium")
+    assert any(row["manifest"] == f"{directory}/package.json" for row in report["inventory"]["npm"])
+    assert "npm:scada-build" in ra.added_items(root, "HEAD")[0]
+    (root / directory / "package-lock.json").unlink()
+    assert ("npm-no-lockfile", f"npm:{directory}/package-lock.json") in checks(run(root), "high")
+    with pytest.raises(FileNotFoundError, match="tools/webkit/scada/package-lock.json"):
+        ra.item_ids(ra.WorkTree(root))
+
+
+def test_existing_npm_name_cannot_hide_a_new_context_or_changed_pin(repo_with_base):
+    root = repo_with_base
+    directory = ra.NPM_SCADA_DIR
+    write(root, f'{directory}/package.json', json.dumps({'devDependencies': {'marked': '99.0.0'}}))
+    write(root, f'{directory}/package-lock.json', lock(good_pkg('marked', '99.0.0')))
+    git(root, 'add', directory)
+    assert 'npm:marked' in ra.added_items(root, 'HEAD')[0]
+    table = ra.rows_markdown(run(root), ['npm:marked'])
+    assert '16.4.1 (tools/site/package.json)' in table
+    assert '99.0.0 (tools/webkit/scada/package.json)' in table
+    git(root, 'commit', '-m', 'add second locked context')
+    assert 'npm:marked' not in ra.added_items(root, 'HEAD')[0]
+    write(root, f'{directory}/package-lock.json', lock(good_pkg('marked', '99.0.1')))
+    assert 'npm:marked' in ra.added_items(root, 'HEAD')[0]
+
+
 @pytest.mark.parametrize("missing", ["package.json", "package-lock.json"])
 def test_missing_renderer_inputs_cannot_use_the_site_or_stale_root(tmp_path, missing):
     root = checkout(tmp_path)
@@ -637,6 +671,21 @@ def test_real_esbuild_hook_exception_cannot_accept_the_same_version_in_the_site(
         producer = [f for f in hooks if "tools/mermaid/package.json:" in f["evidence"]]
         assert len(producer) == 1 and producer[0].get("accepted")
         assert producer[0]["fp"] != site[0]["fp"]
+
+
+@pytest.mark.parametrize('context,version,accepted', [
+    ('tools/webkit/scada', '0.25.12', True),
+    ('tools/webkit/scada', '0.25.13', False),
+    ('tools/mermaid', '0.25.12', False),
+    ('tools/site', '0.25.12', False),
+])
+def test_scada_esbuild_hook_acceptance_is_exact_context_and_version(tmp_path, context, version, accepted):
+    root = checkout(tmp_path)
+    write(root, f'{context}/package.json', json.dumps({'devDependencies': {'esbuild': version}}))
+    write(root, f'{context}/package-lock.json', lock(good_pkg('esbuild', version, hasInstallScript=True)))
+    report = run(root, accepted=ra.load_accepted(ROOT / ra.ACCEPTED))
+    hook = next(f for f in report['findings'] if f['check'] == 'npm-install-script' and f['subject'] == 'npm:esbuild')
+    assert bool(hook.get('accepted')) is accepted
 
 
 @pytest.mark.parametrize("change", [None, "context", "version", "integrity", "resolved"])
@@ -1439,6 +1488,11 @@ def test_agent_kit_inventory_has_exact_current_nonempty_names_and_no_stale_subst
         "skill:cad-work-tracking", "skill:design-process", "skill:mcmaster-parts", "skill:pem-fastener-selection", "skill:sheet-metal-hardware",
         "agent:cad-pr-reviewer", "agent:cad-resume",
     }
+    current_skills = {'repository-documentation', 'scada-component-authoring', 'scada-distribution-review',
+                      'scada-model-adaptation', 'scada-system-authoring', 'scada-viewer-review'}
+    for name in current_skills:
+        write(root, f'.agents/skills/{name}/SKILL.md', '# Current instruction\n')
+    expected.update(f'skill:{name}' for name in current_skills)
     def own():
         rep = ra.Report(root, AS_OF, False)
         ra.check_skills(rep)

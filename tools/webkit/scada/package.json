@@ -4,7 +4,7 @@
   "type": "module",
   "license": "UNLICENSED",
   "engines": {
-    "node": ">=22"
+    "node": "^22.22.2 || ^24.15.0 || >=26.0.0"
   },
   "scripts": {
     "test": "node --test --test-concurrency=2 ../../../tests/webkit/scada/ui/*.test.mjs ../../../tests/webkit/scada/sim/*.test.mjs ../../../tests/webkit/scada/sim/scenarios/*.test.mjs ../../../tests/webkit/scada/explorer/*.test.mjs ../../../tests/webkit/scada/external-adapter-render.test.mjs",
@@ -37,7 +37,7 @@
   },
   "devDependencies": {
     "esbuild": "0.25.12",
-    "jsdom": "26.1.0",
+    "jsdom": "31.0.1",
     "rrweb-cssom": "0.8.0"
   }
 }

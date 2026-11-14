@@ -10,7 +10,7 @@ metadata:
 
 # Maintain navigable source documentation
 
-> **Needs:** `node` 22 or newer and `npm`; Python Playwright and local Chromium for SCADA browser capture and visual verification. `cad-agent agents install` says which of these this computer lacks. Without Python Playwright and local Chromium, skip that step; without the rest, do not use it.
+> **Needs:** `node` 22.22.2+, 24.15.0+, or 26+ and `npm`; Python Playwright and local Chromium for SCADA browser capture and visual verification. `cad-agent agents install` says which of these this computer lacks. Without Python Playwright and local Chromium, skip that step; without the rest, do not use it.
 
 Use the maintained cad-agent checkout. Read the [repository map](../../../docs/map.md)
 and the affected owner’s scoped instructions before editing. Follow [work tracking](../cad-work-tracking/SKILL.md),

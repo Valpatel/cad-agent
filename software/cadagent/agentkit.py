@@ -95,15 +95,18 @@ def _playwright() -> Optional[str]:
 
 def _node() -> Optional[str]:
     """Check the existing site/SCADA toolchain floor without fetching packages."""
+    required = "Node.js 22.22.2+, 24.15.0+, or 26+ is required by SCADA maintenance tools"
     if not _on_path("node"):
-        return "`node` is not on PATH: install Node.js 22 or newer"
+        return "`node` is not on PATH: " + required
     try:
         result = subprocess.run(["node", "--version"], capture_output=True, text=True, timeout=5)
     except (OSError, subprocess.SubprocessError):
-        return "`node --version` failed: Node.js 22 or newer is required"
-    version = re.fullmatch(r"v(\d+)\.\d+\.\d+\s*", result.stdout)
-    if result.returncode or not version or int(version[1]) < 22:
-        return "Node.js 22 or newer is required by the site and SCADA maintenance tools"
+        return "`node --version` failed: " + required
+    version = re.fullmatch(r"v(\d+)\.(\d+)\.(\d+)\s*", result.stdout)
+    parsed = tuple(map(int, version.groups())) if version else (0, 0, 0)
+    supported = (parsed[0] == 22 and parsed >= (22, 22, 2)) or (parsed[0] == 24 and parsed >= (24, 15, 0)) or parsed[0] >= 26
+    if result.returncode or not supported:
+        return required
     return None
 
 
@@ -142,7 +145,7 @@ REQUIREMENTS: Dict[str, Requirement] = {
     "ssh": Requirement("`ssh`", lambda: None if _on_path("ssh") else "`ssh` is not on PATH"),
     "rsync": Requirement("`rsync`", lambda: None if _on_path("rsync") else "`rsync` is not on PATH"),
     "playwright": Requirement("Playwright and Google Chrome", _playwright),
-    "node": Requirement("`node` 22 or newer", _node),
+    "node": Requirement("`node` 22.22.2+, 24.15.0+, or 26+", _node),
     "npm": Requirement("`npm`", lambda: None if _on_path("npm") else "`npm` is not on PATH"),
     "scada-browser": Requirement("Python Playwright and local Chromium", _scada_browser),
     "write-access": Requirement("write access to the repository it works in", None),

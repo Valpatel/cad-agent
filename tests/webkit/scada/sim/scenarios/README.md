@@ -15,4 +15,4 @@ flowchart TD
 
 [Runtime library map](../../../../../software/cadagent/webkit/scada/README.md) · [Parent map](../README.md)
 
-Run this group from the repository root: `node --test --test-concurrency=2 tests/webkit/scada/sim/scenarios/*.test.mjs`. Install development dependencies first with `npm ci --prefix tools/webkit/scada`.
+Run this group from the repository root: `node --test --test-concurrency=2 tests/webkit/scada/sim/scenarios/*.test.mjs`. Install development dependencies first with `npm ci --ignore-scripts --prefix tools/webkit/scada`.

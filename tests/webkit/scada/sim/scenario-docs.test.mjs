@@ -64,7 +64,8 @@ test('scenario docs derive facts, remain deterministic and detect changed JSON w
   const winery = join(root, 'scenarios/winery/README.md');
   const initial = await readFile(winery, 'utf8');
   assert.match(initial, /Generated scenario map/);
-  assert.match(initial, /img\/topologies\/winery\.svg/);
+  assert.match(initial, /img\/topologies\/food-beverage\/winery\/topology\.svg/);
+  assert.match(initial, /img\/thumbnails\/food-beverage\/winery\/preview\.jpg/);
   assert.doesNotMatch(initial, /```mermaid/);
   const index = await readFile(join(root, 'scenarios/README.md'), 'utf8');
   assert.match(index, /The 2 scenario folders/);

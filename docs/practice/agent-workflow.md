@@ -185,7 +185,7 @@ agents: these also need what cad-agent can't check from here:
 | `ssh` | on PATH | `cad-remote-runs` |
 | `rsync` | on PATH; only to copy files that are not in git | `cad-remote-runs` |
 | Playwright and Google Chrome | the module in cad-agent's Python, and Chrome itself (not Chromium) on PATH or in its usual place; only to download a new part | `mcmaster-parts` |
-| `node` 22 or newer | local `node --version`, no network | `scada-component-authoring`, `scada-system-authoring`, `scada-model-adaptation`, `scada-viewer-review`, `scada-distribution-review`, `repository-documentation` |
+| `node` 22.22.2+, 24.15.0+, or 26+ | local `node --version`, no network | `scada-component-authoring`, `scada-system-authoring`, `scada-model-adaptation`, `scada-viewer-review`, `scada-distribution-review`, `repository-documentation` |
 | `npm` | on PATH | `scada-component-authoring`, `scada-system-authoring`, `scada-model-adaptation`, `scada-viewer-review`, `scada-distribution-review`, `repository-documentation` |
 | Python Playwright and local Chromium | Python module plus PATH Chromium or Playwright’s installed executable; launch and OS libraries are verified by the browser checks | `scada-component-authoring`, `scada-system-authoring`, `scada-model-adaptation`, `scada-viewer-review`, `scada-distribution-review`, `repository-documentation` |
 | write access to the repository it works in | not checkable here: you know whether you can push, open and merge PRs there | `cad-pr-review`, `cad-work-tracking` |

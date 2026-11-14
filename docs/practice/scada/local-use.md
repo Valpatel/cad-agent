@@ -26,6 +26,22 @@ The runtime packages have no external JavaScript runtime dependencies. A runtime
 export omits authoring tools/tests intentionally; it is not a complete development
 checkout or a substitute for the local source copy.
 
+## Distribution scope
+
+The Python wheel and `cad-agent webkit` copy carry the complete browser SDK,
+including SCADA modules, schemas, scenario definitions, local galleries, examples,
+reference notes and retained license notices. Gallery and documentation paths in
+package exports continue to resolve locally. The gallery makes this a larger SDK rather than a minimal viewer export; measure
+the selected artifact when sizing a deployment. The source checkout also supplies
+separate tools, tests and agent skills. A wheel is not the authoring checkout.
+
+Assembly-guide exports select a smaller, explicit reader runtime and omit SCADA.
+They still include their required model renderer, controls, assembly instructions,
+decoders, styles and notices. Keep these two delivery scopes separate: do not
+silently trim the full SDK, manufacture stripped SCADA package metadata, or add an
+unused intermediate profile. Verify the actual artifact and its local imports,
+not only the source package.
+
 ## Install authoring and review tools
 
 The shared maintenance owner declares its own Node dependencies and lockfile:
@@ -38,7 +54,8 @@ npm --prefix tools/webkit/scada run check:metadata
 npm --prefix tools/webkit/scada run check:default-baseline
 ```
 
-Use Node.js 22 or newer. Browser captures use the Python environment's declared
+Use Node.js 22.22.2+, 24.15.0+, or 26+ (the maintenance lockfile's supported range).
+Browser captures use the Python environment's declared
 requirements in `tools/webkit/scada/ui/requirements.txt`, plus a local `chromium`
 binary or Playwright-installed Chromium. Install these development dependencies
 before disconnecting a home machine. A browser's OS libraries also need to be

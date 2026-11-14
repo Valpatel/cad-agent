@@ -21,7 +21,7 @@ flowchart TD
 
 [Runtime library map](../../../software/cadagent/webkit/scada/README.md) · [Parent map](../README.md)
 
-From the repository root, run `npm ci --prefix tools/webkit/scada`, then `npm --prefix tools/webkit/scada test`. Generation/check scripts are listed in [package.json](package.json). Capture tools additionally need the pinned [Python requirements](ui/requirements.txt) and Chromium. Runtime imports use neither Node tooling nor browser capture dependencies.
+From the repository root, run `npm ci --ignore-scripts --prefix tools/webkit/scada`, then `npm --prefix tools/webkit/scada test`. Generation/check scripts are listed in [package.json](package.json). Capture tools additionally need the pinned [Python requirements](ui/requirements.txt) and Chromium. Runtime imports use neither Node tooling nor browser capture dependencies.
 
 | Changed input | Generate with `npm --prefix tools/webkit/scada run …` | Read-only verification |
 | --- | --- | --- |

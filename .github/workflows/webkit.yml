@@ -165,6 +165,7 @@ jobs:
         if: matrix.engine == 'chromium'
         working-directory: tools/webkit/scada
         run: |
+          python -m pip install -r ui/requirements.txt
           npm run gallery:check
           npm run thumbnails:check
           npm run topologies:check

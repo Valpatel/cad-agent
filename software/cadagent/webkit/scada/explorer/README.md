@@ -76,3 +76,7 @@ placeholder kernel.
 [Simulation library](../sim/README.md) ·
 [Model/API contract](../sim/docs/MODEL-API.md) ·
 [Explorer tests](https://github.com/Valpatel/cad-agent/tree/dev/tests/webkit/scada/explorer)
+
+The primary Explorer opts into `responsiveLayout: 'process-chain'`: unbranched diagrams can use fewer rows on a wide screen while card sizes and declared connections remain intact. Complex diagrams keep their authored geometry. Manual pan/zoom preserves the arrangement on resize; **Zoom to fit** recalculates it. The observer remains an independent presentation of the same session. Browser checks measure occupied equipment width, not only the canvas frame.
+
+The camera owns the single in-view **Fit / − / percentage / +** toolbar. Equipment selection stays in the host row; no second camera toolbar is rendered above the process. Inspector buttons and on/off status text use paired application palette tokens in both themes; browser regression checks require at least 4.5:1 text contrast in default and hovered states.

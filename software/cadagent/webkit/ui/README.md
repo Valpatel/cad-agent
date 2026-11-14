@@ -28,8 +28,9 @@ and `hidden` becomes available when its click behavior is ready. The hidden
 button reserves its box, preventing layout movement during startup.
 
 The controller toggles `data-theme` on the document root and emits
-`cad-themechange` with `detail.theme`. Hosts own any renderer-specific refresh.
-A choice matching the system is cleared so later system changes apply. Storage
+`cad-themechange` with `detail.theme`. Only changes to the effective mode emit an event, including system changes when
+there is no explicit choice and preferences changed in another tab. Hosts own any
+renderer-specific refresh. A choice matching the system is cleared so later system changes apply. Storage
 failure does not prevent local controls from working; no network request is made.
 These opt-in application tokens do not replace process-state colors or a
 renderer’s scoped palette.

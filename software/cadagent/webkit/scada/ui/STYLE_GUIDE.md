@@ -41,6 +41,13 @@ Keep CSS within `.scada-component`, `.scada-workspace` or the viewer's own names
 
 Compare additions with the [thumbnail contact sheet](./img/thumbnails/contact-sheet.jpg) and inspect at least one small card, a large modal preview and the actual system view. A clean large screenshot does not prove the small version is legible.
 
+The Explorer’s application chrome consumes the shared web-kit `ui/theme.css` and
+`ui/theme.js` palette/preference contract and locally bundled fonts. Keep site
+build assets out of library imports. A host may keep the process artwork on its
+dark surface in either application theme; the surrounding controls and dialogs
+must retain readable contrast and follow the chosen theme. Fitted overview text
+scales with the diagram; inspectors remain readable at the application text size.
+
 ## State is explicit
 
 Use the [per-component coverage review](./docs/STATE_COVERAGE.md) as the current
@@ -88,11 +95,14 @@ Default equipment has one `role="img"` description containing its label and rele
 
 Use native controls with at least 44 px targets, visible focus, associated labels and explicit units. Main dialog controls should use roughly 15–16 px text; supporting copy should remain readable at phone widths. Color alone is not a state description. Keyboard and reduced-motion users must be able to inspect the same information.
 
+Pair foreground and background tokens for inspector buttons in every application theme. Measure at least 4.5:1 text contrast for default, pressed/unpressed and hovered actions, including the smaller on/off status spans.
+
 Dialogs use `ScadaWorkspace` for top-layer behavior, focus containment, Escape/backdrop dismissal and focus return. Keep controls mounted during live value updates; do not replace the whole modal on each tick. Destroy the view/dialog controller before removing its root, while preserving the externally owned system session.
 
 Contained diagram viewers use a camera, not scrollbars, to navigate their 2D or
 3D content. Size the viewport to the available host/window, keep **Zoom to fit**
-visible outside the transformed scene, and support mouse/touch pan and zoom plus
+visible in the camera's single in-view toolbar alongside zoom and readable/reset scale.
+Keep that toolbar outside the transformed scene and support mouse/touch pan and zoom plus
 keyboard equivalents. Fit is an overview, not a claim that every small label is
 readable: provide readable zoom and equipment inspection. Preserve the camera
 during model updates and keep focused equipment reachable. Normal top-level page

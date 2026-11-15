@@ -3,10 +3,14 @@ Install cad-agent from https://cad-agent.valpatel.com/llms.txt, then use it for:
 How to install cad-agent (github.com/Valpatel/cad-agent, MIT) and work with it:
 
 1. Already installed? If installation or updates are disallowed, leave the
-   installation unchanged. Find the executable (`command -v cad-agent`) and
-   inspect its launcher to identify the Python it uses. In that Python, inspect
-   `cadagent.__file__`, the installed package version and its `direct_url.json`
-   metadata to identify the actual provider. Reuse it only within the user's
+   installation unchanged. Find the executable (`command -v cad-agent` on
+   POSIX, `Get-Command cad-agent` in PowerShell) and inspect its launcher to
+   identify the Python it uses. In that Python, use `-B` to disable bytecode
+   writes and inspect `cadagent.__file__`, `cadagent.__version__`, and available
+   distribution version and `direct_url.json` metadata. Editable metadata can
+   be stale; a non-editable install's URL describes its source, not a live
+   checkout. If the launcher or provider cannot be identified, say so.
+   Reuse it only within the user's
    authorized scope; record its checkout and commit if verifiable, otherwise
    say they are unknown. Report missing dependencies and version limits.
    When updates are allowed, run `cad-agent update` first. For a new install,
@@ -23,8 +27,9 @@ How to install cad-agent (github.com/Valpatel/cad-agent, MIT) and work with it:
 2. Before designing, read `~/cad-agent/docs/agent-prompt.txt` in full for
    the default installation, or `docs/agent-prompt.txt` in the actual
    provider checkout identified above. A web summary can omit requirements.
-   Use your chosen checkout if CAD_AGENT_DIR differs; if no checkout can be
-   established, say so instead of assuming that path exists.
+   CAD_AGENT_DIR is an installation-path hint, not proof of the loaded provider;
+   verify it. If no checkout can be established, say so instead of assuming
+   that path exists.
    Look before you write code: fetch cad-agent.valpatel.com/llms.txt, then
    the page or catalog/<area>.json it points to (any page also as .md),
    and `cad-agent <command> --help`. Skills are in the same provider checkout:

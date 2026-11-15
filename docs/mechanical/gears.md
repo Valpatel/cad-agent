@@ -120,7 +120,7 @@ The face width is checked against the cone distance (apex to large end, `cone_di
 flowchart TD
     W{"face width<br/>÷ cone distance"} -->|"up to a third"| A["drawn<br/>the usual range"]
     W -->|"above a third"| B["drawn, UserWarning<br/>note in the dimensions<br/>fine small-end teeth"]
-    W -->|"above 0.9"| C["refused: ValueError<br/>limit named in mm<br/>teeth vanish at the apex"]
+    B -->|"above 0.9"| C["refused: ValueError<br/>limit named in mm<br/>teeth vanish at the apex"]
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
     classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c

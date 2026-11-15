@@ -81,7 +81,7 @@ def toolkit():
               path('M218 165L230 177L253 151', width=3), text(236, 237, 'Domain tools', anchor='middle')]
     parts += [panel(362,103,76,100,4),panel(353,113,76,100,4),cube(391,154,.66),
               path('M366 194H415', VIOLET),text(391,237,'Artifacts',anchor='middle')]
-    parts += [panel(30,283,420,100), path('M174 299V368M309 299V368','#4e8499'),
+    parts += [panel(30,283,420,100), path('M174 299V345M309 299V345','#4e8499'),
               cube(87,323,.65),text(126,329,'3D',size=15),
               path('M192 345V307M192 345H290','#4e8499'),
               path('M195 337L213 327L233 335L251 313L286 306',VIOLET),

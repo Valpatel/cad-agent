@@ -365,6 +365,8 @@ try{
       const start=await minutes(live),content=await run.evaluateHandle(button=>button.firstChild),box=await run.boundingBox();
       await live.mouse.move(box.x+box.width/2,box.y+box.height/2);await live.mouse.down();
       await live.clock.runFor(1000);assert.equal(await minutes(live),start+1,'Exactly one tick must land between press and release');
+      // This identity check is what fails without the fix; it proves the replacement is gone, not that
+      // it caused the WebKit loss (no unfixed WebKit run reproduces that). Chromium keeps the click either way.
       assert.equal(await content.evaluate((node,button)=>node.parentNode===button,await run.elementHandle()),true,'A tick must not replace the pressed transport control');
       await live.mouse.up();await expect(lab).toHaveAttribute('data-running','false');await expect(run).toHaveText('Run');
       const pausedAt=await minutes(live);await live.clock.runFor(5000);assert.equal(await minutes(live),pausedAt);

@@ -127,6 +127,16 @@
    "mirrors": [{"workflow": "ci.yml", "job": "supply-chain", "run": "python3 tools/resource_audit.py gate --base HEAD^1 --into \"$INTO\" --pr-body-env PR_BODY"}, {"workflow": "ci.yml", "job": "supply-chain", "run": "python3 tools/resource_audit.py gate --base HEAD^1 --into \"$INTO\""}]
   },
   {
+   "id": "repo-map",
+   "title": "Every folder has an owner map and docs/map.md is current (part of the site's Node tests)",
+   "paths": ["**"],
+   "command": "node --test tests/site/website-repo-map.test.mjs",
+   "needs": {"node_deps": ["tools/site"]},
+   "cost": "fast",
+   "subset": true,
+   "mirrors": [{"workflow": "webkit.yml", "job": "browser", "run": "node --test tests/site/website-*.test.mjs tests/site/toolkit/website-*.test.mjs"}]
+  },
+  {
    "id": "site-build",
    "title": "Build the site once for the site tests (CAD_AGENT_SITE)",
    "paths": ["**/*.md", "docs/**", "tools/site/**", "software/cadagent/webkit/**", ".agents/**", "software/vendor/upstreams/**"],

@@ -229,6 +229,7 @@ def test_acceptance_coverage(mapping):
     assert {"site-build", "site-browser"} <= ids("docs/practice/agent-workflow.md")
     assert {"fea", "stage", "part-table", "file-viewer", "assembly-guide"} <= ids("software/cadagent/webkit/ui/x.js")
     assert "pytest-repo" in ids("tools/ci/preflight.py")
+    assert "repo-map" in ids("tests/repo/ci/README.md")                               # a new folder needs docs/map.md
 
 
 def test_engines_exclude_and_per_match():

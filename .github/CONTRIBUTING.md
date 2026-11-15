@@ -214,6 +214,7 @@ These files keep their GitHub discovery names. This guide owns their map rather 
 |---|---|
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Canonical contribution, integration and release procedure. |
 | [SECURITY.md](SECURITY.md) | Vulnerability reporting policy. |
+| [ci-checks.json](ci-checks.json) | Which checks each workflow runs for which changed paths; `tools/ci/preflight.py` runs them locally. |
 | [dependabot.yml](dependabot.yml) | Deliberate GitHub-Actions-only version update campaign. |
 | [pull_request_template.md](pull_request_template.md) | Review and evidence checklist. |
 | [ISSUE_TEMPLATE/](ISSUE_TEMPLATE/) · [feedback.yml](ISSUE_TEMPLATE/feedback.yml) | Structured feedback intake. |

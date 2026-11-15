@@ -44,6 +44,7 @@ import os
 import platform
 import re
 import shutil
+import signal
 import subprocess
 import sys
 import tempfile
@@ -404,10 +405,14 @@ def run(inst: Instance, ctx: dict, machine: Machine, workdir: Path, timeout: int
     cwd = machine.root / check.get("cwd", ".")
     started = time.monotonic()
     with log.open("w", encoding="utf-8", errors="replace") as out:
+        # its own process group, so a timeout stops the browsers and servers a suite started, not only the shell
+        proc = subprocess.Popen(["/bin/sh", "-c", inst.command(ctx)], cwd=cwd, env=env, stdout=out,
+                                stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL, start_new_session=True)
         try:
-            code = subprocess.run(["/bin/sh", "-c", inst.command(ctx)], cwd=cwd, env=env, stdout=out,
-                                  stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL, timeout=timeout).returncode
+            code = proc.wait(timeout=timeout)
         except subprocess.TimeoutExpired:
+            os.killpg(proc.pid, signal.SIGKILL)
+            proc.wait()
             code = None
     inst.seconds = round(time.monotonic() - started, 1)
     inst.log = str(log)

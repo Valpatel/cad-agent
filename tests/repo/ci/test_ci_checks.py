@@ -405,3 +405,10 @@ def test_diff_base_and_uncommitted_paths(tmp_path, capsys):
     assert pf.main(args + ["--base", "base", "--json", "--list", "--committed-only"]) == 0
     assert json.loads(capsys.readouterr().out)["paths"] == ["a/committed.txt"]
     assert pf.main(args + ["--base", "no-such-ref"]) == 2
+
+
+def test_a_hung_check_is_stopped_and_fails(tmp_path, capsys):
+    args = _repo(tmp_path, [_check("hang", "sleep 30 & sleep 30")])
+    assert pf.main(args + ["--paths", "a/x", "--timeout", "1", "--json"]) == 1
+    (report,) = json.loads(capsys.readouterr().out)["checks"]
+    assert report["status"] == "failed" and report["reason"] == "timed out after 1 s" and report["seconds"] < 10

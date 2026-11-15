@@ -61,11 +61,11 @@ Equipment and control models share a session. Snapshots feed plant, sludge and d
 
 | Animated figure | Static alternative | Visual structure |
 |---|---|---|
-| [toolkit-workflow.svg](toolkit-workflow.svg) | [toolkit-workflow-still.svg](toolkit-workflow-still.svg) | Artifact workbench |
-| [agent-workflow.svg](agent-workflow.svg) | [agent-workflow-still.svg](agent-workflow-still.svg) | Review and feedback loop |
-| [site-publication.svg](site-publication.svg) | [site-publication-still.svg](site-publication-still.svg) | Source funnel and publication |
-| [verification.svg](verification.svg) | [verification-still.svg](verification-still.svg) | Trace comparison and evidence record |
-| [scada-session.svg](scada-session.svg) | [scada-session-still.svg](scada-session-still.svg) | Shared state and view fan-out |
+| [Toolkit](toolkit-workflow.svg) | [Static](toolkit-workflow-still.svg) | Artifact workbench |
+| [Agent review](agent-workflow.svg) | [Static](agent-workflow-still.svg) | Review and feedback loop |
+| [Publication](site-publication.svg) | [Static](site-publication-still.svg) | Source funnel and publication |
+| [Verification](verification.svg) | [Static](verification-still.svg) | Trace comparison and evidence record |
+| [SCADA](scada-session.svg) | [Static](scada-session-still.svg) | Shared state and view fan-out |
 
 The source is [documentation_flows.py](../../../tools/anim/documentation_flows.py). Run `python3 tools/anim/documentation_flows.py --check` from the repository root. CSS motion illustrates each subject; timing is not a measurement. All information remains visible in the static variants, selected automatically for reduced motion.
 

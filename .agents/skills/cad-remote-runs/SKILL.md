@@ -1,6 +1,6 @@
 ---
 name: cad-remote-runs
-description: Use before starting any CAD/FEA/CFD/topology run or full pipeline that takes more than a few minutes or several GB of memory. Run it on a compute host instead of the workstation the agents share, detached so it survives the session, recorded in the GitHub issue (host, command, log, done marker, how to collect results) so any machine can pick it up, and its results pulled back and committed.
+description: Use before starting any CAD/FEA/CFD/topology run or full pipeline that takes more than a few minutes or several GB of memory, and when the agent itself works from a cloud container. Run a long job on a compute host instead of the workstation the agents share, detached so it survives the session, recorded in the GitHub issue (host, command, log, done marker, how to collect results) so any machine can pick it up, and its results pulled back and committed.
 metadata:
   requires: "git gh ssh compute-host"
   optional: "rsync"
@@ -92,5 +92,49 @@ flowchart TD
 - Pull the results back (`rsync -a <host>:<repo>/<result paths> <local paths>`), commit them with the command that
   made them in the message, push, and tick the issue.
 - Leave the host clean: stop containers you started, delete large scratch case folders you no longer need.
+
+## Working from a cloud container
+
+When the agent itself runs in a hosted cloud container (no `gh`, GitHub through MCP tools), the long-run rules above
+still apply; these are the differences. Each links the dated evidence and says what was observed only once.
+
+- **GitHub.** Reads work without a grant on public repositories; a push or issue creation that fails with
+  "Claude doesn't have GitHub access" needs the owner to give the GitHub App access to the repository. `gh` may be
+  missing or logged out, so use the MCP tools as the [review skill](../cad-pr-review/SKILL.md) describes; until
+  [#750](https://github.com/Valpatel/cad-agent/issues/750) and [#751](https://github.com/Valpatel/cad-agent/issues/751)
+  merge, `tools/ci_gates.py all` cannot run here and a cloud reviewer's verdict is not read by the review gate, so
+  leave those merges to a `gh` session or the owner. Put status in comments: a description edit restarts CI
+  ([evidence](../../inbox/agents/2026-11-15-cloud-sessions-reach-github-through-mcp.md)).
+- **Checkouts.** Leave the session's own clone and its designated branch alone; make each topic worktree beside it
+  with `git worktree add --no-track` on a `feat/`, `fix/` or `docs/` branch from `origin/dev`, push only that branch,
+  and give each worktree its own venv (check `cadagent.__file__`)
+  ([evidence](../../inbox/agents/2026-11-15-cloud-sessions-need-own-worktrees-and-fresh-reviewers.md)).
+- **Browsers and Python.** Only Playwright's Chromium is installed, at a newer revision than the pinned
+  `@playwright/test` expects, so pass `executablePath`; WebKit is absent and stays so. Report WebKit as not run
+  locally and let CI decide. Run provenance checks with `python3.12`, which CI uses
+  ([evidence](../../inbox/agents/2026-11-15-cloud-containers-limit-browser-and-provenance-evidence.md)).
+
+<details>
+<summary>Hashes that move with their sources, slow steps, and the orchestration that worked</summary>
+
+- **Hash pairs.** Change the source and its recorded hash in the same commit, and run the checks that compare them:
+  - `software/cadagent/webkit/model/model.js` → `renderer_sha256` in `tools/site/assets/models/j501-source.json`
+    (checked by `tests/webkit/webkit-model.test.mjs`);
+  - SCADA explorer sources → `source_hashes` in `software/cadagent/webkit/scada/sim/metadata/thumbnails.json`
+    (checked by the `scada (chromium)` job's provenance step; run its `npm run …:check` scripts in
+    `tools/webkit/scada`, not only the browser suite).
+
+  Do not regenerate thumbnails on the container's browser: a different build changes images for engine reasons
+  alone. Compare old and new source on one build and update the hash, or recapture with the pinned shell.
+- **Slow steps:** the site build takes about 3 minutes, the touch-orbit browser suite about 4 minutes in software
+  WebGL, and the catalogue browser suite about 4.5 minutes a run (observed once). Run them once, at the end.
+- **Orchestration:** one orchestrating session; implementers each in its own worktree and branch; a cheaper checker
+  for CI logs and issues; and a freshly started reviewer given only the PR. Answer nits on the thread and carry them
+  to the next change of the same lines rather than pushing after a pass, so the reviewed head stays reviewed.
+
+Limits: from one session on 2026-11-15. The 403 text, the owner's go-ahead for topic branches, the shared-venv
+mix-up, the catalogue timing and two MCP quirks were observed once and not confirmed; container images change.
+
+</details>
 
 [Folder map](README.md)

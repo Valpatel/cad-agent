@@ -15,7 +15,7 @@ flowchart LR
 | Location | Contents |
 | --- | --- |
 | [publish/](publish/README.md) | Browser, document compilation and displayed CAD provenance incidents. |
-| [agents/](agents/README.md) | Instruction discovery, installer/update boundaries and checkout path consumers. |
+| [agents/](agents/README.md) | Instruction discovery, installer/update boundaries, checkout path consumers and cloud-container sessions. |
 | [review/](review/README.md) | Assembly/relation gate scope, source geometry and recoverable validation evidence. |
 | Dated files here | Other operational incidents, grouped further when a domain grows. |
 

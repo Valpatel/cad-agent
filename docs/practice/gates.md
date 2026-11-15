@@ -777,9 +777,10 @@ Refused, with the reason in the `motion:<group>` message and `density[].symmetry
 
 - a part with a free-form face (a spline, an offset or a swept curve: anything but a plane, cylinder, cone, sphere
   or torus). A feature of such a face can lie between sample points, so an involute gear is queried at every sample;
-- a part whose volume integration error estimate is over the limit. With the default tolerances that is a 20 mm
-  ball, a 20/1.5 mm O-ring, a plain or chamfered cylinder of 300 mm radius and a cylinder of 100 mm radius with 1 mm
-  fillets; a 10 mm ball and a plain cylinder of 150 mm radius are measured;
+- a part whose volume integration error estimate is over the limit. With the default tolerances that is a ball of
+  20 mm radius, an O-ring of 20 mm radius and 1.5 mm section radius, a plain or chamfered cylinder of 300 mm radius
+  and a cylinder of 100 mm radius with 1 mm fillets. A ball of 10 mm radius and a plain cylinder of 150 mm radius are
+  measured;
 - a part over the work limit (20000 boundary points or 400000 point-to-face distances: a wheel of more than about
   130 simple lugs);
 - a kernel failure while measuring. It is not written to the pair cache, so the next run measures again.

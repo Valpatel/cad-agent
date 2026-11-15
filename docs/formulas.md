@@ -245,20 +245,13 @@ Arrows: each function's result is the next one's input.
 flowchart TD
     A["bevel_pitch_angles<br/>bevel_cone_distance"] --> V["bevel_virtual_teeth<br/>N / cos γ"]
     V --> Y["lewis_form_factor<br/>Y′ from the table"]
-    A --> M["bevel_mean_radius"]
-    T["torque"] --> FL["gear_tangential_force<br/>at the large-end radius"]
-    T --> M
-    M --> FM["bevel_gear_forces<br/>at the mean radius"]
-    Y --> S["lewis_bevel_bending_stress<br/>with the cone factor"]
-    FL --> S
+    Y --> S["lewis_bevel_<br/>bending_stress<br/>with the cone factor"]
+    FL["gear_tangential_force<br/>at the large-end radius"] --> S
     S --> R["root stress, Pa<br/>against your allowable"]
-    FM --> B["shaft and<br/>bearing loads"]
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
-    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
     classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
-    class A,V,Y,M,FL,FM,S here
-    class T near
-    class R,B out
+    class A,V,Y,FL,S here
+    class R out
 ```
 
 **The module is in metres here**, like every other length: a 2 mm module is `0.002`, and
@@ -290,6 +283,22 @@ wrong by mixing them:
 - **The cone distance** L, from the apex to the large end. A face width b uses only part of a full tooth, so the
   spur equation's strength is multiplied by the cone factor (L − b) / L, and the form factor is read at the virtual
   tooth number N / cos γ, as Khurmi and Gupta give it [ref:khurmi].
+
+One torque gives two forces, and each has its own use (the figures are the example's):
+
+```mermaid
+flowchart TD
+    T["torque on the pinion<br/>2 N m"] --> FL["over the large-end radius<br/>111 N"]
+    T --> FM["over the mean radius<br/>131 N"]
+    FL --> S["lewis_bevel_<br/>bending_stress<br/>root stress"]
+    FM --> B["bevel_gear_forces<br/>shaft and bearing loads"]
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
+    classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
+    class FL,FM here
+    class T near
+    class S,B out
+```
 
 Leaving the cone factor out reads the stress 30 % low in the example above. Putting the mean-radius force through
 the bevel equation reads it 18 % high. `bevel_tooth_bending` returns every one of these values, so a stress is

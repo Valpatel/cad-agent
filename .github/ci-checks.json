@@ -150,7 +150,7 @@
   {
    "id": "folder-maps",
    "title": "Every owned folder map's diagram draws (Chromium job only)",
-   "paths": ["**/README.md", "tools/site/compiler/**", "software/cadagent/webkit/documents/**", "software/cadagent/webkit/vendor/mermaid/**", "tests/site/website-repo-map.test.mjs"],
+   "paths": ["**/README.md", ".github/CONTRIBUTING.md", "tools/site/compiler/**", "software/cadagent/webkit/documents/**", "software/cadagent/webkit/vendor/mermaid/**", "tests/site/website-repo-map.test.mjs"],
    "command": "node --test --test-name-pattern='all owned folder diagrams' tests/site/website-repo-map.test.mjs",
    "env": {"CAD_AGENT_REPO_MAP_DIAGRAMS": "1"},
    "needs": {"node_deps": ["tools/site"], "browser": "chromium"},
@@ -176,12 +176,13 @@
    "command": "node --test tests/site/website-*.test.mjs tests/site/toolkit/website-*.test.mjs",
    "needs": {"node_deps": ["tools/site"], "after": ["site-build"]},
    "cost": "slow",
-   "cost_note": "reads the whole built site",
+   "cost_note": "website-build.test.mjs makes about eight more full site builds; over 30 minutes on a loaded 4-CPU machine",
+   "timeout": 5400,
    "mirrors": [{"workflow": "webkit.yml", "job": "browser", "run": "node --test tests/site/website-*.test.mjs tests/site/toolkit/website-*.test.mjs"}]
   },
   {
    "id": "site-browser",
-   "title": "The built site in a browser",
+   "title": "The built site in a browser: console and CSP errors, layouts, diagram widths at 1100 px (folder README maps included), walls of text",
    "paths": ["**/*.md", "docs/**", "tools/site/**", "software/cadagent/webkit/**", ".agents/**", "software/vendor/upstreams/**", "tests/site/**"],
    "command": "node tests/site/website-browser.mjs",
    "engines": ["chromium", "webkit"],
@@ -293,7 +294,7 @@
    "paths": ["software/cadagent/webkit/scada/**", "tools/webkit/scada/**", "tests/webkit/scada/**", "software/cadagent/webkit/ui/**", "software/cadagent/webkit/vendor/fonts/**"],
    "command": "npm test",
    "cwd": "tools/webkit/scada",
-   "needs": {"node_deps": ["tools/webkit/scada"]},
+   "needs": {"node_deps": ["tools/webkit/scada"], "node_heap_mb": 4096, "node_heap_why": "tests/webkit/scada/ui/scada-components.test.mjs peaks near 3.2 GB; at a 2 GB heap it runs out of memory"},
    "cost": "fast",
    "mirrors": [{"workflow": "webkit.yml", "job": "scada", "run": "npm test"}]
   },

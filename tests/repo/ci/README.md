@@ -5,15 +5,32 @@ and the local preflight with the guard that keeps its mapping in step with the w
 
 Arrows: what a test imports or reads.
 
+Runner provisioning
+
 ```mermaid
 flowchart TD
-    A["test_apt_mirror.py"] -->|"imports"| M["tools/ci/apt_mirror.py"]
-    C["test_ci_checks.py"] -->|"imports"| P["tools/ci/preflight.py"]
-    C -->|"reads"| W[".github/workflows/<br/>.github/ci-checks.json"]
+    A["test_apt_mirror.py"]
+    M["tools/ci/<br/>apt_mirror.py"]
+    A -->|"imports"| M
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
-    class A,C here
-    class M,P,W near
+    class A here
+    class M near
+```
+
+Local preflight and its drift guard
+
+```mermaid
+flowchart TD
+    C["test_ci_checks.py"]
+    P["tools/ci/<br/>preflight.py"]
+    W[".github/<br/>workflows/ · ci-checks.json"]
+    C -->|"imports"| P
+    C -->|"reads"| W
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
+    class C here
+    class P,W near
 ```
 
 | File | What it tests |

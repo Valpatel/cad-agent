@@ -20,8 +20,13 @@ Each selected check is reported as one of:
   CI pins when the check is sensitive to it, installed Node dependencies, Windows). Never counted as passed.
 * ``skipped: slow``: the repo marks it slow; ``--slow`` runs it.
 
-Exit status: 0 when every check that ran passed (or none was selected), 1 when a check that ran failed, 2 on a usage
-or setup error. ``--list`` exits 0.
+Exit status, and the JSON report's ``verdict``:
+
+* 0, ``passed``: every selected check ran here and passed (or none was selected);
+* 1, ``failed``: a check that ran failed;
+* 3, ``incomplete``: nothing that ran failed, but some selected checks did not run here (not run or skipped). The
+  report ends by listing each one with its reason: CI will run them, so they can still fail there;
+* 2: a usage or setup error. ``--list`` exits 0 and its verdict is ``listed``.
 
 Limits, stated plainly:
 
@@ -58,6 +63,7 @@ NODE_PLAYWRIGHT = "tools/site/node_modules/playwright-core/browsers.json"
 CHROME_CHANNEL = Path("/opt/google/chrome/chrome")        # where Playwright's `chrome` channel looks on Linux
 PYTHON_NAMES = ["python3", "python3.10", "python3.11", "python3.12", "python3.13", "python3.14"]
 TAIL_LINES = 20
+DEFAULT_TIMEOUT = 1800
 
 # Run by each candidate interpreter (with -I, so nothing from the checkout is imported): its version, which of the
 # asked modules it can find (find_spec only locates, it runs no package code), installed distribution versions, and
@@ -308,7 +314,19 @@ class Machine:
         return (f"Python Playwright needs Chromium r{rev}" + (f" (found {', '.join(have)})" if have else "")
                 + "; CI installs it with `python -m playwright install chromium --only-shell`. Not installed for you.")
 
-    # Node dependencies -----------------------------------------------------------------------------------------------
+    # Node ------------------------------------------------------------------------------------------------------------
+    def node_heap_mb(self) -> int | None:
+        """This machine's default V8 heap limit for ``node``: V8 sizes it from the memory it sees (a container's
+        cgroup limit included), so it can be smaller here than on CI's runner."""
+        if not hasattr(self, "_heap"):
+            try:
+                out = subprocess.run(["node", "-e", "console.log(require('v8').getHeapStatistics().heap_size_limit)"],
+                                     env=self.env, capture_output=True, text=True, timeout=30)
+                self._heap = int(out.stdout) // 2**20 if out.returncode == 0 else None
+            except (OSError, ValueError, subprocess.SubprocessError):
+                self._heap = None
+        return self._heap
+
     def node_deps(self, folder: str) -> bool:
         return (self.root / folder / "node_modules" / ".package-lock.json").exists()
 
@@ -339,6 +357,12 @@ def assess(inst: Instance, machine: Machine, slow: bool, done: dict[str, Instanc
             inst.reason = f"needs `{dep}` to pass first" + (f" (it is {prior.status})" if prior else " (not selected)")
             return
         inst.env.update({k: v.format(**ctx) for k, v in prior.check.get("provides_env", {}).items()})
+    if need.get("node_heap_mb"):
+        want, have = need["node_heap_mb"], machine.node_heap_mb()
+        if have is not None and have < want:
+            inst.env["NODE_OPTIONS"] = f"{machine.env.get('NODE_OPTIONS', '')} --max-old-space-size={want}".strip()
+            inst.notes.append(f"this machine's default Node heap is {have} MB, under the {want} MB this suite needs "
+                              f"({need.get('node_heap_why', 'see the mapping')}); runs with --max-old-space-size={want}")
     if inst.engine or need.get("browser"):
         env, problem, notes = machine.node_engine(inst.engine or need["browser"])
         if problem:
@@ -460,7 +484,7 @@ def to_json(inst: Instance, ctx: dict) -> dict:
             "mirrors": [f"{m['workflow']} / {m['job']}: {m['run']}" for m in inst.check.get("mirrors", [])]}
 
 
-def text_report(instances: list[Instance], paths: list[str], ctx: dict, listing: bool) -> str:
+def text_report(instances: list[Instance], paths: list[str], ctx: dict, listing: bool, logs: str | None = None) -> str:
     out = [f"{len(paths)} changed path(s); {len(instances)} check(s) selected"
            + (" (listing only, nothing run)" if listing else "")]
     if not instances:
@@ -482,13 +506,36 @@ def text_report(instances: list[Instance], paths: list[str], ctx: dict, listing:
         if inst.status == "failed":
             out.append(f"  {'':<{width}}  log: {inst.log}")
             out += [f"  {'':<{width}}  | {t}" for t in inst.tail.splitlines()]
+    if logs:
+        out.append(f"Logs: {logs}")
     counts: dict[str, int] = {}
     for inst in instances:
         counts[inst.status] = counts.get(inst.status, 0) + 1
     out.append("Summary: " + (", ".join(f"{n} {s}" for s, n in counts.items()) or "nothing selected"))
-    if counts.get("not run") or counts.get("skipped"):
-        out.append("Checks not run or skipped here are not passes: CI still decides them.")
+    missing = [i for i in instances if i.status in ("not run", "skipped")]
+    if missing:
+        verb = "Would not run here" if listing else "NOT RUN HERE"
+        out.append(f"{verb}: {len(missing)} of {len(instances)} selected checks. CI runs them, so they can still fail "
+                   "there; not run is not passed:")
+        out += [f"  - {i.id} ({i.check.get('title', '')}): {i.status}: {i.reason}" for i in missing]
+    if not listing:
+        out.append(f"Verdict: {verdict(instances, listing)}")
     return "\n".join(out)
+
+
+def verdict(instances: list[Instance], listing: bool = False) -> str:
+    """``listed``, ``failed`` (a check that ran failed), ``incomplete`` (nothing failed, but a selected check did not
+    run here) or ``passed`` (every selected check ran and passed, or none was selected)."""
+    if listing:
+        return "listed"
+    if any(i.status == "failed" for i in instances):
+        return "failed"
+    if any(i.status in ("not run", "skipped") for i in instances):
+        return "incomplete"
+    return "passed"
+
+
+EXIT = {"passed": 0, "listed": 0, "failed": 1, "incomplete": 3}
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -505,7 +552,8 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--slow", action="store_true", help="also run the checks the repo marks slow")
     ap.add_argument("--python", action="append", default=[], metavar="EXE",
                     help="another interpreter to consider (repeatable), e.g. a venv with CI's Python minor")
-    ap.add_argument("--timeout", type=int, default=1800, help="seconds per check (default 1800)")
+    ap.add_argument("--timeout", type=int, help=f"seconds per check (default: the check's own `timeout`, else "
+                    f"{DEFAULT_TIMEOUT})")
     ap.add_argument("--root", type=Path, default=ROOT,
                     help="the checkout to check (default: this one); the mapping still comes from --mapping")
     ap.add_argument("--mapping", type=Path, default=MAPPING, help="the path-to-check mapping (default: %(default)s)")
@@ -542,29 +590,28 @@ def main(argv: list[str] | None = None) -> int:
     ctx = {"base": merge_base, "tmp": str(workdir), "root": str(root)}
     machine = Machine(root, pythons=a.python)
     done: dict[str, Instance] = {}
-    failed = False
     for inst in instances:
         assess(inst, machine, a.slow, done, ctx)
         if inst.status == "runnable" and not a.list:
             if not a.json:
                 print(f"running {inst.id} ...", file=sys.stderr, flush=True)
-            run(inst, ctx, machine, workdir, a.timeout)
-            failed |= inst.status == "failed"
+            run(inst, ctx, machine, workdir, a.timeout or inst.check.get("timeout", DEFAULT_TIMEOUT))
         done.setdefault(inst.check["id"], inst)
 
     if a.json:
         print(json.dumps({"root": str(root), "base": a.base if not a.paths else None, "merge_base": merge_base, "paths": paths,
-                          "listing": a.list, "workdir": str(workdir),
+                          "listing": a.list, "verdict": verdict(instances, a.list), "workdir": str(workdir),
+                          "not_run": [{"id": i.id, "status": i.status, "reason": i.reason} for i in instances
+                                      if i.status in ("not run", "skipped")],
                           "checks": [to_json(i, ctx) for i in instances],
                           "limits": "Mirrors CI, does not replace it: not run or skipped is not passed, and a pass on "
                                     "another browser or Python than CI's is evidence, not CI's result."}, indent=2))
     else:
-        print(text_report(instances, paths, ctx, a.list))
-        if not a.list and any(i.log for i in instances):
-            print(f"Logs: {workdir / 'logs'}")
+        logs = str(workdir / "logs") if any(i.log for i in instances) else None
+        print(text_report(instances, paths, ctx, a.list, logs))
     if not any(i.log for i in instances):
         shutil.rmtree(workdir, ignore_errors=True)
-    return 1 if failed else 0
+    return EXIT[verdict(instances, a.list)]
 
 
 if __name__ == "__main__":

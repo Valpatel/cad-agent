@@ -232,6 +232,16 @@ def test_acceptance_coverage(mapping):
     assert "repo-map" in ids("tests/repo/ci/README.md")                               # a new folder needs docs/map.md
 
 
+@pytest.mark.parametrize("readme", ["tests/repo/ci/README.md", "tools/ci/README.md", "README.md",
+                                    "software/cadagent/mechanical/README.md", ".github/CONTRIBUTING.md"])
+def test_a_readme_anywhere_selects_the_site_browser_diagram_widths(mapping, readme):
+    """#766: tests/repo/ci/README.md's new map was 748 px wide at 1100 px and failed website-browser.mjs's diagram
+    widths in CI. Every README (and CONTRIBUTING, which owns .github's map) is published as a page, so a change to one
+    selects the site build, the browser test that measures its diagrams in both engines, and the folder-map drawing."""
+    ids = {i.id for i in pf.select(mapping, [readme])}
+    assert {"site-build", "site-browser[chromium]", "site-browser[webkit]", "folder-maps", "repo-map"} <= ids, ids
+
+
 def test_engines_exclude_and_per_match():
     mapping = {"checks": [
         {"id": "b", "paths": ["kit/**"], "exclude": ["kit/scada/**"], "engines": ["chromium", "webkit"],
@@ -385,10 +395,27 @@ def test_exit_codes(tmp_path, capsys):
 
 def test_json_report_never_counts_not_run_as_passed(tmp_path, capsys):
     args = _repo(tmp_path, [_check("ok", "true"), _check("away", "true", needs={"os": "plan9"})])
-    assert pf.main(args + ["--paths", "a/x", "--json"]) == 0
+    assert pf.main(args + ["--paths", "a/x", "--json"]) == 3                   # incomplete, not passed
     report = json.loads(capsys.readouterr().out)
     assert {c["id"]: c["status"] for c in report["checks"]} == {"ok": "passed", "away": "not run"}
+    assert report["verdict"] == "incomplete" and [n["id"] for n in report["not_run"]] == ["away"]
     assert report["paths"] == ["a/x"] and "evidence" in report["limits"]
+    assert pf.main(args + ["--paths", "a/x", "--json", "--only", "ok"]) == 0
+    assert json.loads(capsys.readouterr().out)["verdict"] == "passed"
+
+
+def test_a_selected_check_that_did_not_run_is_listed_at_the_end(tmp_path, capsys):
+    """#766: a slow site browser check was selected, reported as skipped among many lines, and missed. The report now
+    ends with every selected check that did not run and why, and the exit status says the run was incomplete."""
+    args = _repo(tmp_path, [_check("ok", "true"), _check("browser", "true", cost="slow", cost_note="whole site",
+                                                          title="The built site in a browser: diagram widths")])
+    assert pf.main(args + ["--paths", "a/x"]) == 3
+    tail = capsys.readouterr().out.splitlines()[-3:]
+    assert tail[0].startswith("NOT RUN HERE: 1 of 2 selected checks")
+    assert tail[1] == "  - browser (The built site in a browser: diagram widths): skipped: slow (whole site); --slow runs it"
+    assert tail[2] == "Verdict: incomplete"
+    assert pf.main(args + ["--paths", "a/x", "--slow"]) == 0
+    assert capsys.readouterr().out.splitlines()[-1] == "Verdict: passed"
 
 
 def test_diff_base_and_uncommitted_paths(tmp_path, capsys):
@@ -412,3 +439,31 @@ def test_a_hung_check_is_stopped_and_fails(tmp_path, capsys):
     assert pf.main(args + ["--paths", "a/x", "--timeout", "1", "--json"]) == 1
     (report,) = json.loads(capsys.readouterr().out)["checks"]
     assert report["status"] == "failed" and report["reason"] == "timed out after 1 s" and report["seconds"] < 10
+
+
+def test_large_output_and_stdin_do_not_block_a_check(tmp_path, capsys):
+    """Output goes to a file, not an undrained pipe, and stdin is closed: a check that writes megabytes and reads
+    stdin finishes instead of waiting (the site-unit timeout on #766 was the suite's own site builds, not this)."""
+    args = _repo(tmp_path, [_check("chatty", "head -c 3000000 /dev/zero | tr '\\\\0' x; cat; echo done")])
+    assert pf.main(args + ["--paths", "a/x", "--timeout", "60", "--json"]) == 0
+    (report,) = json.loads(capsys.readouterr().out)["checks"]
+    assert report["status"] == "passed" and report["seconds"] < 30
+    assert Path(report["log"]).stat().st_size > 3_000_000
+
+
+def test_a_checks_own_timeout_and_heap_need(tmp_path, monkeypatch):
+    m = _machine(tmp_path)
+    m.node_heap_mb = lambda: 2096
+    need = {"node_heap_mb": 4096, "node_heap_why": "big suite"}
+    inst = _assess({"id": "x", "command": "c", "needs": need}, m)
+    assert inst.status == "runnable" and inst.env["NODE_OPTIONS"].endswith("--max-old-space-size=4096")
+    assert any("default Node heap is 2096 MB" in n and "big suite" in n for n in inst.notes)
+    m.node_heap_mb = lambda: 4144
+    assert "NODE_OPTIONS" not in _assess({"id": "x", "command": "c", "needs": need}, m).env
+    seen = []
+    monkeypatch.setattr(pf, "run", lambda inst, ctx, machine, workdir, timeout: seen.append(timeout))
+    (tmp_path / "t").mkdir()
+    args = _repo(tmp_path / "t", [_check("own", "true", timeout=5400), _check("plain", "true")])
+    pf.main(args + ["--paths", "a/x", "--json"])
+    pf.main(args + ["--paths", "a/x", "--json", "--timeout", "7"])
+    assert seen == [5400, pf.DEFAULT_TIMEOUT, 7, 7]

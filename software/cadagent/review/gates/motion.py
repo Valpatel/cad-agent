@@ -31,16 +31,19 @@ part it moves against (``cadagent.review.gates.relations``: apart / touching / o
   pattern that repeats every ``360 / N`` degrees: ``cadagent.review.gates.symmetry``, from the solids, never
   from a declaration), samples one period apart put every part in the same place, and the kernel is asked
   about each distinct pose once: one pose for a shaft, one period for a lugged wheel. The measurement is
-  held tighter than anything this gate reports: between two poses treated as one the boundary moves by no
-  more than ``touch_mm / 10`` and no more than ``overlap_mm3 / 2`` of volume changes place, so an asymmetry
-  it ignores is not by itself an interference or a contact; a solid that cannot be measured that closely
-  (a free-form face, too many faces, an integration error over the limit) is refused and queried at every
-  sample, and the verdict says why. It is not measured at all where it could save nothing (two samples
-  or fewer, or no two samples a candidate period apart). The sampled values, the broad phase, closes
-  points and containment are unchanged; the verdict names the joint, the period, the measured
-  differences with their limits and point count, and the number of distinct poses. A body that is not
-  measured symmetric (a missing lug, an off-axis hole) is queried at every sample. ``symmetry=False``
-  turns it off.
+  held tighter than anything this gate reports: between two poses treated as one, each solid's boundary
+  moves by no more than ``touch_mm / 20`` and no more than ``overlap_mm3 / 4`` of its volume changes place,
+  so a pair's gap differs by no more than ``touch_mm / 10`` and its shared volume by no more than
+  ``overlap_mm3 / 2`` even when both of its parts are symmetric bodies, and an asymmetry it ignores is not
+  by itself an interference or a contact; a solid that cannot be measured that closely (a free-form face,
+  too many faces, an integration error over the limit) is refused and queried at every sample, and the
+  verdict says why. A joint's body is measured after its group's broad phase, and only when it could save
+  a kernel query: some pair with a part of that body passes the broad phase at more than two of the
+  joint's sampled values, two of them a candidate period apart. A wheel nothing comes near is not
+  measured. The sampled values, the broad phase, closes points and containment are unchanged; the verdict
+  names the joint, the period, the measured differences with their limits and point count, and the number
+  of distinct poses. A body that is not measured symmetric (a missing lug, an off-axis hole) is queried at
+  every sample. ``symmetry=False`` turns it off.
 * **Verdicts per pair.** Shared volume (``overlapping``/``contains``) is a collision and fails,
   unless the pair is a declared intended overlap. A joint's ``intended_contacts`` (and its own
   ``moving``/``fixed`` pair, the bearing) may touch; shared volume between them beyond
@@ -85,6 +88,19 @@ DEFAULT_CLOSURE_TOL_MM = 0.1
 DRIVABLE = ("revolute", "slider")       # one value each: the kinds that can follow or be followed
 IDENTITY: Tuple[float, ...] = (1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0)
 
+SYMMETRY_ASSUMPTION = (       # stated only in a verdict where a joint's repeating poses were queried once
+    "a revolute joint that carries no other joint, and whose moving parts each measure as unchanged by a rotation "
+    "about its axis (a body of revolution, or a pattern repeating every 360/N deg), has samples that are the same "
+    "pose: each distinct pose is queried once. The measurement is on the solids and held under what this gate "
+    "reports: between two poses treated as one, each solid's boundary (compared at every vertex and at points "
+    "inside every edge and face) moves by no more than touch_mm/20 and no more than overlap_mm3/4 of its volume "
+    "changes place, kernel integration error included, so a pair's gap differs by no more than touch_mm/10 and its "
+    "shared volume by no more than overlap_mm3/2 from full sampling, also when both of its parts are symmetric "
+    "bodies; a solid that cannot be measured that closely (a free-form face, a work limit, an integration error "
+    "over the limit) is refused and queried at every sample. An asymmetry under those limits is not seen, and a gap "
+    "within touch_mm/10 of touch_mm, or a shared volume within overlap_mm3/2 of overlap_mm3, can read either way; "
+    "symmetry=False queries every sample")
+
 ASSUMPTIONS = [
     "joints are sampled at discrete values across their declared ranges, both ends included; the density is "
     "reported per joint axis. A collision that starts and ends between two samples, or a feature thinner than the "
@@ -98,20 +114,14 @@ ASSUMPTIONS = [
     "a joint that follows another is not sampled: it takes multiplier × driver + offset in every pose. That ratio "
     "is the author's declaration of the linkage; loop closure is not solved, and only a declared closes point is "
     "measured, at the sampled poses",
-    "a revolute joint that carries no other joint, and whose moving parts each measure as unchanged by a rotation "
-    "about its axis (a body of revolution, or a pattern repeating every 360/N deg), has samples that are the same "
-    "pose: each distinct pose is queried once. The measurement is on the solids and held under what this gate "
-    "reports: between two poses treated as one, the boundary (compared at every vertex and at points inside every "
-    "edge and face) moves by no more than touch_mm/10 and no more than overlap_mm3/2 of volume changes place, "
-    "kernel integration error included; a solid that cannot be measured that closely (a free-form face, a work "
-    "limit, an integration error over the limit) is refused and queried at every sample. An asymmetry under those "
-    "limits is not seen, and a gap or shared volume that close to a threshold can read either way; symmetry=False "
-    "queries every sample",
+    # SYMMETRY_ASSUMPTION goes here (index _SYMMETRY_ASSUMPTION_AT) when it applies
     "pairs that do not move relative to each other (static against static, parts of one body) are not queried; "
     "the relation table and connectivity gate cover them",
     "exact B-rep relations within the relation tolerances; no tolerance stack, print shrink, deflection or "
     "backlash: a clear pose in the model does not prove the printed parts clear",
 ]
+
+_SYMMETRY_ASSUMPTION_AT = 5
 
 
 # ----------------------------------------------------------------------------- 3x4 rigid transforms
@@ -851,21 +861,22 @@ def run_motion(world: World, joints: Mapping[str, Any], *, tol: Tolerances = Tol
     # -- repeating poses: a leaf revolute joint whose every part measures unchanged by a turn about its axis
     turns: Dict[str, Dict[str, Any]] = {}
     unmeasured: Dict[str, Dict[str, Any]] = {}      # {joint: the part that was refused, and why}
-    sampled: Dict[str, List[float]] = {}            # {joint: the values its one axis takes over its group's poses}
-    for g in groups:
-        for a, c in zip(g.axes, g.counts):
-            sampled[a.joint] = list(a.values(c))
-            for f in g.joints:
-                if f in eff and eff[f].joint == a.joint:
-                    sampled[f] = [eff[f].of(v) for v in sampled[a.joint]]
-    for jid in sorted(js) if symmetry else ():
+
+    def may_repeat(jid: str) -> bool:
+        """A joint that carries another moves that joint's axis: every sample is its own pose."""
         j = js[jid]
-        if j.kind != "revolute" or j.dofs[0].hi <= j.dofs[0].lo or jid in parent.values():
-            continue            # a joint that carries another moves that joint's axis: every sample is its own pose
-        home = home_values(jid)[0]
-        orders = _repeating_orders(sampled.get(jid, ()), home)
-        if orders is None:
-            continue            # two samples or fewer: nothing a measurement could save
+        return bool(symmetry) and j.kind == "revolute" and j.dofs[0].hi > j.dofs[0].lo and jid not in parent.values()
+
+    def measure_turn(jid: str, near: Mapping[Any, Iterable[float]]) -> None:
+        """Measure the symmetry of ``jid``'s body, into ``turns`` or ``unmeasured``, when it could save a kernel
+        query. ``near`` holds, for each pair with a part of that body and each placement of the pair apart from
+        this joint's own angle, the joint's values at which the pair passed the broad phase: only two such
+        poses can be the same pose. Nothing is measured when no entry has more than two values."""
+        j, home = js[jid], home_values(jid)[0]
+        wanted = [o for o in (_repeating_orders(sorted(vals), home) for vals in near.values()) if o is not None]
+        if not wanted:
+            return              # no pair near at more than two of its angles: nothing a measurement could save
+        orders = sorted({n for o in wanted for n in o})
         found: Dict[str, Any] = {}
         for k in [k for b in body_of_joint[jid] for k in body_keys.get(b, [])]:
             found[k] = world.symmetry(k, j.origin, j.direction, orders)
@@ -876,19 +887,21 @@ def run_motion(world: World, joints: Mapping[str, Any], *, tol: Tolerances = Tol
             if getattr(last, "refused", False):
                 unmeasured[jid] = {"joint": jid, "part": k, "reason": str(getattr(last, "reason", "")),
                                    "retried": "on the next run" if getattr(last, "failed", False) else "no"}
-            continue
+            return
         order = 0
         for f in found.values():        # the turn every part repeats at: gcd(0, n) = n, and 0 is any angle
             order = math.gcd(order, int(f.order))
         if order == 1 or (order and order not in orders):
-            continue                    # the period the parts share puts no two samples in the same place
+            return                      # the period the parts share puts no two of those poses in the same place
         rows = {k: f.to_dict() for k, f in found.items()}
+        # each part was measured at its own period (or, a body of revolution, at the three test angles) and held
+        # to its own limits (``parts``); the joint's row carries the largest differences and the tightest limits
         turns[jid] = {"kind": "periodic" if order else "revolution", "order": order,
                       "period_deg": 360.0 / order if order else None, "parts": rows,
                       "difference_mm3": max(float(r.get("difference_mm3", 0.0)) for r in rows.values()),
                       "boundary_mm": max(float(r.get("boundary_mm", 0.0)) for r in rows.values()),
-                      "limit_mm3": max(float(r.get("limit_mm3", 0.0)) for r in rows.values()),
-                      "limit_mm": max(float(r.get("limit_mm", 0.0)) for r in rows.values()),
+                      "limit_mm3": min(float(r.get("limit_mm3", 0.0)) for r in rows.values()),
+                      "limit_mm": min(float(r.get("limit_mm", 0.0)) for r in rows.values()),
                       "points": sum(int(r.get("points", 0)) for r in rows.values())}
 
     def canonical(values: Mapping[str, Sequence[float]]) -> Mapping[str, Sequence[float]]:
@@ -980,10 +993,18 @@ def run_motion(world: World, joints: Mapping[str, Any], *, tol: Tolerances = Tol
         pair_rows: Dict[Tuple[str, str], List[Tuple[int, Relation]]] = {}
         min_box: Dict[str, Any] = {}
         pose_mats: Dict[str, Dict[str, Tuple[float, ...]]] = {}
+        # the broad phase over every pose first: which pairs come near, and at which poses. The kernel is asked
+        # after it, so a body's symmetry is measured only where there are queries it could save
+        candidates: List[Tuple[int, Tuple[str, str]]] = []
+        vmaps: List[Dict[str, List[float]]] = []
+        turner = {k: jid for jid in g.joints if may_repeat(jid)
+                  for b in body_of_joint[jid] for k in body_keys.get(b, [])}      # {part: the joint that turns it}
+        near: Dict[str, Dict[Any, set]] = {}
         for pi, vals in enumerate(poses):
             vmap = values_of(vals)
+            vmaps.append(vmap)
             mats = world_mats(vmap)
-            kmats = kernel_mats(vmap) if turns else mats     # the same place for every part; fewer distinct poses
+            rest: Dict[str, Dict[str, Tuple[float, ...]]] = {}     # {joint: this pose with that joint at home}
             # Containment needs the same complete physical pose as collision/closure checks.
             # Active bodies still select declarations, but inactive followers may have nonzero home offsets.
             pose_mats[_label(g, vals)] = mats
@@ -1017,8 +1038,19 @@ def run_motion(world: World, joints: Mapping[str, Any], *, tol: Tolerances = Tol
                             min_box = {"mm": round(d, 6), "pair": list(pair), "pose": _label(g, vals)}
                         continue
                     candidates_total += 1
-                    rel = world.relate(kmats, pair[0], pair[1])
-                    pair_rows.setdefault(pair, []).append((pi, rel))
+                    candidates.append((pi, pair))
+                    for jid in {turner[k] for k in pair if k in turner}:
+                        if jid not in rest:
+                            rest[jid] = world_mats({**vmap, jid: home_values(jid)})
+                        placed = tuple(matrix_key(rest[jid].get(world.body(k), IDENTITY)) for k in pair)
+                        near.setdefault(jid, {}).setdefault((pair, placed), set()).add(round(vmap[jid][0], 9))
+        for jid in sorted(near):
+            measure_turn(jid, near[jid])
+        last: Tuple[int, Any] = (-1, None)
+        for pi, pair in candidates:
+            if last[0] != pi:       # the same place for every part of a repeating body; fewer distinct poses
+                last = (pi, kernel_mats(vmaps[pi]) if turns else world_mats(vmaps[pi]))
+            pair_rows.setdefault(pair, []).append((pi, world.relate(last[1], pair[0], pair[1])))
 
         # -- classify
         collisions, contacts, unknown, touched = [], [], [], {}
@@ -1224,7 +1256,10 @@ def run_motion(world: World, joints: Mapping[str, Any], *, tol: Tolerances = Tol
              "pair_queries": candidates_total, "symmetric_joints": len(turns),
              "symmetry_not_measured": len(unmeasured),
              **world.stats, "seconds": round(time.perf_counter() - t0, 3)}
-    return verdict(GATE, checks, assumptions=ASSUMPTIONS, limits=limits, exclusions=excl,
+    assumptions = list(ASSUMPTIONS)
+    if turns:                           # said only where it happened
+        assumptions.insert(_SYMMETRY_ASSUMPTION_AT, SYMMETRY_ASSUMPTION)
+    return verdict(GATE, checks, assumptions=assumptions, limits=limits, exclusions=excl,
                    extra={"groups": group_rows, "driven": driven, "closures": closure_rows_all,
                           "not_checked": not_checked, "stats": stats})
 
@@ -1271,16 +1306,37 @@ def _repeating_orders(values: Sequence[float], home: float) -> Optional[List[int
     return orders
 
 
-def _repeats_text(jid: str, row: Mapping[str, Any]) -> str:
-    n = len(row["parts"])
-    held = (f"{row['difference_mm3']:g} mm3 of volume (limit {row['limit_mm3']:g}) and {row['boundary_mm']:g} mm at "
+_PARTS_NAMED = 4      # parts of a repeating body whose own measurement the message spells out
+
+
+def _held(row: Mapping[str, Any]) -> str:
+    return (f"{row['difference_mm3']:g} mm3 of volume (limit {row['limit_mm3']:g}) and {row['boundary_mm']:g} mm at "
             f"{row['points']} boundary points (limit {row['limit_mm']:g})")
+
+
+def _repeats_text(jid: str, row: Mapping[str, Any]) -> str:
+    """The sentence of the ``motion:<group>`` message for a joint whose repeating poses were queried once. Each
+    part is measured at its own period and held to its own limits, so a body whose parts repeat at different
+    turns is reported per part, never as one difference "after one step" of the period they share."""
+    n = len(row["parts"])
     body = f"{jid}'s moving body ({n} part{'s' if n != 1 else ''}) measures as "
     if row["kind"] == "revolution":
         return (f"{body}a body of revolution about the joint axis (the largest difference over the three test "
-                f"angles is {held}): its {row['samples']} samples are one pose, queried once")
-    body += (f"repeating every {row['period_deg']:g} deg about the joint axis (the difference after one such step "
-             f"is {held})")
+                f"angles is {_held(row)}): its {row['samples']} samples are one pose, queried once")
+    orders = {int(p["order"]) for p in row["parts"].values()}
+    if orders == {int(row["order"])}:
+        how = f"the difference after one such step is {_held(row)}"
+    else:
+        named = []
+        for key in sorted(row["parts"])[:_PARTS_NAMED]:
+            part = row["parts"][key]
+            own = (f"every {360.0 / int(part['order']):g} deg" if int(part["order"])
+                   else "a body of revolution, over the three test angles")
+            named.append(f"{key}, {own}: {_held(part)}")
+        more = f"; {n - _PARTS_NAMED} more in the evidence" if n > _PARTS_NAMED else ""
+        how = ("each part's difference after one step of its own period, against its own limits: "
+               + "; ".join(named) + more)
+    body += f"repeating every {row['period_deg']:g} deg about the joint axis ({how})"
     if row["distinct_poses"] == 1:
         return f"{body}: its {row['samples']} samples are one pose, queried once"
     return (f"{body}: its {row['samples']} samples are {row['distinct_poses']} distinct poses of one period, each "

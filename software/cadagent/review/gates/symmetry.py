@@ -8,10 +8,14 @@ measured here on the solid: it is never taken from a declaration.
 **The rule the tolerances follow.** The gate reports shared volume above ``overlap_mm3`` and a gap at or
 below ``touch_mm``, and its crossing probe ignores a depth of ``touch_mm / 10``. A symmetry claimed here
 replaces a sampled pose by another one, so whatever this test ignores has to be smaller than anything the
-gate reports: between any two poses it treats as the same, the solid's boundary moves by no more than
-``touch_mm / 10`` and no more than ``overlap_mm3 / 2`` of its volume changes place. An asymmetry that is
-ignored can therefore not be, on its own, an interference or a contact the gate reports. A solid on which
-that cannot be measured is refused (no symmetry is claimed), which only costs time.
+gate reports. Both parts of a pair can be symmetric bodies on joints of their own, and what the two ignore
+adds up, so each solid is held to half of what a pair may differ by: between any two poses treated as the
+same, one solid's boundary moves by no more than ``touch_mm / 20`` and no more than ``overlap_mm3 / 4`` of
+its volume changes place. A pair's gap therefore differs by no more than ``touch_mm / 10`` and its shared
+volume by no more than ``overlap_mm3 / 2`` from what full sampling measures, whether one of its parts was
+measured symmetric or both. An asymmetry that is ignored can therefore not be, on its own, an interference
+or a contact the gate reports. A solid on which that cannot be measured is refused (no symmetry is
+claimed), which only costs time.
 
 ``measure_symmetry(shape, origin, direction)`` returns a ``Symmetry``:
 
@@ -28,22 +32,26 @@ A rotation by an angle counts as leaving the solid unchanged when both hold, eac
 
 1. **Volume.** The volume of the solid outside its rotated copy (``BRepAlgoAPI_Cut``, integrated on its
    own), and the solid's volume less the volume it shares with the copy (``BRepAlgoAPI_Common``), are each
-   within the limit *with the kernel's integration error estimates added*. There is no allowance that
-   grows with the part: a large curved solid whose integration error estimate alone is over the limit is
-   refused.
+   within the limit *with the kernel's integration error estimates added*. The two are the same quantity
+   from two booleans, so on a solid both booleans get right neither decides alone: the second is there for
+   a boolean that returns a wrong result. There is no allowance that grows with the part: a large curved
+   solid whose integration error estimate alone is over the limit is refused.
 2. **Boundary points.** Points of the solid's boundary, rotated by the angle and by its reverse, lie
    within the limit of the solid's faces (``BRepExtrema_DistShapeShape``). The points are every vertex,
    ``_EDGE_POINTS`` points inside every edge and a ``_FACE_GRID`` by ``_FACE_GRID`` grid inside every face
    (finer where a narrow face would get none), so a smooth feature that has no edge or vertex of its own
    in view (a spherical bump with a buried seam, a dome, a dimple) is still sampled on its own face.
 
-The limits, from ``touch_mm / 10`` (boundary) and ``overlap_mm3 / 2`` (volume):
+The limits, from ``touch_mm / 20`` (boundary) and ``overlap_mm3 / 4`` (volume):
 
 * **Order N** is tested at one step of ``360 / N`` and held to those limits divided by ``N / 2``. A pose is
   at most ``N / 2`` steps from one that was queried, and the differences of single steps add up over
   them, so the whole drift stays within the undivided limits. (A shaft whose joint axis is a few microns
   off its own axis repeats almost exactly after one degree and is visibly elsewhere after 180.) The
-  boundary points are also tested at the multiple nearest a half turn, to the undivided limit.
+  boundary points are also tested at the multiple nearest a half turn, to the undivided limit. The step
+  limit already implies that for the points compared (distances add up over the steps at most), and no
+  solid is known on which this second test decides: it is a second look at the farthest pose, not a
+  separate guarantee.
 * **A body of revolution** must pass at three angles that are irrational fractions of a turn and share no
   close rational approximation (``GENERIC_DEG``), held to the limits times ``_GENERIC_SHARE``: a pattern
   of N lobes can sit close to itself at one such angle, and that factor is the least share of a lobed
@@ -55,10 +63,10 @@ between sample points, so a solid with one is refused. The work is capped (``MAX
 ``MAX_DISTANCES`` point-to-face distances): beyond it the solid is refused and the reason says so.
 
 Limits. This is a measurement, not a proof. The boundary is compared at sample points, the booleans and
-integrals are OCCT's, and a pair whose gap or shared volume sits within the limits above of one of the
-gate's thresholds can read either way. The point tests run before any boolean, so a solid that is plainly
-not symmetric is answered by its first few points. Orders above ``max_order`` (a pattern finer than 1 degree)
-are not looked for.
+integrals are OCCT's, and a pair whose gap sits within ``touch_mm / 10`` of ``touch_mm``, or whose shared
+volume sits within ``overlap_mm3 / 2`` of ``overlap_mm3``, can read either way. The point tests run before
+any boolean, so a solid that is plainly not symmetric is answered by its first few points. Orders above
+``max_order`` (a pattern finer than 1 degree) are not looked for.
 """
 
 from __future__ import annotations
@@ -70,7 +78,7 @@ from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple
 from cadagent._deps import require
 from cadagent.review.gates.relations import Tolerances, _boolean, _trsf, _validate_volume_shape
 
-SYMMETRY_VERSION = "2"    # 2: limits under the gate's own thresholds, face-interior points, per-step scaling (#724)
+SYMMETRY_VERSION = "3"    # 3: each solid held to half of what a pair may differ by (#724)
 MAX_ORDER = 360
 # 360/phi^2, 360/e, 360/pi: irrational fractions of a turn whose close rational approximations differ
 GENERIC_DEG = (137.50776405003785, 132.43657741585718, 114.59155902616465)
@@ -123,13 +131,15 @@ class _Refused(Exception):
 
 
 def boundary_limit_mm(tol: Tolerances) -> float:
-    """The most the boundary may move between two poses treated as one: the crossing probe's depth."""
-    return tol.touch_mm / 10.0
+    """The most one solid's boundary may move between two poses treated as one: half the crossing probe's
+    depth, so that two symmetric bodies in one pair together stay within that depth (``touch_mm / 10``)."""
+    return tol.touch_mm / 20.0
 
 
 def volume_limit_mm3(tol: Tolerances) -> float:
-    """The most volume that may change place between two poses treated as one: half of what is an overlap."""
-    return tol.overlap_mm3 / 2.0
+    """The most of one solid's volume that may change place between two poses treated as one: a quarter of
+    what is an overlap, so that two symmetric bodies in one pair together stay within half of it."""
+    return tol.overlap_mm3 / 4.0
 
 
 def _rotation_rows(origin: Sequence[float], direction: Sequence[float], degrees: float) -> List[List[float]]:
@@ -395,7 +405,8 @@ def _measure(topods, origin: List[float], direction: List[float], tol: Tolerance
         if off is None:
             continue
         if order // 2 > 1 and boundary_off(angle * (order // 2), limit_mm) is None:
-            continue                                  # one step looked the same and half a turn does not: a drift
+            continue        # one step looked the same and half a turn does not: a drift (implied by the step limit
+            #                 for the points compared; see the module docstring)
         diff = volume_off(angle, lim3)
         if diff is None:
             refused += 1

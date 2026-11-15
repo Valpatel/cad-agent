@@ -73,7 +73,7 @@
   {
    "id": "wheel-smoke",
    "title": "The installed wheel's consumers outside the checkout",
-   "paths": ["software/**", "pyproject.toml", "tests/cli/test_init.py"],
+   "paths": ["software/**", "pyproject.toml", "tests/cli/test_init.py", "docs/examples/starter-box/**"],
    "command": "python tests/cli/test_init.py --wheel-smoke",
    "needs": {"python": {"version": "3.12", "modules": ["pip"]}},
    "cost": "slow",
@@ -206,7 +206,7 @@
   {
    "id": "assembly-guide",
    "title": "Assembly guide in a browser",
-   "paths": ["software/cadagent/webkit/**", "tests/webkit/assembly/**", "tools/site/package.json", "tools/site/package-lock.json", "tests/webkit/webkit-server.mjs", "tests/site/npm-context.mjs"],
+   "paths": ["software/cadagent/webkit/**", "tests/webkit/assembly/**", "tools/site/package.json", "tools/site/package-lock.json", "tests/webkit/webkit-server.mjs", "tests/site/npm-context.mjs", "tests/fixtures/assembly-plan/**"],
    "exclude": ["software/cadagent/webkit/scada/**"],
    "command": "npm run test:assembly-guide",
    "cwd": "tools/site",
@@ -279,12 +279,12 @@
   {
    "id": "diagrams",
    "title": "Diagrams in the kit and in a generated site",
-   "paths": ["software/cadagent/webkit/**", "tests/webkit/webkit-diagrams-browser.mjs", "tests/site/site-diagrams-browser.mjs", "tools/site/package.json", "tools/site/package-lock.json", "tests/webkit/webkit-server.mjs", "tests/site/npm-context.mjs", "software/cadagent/publish/**", "tools/site/compiler/site-diagrams.mjs"],
+   "paths": ["software/cadagent/webkit/**", "tests/webkit/webkit-diagrams-browser.mjs", "tests/site/site-diagrams-browser.mjs", "tools/site/package.json", "tools/site/package-lock.json", "tests/webkit/webkit-server.mjs", "tests/site/npm-context.mjs", "software/cadagent/publish/**", "tools/site/compiler/site-diagrams.mjs", "tools/mermaid/**"],
    "exclude": ["software/cadagent/webkit/scada/**"],
    "command": "npm run test:diagrams",
    "cwd": "tools/site",
    "engines": ["chromium", "webkit"],
-   "needs": {"node_deps": ["tools/site"], "python": {"version": "3.12", "modules": ["yaml", "numpy", "packaging", "markdown"]}},
+   "needs": {"node_deps": ["tools/site", "tools/mermaid"], "python": {"version": "3.12", "modules": ["yaml", "numpy", "packaging", "markdown"]}},
    "cost": "fast",
    "mirrors": [{"workflow": "webkit.yml", "job": "browser", "run": "npm run test:diagrams"}],
    "env": {"PYTHONPATH": "{root}/software"}
@@ -382,7 +382,7 @@
   {
    "id": "scada-explorer-browser",
    "title": "Shared SCADA simulation controls in a browser",
-   "paths": ["software/cadagent/webkit/scada/**", "tools/webkit/scada/**", "tests/webkit/scada/**", "software/cadagent/webkit/ui/**", "software/cadagent/webkit/vendor/fonts/**", "tests/site/npm-context.mjs", "tests/webkit/webkit-server.mjs", "tests/fixtures/scada/**"],
+   "paths": ["software/cadagent/webkit/scada/**", "tools/webkit/scada/**", "tests/webkit/scada/**", "software/cadagent/webkit/ui/**", "software/cadagent/webkit/vendor/fonts/**", "tests/site/npm-context.mjs", "tests/webkit/webkit-server.mjs", "tests/fixtures/scada/**", "tools/site/package.json", "tools/site/package-lock.json"],
    "command": "node tests/webkit/scada/explorer/browser.mjs",
    "engines": ["chromium", "webkit"],
    "needs": {"node_deps": ["tools/site"]},

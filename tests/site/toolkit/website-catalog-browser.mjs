@@ -5,7 +5,8 @@ import {lowContrast} from '../layout/outline.mjs';
  */
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
-import { readFile } from 'node:fs/promises';
+import { mkdtemp, readFile, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { chromium, webkit } from '../npm-context.mjs';
 import { builtSite } from '../built-site.mjs';
@@ -28,7 +29,9 @@ const fail = (where, what) => problems.push(`${where}: ${what}`);
 
 // `init`: a script to run before the page's own (to break something on purpose); `fails`: a page error it causes;
 // `forced`: 'active' emulates forced colours (Windows High Contrast and the like).
-async function open(route, { width = 1366, height = 900, js = true, motion = 'no-preference', block = null, init = null, fails = null, forced = 'none', color = 'light' } = {}) {
+// `trace`: keep a navigation trail (main-frame navigations, load events, the page's own history writes and clicks),
+// written out only by `evidence` when a step fails (#754).
+async function open(route, { width = 1366, height = 900, js = true, motion = 'no-preference', block = null, init = null, fails = null, forced = 'none', color = 'light', trace = false } = {}) {
   const context = await browser.newContext({ viewport: { width, height }, javaScriptEnabled: js, reducedMotion: motion, forcedColors: forced, colorScheme: color });
   const page = await context.newPage();
   const seen = [];
@@ -40,10 +43,38 @@ async function open(route, { width = 1366, height = 900, js = true, motion = 'no
   page.on('request', r => { if (!r.url().startsWith(base) && !/^(data|blob):/.test(r.url())) seen.push(`third party: ${r.url()}`); });
   if (js) await page.addInitScript(() => document.addEventListener('securitypolicyviolation', e => console.error(`CSP ${e.violatedDirective} ${e.blockedURI}`)));
   if (init) await page.addInitScript(init);
+  const trail = [];
+  if (trace) {
+    const t0 = Date.now(), note = what => trail.push(`${Date.now() - t0} ms ${what}`);
+    page.on('framenavigated', f => { if (f === page.mainFrame()) note(`framenavigated ${f.url()}`); });
+    page.on('domcontentloaded', () => note('domcontentloaded'));
+    page.on('load', () => note('load'));
+    await page.addInitScript(() => {
+      const log = window.__catalogTrace = [], t0 = performance.now(), note = what => log.push(`${Math.round(performance.now() - t0)} ms ${what}`);
+      for (const name of ['pushState', 'replaceState']) {
+        const write = history[name];
+        history[name] = function (state, title, url) { note(`${name} ${url}`); return write.apply(this, arguments); };
+      }
+      addEventListener('popstate', () => note(`popstate ${location.href}`));
+      addEventListener('click', e => note(`click ${e.target?.getAttribute?.('aria-label') || e.target?.localName} defaultPrevented=${e.defaultPrevented}`), true);
+      addEventListener('pageshow', () => note(`pageshow ${location.href}`));
+    });
+  }
   await page.goto(base + route, { waitUntil: 'networkidle' });
   if (js && !block && !fails && /^\/(?:explore|catalog)(?:[?#]|$)/.test(route)) await page.waitForSelector('cad-gallery[data-ready]', { timeout: 10000 }).catch(() => seen.push('the gallery did not start'));
   const done = async () => { for (const s of seen) fail(`${route} @${width}${js ? '' : ' no-JS'}`, s); await context.close(); };
-  return { page, done };
+  // On a failed step only: what the client believes the URL is, what the document says, its load state, the trail and a picture.
+  const evidence = async (where, error) => {
+    const out = await mkdtemp(path.join(tmpdir(), 'cad-agent-catalog-wait-'));
+    const inPage = await page.evaluate(() => ({ href: location.href, readyState: document.readyState, history: history.length, trace: window.__catalogTrace || null,
+      chips: [...document.querySelectorAll('[data-gallery-chips] button')].map(b => b.getAttribute('aria-label')),
+      checked: [...document.querySelectorAll('cad-gallery input:checked')].map(b => `${b.name}=${b.value}`),
+      focus: document.activeElement?.getAttribute('aria-label') || document.activeElement?.localName })).catch(e => ({ unavailable: String(e) }));
+    await writeFile(path.join(out, 'state.json'), JSON.stringify({ where, error: String(error?.message || error), route, playwrightUrl: page.url(), inPage, trail, seen }, null, 2) + '\n');
+    await page.screenshot({ path: path.join(out, 'page.png'), fullPage: true }).catch(() => {});
+    console.error(`${where}: failure evidence in ${out}`);
+  };
+  return { page, done, evidence };
 }
 // Hidden from view but kept for screen readers (gallery.css: a 1 px clipped box), or not shown at all.
 const offScreen = loc => loc.evaluate(el => { const r = el.getBoundingClientRect(); return !el.checkVisibility() || (r.width <= 1 && r.height <= 1); });
@@ -189,7 +220,7 @@ async function lifecycleChecks(){
  }
 }
 async function interactionChecks(){
- const {page,done}=await open('/explore');try{
+ const {page,done,evidence}=await open('/explore',{trace:true});try{
   const tabs=page.locator('[data-gallery-tabs] [data-tab]');await tabs.first().focus();await page.keyboard.press('ArrowRight');await page.waitForURL(u=>u.searchParams.get('kind')==='guides');
   if(await page.locator('[data-gallery-tabs] [aria-selected=true]').getAttribute('data-tab')!=='guides')fail('keyboard tabs','ArrowRight does not select guides');
   await page.keyboard.press('End');await page.waitForURL(u=>u.searchParams.get('kind')==='demos');await page.keyboard.press('Home');await page.waitForURL(u=>!u.searchParams.has('kind'));
@@ -205,7 +236,7 @@ async function interactionChecks(){
   if(JSON.stringify(titles)!==JSON.stringify(expected))fail('sort/filter','A–Z tool results disagree with catalogue');
   const projection=JSON.parse(await readFile(path.join(dir,'discovery.json'),'utf8')),total=projection.items.filter(x=>x.group==='guides').length;
   const line=await page.locator('[data-gallery-status]').textContent();if(line!==`${expected.length} of ${total} tools & guides`)fail('filtered count',line);
- }finally{await done();}
+ }catch(error){await evidence('interaction',error);throw error;}finally{await done();}
 }
 async function detailsChecks(){
  for(const badRevision of [false,true]){
@@ -261,6 +292,7 @@ async function outlineThemeChecks(){
  }
 }
 try{await sharedDiscoveryChecks();await legacyChecks();await lifecycleChecks();await interactionChecks();await detailsChecks();await readerChecks();await outlineThemeChecks();await toolkitBrowserChecks({open,fail});}
+catch(error){if(problems.length)console.error(`Findings before the error:\n${problems.join('\n')}`);throw error;}   // a thrown step would otherwise hide them
 finally{await browser.close();server.kill();await site.done();}
 assert.deepEqual(problems,[],problems.join('\n'));
 console.log(`Explore/catalogue/readers OK in ${engine.name()}`);

@@ -81,7 +81,8 @@ flowchart TD
   finding that names the path it belongs at; a new top-level folder is blocking.
 - Post inline comments on the exact lines (`gh api repos/<o>/<r>/pulls/<n>/comments` with `commit_id`, `path`,
   `line`, `side=RIGHT`), then one summary review (`gh pr review <n> --comment --body ...`) that says plainly whether
-  anything is blocking. Its last line is the verdict marker for the head commit you reviewed:
+  anything is blocking. Its last line is the verdict marker for the head commit you reviewed (an attribution footer
+  added by the posting tool may follow it):
   `<!-- cad-review verdict=pass sha=<full 40-character head sha> -->` when nothing blocking is left, otherwise
   `verdict=block`. A re-review after fixes posts a new summary with a new marker. Where the repo has merge gates,
   re-run them so they read it: `gh workflow run gates.yml -R <owner>/<repo> -f pr=<n>`. Do not approve or merge unless the repo's rules give

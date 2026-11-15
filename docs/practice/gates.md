@@ -698,26 +698,32 @@ every part in the same place, and asking the kernel about both adds nothing. The
 ```mermaid
 flowchart TD
     J{"revolute joint that<br/>carries no other joint?"} -->|"no"| E["queried at<br/>every sample"]
-    J -->|"yes"| M{"every part of its body<br/>measures unchanged<br/>by a turn?"}
+    J -->|"yes"| N{"a pair near its body<br/>at angles that could<br/>be one pose?"}
+    N -->|"no: not measured"| E
+    N -->|"yes"| M{"every part of its body<br/>measures unchanged<br/>by a turn?"}
     M -->|"no, or refused"| E
     M -->|"yes"| P["poses one period apart<br/>queried once"]
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
     classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
-    class J,M here
+    class J,N,M here
     class E near
     class P out
 ```
 
 The rule for the measurement: **it is held tighter than anything the gate reports.** The gate reports shared volume
 above `overlap_mm3` (0.001 mm³) and a gap at or below `touch_mm` (0.01 mm). Between any two poses the shortcut treats
-as one, the solid's boundary moves by no more than `touch_mm / 10` (0.001 mm, the depth the crossing probe ignores)
-and no more than `overlap_mm3 / 2` (0.0005 mm³) of its volume changes place. An asymmetry the measurement ignores is
-therefore not, on its own, an interference or a contact the gate reports. A solid that cannot be measured that
-closely is refused and queried at every sample. A part counts as unchanged by a turn when both hold:
+as one, a pair's gap differs by no more than `touch_mm / 10` (0.001 mm, the depth the crossing probe ignores) and its
+shared volume by no more than `overlap_mm3 / 2` (0.0005 mm³) from what full sampling measures. Both parts of a pair
+can be symmetric bodies, and what the two measurements ignore adds up. So each solid is held to half of that: its
+boundary moves by no more than `touch_mm / 20` (0.0005 mm) and no more than `overlap_mm3 / 4` (0.00025 mm³) of its
+volume changes place. An asymmetry the measurement ignores is therefore not, on its own, an interference or a contact
+the gate reports. A solid that cannot be measured that closely is refused and queried at every sample. A part counts
+as unchanged by a turn when both hold:
 
 - **Volume.** The volume outside its turned copy (the cut, integrated on its own) and its volume less the volume
-  shared with the copy are each within the limit, with the kernel's integration error estimates added. There is no
+  shared with the copy are each within the limit, with the kernel's integration error estimates added. The two are
+  the same quantity from two booleans: the second is there for a boolean that returns a wrong result. There is no
   allowance that grows with the part.
 - **Boundary points.** Every vertex, three points inside every edge and a 5 × 5 grid of points inside every face
   (finer on a narrow face), turned by the angle and by its reverse, lie within the limit of the faces. A smooth
@@ -725,18 +731,21 @@ closely is refused and queried at every sample. A part counts as unchanged by a 
 
 | What is tested | Angles | Limits |
 |---|---|---|
-| A body of revolution | three angles that are irrational fractions of a turn | `touch_mm / 10` and `overlap_mm3 / 2`, each × 0.04: the least share of an N-lobed pattern's largest difference that the best of the three angles shows. The reported difference is the largest over the three angles. |
-| A pattern of order N (the finest N up to 360 first) | one step of `360 / N`, and the boundary points again at the multiple nearest a half turn | the same two limits ÷ (N / 2). A pose is at most N / 2 steps from one that was queried and the differences of single steps add up, so the whole drift stays inside the undivided limits. The reported difference is that of one step. |
+| A body of revolution | three angles that are irrational fractions of a turn | `touch_mm / 20` and `overlap_mm3 / 4`, each × 0.04: the least share of an N-lobed pattern's largest difference that the best of the three angles shows. The reported difference is the largest over the three angles. |
+| A pattern of order N (the finest N up to 360 first) | one step of `360 / N`, and the boundary points again at the multiple nearest a half turn | the same two limits ÷ (N / 2). A pose is at most N / 2 steps from one that was queried and the differences of single steps add up, so the whole drift stays inside the undivided limits. The reported difference is that of one step. The half-turn comparison is a second look: the step limit already bounds it for the points compared, and no solid is known on which it decides. |
 
-A body of several parts repeats at the turn they all share (a round hub in a 12-lug rim: 30°).
+A body of several parts repeats at the turn they all share (a round hub in a 12-lug rim: 30°). Each part is still
+measured at its own period and held to its own limits.
 
 The sampled values do not change, so the range, the density, the broad phase, `closes` points and per-pose
 containment are as before. Only the pose handed to the kernel is replaced by the equivalent one in the first period
 from home, and the placement-keyed memo and pair cache answer the repeats: one query per pair for a shaft, one period
 for a lugged wheel. Every sampled pose still gets its relation, so a collision is reported at the pose where it is
 first met. The `motion:<group>` message and `density[].symmetry` state what was measured (`kind`, `period_deg`, the
-largest volume and boundary-point differences with the limits they were held to and the number of points compared,
-per part) and how many `distinct_poses` the samples are.
+volume and boundary-point differences with the limits they were held to and the number of points compared, per part
+under `parts`) and how many `distinct_poses` the samples are. The joint's own row carries the largest differences and
+the tightest limits of its parts. Where the parts repeat at different turns, the message gives each part's numbers
+after one step of its own period.
 
 ```mermaid
 flowchart TD
@@ -756,23 +765,30 @@ It is not applied where it would not hold: a joint that carries another joint (t
 a slider or cylindrical joint, and any body with one part that does not measure symmetric (a missing lug, one lug
 longer by more than the limit, a keyway, an off-axis hole, a joint axis a few microns off the shaft's own) are
 queried at every sample. A follower or a joint in a `combine` grid is judged on its own body like any other leaf
-joint. Nothing is measured where nothing could be saved: a joint with two samples or fewer, and patterns whose
-period puts no two of the joint's samples in the same place (a range shorter than the period, or a step that never
-lands on it). The first part of a body that does not repeat ends the measuring of that body.
+joint.
+
+A body is measured after its group's broad phase, and only when that could save a kernel query. Some pair with a part
+of the body has to pass the broad phase in more than two poses that differ in this joint's angle alone. Only periods
+that put two of those poses in the same place are looked for. So a wheel nothing comes near is not measured, nor is a
+joint with two samples or fewer, a range shorter than the period, or a step that never lands on it. The first part of
+a body that does not repeat ends the measuring of that body.
 
 Refused, with the reason in the `motion:<group>` message and `density[].symmetry_not_measured`:
 
 - a part with a free-form face (a spline, an offset or a swept curve: anything but a plane, cylinder, cone, sphere
   or torus). A feature of such a face can lie between sample points, so an involute gear is queried at every sample;
-- a part whose volume integration error estimate is over the limit (a large sphere or torus);
+- a part whose volume integration error estimate is over the limit. With the default tolerances that is a 20 mm
+  ball, a 20/1.5 mm O-ring, a plain or chamfered cylinder of 300 mm radius and a cylinder of 100 mm radius with 1 mm
+  fillets; a 10 mm ball and a plain cylinder of 150 mm radius are measured;
 - a part over the work limit (20000 boundary points or 400000 point-to-face distances: a wheel of more than about
   130 simple lugs);
 - a kernel failure while measuring. It is not written to the pair cache, so the next run measures again.
 
 Limits. This is a measurement, not a proof: the boundary is compared at sample points and the booleans and
-integrals are OCCT's. An asymmetry under the limits above is not seen, and a pair whose gap or shared volume sits
-within those limits of `touch_mm` or `overlap_mm3` can read either way. `symmetry=False` (`cad: gates: motion:
-{symmetry: false}`) queries every sample.
+integrals are OCCT's. An asymmetry under the limits above is not seen. A pair whose gap sits within `touch_mm / 10`
+of `touch_mm`, or whose shared volume sits within `overlap_mm3 / 2` of `overlap_mm3`, can read either way. The verdict
+carries the assumption line for the shortcut only when a joint's poses were queried once. `symmetry=False` (`cad:
+gates: motion: {symmetry: false}`) queries every sample.
 
 **Driven joints (one degree of freedom, several joints).** In a linkage one joint's value sets another's: the two
 arms of a parallelogram turn together and the link they carry keeps its attitude. Sampled as free joints, such a
@@ -911,9 +927,10 @@ The synthetic 100-part assembly (`tools/gate_timing.py --motion 20`) with three 
 92 candidate pairs plus 32 bisection queries, 1.7 s cold, 0.07 s warm from the pair cache. The broad phase keeps
 the queries to the pairs that come near: real parts cost more per query (see the relation table), not more queries.
 Repeating poses (#724): a shaft that is a body of revolution and a 12-lug wheel, each on a full-turn joint at
-`max_step_deg=2` with two neighbours: 362 poses, 700 kernel queries and 14.1 s with `symmetry=False`; 32 kernel
-queries and 1.6 s with it, the two symmetry measurements (0.5 s, `stats.symmetry_seconds`) included. A wheel of
-120 lugs takes about 17 s to measure, most of it two booleans, once per part and pair cache.
+`max_step_deg=2` with two neighbours: 362 poses, 700 kernel queries and 11.6 s with `symmetry=False`; 32 kernel
+queries and 1.2 s with it, the two symmetry measurements (0.5 s, `stats.symmetry_seconds`) included. A wheel of
+120 lugs takes about 13 s to measure, most of it two booleans, once per part and pair cache. With a pin beside its
+lugs, a full turn at `max_step_deg=2` took 13.9 s (3 kernel queries) against 28.3 s (180). Alone, it is not measured.
 
 Limits. Sampled poses, not a swept volume. Rigid bodies on ideal axes: no backlash, play, deflection or tolerance
 stack, so a clear pose in the model does not prove printed parts clear. Contacts are classified by the relation

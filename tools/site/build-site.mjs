@@ -549,6 +549,14 @@ const moreChecks = home.more_checks.map((m, i) => {
   homeMd.reel.push(`- [${m.title}](${absolute(m.href)}): ${m.caption} (\`${m.tool}\`)`);
   return `<li><a href="${esc(homeHref(m.href, at))}">${esc(m.title)}</a> <code>${esc(realTool(m.tool, at))}</code></li>`;
 }).join('');
+// The loop as a figure: the steps in order and the way back to the start (the cards below say how far each has got).
+const ARC_SUB = ['frontier models, real builds', 'reviewed PRs with tests', 'references, checks, tools', 'free, open and local models'];
+const arcLoop = `<svg class="arc-loop" viewBox="0 0 800 132" role="img" aria-label="The loop: people on frontier models use cad-agent on real projects, improve it, the project gathers the best references, checks and tools, and evals measure whether smaller, open and local models can do the same work; then the next round begins">
+<defs><marker id="arc-arrow" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path class="tip" d="M0 0L8 4L0 8z"/></marker></defs>
+${home.arc.map((st, i) => `<g transform="translate(${8 + i * 198} 8)"><rect class="box${i === 3 ? ' out' : ''}" width="178" height="74" rx="12"/><text class="num" x="14" y="24" font-size="16" font-weight="750">${i + 1}</text><text class="name" x="14" y="45" font-size="12.5" font-weight="700">${esc(st.title)}</text><text class="sub" x="14" y="63" font-size="10.5">${esc(ARC_SUB[i])}</text></g>${i < 3 ? `<path class="flow" d="M${188 + i * 198} 45h16" stroke-width="2" marker-end="url(#arc-arrow)"/>` : ''}`).join('')}
+<path class="flow" d="M700 84v20a8 8 0 0 1-8 8H105a8 8 0 0 1-8-8v-14" fill="none" stroke-width="2" stroke-dasharray="4 4" marker-end="url(#arc-arrow)"/>
+<text class="sub" x="400" y="128" text-anchor="middle" font-size="11">what the evals show feeds the next round</text></svg>`;
+if (home.arc.length !== ARC_SUB.length) throw new Error('docs/home.yaml arc: four steps, as the loop figure draws them');
 // From frontier to local: each step says what holds today and what is next.
 homeMd.arc = [];
 const arcSteps = home.arc.map((s, i) => {
@@ -645,7 +653,7 @@ ${useCard}
 <ul class="reel">${reel.join('')}</ul>
 <div class="more-checks"><p>More checks</p><ul>${moreChecks}</ul></div></div></section>
 <div class="wrap"><section class="section arc" id="frontier-to-local" aria-labelledby="arc-title"><div class="lead"><h2 id="arc-title">From frontier <span>to local.</span></h2><p>The plan, and how far it has got. People on frontier models improve cad-agent on real work; evals will show when cheaper and local models can do the same. <a href="${esc(homeHref('docs/vision.md', 'arc'))}">The vision</a> · <a href="${esc(homeHref('docs/practice/standard-evaluation.md', 'arc'))}">What the evals measure</a></p></div>
-<ol class="arc-steps">${arcSteps}</ol></section>
+${arcLoop}<ol class="arc-steps">${arcSteps}</ol></section>
 <section class="section help-band"><div class="lead"><h2>Help us <span>improve!</span></h2><p>Found a mistake, a better tool, or a page that wasted your time? It takes a minute, and ideas we use are credited by name.</p></div>
 <div class="help-actions"><a class="button primary" href="${esc(feedbackURL('home page', '/'))}">Give feedback</a><a class="button" href="${REPO}/issues">See open issues</a><a class="button" href="/CONTRIBUTING">How to contribute</a></div></section></div>`;
 await writeFile(path.join(out, 'index.html'), frame({ title: TAGLINE, fullTitle: HOME_TITLE, description: HOME_DESCRIPTION, body: landing, md: '/index.md', current: '/', page: 'landing', css: ['/web/snap-demo.css', '/kit/model/model.css', '/web/home.css'] }));

@@ -34,6 +34,7 @@ flowchart TD
 | `webkit-fourbar.test.mjs` | `<cad-fourbar>`'s pure parts in Node |
 | `webkit-gallery.test.mjs` | `<cad-gallery>`'s pure parts: URL state, search, facets and sorting |
 | `webkit-model.test.mjs` | `model.js`, the `<cad-model>` decoder, against the Python reference |
+| `webkit-model-touch-browser.mjs` | `<cad-model>` touch arbitration: real CDP touch drags turn both homepage models without scrolling the page, phone portrait and landscape; scrolling beside the canvas, cancel, second finger, tap; a full-screen viewer keeps vertical swipes for the page. WebKit checks only the contract and a tap |
 | `webkit-part-table-browser.mjs` | The part table in a real browser |
 | `webkit-part-tracker.test.mjs` | `part-tracker.js`: statuses per project, atomic imports, storage denial, cross-tab sync |
 | `webkit-printed-boss.test.mjs` | `<cad-printed-boss>` without a browser, against `cadagent.mechanical.bosses` |
@@ -42,7 +43,7 @@ flowchart TD
 | `webkit-torsion-snap.test.mjs` | `<cad-torsion-snap>` without a browser: the port's numbers, Saint-Venant scaling |
 | `webkit-vendor.test.mjs` | The kit's vendored libraries match their receipts |
 
-Run: `npm --prefix tools/site run test:webkit-unit` and `npm --prefix tools/site run test:part-table`, `test:file-viewer`, `test:fea`, `test:diagrams`.
+Run: `npm --prefix tools/site run test:webkit-unit` and `npm --prefix tools/site run test:part-table`, `test:model-touch`, `test:file-viewer`, `test:fea`, `test:diagrams`.
 The shared-stage regression runs with `npm --prefix tools/site run test:stage` and `PLAYWRIGHT_BROWSER=chromium` or
 `webkit`. It writes actual browser PNGs and JSON measurements under `TEST_OUTPUT` (default `/tmp/cad-agent-stage-grid`);
 `TEST_SOURCE_REVISION` records the source commit. `CHROMIUM_EXECUTABLE` can select a local Chromium binary.

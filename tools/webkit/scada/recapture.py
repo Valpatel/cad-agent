@@ -8,7 +8,9 @@ must lie inside that generator's declared outputs: anything else (the frozen mod
 baseline in tests/fixtures/scada/ included) aborts without staging. The changed files
 are copied to --out at their repository paths, with a manifest at
 .cache/scada/recapture-manifest.json (an ignored path, so unpacking the artifact at the
-repository root never stages it). Exit status is nonzero when nothing can be offered.
+repository root never stages it). Exit status is nonzero when nothing can be offered, and
+then --out is left as it was: staging fills a sibling directory renamed into place only when
+complete.
 
 Limits: the recapture is only as good as the pinned shell. It proves the outputs were
 produced from the checked-out sources, not that the images look right. On a pull
@@ -24,6 +26,7 @@ import re
 import shutil
 import subprocess
 import sys
+import tempfile
 
 REPO = Path(__file__).resolve().parents[3]
 TOOL = 'tools/webkit/scada'
@@ -90,7 +93,7 @@ def unowned(paths, generators):
     bad = []
     for path in paths:
         parts = Path(path).parts
-        if (path.startswith(FROZEN) or path.startswith('/') or '..' in parts
+        if (path.startswith(FROZEN) or path.startswith('/') or '..' in parts or '\\' in path
                 or not any(p.fullmatch(path) for p in patterns)):
             bad.append(path)
     return bad
@@ -155,6 +158,8 @@ def git(*args):
 
 
 def status():
+    # Assumes no generator output is git-ignored: git status would not list it, so it would be
+    # missing from the artifact while the re-check here still passed (tested against .gitignore).
     return parse_porcelain(git('status', '--porcelain=v1', '-z', '--untracked-files=all', '--no-renames'))
 
 
@@ -193,13 +198,23 @@ def main(argv=None):
         raise SystemExit('Recapture changed files outside its generators\' outputs; nothing staged: ' + ', '.join(bad))
     if not written and not deleted:
         raise SystemExit('Generators changed no files; nothing to upload.')
-    files = stage(REPO, written, out)
-    manifest = build_manifest(source_commit=git('rev-parse', 'HEAD').decode().strip(),
-                              pr_head=os.environ.get('PR_HEAD_SHA') or None, shell=shell,
-                              commands=commands, files=files, deleted=deleted)
-    target = out / MANIFEST
-    target.parent.mkdir(parents=True, exist_ok=True)
-    target.write_text(json.dumps(manifest, indent=2) + '\n')
+    # All or nothing: fill a sibling directory and rename it to --out only once complete.
+    out.parent.mkdir(parents=True, exist_ok=True)
+    partial = Path(tempfile.mkdtemp(prefix='.recapture-', dir=out.parent))
+    try:
+        files = stage(REPO, written, partial)
+        manifest = build_manifest(source_commit=git('rev-parse', 'HEAD').decode().strip(),
+                                  pr_head=os.environ.get('PR_HEAD_SHA') or None, shell=shell,
+                                  commands=commands, files=files, deleted=deleted)
+        target = partial / MANIFEST
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(json.dumps(manifest, indent=2) + '\n')
+        if out.exists():
+            out.rmdir()  # checked empty above
+        partial.rename(out)
+    except BaseException:
+        shutil.rmtree(partial, ignore_errors=True)
+        raise
     print(json.dumps({'staged': len(files), 'deleted': deleted, 'generators': generators, 'out': str(out)}))
     return 0
 

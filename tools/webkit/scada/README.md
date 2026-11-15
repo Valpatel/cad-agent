@@ -50,8 +50,15 @@ the five checks, regenerates only the failing ones and uploads
 each file). The job still fails. Unpack the artifact at the repository root, delete
 any paths the manifest lists under `deleted`, and commit the files unchanged. The
 capture is of the pull request merged with its base, so merge the base in first if
-it changed SCADA sources. The script stages nothing outside its generators' outputs,
-the frozen baseline included.
+it changed SCADA sources. Take the artifact from the run on your pull request's
+current head: the artifact name and the manifest's `pull_request_head` carry that SHA.
+Commit the artifact whole; never trim it. The first `thumbnails:scenarios`
+recapture differs from every committed scenario thumbnail (63 files, about 9 MB; the
+differences are in text rendering): it is a one-time re-baseline to the CI shell, after
+which recaptures, byte-reproducible on that shell, should change only images whose
+pixels change. The script stages nothing outside its generators' outputs, the frozen
+baseline included. That guard and the manifest are an integrity aid for our own
+branches, not a trust boundary: an artifact from a fork's run proves nothing.
 
 </details>
 

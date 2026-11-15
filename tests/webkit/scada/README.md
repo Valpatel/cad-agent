@@ -11,6 +11,7 @@ flowchart TD
 | File or folder | Purpose |
 | --- | --- |
 | [dependencies.mjs](dependencies.mjs) | Resolve DOM/bundler development dependencies from the tooling manifest. |
+| [__init__.py](__init__.py) | Empty: makes the folder a Python test package, so a test here may share a file name with one in another folder. |
 | [test_recapture.py](test_recapture.py) | The CI recapture's check-to-generator choice, output ownership (frozen baseline refused), staged file list and manifest, without a browser. |
 | [external-adapter-render.test.mjs](external-adapter-render.test.mjs) | Render external telemetry and mount direct circuit-model adapters to verify units, validity, read-only controls and shared session lifetime. |
 | [explorer/](explorer/README.md) | Explorer search, audio, selection and wastewater integration checks. |

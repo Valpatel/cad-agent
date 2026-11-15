@@ -25,6 +25,7 @@ Other agent sessions use and change this repo at the same time, so:
   `cad-gates/<base>/review` with an independent reviewer's pass verdict, and `cad-gates/main/release` for `dev` →
   `main`), and `python3 tools/ci_gates.py all --repo Valpatel/cad-agent --pr <n>`, run from an up-to-date `dev`
   checkout, exits 0 just before you merge (it reads the reviews live). Never write a review verdict on your own PR, and never merge around a failing gate.
+  What an agent may merge without the owner, and the route without `gh`: [Merging without the owner](.agents/skills/cad-pr-review/SKILL.md#merging-without-the-owner); what a review checks: [review criteria](.agents/skills/cad-pr-review/review-criteria.md).
 - **Ship to `main` as part of the loop.** Every merged change adds its CHANGELOG lines as a fragment in
   [`docs/changelog.d/`](docs/changelog.d/README.md), not by editing `CHANGELOG.md` (parallel PRs would conflict). When `dev`
   has user-visible work that `main` lacks, cut a release with `tools/cut_release.py` and merge it through the release

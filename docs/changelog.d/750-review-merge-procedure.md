@@ -1,0 +1,11 @@
+**New**
+- `cad-pr-review` skill: one review-criteria page (severities, checks for every PR and by change type, the evidence
+  each needs, what a pass verdict does not mean), independence rules for the reviewer, and "Merging without the
+  owner": what an agent may merge into `dev` by itself, what always waits for the owner, and a post-merge checklist
+  (#750).
+- `cad-pr-review` and `cad-pr-reviewer` give the GitHub MCP tool beside each `gh` command, including the gate re-run
+  and the merge, so a session without `gh` can review and merge (#750).
+
+**Changed**
+- `cad-agent agents install` reports `cad-pr-review` and `cad-pr-reviewer` as needing GitHub access through `gh` or
+  the GitHub MCP tools, which it cannot check from here, instead of `gh` alone (#750).

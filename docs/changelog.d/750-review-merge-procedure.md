@@ -5,7 +5,9 @@
   replaces a gate), and a post-merge checklist
   (#750).
 - `cad-pr-review` and `cad-pr-reviewer` give the GitHub MCP tool beside each `gh` command, including the gate re-run
-  and the merge, so a session without `gh` can review and merge (#750).
+  and the merge, and a stated substitute for the local `tools/ci_gates.py` run in a session without `gh`. A verdict
+  posted through a route that appends a footer after the marker turns the review gate green only once #751 is fixed
+  (#750).
 
 **Changed**
 - `cad-agent agents install` reports `cad-pr-review` and `cad-pr-reviewer` as needing GitHub access through `gh` or

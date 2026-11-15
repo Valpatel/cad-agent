@@ -38,8 +38,11 @@ A verdict is `pass` only when no blocking finding is left.
 - **No duplicate helpers.** Search for what each new helper does, not only its name. A second copy is blocking.
 - **Limits stated honestly** in code, docs and the PR: what a check assumes, and nothing claims more than was built
   or measured.
+- **Say whether a go-ahead item applies.** The summary names each item under the skill's
+  [Needs the owner's go-ahead](SKILL.md#needs-the-owners-go-ahead) that the diff touches, or says none does. An
+  agent may merge without the owner's go-ahead only on that statement.
 - **No test skipped, weakened or deleted to get green.** Any such change is blocking unless the PR explains why the
-  test was wrong, and it needs the owner's go-ahead before merging ([skill](SKILL.md#merging-without-the-owner)).
+  test was wrong, and it needs the owner's go-ahead before merging ([skill](SKILL.md#needs-the-owners-go-ahead)).
 
 ## By change type
 

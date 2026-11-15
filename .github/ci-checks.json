@@ -1,5 +1,6 @@
 {
- "about": "What CI runs for which changed paths, mirrored from .github/workflows/*.yml for tools/ci/preflight.py (#759). Each check: id, title, paths (repo globs; ** spans folders) and exclude, the command and its cwd (placeholders {root}, {base} = merge base, {tmp} = run folder, per_match groups), env, needs (python version/exact/modules/dists/browser, node_deps, browser, os, commands, after), engines (CI's browser matrix), cost (fast | slow, with cost_note), subset (runs part of a CI step), and mirrors: the workflow, job and exact CI command it stands for. tests/repo/ci/test_ci_checks.py fails when a pull-request workflow runs a check command that no entry mirrors, or an entry mirrors one that no longer exists.",
+ "about": "What CI runs for which changed paths, mirrored from .github/workflows/*.yml for tools/ci/preflight.py (#759). Each check: id, title, paths (repo globs; ** spans folders) and exclude, the command and its cwd (placeholders {root}, {base} = merge base, {tmp} = run folder, per_match groups), env, needs (python version/exact/modules/dists/browser, node_deps, browser, os, commands, after), engines (CI's browser matrix), cost (fast | slow, with cost_note), timeout (seconds), needs.node_heap_mb, subset (runs part of a CI step), and mirrors: the workflow, job and exact CI command it stands for (in the entry's cwd unless the mirror names one). ci_node_major is the Node major CI's setup-node pins. per_match groups must be plain character classes; values are shell-quoted. tests/repo/ci/test_ci_checks.py fails when a pull-request workflow runs a check command that no entry mirrors, or an entry mirrors one that no longer exists.",
+ "ci_node_major": "22",
  "checks": [
   {
    "id": "pytest-repo",
@@ -39,8 +40,8 @@
   },
   {
    "id": "pytest-core",
-   "title": "The whole pytest suite with the required dependencies (CI core, 3.10 and 3.12)",
-   "paths": ["software/**", "tests/**", "pyproject.toml"],
+   "title": "The whole pytest suite with the required dependencies (CI core; one interpreter here, not the 3.10 floor-version rerun)",
+   "paths": ["**"],
    "command": "python -m pytest -q",
    "env": {"PYTHONPATH": "{root}/software"},
    "needs": {"python": {"version": "3.12", "modules": ["pytest", "yaml", "numpy", "packaging"]}},
@@ -61,7 +62,7 @@
   {
    "id": "pytest-full",
    "title": "The whole suite with every extra (CI full)",
-   "paths": ["software/**", "tests/**", "pyproject.toml"],
+   "paths": ["**"],
    "command": "python -u -m pytest -vv -rs -o faulthandler_timeout=120",
    "env": {"PYTHONPATH": "{root}/software"},
    "needs": {"python": {"version": "3.12", "modules": ["pytest", "cadquery", "OCP", "trimesh", "vtk", "matplotlib", "PIL", "gmsh", "skfem", "mujoco", "markdown", "pymoto", "pyvista", "imageio", "manifold3d", "rtree", "optuna", "paho.mqtt"]}},
@@ -111,7 +112,7 @@
   {
    "id": "installer-guards",
    "title": "The PowerShell installer guards (Windows)",
-   "paths": ["tools/site/assets/install.*", "tests/cli/test_installer.py", "docs/install*.md"],
+   "paths": ["tools/site/assets/install.*", "tests/cli/test_installer.py", "docs/install*.md", ".agents/skills/**", "software/cadagent/cli.py", "CHANGELOG.md", "pyproject.toml", "README.md"],
    "command": "python -m pytest -q tests/cli/test_installer.py -k \"checked_installers_pin or actual_powershell_guide or install_ps1_parses\"",
    "needs": {"os": "windows", "commands": ["pwsh"], "python": {"version": "3.12", "modules": ["pytest"]}},
    "cost": "fast",
@@ -139,7 +140,7 @@
   {
    "id": "site-build",
    "title": "Build the site once for the site tests (CAD_AGENT_SITE)",
-   "paths": ["**/*.md", "docs/**", "tools/site/**", "software/cadagent/webkit/**", ".agents/**", "software/vendor/upstreams/**"],
+   "paths": ["**"],
    "command": "node tools/site/build-site.mjs --out \"{tmp}/site\" > \"{tmp}/site.log\" 2>&1; s=$?; cat \"{tmp}/site.log\"; exit $s",
    "provides_env": {"CAD_AGENT_SITE": "{tmp}/site"},
    "needs": {"node_deps": ["tools/site"], "browser": "chromium"},
@@ -150,7 +151,7 @@
   {
    "id": "folder-maps",
    "title": "Every owned folder map's diagram draws (Chromium job only)",
-   "paths": ["**/README.md", ".github/CONTRIBUTING.md", "tools/site/compiler/**", "software/cadagent/webkit/documents/**", "software/cadagent/webkit/vendor/mermaid/**", "tests/site/website-repo-map.test.mjs"],
+   "paths": ["**"],
    "command": "node --test --test-name-pattern='all owned folder diagrams' tests/site/website-repo-map.test.mjs",
    "env": {"CAD_AGENT_REPO_MAP_DIAGRAMS": "1"},
    "needs": {"node_deps": ["tools/site"], "browser": "chromium"},
@@ -161,7 +162,7 @@
   {
    "id": "webkit-unit",
    "title": "Web kit Node tests (renderer hashes, formulas, vendored receipts)",
-   "paths": ["software/cadagent/webkit/**", "tests/webkit/*.test.mjs", "tests/webkit/files/**", "tests/webkit/assembly/**", "tests/webkit/simulation/**", "tools/site/package.json", "tools/site/package-lock.json", "tools/site/assets/models/**", "tools/site/figures/site-model-poster.mjs"],
+   "paths": ["software/cadagent/webkit/**", "tests/webkit/*.test.mjs", "tests/webkit/files/**", "tests/webkit/assembly/**", "tests/webkit/simulation/**", "tools/site/package.json", "tools/site/package-lock.json", "tools/site/assets/models/**", "tools/site/figures/site-model-poster.mjs", "tools/**", "docs/img/**", "tests/fixtures/**", "software/vendor/THIRD_PARTY_NOTICES.md"],
    "exclude": ["software/cadagent/webkit/scada/**"],
    "command": "npm run test:webkit-unit",
    "cwd": "tools/site",
@@ -172,7 +173,7 @@
   {
    "id": "site-unit",
    "title": "The site build's own Node tests (Chromium job only)",
-   "paths": ["**/*.md", "docs/**", "tools/site/**", "software/cadagent/webkit/**", ".agents/**", "software/vendor/upstreams/**", "tests/site/**"],
+   "paths": ["**"],
    "command": "node --test tests/site/website-*.test.mjs tests/site/toolkit/website-*.test.mjs",
    "needs": {"node_deps": ["tools/site"], "after": ["site-build"]},
    "cost": "slow",
@@ -183,7 +184,7 @@
   {
    "id": "site-browser",
    "title": "The built site in a browser: console and CSP errors, layouts, diagram widths at 1100 px (folder README maps included), walls of text",
-   "paths": ["**/*.md", "docs/**", "tools/site/**", "software/cadagent/webkit/**", ".agents/**", "software/vendor/upstreams/**", "tests/site/**"],
+   "paths": ["**"],
    "command": "node tests/site/website-browser.mjs",
    "engines": ["chromium", "webkit"],
    "needs": {"node_deps": ["tools/site"], "after": ["site-build"]},
@@ -194,7 +195,7 @@
   {
    "id": "site-catalog-browser",
    "title": "The site's catalogue in a browser",
-   "paths": ["**/*.md", "docs/**", "tools/site/**", "software/cadagent/webkit/**", ".agents/**", "software/vendor/upstreams/**", "tests/site/**"],
+   "paths": ["**"],
    "command": "node tests/site/toolkit/website-catalog-browser.mjs",
    "engines": ["chromium", "webkit"],
    "needs": {"node_deps": ["tools/site"], "after": ["site-build"]},
@@ -253,7 +254,7 @@
   {
    "id": "file-viewer",
    "title": "File viewer, viewer host and simulation replay in a browser",
-   "paths": ["software/cadagent/webkit/**", "tests/webkit/files/**", "tests/webkit/host/**", "tests/webkit/simulation/**", "tools/site/package.json", "tools/site/package-lock.json", "tests/webkit/webkit-server.mjs", "tests/site/npm-context.mjs"],
+   "paths": ["software/cadagent/webkit/**", "tests/webkit/files/**", "tests/webkit/host/**", "tests/webkit/simulation/**", "tools/site/package.json", "tools/site/package-lock.json", "tests/webkit/webkit-server.mjs", "tests/site/npm-context.mjs", "tests/fixtures/file-viewer/**"],
    "exclude": ["software/cadagent/webkit/scada/**"],
    "command": "npm run test:file-viewer",
    "cwd": "tools/site",
@@ -291,7 +292,7 @@
   {
    "id": "scada-unit",
    "title": "SCADA models, contracts and explorer Node tests (Chromium job only)",
-   "paths": ["software/cadagent/webkit/scada/**", "tools/webkit/scada/**", "tests/webkit/scada/**", "software/cadagent/webkit/ui/**", "software/cadagent/webkit/vendor/fonts/**"],
+   "paths": ["software/cadagent/webkit/scada/**", "tools/webkit/scada/**", "tests/webkit/scada/**", "software/cadagent/webkit/ui/**", "software/cadagent/webkit/vendor/fonts/**", "tests/fixtures/scada/**"],
    "command": "npm test",
    "cwd": "tools/webkit/scada",
    "needs": {"node_deps": ["tools/webkit/scada"], "node_heap_mb": 4096, "node_heap_why": "tests/webkit/scada/ui/scada-components.test.mjs peaks near 3.2 GB; at a 2 GB heap it runs out of memory"},
@@ -301,7 +302,7 @@
   {
    "id": "scada-schema",
    "title": "SCADA generated schema is current (Chromium job only)",
-   "paths": ["software/cadagent/webkit/scada/**", "tools/webkit/scada/**", "tests/webkit/scada/**", "software/cadagent/webkit/ui/**", "software/cadagent/webkit/vendor/fonts/**"],
+   "paths": ["software/cadagent/webkit/scada/**", "tools/webkit/scada/**", "tests/webkit/scada/**", "software/cadagent/webkit/ui/**", "software/cadagent/webkit/vendor/fonts/**", "tests/fixtures/scada/**"],
    "command": "npm run check:schema",
    "cwd": "tools/webkit/scada",
    "needs": {"node_deps": ["tools/webkit/scada"]},
@@ -311,7 +312,7 @@
   {
    "id": "scada-metadata",
    "title": "SCADA generated metadata is current (Chromium job only)",
-   "paths": ["software/cadagent/webkit/scada/**", "tools/webkit/scada/**", "tests/webkit/scada/**", "software/cadagent/webkit/ui/**", "software/cadagent/webkit/vendor/fonts/**"],
+   "paths": ["software/cadagent/webkit/scada/**", "tools/webkit/scada/**", "tests/webkit/scada/**", "software/cadagent/webkit/ui/**", "software/cadagent/webkit/vendor/fonts/**", "tests/fixtures/scada/**"],
    "command": "npm run check:metadata",
    "cwd": "tools/webkit/scada",
    "needs": {"node_deps": ["tools/webkit/scada"]},
@@ -321,7 +322,7 @@
   {
    "id": "scada-default-baseline",
    "title": "SCADA default baseline (Chromium job only)",
-   "paths": ["software/cadagent/webkit/scada/**", "tools/webkit/scada/**", "tests/webkit/scada/**", "software/cadagent/webkit/ui/**", "software/cadagent/webkit/vendor/fonts/**"],
+   "paths": ["software/cadagent/webkit/scada/**", "tools/webkit/scada/**", "tests/webkit/scada/**", "software/cadagent/webkit/ui/**", "software/cadagent/webkit/vendor/fonts/**", "tests/fixtures/scada/**"],
    "command": "npm run check:default-baseline",
    "cwd": "tools/webkit/scada",
    "needs": {"node_deps": ["tools/webkit/scada"]},
@@ -331,7 +332,7 @@
   {
    "id": "scada-gallery",
    "title": "SCADA component gallery provenance (Chromium job only)",
-   "paths": ["software/cadagent/webkit/scada/**", "tools/webkit/scada/**", "tests/webkit/scada/**", "software/cadagent/webkit/ui/**", "software/cadagent/webkit/vendor/fonts/**"],
+   "paths": ["software/cadagent/webkit/scada/**", "tools/webkit/scada/**", "tests/webkit/scada/**", "software/cadagent/webkit/ui/**", "software/cadagent/webkit/vendor/fonts/**", "tests/fixtures/scada/**"],
    "command": "npm run gallery:check",
    "cwd": "tools/webkit/scada",
    "needs": {"node_deps": ["tools/webkit/scada"], "python": {"version": "3.12"}},
@@ -341,7 +342,7 @@
   {
    "id": "scada-thumbnails",
    "title": "SCADA component thumbnail provenance (launches Chromium) (Chromium job only)",
-   "paths": ["software/cadagent/webkit/scada/**", "tools/webkit/scada/**", "tests/webkit/scada/**", "software/cadagent/webkit/ui/**", "software/cadagent/webkit/vendor/fonts/**"],
+   "paths": ["software/cadagent/webkit/scada/**", "tools/webkit/scada/**", "tests/webkit/scada/**", "software/cadagent/webkit/ui/**", "software/cadagent/webkit/vendor/fonts/**", "tests/fixtures/scada/**"],
    "command": "npm run thumbnails:check",
    "cwd": "tools/webkit/scada",
    "needs": {"node_deps": ["tools/webkit/scada"], "python": {"version": "3.12", "modules": ["PIL", "playwright"], "browser": "chromium"}},
@@ -351,7 +352,7 @@
   {
    "id": "scada-topologies",
    "title": "SCADA scenario topology provenance (Chromium job only)",
-   "paths": ["software/cadagent/webkit/scada/**", "tools/webkit/scada/**", "tests/webkit/scada/**", "software/cadagent/webkit/ui/**", "software/cadagent/webkit/vendor/fonts/**"],
+   "paths": ["software/cadagent/webkit/scada/**", "tools/webkit/scada/**", "tests/webkit/scada/**", "software/cadagent/webkit/ui/**", "software/cadagent/webkit/vendor/fonts/**", "tests/fixtures/scada/**"],
    "command": "npm run topologies:check",
    "cwd": "tools/webkit/scada",
    "needs": {"node_deps": ["tools/webkit/scada"], "python": {"version": "3.12"}},
@@ -361,7 +362,7 @@
   {
    "id": "scada-scenario-docs",
    "title": "SCADA scenario docs are current (Chromium job only)",
-   "paths": ["software/cadagent/webkit/scada/**", "tools/webkit/scada/**", "tests/webkit/scada/**", "software/cadagent/webkit/ui/**", "software/cadagent/webkit/vendor/fonts/**"],
+   "paths": ["software/cadagent/webkit/scada/**", "tools/webkit/scada/**", "tests/webkit/scada/**", "software/cadagent/webkit/ui/**", "software/cadagent/webkit/vendor/fonts/**", "tests/fixtures/scada/**"],
    "command": "npm run docs:scenarios:check",
    "cwd": "tools/webkit/scada",
    "needs": {"node_deps": ["tools/webkit/scada"], "python": {"version": "3.12"}},
@@ -371,7 +372,7 @@
   {
    "id": "scada-scenario-thumbnails",
    "title": "SCADA scenario thumbnail provenance: source hashes and capture fingerprint (Chromium job only)",
-   "paths": ["software/cadagent/webkit/scada/**", "tools/webkit/scada/**", "tests/webkit/scada/**", "software/cadagent/webkit/ui/**", "software/cadagent/webkit/vendor/fonts/**"],
+   "paths": ["software/cadagent/webkit/scada/**", "tools/webkit/scada/**", "tests/webkit/scada/**", "software/cadagent/webkit/ui/**", "software/cadagent/webkit/vendor/fonts/**", "tests/fixtures/scada/**"],
    "command": "npm run thumbnails:scenarios:check",
    "cwd": "tools/webkit/scada",
    "needs": {"node_deps": ["tools/webkit/scada"], "python": {"version": "3.12", "exact": true, "modules": ["PIL", "playwright"], "why": "the capture fingerprint hashes ast.dump output, which differs between Python minors"}},
@@ -381,7 +382,7 @@
   {
    "id": "scada-explorer-browser",
    "title": "Shared SCADA simulation controls in a browser",
-   "paths": ["software/cadagent/webkit/scada/**", "tools/webkit/scada/**", "tests/webkit/scada/**", "software/cadagent/webkit/ui/**", "software/cadagent/webkit/vendor/fonts/**", "tests/site/npm-context.mjs", "tests/webkit/webkit-server.mjs"],
+   "paths": ["software/cadagent/webkit/scada/**", "tools/webkit/scada/**", "tests/webkit/scada/**", "software/cadagent/webkit/ui/**", "software/cadagent/webkit/vendor/fonts/**", "tests/site/npm-context.mjs", "tests/webkit/webkit-server.mjs", "tests/fixtures/scada/**"],
    "command": "node tests/webkit/scada/explorer/browser.mjs",
    "engines": ["chromium", "webkit"],
    "needs": {"node_deps": ["tools/site"]},

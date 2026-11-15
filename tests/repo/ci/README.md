@@ -37,7 +37,7 @@ flowchart TD
 |---|---|
 | `__init__.py` | Empty: a package, so these files may share names with tests elsewhere |
 | `test_apt_mirror.py` | Hosted runner profile and mirror priorities; isolated loopback apt failover preserves signature rejection |
-| `test_ci_checks.py` | `.github/ci-checks.json` mirrors every check a pull-request workflow runs (and nothing stale), naming the step that lacks an entry; `tools/ci/preflight.py` matches paths, reports what cannot run here as not run, and exits non-zero only when a check that ran fails |
+| `test_ci_checks.py` | `.github/ci-checks.json` mirrors every check a pull-request workflow runs, in its working directory (and nothing stale), naming the step that lacks an entry; every other command of a step is known setup or inert; every repo file a suite names selects that suite. `tools/ci/preflight.py` matches paths, reports what cannot run here as not run, and never reports passed for a check that did not run: exit 0 passed or nothing selected, 1 failed, 2 setup error, 3 incomplete, 130 interrupted |
 
 Run: `pytest tests/repo/ci` (with `PYTHONPATH=software`).
 

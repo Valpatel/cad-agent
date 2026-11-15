@@ -14,19 +14,28 @@ The mapping from changed paths to checks is data: ``.github/ci-checks.json``, ne
 
 Each selected check is reported as one of:
 
-* ``passed`` / ``failed``: it ran here. A pass on a different browser or Python than CI's is evidence, not CI's result;
-  the report says what differed.
+* ``passed`` / ``failed``: it ran here. A pass on a different browser, Python minor or Node major than CI's is
+  evidence, not CI's result: the check is flagged ``differs`` and the closing summary counts them.
 * ``not run: <reason>``: this machine lacks what it needs (a Playwright engine of the right revision, the Python minor
   CI pins when the check is sensitive to it, installed Node dependencies, Windows). Never counted as passed.
 * ``skipped: slow``: the repo marks it slow; ``--slow`` runs it.
 
 Exit status, and the JSON report's ``verdict``:
 
-* 0, ``passed``: every selected check ran here and passed (or none was selected);
+* 0, ``passed``: every selected check ran here and passed;
+* 0, ``nothing selected``: no check watches these paths and none was named, so nothing ran;
 * 1, ``failed``: a check that ran failed;
 * 3, ``incomplete``: nothing that ran failed, but some selected checks did not run here (not run or skipped). The
   report ends by listing each one with its reason: CI will run them, so they can still fail there;
-* 2: a usage or setup error. ``--list`` exits 0 and its verdict is ``listed``.
+* 2: a usage or setup error (a malformed mapping included). ``--list`` exits 0 and its verdict is ``listed``;
+* 130: interrupted (Ctrl-C). The running check's whole process group is stopped first.
+
+``--only <id>`` runs that check whether or not the changed paths select it. A ``per_match`` check named that way needs
+a changed path that gives it its value (``pytest-domain`` needs a path under ``software/cadagent/<domain>/``);
+without one it is ``not run``.
+
+Logs and the run folder (``/tmp/cad-agent-preflight-*``, which also holds the built site) are deleted when every check
+that ran passed, and kept, with their path printed, when one failed or the run was interrupted.
 
 Limits, stated plainly:
 
@@ -48,8 +57,10 @@ import json
 import os
 import platform
 import re
+import shlex
 import shutil
 import signal
+import string
 import subprocess
 import sys
 import tempfile
@@ -141,6 +152,7 @@ class Instance:
     seconds: float | None = None
     log: str | None = None
     tail: str = ""
+    differs: list = field(default_factory=list)      # what differs from CI's runner: browser, python, node
 
     @property
     def id(self) -> str:
@@ -150,7 +162,87 @@ class Instance:
         return name + (f"[{self.engine}]" if self.engine else "")
 
     def command(self, ctx: dict) -> str:
-        return self.check["command"].format(**ctx, **self.subs)
+        # per_match values come from file names: quoted, so a name can never become shell syntax
+        values = _Shown({**ctx, **{k: shlex.quote(v) for k, v in self.subs.items()}})
+        return string.Formatter().vformat(self.check["command"], (), values)
+
+
+class _Shown(dict):
+    """Format values; a field with no value yet (a named per_match check) is shown as itself, ``{domain}``."""
+    def __missing__(self, key):
+        return "{" + key + "}"
+
+
+CONTEXT_FIELDS = {"root", "base", "tmp"}
+# A per_match group must be a plain character class without shell-special characters, e.g. [a-z_]+
+SAFE_GROUP = re.compile(r"\(\?P<(\w+)>(\[[A-Za-z0-9_\-]+\][+*])\)")
+
+
+def mapping_problems(mapping) -> list[str]:
+    """What makes a mapping unusable, checked once after loading, so a bad entry is a setup error (exit 2) with a
+    message, not a traceback part-way through a run."""
+    if not isinstance(mapping, dict) or not isinstance(mapping.get("checks"), list):
+        return ["the mapping has no `checks` list"]
+    problems, ids = [], set()
+    for n, check in enumerate(mapping["checks"]):
+        where = f"check {check.get('id', f'#{n}') if isinstance(check, dict) else f'#{n}'}"
+        if not isinstance(check, dict):
+            problems.append(f"{where}: not an object")
+            continue
+        for key in ("id", "command", "paths"):
+            if not check.get(key):
+                problems.append(f"{where}: no `{key}`")
+        if check.get("id") in ids:
+            problems.append(f"{where}: duplicate id")
+        ids.add(check.get("id"))
+        groups = set()
+        if check.get("per_match"):
+            try:
+                groups = set(re.compile(check["per_match"]).groupindex)
+            except re.error as e:
+                problems.append(f"{where}: per_match is not a regex ({e})")
+            safe = {name for name, _ in SAFE_GROUP.findall(check["per_match"])}
+            for name in sorted(groups - safe):
+                problems.append(f"{where}: per_match group `{name}` must be a plain character class such as "
+                                f"(?P<{name}>[a-z_]+)")
+        for key, text in [("command", check.get("command", ""))] + [
+                (f"env.{k}", v) for k, v in {**check.get("env", {}), **check.get("provides_env", {})}.items()]:
+            try:
+                names = {f for _, f, _, _ in string.Formatter().parse(str(text)) if f is not None}
+            except ValueError as e:
+                problems.append(f"{where}: {key} has a stray brace ({e}); write {{{{ and }}}} for literal braces")
+                continue
+            unknown = names - CONTEXT_FIELDS - (groups if key == "command" else set())
+            if unknown:
+                problems.append(f"{where}: {key} names {{{', '.join(sorted(unknown))}}}; known: "
+                                f"{', '.join(sorted(CONTEXT_FIELDS | groups))} (write {{{{ and }}}} for literal braces)")
+        for glob in check.get("paths", []) + check.get("exclude", []):
+            if not isinstance(glob, str):
+                problems.append(f"{where}: glob {glob!r} is not a string")
+    return problems
+
+
+def named(mapping: dict, only: list[str], selected: list[Instance]) -> list[Instance]:
+    """``--only``: the named checks, whether or not the changed paths selected them. A named ``per_match`` check that
+    no changed path gives a value is ``not run``, with the reason."""
+    out = []
+    for check in mapping["checks"]:
+        picked = [i for i in selected if i.check is check and (check["id"] in only or i.id in only)]
+        wanted = check["id"] in only or any(o.startswith(check["id"] + "[") for o in only)
+        if picked or not wanted:
+            out += picked
+            continue
+        if check.get("per_match"):
+            inst = Instance(check, None, {}, ["named with --only"], status="not run",
+                            reason="named with --only, but no changed path gives it a value for "
+                                   f"{check['per_match']}; pass one with --paths")
+            out.append(inst)
+            continue
+        for engine in check.get("engines") or [None]:
+            inst = Instance(check, engine, {}, ["named with --only; no changed path selects it"])
+            if check["id"] in only or inst.id in only:
+                out.append(inst)
+    return out
 
 
 def select(mapping: dict, paths: list[str], root: Path = ROOT) -> list[Instance]:
@@ -187,6 +279,7 @@ class Machine:
         self.root = root
         self.env = dict(os.environ if env is None else env)
         self.extra_pythons = pythons or []
+        self.ci_node_major: str | None = None            # the mapping's `ci_node_major`, set by main
         self._probes: dict[tuple, dict | None] = {}
 
     # Interpreters ----------------------------------------------------------------------------------------------------
@@ -327,6 +420,15 @@ class Machine:
                 self._heap = None
         return self._heap
 
+    def node_major(self) -> str | None:
+        if not hasattr(self, "_node_major"):
+            try:
+                out = subprocess.run(["node", "--version"], env=self.env, capture_output=True, text=True, timeout=30)
+                self._node_major = out.stdout.strip().lstrip("v").split(".")[0] if out.returncode == 0 else None
+            except (OSError, subprocess.SubprocessError):
+                self._node_major = None
+        return self._node_major
+
     def node_deps(self, folder: str) -> bool:
         return (self.root / folder / "node_modules" / ".package-lock.json").exists()
 
@@ -334,6 +436,8 @@ class Machine:
 def assess(inst: Instance, machine: Machine, slow: bool, done: dict[str, Instance], ctx: dict | None = None) -> None:
     """Decide whether ``inst`` can run here, filling ``status``/``reason``, ``env``, ``python`` and ``notes``."""
     check, need, ctx = inst.check, inst.check.get("needs", {}), ctx or {}
+    if inst.status == "not run":                       # decided at selection (a named per_match check)
+        return
     if check.get("cost") == "slow" and not slow:
         inst.status, inst.reason = "skipped", "slow" + (f" ({check['cost_note']})" if check.get("cost_note") else "") \
             + "; --slow runs it"
@@ -370,6 +474,8 @@ def assess(inst: Instance, machine: Machine, slow: bool, done: dict[str, Instanc
             return
         inst.env.update(env)
         inst.notes += notes
+        if notes:
+            inst.differs.append("browser")
     if "python" in need:
         pythonpath = str(machine.root / "software") if check.get("env", {}).get("PYTHONPATH") else None
         exe, probe, problem = machine.choose_python(need["python"], pythonpath)
@@ -380,12 +486,21 @@ def assess(inst: Instance, machine: Machine, slow: bool, done: dict[str, Instanc
         minor = ".".join(probe["version"].split(".")[:2])
         if need["python"].get("version") and minor != need["python"]["version"]:
             inst.notes.append(f"runs on Python {minor} ({exe}), CI pins {need['python']['version']}: evidence only")
+            inst.differs.append("python")
         if need["python"].get("browser"):
             problem = machine.python_browser(probe)
             if problem:
                 inst.status, inst.reason = "not run", problem
                 return
+    if machine.ci_node_major and NODE_COMMAND.match(check["command"]):
+        have = machine.node_major()
+        if have and have != machine.ci_node_major:
+            inst.notes.append(f"runs on Node {have}, CI pins {machine.ci_node_major}: evidence only")
+            inst.differs.append("node")
     inst.status = "runnable"
+
+
+NODE_COMMAND = re.compile(r"^(?:node|npm)\b")
 
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -438,6 +553,11 @@ def run(inst: Instance, ctx: dict, machine: Machine, workdir: Path, timeout: int
             os.killpg(proc.pid, signal.SIGKILL)
             proc.wait()
             code = None
+        except KeyboardInterrupt:                    # the check runs in its own session, so Ctrl-C does not reach it
+            os.killpg(proc.pid, signal.SIGKILL)
+            proc.wait()
+            inst.status, inst.reason, inst.log = "failed", "interrupted", str(log)
+            raise
     inst.seconds = round(time.monotonic() - started, 1)
     inst.log = str(log)
     lines = log.read_text(encoding="utf-8", errors="replace").splitlines()
@@ -480,7 +600,7 @@ def to_json(inst: Instance, ctx: dict) -> dict:
     return {"id": inst.id, "title": inst.check.get("title", ""), "status": inst.status, "reason": inst.reason,
             "command": inst.command(ctx), "cwd": inst.check.get("cwd", "."), "engine": inst.engine,
             "python": inst.python, "notes": inst.notes, "because": inst.because, "seconds": inst.seconds,
-            "log": inst.log, "tail": inst.tail,
+            "log": inst.log, "tail": inst.tail, "differs": inst.differs,
             "mirrors": [f"{m['workflow']} / {m['job']}: {m['run']}" for m in inst.check.get("mirrors", [])]}
 
 
@@ -511,7 +631,11 @@ def text_report(instances: list[Instance], paths: list[str], ctx: dict, listing:
     counts: dict[str, int] = {}
     for inst in instances:
         counts[inst.status] = counts.get(inst.status, 0) + 1
-    out.append("Summary: " + (", ".join(f"{n} {s}" for s, n in counts.items()) or "nothing selected"))
+    out.append("Summary: " + (", ".join(f"{n} {s}" for s, n in counts.items()) or "nothing selected, nothing ran"))
+    differing = [i for i in instances if i.status == "passed" and i.differs]
+    if differing:
+        out.append(f"{len(differing)} passed on a different browser, Python or Node than CI's (evidence, not CI's "
+                   f"result): " + ", ".join(f"{i.id} ({'/'.join(i.differs)})" for i in differing))
     missing = [i for i in instances if i.status in ("not run", "skipped")]
     if missing:
         verb = "Would not run here" if listing else "NOT RUN HERE"
@@ -524,10 +648,13 @@ def text_report(instances: list[Instance], paths: list[str], ctx: dict, listing:
 
 
 def verdict(instances: list[Instance], listing: bool = False) -> str:
-    """``listed``, ``failed`` (a check that ran failed), ``incomplete`` (nothing failed, but a selected check did not
-    run here) or ``passed`` (every selected check ran and passed, or none was selected)."""
+    """``listed``, ``nothing selected``, ``failed`` (a check that ran failed), ``incomplete`` (nothing failed, but a
+    selected check did not run here) or ``passed`` (every selected check ran and passed). Never ``passed`` when
+    nothing ran."""
     if listing:
         return "listed"
+    if not instances:
+        return "nothing selected"
     if any(i.status == "failed" for i in instances):
         return "failed"
     if any(i.status in ("not run", "skipped") for i in instances):
@@ -535,7 +662,7 @@ def verdict(instances: list[Instance], listing: bool = False) -> str:
     return "passed"
 
 
-EXIT = {"passed": 0, "listed": 0, "failed": 1, "incomplete": 3}
+EXIT = {"passed": 0, "nothing selected": 0, "listed": 0, "failed": 1, "incomplete": 3}
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -565,6 +692,10 @@ def main(argv: list[str] | None = None) -> int:
     except (OSError, ValueError) as e:
         print(f"preflight: cannot read the mapping {a.mapping}: {e}", file=sys.stderr)
         return 2
+    problems = mapping_problems(mapping)
+    if problems:
+        print(f"preflight: the mapping {a.mapping} is malformed:\n  " + "\n  ".join(problems), file=sys.stderr)
+        return 2
     try:
         if a.paths:
             paths, merge_base = sorted(set(a.paths)), git("rev-parse", "HEAD", root=root).strip()
@@ -575,27 +706,36 @@ def main(argv: list[str] | None = None) -> int:
         print(f"preflight: cannot list changed paths against {a.base}: {detail.strip()}", file=sys.stderr)
         return 2
 
-    instances = select(mapping, paths, root)
+    try:
+        instances = select(mapping, paths, root)
+    except (re.error, KeyError, ValueError) as e:
+        print(f"preflight: cannot apply the mapping: {e}", file=sys.stderr)
+        return 2
     if a.only:
-        known = {i.check["id"] for i in instances} | {i.id for i in instances}
         all_ids = {c["id"] for c in mapping["checks"]}
-        unknown = [o for o in a.only if o not in all_ids and o not in known]
+        unknown = [o for o in a.only if o.split("[")[0] not in all_ids]
         if unknown:
             print(f"preflight: unknown check id(s): {', '.join(unknown)}; known: {', '.join(sorted(all_ids))}",
                   file=sys.stderr)
             return 2
-        instances = [i for i in instances if i.check["id"] in a.only or i.id in a.only]
+        instances = named(mapping, a.only, instances)
 
     workdir = Path(tempfile.mkdtemp(prefix="cad-agent-preflight-"))
     ctx = {"base": merge_base, "tmp": str(workdir), "root": str(root)}
     machine = Machine(root, pythons=a.python)
+    machine.ci_node_major = mapping.get("ci_node_major")
     done: dict[str, Instance] = {}
     for inst in instances:
         assess(inst, machine, a.slow, done, ctx)
         if inst.status == "runnable" and not a.list:
             if not a.json:
                 print(f"running {inst.id} ...", file=sys.stderr, flush=True)
-            run(inst, ctx, machine, workdir, a.timeout or inst.check.get("timeout", DEFAULT_TIMEOUT))
+            try:
+                run(inst, ctx, machine, workdir, a.timeout or inst.check.get("timeout", DEFAULT_TIMEOUT))
+            except KeyboardInterrupt:
+                print(f"preflight: interrupted; stopped {inst.id} and everything it started. Logs kept in "
+                      f"{workdir / 'logs'}", file=sys.stderr)
+                return 130
         done.setdefault(inst.check["id"], inst)
 
     if a.json:
@@ -607,10 +747,10 @@ def main(argv: list[str] | None = None) -> int:
                           "limits": "Mirrors CI, does not replace it: not run or skipped is not passed, and a pass on "
                                     "another browser or Python than CI's is evidence, not CI's result."}, indent=2))
     else:
-        logs = str(workdir / "logs") if any(i.log for i in instances) else None
+        logs = str(workdir / "logs") + " (kept: a check failed)" if any(i.status == "failed" for i in instances) else None
         print(text_report(instances, paths, ctx, a.list, logs))
-    if not any(i.log for i in instances):
-        shutil.rmtree(workdir, ignore_errors=True)
+    if not any(i.status == "failed" for i in instances):
+        shutil.rmtree(workdir, ignore_errors=True)       # kept only when a check failed, for its log
     return EXIT[verdict(instances, a.list)]
 
 

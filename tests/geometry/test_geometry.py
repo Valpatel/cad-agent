@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import math
 
 import pytest
@@ -37,6 +38,7 @@ def test_export_print_stl_rotates_flattens_and_is_watertight(tmp_path):
     r = geometry.export_print_stl(box(10, 20, 30, at=(40, -7, 3)), out, rotation=((1, 0, 0), 90))
     assert r["watertight"] is True and r["cad_valid"] is True and r["solid_count"] == 1
     assert r["print_bounds_mm"] == pytest.approx([10, 30, 20])
+    assert r["stl_sha256"] == hashlib.sha256(out.read_bytes()).hexdigest()
     mesh = trimesh.load_mesh(out)
     assert mesh.is_watertight
     assert mesh.bounds[0] == pytest.approx([0, 0, 0], abs=1e-6)
@@ -172,12 +174,16 @@ def test_export_print_stl_welds_a_sub_micron_split_vertex(monkeypatch, tmp_path)
     out = tmp_path / "split.stl"
     mesh.export(out)
     assert not trimesh.load_mesh(out).is_watertight      # the split survives the STL round trip
+    before = out.read_bytes()
     write_mesh_instead(monkeypatch, mesh)
     r = geometry.export_print_stl(box(10, 10, 10), out)
     assert r["watertight"] is True and r["vertices_welded"] == 1
     assert r["mesh_volume_mm3"] == pytest.approx(1000.0, abs=0.05)  # the weld moves one corner by 0.4 µm
     assert r["mesh_volume_before_weld_mm3"] == pytest.approx(r["mesh_volume_mm3"], abs=0.05)
     assert trimesh.load_mesh(out).is_watertight          # the rewritten STL is welded too
+    assert out.read_bytes() != before
+    assert r["stl_sha256"] == hashlib.sha256(out.read_bytes()).hexdigest()
+    assert r["stl_sha256"] != hashlib.sha256(before).hexdigest()
 
 def test_export_print_stl_still_rejects_a_real_hole(monkeypatch, tmp_path):
     write_mesh_instead(monkeypatch, split_cube(0.0004, drop_face=True))

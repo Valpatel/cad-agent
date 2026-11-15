@@ -695,6 +695,20 @@ one fixed line. If every part of that body is unchanged by a turn about that lin
 every part in the same place, and asking the kernel about both adds nothing. The gate measures this on the solids
 (`cadagent.review.gates.symmetry.measure_symmetry`); it is never declared.
 
+```mermaid
+flowchart TD
+    J{"revolute joint that<br/>carries no other joint?"} -->|"no"| E["queried at<br/>every sample"]
+    J -->|"yes"| M{"every part of its body<br/>measures unchanged<br/>by a turn?"}
+    M -->|"no, or refused"| E
+    M -->|"yes"| P["poses one period apart<br/>queried once"]
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
+    classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
+    class J,M here
+    class E near
+    class P out
+```
+
 The rule for the measurement: **it is held tighter than anything the gate reports.** The gate reports shared volume
 above `overlap_mm3` (0.001 mm³) and a gap at or below `touch_mm` (0.01 mm). Between any two poses the shortcut treats
 as one, the solid's boundary moves by no more than `touch_mm / 10` (0.001 mm, the depth the crossing probe ignores)
@@ -723,6 +737,20 @@ for a lugged wheel. Every sampled pose still gets its relation, so a collision i
 first met. The `motion:<group>` message and `density[].symmetry` state what was measured (`kind`, `period_deg`, the
 largest volume and boundary-point differences with the limits they were held to and the number of points compared,
 per part) and how many `distinct_poses` the samples are.
+
+```mermaid
+flowchart TD
+    S["sampled pose<br/>keeps its own relation"] --> F["equivalent pose<br/>in the first period from home"]
+    F --> C{"that placement<br/>already queried?"}
+    C -->|"yes"| A["answer from the memo<br/>or the pair cache"]
+    C -->|"no"| K["one kernel query"]
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
+    classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
+    class S,F,C here
+    class A near
+    class K out
+```
 
 It is not applied where it would not hold: a joint that carries another joint (turning it moves the child's axis),
 a slider or cylindrical joint, and any body with one part that does not measure symmetric (a missing lug, one lug

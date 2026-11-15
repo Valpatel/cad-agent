@@ -22,19 +22,32 @@ section). **Limits:** confirmed from the PR records and the README.
 
 The inline model viewer has the same pairing: `software/cadagent/webkit/model/model.js` is hashed as
 `renderer_sha256` in `tools/site/assets/models/j501-source.json`, enforced by `tests/webkit/webkit-model.test.mjs`.
-#749 (open) regenerated it with `node tools/site/figures/site-model-poster.mjs --model j501`, which re-renders the
-poster and writes the receipt; the poster came out byte-identical, so only `renderer_sha256` changed (its commit
-`6e0a654a` says so). #756 (open draft) changes `model.js` too and must rerun that generator after #749 merges.
+The generator is `node tools/site/figures/site-model-poster.mjs --model j501`: it launches whatever Chrome the machine
+has (channel `chrome`; here Chrome for Testing 153 with software WebGL) and always rewrites `j501.webp` and the
+receipt. #749 (open) says in commit `6e0a654a` that "the poster was regenerated with
+tools/site/figures/site-model-poster.mjs and came out byte-identical, so only renderer_sha256 changes"; no record
+shows the flag it used. That byte-identical poster was observed once. When the poster's bytes do change, report it in
+the PR as a new render from this container's browser, or ask the owner; never keep the old image with a new hash.
+#756 (open draft) changes `model.js` too and must rerun that generator after #749 merges.
 
 ### A CI route is proposed, not merged
 
 [#762](https://github.com/Valpatel/cad-agent/issues/762) / PR #763 (open, draft on 2026-11-15) makes the
 `scada (chromium)` job, when its provenance step fails, recapture on the job's pinned shell and upload the result as
-an artifact for the author to commit unchanged. It was demonstrated once, in run 43757747789: 61 scenarios, 63 files,
-about 9.4 MB, 77 s. That run also showed that none of the 62 committed thumbnails is byte-identical to the CI
-recapture; in the one image examined the differences were confined to text rendering, so the committed images were
-made where fonts differ from CI's. **Limits:** observed once; run-to-run determinism on CI is not yet established.
-Until #763 merges, the route is the owner.
+an artifact for the author to commit unchanged. Evidence ([#763 comment](https://github.com/Valpatel/cad-agent/pull/763#issuecomment-6901678558)):
+
+- Run 43757747789 (head `3df082d4`, a deliberately stale source): the recapture ran `thumbnails:scenarios`
+  (61 scenarios) in 77 s and staged 63 files; the artifact holds 64 files (63 plus the manifest), 9,357,988 bytes.
+- A second run (head `6edf825b`) produced 63 files byte-identical to the first, so captures are reproducible on the
+  CI shell.
+- That artifact, committed unchanged, passed `scada (chromium)` on #764 (closed, not merged).
+- #763's manifest records the pinned shell: Playwright 1.62.0 with browser 151.0.7922.34.
+- None of the 62 committed thumbnails is byte-identical to the CI recapture; in the one image compared, every
+  difference is in text, so the committed images were rendered with different fonts. **Expect the first recapture
+  to re-baseline all thumbnails (about 9 MB).**
+
+**Limits:** two demonstration runs; one image examined visually. #763 is open and a draft; until it merges, the route
+is the owner.
 
 ## "Capture implementation changed" unless the check runs on Python 3.12
 
@@ -55,7 +68,8 @@ depend on the browser build and fonts; CI installs the shell pinned by `tools/we
 the container's Chromium is Chrome for Testing 153. **Evidence:** in #753, old and new `main.mjs` captured on the same
 local build gave 55 of 62 identical JPEGs and 7 within 12 of 255 levels; the #763 demonstration above found no
 committed image byte-identical to a CI recapture. **Action:** do not commit captures from the container; use the
-pinned shell (or, once merged, #763's artifact). **Limits:** the pinned build's number (151) is stated in #753 only.
+pinned shell (or, once merged, #763's artifact). **Limits:** the pinned build (151.0.7922.34) is recorded in #763's
+manifest.
 
 ## Only Chromium is installed for Playwright
 
@@ -67,6 +81,8 @@ How each suite takes a browser (read from the test files on `dev`):
 - `tests/webkit/{assembly,host,simulation}/browser.mjs`, `webkit-fea-browser.mjs` and `webkit-stage-browser.mjs`
   read `CHROMIUM_EXECUTABLE`.
 - `tests/webkit/scada/explorer/browser.mjs` reads `PLAYWRIGHT_EXECUTABLE_PATH`.
+- `tests/webkit/webkit-diagrams-browser.mjs`, `webkit-part-table-browser.mjs`, `files/browser.mjs` and
+  `assembly/release-browser.mjs` take only `PLAYWRIGHT_CHANNEL`, like the site suites below.
 - The `tests/site` browser suites take only `PLAYWRIGHT_CHANNEL`; unset, they launch channel `chrome`, which here
   resolves through `/opt/google/chrome/chrome` to a `/usr/bin/google-chrome` wrapper that runs
   `/opt/pw-browsers/chromium`. That is how they ran in this container, and why the site build reports "Google
@@ -79,12 +95,16 @@ on #756's description only.
 ## Site checks that fail only in the browser job
 
 - **A folder README must list every file in it,** including a new `__init__.py`, or
-  `tests/site/website-repo-map.test.mjs` fails in the browser job (seen on #763).
+  `tests/site/website-repo-map.test.mjs` fails in the browser job (seen on #763). Run
+  `node --test tests/site/website-repo-map.test.mjs` first: seconds, no browser, no site build.
+- **A Mermaid map in a folder README must fit the page column** (top down, at most three boxes per row), or
+  `tests/site/website-browser.mjs` "diagram widths" fails in both browser jobs (seen on #766 for
+  `tests/repo/ci/README.md`: 748 px against a 658 px column).
 - **Added prose can push a rendered page past the 1200 px wall-of-text limit,** failing
   `tests/site/website-browser.mjs` (seen on #763 for `tools/webkit/scada/README.md` and the `scada-system-authoring`
   skill page). Build the site and run that check for any page you lengthen; fold reference detail into `<details>`.
 
-Both observed once, on #763's CI; not confirmed here.
+Each observed once, on #763's or #766's CI; not reproduced here.
 
 ## Slow steps
 

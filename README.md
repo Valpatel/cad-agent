@@ -23,9 +23,15 @@
 
 ## What is it?
 
-An open-source toolkit that helps your AI assistant design physical things: find a method, build a model, check
-its assumptions and keep the evidence for review. Reusable viewers, SCADA diagrams, simulation playback and build
-instructions help people inspect and operate that work inside their own applications.
+Two layers. **Shared components** for general CAD work: 3D viewers, reports, BOMs, exploded views and build
+guides, simulators and deterministic checks, tested like any code. On top, **agent skills and evals** that aim to
+let free, open and local models do the work frontier models do today.
+
+| Shared components | Skills and evals |
+|---|---|
+| [3D viewers and build guides](software/cadagent/webkit/README.md) · [simulators](software/cadagent/simulation/README.md) · [SCADA](software/cadagent/webkit/scada/README.md) | [Agent skills](.agents/skills/README.md) |
+| [Reports and review packets](software/cadagent/review/README.md) · [publishing](software/cadagent/publish/README.md) | [Evals](tools/evaluation/README.md): [what they measure today](docs/practice/standard-evaluation.md) |
+| [Formulas with golden vectors](software/cadagent/formulas/README.md) · [gates](docs/practice/gates.md) | [From frontier to local](docs/vision.md#from-frontier-to-local) |
 
 Start with the [guides](docs/README.md), explore the [visual catalogue](https://cad-agent.valpatel.com/catalog),
 or try the [toolkit viewers and simulations](https://cad-agent.valpatel.com/toolkit).
@@ -49,6 +55,10 @@ Made by <a href="tools/readme_anim.py"><code>tools/readme_anim.py</code></a>.
 <a href="docs/practice/animated-figures.md">Sources, limits and regeneration</a>; not the latest design or a physical qualification.</sub>
 
 </div>
+
+<img src="docs/img/gyropup/turret-playground-still.webp" alt="Gyropup's turret playground: a foam-ball turret on a compute box firing at targets" width="360">
+
+<sub>Gyropup's [turret playground](https://gyropup.com/designer/sim), recorded by [`gyropup-turret.mjs`](tools/site/figures/gyropup-turret.mjs): a work-in-progress prototype, not physics validation.</sub>
 
 [What works and its limits](docs/toolkit.md) · [Code and tests](software/cadagent/README.md) · [Lessons](docs/lessons/README.md)
 

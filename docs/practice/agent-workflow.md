@@ -288,9 +288,9 @@ flowchart TD
    what is running (host, command, log, done marker) and the exact next step.
 6. **Heavy runs on a compute host**, detached, recorded in the issue, results pulled back and committed.
 7. **Independent review** by `cad-pr-reviewer` (or a separate Codex session); answer and resolve every thread.
-8. **Merge under the repo's rules**, then check the issues closed and tick the tracking issue. In cad-agent, an agent
-   merges without the owner only as [Merging without the owner](../../.agents/skills/cad-pr-review/SKILL.md#merging-without-the-owner)
-   allows; reviews check the [review criteria](../../.agents/skills/cad-pr-review/review-criteria.md).
+8. **Merge under the repo's rules**, then check the issues closed and tick the tracking issue. In cad-agent, agents
+   merge as [Merging without the owner](../../.agents/skills/cad-pr-review/SKILL.md#merging-without-the-owner)
+   says, some PRs only after the owner's recorded go-ahead; reviews check the [review criteria](../../.agents/skills/cad-pr-review/review-criteria.md).
 
 ### Goals and issues
 

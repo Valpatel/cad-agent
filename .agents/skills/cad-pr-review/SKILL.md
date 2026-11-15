@@ -102,9 +102,10 @@ stop and report; never change a ruleset or setting to get through.
 For cad-agent; a product repo states its own rules in its AGENTS.md. Releases (`dev` → `main`) follow
 [CONTRIBUTING.md, Releases](../../../.github/CONTRIBUTING.md#releases): agents cut and merge them under the same gates.
 
-**An agent may merge into `dev`** when all of these hold:
+Agents merge; the owner does not press merge. **An agent merges into `dev`** when all of these hold:
 
-- the issue is `scope:bounded` or `scope:quick-fix`, with no `stage:design-review`;
+- the issue is `scope:bounded` or `scope:quick-fix`, with no `stage:design-review`, or the owner's go-ahead for
+  this PR is recorded on it (below);
 - every required check passes on the head (CI, both browser engines, every `cad-gates/dev/...` status);
 - the latest verdict is pass, on that exact head, from an independent reviewer ([Independence](#independence));
 - every review thread is answered and resolved;
@@ -122,7 +123,11 @@ For cad-agent; a product repo states its own rules in its AGENTS.md. Releases (`
 - it merges with a merge commit, not squash, pinned to the reviewed head (`expectedHeadSha`), then works through
   [After the merge](#after-the-merge).
 
-**Owner only.** The agent stops, says why on the PR, and asks the owner, for:
+**Needs the owner's go-ahead.** For these, the agent stops, says why on the PR and asks the owner. It merges only
+after the owner's explicit go-ahead for that PR, which it first records as a comment on the PR: who gave it, when,
+and what was authorised. Every other condition above still applies (green checks, an independent pass verdict on
+the exact head, threads resolved, gates dispatched and read, `expectedHeadSha`): the go-ahead never replaces a gate.
+The items:
 
 - any pending design decision (`stage:design-review`, or a choice the issue leaves open);
 - changes to the merge gates, rulesets, `tools/ci_gates.py`, `.github/workflows/gates.yml`, the `MAINTAINERS` list,

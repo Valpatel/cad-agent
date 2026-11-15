@@ -24,7 +24,7 @@ import { drawBoth, drawDiagrams } from './compiler/site-diagrams.mjs';         /
 import { ON, fold, pagePlacer } from './compiler/site-pages.mjs';    // docs/pages.yaml: bands, section cards, figures, folds
 import { SECTIONS, createPublication, validateRedirects, folderMapSources } from './publication.mjs';
 import { loadReferences, referenceModel, referenceSite, linkTags, mdTags, healthOf } from './compiler/site-references.mjs';   // /references (#323)
-import {SCADA_INPUTS, TOOLKIT_ROUTES, scadaToolkitModel, toolkitPages, toolkitFullText} from './compiler/site-toolkit.mjs';
+import {SCADA_INPUTS, TOOLKIT_ROUTES, scadaToolkitModel, toolkitPages, toolkitFullText, toolkitCapabilities} from './compiler/site-toolkit.mjs';
 
 // --root DIR builds another checkout of this repo (the tests use a scratch worktree); the build tools still run from here.
 const rootArg = process.argv.indexOf('--root');
@@ -196,11 +196,11 @@ const kitDemos = body => Object.entries(KIT_DEMOS).filter(([tag]) => body.includ
 const THEME_BUTTON = '<button type="button" class="theme-toggle" aria-pressed="false" title="Dark theme" hidden><span class="visually-hidden">Dark theme</span>' +
   '<svg class="sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>' +
   '<svg class="moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg></button>';
-function frame({ title, body, md, description = LEDE, current = '', page = 'doc', css = [], updated = committed, url = current || '/' }) {
+function frame({ title, fullTitle, body, md, description = LEDE, current = '', page = 'doc', css = [], updated = committed, url = current || '/' }) {
   // Cloudflare's documented region guard preserves package@version code literals without changing zone settings,
   // compression or CSP. Keep the guard outside the authored elements; verify actual hosted bytes after release.
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>${esc(title === TAGLINE ? 'cad-agent · ' + TAGLINE : title + ' · cad-agent')}</title>
+<title>${esc(fullTitle || (title === TAGLINE ? 'cad-agent · ' + TAGLINE : title + ' · cad-agent'))}</title>
 <meta name="description" content="${esc(description)}">${current ? `<link rel="canonical" href="${esc(ORIGIN + current)}">` : ''}
 <script src="/kit/ui/theme.js"></script><link rel="icon" href="/web/icon.svg"><link rel="preload" href="/kit/vendor/fonts/inter.woff2" as="font" type="font/woff2" crossorigin><link rel="preload" href="/kit/vendor/fonts/jetbrains-mono.woff2" as="font" type="font/woff2" crossorigin><link rel="stylesheet" href="/web/site.css"><link rel="stylesheet" href="/kit/documents/diagrams.css">${css.map(c => `<link rel="stylesheet" href="${c}">`).join('')}${kitDemos(body)}
 ${md ? `<link rel="alternate" type="text/markdown" href="${esc(md)}" title="Markdown for agents">` : ''}
@@ -480,7 +480,7 @@ const checkNumbers = (r, at) => {
   for (const n of [fea.tets.toLocaleString('en-US'), String(fea.safety_factor), Number(fea.target).toFixed(1)])
     if (!quotes(n)) throw new Error(`docs/home.yaml ${at}: the caption does not quote ${n} from docs/img/gyropup/SOURCE.json`);
 };
-const reel = [], homeMd = { reel: [], ours: [] };
+const reel = [], homeMd = { reel: [] };
 for (const [i, r] of home.reel.entries()) {
   const at = `reel[${i}]`;
   for (const k of ['img', 'tool', 'title', 'caption', 'alt', 'href', 'on']) if (!r[k]) throw new Error(`docs/home.yaml ${at} has no ${k}`);
@@ -494,29 +494,70 @@ for (const [i, r] of home.reel.entries()) {
 // The snap-fit demo is drawn from its geometry in this build (tools/site/compiler/snap-demo.mjs), so it joins the reel inline.
 reel.splice(3, 0, `<li class="reel-tile reel-snap"><a class="reel-media" href="/docs/compliant" tabindex="-1" aria-hidden="true">${SNAP.svg}</a>
 <p class="reel-tool"><code>cad-agent snapfit</code></p><h3><a href="/docs/compliant">One part, no screws</a></h3><p>A cantilever snap fit animated from its own geometry: contact and root strain computed against the material and the print's layer direction.</p><p class="reel-credit">Drawn by this site's build from the snap-fit geometry</p></li>`);
-const fitsTile = async (t, i) => {
-  const at = `fits.ours[${i}]`;
-  const levels = t.maturity ? [t.maturity] : (t.areas || []).map(a => {
+// The least mature of a block's areas in docs/areas.yaml, shown as its pill.
+const areasLevel = (areas, at) => {
+  const levels = (areas || []).map(a => {
     if (!areaMaturity.has(a)) throw new Error(`docs/home.yaml ${at}: no area ${a} in docs/areas.yaml`);
     return areaMaturity.get(a);
   });
-  if (!levels.length || levels.some(l => !LADDER.includes(l))) throw new Error(`docs/home.yaml ${at}: a maturity on the ladder (${LADDER.join(', ')}), from areas or stated with a why`);
-  if (t.maturity && !t.why) throw new Error(`docs/home.yaml ${at}: a stated maturity needs its why`);
-  const level = levels.reduce((lo, l) => LADDER.indexOf(l) < LADDER.indexOf(lo) ? l : lo);      // the least mature area decides
-  homeMd.ours.push(`- [${t.title}](${/^https:/.test(t.href) ? t.href : ORIGIN + pageURL(t.href)}) (${level}): ${t.does}`);
-  const step = LADDER.indexOf(level);
-  return `<li class="fit-tile"><a href="${esc(homeHref(t.href, at))}">${t.img ? `<span class="fit-media">${await homePicture(t.img, at, ' alt="" loading="lazy" decoding="async"')}</span>`
-  : t.cmd ? `<span class="fit-media fit-cmd"><code>$ ${esc(t.cmd)}</code></span>`
-  : step === 0 ? '<span class="fit-media fit-empty">not built yet</span>' : (() => { throw new Error(`docs/home.yaml ${at}: a built block needs an img or a cmd`); })()}
-<span class="fit-title">${esc(t.title)}</span></a><p>${esc(t.does)}</p>
-</li>`;
+  if (!levels.length || levels.some(l => !LADDER.includes(l))) throw new Error(`docs/home.yaml ${at}: name its areas (docs/areas.yaml), each on the ladder ${LADDER.join(', ')}`);
+  return levels.reduce((lo, l) => LADDER.indexOf(l) < LADDER.indexOf(lo) ? l : lo);
 };
-const upstreamByName = new Map(upstreams.map(u => [u.name, u]));
-const makeChip = (m, i) => {
-  const u = m.upstream && upstreamByName.get(m.upstream);
-  if (m.upstream && !u) throw new Error(`docs/home.yaml fits.make[${i}]: ${m.upstream} is not in software/vendor/upstreams/registry.yaml`);
-  return `<li><span class="make-name"><a href="${esc(homeHref(m.href, `fits.make[${i}]`))}"><b>${esc(m.name)}</b></a>${u ? ` <span class="pill pill-${esc(u.status)}">${esc(STATUS_NOTE[u.status] || u.status)}</span><span class="pill">${esc(u.license)}</span><span class="pill" title="GitHub stars when surveyed">★ ${Number(u.stars).toLocaleString('en-US')}</span>` : ''}</span><span>${esc(m.does)}</span>${m.note ? `<small>${esc(m.note)}</small>` : ''}</li>`;
+const maturityPill = level => `<span class="pill pill-maturity" data-maturity="${esc(level)}" title="Maturity in docs/areas.yaml: ${esc(areasTree.maturity.find(m => m.level === level).means)}">${esc(level)}</span>`;
+// A /toolkit link names one of that page's examples, which carry these ids (tools/site/compiler/site-toolkit.mjs).
+const toolkitCards = new Map(toolkitCapabilities(scada, { catalog: catalog.items, has: f => tracked.includes(f) }).map(c => [c.id, c]));
+const stackHref = (h, at) => {
+  const m = h.match(/^\/toolkit(?:#([\w-]+))?$/);
+  if (!m) return homeHref(h, at);
+  if (m[1] && !toolkitCards.has(m[1])) throw new Error(`docs/home.yaml ${at}: /toolkit has no example #${m[1]}`);
+  return h;
 };
+const absolute = h => /^https:/.test(h) ? h : h.startsWith('/') ? ORIGIN + h : ORIGIN + pageURL(h);
+// The stack: skills and evals on top of the shared components (#748).
+homeMd.stack = { top: [], base: [] };
+const stackTop = home.stack.top.map((t, i) => {
+  const at = `stack.top[${i}]`, level = areasLevel(t.areas, at);
+  homeMd.stack.top.push(`- [${t.title}](${absolute(t.href)}) (${level}): ${t.does}`);
+  return `<li class="stack-cell stack-top-cell"><h3><a href="${esc(stackHref(t.href, at))}">${esc(t.title)}</a>${maturityPill(level)}</h3><p>${esc(t.does)}</p></li>`;
+}).join('');
+if (home.stack.arrow?.length !== 2) throw new Error('docs/home.yaml stack.arrow: from and to');
+const stackBase = (await Promise.all(home.stack.base.map(async (t, i) => {
+  const at = `stack.base[${i}]`, level = areasLevel(t.areas, at);
+  if (!t.img) throw new Error(`docs/home.yaml ${at}: each shared component shows a committed picture`);
+  homeMd.stack.base.push(`- [${t.title}](${absolute(t.href)}) (${level}): ${t.does}`);
+  return `<li class="stack-cell stack-base-cell"><a class="stack-media" href="${esc(stackHref(t.href, at))}" tabindex="-1" aria-hidden="true">${await homePicture(t.img, at, ' alt="" loading="lazy" decoding="async"', t.still)}</a><h3><a href="${esc(stackHref(t.href, at))}">${esc(t.title)}</a>${maturityPill(level)}</h3><p>${esc(t.does)}</p></li>`;
+}))).join('');
+// See it run: the turret recording quotes its own SOURCE.json record, so a new capture cannot leave an old caption.
+const turret = home.showcase.turret, turretRec = gyropupSource.pictures['turret-playground'];
+if (!turretRec || `docs/img/gyropup/${turretRec.file}` !== turret.img || `docs/img/gyropup/${turretRec.still.file}` !== turret.still)
+  throw new Error('docs/home.yaml showcase.turret: its picture and still are the ones recorded in docs/img/gyropup/SOURCE.json');
+if (!/work-in-progress/.test(turret.caption) || !/not physics validation/.test(turret.caption)) throw new Error('docs/home.yaml showcase.turret: the caption states it is a work-in-progress playground, not physics validation');
+const turretCaption = turret.caption.replace('{revision}', turretRec.revision.slice(0, 7));
+const turretCard = `<article class="run-card run-turret"><a class="run-media" href="${esc(homeHref(turret.href, 'showcase.turret'))}" tabindex="-1" aria-hidden="true">${await homePicture(turret.img, 'showcase.turret', ' alt="" loading="lazy" decoding="async"', turret.still)}</a><h3><a href="${esc(turret.href)}">${esc(turret.title)} ↗</a></h3><p>${esc(turretCaption)}</p><p class="run-links"><a href="${esc(turretRec.public.replace(/\?.*/, ''))}">Open the playground</a> · <a href="https://github.com/${esc(turretRec.project)}/tree/${esc(turretRec.revision)}">Recorded source</a> · <a href="/docs/img/gyropup/SOURCE.json">Recording record</a></p><span class="visually-hidden">${esc(turret.alt)}</span></article>`;
+homeMd.run = [`- [${turret.title}](${turret.href}): ${turretCaption}`];
+const runCards = home.showcase.cards.map((c, i) => {
+  const card = toolkitCards.get(c.toolkit);
+  if (!card) throw new Error(`docs/home.yaml showcase.cards[${i}]: ${c.toolkit} is not a /toolkit example`);
+  if (!c.caption) throw new Error(`docs/home.yaml showcase.cards[${i}] has no caption`);
+  homeMd.run.push(`- [${card.title}](${ORIGIN}/toolkit#${card.id}): ${c.caption}`);
+  return `<li class="run-mini"><a class="run-mini-media" href="/toolkit#${esc(card.id)}" tabindex="-1" aria-hidden="true"><img src="${esc(card.image)}" alt="" width="800" height="500" loading="lazy" decoding="async"></a><div><h3><a href="/toolkit#${esc(card.id)}">${esc(card.title)}</a></h3><p>${esc(c.caption)}</p></div></li>`;
+}).join('');
+// More checks: results that stay one click away as text (their animated figures live on the linked pages).
+const moreChecks = home.more_checks.map((m, i) => {
+  const at = `more_checks[${i}]`;
+  for (const k of ['title', 'tool', 'href', 'caption']) if (!m[k]) throw new Error(`docs/home.yaml ${at} has no ${k}`);
+  homeMd.reel.push(`- [${m.title}](${absolute(m.href)}): ${m.caption} (\`${m.tool}\`)`);
+  return `<li><a href="${esc(homeHref(m.href, at))}">${esc(m.title)}</a> <code>${esc(realTool(m.tool, at))}</code></li>`;
+}).join('');
+// From frontier to local: each step says what holds today and what is next.
+homeMd.arc = [];
+const arcSteps = home.arc.map((s, i) => {
+  const at = `arc[${i}]`;
+  for (const k of ['title', 'today', 'next', 'href']) if (!s[k]) throw new Error(`docs/home.yaml ${at} has no ${k}`);
+  const today = s.today.replace('{catalog}', catalog.items.length.toLocaleString('en-US'));
+  homeMd.arc.push(`${i + 1}. [${s.title}](${absolute(s.href)}). Today: ${today} Next: ${s.next}`);
+  return `<li class="arc-step"><span class="arc-num" aria-hidden="true">${i + 1}</span><h3><a href="${esc(homeHref(s.href, at))}">${esc(s.title)}</a></h3><p><b>Today.</b> ${esc(today)}</p><p class="arc-next"><b>Next.</b> ${esc(s.next)}</p></li>`;
+}).join('');
 // The hero model (web/models/, from tools/gyropup_showcase.py) and its still poster (tools/site/figures/site-model-poster.mjs).
 const heroModel = JSON.parse(await read(ASSETS + '/models/gyropup.json'));
 const j501Model = JSON.parse(await read(ASSETS + '/models/j501.json'));
@@ -576,24 +617,38 @@ function titlePixelLine(label, y=0) {
 const titleWide = titlePixelLine('MACHINES BUILDING MACHINES');
 const titleNarrow = titlePixelLine('MACHINES') + titlePixelLine('BUILDING MACHINES', 10);
 const pixelHeading = `<h1 class="pixel-title"><span class="pixel-title-text">Machines building machines</span><svg class="pixel-title-wide" viewBox="0 0 155 9" aria-hidden="true" focusable="false" shape-rendering="crispEdges"><path class="pixel-title-shadow" transform="translate(0 1)" d="${titleWide}"/><path fill="currentColor" d="${titleWide}"/></svg><svg class="pixel-title-narrow" viewBox="0 0 101 19" aria-hidden="true" focusable="false" shape-rendering="crispEdges"><path class="pixel-title-shadow" transform="translate(0 1)" d="${titleNarrow}"/><path fill="currentColor" d="${titleNarrow}"/></svg></h1>`;
+// The home page's lede names both layers (#748); the description and title say the same for search and sharing.
+const HOME_LEDE = ['cad-agent is open-source shared components for CAD work: 3D viewers, reports, BOMs, exploded views, build guides, simulators and deterministic checks.',
+  'On top sit agent skills and evals that aim to let free, open and local models do the work frontier models do today.'];
+const HOME_TITLE = 'cad-agent · Shared CAD components, agent skills and evals';
+const HOME_DESCRIPTION = 'Open-source shared components for CAD work (viewers, reports, BOMs, exploded views, simulators, deterministic checks), with agent skills and evals on top.';
 const landing = `<div class="wrap"><section class="hero learning-hero">
 <div class="hero-head"><p class="eyebrow"><span class="status-dot" aria-hidden="true"></span>Shared knowledge. Better things.</p>
 ${pixelHeading}
-<p class="intro">cad-agent is an open-source CAD toolkit where AI agents share knowledge, test designs, and improve through human feedback.</p></div>
+<p class="intro">${HOME_LEDE.map(esc).join(' ')}</p></div>
 <figure class="learning-art"><picture><source media="(prefers-reduced-motion: reduce) and (max-width:600px)" srcset="/docs/img/hero/learning-loop-mobile-still.svg" width="956" height="710"><source media="(prefers-reduced-motion: reduce)" srcset="/docs/img/hero/learning-loop-still.svg" width="1536" height="768"><source media="(max-width:600px)" srcset="/docs/img/hero/learning-loop-mobile.svg" width="956" height="710"><img src="/docs/img/hero/learning-loop.svg" width="1536" height="768" fetchpriority="high" alt="An original pixel-art orbital workshop: robots assemble, test and teach a new robot, which joins the builders as the next chassis arrives"></picture><figcaption>Every build can improve the shared knowledge and checks behind the next one.</figcaption></figure>
 <div class="hero-actions"><div class="actions"><a class="button primary" href="#use-it">Build with your agent ↓</a><a class="button" href="/explore">Explore the knowledge</a><a class="button quiet" href="${REPO}">GitHub ↗</a></div></div>
-</section></div>
-${useCard}
-<section class="reel-band" id="outputs"><div class="wrap"><div class="lead"><h2>What the code <span>computes.</span></h2><p>Outputs of cad-agent's tools with the numbers they computed: on Gyropup, on a printed enclosure, on this repo's test fixtures and on worked examples. Each tile says which, and opens the page that explains it.</p></div>
-<ul class="reel">${reel.join('')}</ul></div></section>
-<div class="wrap"><section class="section fits" aria-labelledby="fits-title"><div class="lead"><h2 id="fits-title">Check, simulate,<br><span>explain, measure.</span></h2><p>Real outputs, traceable inputs and explicit limits. Every example opens the method and the evidence behind it.</p></div><div class="fits-ours"><ul>${(await Promise.all(home.fits.ours.map(fitsTile))).join('')}</ul></div></section>
-<section class="section built-with" id="built-with"><div class="lead"><h2>Built with <span>cad-agent.</span></h2><p>Useful things made with the toolkit. Turn them around, explore the parts, and follow the projects.</p></div><div class="project-viewers">
+</section>
+<section class="section stack" id="stack" aria-labelledby="stack-title"><div class="lead"><h2 id="stack-title">Two layers, <span>one toolkit.</span></h2><p>Shared components do the CAD work and are tested like any code. Skills and evals on top teach agents to use them, and measure how far down the model scale that works.</p></div>
+<div class="stack-figure">
+<div class="stack-tier stack-tier-top"><p class="stack-label">Agent layer</p><ul>${stackTop}</ul>
+<p class="stack-arrow"><span>${esc(home.stack.arrow[0])}</span><span class="stack-arrow-line" aria-hidden="true"></span><span>${esc(home.stack.arrow[1])}</span></p></div>
+<div class="stack-tier stack-tier-base"><p class="stack-label">Shared components</p><ul>${stackBase}</ul></div>
+</div></section>
+<section class="section built-with" id="built-with" aria-labelledby="run-title"><div class="lead"><h2 id="run-title">See it <span>run.</span></h2><p>Real models and simulations you can turn, play and stop. Each says what it is and what it does not prove.</p></div><div class="project-viewers">
 <article><h3>Gyropup</h3><cad-model src="/web/models/gyropup.json" label="Gyropup" style="aspect-ratio:1"><img class="cad-model-poster" src="/web/models/gyropup.webp" width="1200" height="1200" loading="lazy" alt="Current collected Gyropup assembly"></cad-model><p>A wheel-legged robot that brings mechanical design, motion and electronics together. This simplified view leaves out interior hardware.</p><p><a href="${esc(heroModel.source.repo + '/tree/' + heroModel.source.revision)}">Exact CAD source</a> · <a href="https://gyropup.com">Project</a></p></article>
 <article><h3>J501 AGX Orin enclosure</h3><cad-model src="/web/models/j501.json" label="J501 enclosure with real carrier board" style="aspect-ratio:1"><img class="cad-model-poster" src="/web/models/j501.webp" width="1200" height="1200" loading="lazy" alt="J501 enclosure and real carrier board, assembled from exported CAD"></cad-model><p>A printed home for a Jetson AGX Orin computer, shown with its real carrier board. A fit-check prototype, not a physically qualified enclosure.</p><p><a href="${esc(j501Model.source.repo + '/tree/' + j501Model.source.revision)}">Exact CAD snapshot</a> · <a href="https://github.com/mvalancy/j501-agx-orin">Project and evidence</a> · <a href="/web/models/j501-source.json">Model provenance</a></p></article>
-</div></section>
+</div>
+<div class="run-more">${turretCard}<ul class="run-minis">${runCards}</ul></div></section></div>
+${useCard}
+<section class="reel-band" id="outputs"><div class="wrap"><div class="lead"><h2>What the checks <span>compute.</span></h2><p>Outputs of cad-agent's tools with the numbers they computed: on this repo's test fixtures and on worked examples. Each tile says which, and opens the page that explains it.</p></div>
+<ul class="reel">${reel.join('')}</ul>
+<div class="more-checks"><p>More checks</p><ul>${moreChecks}</ul></div></div></section>
+<div class="wrap"><section class="section arc" id="frontier-to-local" aria-labelledby="arc-title"><div class="lead"><h2 id="arc-title">From frontier <span>to local.</span></h2><p>The plan, and how far it has got. People on frontier models improve cad-agent on real work; evals will show when cheaper and local models can do the same. <a href="${esc(homeHref('docs/vision.md', 'arc'))}">The vision</a> · <a href="${esc(homeHref('docs/practice/standard-evaluation.md', 'arc'))}">What the evals measure</a></p></div>
+<ol class="arc-steps">${arcSteps}</ol></section>
 <section class="section help-band"><div class="lead"><h2>Help us <span>improve!</span></h2><p>Found a mistake, a better tool, or a page that wasted your time? It takes a minute, and ideas we use are credited by name.</p></div>
 <div class="help-actions"><a class="button primary" href="${esc(feedbackURL('home page', '/'))}">Give feedback</a><a class="button" href="${REPO}/issues">See open issues</a><a class="button" href="/CONTRIBUTING">How to contribute</a></div></section></div>`;
-await writeFile(path.join(out, 'index.html'), frame({ title: TAGLINE, body: landing, md: '/index.md', current: '/', page: 'landing', css: ['/web/snap-demo.css', '/kit/model/model.css', '/web/home.css'] }));
+await writeFile(path.join(out, 'index.html'), frame({ title: TAGLINE, fullTitle: HOME_TITLE, description: HOME_DESCRIPTION, body: landing, md: '/index.md', current: '/', page: 'landing', css: ['/web/snap-demo.css', '/kit/model/model.css', '/web/home.css'] }));
 
 // ----------------------------------------------------------------------------- agent files
 const bySection = id => pages.filter(p => p.section === id);
@@ -601,9 +656,18 @@ const llms = `# cad-agent
 
 > ${TAGLINE}. ${LEDE}
 
-cad-agent is an open-source toolkit and knowledge base for AI agents that design hardware: CAD models, assemblies,
-simulation and print releases. It maps the best free tools, demonstrates them on real projects and fills the gaps with
+${HOME_LEDE.join(' ')} It maps the best free tools, demonstrates them on real projects and fills the gaps with
 tested tools of its own. Every page on this site has a Markdown twin at the same path with a .md extension.
+
+## Two layers
+
+Agent layer, from frontier models toward ${home.stack.arrow[1].toLowerCase()}:
+
+${homeMd.stack.top.join('\n')}
+
+Shared components:
+
+${homeMd.stack.base.join('\n')}
 
 - Source: ${REPO} (MIT). Install and use: the checked guide below (then \`cad-agent update\` to update).
   cad-agent collects no telemetry.
@@ -660,22 +724,23 @@ await writeFile(path.join(out, 'llms.txt'), llms);
 await writeFile(path.join(out, 'index.md'), `${llms.replace(/\n*$/, '\n')}
 ## Machines building machines
 
-cad-agent is an open-source CAD toolkit where AI agents share knowledge, test designs, and improve through human feedback.
+${HOME_LEDE.join(' ')}
 
 [The original learning illustration](${ORIGIN}/docs/img/hero/learning-loop.svg) is conceptual process artwork, not an engineering result or a claim of automatic model training.
 
-### What the code computes
-
-${homeMd.reel.join('\n')}
-
-### Check, simulate, explain, measure
-
-${homeMd.ours.join('\n')}
-
-### Built with cad-agent
+### See it run
 
 - [Gyropup](${heroModel.source.repo}/tree/${heroModel.source.revision}): a wheel-legged robot; the web assembly omits interior hardware.
 - [J501 project](https://github.com/mvalancy/j501-agx-orin): an enclosure around a real carrier board; [model provenance](${ORIGIN}/web/models/j501-source.json) records this prototype's captured inputs and display-only simplification. Physical qualification and final current-source adoption remain separate.
+${homeMd.run.join('\n')}
+
+### What the checks compute
+
+${homeMd.reel.join('\n')}
+
+### From frontier to local
+
+${homeMd.arc.join('\n')}
 `);
 await writeFile(path.join(out, 'llms-full.txt'), `# cad-agent: full text\n\n> ${TAGLINE}. ${LEDE}\n\n` +
   pages.map(p => `\n\n---\n\nSource: ${ORIGIN}/${publicPath(p.file)}\n\n${twinMd(p.file, p.body, true).trim()}\n`).join('') +

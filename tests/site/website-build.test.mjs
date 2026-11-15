@@ -616,6 +616,45 @@ test('every lesson page has a diagram, and the home page links to knowledge with
   assert.match(home, /src="\/docs\/img\/hero\/learning-loop\.svg"/);
 });
 
+test('the home page tells the two-layer story in order, every new link resolves and the twins say the same (#748)', async () => {
+  const home = await readFile(path.join(out, 'index.html'), 'utf8');
+  const order = ['class="hero learning-hero"', 'id="stack"', 'id="built-with"', 'id="use-it"', 'id="outputs"', 'id="frontier-to-local"', 'class="section help-band"'];
+  const at = order.map(m => home.indexOf(m));
+  assert.ok(at.every(i => i > 0), `every section is on the page: ${order.filter((m, i) => at[i] < 0)}`);
+  assert.deepEqual([...at].sort((a, b) => a - b), at, 'hero, stack, see it run, install, checks, frontier to local, help');
+  assert.match(home, /<title>cad-agent · Shared CAD components, agent skills and evals<\/title>/);
+  assert.match(home, /<meta name="description" content="[^"]*agent skills and evals[^"]*">/);
+  const stack = home.slice(home.indexOf('id="stack"'), home.indexOf('id="built-with"'));
+  assert.equal((stack.match(/class="stack-cell stack-top-cell"/g) || []).length, 2, 'skills and evals');
+  const base = [...stack.matchAll(/<li class="stack-cell stack-base-cell">[\s\S]*?<\/li>/g)].map(m => m[0]);
+  assert.equal(base.length, 6, 'six shared components');
+  for (const cell of base) {
+    assert.match(cell, /<img src="\/docs\/img\/[^"]+" width="\d+" height="\d+"/, 'each shows a committed picture');
+    assert.match(cell, /class="pill pill-maturity" data-maturity="(?:idea|surveyed|tooling|validated|proven)"/, 'each shows its maturity');
+  }
+  assert.doesNotMatch(home, /Check, simulate|fits-ours/, 'the duplicate section is gone');
+  assert.equal((home.match(/class="run-mini"/g) || []).length, 3, 'robot replay, SCADA and a build guide');
+  assert.match(home, /href="https:\/\/gyropup\.com\/designer\/sim"/);
+  assert.match(home, /class="more-checks"/);
+  // Every local link the new sections add lands on a published page, and every #anchor on a real id.
+  const added = home.slice(home.indexOf('id="stack"'), home.indexOf('class="section help-band"'));
+  for (const [, href] of added.matchAll(/href="(\/[^"]*)"/g)) {
+    const file = resolve(href);
+    assert.ok(file, `${href} is published`);
+    const hash = href.split('#')[1];
+    if (hash) assert.ok((await ids(file)).has(hash), `${href}: no id ${hash}`);
+  }
+  for (const f of ['index.md', 'llms.txt']) {
+    const text = await readFile(path.join(out, f), 'utf8');
+    assert.match(text, /## Two layers/, `${f} names the two layers`);
+    for (const name of ['Agent skills', 'Evals', '3D viewers', 'Reports', 'BOMs', 'Exploded views and build guides', 'Simulators', 'Deterministic checks'])
+      assert.ok(text.includes(`[${name}](`), `${f}: ${name}`);
+  }
+  const twin = await readFile(path.join(out, 'index.md'), 'utf8');
+  for (const h of ['### See it run', '### What the checks compute', '### From frontier to local']) assert.ok(twin.includes(h), `index.md: ${h}`);
+  assert.match(twin, /No local or open model has been measured yet/, 'the twin keeps the honest eval status');
+});
+
 test('a moved source stub uses public redirect identity and every invalid target or rule fails', async () => {
   const wt = path.join(tmp, 'wt-redirects');
   execFileSync('git', ['worktree', 'add', '--detach', '--quiet', wt, 'HEAD'], { cwd: root });

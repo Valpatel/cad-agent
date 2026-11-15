@@ -136,7 +136,7 @@ try {
           const early = await page.evaluate(() => performance.getEntriesByType('resource').filter(r => /three\.module|\/web\/models\/.*\.(json|bin)/.test(r.name)).map(r => r.name));
           if (early.length) seen.push(`model payload fetched at hero before a project was approached: ${early.join(', ')}`);
           const models = page.locator('cad-model');
-          if (await models.count() !== 2) seen.push('Built with cad-agent needs both real project viewers');
+          if (await models.count() !== 2) seen.push('See it run needs both real project viewers');
           let ready = 'ready';
           for (let i = 0; i < await models.count(); i++) {
             await models.nth(i).evaluate(el => { document.documentElement.style.scrollBehavior = 'auto'; el.scrollIntoView({block:'center'}); });

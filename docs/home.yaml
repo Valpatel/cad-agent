@@ -1,4 +1,109 @@
-# Every visible example has a real animated figure, source and limits. See docs/img/hero/README.md (#605).
+# The home page (#748): two layers (shared components, then skills and evals), what runs, then the checks.
+# Every visible example has a real committed figure, source and limits. See docs/img/hero/README.md (#605).
+# The build (tools/site/build-site.mjs) fails when a link is not a published page, a picture is not committed, an area
+# is not in docs/areas.yaml or a /toolkit anchor is not one of its examples.
+stack:
+  top:
+  - title: Agent skills
+    does: Procedures an agent loads when it needs them, for design process, reviews, SCADA authoring, parts and
+      work tracking.
+    href: .agents/skills/README.md
+    areas:
+    - agent-workflow
+  - title: Evals
+    does: Small jobs with independent graders that test whether a model, with or without cad-agent, does the work.
+      Three analytical jobs run today.
+    href: docs/practice/standard-evaluation.md
+    areas:
+    - evaluation
+  arrow:
+  - Frontier models
+  - Free, open and local models
+  base:
+  - title: 3D viewers
+    img: docs/img/viewer.jpg
+    does: Orbit, explode and section real assemblies in a browser, with no CAD install.
+    href: /toolkit#models
+    areas:
+    - publishing
+  - title: Reports
+    img: docs/img/packets/ball_through_wall-store-findings.webp
+    does: Review packets put each finding beside its section, picture and evidence.
+    href: docs/practice/review-packet.md
+    areas:
+    - design-process
+  - title: BOMs
+    img: docs/img/explore/light-bom.webp
+    does: Bills of materials and part tables with quantity, cost, mass and where each number came from.
+    href: docs/practice/web-parts.md
+    areas:
+    - publishing
+  - title: Exploded views and build guides
+    img: docs/img/packets/clean-store-exploded.webp
+    does: Explode parts along their assembly steps, then step through a declared build sequence.
+    href: docs/practice/assembly-guide.md
+    areas:
+    - publishing
+  - title: Simulators
+    img: docs/img/gyropup/wheel-link-fea.webp
+    does: FEA, CFD and thermal, motion and clearance, robot replay and SCADA process models. Loads, meshes and
+      assumptions stay with each result, and a moving picture never replaces a balance check.
+    href: /toolkit
+    areas:
+    - structural-fea
+    - cfd
+    - motion-and-dynamics
+    - scada
+  - title: Deterministic checks
+    img: docs/img/gates/bench-requirements.webp
+    does: Formulas with golden vectors from cited sources, integrity gates and pitfall checks that an agent calls
+      instead of recalling. Fixture evidence, not physical qualification.
+    href: docs/practice/gates.md
+    areas:
+    - review-and-evidence
+    - design-process
+# See it run: the two viewers are written by the build from their model sources; these are the cards beside them.
+showcase:
+  turret:
+    img: docs/img/gyropup/turret-playground.webp
+    still: docs/img/gyropup/turret-playground-still.webp
+    title: Gyropup's turret playground
+    caption: Gyropup's browser playground, model "Turret on the Orin AGX box", armed and firing foam balls at
+      targets. Recorded from Gyropup {revision} by tools/site/figures/gyropup-turret.mjs. An unqualified
+      work-in-progress prototype; the ball flight is the playground's simplified model, not physics validation.
+    alt: A foam-ball turret on a compute box fires a stream of balls at targets in a 3D yard
+    href: https://gyropup.com/designer/sim
+  cards:
+  - toolkit: robot-replay
+    caption: A recorded MuJoCo run of an illustrative two-link arm. Scrub time and orbit; it is a replay, not a
+      live solver.
+  - toolkit: scada-simulations
+    caption: A wastewater digester and other connected processes. Operate equipment and inject faults; the models
+      are illustrative and editable.
+  - toolkit: assembly
+    caption: Step through a synthetic rail assembly's declared insertion order, part by part.
+# From frontier to local: the arc, each step with what holds today and what is next.
+arc:
+- title: Use it on real projects
+  today: People and agents on frontier models use cad-agent on real builds such as Gyropup and the J501 enclosure.
+  next: More outside projects, so gaps show up beyond our own.
+  href: docs/vision.md
+- title: Improve it
+  today: A gap becomes a reviewed PR with tests, sources and stated limits, merged under gates.
+  next: Skills for triaging and integrating outside contributions.
+  href: .github/CONTRIBUTING.md
+- title: Gather the best
+  today: '{catalog} catalogue entries (outside tools, guides, lessons and skills) and a register of cited references;
+    each area states its maturity.'
+  next: A confidence level on every rule and tool.
+  href: docs/research/README.md
+- title: Measure smaller models
+  today: Three analytical jobs with independent graders. The recorded attempts used one hosted frontier model, with
+    no baseline without cad-agent.
+  next: Paired trials with and without cad-agent on a local model first, then a lower-cost hosted one. No local or
+    open model has been measured yet.
+  href: docs/practice/standard-evaluation.md
+# The checks reel: animated, source-bound results; three more stay one click away as text links.
 reel:
 - img: docs/img/fea/mesh-convergence.svg
   still: docs/img/hero/result-stills/mesh-convergence-still.svg
@@ -29,26 +134,6 @@ reel:
     by 10.9 percent; that failure stays visible. Not a cooling qualification.'
   alt: Two recorded cases showing mass flow and heat balance, including the failed ducted case
   href: docs/research/simulation-tools.md
-- img: docs/img/motion/rib-in-counterbore.svg
-  still: docs/img/hero/result-stills/rib-in-counterbore-still.svg
-  'on': fixture-2d
-  tool: cad-agent holes
-  title: A rib that refills a counterbore
-  caption: Two build orders of the same part. A rib added after the holes were cut fills both; the hole check finds
-    it.
-  alt: Section through a screw hole in two build orders; a rib unioned after the hole and counterbore were cut refills
-    both
-  href: docs/practice/common-issues.md
-- img: docs/img/motion/connector-window.svg
-  still: docs/img/hero/result-stills/connector-window-still.svg
-  'on': fixture
-  tool: cadagent.mechanical.connectors
-  title: A port window sized from the mating plug
-  caption: An RJ45 plug pushed in. Through a window sized from the jack's box its latch hits the wall; through one
-    derived from the plug it clears by 0.5 mm.
-  alt: An RJ45 plug pushed along its mating axis through two panel windows; only the window derived from the plug
-    clears the latch
-  href: docs/practice/common-issues.md
 - img: docs/img/motion/hinge-sweep.svg
   still: docs/img/hero/result-stills/hinge-sweep-still.svg
   'on': fixture-2d
@@ -59,15 +144,6 @@ reel:
   alt: A seeded fault, an arm swept from 0 to 60 degrees; it first shares volume with the frame beam between 44.89
     and 44.91 degrees
   href: docs/practice/gates.md
-- img: docs/img/motion/module-insertion.svg
-  still: docs/img/hero/result-stills/module-insertion-still.svg
-  'on': fixture
-  tool: cad-agent gates
-  title: A module that slides in as one piece
-  caption: A carrier and its board checked on their own bench, then inserted into the parent as one rigid body and
-    withdrawn again.
-  alt: A preassembled module inserted into its parent as one rigid body, then withdrawn
-  href: docs/mechanical/subassembly-insertion.md
 - img: docs/img/motion/search-front.svg
   still: docs/img/hero/result-stills/search-front-still.svg
   'on': example
@@ -76,39 +152,16 @@ reel:
   caption: Sixty seeded trials as they arrive. Four are feasible, and trials 1 and 47 form the Pareto front.
   alt: Sixty seeded random design trials plotted by cost and mass as they arrive, with the Pareto front marked
   href: docs/explore.md
-fits:
-  make:
-  - name: text-to-cad
-    upstream: earthtojake/text-to-cad
-    does: build123d models, STEP and 3MF, drawings, DfAM checks, print handoff
-    note: vendored in software/vendor/, pinned, telemetry and update check removed by patch
-    href: https://github.com/Valpatel/cad-agent/tree/dev/vendor/text-to-cad
-  - name: build123d and CadQuery
-    does: The code-CAD kernels (both on OCP); our own tools and projects are CadQuery
-    href: docs/research/agent-workflow/landscape.md
-  - name: KiCad MCP servers
-    does: Schematics and boards; kicad-mcp-pro and kicad-happy are vendored, pinned and in trial
-    href: docs/research/agent-workflow/landscape.md
-  ours:
-  - title: Fit and access before fabrication
-    does: 'Follow computed geometry through real checks: an arm sweeps until it touches the frame. Fixture evidence,
-      not a physical qualification.'
-    areas:
-    - design-process
-    - review-and-evidence
-    href: docs/practice/gates.md
-    img: docs/img/motion/hinge-sweep.svg
-  - title: Numerical evidence with limits
-    does: A recorded mesh study separates a singular peak from a converging filleted result. The load, mesh and
-      assumptions remain available.
-    areas:
-    - structural-fea
-    href: docs/toolkit.md
-    img: docs/img/fea/mesh-convergence.svg
-  - title: Thermal and airflow diagnosis
-    does: Inspect recorded solver traces and energy checks, including a case that did not settle. A moving picture
-      never substitutes for a balance check.
-    areas:
-    - cfd
-    href: docs/research/simulation-tools.md
-    img: docs/img/hero/airflow-balance.svg
+more_checks:
+- title: A rib that refills a counterbore
+  caption: "Two build orders of the same part. A rib added after the holes were cut fills both; the hole check finds it."
+  tool: cad-agent holes
+  href: docs/practice/common-issues.md
+- title: A port window sized from the mating plug
+  caption: "An RJ45 plug pushed in. Through a window sized from the jack's box its latch hits the wall; through one derived from the plug it clears by 0.5 mm."
+  tool: cadagent.mechanical.connectors
+  href: docs/practice/common-issues.md
+- title: A module that slides in as one piece
+  caption: "A carrier and its board checked on their own bench, then inserted into the parent as one rigid body and withdrawn again."
+  tool: cad-agent gates
+  href: docs/mechanical/subassembly-insertion.md

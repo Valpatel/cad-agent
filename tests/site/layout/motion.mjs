@@ -260,12 +260,13 @@ export async function resultImageMotionProblems(browser, base, receipt = {}) {
   const page=await ctx.newPage();
   try {
     await page.goto(base+'/',{waitUntil:'networkidle'});
-    const images=page.locator('.reel-tile picture img, .fit-media picture img');
-    if(await images.count()!==11)out.push('expected eight reel images and all three displayed check/simulation images');
+    // Five animated reel results (the snap fit is inline SVG) and the turret playground recording (#748).
+    const images=page.locator('.reel-tile picture img, .run-media picture img');
+    if(await images.count()!==6)out.push('expected five animated reel images and the turret recording');
     for(const image of await images.all()) {
       await image.scrollIntoViewIfNeeded();await image.evaluate(el=>el.decode());
       const state=await image.evaluate(el=>({src:el.getAttribute('src'),current:new URL(el.currentSrc).pathname,loaded:el.complete&&el.naturalWidth>0}));
-      if(!state.loaded||!state.current.includes('/result-stills/'))out.push('result did not select its finished image: '+JSON.stringify(state));
+      if(!state.loaded||!(state.current.includes('/result-stills/')||state.current.endsWith('-still.webp')))out.push('result did not select its finished image: '+JSON.stringify(state));
       const first=await image.screenshot();await page.waitForTimeout(300);const second=await image.screenshot();
       const stable=first.equals(second);receipt.images.push({...state,stable});
       if(!stable)out.push('computed image still moves under reduced motion: '+state.src);

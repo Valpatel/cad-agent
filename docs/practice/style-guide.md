@@ -126,6 +126,11 @@ static SVG for `prefers-reduced-motion`, as well as an internal reduced-motion r
 not just inline DOM: check motion, its disabled state, text bounds, narrow rendering and light/dark surroundings.
 Animation timing is illustrative unless a source-bound measurement establishes otherwise.
 
+Choose the composition from the subject: a feedback loop, source funnel, comparison plot or state fan-out should
+look different at a glance. Share typography and colors, not one box arrangement with swapped labels. Topic gallery
+READMEs display every authored figure inline, with a short explanation and source/static links; a filename list
+alone is not a visual gallery. Review the whole set together as well as each figure at its embedded reading size.
+
 The [architecture figures](../img/architecture/README.md) explain current handoffs. Existing symbol galleries and
 engineering figures retain their own generators and evidence; do not replace them with decorative flowcharts.
 

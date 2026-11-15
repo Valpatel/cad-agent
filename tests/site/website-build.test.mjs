@@ -616,22 +616,27 @@ test('every lesson page has a diagram, and the home page links to knowledge with
   assert.match(home, /src="\/docs\/img\/hero\/learning-loop\.svg"/);
 });
 
-test('the home page tells the two-layer story in order, every new link resolves and the twins say the same (#748)', async () => {
+test('the home page shows what runs, then what is in cad-agent, in order, every new link resolves and the twins say the same (#748)', async () => {
   const home = await readFile(path.join(out, 'index.html'), 'utf8');
   const order = ['class="hero learning-hero"', 'id="built-with"', 'id="stack"', 'id="use-it"', 'id="outputs"', 'id="frontier-to-local"', 'class="section help-band"'];
   const at = order.map(m => home.indexOf(m));
   assert.ok(at.every(i => i > 0), `every section is on the page: ${order.filter((m, i) => at[i] < 0)}`);
   assert.deepEqual([...at].sort((a, b) => a - b), at, 'hero, see it run, stack, install, checks, frontier to local, help: things that move come first');
-  assert.match(home, /<title>cad-agent · Shared CAD components, agent skills and evals<\/title>/);
-  assert.match(home, /<meta name="description" content="[^"]*agent skills and evals[^"]*">/);
+  assert.match(home, /<title>cad-agent · Open-source CAD libraries, simulators, checks and tools for agents<\/title>/);
+  assert.match(home, /<meta name="description" content="An open-source stack of CAD libraries[^"]*">/);
+  assert.doesNotMatch(home, /[Tt]wo layers/, 'the stack is a cake of tooling, not two layers');
   const stack = home.slice(home.indexOf('id="stack"'), home.indexOf('id="use-it"'));
-  assert.equal((stack.match(/class="stack-cell stack-top-cell"/g) || []).length, 2, 'skills and evals');
-  const base = [...stack.matchAll(/<li class="stack-cell stack-base-cell">[\s\S]*?<\/li>/g)].map(m => m[0]);
-  assert.equal(base.length, 6, 'six shared components');
-  for (const cell of base) {
-    assert.match(cell, /<img src="\/docs\/img\/[^"]+" width="\d+" height="\d+"/, 'each shows a committed picture');
-    assert.doesNotMatch(cell, /pill-maturity/, 'no maturity pill: every stack area reads tooling, so it told cells apart by nothing');
-  }
+  const layers = [...stack.matchAll(/<div class="cake-layer" data-layer="\d+"><div class="cake-head"><h3>([^<]+)<\/h3>/g)].map(m => m[1]);
+  assert.deepEqual(layers, ['Agent kit', 'Knowledge', 'Command-line tools', 'Web widgets', 'Checks and tests', 'Simulators', 'Libraries', 'Built on'], 'top layer first, built on at the bottom');
+  // A dashed block is planned and links its issue; a solid block links a page and never an issue.
+  for (const [, cls, href] of stack.matchAll(/<a class="(cake-block(?: cake-planned)?)" href="([^"]+)"/g))
+    assert.equal(/cake-planned/.test(cls), /\/issues\/\d+$/.test(href), `${href}: planned blocks, and only they, link an issue`);
+  assert.ok((stack.match(/cake-planned/g) || []).length >= 5, 'where it is headed is visible');
+  assert.doesNotMatch(stack, /<img|pill-maturity/, 'blocks, not pictures or pills');
+  // Counts are computed: the command count is the CLI's own.
+  const cli = git('show', 'HEAD:software/cadagent/cli.py');
+  const commandCount = (cli.match(/sub\.add_parser\("/g) || []).length;
+  assert.match(stack, new RegExp(`<span class="cake-name">Commands</span><span class="cake-count">${commandCount}</span>`));
   assert.doesNotMatch(home, /Check, simulate|fits-ours/, 'the duplicate section is gone');
   assert.equal((home.match(/class="run-mini"/g) || []).length, 3, 'robot replay, SCADA and a build guide');
   assert.ok(home.indexOf('class="run-card run-turret"') < home.indexOf('<cad-model ') && home.lastIndexOf('<cad-model ') < home.indexOf('class="run-minis"'), 'the turret leads, then the two viewers, then the toolkit cards');
@@ -647,13 +652,13 @@ test('the home page tells the two-layer story in order, every new link resolves 
   }
   for (const f of ['index.md', 'llms.txt']) {
     const text = await readFile(path.join(out, f), 'utf8');
-    assert.match(text, /## Two layers/, `${f} names the two layers`);
-    for (const name of ['Agent skills', 'Evals', '3D viewers', 'Reports', 'BOMs', 'Exploded views and build guides', 'Simulators', 'Deterministic checks'])
-      assert.ok(text.includes(`[${name}](`), `${f}: ${name}`);
+    assert.match(text, /## What is in cad-agent/, `${f} lists the stack`);
+    for (const layer of ['Agent kit', 'Knowledge', 'Command-line tools', 'Web widgets', 'Checks and tests', 'Simulators', 'Libraries', 'Built on'])
+      assert.ok(text.includes(`- **${layer}**`), `${f}: ${layer}`);
   }
   const twin = await readFile(path.join(out, 'index.md'), 'utf8');
-  const heads = ['### See it run', '### Two layers', '### What the checks compute', '### From frontier to local'].map(h => twin.indexOf(h));
-  assert.ok(heads.every(i => i > 0) && heads.every((v, i) => !i || v > heads[i - 1]), 'index.md follows the page: see it run, two layers, checks, frontier to local');
+  const heads = ['### See it run', '### What is in cad-agent', '### What the checks compute', '### From frontier to local'].map(h => twin.indexOf(h));
+  assert.ok(heads.every(i => i > 0) && heads.every((v, i) => !i || v > heads[i - 1]), 'index.md follows the page: see it run, the stack, checks, frontier to local');
   assert.match(twin, /No local or open model has been measured yet/, 'the twin keeps the honest eval status');
 });
 

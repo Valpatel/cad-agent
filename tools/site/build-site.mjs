@@ -494,16 +494,6 @@ for (const [i, r] of home.reel.entries()) {
 // The snap-fit demo is drawn from its geometry in this build (tools/site/compiler/snap-demo.mjs), so it joins the reel inline.
 reel.splice(3, 0, `<li class="reel-tile reel-snap"><a class="reel-media" href="/docs/compliant" tabindex="-1" aria-hidden="true">${SNAP.svg}</a>
 <p class="reel-tool"><code>cad-agent snapfit</code></p><h3><a href="/docs/compliant">One part, no screws</a></h3><p>A cantilever snap fit animated from its own geometry: contact and root strain computed against the material and the print's layer direction.</p><p class="reel-credit">Drawn by this site's build from the snap-fit geometry</p></li>`);
-// The least mature of a block's areas in docs/areas.yaml, shown as its pill.
-const areasLevel = (areas, at) => {
-  const levels = (areas || []).map(a => {
-    if (!areaMaturity.has(a)) throw new Error(`docs/home.yaml ${at}: no area ${a} in docs/areas.yaml`);
-    return areaMaturity.get(a);
-  });
-  if (!levels.length || levels.some(l => !LADDER.includes(l))) throw new Error(`docs/home.yaml ${at}: name its areas (docs/areas.yaml), each on the ladder ${LADDER.join(', ')}`);
-  return levels.reduce((lo, l) => LADDER.indexOf(l) < LADDER.indexOf(lo) ? l : lo);
-};
-// The level stays validated (areasLevel) but is not shown: every stack area reads tooling today, so a pill told cells apart by nothing (#748 review).
 // A /toolkit link names one of that page's examples, which carry these ids (tools/site/compiler/site-toolkit.mjs).
 const toolkitCards = new Map(toolkitCapabilities(scada, { catalog: catalog.items, has: f => tracked.includes(f) }).map(c => [c.id, c]));
 const stackHref = (h, at) => {
@@ -513,26 +503,61 @@ const stackHref = (h, at) => {
   return h;
 };
 const absolute = h => /^https:/.test(h) ? h : h.startsWith('/') ? ORIGIN + h : ORIGIN + pageURL(h);
-// The stack: skills and evals on top of the shared components (#748).
-homeMd.stack = { top: [], base: [] };
-const stackTop = home.stack.top.map((t, i) => {
-  const at = `stack.top[${i}]`;
-  areasLevel(t.areas, at);
-  homeMd.stack.top.push(`- [${t.title}](${absolute(t.href)}): ${t.does}`);
-  return `<li class="stack-cell stack-top-cell"><h3><a href="${esc(stackHref(t.href, at))}">${esc(t.title)}</a></h3><p>${esc(t.does)}</p></li>`;
+// What is in cad-agent (#748): a layer cake, top layer first. A block is in the repo today unless it is `planned:`
+// with an issue (drawn dashed, linking the issue). Every count is computed here from the repo, never typed.
+const trackedText = async f => (await readBuf(f)).toString('utf8');
+const countLines = async (files, re) => (await Promise.all(files.map(async f => ((await trackedText(f)).match(re) || []).length))).reduce((a, b) => a + b, 0);
+const processProfiles = YAML.parse(await read('docs/research/process-profiles.yaml'));
+const evalCandidates = YAML.parse(await read('tests/fixtures/evaluation/candidates.yaml'));
+const COUNTS = {
+  skills: pages.filter(p => p.section === 'skills').length,
+  agents: pages.filter(p => p.section === 'agents').length,
+  'eval-jobs': new Set(tracked.filter(f => /^tests\/fixtures\/evaluation\/jobs\/[^/]+\/job\.json$/.test(f))).size,
+  'eval-tasks': (evalCandidates.tasks || evalCandidates.candidates || []).length,
+  guides: pages.filter(p => p.section === 'docs').length,
+  lessons: lessonCount,
+  references: refModel.refs.records.size,
+  catalogue: catalog.items.length,
+  commands: commands.length,
+  formulas: await countLines(tracked.filter(f => /^software\/cadagent\/formulas\/[^/]+\.py$/.test(f)), /^@formula\(/gm),
+  'process-rules': (processProfiles.rules || []).length,
+  // Test functions: pytest `def test_` and node:test `test(`; browser scripts are counted as none.
+  tests: await countLines(tracked.filter(f => /^tests\/.*(?:\/test_[^/]+\.py|\.test\.mjs)$/.test(f)), /^\s*(?:async\s+)?def test_\w+|^test\(/gm),
+};
+for (const [k, v] of Object.entries(COUNTS)) if (!Number.isInteger(v) || v <= 0) throw new Error(`home page count ${k} is ${v}: fix its source or drop the count`);
+const ISSUES = `${REPO}/issues/`;
+homeMd.cake = [];
+const seenBlocks = new Set();
+const cakeLayers = home.stack.map((layer, li) => {
+  const at = `stack[${li}]`;
+  if (!layer.layer || !layer.caption || !layer.blocks?.length) throw new Error(`docs/home.yaml ${at}: a layer has a name, a caption and blocks`);
+  if (layer.caption.split(/\s+/).length > 8) throw new Error(`docs/home.yaml ${at}: keep the caption to eight words`);
+  const md = [];
+  const blocks = layer.blocks.map((b, bi) => {
+    const bat = `${at}.blocks[${bi}]`;
+    if (!b.label) throw new Error(`docs/home.yaml ${bat} has no label`);
+    if (seenBlocks.has(b.label.toLowerCase())) throw new Error(`docs/home.yaml ${bat}: ${b.label} is already a block`);
+    seenBlocks.add(b.label.toLowerCase());
+    if (b.planned) {
+      if (!Number.isInteger(b.planned) || b.href || b.count) throw new Error(`docs/home.yaml ${bat}: a planned block names only its open issue`);
+      md.push(`${b.label} (planned, [#${b.planned}](${ISSUES}${b.planned}))`);
+      return `<li><a class="cake-block cake-planned" href="${ISSUES}${b.planned}"><span class="cake-name">${esc(b.label)}</span><span class="cake-count">#${b.planned}</span></a></li>`;
+    }
+    if (!b.href) throw new Error(`docs/home.yaml ${bat}: a block in the repo today links its page`);
+    let n = null;
+    if (b.count) { if (!(b.count in COUNTS)) throw new Error(`docs/home.yaml ${bat}: count ${b.count} is not one the build computes (${Object.keys(COUNTS).join(', ')})`); n = COUNTS[b.count]; }
+    if (b.commands) {
+      const missing = b.commands.filter(c => !commandNames.has(c));
+      if (missing.length) throw new Error(`docs/home.yaml ${bat}: ${missing.join(', ')} not cad-agent commands`);
+      n = b.commands.length;
+    }
+    const href = stackHref(b.href, bat);
+    md.push(`[${b.label}${n != null ? ` (${n.toLocaleString('en-US')})` : ''}](${absolute(b.href)})`);
+    return `<li><a class="cake-block" href="${esc(href)}"${b.commands ? ` title="${esc(b.commands.map(c => 'cad-agent ' + c).join(', '))}"` : ''}><span class="cake-name">${esc(b.label)}</span>${b.note ? `<span class="cake-note">${esc(b.note)}</span>` : ''}${n != null ? `<span class="cake-count">${n.toLocaleString('en-US')}</span>` : ''}</a></li>`;
+  }).join('');
+  homeMd.cake.push(`- **${layer.layer}** (${layer.caption}): ${md.join(' · ')}`);
+  return `<div class="cake-layer" data-layer="${li}"><div class="cake-head"><h3>${esc(layer.layer)}</h3><p>${esc(layer.caption)}</p></div><ul>${blocks}</ul></div>`;
 }).join('');
-if (home.stack.arrow?.length !== 2) throw new Error('docs/home.yaml stack.arrow: from and to');
-const stackBase = (await Promise.all(home.stack.base.map(async (t, i) => {
-  const at = `stack.base[${i}]`;
-  areasLevel(t.areas, at);
-  if (!t.img) throw new Error(`docs/home.yaml ${at}: each shared component shows a committed picture`);
-  // crop: {scale, x, y} shows a part of a dense picture (a table) large enough to read; x and y are percent of the picture.
-  const c = t.crop;
-  if (c && !(c.scale >= 1 && c.scale <= 4 && c.x >= 0 && c.x < 100 && c.y >= 0 && c.y < 100)) throw new Error(`docs/home.yaml ${at}: crop is {scale 1-4, x and y 0-100}`);
-  const crop = c ? ' stack-crop' : '', cropStyle = c ? ` style="--crop-scale:${c.scale};--crop-x:${c.x}%;--crop-y:${c.y}%"` : '';
-  homeMd.stack.base.push(`- [${t.title}](${absolute(t.href)}): ${t.does}`);
-  return `<li class="stack-cell stack-base-cell"><a class="stack-media${crop}" href="${esc(stackHref(t.href, at))}" tabindex="-1" aria-hidden="true"${cropStyle}>${await homePicture(t.img, at, ' alt="" loading="lazy" decoding="async"', t.still)}</a><h3><a href="${esc(stackHref(t.href, at))}">${esc(t.title)}</a></h3><p>${esc(t.does)}</p></li>`;
-}))).join('');
 // See it run: the turret recording quotes its own SOURCE.json record, so a new capture cannot leave an old caption.
 const turret = home.showcase.turret, turretRec = gyropupSource.pictures['turret-playground'];
 if (!turretRec || `docs/img/gyropup/${turretRec.file}` !== turret.img || `docs/img/gyropup/${turretRec.still.file}` !== turret.still)
@@ -632,10 +657,10 @@ const titleWide = titlePixelLine('MACHINES BUILDING MACHINES');
 const titleNarrow = titlePixelLine('MACHINES') + titlePixelLine('BUILDING MACHINES', 10);
 const pixelHeading = `<h1 class="pixel-title"><span class="pixel-title-text">Machines building machines</span><svg class="pixel-title-wide" viewBox="0 0 155 9" aria-hidden="true" focusable="false" shape-rendering="crispEdges"><path class="pixel-title-shadow" transform="translate(0 1)" d="${titleWide}"/><path fill="currentColor" d="${titleWide}"/></svg><svg class="pixel-title-narrow" viewBox="0 0 101 19" aria-hidden="true" focusable="false" shape-rendering="crispEdges"><path class="pixel-title-shadow" transform="translate(0 1)" d="${titleNarrow}"/><path fill="currentColor" d="${titleNarrow}"/></svg></h1>`;
 // The home page's lede names both layers (#748); the description and title say the same for search and sharing.
-const HOME_LEDE = ['cad-agent is open-source shared components for CAD work: 3D viewers, reports, BOMs, exploded views, build guides, simulators and deterministic checks.',
-  'On top sit agent skills and evals that aim to let free, open and local models do the work frontier models do today.'];
-const HOME_TITLE = 'cad-agent · Shared CAD components, agent skills and evals';
-const HOME_DESCRIPTION = 'Open-source shared components for CAD work (viewers, reports, BOMs, exploded views, simulators, deterministic checks), with agent skills and evals on top.';
+const HOME_LEDE = ['cad-agent is an open-source stack of CAD libraries, simulators, deterministic checks, web widgets and command-line tools, with knowledge and an agent kit on top.',
+  'It is headed toward free, open and local models doing the CAD work frontier models do today.'];
+const HOME_TITLE = 'cad-agent · Open-source CAD libraries, simulators, checks and tools for agents';
+const HOME_DESCRIPTION = 'An open-source stack of CAD libraries, simulators, deterministic checks, web widgets and command-line tools, with knowledge and an agent kit on top.';
 const landing = `<div class="wrap"><section class="hero learning-hero">
 <div class="hero-head"><p class="eyebrow"><span class="status-dot" aria-hidden="true"></span>Shared knowledge. Better things.</p>
 ${pixelHeading}
@@ -649,12 +674,9 @@ ${pixelHeading}
 <article><h3>J501 AGX Orin enclosure</h3><cad-model src="/web/models/j501.json" label="J501 enclosure with real carrier board" style="aspect-ratio:1"><img class="cad-model-poster" src="/web/models/j501.webp" width="1200" height="1200" loading="lazy" alt="J501 enclosure and real carrier board, assembled from exported CAD"></cad-model><p>A printed home for a Jetson AGX Orin computer, shown with its real carrier board. A fit-check prototype, not a physically qualified enclosure.</p><p><a href="${esc(j501Model.source.repo + '/tree/' + j501Model.source.revision)}">Exact CAD snapshot</a> · <a href="https://github.com/mvalancy/j501-agx-orin">Project and evidence</a> · <a href="/web/models/j501-source.json">Model provenance</a></p></article>
 </div>
 <ul class="run-minis">${runCards}</ul></section>
-<section class="section stack" id="stack" aria-labelledby="stack-title"><div class="lead"><h2 id="stack-title">Two layers, <span>one toolkit.</span></h2><p>Everything above runs on these. Shared components do the CAD work and are tested like any code. Skills and evals on top teach agents to use them, and measure how far down the model scale that works.</p></div>
-<div class="stack-figure">
-<div class="stack-tier stack-tier-top"><p class="stack-label">Agent layer</p><ul>${stackTop}</ul>
-<p class="stack-arrow"><span>${esc(home.stack.arrow[0])}</span><span class="stack-arrow-line" aria-hidden="true"></span><span>${esc(home.stack.arrow[1])}</span></p></div>
-<div class="stack-tier stack-tier-base"><p class="stack-label">Shared components</p><ul>${stackBase}</ul></div>
-</div></section></div>
+<section class="section stack" id="stack" aria-labelledby="stack-title"><div class="lead"><h2 id="stack-title">What is in <span>cad-agent.</span></h2><p>Everything above is built from this stack: open source underneath, our libraries and tools in the middle, knowledge and an agent kit on top. Each block opens its page.</p></div>
+<ul class="cake-legend"><li><span class="cake-key"></span>In cad-agent today</li><li><span class="cake-key cake-key-planned"></span>Where we are headed (its issue)</li></ul>
+<div class="cake" role="figure" aria-labelledby="stack-title" data-visual>${cakeLayers}</div></section></div>
 ${useCard}
 <section class="reel-band" id="outputs"><div class="wrap"><div class="lead"><h2>What the checks <span>compute.</span></h2><p>Outputs of cad-agent's tools with the numbers they computed: on this repo's test fixtures and on worked examples. Each tile says which, and opens the page that explains it.</p></div>
 <ul class="reel">${reel.join('')}</ul>
@@ -667,16 +689,12 @@ await writeFile(path.join(out, 'index.html'), frame({ title: TAGLINE, fullTitle:
 
 // ----------------------------------------------------------------------------- agent files
 const bySection = id => pages.filter(p => p.section === id);
-// The two layers, in llms.txt after its preamble; index.md moves them below "See it run", as the page shows them.
-const TWO_LAYERS = `## Two layers
+// What is in cad-agent, in llms.txt after its preamble; index.md moves it below "See it run", as the page shows it.
+const CAKE_MD = `## What is in cad-agent
 
-Agent layer, from frontier models toward ${home.stack.arrow[1].toLowerCase()}:
+Top layer first. Planned blocks name their issue.
 
-${homeMd.stack.top.join('\n')}
-
-Shared components:
-
-${homeMd.stack.base.join('\n')}
+${homeMd.cake.join('\n')}
 `;
 const llms = `# cad-agent
 
@@ -685,7 +703,7 @@ const llms = `# cad-agent
 ${HOME_LEDE.join(' ')} It maps the best free tools, demonstrates them on real projects and fills the gaps with
 tested tools of its own. Every page on this site has a Markdown twin at the same path with a .md extension.
 
-${TWO_LAYERS}
+${CAKE_MD}
 - Source: ${REPO} (MIT). Install and use: the checked guide below (then \`cad-agent update\` to update).
   cad-agent collects no telemetry.
 - Machine-readable catalogue: ${ORIGIN}/catalog.json (schema ${catalog.schema}; ${catalog.items.length} entries, each with an id, kind,
@@ -738,7 +756,7 @@ ${refSite.llms}
 `;
 await writeFile(path.join(out, 'llms.txt'), llms);
 // The homepage twin keeps the same current story and evidenced examples as the rendered entrance.
-await writeFile(path.join(out, 'index.md'), `${llms.replace(TWO_LAYERS, '').replace(/\n*$/, '\n')}
+await writeFile(path.join(out, 'index.md'), `${llms.replace(CAKE_MD, '').replace(/\n*$/, '\n')}
 ## Machines building machines
 
 ${HOME_LEDE.join(' ')}
@@ -751,7 +769,7 @@ ${HOME_LEDE.join(' ')}
 - [J501 project](https://github.com/mvalancy/j501-agx-orin): an enclosure around a real carrier board; [model provenance](${ORIGIN}/web/models/j501-source.json) records this prototype's captured inputs and display-only simplification. Physical qualification and final current-source adoption remain separate.
 ${homeMd.run.join('\n')}
 
-${TWO_LAYERS.replace('## Two layers', '### Two layers')}
+${CAKE_MD.replace('## What is in cad-agent', '### What is in cad-agent')}
 ### What the checks compute
 
 ${homeMd.reel.join('\n')}

@@ -2,74 +2,187 @@
 # Every visible example has a real committed figure, source and limits. See docs/img/hero/README.md (#605).
 # The build (tools/site/build-site.mjs) fails when a link is not a published page, a picture is not committed, an area
 # is not in docs/areas.yaml or a /toolkit anchor is not one of its examples.
+# What is in cad-agent: a layer cake, top layer first. A block is in the repo today unless it says `planned:` with an
+# open issue; then it is drawn dashed and links to that issue. `count:` names a number the build computes from the repo.
 stack:
-  top:
-  - title: Agent skills
-    does: Procedures an agent loads when it needs them, for design process, reviews, SCADA authoring, parts and
-      work tracking.
+- layer: Agent kit
+  caption: How agents find and use it
+  blocks:
+  - label: Skills
+    count: skills
     href: .agents/skills/README.md
-    areas:
-    - agent-workflow
-  - title: Evals
-    does: Small jobs with independent graders that test whether a model, with or without cad-agent, does the work.
-      Three analytical jobs run today.
+  - label: Subagents
+    count: agents
+    href: .agents/agents/README.md
+  - label: Eval jobs
+    count: eval-jobs
     href: docs/practice/standard-evaluation.md
-    areas:
-    - evaluation
-  arrow:
-  - Frontier models
-  - Free, open and local models
-  base:
-  - title: 3D viewers
-    img: docs/img/viewer.jpg
-    does: Orbit, explode and section real assemblies in a browser, with no CAD install.
-    href: /toolkit#models
-    areas:
-    - publishing
-  - title: Reports
-    img: docs/img/packets/ball_through_wall-store-findings.webp
-    does: Review packets put each finding beside its section, picture and evidence.
-    href: docs/practice/review-packet.md
-    areas:
-    - design-process
-  - title: BOMs
-    img: docs/img/explore/light-bom.webp
-    crop:
-      scale: 2.2
-      x: 0
-      y: 3
-    does: Bills of materials and part tables with quantity, cost, mass and where each number came from.
-    href: docs/practice/web-parts.md
-    areas:
-    - publishing
-  - title: Exploded views and build guides
-    img: docs/img/packets/clean-store-exploded.webp
-    does: Explode parts along their assembly steps, then step through a declared build sequence.
-    href: docs/practice/assembly-guide.md
-    areas:
-    - publishing
-  - title: Simulators
-    img: docs/img/gyropup/wheel-link-fea.webp
-    does: FEA, CFD and thermal, motion and clearance, robot replay and SCADA process models. Loads, meshes and
-      assumptions stay with each result, and a moving picture never replaces a balance check.
-    href: /toolkit
-    areas:
-    - structural-fea
-    - cfd
-    - motion-and-dynamics
-    - scada
-  - title: Deterministic checks
-    img: docs/img/gates/bench-requirements.webp
-    crop:
-      scale: 1.9
-      x: 0
-      y: 6
-    does: Formulas with golden vectors from cited sources, integrity gates and pitfall checks that an agent calls
-      instead of recalling. Fixture evidence, not physical qualification.
+  - label: Candidate eval tasks
+    count: eval-tasks
+    href: docs/practice/standard-evaluation.md
+  - label: Local and lower-cost model evals
+    planned: 142
+- layer: Knowledge
+  caption: Cited, reviewed, searchable
+  blocks:
+  - label: Guides
+    count: guides
+    href: docs/README.md
+  - label: Lessons
+    count: lessons
+    href: docs/lessons/README.md
+  - label: References
+    count: references
+    href: docs/research/README.md
+  - label: Catalogue entries
+    count: catalogue
+    href: https://cad-agent.valpatel.com/catalog
+  - label: Confidence on every rule
+    planned: 143
+- layer: Command-line tools
+  caption: One cad-agent command
+  blocks:
+  - label: Commands
+    count: commands
+    href: docs/toolkit.md
+  - label: Build and export
+    commands: [build, export-3mf, package, release]
+    href: docs/toolkit.md
+  - label: Check
+    commands: [check, all, holes, overhangs, gates, motion-trace, pcb-check]
+    href: docs/toolkit.md
+  - label: Design rules
+    commands: [rules, choose, snapfit, inserts, bearings]
+    href: docs/toolkit.md
+  - label: Reports and reviews
+    commands: [report, dossier, review-packet, review-section]
+    href: docs/toolkit.md
+  - label: Print
+    commands: [slice, prusa-view, bambu-status]
+    href: docs/toolkit.md
+  - label: Explore designs
+    commands: [compare, optimise]
+    href: docs/toolkit.md
+  - label: Print list and drawings package
+    planned: 302
+- layer: Web widgets
+  caption: cadagent.webkit, in any page
+  blocks:
+  - label: 3D model viewer
+    href: software/cadagent/webkit/model/README.md
+  - label: CAD file viewer
+    href: software/cadagent/webkit/files/README.md
+  - label: Assembly guides and part tables
+    href: software/cadagent/webkit/assembly/README.md
+  - label: FEA result viewer
+    href: software/cadagent/webkit/fea/README.md
+  - label: Simulation replay
+    href: software/cadagent/webkit/simulation/README.md
+  - label: SCADA diagrams and simulator
+    href: software/cadagent/webkit/scada/README.md
+  - label: Calculators
+    href: software/cadagent/webkit/calculators/README.md
+  - label: Diagrams and documents
+    href: software/cadagent/webkit/documents/README.md
+  - label: Authored explode paths
+    planned: 542
+- layer: Checks and tests
+  caption: Deterministic, with known answers
+  blocks:
+  - label: Cited formulas
+    count: formulas
+    href: software/cadagent/formulas/README.md
+  - label: Process rules
+    count: process-rules
+    href: docs/process-checks.md
+  - label: Integrity gates
     href: docs/practice/gates.md
-    areas:
-    - review-and-evidence
-    - design-process
+  - label: Pitfall checks
+    href: docs/practice/common-issues.md
+  - label: Tests
+    count: tests
+    href: tests/README.md
+  - label: Tested code behind every lesson
+    planned: 180
+  - label: Tolerance stacks and DFMEA
+    planned: 40
+- layer: Simulators
+  caption: Each states its assumptions
+  blocks:
+  - label: FEA
+    href: software/cadagent/simulation/README.md
+  - label: CFD and thermal
+    href: docs/research/simulation-tools.md
+  - label: Motion and clearance
+    href: docs/practice/gates.md
+  - label: Robot dynamics replay
+    href: docs/examples/robot-replay/README.md
+  - label: SCADA process models
+    href: docs/practice/scada/README.md
+  - label: Topology optimisation
+    href: software/cadagent/simulation/README.md
+  - label: Fluid and thermal engines for SCADA
+    planned: 733
+  - label: Electrical and PLC simulation
+    planned: 732
+- layer: Libraries
+  caption: The cadagent Python package
+  blocks:
+  - label: geometry
+    note: shared CAD helpers
+    href: software/cadagent/geometry/README.md
+  - label: mechanical
+    note: features and fit
+    href: software/cadagent/mechanical/README.md
+  - label: electrical
+    note: board readiness
+    href: software/cadagent/electrical/README.md
+  - label: thermal
+    note: heat and airflow
+    href: software/cadagent/thermal/README.md
+  - label: manufacturing
+    note: print files, processes
+    href: software/cadagent/manufacturing/README.md
+  - label: formulas
+    note: closed-form equations
+    href: software/cadagent/formulas/README.md
+  - label: simulation
+    note: solvers and search
+    href: software/cadagent/simulation/README.md
+  - label: library
+    note: parts and footprints
+    href: software/cadagent/library/README.md
+  - label: review
+    note: gates, dossier, packets
+    href: software/cadagent/review/README.md
+  - label: publish
+    note: reports, renders, sites
+    href: software/cadagent/publish/README.md
+  - label: Involute gears
+    planned: 723
+- layer: Built on
+  caption: Open source underneath
+  blocks:
+  - label: CadQuery and OCP
+    href: docs/research/agent-workflow/landscape.md
+  - label: build123d
+    href: docs/research/agent-workflow/landscape.md
+  - label: text-to-cad (vendored)
+    href: software/vendor/README.md
+  - label: KiCad MCP servers (vendored)
+    href: software/vendor/README.md
+  - label: Gmsh and scikit-fem
+    href: docs/research/fea-and-process-tools.md
+  - label: OpenFOAM
+    href: docs/research/simulation-tools.md
+  - label: MuJoCo
+    href: docs/examples/robot-replay/README.md
+  - label: pyMOTO
+    href: docs/research/simulation-tools.md
+  - label: Optuna
+    href: docs/explore.md
+  - label: three.js
+    href: software/cadagent/webkit/vendor/README.md
 # See it run: the two viewers are written by the build from their model sources; these are the cards beside them.
 showcase:
   turret:

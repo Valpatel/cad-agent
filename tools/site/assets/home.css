@@ -11,7 +11,7 @@
 /* The idea and most of the cinematic scene should fit a common desktop viewport. */
 .learning-hero{padding:24px 0 32px}.learning-hero h1{font-size:clamp(36px,4.1vw,58px);margin-bottom:16px}.learning-hero .intro{font-size:18px;font-weight:500;line-height:1.5;max-width:850px;margin:0}.learning-art{margin:20px 0 14px}.learning-art figcaption{margin-top:7px}.learning-hero .hero-actions{margin-bottom:0}@media(max-width:700px){.learning-hero{padding:20px 0 28px}.learning-hero h1{font-size:36px}.learning-hero .intro{font-size:16px}.learning-art{margin-top:18px}}
 .reel-media.reel-recorded{height:340px;display:grid;grid-template-rows:170px 150px;gap:4px;padding:8px}.reel-recorded .recorded-field{position:relative;display:block;overflow:hidden;border-radius:8px;background:#fffdf5}.reel-recorded .recorded-field img{width:100%;height:100%;object-fit:contain}.reel-recorded>img{width:100%;height:150px;object-fit:contain}.recorded-field::after{content:"";position:absolute;inset:0;border:2px solid #77cfbb;clip-path:inset(0 50% 0 0);animation:recorded-case 12s ease-in-out infinite;pointer-events:none}@keyframes recorded-case{0%,35%{clip-path:inset(0 50% 0 0)}55%,90%{clip-path:inset(0 0 0 50%)}100%{clip-path:inset(0 50% 0 0)}}@media(prefers-reduced-motion:reduce){.recorded-field::after{animation:none;clip-path:none}}
-.reel-media>picture,.stack-media>picture,.run-media>picture{display:block;width:100%;height:100%}.reel-media.reel-recorded>picture{height:150px}.reel-recorded>picture img{height:150px;object-fit:contain}
+.reel-media>picture,.run-media>picture{display:block;width:100%;height:100%}.reel-media.reel-recorded>picture{height:150px}.reel-recorded>picture img{height:150px;object-fit:contain}
 
 /* The accepted 16-bit scene and original pixel lettering share a crisp, restrained frame. */
 .learning-hero .pixel-title{max-width:930px;margin:18px 0 22px;line-height:1;color:var(--ink);position:relative}.pixel-title-text{position:absolute;width:1px;height:1px;padding:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap}.pixel-title svg{display:block;width:100%;height:auto;overflow:visible}.pixel-title .pixel-title-shadow{fill:var(--orange);opacity:.72}.pixel-title .pixel-title-narrow{display:none}.learning-art img{image-rendering:pixelated;border-radius:4px}.learning-hero .eyebrow{letter-spacing:.1em}@media(max-width:700px){.learning-hero .pixel-title{margin:14px 0 18px}.pixel-title .pixel-title-wide{display:none}.pixel-title .pixel-title-narrow{display:block}.learning-art img{border-radius:2px}}
@@ -28,27 +28,26 @@
   .project-viewers p{max-width:80ch}
 }
 
-/* The stack (#748): the agent layer on top of the shared components, drawn in HTML so it reflows and themes. */
+/* What is in cad-agent (#748): a layer cake of blocks, top layer first; solid = in the repo today, dashed = planned. */
 .stack{padding:56px 0 24px}
-.stack-figure{display:grid;gap:14px}
-.stack-tier{position:relative;border:1px solid var(--line-2);border-radius:calc(22px*var(--round));padding:18px;background:var(--card)}
-.stack-tier-top{background:var(--soft-2);border-color:var(--blue-line)}
-.stack-tier-base{background:var(--soft)}
-.stack-label{font:650 11px/1.6 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--eyebrow);margin:0 0 12px}
-.stack-figure ul{list-style:none;margin:0;padding:0;display:grid;gap:12px}
-.stack-tier-top ul{grid-template-columns:repeat(2,minmax(0,1fr))}
-.stack-tier-base ul{grid-template-columns:repeat(3,minmax(0,1fr))}
-.stack-cell{position:relative;display:flex;flex-direction:column;min-width:0;border:1px solid var(--line-2);border-radius:calc(16px*var(--round));background:var(--card);padding:12px 14px 14px}
-.stack-cell h3{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;font-size:17px;letter-spacing:-.3px;margin:4px 0 6px}
-.stack-cell h3 a{text-decoration:none;color:var(--ink)}.stack-cell h3 a::after{content:"";position:absolute;inset:0;border-radius:inherit}
-.stack-cell:hover{border-color:var(--accent)}.stack-cell:has(h3 a:focus-visible){outline:3px solid var(--focus);outline-offset:3px}.stack-cell h3 a:focus-visible{outline:none}
-.stack-cell p{margin:0;font-size:13.5px;line-height:1.6;color:var(--muted)}
-.stack-media{display:block;aspect-ratio:16/9;border-radius:calc(10px*var(--round));overflow:hidden;background:var(--image);margin-bottom:8px}
-.stack-media img{display:block;width:100%;height:100%;object-fit:cover;object-position:center top}
-.stack-crop{position:relative}.stack-crop img{position:absolute;left:0;top:0;width:calc(100% * var(--crop-scale));max-width:none;height:auto;object-fit:initial;transform:translate(calc(-1 * var(--crop-x)),calc(-1 * var(--crop-y)))}
-.stack-arrow{display:flex;align-items:center;gap:12px;margin:14px 2px 0;font:600 12px/1.4 var(--mono);color:var(--text-2)}
-.stack-arrow-line{flex:1;min-width:24px;height:2px;background:linear-gradient(90deg,var(--line-3),var(--orange));position:relative}
-.stack-arrow-line::after{content:"";position:absolute;right:-1px;top:-5px;border:6px solid transparent;border-left:9px solid var(--orange);border-right:0}
+.cake-legend{list-style:none;margin:-20px 0 18px;padding:0;display:flex;flex-wrap:wrap;gap:8px 22px;font:600 12px/1.4 var(--mono);color:var(--text-2)}
+.cake-legend li{display:flex;align-items:center;gap:8px}
+.cake-key{display:inline-block;width:22px;height:14px;border-radius:4px;background:var(--card);border:1.5px solid var(--line-3)}
+.cake-key-planned{background:transparent;border-style:dashed;border-color:var(--orange)}
+.cake{display:grid;gap:6px}
+.cake-layer{display:grid;grid-template-columns:200px minmax(0,1fr);gap:16px;align-items:center;padding:12px 14px;border-radius:calc(14px*var(--round));border:1px solid var(--line-2);background:var(--cake-bg,var(--soft))}
+.cake-layer[data-layer="0"]{--cake-bg:var(--peach)}.cake-layer[data-layer="1"]{--cake-bg:var(--yellow)}.cake-layer[data-layer="2"]{--cake-bg:var(--soft-3)}
+.cake-layer[data-layer="3"]{--cake-bg:var(--blue)}.cake-layer[data-layer="4"]{--cake-bg:var(--green-2)}.cake-layer[data-layer="5"]{--cake-bg:var(--soft-2)}
+.cake-layer[data-layer="6"]{--cake-bg:var(--soft)}.cake-layer[data-layer="7"]{--cake-bg:var(--grey)}
+.cake-head h3{font-size:16px;letter-spacing:-.2px;margin:0;color:var(--ink)}
+.cake-head p{margin:2px 0 0;font:11.5px/1.4 var(--mono);color:var(--text-2)}
+.cake ul{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:6px}
+.cake-block{display:inline-flex;align-items:baseline;gap:7px;padding:6px 10px;border-radius:calc(8px*var(--round));background:var(--card);border:1.5px solid var(--line-3);color:var(--ink);text-decoration:none;font-size:13.5px;line-height:1.3;font-weight:600}
+.cake-block:hover{border-color:var(--accent)}
+.cake-note{font-weight:400;font-size:12px;color:var(--muted)}
+.cake-count{font:700 12px var(--mono);color:var(--orange)}
+.cake-planned{background:transparent;border-style:dashed;border-color:var(--orange);font-weight:500;color:var(--text-2)}
+.cake-planned .cake-count{font-weight:500}
 /* See it run: the turret recording leads, then the two viewers, then a row of three links into /toolkit. */
 .built-with{padding-top:40px}
 .run-card{position:relative;display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:24px;align-items:center;border:1px solid var(--line-2);border-radius:calc(20px*var(--round));background:var(--card);padding:16px;margin-bottom:24px;min-width:0}
@@ -82,6 +81,6 @@
 .arc-step .arc-next{margin:0;padding-top:8px;border-top:1px dashed var(--line-dash)}
 .arc .lead p a{color:var(--link)}
 @media(min-width:1051px){.reel-band .reel{grid-template-columns:repeat(3,minmax(0,1fr))}}
-@media(max-width:1050px){.stack-tier-base ul,.arc-steps{grid-template-columns:repeat(2,minmax(0,1fr))}.run-card{grid-template-columns:1fr;gap:14px}}
-@media(max-width:760px){.arc-loop{display:none}.stack-base-cell{display:grid;grid-template-columns:104px minmax(0,1fr);grid-template-rows:auto 1fr;column-gap:12px;padding:10px}.stack-base-cell .stack-media{grid-row:1/3;margin:0;aspect-ratio:1}.stack-base-cell h3{margin:0 0 4px;font-size:15.5px}.stack-base-cell p{font-size:12.5px;line-height:1.5}.stack{padding-top:40px}.stack-tier{padding:12px}.stack-tier-top ul,.stack-tier-base ul,.arc-steps{grid-template-columns:1fr}.stack-arrow{font-size:11px}.run-minis{grid-template-columns:1fr}.run-card h3{font-size:21px}.built-with{padding-top:24px}}
-@media(prefers-reduced-motion:reduce){.stack-cell,.run-mini{transition:none}}
+@media(max-width:1050px){.arc-steps{grid-template-columns:repeat(2,minmax(0,1fr))}.run-card{grid-template-columns:1fr;gap:14px}}
+@media(max-width:760px){.arc-loop{display:none}.cake-layer{grid-template-columns:1fr;gap:8px;padding:10px}.cake-note{display:none}.cake-block{font-size:13px;padding:5px 8px}.arc-steps{grid-template-columns:1fr}.run-minis{grid-template-columns:1fr}.run-card h3{font-size:21px}.built-with{padding-top:24px}}
+@media(prefers-reduced-motion:reduce){.cake-block,.run-mini{transition:none}}

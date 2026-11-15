@@ -1,9 +1,12 @@
 **Changed**
-- The home page names cad-agent's two layers: a new stack figure shows the shared components (3D viewers, reports,
-  BOMs, exploded views and build guides, simulators, deterministic checks) under agent skills and evals, each with its
-  maturity from `docs/areas.yaml`. The 3D viewers move up into "See it run", with robot replay, SCADA and build-guide
-  cards that open their `/toolkit` examples, and a new "From frontier to local" section says what the evals measure
-  today and what is next. `index.md`, `llms.txt`, the page title and the README say the same (#748).
+- The home page leads with what runs: "See it run" sits under the hero, with Gyropup's turret playground first, then
+  the two 3D viewers and cards that open `/toolkit` robot replay, SCADA and build-guide examples (#748).
+- A new "What is in cad-agent" figure shows the stack as a layer cake of blocks, from the open source it is built on,
+  through the libraries, simulators, checks and tests, web widgets and command-line tools, to knowledge and the agent
+  kit. Counts (commands, skills, formulas, tests, references, …) are computed by the build; dashed blocks are planned
+  and link their issue. The README, `index.md`, `llms.txt` and the page title say the same (#748).
+- The checks reel keeps its animated tiles; three more checks stay one click away as text links. A "From frontier to
+  local" section says what the evals measure today and what is next (#748).
 - `/toolkit` example cards carry anchors (`/toolkit#robot-replay`, `#scada-simulations`, `#assembly`, …) (#748).
 
 **New**

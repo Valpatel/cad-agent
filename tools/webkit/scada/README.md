@@ -25,6 +25,36 @@ flowchart TD
 
 From the repository root, run `npm ci --ignore-scripts --prefix tools/webkit/scada`, then `npm --prefix tools/webkit/scada test`. Generation/check scripts are listed in [package.json](package.json). Capture tools additionally need the pinned [Python requirements](ui/requirements.txt) and Chromium. Runtime imports use neither Node tooling nor browser capture dependencies.
 
+Without the pinned shell, never hand-edit a capture: push the source change and
+let CI recapture it. Arrows: what each step hands the next.
+
+```mermaid
+flowchart TD
+    C["provenance check<br/>fails in CI"] --> R["recapture.py<br/>on the pinned shell"]
+    R --> A["scada-recapture-SHA<br/>artifact"]
+    A --> M["author commits<br/>it unchanged"]
+    M --> P["checks pass<br/>on the next run"]
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
+    class R,A here
+    class C,M,P near
+```
+
+<details>
+<summary>Using the recapture artifact</summary>
+
+When the `scada (chromium)` provenance step fails, [recapture.py](recapture.py) reruns
+the five checks, regenerates only the failing ones and uploads
+`scada-recapture-<head SHA>`: exactly the changed outputs plus
+`.cache/scada/recapture-manifest.json` (source commit, shell, commands, SHA-256 of
+each file). The job still fails. Unpack the artifact at the repository root, delete
+any paths the manifest lists under `deleted`, and commit the files unchanged. The
+capture is of the pull request merged with its base, so merge the base in first if
+it changed SCADA sources. The script stages nothing outside its generators' outputs,
+the frozen baseline included.
+
+</details>
+
 | Changed input | Generate with `npm --prefix tools/webkit/scada run …` | Read-only verification |
 | --- | --- | --- |
 | Catalog contracts | `build:schema`, `build:metadata` | `check:schema`, `check:metadata` |
@@ -35,19 +65,8 @@ From the repository root, run `npm ci --ignore-scripts --prefix tools/webkit/sca
 
 Generators write only their declared library-owned outputs. Browser receipts and
 diagnostic screenshots belong under ignored `.cache/scada/`, not runtime source.
-Do not edit capture hashes or replace the frozen baseline to make a check pass.
-Without the pinned shell (a cloud session, or another browser that rewrites every
-image), push the source change anyway: when the `scada (chromium)` job's provenance
-step fails, it reruns the five checks, regenerates only the failing ones on its own
-pinned shell and uploads `scada-recapture-<head SHA>`, which holds exactly the changed
-outputs plus `.cache/scada/recapture-manifest.json` (source commit, shell, commands,
-SHA-256 of each file). The job still fails. Download that artifact from the failed
-run, unpack it at the repository root, delete any paths its manifest lists under
-`deleted`, and commit the files unchanged; never hand-edit them. The manifest stays
-in ignored `.cache/`. On a pull request the capture is of the merge with the base
-branch, so merge the base in first if it changed SCADA sources. The script
-([recapture.py](recapture.py)) refuses to stage any file
-outside its generators' outputs, the frozen baseline included.
+Do not edit capture hashes or replace the frozen baseline to make a check pass;
+without the pinned shell, use the recapture route above.
 Freeze rendering inputs before capturing; a concurrent change correctly makes
 the source-bound receipt fail freshness validation. Library Markdown maps may
 be refreshed separately only when the owning tool validates existing image

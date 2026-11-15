@@ -83,9 +83,6 @@ flowchart TD
    npm --prefix tools/webkit/scada run thumbnails:scenarios:check
    ```
 
-   Without the pinned capture shell, never hand-edit a capture hash: use the CI
-   recapture artifact described in the [tooling README](../../../tools/webkit/scada/README.md).
-
 8. Use [viewer review](../scada-viewer-review/SKILL.md) for branches, direction,
    readable labels, equipment dialogs, pan/zoom and Fit at desktop/phone sizes.
    Preserve the frozen baseline's original scope when adding a new scenario; the

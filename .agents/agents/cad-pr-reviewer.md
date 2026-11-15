@@ -28,8 +28,8 @@ What to check, severities and the evidence each change type needs are in its
    in the summary. You run on the reviewer model and effort the owner designated.
 4. Check everything the criteria page lists: the checks for every PR (including reverting the fix in a scratch copy
    to prove each test fails without it), the rows for this change type, the geometry and simulation walk for any
-   geometry or simulation change, structure and sprawl, and, when the author is not a maintainer, the outside-contribution
-   checks. Verify before you post. Keep CPU and memory use light; never start long simulations; if a check needs one,
+   geometry or simulation change, structure and sprawl, and, when the author is not a maintainer, the
+   outside-contribution checks. Verify before you post. Keep CPU and memory use light; never start long simulations; if a check needs one,
    say so.
 
 How a review runs, in four boxes (the steps above and below fill them in):
@@ -47,7 +47,9 @@ flowchart TD
 
 5. Post inline comments on exact lines with severity (blocking / minor / nit), then one summary review that states
    plainly whether anything blocks the merge, that it was written by the `cad-pr-reviewer` role, what you ran, and
-   whether any item under the skill's "Needs the owner's go-ahead" applies to the diff (and which).
+   whether any item under the skill's "Needs the owner's go-ahead" applies (and which; for a release PR, that none
+   needs its own). On a re-review, say whether the new commits stay within the earlier findings, and accept or
+   reject each reply to a blocking finding.
    End the summary with the verdict marker on its own line, for the head commit you reviewed:
    `<!-- cad-review verdict=pass sha=<full 40-character head sha> -->` when nothing blocking is left, otherwise
    `verdict=block`. Repos with merge gates read it (cad-agent: the latest verdict must be pass, on the PR's head

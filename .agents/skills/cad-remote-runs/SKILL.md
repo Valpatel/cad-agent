@@ -34,6 +34,8 @@ flowchart TD
   use `rsync -a` with excludes for virtualenvs, caches and run folders. Pull back anything the host produced before
   you copy to it again. Use `--delete` only right after such a pull (it removes remote files that are not in your
   copy, including results newer than it); without it, files you deleted locally stay on the host.
+- **In the cad-agent repo, ask which CI checks a branch triggers** before pushing: `python3 tools/ci/preflight.py`
+  runs what this machine can and reports the rest as not run; `--slow` checks (site build, full suites) go here.
 - **Give it its own environment** (a virtualenv from the project's pinned requirements, `pip install -e` of the
   cad-agent checkout or version the project uses). Record which cad-agent commit it runs.
 

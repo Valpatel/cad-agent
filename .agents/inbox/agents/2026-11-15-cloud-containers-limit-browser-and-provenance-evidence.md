@@ -47,7 +47,8 @@ WebKit drag evidence even in CI (#756). **Limits:** the paths and revisions were
 
 ## Slow steps
 
-- `npm --prefix tools/site run build:site`: about 3 minutes (re-measured for this entry).
+- `npm --prefix tools/site run build:site`: about 3 minutes in the session; 5 minutes when re-measured for this
+  entry at `210a39e8`, with an empty diagram cache (720 diagram renders, none cached).
 - `tests/webkit/webkit-model-touch-browser.mjs`: about 4 minutes, mostly software WebGL (#756).
 - `tests/site/toolkit/website-catalog-browser.mjs`: about 4.5 minutes a run; observed once, not confirmed.
 

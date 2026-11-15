@@ -126,7 +126,7 @@ still apply; these are the differences. Each links the dated evidence and says w
 
   Do not regenerate thumbnails on the container's browser: a different build changes images for engine reasons
   alone. Compare old and new source on one build and update the hash, or recapture with the pinned shell.
-- **Slow steps:** the site build takes about 3 minutes, the touch-orbit browser suite about 4 minutes in software
+- **Slow steps:** the site build takes 3 to 5 minutes (longer with an empty diagram cache), the touch-orbit browser suite about 4 minutes in software
   WebGL, and the catalogue browser suite about 4.5 minutes a run (observed once). Run them once, at the end.
 - **Orchestration:** one orchestrating session; implementers each in its own worktree and branch; a cheaper checker
   for CI logs and issues; and a freshly started reviewer given only the PR. Answer nits on the thread and carry them

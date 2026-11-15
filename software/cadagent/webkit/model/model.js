@@ -10,10 +10,11 @@
  * The poster shows first and keeps the box's size (give the element an aspect-ratio, or let the poster set it), so
  * nothing moves when the 3D view arrives. three.js and the model load only after the page has loaded, when the
  * element is near the screen and the browser is idle; with Save-Data on, a button loads them instead. The model
- * turns slowly (not with reduced motion; a button pauses it), turns under a drag (vertical swipes still scroll the
- * page on touch screens), names the part under the pointer or a tap, and comes apart with "Explode". No wheel zoom,
- * so the page scrolls normally. Rendering stops while the element is off screen or the tab is hidden. Without WebGL
- * or DecompressionStream the poster stays (data-state="error").
+ * turns slowly (not with reduced motion; a button pauses it), turns under a drag (on touch screens one finger turns it
+ * and two zoom the page; a viewer too big to scroll past leaves vertical swipes to the page), names the part under the
+ * pointer or a tap, and comes apart with "Explode". No wheel zoom, so the page scrolls normally. Rendering stops
+ * while the element is off screen or the tab is hidden. Without WebGL or DecompressionStream the poster stays
+ * (data-state="error").
  *
  * Attributes: src (required), label, azimuth and elevation (the opening view in degrees; default the model's own
  * `view`, else 35 and 18; azimuth 0 looks from the CAD -y side, 90 from +x), turn
@@ -389,7 +390,17 @@ class CadModel extends (typeof HTMLElement === 'undefined' ? class {} : HTMLElem
       label.textContent = mesh ? partLabel(mesh.userData.part.name) : 'Drag to turn';
       request();
     };
-    canvas.style.touchAction = 'pan-y';
+    // Touch (#650): one finger turns the model both ways without scrolling the page; two fingers still zoom the page.
+    // Taking vertical drags could trap scrolling under a viewer that fills the screen, so it takes them only while a
+    // quarter of the visible viewport's height or width stays outside it; otherwise vertical swipes scroll the page.
+    const arbitrate = () => {
+      const vv = window.visualViewport, w = vv?.width ?? innerWidth, h = vv?.height ?? innerHeight;
+      canvas.style.touchAction = this.clientHeight <= h * 0.75 || this.clientWidth <= w * 0.75 ? 'pinch-zoom' : 'pan-y pinch-zoom';
+    };
+    for (const target of [window, window.visualViewport].filter(Boolean)) {
+      target.addEventListener('resize', arbitrate);
+      disposers.push(() => target.removeEventListener('resize', arbitrate));
+    }
     canvas.addEventListener('pointerdown', e => {
       drag = { id: e.pointerId, x: e.clientX, y: e.clientY, moved: 0, t: performance.now() };
       spin = 0; lastInput = performance.now();
@@ -436,6 +447,7 @@ class CadModel extends (typeof HTMLElement === 'undefined' ? class {} : HTMLElem
       if (disposed) return;
       const w = this.clientWidth || 1, h = this.clientHeight || 1;
       renderer.setSize(w, h, false);
+      arbitrate();
       camera.aspect = w / h;
       camera.updateProjectionMatrix();
       fit();
@@ -448,7 +460,7 @@ class CadModel extends (typeof HTMLElement === 'undefined' ? class {} : HTMLElem
       if (disposed) return;
       frame = 0;
       this.frames++;
-      const dt = Math.min(0.05, (now - last) / 1000);
+      const dt = Math.max(0, Math.min(0.05, (now - last) / 1000));
       last = now;
       let more = false;
       if (anim) {

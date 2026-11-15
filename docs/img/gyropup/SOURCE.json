@@ -31,7 +31,7 @@
    "committed": "2026-11-11T15:25:14-08:00",
    "generator": {
     "path": "tools/site/figures/gyropup-turret.mjs",
-    "sha256": "c7a53c943d17def316265623afbe078d30a074b128bea44c10ac3ca43d1ae5e6"
+    "sha256": "1c792faa7998f837d0b078c46fc5d477bbbc2e78e1921e96252f1e92797c57c5"
    },
    "browser": {
     "engine": "chromium",
@@ -46,19 +46,29 @@
     "height": 600
    },
    "crop": {
-    "x": 0.08,
-    "y": 0.14,
-    "w": 0.84,
-    "h": 0.78
+    "x": 0.03,
+    "y": 0.18,
+    "w": 0.92,
+    "h": 0.77
    },
-   "zoom_steps": 4,
-   "duration_ms": 7800,
+   "camera": {
+    "orbit_drag_px": [
+     -35,
+     -4
+    ],
+    "zoom_at_px": [
+     300,
+     320
+    ],
+    "zoom_steps": 2
+   },
+   "duration_ms": 7749,
    "timing": "each frame lasts the playground time it covers (2 rendered steps of at most 50 ms each), not wall time",
-   "sha256": "255d9715677442ae279db732015de4fd7762a4ffb655e31b01f8008faa92f3d7",
+   "sha256": "ba9914d7a97646c712b9961e91947bc4cccffe540f372d615bbc60b81e49836b",
    "still": {
     "file": "turret-playground-still.webp",
     "frame": 48,
-    "sha256": "738b77e5cebfde589301f429b66b0919d3a09b64bb5df1d19f451d8f9f82ff09"
+    "sha256": "d1347fbfbd15efa49f456cd38ce290116886ced112c1eb1105d0afd02e71e8fd"
    },
    "served_sources": 149,
    "served_sources_sha256": "012a082a9e6a58be623dc536c31e615852128b8ced7d33f14acfbe36e2509f81",

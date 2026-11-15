@@ -27,8 +27,8 @@ const generator = 'tools/site/figures/gyropup-turret.mjs';
 const outDir = 'docs/img/gyropup';
 const ANIMATION = 'turret-playground.webp', STILL = 'turret-playground-still.webp';
 const VIEWPORT = { width: 960, height: 600 }, SIZE = [720];
-const FRAMES = 72, STRIDE = 2, QUALITY = 62, ZOOM_STEPS = 4;
-const CROP = { x: 0.08, y: 0.14, w: 0.84, h: 0.78 };            // of the stage canvas: the yard, not the empty sky
+const FRAMES = 72, STRIDE = 2, QUALITY = 62, ORBIT = [-35, -4], ZOOM_AT = [300, 320], ZOOM_STEPS = 2;
+const CROP = { x: 0.03, y: 0.18, w: 0.92, h: 0.77 };            // of the stage canvas: the turret and the range, not the empty sky
 const hash = bytes => createHash('sha256').update(bytes).digest('hex');
 const args = process.argv.slice(2);
 const opt = name => { const i = args.indexOf(name); return i < 0 ? undefined : args[i + 1]; };
@@ -85,8 +85,14 @@ try {
   await page.waitForFunction(() => document.getElementById('sim-startup')?.hidden && document.querySelector('.tb-fire'), null, { timeout: 120000 });
   await page.waitForTimeout(6000);                                   // models and textures settle in software WebGL
   await page.getByRole('button', { name: /hide panel/i }).click().catch(() => {});
-  await page.mouse.move(VIEWPORT.width * 0.45, VIEWPORT.height * 0.42);
-  for (let i = 0; i < ZOOM_STEPS; i++) { await page.mouse.wheel(0, -120); await page.waitForTimeout(250); }   // closer to turret and targets
+  // A fixed camera, set once by a reader's own gestures: orbit to the turret's side so the barrel, hopper and targets
+  // line up, then two wheel steps closer. The stage eases its camera over many frames, so each gesture gets time to settle.
+  await page.mouse.move(VIEWPORT.width / 2, VIEWPORT.height / 2); await page.mouse.down();
+  for (let i = 1; i <= 10; i++) { await page.mouse.move(VIEWPORT.width / 2 + ORBIT[0] * i / 10, VIEWPORT.height / 2 + ORBIT[1] * i / 10); await page.waitForTimeout(150); }
+  await page.mouse.up(); await page.waitForTimeout(6000);
+  await page.mouse.move(...ZOOM_AT);
+  for (let i = 0; i < ZOOM_STEPS; i++) { await page.mouse.wheel(0, -120); await page.waitForTimeout(600); }
+  await page.waitForTimeout(8000);
   await page.evaluate(() => document.activeElement?.blur());          // keys on a focused button are ignored by the bench
   await page.waitForTimeout(1500);
   const hopper = () => page.evaluate(() => document.querySelector('.tb-reload')?.innerText.replace(/\s+/g, ' '));
@@ -153,7 +159,7 @@ Image.open(spec['still']).convert('RGB').save(spec['stillOut'], quality=80, meth
     generator: { path: generator, sha256: hash(await readFile(path.join(root, generator))) },
     browser: { engine: 'chromium', version: browser.version(), webgl: 'SwiftShader (software)' },
     actions: 'hold ARM (Space), then hold FIRE (F) for automatic fire, then release both',
-    frames: frames.length, width: SIZE[0], viewport: VIEWPORT, crop: CROP, zoom_steps: ZOOM_STEPS, duration_ms: durations.reduce((a, b) => a + b, 0),
+    frames: frames.length, width: SIZE[0], viewport: VIEWPORT, crop: CROP, camera: { orbit_drag_px: ORBIT, zoom_at_px: ZOOM_AT, zoom_steps: ZOOM_STEPS }, duration_ms: durations.reduce((a, b) => a + b, 0),
     timing: `each frame lasts the playground time it covers (${STRIDE} rendered steps of at most 50 ms each), not wall time`,
     sha256: hash(anim),
     still: { file: STILL, frame: stillIndex, sha256: hash(stillBytes) },

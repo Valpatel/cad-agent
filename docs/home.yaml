@@ -34,6 +34,10 @@ stack:
     - design-process
   - title: BOMs
     img: docs/img/explore/light-bom.webp
+    crop:
+      scale: 2.2
+      x: 0
+      y: 3
     does: Bills of materials and part tables with quantity, cost, mass and where each number came from.
     href: docs/practice/web-parts.md
     areas:
@@ -56,6 +60,10 @@ stack:
     - scada
   - title: Deterministic checks
     img: docs/img/gates/bench-requirements.webp
+    crop:
+      scale: 1.9
+      x: 0
+      y: 6
     does: Formulas with golden vectors from cited sources, integrity gates and pitfall checks that an agent calls
       instead of recalling. Fixture evidence, not physical qualification.
     href: docs/practice/gates.md

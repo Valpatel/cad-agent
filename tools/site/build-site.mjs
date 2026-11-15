@@ -503,7 +503,7 @@ const areasLevel = (areas, at) => {
   if (!levels.length || levels.some(l => !LADDER.includes(l))) throw new Error(`docs/home.yaml ${at}: name its areas (docs/areas.yaml), each on the ladder ${LADDER.join(', ')}`);
   return levels.reduce((lo, l) => LADDER.indexOf(l) < LADDER.indexOf(lo) ? l : lo);
 };
-const maturityPill = level => `<span class="pill pill-maturity" data-maturity="${esc(level)}" title="Maturity in docs/areas.yaml: ${esc(areasTree.maturity.find(m => m.level === level).means)}">${esc(level)}</span>`;
+// The level stays validated (areasLevel) but is not shown: every stack area reads tooling today, so a pill told cells apart by nothing (#748 review).
 // A /toolkit link names one of that page's examples, which carry these ids (tools/site/compiler/site-toolkit.mjs).
 const toolkitCards = new Map(toolkitCapabilities(scada, { catalog: catalog.items, has: f => tracked.includes(f) }).map(c => [c.id, c]));
 const stackHref = (h, at) => {
@@ -516,16 +516,22 @@ const absolute = h => /^https:/.test(h) ? h : h.startsWith('/') ? ORIGIN + h : O
 // The stack: skills and evals on top of the shared components (#748).
 homeMd.stack = { top: [], base: [] };
 const stackTop = home.stack.top.map((t, i) => {
-  const at = `stack.top[${i}]`, level = areasLevel(t.areas, at);
-  homeMd.stack.top.push(`- [${t.title}](${absolute(t.href)}) (${level}): ${t.does}`);
-  return `<li class="stack-cell stack-top-cell"><h3><a href="${esc(stackHref(t.href, at))}">${esc(t.title)}</a>${maturityPill(level)}</h3><p>${esc(t.does)}</p></li>`;
+  const at = `stack.top[${i}]`;
+  areasLevel(t.areas, at);
+  homeMd.stack.top.push(`- [${t.title}](${absolute(t.href)}): ${t.does}`);
+  return `<li class="stack-cell stack-top-cell"><h3><a href="${esc(stackHref(t.href, at))}">${esc(t.title)}</a></h3><p>${esc(t.does)}</p></li>`;
 }).join('');
 if (home.stack.arrow?.length !== 2) throw new Error('docs/home.yaml stack.arrow: from and to');
 const stackBase = (await Promise.all(home.stack.base.map(async (t, i) => {
-  const at = `stack.base[${i}]`, level = areasLevel(t.areas, at);
+  const at = `stack.base[${i}]`;
+  areasLevel(t.areas, at);
   if (!t.img) throw new Error(`docs/home.yaml ${at}: each shared component shows a committed picture`);
-  homeMd.stack.base.push(`- [${t.title}](${absolute(t.href)}) (${level}): ${t.does}`);
-  return `<li class="stack-cell stack-base-cell"><a class="stack-media" href="${esc(stackHref(t.href, at))}" tabindex="-1" aria-hidden="true">${await homePicture(t.img, at, ' alt="" loading="lazy" decoding="async"', t.still)}</a><h3><a href="${esc(stackHref(t.href, at))}">${esc(t.title)}</a>${maturityPill(level)}</h3><p>${esc(t.does)}</p></li>`;
+  // crop: {scale, x, y} shows a part of a dense picture (a table) large enough to read; x and y are percent of the picture.
+  const c = t.crop;
+  if (c && !(c.scale >= 1 && c.scale <= 4 && c.x >= 0 && c.x < 100 && c.y >= 0 && c.y < 100)) throw new Error(`docs/home.yaml ${at}: crop is {scale 1-4, x and y 0-100}`);
+  const crop = c ? ' stack-crop' : '', cropStyle = c ? ` style="--crop-scale:${c.scale};--crop-x:${c.x}%;--crop-y:${c.y}%"` : '';
+  homeMd.stack.base.push(`- [${t.title}](${absolute(t.href)}): ${t.does}`);
+  return `<li class="stack-cell stack-base-cell"><a class="stack-media${crop}" href="${esc(stackHref(t.href, at))}" tabindex="-1" aria-hidden="true"${cropStyle}>${await homePicture(t.img, at, ' alt="" loading="lazy" decoding="async"', t.still)}</a><h3><a href="${esc(stackHref(t.href, at))}">${esc(t.title)}</a></h3><p>${esc(t.does)}</p></li>`;
 }))).join('');
 // See it run: the turret recording quotes its own SOURCE.json record, so a new capture cannot leave an old caption.
 const turret = home.showcase.turret, turretRec = gyropupSource.pictures['turret-playground'];
@@ -643,11 +649,11 @@ ${pixelHeading}
 <p class="stack-arrow"><span>${esc(home.stack.arrow[0])}</span><span class="stack-arrow-line" aria-hidden="true"></span><span>${esc(home.stack.arrow[1])}</span></p></div>
 <div class="stack-tier stack-tier-base"><p class="stack-label">Shared components</p><ul>${stackBase}</ul></div>
 </div></section>
-<section class="section built-with" id="built-with" aria-labelledby="run-title"><div class="lead"><h2 id="run-title">See it <span>run.</span></h2><p>Real models and simulations you can turn, play and stop. Each says what it is and what it does not prove.</p></div><div class="project-viewers">
+<section class="section built-with" id="built-with" aria-labelledby="run-title"><div class="lead"><h2 id="run-title">See it <span>run.</span></h2><p>Real models and simulations you can turn, play and stop. Each says what it is and what it does not prove.</p></div><div class="run-more">${turretCard}<ul class="run-minis">${runCards}</ul></div>
+<div class="project-viewers">
 <article><h3>Gyropup</h3><cad-model src="/web/models/gyropup.json" label="Gyropup" style="aspect-ratio:1"><img class="cad-model-poster" src="/web/models/gyropup.webp" width="1200" height="1200" loading="lazy" alt="Current collected Gyropup assembly"></cad-model><p>A wheel-legged robot that brings mechanical design, motion and electronics together. This simplified view leaves out interior hardware.</p><p><a href="${esc(heroModel.source.repo + '/tree/' + heroModel.source.revision)}">Exact CAD source</a> · <a href="https://gyropup.com">Project</a></p></article>
 <article><h3>J501 AGX Orin enclosure</h3><cad-model src="/web/models/j501.json" label="J501 enclosure with real carrier board" style="aspect-ratio:1"><img class="cad-model-poster" src="/web/models/j501.webp" width="1200" height="1200" loading="lazy" alt="J501 enclosure and real carrier board, assembled from exported CAD"></cad-model><p>A printed home for a Jetson AGX Orin computer, shown with its real carrier board. A fit-check prototype, not a physically qualified enclosure.</p><p><a href="${esc(j501Model.source.repo + '/tree/' + j501Model.source.revision)}">Exact CAD snapshot</a> · <a href="https://github.com/mvalancy/j501-agx-orin">Project and evidence</a> · <a href="/web/models/j501-source.json">Model provenance</a></p></article>
-</div>
-<div class="run-more">${turretCard}<ul class="run-minis">${runCards}</ul></div></section></div>
+</div></section></div>
 ${useCard}
 <section class="reel-band" id="outputs"><div class="wrap"><div class="lead"><h2>What the checks <span>compute.</span></h2><p>Outputs of cad-agent's tools with the numbers they computed: on this repo's test fixtures and on worked examples. Each tile says which, and opens the page that explains it.</p></div>
 <ul class="reel">${reel.join('')}</ul>

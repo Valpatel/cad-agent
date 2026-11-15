@@ -630,10 +630,11 @@ test('the home page tells the two-layer story in order, every new link resolves 
   assert.equal(base.length, 6, 'six shared components');
   for (const cell of base) {
     assert.match(cell, /<img src="\/docs\/img\/[^"]+" width="\d+" height="\d+"/, 'each shows a committed picture');
-    assert.match(cell, /class="pill pill-maturity" data-maturity="(?:idea|surveyed|tooling|validated|proven)"/, 'each shows its maturity');
+    assert.doesNotMatch(cell, /pill-maturity/, 'no maturity pill: every stack area reads tooling, so it told cells apart by nothing');
   }
   assert.doesNotMatch(home, /Check, simulate|fits-ours/, 'the duplicate section is gone');
   assert.equal((home.match(/class="run-mini"/g) || []).length, 3, 'robot replay, SCADA and a build guide');
+  assert.ok(home.indexOf('class="run-card run-turret"') < home.indexOf('<cad-model '), 'the turret and the toolkit cards come first, the two viewers below');
   assert.match(home, /href="https:\/\/gyropup\.com\/designer\/sim"/);
   assert.match(home, /class="more-checks"/);
   // Every local link the new sections add lands on a published page, and every #anchor on a real id.

@@ -42,17 +42,16 @@
 .stack-cell h3{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;font-size:17px;letter-spacing:-.3px;margin:4px 0 6px}
 .stack-cell h3 a{text-decoration:none;color:var(--ink)}.stack-cell h3 a::after{content:"";position:absolute;inset:0;border-radius:inherit}
 .stack-cell:hover{border-color:var(--accent)}.stack-cell:has(h3 a:focus-visible){outline:3px solid var(--focus);outline-offset:3px}.stack-cell h3 a:focus-visible{outline:none}
-.stack-cell h3 .pill{margin:0}
 .stack-cell p{margin:0;font-size:13.5px;line-height:1.6;color:var(--muted)}
 .stack-media{display:block;aspect-ratio:16/9;border-radius:calc(10px*var(--round));overflow:hidden;background:var(--image);margin-bottom:8px}
 .stack-media img{display:block;width:100%;height:100%;object-fit:cover;object-position:center top}
+.stack-crop{position:relative}.stack-crop img{position:absolute;left:0;top:0;width:calc(100% * var(--crop-scale));max-width:none;height:auto;object-fit:initial;transform:translate(calc(-1 * var(--crop-x)),calc(-1 * var(--crop-y)))}
 .stack-arrow{display:flex;align-items:center;gap:12px;margin:14px 2px 0;font:600 12px/1.4 var(--mono);color:var(--text-2)}
 .stack-arrow-line{flex:1;min-width:24px;height:2px;background:linear-gradient(90deg,var(--line-3),var(--orange));position:relative}
 .stack-arrow-line::after{content:"";position:absolute;right:-1px;top:-5px;border:6px solid transparent;border-left:9px solid var(--orange);border-right:0}
-.pill-maturity{background:var(--green);border-color:var(--green-line)}.pill-maturity[data-maturity=idea],.pill-maturity[data-maturity=surveyed]{background:var(--grey)}
 /* See it run: the two viewers, then the turret recording beside compact links into /toolkit. */
 .built-with{padding-top:40px}
-.run-more{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:24px;margin-top:24px}
+.run-more{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:24px;margin-bottom:24px}
 .run-card,.run-mini{position:relative;border:1px solid var(--line-2);border-radius:calc(20px*var(--round));background:var(--card);min-width:0}
 .run-card{padding:16px 18px 18px}
 .run-media{display:block;border-radius:calc(12px*var(--round));overflow:hidden;background:var(--image)}

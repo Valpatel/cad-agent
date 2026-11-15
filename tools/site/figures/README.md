@@ -24,6 +24,7 @@ flowchart TD
 | [pack-j501.py](pack-j501.py) | Hash and pack existing assembly meshes with explicit render-only simplification and a real-board coordinate check. |
 | [fan-curve-still.mjs](fan-curve-still.mjs) | Snapshot fan curve data. |
 | [fourbar-still.mjs](fourbar-still.mjs) | Snapshot the four-bar example. |
+| [gyropup-turret.mjs](gyropup-turret.mjs) | Record Gyropup's turret browser playground from a clean local checkout, with a still and a SOURCE.json record. |
 | [printed-boss-still.mjs](printed-boss-still.mjs) | Snapshot printed boss geometry. |
 | [site-bench-pictures.mjs](site-bench-pictures.mjs) | Draw benchmark pictures. |
 | [site-explore-pictures.mjs](site-explore-pictures.mjs) | Capture exploration examples. |

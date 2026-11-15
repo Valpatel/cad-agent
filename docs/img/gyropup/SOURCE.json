@@ -9,7 +9,7 @@
    "part": "wheel_link",
    "case": "E1",
    "safety_factor": 3.15,
-   "target": 2.0,
+   "target": 2,
    "ok": true,
    "material": "PA6-CF along the layers (humid)",
    "tets": 52134,
@@ -21,6 +21,48 @@
    "source": "exports/leg/leg-stand-iso.png",
    "width": 601,
    "height": 861
+  },
+  "turret-playground": {
+   "file": "turret-playground.webp",
+   "page": "software/site/designer/sim.html?design=turret-box",
+   "public": "https://gyropup.com/designer/sim?design=turret-box",
+   "project": "Valpatel/gyropup",
+   "revision": "41c5c266569d6141ecda28711188343b54ab43d8",
+   "committed": "2026-11-11T15:25:14-08:00",
+   "generator": {
+    "path": "tools/site/figures/gyropup-turret.mjs",
+    "sha256": "c7a53c943d17def316265623afbe078d30a074b128bea44c10ac3ca43d1ae5e6"
+   },
+   "browser": {
+    "engine": "chromium",
+    "version": "153.0.8010.12",
+    "webgl": "SwiftShader (software)"
+   },
+   "actions": "hold ARM (Space), then hold FIRE (F) for automatic fire, then release both",
+   "frames": 72,
+   "width": 720,
+   "viewport": {
+    "width": 960,
+    "height": 600
+   },
+   "crop": {
+    "x": 0.08,
+    "y": 0.14,
+    "w": 0.84,
+    "h": 0.78
+   },
+   "zoom_steps": 4,
+   "duration_ms": 7800,
+   "timing": "each frame lasts the playground time it covers (2 rendered steps of at most 50 ms each), not wall time",
+   "sha256": "255d9715677442ae279db732015de4fd7762a4ffb655e31b01f8008faa92f3d7",
+   "still": {
+    "file": "turret-playground-still.webp",
+    "frame": 48,
+    "sha256": "738b77e5cebfde589301f429b66b0919d3a09b64bb5df1d19f451d8f9f82ff09"
+   },
+   "served_sources": 149,
+   "served_sources_sha256": "012a082a9e6a58be623dc536c31e615852128b8ced7d33f14acfbe36e2509f81",
+   "limits": "A browser playground of an unqualified work-in-progress prototype (the page says PLAYGROUND - WIP). Ball flight is the playground's simplified model, not physics validation; no hardware was tested."
   }
  },
  "released_hardware_audit": {

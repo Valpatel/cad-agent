@@ -314,4 +314,3 @@ try{
   await loadScenario(selection.entry?.id,{initial:true,fallback:selection.fallback});
   startClock();
 }catch(error){message(error.message,true);setBusy(false);}
-// Demonstration for #762: stale Explorer source hash; revert after the recapture artifact is verified.

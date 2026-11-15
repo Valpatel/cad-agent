@@ -43,14 +43,19 @@ const valvePosition=async(node,kind,label)=>{
   assert.ok(geometry.label.left>=0&&geometry.label.right<=geometry.card.width+1&&geometry.label.top>=0&&geometry.label.bottom<=geometry.card.height+1,JSON.stringify(geometry));
   return geometry;
 };
-const minutes=async()=>parseFloat(await page.locator('[data-kpi="time"]').innerText());
-const close=async()=>{
-  const quick=page.locator('[data-scada-popover-open=true]').last();
+const minutes=async(target=page)=>parseFloat(await target.locator('[data-kpi="time"]').innerText());
+const close=async(target=page)=>{
+  const quick=target.locator('[data-scada-popover-open=true]').last();
   if(await quick.count())await quick.locator('[data-scada-popover-close]').click();
-  else await page.locator('dialog[open]').last().locator(':scope > header [data-scada-close]').click();
+  else await target.locator('dialog[open]').last().locator(':scope > header [data-scada-close]').click();
 };
-const open=async id=>{await page.locator(`[data-scada-open="${id}"]`).first().click();await expect(page.locator(`#industry-${id}-dialog`)).toBeVisible();};
-const paused=async()=>{if(await page.locator('#industry-lab').getAttribute('data-running')==='true')await page.locator('[data-action="running"]').click();};
+const open=async(id,target=page)=>{await target.locator(`[data-scada-open="${id}"]`).first().click();await expect(target.locator(`#industry-${id}-dialog`)).toBeVisible();};
+// Pause and prove it: a toggle whose click is lost must fail here, not as a later snapshot mismatch (#745).
+const paused=async(target=page)=>{
+  const lab=target.locator('#industry-lab');
+  if(await lab.getAttribute('data-running')==='true')await target.locator('[data-action="running"]').click();
+  await expect(lab).toHaveAttribute('data-running','false');
+};
 const noHorizontalOverflow=async()=>assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true);
 const observerContained=async()=>{
   const bounds=await page.locator('#industry-observer-dialog').boundingBox();
@@ -72,9 +77,9 @@ const viewportContract=async selector=>{
   const controls=await viewport.locator('[data-scada-camera-controls]').boundingBox(),bounds=await viewport.boundingBox();
   assert.ok(controls.x>=bounds.x&&controls.y>=bounds.y&&controls.x+controls.width<=bounds.x+bounds.width&&controls.y+controls.height<=bounds.y+bounds.height,'Camera toolbar must stay within its own viewport');
 };
-const session=async()=>{
-  await open('session');const promise=page.waitForEvent('download');await page.locator('[data-action="export"]').click();
-  const download=await promise;const payload=JSON.parse(await readFile(await download.path(),'utf8'));await close();return payload;
+const session=async(target=page)=>{
+  await open('session',target);const promise=target.waitForEvent('download');await target.locator('[data-action="export"]').click();
+  const download=await promise;const payload=JSON.parse(await readFile(await download.path(),'utf8'));await close(target);return payload;
 };
 function buttonContrast(element){
   const luminance=value=>value.match(/[\d.]+/g).slice(0,3).map(Number).map(x=>{x/=255;return x<=.04045?x/12.92:((x+.055)/1.055)**2.4;}).reduce((sum,x,i)=>sum+x*[.2126,.7152,.0722][i],0);
@@ -335,12 +340,49 @@ try{
     await close();await paused();
   });
   await check('session round trip restores edits and malformed JSON preserves state',async()=>{
-    const saved=await session();await page.locator('[data-action="step"]').click();await open('session');
+    const saved=await session();assert.equal(saved.state.running,false,'The round trip must start from a paused session');
+    await page.locator('[data-action="step"]').click();await open('session');
     await page.locator('[data-import-file]').setInputFiles({name:'saved.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(saved))});
     await expect(page.locator('[data-dialog-message="session"]')).toContainText('Saved session restored');assert.equal(await minutes(),saved.state.minutes);
     await page.locator('[data-import-file]').setInputFiles({name:'invalid.json',mimeType:'application/json',buffer:Buffer.from('{"invalid":true}')});
     await expect(page.locator('[data-dialog-message="session"]')).toContainText('not restored');assert.equal(await minutes(),saved.state.minutes);await close();
     assert.deepEqual(await session(),saved);
+  });
+  await check('a live tick between press and release keeps Pause, and paused and running restores have an explicit clock boundary',async()=>{
+    // Playwright's fake clock owns the Explorer interval here, so each tick is placed deliberately (#745).
+    const live=await context.newPage();live.on('pageerror',error=>errors.push(error.message));
+    try{
+      await live.clock.install();
+      await live.goto(`${baseURL}/kit/scada/explorer/index.html?scenario=wastewater-digester`);
+      const lab=live.locator('#industry-lab'),run=live.locator('[data-action="running"]'),restore=async payload=>{
+        await live.locator('[data-import-file]').setInputFiles({name:'saved.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(payload))});
+        await expect(live.locator('[data-dialog-message="session"]')).toContainText('Saved session restored');
+      };
+      await expect(lab).toHaveAttribute('aria-busy','false');await expect(lab).toHaveAttribute('data-running','true');
+      await live.clock.pauseAt(await live.evaluate(()=>Date.now()+1000));
+      // The race: a tick lands while the pointer is down on Pause. Replacing the button's content
+      // there leaves press and release on different text nodes; WebKit can then drop the click.
+      const start=await minutes(live),content=await run.evaluateHandle(button=>button.firstChild),box=await run.boundingBox();
+      await live.mouse.move(box.x+box.width/2,box.y+box.height/2);await live.mouse.down();
+      await live.clock.runFor(1000);assert.equal(await minutes(live),start+1,'Exactly one tick must land between press and release');
+      assert.equal(await content.evaluate((node,button)=>node.parentNode===button,await run.elementHandle()),true,'A tick must not replace the pressed transport control');
+      await live.mouse.up();await expect(lab).toHaveAttribute('data-running','false');await expect(run).toHaveText('Run');
+      const pausedAt=await minutes(live);await live.clock.runFor(5000);assert.equal(await minutes(live),pausedAt);
+      // Paused round trip: ticks between export, import, rejected input and re-export change nothing.
+      const saved=await session(live);assert.equal(saved.state.running,false);
+      await live.locator('[data-action="step"]').click();assert.equal(await minutes(live),saved.state.minutes+1);
+      await open('session',live);await restore(saved);await live.clock.runFor(5000);assert.equal(await minutes(live),saved.state.minutes);
+      await live.locator('[data-import-file]').setInputFiles({name:'invalid.json',mimeType:'application/json',buffer:Buffer.from('{"invalid":true}')});
+      await expect(live.locator('[data-dialog-message="session"]')).toContainText('not restored');await close(live);
+      await live.clock.runFor(5000);assert.deepEqual(await session(live),saved);
+      // Running restore: the saved transport state resumes, but only on the next clock tick after import.
+      await run.click();await expect(lab).toHaveAttribute('data-running','true');
+      const running=await session(live);assert.equal(running.state.running,true);
+      await live.clock.runFor(3000);assert.equal(await minutes(live),running.state.minutes+3);
+      await open('session',live);await restore(running);await close(live);
+      await expect(lab).toHaveAttribute('data-running','true');assert.deepEqual(await session(live),running);
+      await live.clock.runFor(1000);assert.equal(await minutes(live),running.state.minutes+1);
+    }finally{await live.close();}
   });
   await check('mouse zoom, drag, keyboard fit and pinned fit never scroll the canvas',async()=>{
     const viewport=page.locator('#lab-viewer [data-scada-scroll]');await viewport.scrollIntoViewIfNeeded();

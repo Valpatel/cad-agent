@@ -25,7 +25,13 @@
 
 An open-source stack of CAD libraries, simulators, deterministic checks, web widgets and command-line tools, with
 knowledge and an agent kit on top. It is headed toward free, open and local models doing the CAD work frontier
-models do today ([where it is headed](docs/vision.md#from-frontier-to-local)). Top layer first:
+models do today ([where it is headed](docs/vision.md#from-frontier-to-local)).
+
+<img src="docs/img/gyropup/turret-playground-still.webp" alt="Gyropup's turret playground: a foam-ball turret on a compute box firing at targets" width="420">
+
+<sub>Gyropup's [turret playground](https://gyropup.com/designer/sim), recorded by [`gyropup-turret.mjs`](tools/site/figures/gyropup-turret.mjs): a work-in-progress prototype, not physics validation.</sub>
+
+The stack, top layer first:
 
 | Layer | In cad-agent today |
 |---|---|
@@ -60,10 +66,6 @@ Made by <a href="tools/readme_anim.py"><code>tools/readme_anim.py</code></a>.
 <a href="docs/practice/animated-figures.md">Sources, limits and regeneration</a>; not the latest design or a physical qualification.</sub>
 
 </div>
-
-<img src="docs/img/gyropup/turret-playground-still.webp" alt="Gyropup's turret playground: a foam-ball turret on a compute box firing at targets" width="360">
-
-<sub>Gyropup's [turret playground](https://gyropup.com/designer/sim), recorded by [`gyropup-turret.mjs`](tools/site/figures/gyropup-turret.mjs): a work-in-progress prototype, not physics validation.</sub>
 
 [What works and its limits](docs/toolkit.md) · [Code and tests](software/cadagent/README.md) · [Lessons](docs/lessons/README.md)
 

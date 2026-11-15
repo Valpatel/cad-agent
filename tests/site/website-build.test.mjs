@@ -618,13 +618,13 @@ test('every lesson page has a diagram, and the home page links to knowledge with
 
 test('the home page tells the two-layer story in order, every new link resolves and the twins say the same (#748)', async () => {
   const home = await readFile(path.join(out, 'index.html'), 'utf8');
-  const order = ['class="hero learning-hero"', 'id="stack"', 'id="built-with"', 'id="use-it"', 'id="outputs"', 'id="frontier-to-local"', 'class="section help-band"'];
+  const order = ['class="hero learning-hero"', 'id="built-with"', 'id="stack"', 'id="use-it"', 'id="outputs"', 'id="frontier-to-local"', 'class="section help-band"'];
   const at = order.map(m => home.indexOf(m));
   assert.ok(at.every(i => i > 0), `every section is on the page: ${order.filter((m, i) => at[i] < 0)}`);
-  assert.deepEqual([...at].sort((a, b) => a - b), at, 'hero, stack, see it run, install, checks, frontier to local, help');
+  assert.deepEqual([...at].sort((a, b) => a - b), at, 'hero, see it run, stack, install, checks, frontier to local, help: things that move come first');
   assert.match(home, /<title>cad-agent · Shared CAD components, agent skills and evals<\/title>/);
   assert.match(home, /<meta name="description" content="[^"]*agent skills and evals[^"]*">/);
-  const stack = home.slice(home.indexOf('id="stack"'), home.indexOf('id="built-with"'));
+  const stack = home.slice(home.indexOf('id="stack"'), home.indexOf('id="use-it"'));
   assert.equal((stack.match(/class="stack-cell stack-top-cell"/g) || []).length, 2, 'skills and evals');
   const base = [...stack.matchAll(/<li class="stack-cell stack-base-cell">[\s\S]*?<\/li>/g)].map(m => m[0]);
   assert.equal(base.length, 6, 'six shared components');
@@ -634,11 +634,11 @@ test('the home page tells the two-layer story in order, every new link resolves 
   }
   assert.doesNotMatch(home, /Check, simulate|fits-ours/, 'the duplicate section is gone');
   assert.equal((home.match(/class="run-mini"/g) || []).length, 3, 'robot replay, SCADA and a build guide');
-  assert.ok(home.indexOf('class="run-card run-turret"') < home.indexOf('<cad-model '), 'the turret and the toolkit cards come first, the two viewers below');
+  assert.ok(home.indexOf('class="run-card run-turret"') < home.indexOf('<cad-model ') && home.lastIndexOf('<cad-model ') < home.indexOf('class="run-minis"'), 'the turret leads, then the two viewers, then the toolkit cards');
   assert.match(home, /href="https:\/\/gyropup\.com\/designer\/sim"/);
   assert.match(home, /class="more-checks"/);
   // Every local link the new sections add lands on a published page, and every #anchor on a real id.
-  const added = home.slice(home.indexOf('id="stack"'), home.indexOf('class="section help-band"'));
+  const added = home.slice(home.indexOf('id="built-with"'), home.indexOf('class="section help-band"'));
   for (const [, href] of added.matchAll(/href="(\/[^"]*)"/g)) {
     const file = resolve(href);
     assert.ok(file, `${href} is published`);
@@ -652,7 +652,8 @@ test('the home page tells the two-layer story in order, every new link resolves 
       assert.ok(text.includes(`[${name}](`), `${f}: ${name}`);
   }
   const twin = await readFile(path.join(out, 'index.md'), 'utf8');
-  for (const h of ['### See it run', '### What the checks compute', '### From frontier to local']) assert.ok(twin.includes(h), `index.md: ${h}`);
+  const heads = ['### See it run', '### Two layers', '### What the checks compute', '### From frontier to local'].map(h => twin.indexOf(h));
+  assert.ok(heads.every(i => i > 0) && heads.every((v, i) => !i || v > heads[i - 1]), 'index.md follows the page: see it run, two layers, checks, frontier to local');
   assert.match(twin, /No local or open model has been measured yet/, 'the twin keeps the honest eval status');
 });
 

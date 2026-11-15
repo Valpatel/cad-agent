@@ -539,7 +539,7 @@ if (!turretRec || `docs/img/gyropup/${turretRec.file}` !== turret.img || `docs/i
   throw new Error('docs/home.yaml showcase.turret: its picture and still are the ones recorded in docs/img/gyropup/SOURCE.json');
 if (!/work-in-progress/.test(turret.caption) || !/not physics validation/.test(turret.caption)) throw new Error('docs/home.yaml showcase.turret: the caption states it is a work-in-progress playground, not physics validation');
 const turretCaption = turret.caption.replace('{revision}', turretRec.revision.slice(0, 7));
-const turretCard = `<article class="run-card run-turret"><a class="run-media" href="${esc(homeHref(turret.href, 'showcase.turret'))}" tabindex="-1" aria-hidden="true">${await homePicture(turret.img, 'showcase.turret', ' alt="" loading="lazy" decoding="async"', turret.still)}</a><h3><a href="${esc(turret.href)}">${esc(turret.title)} ↗</a></h3><p>${esc(turretCaption)}</p><p class="run-links"><a href="${esc(turretRec.public.replace(/\?.*/, ''))}">Open the playground</a> · <a href="https://github.com/${esc(turretRec.project)}/tree/${esc(turretRec.revision)}">Recorded source</a> · <a href="${REPO}/blob/dev/docs/img/gyropup/SOURCE.json">Recording record</a></p><span class="visually-hidden">${esc(turret.alt)}</span></article>`;
+const turretCard = `<article class="run-card run-turret"><a class="run-media" href="${esc(homeHref(turret.href, 'showcase.turret'))}" tabindex="-1" aria-hidden="true">${await homePicture(turret.img, 'showcase.turret', ' alt="" loading="lazy" decoding="async"', turret.still)}</a><div class="run-body"><p class="run-kicker">Browser playground · work in progress</p><h3><a href="${esc(turret.href)}">${esc(turret.title)} ↗</a></h3><p>${esc(turretCaption)}</p><p class="run-links"><a href="${esc(turretRec.public.replace(/\?.*/, ''))}">Open the playground</a> · <a href="https://github.com/${esc(turretRec.project)}/tree/${esc(turretRec.revision)}">Recorded source</a> · <a href="${REPO}/blob/dev/docs/img/gyropup/SOURCE.json">Recording record</a></p></div><span class="visually-hidden">${esc(turret.alt)}</span></article>`;
 homeMd.run = [`- [${turret.title}](${turret.href}): ${turretCaption}`];
 const runCards = home.showcase.cards.map((c, i) => {
   const card = toolkitCards.get(c.toolkit);
@@ -643,16 +643,17 @@ ${pixelHeading}
 <figure class="learning-art"><picture><source media="(prefers-reduced-motion: reduce) and (max-width:600px)" srcset="/docs/img/hero/learning-loop-mobile-still.svg" width="956" height="710"><source media="(prefers-reduced-motion: reduce)" srcset="/docs/img/hero/learning-loop-still.svg" width="1536" height="768"><source media="(max-width:600px)" srcset="/docs/img/hero/learning-loop-mobile.svg" width="956" height="710"><img src="/docs/img/hero/learning-loop.svg" width="1536" height="768" fetchpriority="high" alt="An original pixel-art orbital workshop: robots assemble, test and teach a new robot, which joins the builders as the next chassis arrives"></picture><figcaption>Every build can improve the shared knowledge and checks behind the next one.</figcaption></figure>
 <div class="hero-actions"><div class="actions"><a class="button primary" href="#use-it">Build with your agent ↓</a><a class="button" href="/explore">Explore the knowledge</a><a class="button quiet" href="${REPO}">GitHub ↗</a></div></div>
 </section>
-<section class="section stack" id="stack" aria-labelledby="stack-title"><div class="lead"><h2 id="stack-title">Two layers, <span>one toolkit.</span></h2><p>Shared components do the CAD work and are tested like any code. Skills and evals on top teach agents to use them, and measure how far down the model scale that works.</p></div>
+<section class="section built-with" id="built-with" aria-labelledby="run-title"><div class="lead"><h2 id="run-title">See it <span>run.</span></h2><p>Real models and simulations you can turn, play and stop. Each says what it is and what it does not prove.</p></div>${turretCard}
+<div class="project-viewers">
+<article><h3>Gyropup</h3><cad-model src="/web/models/gyropup.json" label="Gyropup" style="aspect-ratio:1"><img class="cad-model-poster" src="/web/models/gyropup.webp" width="1200" height="1200" loading="lazy" alt="Current collected Gyropup assembly"></cad-model><p>A wheel-legged robot that brings mechanical design, motion and electronics together. This simplified view leaves out interior hardware.</p><p><a href="${esc(heroModel.source.repo + '/tree/' + heroModel.source.revision)}">Exact CAD source</a> · <a href="https://gyropup.com">Project</a></p></article>
+<article><h3>J501 AGX Orin enclosure</h3><cad-model src="/web/models/j501.json" label="J501 enclosure with real carrier board" style="aspect-ratio:1"><img class="cad-model-poster" src="/web/models/j501.webp" width="1200" height="1200" loading="lazy" alt="J501 enclosure and real carrier board, assembled from exported CAD"></cad-model><p>A printed home for a Jetson AGX Orin computer, shown with its real carrier board. A fit-check prototype, not a physically qualified enclosure.</p><p><a href="${esc(j501Model.source.repo + '/tree/' + j501Model.source.revision)}">Exact CAD snapshot</a> · <a href="https://github.com/mvalancy/j501-agx-orin">Project and evidence</a> · <a href="/web/models/j501-source.json">Model provenance</a></p></article>
+</div>
+<ul class="run-minis">${runCards}</ul></section>
+<section class="section stack" id="stack" aria-labelledby="stack-title"><div class="lead"><h2 id="stack-title">Two layers, <span>one toolkit.</span></h2><p>Everything above runs on these. Shared components do the CAD work and are tested like any code. Skills and evals on top teach agents to use them, and measure how far down the model scale that works.</p></div>
 <div class="stack-figure">
 <div class="stack-tier stack-tier-top"><p class="stack-label">Agent layer</p><ul>${stackTop}</ul>
 <p class="stack-arrow"><span>${esc(home.stack.arrow[0])}</span><span class="stack-arrow-line" aria-hidden="true"></span><span>${esc(home.stack.arrow[1])}</span></p></div>
 <div class="stack-tier stack-tier-base"><p class="stack-label">Shared components</p><ul>${stackBase}</ul></div>
-</div></section>
-<section class="section built-with" id="built-with" aria-labelledby="run-title"><div class="lead"><h2 id="run-title">See it <span>run.</span></h2><p>Real models and simulations you can turn, play and stop. Each says what it is and what it does not prove.</p></div><div class="run-more">${turretCard}<ul class="run-minis">${runCards}</ul></div>
-<div class="project-viewers">
-<article><h3>Gyropup</h3><cad-model src="/web/models/gyropup.json" label="Gyropup" style="aspect-ratio:1"><img class="cad-model-poster" src="/web/models/gyropup.webp" width="1200" height="1200" loading="lazy" alt="Current collected Gyropup assembly"></cad-model><p>A wheel-legged robot that brings mechanical design, motion and electronics together. This simplified view leaves out interior hardware.</p><p><a href="${esc(heroModel.source.repo + '/tree/' + heroModel.source.revision)}">Exact CAD source</a> · <a href="https://gyropup.com">Project</a></p></article>
-<article><h3>J501 AGX Orin enclosure</h3><cad-model src="/web/models/j501.json" label="J501 enclosure with real carrier board" style="aspect-ratio:1"><img class="cad-model-poster" src="/web/models/j501.webp" width="1200" height="1200" loading="lazy" alt="J501 enclosure and real carrier board, assembled from exported CAD"></cad-model><p>A printed home for a Jetson AGX Orin computer, shown with its real carrier board. A fit-check prototype, not a physically qualified enclosure.</p><p><a href="${esc(j501Model.source.repo + '/tree/' + j501Model.source.revision)}">Exact CAD snapshot</a> · <a href="https://github.com/mvalancy/j501-agx-orin">Project and evidence</a> · <a href="/web/models/j501-source.json">Model provenance</a></p></article>
 </div></section></div>
 ${useCard}
 <section class="reel-band" id="outputs"><div class="wrap"><div class="lead"><h2>What the checks <span>compute.</span></h2><p>Outputs of cad-agent's tools with the numbers they computed: on this repo's test fixtures and on worked examples. Each tile says which, and opens the page that explains it.</p></div>
@@ -666,14 +667,8 @@ await writeFile(path.join(out, 'index.html'), frame({ title: TAGLINE, fullTitle:
 
 // ----------------------------------------------------------------------------- agent files
 const bySection = id => pages.filter(p => p.section === id);
-const llms = `# cad-agent
-
-> ${TAGLINE}. ${LEDE}
-
-${HOME_LEDE.join(' ')} It maps the best free tools, demonstrates them on real projects and fills the gaps with
-tested tools of its own. Every page on this site has a Markdown twin at the same path with a .md extension.
-
-## Two layers
+// The two layers, in llms.txt after its preamble; index.md moves them below "See it run", as the page shows them.
+const TWO_LAYERS = `## Two layers
 
 Agent layer, from frontier models toward ${home.stack.arrow[1].toLowerCase()}:
 
@@ -682,7 +677,15 @@ ${homeMd.stack.top.join('\n')}
 Shared components:
 
 ${homeMd.stack.base.join('\n')}
+`;
+const llms = `# cad-agent
 
+> ${TAGLINE}. ${LEDE}
+
+${HOME_LEDE.join(' ')} It maps the best free tools, demonstrates them on real projects and fills the gaps with
+tested tools of its own. Every page on this site has a Markdown twin at the same path with a .md extension.
+
+${TWO_LAYERS}
 - Source: ${REPO} (MIT). Install and use: the checked guide below (then \`cad-agent update\` to update).
   cad-agent collects no telemetry.
 - Machine-readable catalogue: ${ORIGIN}/catalog.json (schema ${catalog.schema}; ${catalog.items.length} entries, each with an id, kind,
@@ -735,7 +738,7 @@ ${refSite.llms}
 `;
 await writeFile(path.join(out, 'llms.txt'), llms);
 // The homepage twin keeps the same current story and evidenced examples as the rendered entrance.
-await writeFile(path.join(out, 'index.md'), `${llms.replace(/\n*$/, '\n')}
+await writeFile(path.join(out, 'index.md'), `${llms.replace(TWO_LAYERS, '').replace(/\n*$/, '\n')}
 ## Machines building machines
 
 ${HOME_LEDE.join(' ')}
@@ -748,6 +751,7 @@ ${HOME_LEDE.join(' ')}
 - [J501 project](https://github.com/mvalancy/j501-agx-orin): an enclosure around a real carrier board; [model provenance](${ORIGIN}/web/models/j501-source.json) records this prototype's captured inputs and display-only simplification. Physical qualification and final current-source adoption remain separate.
 ${homeMd.run.join('\n')}
 
+${TWO_LAYERS.replace('## Two layers', '### Two layers')}
 ### What the checks compute
 
 ${homeMd.reel.join('\n')}

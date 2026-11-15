@@ -158,7 +158,7 @@
     "software/cadagent/webkit/scada/explorer/equipment-model.css": "020c1faa8b3bdd4afe3f1cf907ddf69873442c655b33ce2e126bb254eb91ba90",
     "software/cadagent/webkit/scada/explorer/equipment-model.mjs": "9e90c6c6dac6155987cc08d07a8117c2120d7959d4452d2e82f2bbffb1774224",
     "software/cadagent/webkit/scada/explorer/index.html": "d0bb337cd74218059739272aee1c87575d008e12755a194824db33048a68a0aa",
-    "software/cadagent/webkit/scada/explorer/main.mjs": "2b7391354876db745d580253f5049ae9906e95fc3a5254ce16a81b89d9dac480",
+    "software/cadagent/webkit/scada/explorer/main.mjs": "c95e4d38bd301daf88b9463de873454bcef56859db6489977bde8c80f8dd3b2c",
     "software/cadagent/webkit/scada/explorer/model-editor.mjs": "4e887bb9896bb7bf1e23d30984773903cba0a860116c1b405c806fb966a99061",
     "software/cadagent/webkit/scada/explorer/search.mjs": "904fc7534c27ba62a257050bdcd68b12e0beaa61f0cb43ddfca23130bbdbf700",
     "software/cadagent/webkit/scada/explorer/selection.mjs": "a513e7bf6545805e8cc8efa0ee4c20b68ebe04ac28cf2eb56e92073044a7ad7a",
@@ -335,8 +335,8 @@
       "path": "img/thumbnails/water-utilities/wastewater-digester/preview.jpg",
       "width": 1398,
       "height": 1173,
-      "bytes": 171365,
-      "sha256": "9eb0dda82c9900fb82e21c4230fd55ab5baaa5cb4dbb7b0fdf34f62a8fec0f4c"
+      "bytes": 170485,
+      "sha256": "1feb0f1f20c103f36dcc06fe60468a2103bc47739b2b971bda0406dd888bcea0"
     },
     {
       "id": "winery",
@@ -438,8 +438,8 @@
       "path": "img/thumbnails/food-beverage/winery/preview.jpg",
       "width": 1398,
       "height": 1196,
-      "bytes": 176415,
-      "sha256": "1599b29cca1d2fce241707571f33549c9b7ca2c3e71dc775494f97c0ead6d09d"
+      "bytes": 177584,
+      "sha256": "cb0a8605a4793aa393b305fbd4564d0b085596eef00664be70b79803d418ea29"
     },
     {
       "id": "brewery",
@@ -545,8 +545,8 @@
       "path": "img/thumbnails/food-beverage/brewery/preview.jpg",
       "width": 1398,
       "height": 1196,
-      "bytes": 179420,
-      "sha256": "6861c9326d211cc4b723111757aa6154444873d63ac57b3ca510cad8bd03eafe"
+      "bytes": 179061,
+      "sha256": "3e7bdd977eed94c907656c59a271160a78dd035aeb7b601b50fd726f723bbf29"
     },
     {
       "id": "fortune-cookies",
@@ -624,8 +624,8 @@
       "path": "img/thumbnails/food-beverage/fortune-cookies/preview.jpg",
       "width": 1398,
       "height": 1196,
-      "bytes": 175985,
-      "sha256": "63322378c21833c3bed371637143ccc0a27299a548fe3cc939d381baaadee1b3"
+      "bytes": 174397,
+      "sha256": "c76c0cab27d5fb6400e216cd275ded1ed0aeab41966925fc4ff3837ecd899204"
     },
     {
       "id": "shampoo",
@@ -701,8 +701,8 @@
       "path": "img/thumbnails/consumer-products/shampoo/preview.jpg",
       "width": 1398,
       "height": 1173,
-      "bytes": 159024,
-      "sha256": "f5902106ef6bc603f3b1314755974367f0f5e8bd6064fc440f909ad5c8efc358"
+      "bytes": 160436,
+      "sha256": "808fea15adab73a35d3ca471f61de640441f098018627276ab18516beda2b908"
     },
     {
       "id": "carbonated-beverages",
@@ -782,8 +782,8 @@
       "path": "img/thumbnails/food-beverage/carbonated-beverages/preview.jpg",
       "width": 1398,
       "height": 1173,
-      "bytes": 168444,
-      "sha256": "fa8497468df23263060cee359f9ba17a3fe593a727b0ecad0e7b5e5f21331c87"
+      "bytes": 169974,
+      "sha256": "b60133c662db36130af6e125cf0f573acf56edc3a38c07e4deea405bf518c4ac"
     },
     {
       "id": "dairy",
@@ -861,8 +861,8 @@
       "path": "img/thumbnails/food-beverage/dairy/preview.jpg",
       "width": 1398,
       "height": 1196,
-      "bytes": 169734,
-      "sha256": "185c7de9d079519fa95bc9ff90b3c3cfb98c5e5c54dfe12b4ebfc1cfaa17d908"
+      "bytes": 169575,
+      "sha256": "5440e17ed1edf50614e776b5696861d23ffeab8526e830df229e8bdb639e5eac"
     },
     {
       "id": "fruit-juice",
@@ -942,8 +942,8 @@
       "path": "img/thumbnails/food-beverage/fruit-juice/preview.jpg",
       "width": 1398,
       "height": 1196,
-      "bytes": 179204,
-      "sha256": "438a9555861f23bf8efa48cf73a0cbd1d76a5c134c4276d96f57384ce550b7ca"
+      "bytes": 181778,
+      "sha256": "14426829156318102de2dba0c62eb97b942483bb27c1e1c8261be4628c12ba77"
     },
     {
       "id": "pharma-oral-liquid",
@@ -1023,8 +1023,8 @@
       "path": "img/thumbnails/pharmaceuticals/pharma-oral-liquid/preview.jpg",
       "width": 1398,
       "height": 1173,
-      "bytes": 169186,
-      "sha256": "d452a114cc73cca7067637780acec90f93e0aaeb4e4412132b16d979b42c485c"
+      "bytes": 170898,
+      "sha256": "21286634c1ad3dc44f69257e20748795b778d88aa5e7ccdbeafdfce0853673bc"
     },
     {
       "id": "tablets",
@@ -1106,8 +1106,8 @@
       "path": "img/thumbnails/pharmaceuticals/tablets/preview.jpg",
       "width": 1398,
       "height": 1173,
-      "bytes": 186430,
-      "sha256": "2d808f7b4f81dd3ec02e8f82a7e972567115e49362874f276708eb3091f59b04"
+      "bytes": 189667,
+      "sha256": "5056da673527fe204e47ef7295ca896a6b1c080ad54a6ee06071a74c76907b1c"
     },
     {
       "id": "biopharma-fermentation",
@@ -1185,8 +1185,8 @@
       "path": "img/thumbnails/biopharma/biopharma-fermentation/preview.jpg",
       "width": 1398,
       "height": 1173,
-      "bytes": 169401,
-      "sha256": "117a22b30e08679a0c9694434037ef91795d64543afd6752ce5610d9f5c56846"
+      "bytes": 172476,
+      "sha256": "263cf5c0b84b4d87be21651089a94da28eb05079c29284d07531297f9422b15b"
     },
     {
       "id": "sterile-filling",
@@ -1264,8 +1264,8 @@
       "path": "img/thumbnails/pharmaceuticals/sterile-filling/preview.jpg",
       "width": 1398,
       "height": 1173,
-      "bytes": 170020,
-      "sha256": "599a923b0970f0f2ca23a85a6664fef2ab73fb09682036b2bfa1394363682131"
+      "bytes": 172236,
+      "sha256": "e3c3b6bf34c2c2063f7b960244702840f22b5c2c09846c25319f63784bc5cd2c"
     },
     {
       "id": "paint-blending",
@@ -1339,8 +1339,8 @@
       "path": "img/thumbnails/chemicals/paint-blending/preview.jpg",
       "width": 1398,
       "height": 1196,
-      "bytes": 152149,
-      "sha256": "c2459af3f30dbb9e2990d5939afda575b9e3de8cdfe06867823c94c2faf19c42"
+      "bytes": 153824,
+      "sha256": "8bc273160233d9bb7ebd6013726d29fef1411100ab18b2e3c0b9e7c7e199ca5f"
     },
     {
       "id": "industrial-detergent",
@@ -1418,8 +1418,8 @@
       "path": "img/thumbnails/chemicals/industrial-detergent/preview.jpg",
       "width": 1398,
       "height": 1173,
-      "bytes": 163434,
-      "sha256": "32d9a376f4081b93081d2d1213257532a444b70a2e13fa4f6b7d2c4195e4dca5"
+      "bytes": 165090,
+      "sha256": "b83b035c8b2824f42cc5450cd66d011104f76bb42b2fe5f3b6335fda033b441b"
     },
     {
       "id": "polymer-extrusion",
@@ -1499,8 +1499,8 @@
       "path": "img/thumbnails/materials/polymer-extrusion/preview.jpg",
       "width": 1398,
       "height": 1196,
-      "bytes": 178981,
-      "sha256": "e2c078acb7f8ce9ee485a2f622d4690871f160429b251d8f4d9caf3f89b06f9f"
+      "bytes": 181734,
+      "sha256": "855bd3834cba805f2147fbce2e3cc58f7ef925b5f91b73492eff63169547871f"
     },
     {
       "id": "concrete-batching",
@@ -1576,8 +1576,8 @@
       "path": "img/thumbnails/construction-materials/concrete-batching/preview.jpg",
       "width": 1398,
       "height": 1196,
-      "bytes": 163248,
-      "sha256": "8898e8145066c5c2aa0def11fa70ee8a0d4316a8aeeedaf171db88f0e42fee14"
+      "bytes": 163697,
+      "sha256": "3967034654f4a21af5533b0fed8b036d7b4af0a1c2cbbf2b1acf7a1acd673f3c"
     },
     {
       "id": "cement",
@@ -1655,8 +1655,8 @@
       "path": "img/thumbnails/construction-materials/cement/preview.jpg",
       "width": 1398,
       "height": 1173,
-      "bytes": 169948,
-      "sha256": "432da41bf68c4ef192e320e014c1ee46504a5f9a94070af2c3f9b3113e9a8c9c"
+      "bytes": 172191,
+      "sha256": "b714f401acc1a8577da9302e870fd8317c8e9329a792fba1db8cc50aafaf421d"
     },
     {
       "id": "mineral-crushing",
@@ -1734,8 +1734,8 @@
       "path": "img/thumbnails/mineral-processing/mineral-crushing/preview.jpg",
       "width": 1398,
       "height": 1196,
-      "bytes": 173619,
-      "sha256": "6f9239ef90e217d517daf7a864e77c87d7238013398f766b28ed84c1f00d0610"
+      "bytes": 174100,
+      "sha256": "dca4db1737d06d0b1844ddb101c107d8b0d7a7dae92c32a28aeee93910d2cce8"
     },
     {
       "id": "mineral-flotation",
@@ -1813,8 +1813,8 @@
       "path": "img/thumbnails/mineral-processing/mineral-flotation/preview.jpg",
       "width": 1398,
       "height": 1196,
-      "bytes": 170138,
-      "sha256": "22e939264de14dad98ee78b68ecc63b849b09b4fa9a9147951a264c692891ce9"
+      "bytes": 171231,
+      "sha256": "8c78a3a31e9867117895701c6926ce7ddc4d9f81c082529fe25d86d6479f6222"
     },
     {
       "id": "metal-finishing",
@@ -1890,8 +1890,8 @@
       "path": "img/thumbnails/surface-treatment/metal-finishing/preview.jpg",
       "width": 1398,
       "height": 1173,
-      "bytes": 152172,
-      "sha256": "3ce25d4d47c73b3c43412ed5d6ef7e2960e381a61fe86dd664f5ad6f9dd4431e"
+      "bytes": 154280,
+      "sha256": "4cc9e784d5078f09701e974d832bf5e68ee68b1a6fea906713ee279e4992d224"
     },
     {
       "id": "pulp-paper",
@@ -1971,8 +1971,8 @@
       "path": "img/thumbnails/fiber-processing/pulp-paper/preview.jpg",
       "width": 1398,
       "height": 1196,
-      "bytes": 178454,
-      "sha256": "1ae7a8999e984223c6ccbb0f9e1289ac811fdce693a7574e990d85e459f64bf0"
+      "bytes": 181495,
+      "sha256": "950c28c4d6eec911b0cec7da1f54e5025eb13d37909c47491b6e7d45eae47d9b"
     },
     {
       "id": "power-gas-simple-cycle",
@@ -2038,8 +2038,8 @@
       "path": "img/thumbnails/power-utilities/power-gas-simple-cycle/preview.jpg",
       "width": 1398,
       "height": 1173,
-      "bytes": 146851,
-      "sha256": "6767e6f07c30d44f4606022d665bedf8016bc745357c14f59a71c7e6c85467e3"
+      "bytes": 149095,
+      "sha256": "706e3822ac197b0429c546e7a334696030ae6764bc3d02c29d54caf0fabcdff3"
     },
     {
       "id": "power-gas-combined-cycle",
@@ -2107,8 +2107,8 @@
       "path": "img/thumbnails/power-utilities/power-gas-combined-cycle/preview.jpg",
       "width": 1398,
       "height": 1173,
-      "bytes": 157870,
-      "sha256": "1fb1ce011c87789da29d0ccc91a8262bffa950f77413d24c6d7a10d7b53c94a2"
+      "bytes": 160717,
+      "sha256": "5e3eeee5207d99d04a6a0928c1f9ec3163c898224cc0cf7873637bacd4f3f17a"
     },
     {
       "id": "power-coal-steam",
@@ -2178,8 +2178,8 @@
       "path": "img/thumbnails/power-utilities/power-coal-steam/preview.jpg",
       "width": 1398,
       "height": 1173,
-      "bytes": 148264,
-      "sha256": "a97466805d5b8a96e2022ae2045a006a32444ed2b7fdb86224f0fc77673106c5"
+      "bytes": 150123,
+      "sha256": "668dde8400cbc401b0531a15c5d61fe0ab0b21526300386bcefa23fbad82804a"
     },
     {
       "id": "power-biomass-chp",
@@ -2249,8 +2249,8 @@
       "path": "img/thumbnails/power-utilities/power-biomass-chp/preview.jpg",
       "width": 1398,
       "height": 1173,
-      "bytes": 148803,
-      "sha256": "5a0ce66d6aa3005f747a1cfa427fd1a21564072f1994537c49508125831562fa"
+      "bytes": 150876,
+      "sha256": "b7cabccc0c83d0e469087c07f1b54321da3fca4d39d397a59462c086037067ce"
     },
     {
       "id": "power-hydro-impoundment",
@@ -2318,8 +2318,8 @@
       "path": "img/thumbnails/power-utilities/power-hydro-impoundment/preview.jpg",
       "width": 1398,
       "height": 1196,
-      "bytes": 150131,
-      "sha256": "5460ad1424e7a84a02b9a93465b028bc613ada64ceb0d3da8c32dd6527e9e96c"
+      "bytes": 153187,
+      "sha256": "f7d78228dc3382f56f993d43d1295657cfedfeb32ce95708004e01af6c632d34"
     },
     {
       "id": "power-hydro-diversion",
@@ -2385,8 +2385,8 @@
       "path": "img/thumbnails/power-utilities/power-hydro-diversion/preview.jpg",
       "width": 1398,
       "height": 1173,
-      "bytes": 143711,
-      "sha256": "d273a15072a2cf48f646a93568d7b3e52f3116cc3dae97b9ef6cc66d42ed98e8"
+      "bytes": 146582,
+      "sha256": "ba6b59d71dcf9aa1373fa4443c78efec08a1566e54f0afe852bc2e195a242f01"
     },
     {
       "id": "power-pumped-storage",
@@ -2448,8 +2448,8 @@
       "path": "img/thumbnails/power-utilities/power-pumped-storage/preview.jpg",
       "width": 1398,
       "height": 1173,
-      "bytes": 122975,
-      "sha256": "069eaf604c3589cb6573742a80b8a8b3f2138d5b2170b39fe74ecc851b5389f9"
+      "bytes": 124564,
+      "sha256": "c60583c1aee888daac4a9c62d2efec6ec15099582184c5a8c90ae506e47750fe"
     },
     {
       "id": "power-nuclear-pwr",
@@ -2515,8 +2515,8 @@
       "path": "img/thumbnails/power-utilities/power-nuclear-pwr/preview.jpg",
       "width": 1398,
       "height": 1173,
-      "bytes": 157192,
-      "sha256": "127549e578d4b5100e1ddeff491b34bb6952d5b7848087f37d3521f2574d4a58"
+      "bytes": 160024,
+      "sha256": "0a8a1576cc0235dfd1e68bcee89bd6da06ebb01966f443a550411a8e9adff956"
     },
     {
       "id": "power-nuclear-phwr",
@@ -2582,8 +2582,8 @@
       "path": "img/thumbnails/power-utilities/power-nuclear-phwr/preview.jpg",
       "width": 1398,
       "height": 1173,
-      "bytes": 159659,
-      "sha256": "37ed402ec6078b93026fd1c3a8c1c42b473cbeaca4bd2183871a0ecba906fb56"
+      "bytes": 162125,
+      "sha256": "30d9166b1383a3f6256379d3422550d40af0ba697c3c6c5a0342c2711e647f02"
     },
     {
       "id": "power-nuclear-htgr",
@@ -2647,8 +2647,8 @@
       "path": "img/thumbnails/power-utilities/power-nuclear-htgr/preview.jpg",
       "width": 1398,
       "height": 1196,
-      "bytes": 143673,
-      "sha256": "66347e8adb81a9821dff50e9809523c65211b446f60869a0acc39b13487511a6"
+      "bytes": 145869,
+      "sha256": "cf60d4f0d85f981e9b1dbeada9073b28e6c81ec0f25fc96a47b570644565714c"
     },
     {
       "id": "power-nuclear-sodium-fast",
@@ -2716,8 +2716,8 @@
       "path": "img/thumbnails/power-utilities/power-nuclear-sodium-fast/preview.jpg",
       "width": 1398,
       "height": 1173,
-      "bytes": 172148,
-      "sha256": "c3ab0006678c34d336519f8d0341be568237701b915e53d0fe0819a1dbd5d3a3"
+      "bytes": 175076,
+      "sha256": "36ddcebd33712961f0532e2aa03615af7f07e98c13a73187ca3362d27ca76264"
     },
     {
       "id": "power-nuclear-molten-salt",
@@ -2785,8 +2785,8 @@
       "path": "img/thumbnails/power-utilities/power-nuclear-molten-salt/preview.jpg",
       "width": 1398,
       "height": 1173,
-      "bytes": 169261,
-      "sha256": "1b1459a142dcfd3002db42c56a0185e661fe0e5bf5a91849c135a74e0368ab94"
+      "bytes": 172110,
+      "sha256": "2d52d644245a9df303a611a9eece2df492238d22f801173cfb69da4b83ef5515"
     },
     {
       "id": "power-nuclear-bwr",
@@ -2850,8 +2850,8 @@
       "path": "img/thumbnails/power-utilities/power-nuclear-bwr/preview.jpg",
       "width": 1398,
       "height": 1173,
-      "bytes": 139964,
-      "sha256": "f131d22a0b853ab8df87e4c86d8640f01768512916fb3396c77236d2e6612dc3"
+      "bytes": 142542,
+      "sha256": "e56c342430e4cbdaf908dbfd6554906fab350db2805061870c983d25e0dda352"
     },
     {
       "id": "power-nuclear-lw-smr",
@@ -2925,8 +2925,8 @@
       "path": "img/thumbnails/power-utilities/power-nuclear-lw-smr/preview.jpg",
       "width": 1398,
       "height": 1173,
-      "bytes": 175720,
-      "sha256": "b97104730129960fd139784a7676ae0e02d8f69589ca9cffc4436b4a7d3a744a"
+      "bytes": 177578,
+      "sha256": "7d742d48c2c4e5185c2aa23f21d8c0ab00ad46efcfa5199a5d498b75575b0b90"
     },
     {
       "id": "power-ng-engine-chp",
@@ -2992,8 +2992,8 @@
       "path": "img/thumbnails/power-utilities/power-ng-engine-chp/preview.jpg",
       "width": 1398,
       "height": 1173,
-      "bytes": 151973,
-      "sha256": "000d85de6d28907444a083415ffd8296d8588adda16760d20b54ecdb48d30bd2"
+      "bytes": 155051,
+      "sha256": "28bf546c309634653f7783cf05b9d7b08c8f15a9c3af9dd8ea43e1547bd229ae"
     },
     {
       "id": "power-diesel-standby",
@@ -3059,8 +3059,8 @@
       "path": "img/thumbnails/power-utilities/power-diesel-standby/preview.jpg",
       "width": 1398,
       "height": 1173,
-      "bytes": 146338,
-      "sha256": "45818670225b28e4173c561de774fecd54f1fe65018b76cd614d20bcbcdd2fe4"
+      "bytes": 148903,
+      "sha256": "7f175f7f9d22b0d996da234dc4a82e8f5a5990a53b6d39fb1b79ee9426464abc"
     },
     {
       "id": "power-gasoline-portable",
@@ -3130,8 +3130,8 @@
       "path": "img/thumbnails/power-utilities/power-gasoline-portable/preview.jpg",
       "width": 1398,
       "height": 1196,
-      "bytes": 144891,
-      "sha256": "26b5dae3e065d3966cfefcd303d48ab7e90194d56e7881ff58102987802b017d"
+      "bytes": 147043,
+      "sha256": "be11b9d61b1f03286674ad7dfdc6e46719cf741adef5032069138b59501bd66c"
     },
     {
       "id": "power-substation-distribution",
@@ -3197,8 +3197,8 @@
       "path": "img/thumbnails/power-utilities/power-substation-distribution/preview.jpg",
       "width": 1398,
       "height": 1173,
-      "bytes": 144209,
-      "sha256": "8852de2e6c348ae80802510342b7d0ba8013f1c206dc0c39c2845f27cc123194"
+      "bytes": 147178,
+      "sha256": "ad6aff108384f73021355ed3e7461d165e3cf663400740fd1790c0de6e9ee176"
     },
     {
       "id": "power-substation-gsu",
@@ -3262,8 +3262,8 @@
       "path": "img/thumbnails/power-utilities/power-substation-gsu/preview.jpg",
       "width": 1398,
       "height": 1173,
-      "bytes": 137689,
-      "sha256": "20b35623aefb832bc7c5d8b09f74e96b926cefb78e3a35782a50d4715633bd4c"
+      "bytes": 140223,
+      "sha256": "b97d1a490964901be0cc96a797e770bd52daa0ebbd9e05f01b1e583fc9af5b39"
     },
     {
       "id": "power-substation-gis",
@@ -3327,8 +3327,8 @@
       "path": "img/thumbnails/power-utilities/power-substation-gis/preview.jpg",
       "width": 1398,
       "height": 1173,
-      "bytes": 132136,
-      "sha256": "5a11a2603b35f063e77b240a272cefc4895e17dd95b90f10e36dd351c9f2ee81"
+      "bytes": 134223,
+      "sha256": "5b6d3d097d88df231e52c3494c92852742f622eeb4b4338bb766554357c923da"
     },
     {
       "id": "power-hvdc-interface",
@@ -3390,8 +3390,8 @@
       "path": "img/thumbnails/power-utilities/power-hvdc-interface/preview.jpg",
       "width": 1398,
       "height": 1173,
-      "bytes": 123067,
-      "sha256": "aee3dadcdb42ef7f1c3a17688703427666e7e9f6df33eefec10277bce80efd8b"
+      "bytes": 125711,
+      "sha256": "8f3ee7301d4dce00f05f8adf5aaa9397e83032912493d58b1887853743f62e55"
     },
     {
       "id": "power-solar-pv",
@@ -3455,8 +3455,8 @@
       "path": "img/thumbnails/power-utilities/power-solar-pv/preview.jpg",
       "width": 1398,
       "height": 1196,
-      "bytes": 137691,
-      "sha256": "90128a5f941f5eb3d20421201e73f71abd11c0e7dee3c90c4a6f82055ad80e25"
+      "bytes": 139841,
+      "sha256": "c1b3a096475198b22e5e03733a32fad39389ca9f19332d6f16eccbcf64d19681"
     },
     {
       "id": "power-wind-collection",
@@ -3518,8 +3518,8 @@
       "path": "img/thumbnails/power-utilities/power-wind-collection/preview.jpg",
       "width": 1398,
       "height": 1196,
-      "bytes": 127602,
-      "sha256": "75f01c030afdc90537777c2caad726c71aabe26b8d69a781e8eddc2228a96871"
+      "bytes": 129812,
+      "sha256": "ea37ef56eb93995ad128b88db1df3f495030c150cf1f59fd68c4ae773eb680f6"
     },
     {
       "id": "power-tidal-current",
@@ -3581,8 +3581,8 @@
       "path": "img/thumbnails/power-utilities/power-tidal-current/preview.jpg",
       "width": 1398,
       "height": 1173,
-      "bytes": 126434,
-      "sha256": "0dd107441adebee13aa79a73bf391756a079d6e8f021f5dad5617517654d3fef"
+      "bytes": 128392,
+      "sha256": "224c4e9b337ea5fbfe876807c97d5878bfd80a65a7919879c8ba55126bd2c5df"
     },
     {
       "id": "power-wave-point-absorber",
@@ -3644,8 +3644,8 @@
       "path": "img/thumbnails/power-utilities/power-wave-point-absorber/preview.jpg",
       "width": 1398,
       "height": 1196,
-      "bytes": 127729,
-      "sha256": "f02126cc3770a6d3e5281698d32b6aa7f43e7bc122984cb6ce4a3d1a09ecce9e"
+      "bytes": 129796,
+      "sha256": "9f3dad97005cb1f229cfeb3fbb05bd16c5cf21727c77076be0ae6a77ad43378f"
     },
     {
       "id": "power-csp-tower",
@@ -3713,8 +3713,8 @@
       "path": "img/thumbnails/power-utilities/power-csp-tower/preview.jpg",
       "width": 1398,
       "height": 1196,
-      "bytes": 160620,
-      "sha256": "c902a1c54c2f3b7c2b6527d19c51544472af252cb751ed169d0123e547e84618"
+      "bytes": 164313,
+      "sha256": "371060a68e7784828849d940dc4a4622d928c54c249057349ea4d132de0f2c68"
     },
     {
       "id": "power-csp-trough",
@@ -3782,8 +3782,8 @@
       "path": "img/thumbnails/power-utilities/power-csp-trough/preview.jpg",
       "width": 1398,
       "height": 1196,
-      "bytes": 164714,
-      "sha256": "2596a5f73fb09f8f888046409b47b9226b546992267b4cad5dfc81ee3350d983"
+      "bytes": 168308,
+      "sha256": "aed32593e66c84f6dc9b59e37215c95667096484df86fd9c34eb3a716932e9b7"
     },
     {
       "id": "power-fuel-cell",
@@ -3849,8 +3849,8 @@
       "path": "img/thumbnails/power-utilities/power-fuel-cell/preview.jpg",
       "width": 1398,
       "height": 1196,
-      "bytes": 147241,
-      "sha256": "71b468d24ba600c7e736a937779ade75409237aaf2fe8370a355329c3cfd7686"
+      "bytes": 150087,
+      "sha256": "f3bb38c56eec7599896ffaaba9f930b2968d87166df001c0dbeb88e8e2a8a160"
     },
     {
       "id": "power-geothermal-flash",
@@ -3912,8 +3912,8 @@
       "path": "img/thumbnails/power-utilities/power-geothermal-flash/preview.jpg",
       "width": 1398,
       "height": 1173,
-      "bytes": 131302,
-      "sha256": "08ba0be0bfe03b7058210d5f7dbdab3df45aeac88a71165ff591a25d78712391"
+      "bytes": 132836,
+      "sha256": "84d673b4d0a0a60903c88507e2fd7254b315bcc941bc7ba4b28c23397e4e0965"
     },
     {
       "id": "power-geothermal-binary",
@@ -3975,8 +3975,8 @@
       "path": "img/thumbnails/power-utilities/power-geothermal-binary/preview.jpg",
       "width": 1398,
       "height": 1173,
-      "bytes": 131187,
-      "sha256": "202bb8c60288c8352d38866b25174b1864bb748ad646405f57c9afda46348176"
+      "bytes": 133977,
+      "sha256": "913827564a73cdc1f79b674135f4a4f19fb8045c1ae3c0bab1020e7e59a75307"
     },
     {
       "id": "power-geothermal-dry-steam",
@@ -4038,8 +4038,8 @@
       "path": "img/thumbnails/power-utilities/power-geothermal-dry-steam/preview.jpg",
       "width": 1398,
       "height": 1196,
-      "bytes": 125964,
-      "sha256": "6f4504a2860b0af6424a4ee2968a65a294b6742b7b87739de9d12b3cc1e259eb"
+      "bytes": 127579,
+      "sha256": "26e6735155d7cb89daf419a8c0a1e2a0179e6edd7643c54eef1669a7042b42d5"
     },
     {
       "id": "power-battery-storage",
@@ -4103,8 +4103,8 @@
       "path": "img/thumbnails/power-utilities/power-battery-storage/preview.jpg",
       "width": 1398,
       "height": 1196,
-      "bytes": 135601,
-      "sha256": "1883c58318a4a25c050a0c9382bcad0d99d0cfb587d3e1ec2fab347d6eef61ec"
+      "bytes": 138733,
+      "sha256": "3b8b42452f2acea433280ef797f72a2b5d9ab204ad5b8c2f4d4496e7f6476a22"
     },
     {
       "id": "power-hybrid-microgrid",
@@ -4178,8 +4178,8 @@
       "path": "img/thumbnails/power-utilities/power-hybrid-microgrid/preview.jpg",
       "width": 1398,
       "height": 1173,
-      "bytes": 159204,
-      "sha256": "7403eafda37bd2126b8d5d74638bbff5cc33fc57bf89c9a06169a7b9639fd1e5"
+      "bytes": 161695,
+      "sha256": "d74f3b37c53d0cfe35c659196b5c7eb01c033f5b22c7286847f1285e144f84d5"
     },
     {
       "id": "aquaponics-media-bed",
@@ -4245,8 +4245,8 @@
       "path": "img/thumbnails/agriculture-aquaculture/aquaponics-media-bed/preview.jpg",
       "width": 1398,
       "height": 1196,
-      "bytes": 150545,
-      "sha256": "a9ef7a0a26415d83573b75d963224bcbbe41ba90a941a1b7c6f31e3e5662c025"
+      "bytes": 152649,
+      "sha256": "46cedd403a884aeacd43e5f9899c73ccafd2769699d3ec3abef95a09c98738c2"
     },
     {
       "id": "aquaponics-dwc",
@@ -4318,8 +4318,8 @@
       "path": "img/thumbnails/agriculture-aquaculture/aquaponics-dwc/preview.jpg",
       "width": 1398,
       "height": 1196,
-      "bytes": 156494,
-      "sha256": "f62c0224f6d32189e7133b6ec9dc969ca3eb8d146738896a08430c875acbbdbe"
+      "bytes": 158161,
+      "sha256": "13e34ff35b7c6de073dc36f4c2ba6d8e7201dec4ee0fb122326a15d2d9136ccc"
     },
     {
       "id": "hydroponics-nft",
@@ -4391,8 +4391,8 @@
       "path": "img/thumbnails/agriculture-aquaculture/hydroponics-nft/preview.jpg",
       "width": 1398,
       "height": 1196,
-      "bytes": 160134,
-      "sha256": "56f33bdcf7b39f883e7a27d1f7a46bf9b18419de492f098019107609714317fc"
+      "bytes": 162235,
+      "sha256": "fc232e21916783dd0e218d4330ff4fed09b0b75d890ab06fd02fb3884a7aea10"
     },
     {
       "id": "hydroponics-ebb-flow",
@@ -4462,8 +4462,8 @@
       "path": "img/thumbnails/agriculture-aquaculture/hydroponics-ebb-flow/preview.jpg",
       "width": 1398,
       "height": 1196,
-      "bytes": 152709,
-      "sha256": "fa839788a93beab781dd3a965521e7066cf8543ca8ea3ca8dd2ff74e718fcef8"
+      "bytes": 154017,
+      "sha256": "9492dcb66c68e0555e434343eda4f5c71072a916c2a906021668f952c6bb9c09"
     },
     {
       "id": "greenhouse-drip",
@@ -4535,8 +4535,8 @@
       "path": "img/thumbnails/agriculture-aquaculture/greenhouse-drip/preview.jpg",
       "width": 1398,
       "height": 1196,
-      "bytes": 161356,
-      "sha256": "01ab82e4f1b0681604410e6878b147c5d5c54279d038a050055e03ef437695d1"
+      "bytes": 163401,
+      "sha256": "6aada01224975a4dc1880f858ef682410db0e06265790bd65ce8f86aa96c0ea6"
     },
     {
       "id": "indoor-aeroponics",
@@ -4606,8 +4606,8 @@
       "path": "img/thumbnails/agriculture-aquaculture/indoor-aeroponics/preview.jpg",
       "width": 1398,
       "height": 1196,
-      "bytes": 157219,
-      "sha256": "3b2c7f92f54e618a6a8a702b7cf220966eb27847349c94afc2d5a3794c22f277"
+      "bytes": 159128,
+      "sha256": "d758e7d06c80af1b5762fb57e486bfb6bab6391f4298ce1bf0b42dba2c878f97"
     },
     {
       "id": "electric-batch-oven",
@@ -4669,16 +4669,16 @@
       "path": "img/thumbnails/manufacturing-thermal-processing/electric-batch-oven/preview.jpg",
       "width": 1398,
       "height": 1196,
-      "bytes": 123367,
-      "sha256": "158720aeb237a896ead19bcb28c0d710e262af59dc7da8f70630e3fd680f1450"
+      "bytes": 125575,
+      "sha256": "b35de430a7a31a0a4b3ca8cda170da812b17f93e37509fc35253acbbd3d5ea89"
     }
   ],
   "contact_sheet": {
     "path": "img/thumbnails/contact-sheet.jpg",
     "width": 2000,
     "height": 7389,
-    "bytes": 1794168,
-    "sha256": "c6cf3e12b06a8a1ff116d1c49db0b288e24f6a89163757ea475b06ae78ed130f"
+    "bytes": 1805783,
+    "sha256": "b8a6215c5ab2338c936de8d52f0daa63967f7a5da112952b8592dddd503d829b"
   },
   "capture_implementation_sha256": "6be498cb860d8db344613576ad3934e3cafd137268f52a549d7b20cf6d77dc42"
 }

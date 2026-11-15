@@ -6,7 +6,7 @@ Dated incidents preserve evidence, causes, corrective rules and limits. Start fr
 ```mermaid
 flowchart LR
     I["inbox/"] --> P["publish/"]
-    I --> A["agents/<br/>installation + checkouts"]
+    I --> A["agents/<br/>setup, checkouts,<br/>cloud sessions"]
     I --> R["review/<br/>gate scope + evidence"]
     I --> S["../SYMPTOM-INDEX.md"]
     S --> L["../../docs/lessons/"]

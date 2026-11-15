@@ -95,45 +95,49 @@ flowchart TD
 
 ## Working from a cloud container
 
-When the agent itself runs in a hosted cloud container (no `gh`, GitHub through MCP tools), the long-run rules above
-still apply; these are the differences. Each links the dated evidence and says what was observed only once.
+For an agent that itself runs in a hosted cloud container; the Needs line above does not apply here. Each point
+links dated evidence that says what was observed only once.
 
 - **GitHub.** Reads work without a grant on public repositories; a push or issue creation that fails with
   "Claude doesn't have GitHub access" needs the owner to give the GitHub App access to the repository. `gh` may be
-  missing or logged out, so use the MCP tools as the [review skill](../cad-pr-review/SKILL.md) describes; until
-  [#750](https://github.com/Valpatel/cad-agent/issues/750) and [#751](https://github.com/Valpatel/cad-agent/issues/751)
-  merge, `tools/ci_gates.py all` cannot run here and a cloud reviewer's verdict is not read by the review gate, so
-  leave those merges to a `gh` session or the owner. Put status in comments: a description edit restarts CI
+  missing or logged out; use the GitHub MCP tools. The [review skill](../cad-pr-review/SKILL.md) on `dev` covers `gh`
+  only; MCP routes ([#750](https://github.com/Valpatel/cad-agent/issues/750), PR #755) and a gate that reads a cloud
+  reviewer's verdict ([#751](https://github.com/Valpatel/cad-agent/issues/751), PR #752) are open. Until they merge,
+  leave merges to a `gh` session or the owner. Post status as comments: a description edit restarts CI
   ([evidence](../../inbox/agents/2026-11-15-cloud-sessions-reach-github-through-mcp.md)).
 - **Checkouts.** Leave the session's own clone and its designated branch alone; make each topic worktree beside it
-  with `git worktree add --no-track` on a `feat/`, `fix/` or `docs/` branch from `origin/dev`, push only that branch,
-  and give each worktree its own venv (check `cadagent.__file__`)
-  ([evidence](../../inbox/agents/2026-11-15-cloud-sessions-need-own-worktrees-and-fresh-reviewers.md)).
-- **Browsers and Python.** Only Playwright's Chromium is installed, at a newer revision than the pinned
-  `@playwright/test` expects, so pass `executablePath`; WebKit is absent and stays so. Report WebKit as not run
-  locally and let CI decide. Run provenance checks with `python3.12`, which CI uses
+  with `git worktree add --no-track` on a `feat/`, `fix/` or `docs/` branch from `origin/dev`. Ask the owner before
+  pushing any branch other than the one the session designates. Give each worktree its own venv and check
+  `cadagent.__file__` ([evidence](../../inbox/agents/2026-11-15-cloud-sessions-need-own-worktrees-and-fresh-reviewers.md)).
+- **Provenance receipts.** Never edit a recorded hash ([SCADA tools](../../../tools/webkit/scada/README.md));
+  regenerate with the generator. SCADA explorer sources need `thumbnails:scenarios` on the pinned shell, which the
+  container lacks: stop and ask the owner, attaching any same-build comparison as evidence. For `model.js`, run
+  `node tools/site/figures/site-model-poster.mjs --model j501`. PR #763 (open) proposes a CI recapture
   ([evidence](../../inbox/agents/2026-11-15-cloud-containers-limit-browser-and-provenance-evidence.md)).
+- **Browsers and Python:** Chromium only (report WebKit as not run locally); Python 3.12 for provenance checks.
 
 <details>
-<summary>Hashes that move with their sources, slow steps, and the orchestration that worked</summary>
+<summary>Browsers, Python, slow steps, site checks and the orchestration that worked</summary>
 
-- **Hash pairs.** Change the source and its recorded hash in the same commit, and run the checks that compare them:
-  - `software/cadagent/webkit/model/model.js` → `renderer_sha256` in `tools/site/assets/models/j501-source.json`
-    (checked by `tests/webkit/webkit-model.test.mjs`);
-  - SCADA explorer sources → `source_hashes` in `software/cadagent/webkit/scada/sim/metadata/thumbnails.json`
-    (checked by the `scada (chromium)` job's provenance step; run its `npm run …:check` scripts in
-    `tools/webkit/scada`, not only the browser suite).
-
-  Do not regenerate thumbnails on the container's browser: a different build changes images for engine reasons
-  alone. Compare old and new source on one build and update the hash, or recapture with the pinned shell.
-- **Slow steps:** the site build takes 3 to 5 minutes (longer with an empty diagram cache), the touch-orbit browser suite about 4 minutes in software
-  WebGL, and the catalogue browser suite about 4.5 minutes a run (observed once). Run them once, at the end.
+- **Browsers:** only Playwright's Chromium is installed, newer than the pinned `@playwright/test` expects; WebKit is
+  absent and stays so, and CI decides for it.
+- **Python:** the npm scripts call `python3`; only 3.12 reproduces the CI hashes, so put a 3.12 venv first on `PATH`.
+- **Browser variables:** `CHROMIUM_EXECUTABLE` for `tests/webkit/{assembly,host,simulation}/browser.mjs`,
+  `webkit-fea-browser.mjs` and `webkit-stage-browser.mjs`; `PLAYWRIGHT_EXECUTABLE_PATH` for the SCADA explorer
+  suite. The `tests/site` suites take only `PLAYWRIGHT_CHANNEL`; unset, channel `chrome` reaches the installed
+  Chromium through a `google-chrome` wrapper.
+- **Slow steps:** the site build takes 3 to 5 minutes (longer with an empty diagram cache) and the catalogue browser
+  suite about 4.5 minutes a run (observed once); #756's touch suite, not on `dev`, about 4 minutes. Run them once.
+- **Site checks in the browser job:** a folder README lists every file in it, a new `__init__.py` included; added
+  prose can push a page past the 1200 px wall-of-text limit. Build the site and run those checks after a docs change.
 - **Orchestration:** one orchestrating session; implementers each in its own worktree and branch; a cheaper checker
-  for CI logs and issues; and a freshly started reviewer given only the PR. Answer nits on the thread and carry them
-  to the next change of the same lines rather than pushing after a pass, so the reviewed head stays reviewed.
+  for CI logs and issues; and a freshly started reviewer given only the PR. All post through one account, so the
+  reviewer's independence is procedural and the gate cannot check it. Answer nits on the thread and carry them to
+  the next change of the same lines rather than pushing after a pass, so the reviewed head stays reviewed.
 
 Limits: from one session on 2026-11-15. The 403 text, the owner's go-ahead for topic branches, the shared-venv
-mix-up, the catalogue timing and two MCP quirks were observed once and not confirmed; container images change.
+mix-up, the catalogue timing, two MCP quirks and the two site-check failures were observed once; container images
+change.
 
 </details>
 

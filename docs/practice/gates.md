@@ -302,6 +302,21 @@ not_drawn("motor_shaft", reason="vendor STEP not imported", near="motor")
 The declaration adds no geometry. The build writes it to the geometry record as `not_drawn: {name: {reason, near,
 declared_at}}`, only when something is declared, so a record without declarations is unchanged.
 
+```mermaid
+flowchart TD
+    N["not_drawn(name, reason, near)<br/>in the build script"] --> R["geometry record<br/>not_drawn table"]
+    R --> W["gates whose result depends<br/>on which solids are present<br/>status warn, pass stays true"]
+    R --> O["wall gate<br/>components listed<br/>status unchanged"]
+    W --> V["every reader of a pass<br/>CLI, report, site, packet<br/>names the components"]
+    O --> V
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
+    classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
+    class N,R here
+    class O near
+    class W,V out
+```
+
 Every verdict made for that build then states it (`cadagent.review.gates.verdict.note_not_drawn`). The word `warn`
 appears in the places this table names, and nowhere else:
 
@@ -331,6 +346,19 @@ is not part of it). To clear the warning, draw the component and remove the decl
 review (`review-stale`), as a changed shape does, and a record written before the declaration is refused at
 submission (`stale-not-drawn`). A declaration without `near` names no section and voids no review; it still
 reaches every packet written after it.
+
+```mermaid
+flowchart TD
+    D["a component declared<br/>after a section was reviewed"] --> Q{"near a part<br/>of that section?"}
+    Q -->|"yes"| S["review voided: review-stale<br/>an older record is refused:<br/>stale-not-drawn"]
+    Q -->|"no, or no near"| K["review stands<br/>later packets still<br/>list the component"]
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
+    classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
+    class D,Q here
+    class K near
+    class S out
+```
 
 <details>
 <summary>Limits: what the declaration does not do</summary>

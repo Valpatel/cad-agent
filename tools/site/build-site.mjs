@@ -10,7 +10,7 @@ import {topicSprite, readerNav, updateTime, articleOutline} from './compiler/sit
  * browser, leaves them to the reader's browser, as before (#132).
  */
 import { readFile, writeFile, mkdir, rm, readdir } from 'node:fs/promises';
-import { readFileSync } from 'node:fs';
+import { readFileSync, existsSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import path from 'node:path';
@@ -498,6 +498,12 @@ reel.splice(3, 0, `<li class="reel-tile reel-snap"><a class="reel-media" href="/
 const toolkitCards = new Map(toolkitCapabilities(scada, { catalog: catalog.items, has: f => tracked.includes(f) }).map(c => [c.id, c]));
 const stackHref = (h, at) => {
   const m = h.match(/^\/toolkit(?:#([\w-]+))?$/);
+  // A generated site route (/references, /catalog) must already be in the output; an outside link must be plain https.
+  if (!m && /^\/[a-z][\w/-]*$/.test(h)) {
+    if (![h.slice(1) + '.html', h.slice(1) + '/index.html'].some(f => existsSync(path.join(out, f)))) throw new Error(`docs/home.yaml ${at}: ${h} is not a page this build writes`);
+    return h;
+  }
+  if (/^https:/.test(h)) { let u; try { u = new URL(h); } catch { u = null; } if (!u || u.username || u.password || u.protocol !== 'https:') throw new Error(`docs/home.yaml ${at}: ${h} is not a plain https link`); return h; }
   if (!m) return homeHref(h, at);
   if (m[1] && !toolkitCards.has(m[1])) throw new Error(`docs/home.yaml ${at}: /toolkit has no example #${m[1]}`);
   return h;
@@ -517,6 +523,8 @@ const COUNTS = {
   guides: pages.filter(p => p.section === 'docs').length,
   lessons: lessonCount,
   references: refModel.refs.records.size,
+  // Read at source or better (read, verified-at-source, encoded); the rest are catalogued from a search snippet only.
+  'sources-read': [...refModel.refs.records.values()].filter(r => r.status === 'source').length,
   catalogue: catalog.items.length,
   commands: commands.length,
   formulas: await countLines(tracked.filter(f => /^software\/cadagent\/formulas\/[^/]+\.py$/.test(f)), /^@formula\(/gm),
@@ -540,6 +548,8 @@ const cakeLayers = home.stack.map((layer, li) => {
     seenBlocks.add(b.label.toLowerCase());
     if (b.planned) {
       if (!Number.isInteger(b.planned) || b.href || b.count) throw new Error(`docs/home.yaml ${bat}: a planned block names only its open issue`);
+      // `until:` names the file that will exist once the work lands: then the block must become solid.
+      if (b.until && tracked.includes(b.until)) throw new Error(`docs/home.yaml ${bat}: ${b.until} now exists, so ${b.label} is built: make it a solid block with its page`);
       md.push(`${b.label} (planned, [#${b.planned}](${ISSUES}${b.planned}))`);
       return `<li><a class="cake-block cake-planned" href="${ISSUES}${b.planned}"><span class="cake-name">${esc(b.label)}</span><span class="cake-count">#${b.planned}</span></a></li>`;
     }
@@ -553,7 +563,7 @@ const cakeLayers = home.stack.map((layer, li) => {
     }
     const href = stackHref(b.href, bat);
     md.push(`[${b.label}${n != null ? ` (${n.toLocaleString('en-US')})` : ''}](${absolute(b.href)})`);
-    return `<li><a class="cake-block" href="${esc(href)}"${b.commands ? ` title="${esc(b.commands.map(c => 'cad-agent ' + c).join(', '))}"` : ''}><span class="cake-name">${esc(b.label)}</span>${b.note ? `<span class="cake-note">${esc(b.note)}</span>` : ''}${n != null ? `<span class="cake-count">${n.toLocaleString('en-US')}</span>` : ''}</a></li>`;
+    return `<li${b.commands ? ' class="cake-family"' : ''}><a class="cake-block" href="${esc(href)}"${b.commands ? ` title="${esc(b.commands.map(c => 'cad-agent ' + c).join(', '))}"` : ''}><span class="cake-name">${esc(b.label)}</span>${b.note ? `<span class="cake-note">${esc(b.note)}</span>` : ''}${n != null ? `<span class="cake-count">${n.toLocaleString('en-US')}</span>` : ''}</a></li>`;
   }).join('');
   homeMd.cake.push(`- **${layer.layer}** (${layer.caption}): ${md.join(' · ')}`);
   return `<div class="cake-layer" data-layer="${li}"><div class="cake-head"><h3>${esc(layer.layer)}</h3><p>${esc(layer.caption)}</p></div><ul>${blocks}</ul></div>`;
@@ -593,7 +603,8 @@ homeMd.arc = [];
 const arcSteps = home.arc.map((s, i) => {
   const at = `arc[${i}]`;
   for (const k of ['title', 'today', 'next', 'href']) if (!s[k]) throw new Error(`docs/home.yaml ${at} has no ${k}`);
-  const today = s.today.replace('{catalog}', catalog.items.length.toLocaleString('en-US'));
+  const today = s.today.replace(/\{([\w-]+)\}/g, (all, k) => k === 'catalog' ? catalog.items.length.toLocaleString('en-US')
+    : k in COUNTS ? COUNTS[k].toLocaleString('en-US') : (() => { throw new Error(`docs/home.yaml ${at}: no count ${k}`); })());
   homeMd.arc.push(`${i + 1}. [${s.title}](${absolute(s.href)}). Today: ${today} Next: ${s.next}`);
   return `<li class="arc-step"><span class="arc-num" aria-hidden="true">${i + 1}</span><h3><a href="${esc(homeHref(s.href, at))}">${esc(s.title)}</a></h3><p><b>Today.</b> ${esc(today)}</p><p class="arc-next"><b>Next.</b> ${esc(s.next)}</p></li>`;
 }).join('');
@@ -656,7 +667,7 @@ function titlePixelLine(label, y=0) {
 const titleWide = titlePixelLine('MACHINES BUILDING MACHINES');
 const titleNarrow = titlePixelLine('MACHINES') + titlePixelLine('BUILDING MACHINES', 10);
 const pixelHeading = `<h1 class="pixel-title"><span class="pixel-title-text">Machines building machines</span><svg class="pixel-title-wide" viewBox="0 0 155 9" aria-hidden="true" focusable="false" shape-rendering="crispEdges"><path class="pixel-title-shadow" transform="translate(0 1)" d="${titleWide}"/><path fill="currentColor" d="${titleWide}"/></svg><svg class="pixel-title-narrow" viewBox="0 0 101 19" aria-hidden="true" focusable="false" shape-rendering="crispEdges"><path class="pixel-title-shadow" transform="translate(0 1)" d="${titleNarrow}"/><path fill="currentColor" d="${titleNarrow}"/></svg></h1>`;
-// The home page's lede names both layers (#748); the description and title say the same for search and sharing.
+// The home page's lede says what cad-agent is and where it is headed (#748); the title and description say the same.
 const HOME_LEDE = ['cad-agent is an open-source stack of CAD libraries, simulators, deterministic checks, web widgets and command-line tools, with knowledge and an agent kit on top.',
   'It is headed toward free, open and local models doing the CAD work frontier models do today.'];
 const HOME_TITLE = 'cad-agent · Open-source CAD libraries, simulators, checks and tools for agents';
@@ -676,7 +687,7 @@ ${pixelHeading}
 <ul class="run-minis">${runCards}</ul></section>
 <section class="section stack" id="stack" aria-labelledby="stack-title"><div class="lead"><h2 id="stack-title">What is in <span>cad-agent.</span></h2><p>Everything above is built from this stack: open source underneath, our libraries and tools in the middle, knowledge and an agent kit on top. Each block opens its page.</p></div>
 <ul class="cake-legend"><li><span class="cake-key"></span>In cad-agent today</li><li><span class="cake-key cake-key-planned"></span>Where we are headed (its issue)</li></ul>
-<div class="cake" role="figure" aria-labelledby="stack-title" data-visual>${cakeLayers}</div></section></div>
+<a class="cake-skip" href="#use-it">Skip the stack</a><div class="cake" role="figure" aria-labelledby="stack-title" data-visual>${cakeLayers}</div></section></div>
 ${useCard}
 <section class="reel-band" id="outputs"><div class="wrap"><div class="lead"><h2>What the checks <span>compute.</span></h2><p>Outputs of cad-agent's tools with the numbers they computed: on this repo's test fixtures and on worked examples. Each tile says which, and opens the page that explains it.</p></div>
 <ul class="reel">${reel.join('')}</ul>

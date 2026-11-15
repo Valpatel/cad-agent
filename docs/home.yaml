@@ -1,9 +1,10 @@
-# The home page (#748): two layers (shared components, then skills and evals), what runs, then the checks.
+# The home page (#748): what runs, what is in cad-agent (a layer cake), install, the checks, then where it is headed.
 # Every visible example has a real committed figure, source and limits. See docs/img/hero/README.md (#605).
 # The build (tools/site/build-site.mjs) fails when a link is not a published page, a picture is not committed, an area
 # is not in docs/areas.yaml or a /toolkit anchor is not one of its examples.
 # What is in cad-agent: a layer cake, top layer first. A block is in the repo today unless it says `planned:` with an
 # open issue; then it is drawn dashed and links to that issue. `count:` names a number the build computes from the repo.
+# `until:` names the file a planned block awaits; once it exists the build asks for a solid block.
 stack:
 - layer: Agent kit
   caption: How agents find and use it
@@ -23,7 +24,7 @@ stack:
   - label: Local and lower-cost model evals
     planned: 142
 - layer: Knowledge
-  caption: Cited, reviewed, searchable
+  caption: Guides, lessons and a reference register
   blocks:
   - label: Guides
     count: guides
@@ -31,12 +32,15 @@ stack:
   - label: Lessons
     count: lessons
     href: docs/lessons/README.md
-  - label: References
+  - label: Reference records
     count: references
-    href: docs/research/README.md
+    href: /references
+  - label: Sources read
+    count: sources-read
+    href: /references
   - label: Catalogue entries
     count: catalogue
-    href: https://cad-agent.valpatel.com/catalog
+    href: /catalog
   - label: Confidence on every rule
     planned: 143
 - layer: Command-line tools
@@ -160,16 +164,19 @@ stack:
     href: software/cadagent/publish/README.md
   - label: Involute gears
     planned: 723
+    until: software/cadagent/mechanical/gears.py
 - layer: Built on
   caption: Open source underneath
   blocks:
   - label: CadQuery and OCP
     href: docs/research/agent-workflow/landscape.md
-  - label: build123d
-    href: docs/research/agent-workflow/landscape.md
+  - label: trimesh
+    href: software/cadagent/geometry/README.md
+  - label: PyVista
+    href: software/cadagent/simulation/README.md
   - label: text-to-cad (vendored)
     href: software/vendor/README.md
-  - label: KiCad MCP servers (vendored)
+  - label: kicad-mcp-pro (vendored)
     href: software/vendor/README.md
   - label: Gmsh and scikit-fem
     href: docs/research/fea-and-process-tools.md
@@ -181,6 +188,8 @@ stack:
     href: docs/research/simulation-tools.md
   - label: Optuna
     href: docs/explore.md
+  - label: Bambu Studio and PrusaSlicer (external)
+    href: docs/toolkit.md
   - label: three.js
     href: software/cadagent/webkit/vendor/README.md
 # See it run: the two viewers are written by the build from their model sources; these are the cards beside them.
@@ -214,13 +223,13 @@ arc:
   next: Skills for triaging and integrating outside contributions.
   href: .github/CONTRIBUTING.md
 - title: Gather the best
-  today: '{catalog} catalogue entries (outside tools, guides, lessons and skills) and a register of cited references;
-    each area states its maturity.'
+  today: '{catalog} catalogue entries (outside tools, guides, lessons and skills) and {references} reference records,
+    {sources-read} of them read at source; each area states its maturity.'
   next: A confidence level on every rule and tool.
   href: docs/research/README.md
 - title: Measure smaller models
-  today: Three analytical jobs with independent graders. The recorded attempts used one hosted frontier model, with
-    no baseline without cad-agent.
+  today: Three analytical jobs with independent graders. Three recorded attempts passed, all on one hosted frontier
+    model; two CLI attempts produced no artifact. No baseline without cad-agent.
   next: Paired trials with and without cad-agent on a local model first, then a lower-cost hosted one. No local or
     open model has been measured yet.
   href: docs/practice/standard-evaluation.md

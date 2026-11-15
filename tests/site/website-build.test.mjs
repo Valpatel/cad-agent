@@ -616,6 +616,10 @@ test('every lesson page has a diagram, and the home page links to knowledge with
   assert.match(home, /src="\/docs\/img\/hero\/learning-loop\.svg"/);
 });
 
+test('the turret recording matches its SOURCE.json record (tools/site/figures/gyropup-turret.mjs --check)', () => {
+  execFileSync(process.execPath, ['tools/site/figures/gyropup-turret.mjs', '--check'], { cwd: root, stdio: 'pipe' });
+});
+
 test('the home page shows what runs, then what is in cad-agent, in order, every new link resolves and the twins say the same (#748)', async () => {
   const home = await readFile(path.join(out, 'index.html'), 'utf8');
   const order = ['class="hero learning-hero"', 'id="built-with"', 'id="stack"', 'id="use-it"', 'id="outputs"', 'id="frontier-to-local"', 'class="section help-band"'];
@@ -637,6 +641,15 @@ test('the home page shows what runs, then what is in cad-agent, in order, every 
   const cli = git('show', 'HEAD:software/cadagent/cli.py');
   const commandCount = (cli.match(/sub\.add_parser\("/g) || []).length;
   assert.match(stack, new RegExp(`<span class="cake-name">Commands</span><span class="cake-count">${commandCount}</span>`));
+  // References: every record is counted, and separately the ones read at source, as the register's own totals say.
+  const { totals } = JSON.parse(await readFile(path.join(out, 'catalog/references/index.json'), 'utf8'));
+  assert.match(stack, new RegExp(`Reference records</span><span class="cake-count">${totals.records.toLocaleString('en-US')}</span>`));
+  assert.match(stack, new RegExp(`Sources read</span><span class="cake-count">${totals.sources.toLocaleString('en-US')}</span>`));
+  assert.match(stack, /<a class="cake-skip" href="#use-it">/, 'a keyboard reader can skip the stack');
+  // A planned block's `until:` file must not exist yet; once it does, the block becomes solid (the build refuses).
+  const yamlHome = YAML.parse(git('show', 'HEAD:docs/home.yaml'));
+  const tracked = new Set(git('ls-tree', '-r', '--name-only', 'HEAD').split('\n'));
+  for (const b of yamlHome.stack.flatMap(l => l.blocks).filter(b => b.until)) assert.ok(!tracked.has(b.until), `${b.until} exists: ${b.label} is built`);
   assert.doesNotMatch(home, /Check, simulate|fits-ours/, 'the duplicate section is gone');
   assert.equal((home.match(/class="run-mini"/g) || []).length, 3, 'robot replay, SCADA and a build guide');
   assert.ok(home.indexOf('class="run-card run-turret"') < home.indexOf('<cad-model ') && home.lastIndexOf('<cad-model ') < home.indexOf('class="run-minis"'), 'the turret leads, then the two viewers, then the toolkit cards');

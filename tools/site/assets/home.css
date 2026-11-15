@@ -48,6 +48,8 @@
 .cake-count{font:700 12px var(--mono);color:var(--orange)}
 .cake-planned{background:transparent;border-style:dashed;border-color:var(--orange);font-weight:500;color:var(--text-2)}
 .cake-planned .cake-count{font-weight:500}
+.cake-skip{position:absolute;left:-9999px;top:auto}
+.cake-skip:focus{position:static;display:inline-block;margin:0 0 10px;padding:8px 14px;border-radius:calc(8px*var(--round));background:var(--ink);color:var(--cream);font-weight:700}
 /* See it run: the turret recording leads, then the two viewers, then a row of three links into /toolkit. */
 .built-with{padding-top:40px}
 .run-card{position:relative;display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:24px;align-items:center;border:1px solid var(--line-2);border-radius:calc(20px*var(--round));background:var(--card);padding:16px;margin-bottom:24px;min-width:0}
@@ -82,5 +84,9 @@
 .arc .lead p a{color:var(--link)}
 @media(min-width:1051px){.reel-band .reel{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:1050px){.arc-steps{grid-template-columns:repeat(2,minmax(0,1fr))}.run-card{grid-template-columns:1fr;gap:14px}}
-@media(max-width:760px){.arc-loop{display:none}.cake-layer{grid-template-columns:1fr;gap:8px;padding:10px}.cake-note{display:none}.cake-block{font-size:13px;padding:5px 8px}.arc-steps{grid-template-columns:1fr}.run-minis{grid-template-columns:1fr}.run-card h3{font-size:21px}.built-with{padding-top:24px}}
+@media(max-width:760px){.arc-loop{display:none}.cake{gap:4px}.cake-layer{display:block;padding:8px 10px}.cake-head{margin:0 0 2px}.cake-head h3{font-size:14.5px}.cake-head p{display:none}
+.cake-note{display:none}
+.cake ul{display:block;line-height:1.75;font-size:13px}.cake li{display:inline}.cake li.cake-family{display:none}.cake li+li::before{content:" · ";color:var(--muted)}
+.cake-block{display:inline;padding:0;border:0;background:none;font-size:13px;font-weight:600;text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--line-3)}
+.cake-block .cake-count{margin-left:.3em}.cake-key{height:0;border-width:0 0 2px;border-radius:0;background:none}.cake-key-planned{border-bottom-style:dashed}.cake-planned{text-decoration-style:dashed;text-decoration-color:var(--orange)}.arc-steps{grid-template-columns:1fr}.run-minis{grid-template-columns:1fr}.run-card h3{font-size:21px}.built-with{padding-top:24px}}
 @media(prefers-reduced-motion:reduce){.cake-block,.run-mini{transition:none}}

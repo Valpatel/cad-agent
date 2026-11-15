@@ -23,8 +23,8 @@ cheaper, open and local models can do the same work with that help (#748).
   - Next: a confidence level on every rule and tool (#143).
 - **Measure smaller models.**
   - Today: three analytical jobs with independent graders and a 28-entry candidate catalogue
-    ([standard evaluation](practice/standard-evaluation.md)). The recorded attempts used one hosted frontier model,
-    with no baseline without cad-agent.
+    ([standard evaluation](practice/standard-evaluation.md)). Three recorded attempts passed, all on one hosted
+    frontier model; two CLI attempts produced no artifact. No baseline without cad-agent.
   - Next: paired trials with and without cad-agent on a local model first, then a lower-cost hosted one (#142). No
     local or open model has been measured yet.
 

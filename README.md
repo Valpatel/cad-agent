@@ -42,7 +42,7 @@ The stack, top layer first:
 | Checks and tests | [formulas](software/cadagent/formulas/README.md) · [gates](docs/practice/gates.md) · [tests](tests/README.md) |
 | Simulators | [FEA, CFD, robots](software/cadagent/simulation/README.md) · [SCADA](docs/practice/scada/README.md) |
 | Libraries | [the `cadagent` package](software/cadagent/README.md) |
-| Built on | CadQuery, build123d, Gmsh, OpenFOAM, MuJoCo, three.js ([vendored](software/vendor/README.md)) |
+| Built on | CadQuery, trimesh, Gmsh, OpenFOAM, MuJoCo, three.js; [vendored projects](software/vendor/README.md) |
 
 Start with the [guides](docs/README.md), explore the [visual catalogue](https://cad-agent.valpatel.com/catalog),
 or try the [toolkit viewers and simulations](https://cad-agent.valpatel.com/toolkit).

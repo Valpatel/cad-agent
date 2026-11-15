@@ -43,20 +43,24 @@ async function open(route, { width = 1366, height = 900, js = true, motion = 'no
   page.on('request', r => { if (!r.url().startsWith(base) && !/^(data|blob):/.test(r.url())) seen.push(`third party: ${r.url()}`); });
   if (js) await page.addInitScript(() => document.addEventListener('securitypolicyviolation', e => console.error(`CSP ${e.violatedDirective} ${e.blockedURI}`)));
   if (init) await page.addInitScript(init);
+  // One clock (Date.now()) for the Node trail and the page's own log, so each pushState pairs with its framenavigated.
   const trail = [];
   if (trace) {
-    const t0 = Date.now(), note = what => trail.push(`${Date.now() - t0} ms ${what}`);
+    const note = what => trail.push(`${Date.now()} ${what}`);
     page.on('framenavigated', f => { if (f === page.mainFrame()) note(`framenavigated ${f.url()}`); });
     page.on('domcontentloaded', () => note('domcontentloaded'));
     page.on('load', () => note('load'));
     await page.addInitScript(() => {
-      const log = window.__catalogTrace = [], t0 = performance.now(), note = what => log.push(`${Math.round(performance.now() - t0)} ms ${what}`);
+      const log = window.__catalogTrace = [], note = what => log.push(`${Date.now()} ${what}`);
       for (const name of ['pushState', 'replaceState']) {
         const write = history[name];
         history[name] = function (state, title, url) { note(`${name} ${url}`); return write.apply(this, arguments); };
       }
       addEventListener('popstate', () => note(`popstate ${location.href}`));
-      addEventListener('click', e => note(`click ${e.target?.getAttribute?.('aria-label') || e.target?.localName} defaultPrevented=${e.defaultPrevented}`), true);
+      // Capture phase: the click arrived (and on what); bubble phase: it got past the page's handlers, and whether one prevented it.
+      const what = e => e.target?.getAttribute?.('aria-label') || e.target?.localName;
+      addEventListener('click', e => note(`click ${what(e)}`), true);
+      addEventListener('click', e => note(`click handled ${what(e)} defaultPrevented=${e.defaultPrevented}`));
       addEventListener('pageshow', () => note(`pageshow ${location.href}`));
     });
   }
@@ -64,14 +68,23 @@ async function open(route, { width = 1366, height = 900, js = true, motion = 'no
   if (js && !block && !fails && /^\/(?:explore|catalog)(?:[?#]|$)/.test(route)) await page.waitForSelector('cad-gallery[data-ready]', { timeout: 10000 }).catch(() => seen.push('the gallery did not start'));
   const done = async () => { for (const s of seen) fail(`${route} @${width}${js ? '' : ' no-JS'}`, s); await context.close(); };
   // On a failed step only: what the client believes the URL is, what the document says, its load state, the trail and a picture.
+  // Readings it separates: a click that missed (no `click` entry, or another target); a handler that failed (click, no
+  // pushState, a page error in `seen`) or wrote nothing because the URL was unchanged (`chips`/`checked` show the state);
+  // the engine not reporting (a pushState and `inPage.href` without the change, `playwrightUrl` still with it); and a page
+  // that stopped responding (`inPage.unavailable`). The page reads are bounded, so a hung page still fails in about 30 s.
   const evidence = async (where, error) => {
     const out = await mkdtemp(path.join(tmpdir(), 'cad-agent-catalog-wait-'));
-    const inPage = await page.evaluate(() => ({ href: location.href, readyState: document.readyState, history: history.length, trace: window.__catalogTrace || null,
+    const record = inPage => writeFile(path.join(out, 'state.json'), JSON.stringify({ where, error: String(error?.message || error), route, playwrightUrl: page.url(), inPage, trail, seen }, null, 2) + '\n');
+    await record({ unavailable: 'not read yet' });   // the Node-side facts need no page
+    let timer;
+    const timedOut = new Promise(ok => { timer = setTimeout(() => ok({ unavailable: 'timed out after 5 s: the page did not answer' }), 5000); });
+    const inPage = await Promise.race([timedOut, page.evaluate(() => ({ href: location.href, readyState: document.readyState, history: history.length, trace: window.__catalogTrace || null,
       chips: [...document.querySelectorAll('[data-gallery-chips] button')].map(b => b.getAttribute('aria-label')),
       checked: [...document.querySelectorAll('cad-gallery input:checked')].map(b => `${b.name}=${b.value}`),
-      focus: document.activeElement?.getAttribute('aria-label') || document.activeElement?.localName })).catch(e => ({ unavailable: String(e) }));
-    await writeFile(path.join(out, 'state.json'), JSON.stringify({ where, error: String(error?.message || error), route, playwrightUrl: page.url(), inPage, trail, seen }, null, 2) + '\n');
-    await page.screenshot({ path: path.join(out, 'page.png'), fullPage: true }).catch(() => {});
+      focus: document.activeElement?.getAttribute('aria-label') || document.activeElement?.localName })).catch(e => ({ unavailable: String(e) }))]);
+    clearTimeout(timer);
+    await record(inPage);
+    if (!inPage.unavailable) await page.screenshot({ path: path.join(out, 'page.png'), fullPage: true, timeout: 5000 }).catch(() => {});
     console.error(`${where}: failure evidence in ${out}`);
   };
   return { page, done, evidence };
@@ -236,7 +249,7 @@ async function interactionChecks(){
   if(JSON.stringify(titles)!==JSON.stringify(expected))fail('sort/filter','A–Z tool results disagree with catalogue');
   const projection=JSON.parse(await readFile(path.join(dir,'discovery.json'),'utf8')),total=projection.items.filter(x=>x.group==='guides').length;
   const line=await page.locator('[data-gallery-status]').textContent();if(line!==`${expected.length} of ${total} tools & guides`)fail('filtered count',line);
- }catch(error){await evidence('interaction',error);throw error;}finally{await done();}
+ }catch(error){await evidence('interaction',error).catch(e=>console.error('interaction: evidence not written: '+e.message));throw error;}finally{await done();}
 }
 async function detailsChecks(){
  for(const badRevision of [false,true]){

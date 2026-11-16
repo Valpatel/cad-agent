@@ -60,7 +60,7 @@ flowchart TD
    |---|---|---|
    | Inline comment | `gh api repos/<owner>/<repo>/pulls/<n>/comments` (`commit_id` = head SHA, `path`, `line`, `side=RIGHT`) | `pull_request_review_write` (`create`, `commitID` = head SHA, no `event`), then `add_comment_to_pending_review` (`path`, `line`, `side` RIGHT, `subjectType` LINE) |
    | Summary and verdict | `gh pr review <n> --comment --body-file <file>` | `pull_request_review_write` (`submit_pending`, `event` COMMENT, `body` ending with the marker); with no inline comments, `create` with `event` COMMENT |
-   | Re-run the gates | `gh workflow run gates.yml -R <owner>/<repo> -f pr=<n>` | `actions_run_trigger` (`run_workflow`, `workflow_id` gates.yml, `ref` the default branch, `inputs` {pr: "<n>"}) |
+   | Re-run the gates | `gh workflow run gates.yml -R <owner>/<repo> -f pr=<n>` | `actions_run_trigger` (`run_workflow`, `workflow_id` gates.yml, `ref` dev, `inputs` {pr: "<n>"}) |
    | Timeline update | `gh pr comment --body-file`, `gh issue comment --body-file` | `add_issue_comment` |
 
    Use `actions_run_trigger` only for `run_workflow` on gates.yml; never re-run, cancel or delete other runs.

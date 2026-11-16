@@ -84,10 +84,37 @@ CHROME_APPS = ("/Applications/Google Chrome.app", "/opt/google/chrome/chrome",
                r"%LOCALAPPDATA%\Google\Chrome\Application\chrome.exe")
 
 
+def add_packages_command(*packages: str, requirements: Optional[Path] = None) -> str:
+    """The command that adds ``packages`` (or a requirements file) to the Python this cad-agent runs in, for a person
+    to run. A uv tool environment has no pip and uv rebuilds it on every reinstall, so there it is uv's own
+    ``tool install --with``, keeping the extras and earlier ``--with`` packages; elsewhere pip in this Python."""
+    adds = list(packages) if requirements is None else [str(requirements)]
+    if _uv_tool_env():
+        try:
+            root: Optional[Path] = kit_root()
+        except FileNotFoundError:
+            root = None
+        if root is not None:
+            cmd = _uv_tool_install(root, _receipt_extras() or [], _uv() or "uv")
+            cmd.remove("--quiet")
+            for add in adds:
+                cmd += ["--with-requirements" if requirements is not None else "--with", add]
+            return _shell_line(cmd)
+    return _shell_line([sys.executable, "-m", "pip", "install", *(["-r"] if requirements is not None else []), *adds])
+
+
+def _shell_line(cmd: List[str]) -> str:
+    """``cmd`` as one line to paste into this platform's shell."""
+    if os.name == "nt":
+        return " ".join(f'"{a}"' if re.search(r"[\s\[\]&;()]", a) else a for a in cmd)
+    import shlex
+    return shlex.join(cmd)
+
+
 def _playwright() -> Optional[str]:
     missing = []
     if importlib.util.find_spec("playwright") is None:
-        missing.append(f"Playwright is not installed in this Python (`\"{sys.executable}\" -m pip install playwright`)")
+        missing.append(f"Playwright is not installed in this Python (`{add_packages_command('playwright')}`)")
     if not (_on_path(*CHROME) or any(Path(os.path.expandvars(p)).expanduser().exists() for p in CHROME_APPS)):
         missing.append("Google Chrome was not found")
     return "; ".join(missing) or None
@@ -118,7 +145,9 @@ def _scada_browser() -> Optional[str]:
     is still needed to establish OS libraries, permissions and rendering behavior.
     """
     if importlib.util.find_spec("playwright") is None:
-        return "Python Playwright is missing: install tools/webkit/scada/ui/requirements.txt in this Python"
+        req = Path(__file__).resolve().parents[2] / "tools" / "webkit" / "scada" / "ui" / "requirements.txt"
+        return (f"Python Playwright is missing: `{add_packages_command(requirements=req)}`" if req.is_file() else
+                f"Python Playwright is missing: `{add_packages_command('playwright')}`")
     if shutil.which("chromium"):
         return None
     code = ("from playwright.sync_api import sync_playwright\n"
@@ -130,7 +159,8 @@ def _scada_browser() -> Optional[str]:
             return None
     except (OSError, subprocess.SubprocessError):
         pass
-    return "Chromium was not found: install a local chromium binary or run this Python's `-m playwright install chromium`"
+    return ("Chromium was not found: install a local chromium binary or run "
+            f"`{_shell_line([sys.executable, '-m', 'playwright', 'install', 'chromium'])}`")
 
 
 @dataclass(frozen=True)
@@ -473,10 +503,11 @@ def prune(home: Path, root: Path, targets=TARGETS, dry_run: bool = False) -> Lis
 
 
 def install(home: Path, root: Path, targets=TARGETS, copy: bool = False, dry_run: bool = False) -> dict:
-    """Install the kit. Returns {'done': [...], 'conflicts': [...], 'removed': [...]}. Only what this module made is
-    replaced or removed; anything else at a destination is a conflict and left untouched. A link that cannot be made
-    (Windows without Developer Mode) becomes a copy."""
-    done, conflicts = [], []
+    """Install the kit. Returns {'done': [...], 'conflicts': [...], 'removed': [...], 'unchanged': [...]}. Only what
+    this module made is replaced or removed; anything else at a destination is a conflict and left untouched. A link
+    that already points at the item is left as it is (``unchanged``), so an update lists only what changed. A link that
+    cannot be made (Windows without Developer Mode) becomes a copy."""
+    done, conflicts, unchanged = [], [], []
     plan = _plan(home, root, targets)              # checks the folders first, before anything is removed
     removed = migrate(home, dry_run) + prune(home, root, targets, dry_run)
     for item, dest, how in plan:
@@ -484,6 +515,9 @@ def install(home: Path, root: Path, targets=TARGETS, copy: bool = False, dry_run
             conflicts.append(str(dest))
             continue
         mode = "generate" if how == "generate" else "copy" if copy else "link"
+        if mode == "link" and dest.is_symlink() and Path(os.readlink(dest)) == item.path.resolve():
+            unchanged.append(str(dest))
+            continue
         if dry_run:
             done.append(f"{mode} {dest}")
             continue
@@ -503,7 +537,7 @@ def install(home: Path, root: Path, targets=TARGETS, copy: bool = False, dry_run
         elif mode == "copy":
             dest.write_text(item.path.read_text() + f"\n<!-- {COPY_MARK}: copied from {item.path} -->\n")
         done.append(f"{mode} {dest}")
-    return {"done": done, "conflicts": conflicts, "removed": removed}
+    return {"done": done, "conflicts": conflicts, "removed": removed, "unchanged": unchanged}
 
 
 def uninstall(home: Path, dry_run: bool = False) -> List[str]:
@@ -639,6 +673,24 @@ def _receipt_extras() -> Optional[List[str]]:
     return None
 
 
+def _receipt_with() -> List[str]:
+    """The packages uv recorded beside cad-agent (``uv tool install --with``), as requirement strings, so a reinstall
+    keeps them: uv rebuilds the environment from exactly the requirements it is given."""
+    try:
+        import tomllib
+        reqs = tomllib.loads(_text(Path(sys.prefix) / "uv-receipt.toml") or "").get("tool", {}).get("requirements", [])
+    except (ImportError, ValueError):
+        return []
+    out = []
+    for req in reqs if isinstance(reqs, list) else []:
+        if not isinstance(req, dict) or not isinstance(req.get("name"), str) or req["name"] == "cad-agent":
+            continue
+        extras = req.get("extras") or []
+        text = req["name"] + (f"[{','.join(map(str, extras))}]" if extras else "") + str(req.get("specifier") or "")
+        out.append(text + (f"; {req['marker']}" if req.get("marker") else ""))
+    return out
+
+
 def installed_extras(root: Path) -> List[str]:
     """The extras this cad-agent was installed with: what uv recorded, else the extras whose active requirements are
     installed in this Python. Call it before pulling: a newer pyproject.toml may list packages not installed yet."""
@@ -680,13 +732,28 @@ def _uv_tool_env() -> bool:
     return (Path(sys.prefix) / "uv-receipt.toml").is_file()
 
 
-def reinstall_command(root: Path, extras: List[str]) -> List[str]:
-    """How to reinstall this cad-agent with ``extras``: uv's tool install when that is how it was installed, else
-    pip into the running environment (an older, venv install)."""
+def _uv() -> Optional[str]:
+    """uv: on PATH, else where the installer puts it (~/.local/bin, or $XDG_BIN_HOME), which may not be on PATH yet."""
+    found = shutil.which("uv")
+    if found:
+        return found
+    bin_dir = Path(os.environ.get("XDG_BIN_HOME") or Path.home() / ".local" / "bin")
+    return shutil.which("uv", path=str(bin_dir))
+
+
+def _uv_tool_install(root: Path, extras: List[str], uv: str) -> List[str]:
     spec = f"{root}[{','.join(extras)}]" if extras else str(root)
+    return [uv, "tool", "install", "--quiet", "--force", "--editable", "--python",
+            f"{sys.version_info.major}.{sys.version_info.minor}", spec,
+            *[a for w in _receipt_with() for a in ("--with", w)]]
+
+
+def reinstall_command(root: Path, extras: List[str]) -> List[str]:
+    """How to reinstall this cad-agent with ``extras``: uv's tool install when that is how it was installed (keeping
+    the packages added with ``--with``), else pip into the running environment (an older, venv install)."""
     if _uv_tool_env() and shutil.which("uv"):
-        return ["uv", "tool", "install", "--quiet", "--force", "--editable", "--python",
-                f"{sys.version_info.major}.{sys.version_info.minor}", spec]
+        return _uv_tool_install(root, extras, "uv")
+    spec = f"{root}[{','.join(extras)}]" if extras else str(root)
     return [sys.executable, "-m", "pip", "install", "--quiet", "-e", spec]
 
 

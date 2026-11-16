@@ -56,6 +56,24 @@ def test_parser_exposes_every_subcommand():
     assert (args.port, args.host) == (8123, "0.0.0.0")
     assert parser.parse_args(["report", "--open"]).open is True
 
+def test_version_and_each_command_help_say_what_they_are(capsys):
+    """`cad-agent --version` prints the version and where it runs from; `<command> --help` opens with the line the
+    command list shows (#799: view, site and serve had none)."""
+    import cadagent
+    with pytest.raises(SystemExit) as stop:
+        main(["--version"])
+    assert stop.value.code == 0
+    assert capsys.readouterr().out.strip() == f"cad-agent {cadagent.__version__} ({Path(cadagent.__file__).resolve().parent})"
+    sub = next(a for a in build_parser()._actions if isinstance(a, argparse._SubParsersAction))
+    listed = {a.dest: a.help for a in sub._choices_actions}
+    assert set(listed) == set(sub.choices)
+    for name, parser in sub.choices.items():
+        assert parser.description == listed[name] and parser.description, name
+    with pytest.raises(SystemExit):
+        main(["view", "--help"])
+    assert "Export every part in assembly position for the 3D viewer" in capsys.readouterr().out
+
+
 def test_build_runs_steps_in_order_with_logs(tmp_path, capsys):
     root = write_steps_project(tmp_path)
     assert main(["build", "--project", str(root)]) == 0

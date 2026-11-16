@@ -166,6 +166,40 @@ def test_reinstall_keeps_the_extras_and_uses_how_it_was_installed(tmp_path, monk
     assert agentkit.reinstall_command(tmp_path, [])[1:4] == ["-m", "pip", "install"]
 
 
+RECEIPT = """[tool]
+requirements = [
+    { name = "cad-agent", editable = "/k/cad-agent", extras = ["cad", "fea"] },
+    { name = "playwright", specifier = "==1.62.0" },
+    { name = "requests", extras = ["socks"], specifier = ">=2" },
+    { name = "idna", marker = "python_full_version >= '3.8'", specifier = ">=3" },
+]
+python = "3.12"
+"""
+
+
+def test_a_uv_tool_install_keeps_its_with_packages_and_is_told_uvs_way_to_add_one(tmp_path, monkeypatch):
+    """uv rebuilds a tool environment from exactly the requirements it is given, and it has no pip (#799): a reinstall
+    passes the receipt's --with packages back, and the hint to add one is uv's own `tool install --with`."""
+    (tmp_path / "uv-receipt.toml").write_text(RECEIPT)          # the receipt's format, as uv 0.11 writes it
+    monkeypatch.setattr(agentkit.sys, "prefix", str(tmp_path))
+    monkeypatch.setattr(agentkit.shutil, "which", lambda name, path=None: "/home/u/.local/bin/uv")
+    kept = ["--with", "playwright==1.62.0", "--with", "requests[socks]>=2", "--with", "idna>=3; python_full_version >= '3.8'"]
+    cmd = agentkit.reinstall_command(tmp_path / "k", ["cad", "fea"])
+    assert cmd[:3] == ["uv", "tool", "install"] and cmd[-6:] == kept and f"{tmp_path / 'k'}[cad,fea]" in cmd
+    hint = agentkit.add_packages_command("playwright")
+    root = agentkit.kit_root()
+    assert hint.startswith("/home/u/.local/bin/uv tool install --force --editable --python ")
+    assert f"'{root}[cad,fea]'" in hint and hint.endswith("--with playwright") and "pip" not in hint
+    assert "--quiet" not in hint and "--with playwright==1.62.0" in hint, "earlier --with packages stay"
+    req = root / "tools" / "webkit" / "scada" / "ui" / "requirements.txt"
+    assert agentkit.add_packages_command(requirements=req).endswith(f"--with-requirements {req}")
+    monkeypatch.setattr(agentkit.importlib.util, "find_spec", lambda name: None)     # Playwright absent
+    assert agentkit._playwright().startswith("Playwright is not installed in this Python (`/home/u/.local/bin/uv tool")
+    assert f"--with-requirements {req}`" in agentkit._scada_browser()
+    (tmp_path / "uv-receipt.toml").unlink()                       # a venv install: pip in this Python
+    assert agentkit.add_packages_command("playwright").endswith("-m pip install playwright")
+
+
 def test_the_cli_reports_a_refusal_and_prints_the_reinstall_command(kit, monkeypatch, capsys):
     _, clone, _ = kit
     monkeypatch.setattr(agentkit, "kit_root", lambda: clone)

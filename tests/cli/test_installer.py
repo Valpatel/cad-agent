@@ -11,6 +11,7 @@ parser, failures reach no shell/child; PowerShell guards also run in the bounded
 from __future__ import annotations
 
 import hashlib
+import importlib.util
 import json
 import os
 import re
@@ -100,6 +101,22 @@ def test_checked_installers_pin_the_actual_snapshot_bytes():
         assert hashlib.sha256(_snapshot_bytes(source)).hexdigest() in block
         assert re.search(r"https://raw\.githubusercontent\.com/Valpatel/cad-agent/[a-f0-9]{40}/tools/site/assets/" + re.escape(source.name), block)
         assert "Installer checksum mismatch" in block
+
+
+def test_the_pin_tool_writes_the_hashes_the_guide_checks():
+    """tools/site/pin_installers.py is how the hashes change: it pins both blocks from Git's blobs, never by hand."""
+    spec = importlib.util.spec_from_file_location("pin_installers", ROOT / "tools" / "site" / "pin_installers.py")
+    tool = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(tool)
+    assert tool.main(["--check"]) == 0, "the guide pins HEAD's installers: run tools/site/pin_installers.py <commit>"
+    head = _git(ROOT, "rev-parse", "HEAD")
+    pinned = tool.pin(INSTALL_GUIDE.read_text(), head)
+    for platform, source in (("posix", SH), ("powershell", PS1)):
+        block = tool._block(pinned, platform).group(1)
+        assert f"/cad-agent/{head}/tools/site/assets/{source.name}" in block
+        assert hashlib.sha256(_snapshot_bytes(source)).hexdigest() in block
+    assert pinned.replace(head, "") == re.sub(r"(?<=/cad-agent/)[0-9a-f]{40}(?=/tools/)", "", INSTALL_GUIDE.read_text()), \
+        "only the two URLs' commits change"
 
 
 @pytest.mark.parametrize("hasher", ["sha256sum", "shasum"])
@@ -413,6 +430,41 @@ def test_it_installs_then_a_second_run_updates(world):
     assert not (home / ".local" / "bin" / "cad-agent").exists()
     assert left(home / ".claude" / "skills") == left(home / ".agents" / "skills") == [], "every skill it placed is gone"
     assert kit.is_dir(), "the checkout stays"
+
+
+def test_the_uninstall_variable_the_guide_names_uninstalls(world):
+    """The guide says to set CAD_AGENT_UNINSTALL=1 before running the block (#799); 0 or unset installs or updates."""
+    remote, home, env = world
+    assert _install({**env, "CAD_AGENT_UNINSTALL": "0"}).returncode == 0
+    assert (home / ".local" / "bin" / "cad-agent").is_file() and any((home / ".claude" / "skills").iterdir())
+    gone = _install({**env, "CAD_AGENT_UNINSTALL": "1"})
+    assert gone.returncode == 0, gone.stdout + gone.stderr
+    assert "updating" not in gone.stdout and "removed the cad-agent command" in gone.stdout
+    assert not (home / ".local" / "bin" / "cad-agent").exists()
+    assert not any((home / ".claude" / "skills").iterdir()) and not any((home / ".agents" / "skills").iterdir())
+    assert (home / "uv-calls.log").read_text().splitlines()[-1] == "tool uninstall cad-agent"
+    assert "uv stays in" in gone.stdout and (home / "cad-agent" / ".git").is_dir(), "it says what it leaves"
+
+
+def test_the_path_hint_names_commands_that_work_in_that_shell(world, tmp_path):
+    """~/.local/bin is not on PATH: the hint's `export PATH=...` finds cad-agent in this shell, and it names uv by its
+    full path, because the uv it just installed is in that same folder (#799)."""
+    _, home, env = world
+    first = _install(env)
+    assert first.returncode == 0, first.stdout + first.stderr
+    bin_dir = home / ".local" / "bin"
+    export = re.search(r"In this terminal: (export PATH=.*?) \(or call (\S+)\);", first.stdout)
+    assert export and export.group(2) == f"{bin_dir}/cad-agent", first.stdout
+    found = subprocess.run(["sh", "-c", export.group(1) + "; command -v cad-agent"], capture_output=True, text=True,
+                           env={"PATH": "/usr/bin:/bin"})
+    assert found.stdout.strip() == f"{bin_dir}/cad-agent", found.stderr
+    uv = re.search(r'for new terminals: "([^"]+)" tool update-shell', first.stdout)
+    assert uv and Path(uv.group(1)).is_absolute() and os.access(uv.group(1), os.X_OK), first.stdout
+    assert Path(uv.group(1)) == Path(env["PATH"].split(":")[0]) / "uv", "the uv this run used"
+    bare = re.search(r"run `uv tool update-shell`", first.stdout)
+    assert not bare, "a bare `uv` is not found when its folder is not on PATH"
+    on_path = _install({**env, "PATH": f"{bin_dir}:{env['PATH']}"})
+    assert on_path.returncode == 0 and "is not on your PATH" not in on_path.stdout
 
 
 def test_bad_options_and_a_folder_that_is_not_a_checkout_are_refused(world):

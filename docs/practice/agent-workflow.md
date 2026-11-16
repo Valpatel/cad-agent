@@ -20,9 +20,9 @@ separate from the download; a failed download or mismatch stops before installat
   installer=$(mktemp)
   trap 'rm -f "$installer"' EXIT HUP INT TERM
   curl -fsSL --proto '=https' --tlsv1.2 \
-    https://raw.githubusercontent.com/Valpatel/cad-agent/da3bc637349159e87ddf9e28bfc9f18192d57841/tools/site/assets/install.sh \
+    https://raw.githubusercontent.com/Valpatel/cad-agent/99ff290e7bbbd5a56fefff4b7d577dc881c2648e/tools/site/assets/install.sh \
     -o "$installer"
-  expected=5154f86280c9ae282c47e05f98c97cb67c9f3b77d75ecc27b727a945515a4868
+  expected=8f3133f0a68a34ec7450e14718c97343b7a0d91c51cf23cb78c2d62a44f8e6ae
   if command -v sha256sum >/dev/null 2>&1; then
     actual=$(sha256sum "$installer")
   else
@@ -43,8 +43,8 @@ separate from the download; a failed download or mismatch stops before installat
 $installer = Join-Path ([IO.Path]::GetTempPath()) ("cad-agent-" + [guid]::NewGuid() + ".ps1")
 try {
   Invoke-WebRequest -UseBasicParsing -ErrorAction Stop -OutFile $installer -Uri `
-    'https://raw.githubusercontent.com/Valpatel/cad-agent/da3bc637349159e87ddf9e28bfc9f18192d57841/tools/site/assets/install.ps1'
-  $expected = '6c55e1065392db7ccd9467a3d007c3537415f097cd2d900b612244f4768be20c'
+    'https://raw.githubusercontent.com/Valpatel/cad-agent/99ff290e7bbbd5a56fefff4b7d577dc881c2648e/tools/site/assets/install.ps1'
+  $expected = '0cef9824daa1c3023b8b8004dc99d57f8ddea5b1e2a85cf827938b13d55fb101'
   if ((Get-FileHash -Algorithm SHA256 -LiteralPath $installer -ErrorAction Stop).Hash.ToLowerInvariant() -ne $expected) {
     throw 'Installer checksum mismatch'
   }
@@ -65,19 +65,31 @@ These checks verify the installer snapshot, not every later download. Installati
 to a release tag before running a block if you want the checkout pinned; `cad-agent update` without `--ref`
 returns to the released `main` channel. No background update is installed.
 
-The scripts are [`web/install.sh`](../../tools/site/assets/install.sh) and [`web/install.ps1`](../../tools/site/assets/install.ps1). They:
+The scripts are [`tools/site/assets/install.sh`](../../tools/site/assets/install.sh) and [`tools/site/assets/install.ps1`](../../tools/site/assets/install.ps1). They:
 
 1. need git, and install [uv](https://docs.astral.sh/uv/) (a pinned version, from astral.sh) into `~/.local/bin` if it
-   is missing, without editing your shell profile;
+   is missing, without editing your shell profile (uv's installer also writes its receipt to `~/.config/uv`);
 2. clone `main` into `~/cad-agent`, or update the checkout that is there;
 3. run `uv tool install --editable ~/cad-agent[cad]`: the `cad-agent` command goes in `~/.local/bin`, with a
    Python 3.12 of its own that uv manages, and runs the checkout's code, so the skills and the code stay in step;
 4. run `cad-agent agents install` (below), which says which skills this computer can't use yet.
 
+The first install downloads about 1.7 GB of Python packages (CadQuery, VTK and their libraries) into uv's cache,
+`~/.cache/uv`, and the checkout takes about 200 MB; later updates download only what changed. If `~/.local/bin` is not
+on your PATH, the installer says how to use `cad-agent` in that terminal and the full path of the `uv` that adds it for
+new ones.
+
 Options: set `CAD_AGENT_EXTRAS=fea,sim` (see [Extras](#extras)), `CAD_AGENT_REF` to a release tag,
 `CAD_AGENT_DIR` to another folder or `CAD_AGENT_UNINSTALL=1` before running the block. On macOS/Linux export
-these environment variables; in PowerShell use `$env:CAD_AGENT_EXTRAS`, `$env:CAD_AGENT_REF`,
-`$env:CAD_AGENT_DIR` or `$env:CAD_AGENT_UNINSTALL`. Uninstall removes the command and skills, keeping the checkout. They turn usage reporting off for everything they start; cad-agent itself sends nothing.
+these environment variables (`export CAD_AGENT_UNINSTALL=1`, then the block); in PowerShell use
+`$env:CAD_AGENT_EXTRAS`, `$env:CAD_AGENT_REF`, `$env:CAD_AGENT_DIR` or `$env:CAD_AGENT_UNINSTALL`. They turn usage
+reporting off for everything they start; cad-agent itself sends nothing.
+
+**Uninstall** removes the `cad-agent` command and the skills and subagents it linked. It leaves the checkout
+(`~/cad-agent`: delete it yourself), and uv: `uv` and `uvx` in `~/.local/bin`, its cache (`~/.cache/uv`), its Pythons
+and tool folders (`~/.local/share/uv`) and its receipt (`~/.config/uv`); on Windows `%APPDATA%\uv` and
+`%LOCALAPPDATA%\uv`. Remove uv with [uv's own steps](https://docs.astral.sh/uv/getting-started/installation/#uninstallation)
+if nothing else uses it.
 
 **Update** by running the command again, or `cad-agent update`; both do the same. `update` refuses a checkout with
 changes or on another branch (use a fork for your own work), then:
@@ -172,12 +184,15 @@ this computer without any network call, and what they cannot check from here.
 
 ```text
 agents: you can use these, but some of their steps can't run yet:
-  skill mcmaster-parts: Playwright is not installed in this Python (`"…/python" -m pip install playwright`)
+  skill mcmaster-parts: Playwright is not installed in this Python (`/home/you/.local/bin/uv tool install --force --editable --python 3.12 '/home/you/cad-agent[cad]' --with playwright`)
 agents: these also need what cad-agent can't check from here:
   GitHub access (`gh` logged in, or the GitHub MCP tools): cad-pr-review, cad-pr-reviewer
   write access to the repository it works in: cad-pr-review, cad-work-tracking
   a compute host you can reach over `ssh`: cad-remote-runs
 ```
+
+The commands fit how this cad-agent was installed. The installer's uv tool environment has no pip, so the notice names
+uv's `tool install --with`, which `cad-agent update` keeps on later reinstalls; an install in your own venv gets pip.
 
 | Needs | Checked how | Who needs it |
 |---|---|---|

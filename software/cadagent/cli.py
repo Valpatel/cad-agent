@@ -1021,6 +1021,7 @@ def cmd_agents(args: argparse.Namespace) -> int:
     for dest in result["conflicts"]:
         _err(f"agents: {dest} exists and was not installed by cad-agent; left untouched (move it away and rerun)")
     _say(f"agents: {len(result['done'])} {'planned' if args.dry_run else 'installed'} from {root}"
+         + (f", {len(result['unchanged'])} already in place" if result["unchanged"] else "")
          + (f", {len(result['conflicts'])} conflicts" if result["conflicts"] else ""))
     for line in agentkit.notice(agentkit.readiness(root)):
         _say(line)
@@ -1439,6 +1440,9 @@ def build_parser() -> argparse.ArgumentParser:
         description="CAD design verification: build, check, report, package (docs/toolkit.md)",
     )
     parser.add_argument("--project", default=None, help=PROJECT_HELP)
+    import cadagent
+    parser.add_argument("--version", action="version", help="print the version and where this cad-agent runs from",
+                        version=f"cad-agent {cadagent.__version__} ({Path(cadagent.__file__).resolve().parent})")
     # also accepted after the subcommand; SUPPRESS keeps it from resetting the parent's value
     common = argparse.ArgumentParser(add_help=False)
     common.add_argument("--project", default=argparse.SUPPRESS, help=PROJECT_HELP)
@@ -1678,6 +1682,9 @@ def build_parser() -> argparse.ArgumentParser:
                         help="Check a filled-in reviewer record against the current build and write it to "
                              "dossier/reviews/ (the actor is CAD_AGENT_ACTOR)")
     rs_grp.add_argument("--check", metavar="RECORD", help="Like --submit, but write nothing")
+    for action in sub._choices_actions:              # `cad-agent <command> --help` opens with what the list says
+        if sub.choices[action.dest].description is None:
+            sub.choices[action.dest].description = action.help
     return parser
 
 def main(argv: Optional[Sequence[str]] = None) -> int:

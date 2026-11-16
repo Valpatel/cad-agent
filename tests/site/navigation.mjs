@@ -6,6 +6,10 @@
  * about two seconds, what the browser and the preview server saw of that navigation, writes a receipt under
  * /tmp/cad-agent-navigation-* (the CI job uploads /tmp/cad-agent-*), prints one evidence line and rethrows the
  * original error unchanged. A fault in the evidence is recorded in it, never thrown over the navigation's error.
+ * For the main frame's document requests the receipt says which of Playwright's events (request, response,
+ * requestfinished, requestfailed) each got and when, which routes the page and its context had, and, for a request a
+ * route handler took, when the handler ran and ended and how each fetch, fulfill or continue it made settled
+ * (`watchRoutes`). Most of the suite's navigations pass through no route handler at all: the receipt says so.
  *
  * `fetchThrough(route)` does the same for a test-side `route.fetch` (the preview server's record of the path and its
  * sockets), aborts the route and adds the failure to its part's findings; `partHandler` wraps a route handler so
@@ -81,14 +85,28 @@ export async function navigate(page, url, options, diag = {}) {
     listeners.push([name, guarded]); page.on(name, guarded);
   };
   const requestInfo = request => ({ url: cleanURL(request.url()), method: cleanText(request.method()), type: cleanText(request.resourceType()) });
+  // The main frame's document requests (at most 8), and which of Playwright's events each one got: the record of the
+  // hop between the browser's network stack and the test process (#686). Only times are kept on the way.
+  const documents = new Map();
+  const documentOf = request => documents.get(request);
   const finish = request => { if (active.delete(request)) pendingCount--; pending.delete(request); };
   watch('request', request => {
     if (!active.has(request)) { active.add(request); pendingCount++; }
     if (pending.size < 24) pending.set(request, { ...requestInfo(request), startedAt: Date.now() });
+    let main = false;   // a service worker's request has no frame, and frame() throws for it
+    try { main = documents.size < 8 && request.isNavigationRequest() && request.frame() === page.mainFrame(); } catch { /* not the main frame's */ }
+    if (main) documents.set(request, { url: request.url(), requestAt: Date.now() });
   });
-  watch('requestfinished', finish);
-  watch('requestfailed', request => { finish(request); record('failed', () => ({ ...requestInfo(request), error: cleanText(request.failure()?.errorText || 'unknown') })); });
+  watch('requestfinished', request => { finish(request); const d = documentOf(request); if (d) d.finishedAt = Date.now(); });
+  watch('requestfailed', request => {
+    finish(request);
+    const d = documentOf(request);
+    if (d) Object.assign(d, { failedAt: Date.now(), failure: request.failure()?.errorText ?? 'unknown' });
+    record('failed', () => ({ ...requestInfo(request), error: cleanText(request.failure()?.errorText || 'unknown') }));
+  });
   watch('response', response => {
+    const d = documentOf(response.request());
+    if (d) Object.assign(d, { respondedAt: Date.now(), status: response.status() });
     const entry = pending.get(response.request());
     if (entry) Object.assign(entry, { status: response.status(), respondedAt: Date.now() });
     record('responses', () => ({ url: cleanURL(response.url()), status: response.status(), navigation: response.request().isNavigationRequest() }));
@@ -103,7 +121,7 @@ export async function navigate(page, url, options, diag = {}) {
     // Known as a failed navigation before any evidence is taken, so even broken evidence code leaves it a finding.
     const kept = { error, evidence: null, receipt: null };
     if (error && typeof error === 'object') failures.set(error, kept);
-    try { await keepEvidence(error, kept, { page, url, options, diag, began, pending, events, counts, pendingCount: () => pendingCount }); }
+    try { await keepEvidence(error, kept, { page, url, options, diag, began, pending, documents, events, counts, pendingCount: () => pendingCount }); }
     catch (fault) {   // keepEvidence records its own faults; this is the fault it could not record
       kept.evidenceError = cleanText(fault?.stack || fault);
       try { console.log('Navigation failure evidence unavailable: ' + kept.evidenceError.split('\n')[0]); } catch { /* never over the error */ }
@@ -114,7 +132,7 @@ export async function navigate(page, url, options, diag = {}) {
   }
 }
 
-async function keepEvidence(error, kept, { page, url, options, diag, began, pending, events, counts, pendingCount }) {
+async function keepEvidence(error, kept, { page, url, options, diag, began, pending, documents, events, counts, pendingCount }) {
   const scope = parts.getStore(), failed = Date.now();
   const pendingNow = () => [...pending.values()].map(entry => ({ ...entry, ageMs: failed - entry.startedAt }));
   const evidence = { part: scope?.name ?? null, where: diag.where ?? null, url: cleanURL(url),
@@ -152,10 +170,15 @@ async function keepEvidence(error, kept, { page, url, options, diag, began, pend
       : Promise.resolve({ unavailable: 'no preview server record configured' });
     const skipped = Promise.reject(new Error('not taken: full evidence skipped'));
     skipped.catch(() => {});
-    const [dom, png, record] = await Promise.allSettled([
+    const hops = routeHopsOf(page, began);
+    const [dom, png, record, , planted] = await Promise.allSettled([
       full ? bounded(() => page.evaluate(domSnapshot), 1000, 'diagnostic capture') : skipped,
       full ? bounded(() => page.screenshot({ type: 'png', fullPage: false, timeout: 1000 }), 1000, 'diagnostic capture') : skipped,
-      server]);
+      server,
+      bounded(() => hopBodySizes(hops), 1000, 'route fetch body sizes'),
+      // a planted control's action at the moment the navigation has failed (a late fulfil), before the record is read
+      diag.planted && diag.afterFailure ? bounded(diag.afterFailure, 1000, 'planted after-failure action') : Promise.resolve()]);
+    if (planted.status === 'rejected') evidence.captureErrors.push('planted after-failure action: ' + cleanText(planted.reason?.message));
     if (!full) { /* the DOM and screenshot were not taken */ }
     else if (dom.status === 'fulfilled') {
       evidence.dom = dom.value;
@@ -179,6 +202,8 @@ async function keepEvidence(error, kept, { page, url, options, diag, began, pend
   } catch (fault) { evidence.evidenceError = cleanText(fault?.stack || fault); }
   // The browser's record as it stands after the captures (a late response still counts); elapsedMs stays the failure's.
   evidence.pendingCount = pendingCount(); evidence.pending = pendingNow(); evidence.counts = { ...counts }; evidence.events = events;
+  try { Object.assign(evidence, documentRecord(page, began, documents)); }
+  catch (fault) { evidence.documents = { unavailable: cleanText(fault?.message) }; }
   if (!full) evidence.receipt = null;
   else try {
     folder ??= await mkdtemp(path.join(tmpdir(), 'cad-agent-navigation-'));
@@ -197,6 +222,8 @@ function evidenceLine(e) {
   return { part: e.part, where: e.where, url: e.url, error: e.error.message.split('\n')[0], waitUntil: e.waitUntil, elapsedMs: e.elapsedMs, engine: e.engine,
     currentURL: e.currentURL, committed: e.committed, pendingCount: e.pendingCount,
     pendingDocuments: e.pending.filter(r => r.type === 'document').map(r => ({ url: r.url, ageMs: r.ageMs, status: r.status ?? null })),
+    routing: e.routing, documents: Array.isArray(e.documents) ? e.documents.map(documentLine) : e.documents,
+    routeHops: e.routeHops?.length ? e.routeHops : undefined,
     failed: e.events.failed.length, testLagMaxMs: e.testProcessLag?.maxMs ?? null,
     server: s.unavailable ? { unavailable: s.unavailable } : { coversWindow: s.coversWindow, openSockets: s.openSockets,
       matchingFirst: s.matchingFirst?.map(at), matchingLast: s.matching?.slice(-3).map(at), requests: s.window?.requests,
@@ -229,6 +256,176 @@ export function ownContexts(browser) {
     return context;
   };
 }
+
+/* Route hops (#686). Which hop loses a stalled document: the route handler never called, its fetch never returned,
+ * its fulfil (or continue) resolved or threw while the page never committed, or no handler at all. watchRoutes(browser)
+ * wraps route, unroute and unrouteAll on every context the browser opens and on every page those contexts open, so a
+ * failed navigation's receipt can say which routes the page and its context had, and for each navigation request a
+ * handler took: when each handler ran and ended, and each fetch, fulfill, continue, abort or fallback it made, when
+ * it was called, and when and how it settled. A request that is not a navigation request passes straight through, so
+ * on the success path the cost is one isNavigationRequest() per routed request. The record is bounded: weak maps
+ * keyed by Playwright's own objects, at most 8 hops per page, 4 handlers and 8 calls per hop. Recording never throws
+ * into a handler and never changes what a handler or a route method returns or throws.
+ * Limits: a route registered with `times` stays listed after Playwright drops it, and Playwright itself continues a
+ * request no pattern matches, inside its driver, a hop the test process cannot see. */
+const routeTables = new WeakMap();   // a page or context -> [{ url, pattern, handler, wrapped }]
+const hopsByPage = new WeakMap();    // a page -> its last 8 route hops for navigation requests
+const hopOf = new WeakMap();         // a Playwright Request -> its hop
+const wrappedRoutes = new WeakSet(); // routes whose methods are already recorded
+const ROUTE_METHODS = ['fetch', 'fulfill', 'continue', 'abort', 'fallback'];
+const describePattern = url => typeof url === 'string' ? cleanText(url) : url instanceof RegExp ? cleanText(String(url)).slice(0, 120) : typeof url === 'function' ? '[a URL predicate]' : cleanText(String(url));
+
+/** Record the route hops of every context `browser` opens from now on, and of the pages those contexts open. */
+export function watchRoutes(browser) {
+  const newContext = browser.newContext.bind(browser);
+  browser.newContext = async (...args) => {
+    const context = await newContext(...args);
+    try {
+      watchTarget(context);
+      const newPage = context.newPage.bind(context);
+      context.newPage = async (...pageArgs) => { const page = await newPage(...pageArgs); try { watchTarget(page); } catch { /* unwatched */ } return page; };
+    } catch { /* this context's routes stay unwatched; its receipts say so */ }
+    return context;
+  };
+}
+
+/** Wrap one page's or context's route, unroute and unrouteAll (exported for the unit tests). */
+export function watchTarget(target) {
+  if (routeTables.has(target)) return target;
+  const table = [], route = target.route.bind(target), unroute = target.unroute.bind(target), unrouteAll = target.unrouteAll.bind(target);
+  target.route = (url, handler, ...rest) => {
+    const entry = { url, pattern: describePattern(url), handler, wrapped: hopHandler(handler, describePattern(url)) };
+    table.push(entry);
+    return route(url, entry.wrapped, ...rest);
+  };
+  target.unroute = (url, handler) => {
+    const gone = table.filter(e => e.url === url && (handler === undefined || e.handler === handler));
+    for (const e of gone) table.splice(table.indexOf(e), 1);
+    if (handler === undefined || !gone.length) return handler === undefined ? unroute(url) : unroute(url, handler);
+    return Promise.all(gone.map(e => unroute(url, e.wrapped))).then(() => {});
+  };
+  target.unrouteAll = (...args) => { table.length = 0; return unrouteAll(...args); };
+  routeTables.set(target, table);
+  return target;
+}
+
+/** `handler`, recording when it ran and ended for a navigation request; any other request goes straight to it. */
+function hopHandler(handler, pattern) {
+  return function (route, ...rest) {
+    const row = startHop(route, pattern);
+    if (!row) return handler.call(this, route, ...rest);
+    const end = (outcome, error) => { try { Object.assign(row, { endedAt: Date.now(), outcome }, error && { error: cleanText(error?.message ?? error) }); } catch { /* never over the handler */ } };
+    let result;
+    try { result = handler.call(this, route, ...rest); }
+    catch (error) { end('threw', error); throw error; }
+    return Promise.resolve(result).then(value => { end('returned'); return value; }, error => { end('threw', error); throw error; });
+  };
+}
+
+function startHop(route, pattern) {
+  try {
+    const request = route.request();
+    if (!request.isNavigationRequest()) return null;
+    let hop = hopOf.get(request);
+    if (!hop) {
+      hop = { url: cleanURL(request.url()), at: Date.now(), handlers: [], calls: [], callsDropped: 0 };
+      hopOf.set(request, hop);
+      try {
+        const page = request.frame().page();
+        const ring = hopsByPage.get(page) ?? [];
+        hopsByPage.set(page, ring);
+        ring.push(hop);
+        if (ring.length > 8) ring.shift();
+      } catch { /* a request with no page: kept by its request only */ }
+    }
+    if (!wrappedRoutes.has(route)) { wrappedRoutes.add(route); recordRouteCalls(route, hop); }
+    const row = { pattern, at: Date.now(), endedAt: null, outcome: 'running' };
+    if (hop.handlers.length < 4) hop.handlers.push(row);
+    return row;
+  } catch { return null; }   // recording failed: the handler runs as if unwatched
+}
+
+/** Own-property wrappers over the route's fetch, fulfill, continue, abort and fallback, recording each call. */
+function recordRouteCalls(route, hop) {
+  for (const method of ROUTE_METHODS) {
+    const original = route[method];
+    if (typeof original !== 'function') continue;
+    route[method] = function (...args) {
+      let call = null;
+      try { call = { method, at: Date.now(), settledAt: null, outcome: 'pending' }; if (hop.calls.length < 8) hop.calls.push(call); else hop.callsDropped++; }
+      catch { /* unrecorded */ }
+      const settle = (outcome, extra) => { try { if (call) Object.assign(call, { settledAt: Date.now(), outcome }, extra); } catch { /* never over the call */ } };
+      let result;
+      try { result = original.apply(route, args); }
+      catch (error) { settle('threw', { error: cleanText(error?.message ?? error) }); throw error; }
+      return Promise.resolve(result).then(value => {
+        if (method !== 'fetch') settle('resolved');
+        else {
+          let status = null; try { status = value.status(); } catch { /* not a response */ }
+          settle('resolved', { status });
+          try { if (call) Object.defineProperty(call, 'response', { value, enumerable: false }); } catch { /* no body size then */ }
+        }
+        return value;
+      }, error => { settle('threw', { error: cleanText(error?.message ?? error) }); throw error; });
+    };
+  }
+}
+
+/** The route hops of `page`'s navigation requests since `since`. */
+const routeHopsOf = (page, since) => { try { return (hopsByPage.get(page) ?? []).filter(hop => hop.at >= since); } catch { return []; } };
+
+/** Each fetched response's body size, read only once a navigation has failed (the success path never reads it). */
+async function hopBodySizes(hops) {
+  for (const hop of hops) for (const call of hop.calls) {
+    if (!call.response || call.bodyBytes !== undefined) continue;
+    try { call.bodyBytes = (await call.response.body()).length; } catch (fault) { call.bodyError = cleanText(fault?.message ?? fault); }
+  }
+}
+
+const hopRow = (hop, began) => {
+  const ms = t => (t ? t - began : null);
+  return { url: hop.url,
+    handlers: hop.handlers.map(h => ({ pattern: h.pattern, ranAtMs: ms(h.at), endedAtMs: ms(h.endedAt), outcome: h.outcome, ...(h.error && { error: h.error }) })),
+    calls: hop.calls.map(c => ({ method: c.method, calledAtMs: ms(c.at), settledAtMs: ms(c.settledAt), outcome: c.outcome,
+      ...(c.status !== undefined && { status: c.status }), ...(c.bodyBytes !== undefined && { bodyBytes: c.bodyBytes }),
+      ...(c.bodyError && { bodyError: c.bodyError }), ...(c.error && { error: c.error }) })),
+    ...(hop.callsDropped && { callsDropped: hop.callsDropped }) };
+};
+
+/** Which routes the page and its context had when the navigation failed. */
+function routingOf(page) {
+  let context = null;
+  try { context = page.context(); } catch { /* none to read */ }
+  const list = target => (target && routeTables.has(target) ? routeTables.get(target).slice(0, 16).map(e => e.pattern) : null);
+  const onPage = list(page), onContext = list(context);
+  if (onPage === null && onContext === null)
+    return { watched: false, note: 'routes are not watched for this page (watchRoutes), so whether its requests passed through a route handler is not known' };
+  return { watched: true, page: onPage ?? [], context: onContext ?? [] };
+}
+
+/** The main frame's document requests: Playwright's events for each, and the route hop it took (or why it took none). */
+function documentRecord(page, began, documents) {
+  const ms = t => (t ? t - began : null), routing = routingOf(page), hops = routeHopsOf(page, began), shown = new Set();
+  const routed = routing.watched && routing.page.length + routing.context.length > 0;
+  const rows = [...documents].map(([request, d]) => {
+    const hop = hopOf.get(request);
+    if (hop) shown.add(hop);
+    let timing;
+    try { const t = request.timing(); timing = Object.fromEntries(Object.entries(t).map(([k, v]) => [k, typeof v === 'number' ? Math.round(v) : null])); }
+    catch { timing = null; }
+    return { url: cleanURL(d.url), requestAtMs: ms(d.requestAt), responseAtMs: ms(d.respondedAt), status: d.status ?? null,
+      finishedAtMs: ms(d.finishedAt), failedAtMs: ms(d.failedAt), ...(d.failure && { failure: cleanText(d.failure) }),
+      events: { request: true, response: !!d.respondedAt, requestfinished: !!d.finishedAt, requestfailed: !!d.failedAt }, timing,
+      route: hop ? hopRow(hop, began) : !routing.watched ? 'not known: routes are not watched for this page'
+        : routed ? 'no handler of the test process ran for it, though the page or its context has routes: Playwright continues a request no pattern matches inside its driver, a hop the test process cannot see'
+        : 'no route on the page or its context: it did not pass through a route handler' };
+  });
+  // hops whose request Playwright never reported to the page's 'request' listeners
+  return { routing, documents: rows, routeHops: hops.filter(hop => !shown.has(hop)).map(hop => hopRow(hop, began)) };
+}
+
+/** A document's row for the evidence line: the receipt keeps its timing too. */
+const documentLine = ({ timing, ...row }) => row;
 
 /** A route handler (page.route, context.route) that runs as part of the part that registered it, so a test-side fetch
  * that fails inside it (fetchThrough) is reported by that part instead of crashing the run as an unhandled

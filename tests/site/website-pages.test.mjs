@@ -329,7 +329,7 @@ test('a disconnected page and unavailable receipt directory never mask the origi
 });
 
 // #686: the suite's one navigation function and the part boundary that turns its failure into a finding.
-import { configureNavigation, fetchThrough, inLanes, navigate, navigationFailure, ownContexts, partHandler, runPart } from './navigation.mjs';
+import { configureNavigation, fetchThrough, inLanes, navigate, navigationFailure, ownContexts, partHandler, runPart, watchTarget } from './navigation.mjs';
 
 test('shared navigation passes the call site\'s exact arguments and does nothing else on success', async t => {
   const page = new ReaderProbePage(), response = {}, args = [];
@@ -448,6 +448,94 @@ test('after the run\'s first failures, a failed navigation keeps only its eviden
   assert.equal(navigationFailure(secondError).receipt, null); assert.equal(second.domCalls, undefined); assert.equal(second.imageOptions, undefined);
   assert.match(navigationFailure(secondError).evidence.fullEvidence, /^skipped: the first 1 failures/);
   assert.ok(navigationFailure(plantedError).receipt, 'a planted control always keeps its evidence');
+});
+
+// #686: the route hop record. A planted handler that never answers and one that fulfils late run in a real browser
+// (routeHopControls in website-browser.mjs); these pin that recording never changes what a handler or route does.
+const routeTarget = () => {
+  const target = { handlers: [], unrouted: [],
+    route: async (url, handler) => { target.handlers.push({ url, handler }); },
+    unroute: async (url, handler) => { target.unrouted.push({ url, handler }); target.handlers = target.handlers.filter(h => h.url !== url || (handler && h.handler !== handler)); },
+    unrouteAll: async () => { target.handlers = []; } };
+  return watchTarget(target);
+};
+const hopRoute = ({ navigation = true, fetch, fulfill } = {}) => {
+  const page = {}, request = { isNavigationRequest: () => navigation, url: () => 'http://user:pw@localhost/docs/toolkit?q#f', frame: () => ({ page: () => page }) };
+  return { page, request, route: { request: () => request, fetch: fetch ?? (async () => ({ status: () => 200, body: async () => Buffer.from('four') })),
+    fulfill: fulfill ?? (async () => 'fulfilled'), continue: async () => 'continued', abort: async () => 'aborted', fallback: async () => 'fell back' } };
+};
+
+test('a watched route handler and its route methods return and throw exactly what they would unwatched', async () => {
+  const target = routeTarget(), seen = [], handlerError = new Error('handler bug'), fulfilError = new Error('route.fulfill: Target closed');
+  const handler = async (route, request) => { seen.push([route, request]); const r = await route.fetch(); assert.equal(r.status(), 200); return route.fulfill({ response: r }); };
+  await target.route('**/docs/*', handler);
+  const wrapped = target.handlers[0].handler;
+  assert.notEqual(wrapped, handler);
+  // a request that is not a navigation goes straight to the handler: the same arguments, the same route methods
+  const plain = hopRoute({ navigation: false }), plainFetch = plain.route.fetch;
+  assert.equal(await wrapped(plain.route, plain.request), 'fulfilled');
+  assert.deepEqual(seen[0], [plain.route, plain.request]); assert.equal(plain.route.fetch, plainFetch);
+  // a navigation request: recorded, with the same result and the same errors
+  const nav = hopRoute();
+  assert.equal(await wrapped(nav.route, nav.request), 'fulfilled');
+  const failing = hopRoute({ fulfill: async () => { throw fulfilError; } });
+  await assert.rejects(wrapped(failing.route, failing.request), error => error === fulfilError);
+  await target.route('**/throws', async () => { throw handlerError; });
+  const thrown = hopRoute();
+  await assert.rejects(target.handlers[1].handler(thrown.route, thrown.request), error => error === handlerError);
+  const sync = new Error('sync'), syncRoute = hopRoute({ fetch: () => { throw sync; } });
+  await assert.rejects(wrapped(syncRoute.route, syncRoute.request), error => error === sync);
+  // unroute with the caller's own handler removes the wrapper Playwright was given
+  await target.unroute('**/docs/*', handler);
+  assert.deepEqual(target.unrouted, [{ url: '**/docs/*', handler: wrapped }]);
+  assert.deepEqual(target.handlers.map(h => h.url), ['**/throws']);
+});
+
+test('the route hop of a stalled document is in its receipt, bounded, and a page without routes says so', async t => {
+  t.mock.method(console, 'log', () => {});
+  const stall = () => new Error('page.goto: Timeout 30000ms exceeded.');
+  // routes watched, none registered: the document passed through no route handler
+  const frame = {}, bare = Object.assign(new ReaderProbePage(), { context: () => ({}), mainFrame: () => frame, route: async () => {}, unroute: async () => {}, unrouteAll: async () => {} });
+  watchTarget(bare);
+  const document = { url: () => 'http://localhost/docs/toolkit', method: () => 'GET', resourceType: () => 'document', isNavigationRequest: () => true,
+    frame: () => frame, timing: () => ({ startTime: 1, responseStart: -1 }) };
+  const first = stall();
+  bare.navigate = () => { bare.emit('request', document); throw first; };
+  await assert.rejects(navigate(bare, 'http://localhost/docs/toolkit', undefined, { planted: true }), error => error === first);
+  const one = navigationFailure(first);
+  t.after(() => rm(one.receipt, { recursive: true, force: true }));
+  assert.deepEqual(one.evidence.routing, { watched: true, page: [], context: [] });
+  assert.equal(one.evidence.documents.length, 1);
+  assert.deepEqual(one.evidence.documents[0].events, { request: true, response: false, requestfinished: false, requestfailed: false });
+  assert.deepEqual(one.evidence.documents[0].timing, { startTime: 1, responseStart: -1 });
+  assert.match(one.evidence.documents[0].route, /^no route on the page or its context/);
+  assert.deepEqual(one.evidence.routeHops, []);
+  // a context route took the document: its handler still running, its fetch resolved with the body size, at most 8 calls
+  const context = routeTarget(), page = Object.assign(new ReaderProbePage(), { context: () => context });
+  const nav = hopRoute(), pageFrame = { page: () => page };
+  Object.assign(nav.request, { frame: () => pageFrame, method: () => 'GET', resourceType: () => 'document', timing: () => ({}) });
+  page.mainFrame = () => pageFrame;
+  await context.route('**/docs/toolkit', async route => { await route.fetch(); for (let i = 0; i < 12; i++) await route.continue(); await new Promise(() => {}); });
+  const second = stall();
+  page.navigate = async () => {
+    page.emit('request', nav.request);
+    context.handlers[0].handler(nav.route, nav.request);
+    await new Promise(ok => setImmediate(ok));
+    throw second;
+  };
+  await assert.rejects(navigate(page, 'http://localhost/docs/toolkit', undefined, { planted: true }), error => error === second);
+  const two = navigationFailure(second);
+  t.after(() => rm(two.receipt, { recursive: true, force: true }));
+  assert.deepEqual(two.evidence.routing, { watched: true, page: [], context: ['**/docs/toolkit'] });
+  const hop = two.evidence.documents[0].route;
+  assert.equal(hop.url, 'http://localhost/docs/toolkit');
+  assert.equal(hop.handlers[0].pattern, '**/docs/toolkit'); assert.equal(hop.handlers[0].outcome, 'running'); assert.equal(hop.handlers[0].endedAtMs, null);
+  assert.equal(hop.calls.length, 8); assert.equal(hop.callsDropped, 5);
+  assert.deepEqual({ ...hop.calls[0], calledAtMs: 0, settledAtMs: 0 }, { method: 'fetch', calledAtMs: 0, settledAtMs: 0, outcome: 'resolved', status: 200, bodyBytes: 4 });
+  assert.deepEqual(hop.calls.slice(1).map(c => [c.method, c.outcome]), Array(7).fill(['continue', 'resolved']));
+  assert.deepEqual(two.evidence.routeHops, [], 'the hop is shown with its document, not twice');
+  const written = JSON.parse(await readFile(path.join(two.receipt, 'navigation-failure.json'), 'utf8'));
+  assert.deepEqual(written.documents[0].route, hop);
 });
 
 // #663: the prior filtered sample was internally consistent before the resized layout arrived.

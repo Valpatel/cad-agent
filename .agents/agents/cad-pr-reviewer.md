@@ -73,7 +73,7 @@ flowchart TD
    or a second copy of a helper is blocking.
 8. Post inline comments on exact lines with severity (blocking / minor / nit) via
    `gh api repos/<owner>/<repo>/pulls/<n>/comments` (`commit_id` = head SHA, `path`, `line`, `side=RIGHT`), then one
-   summary review with `gh pr review <n> --comment` that states plainly whether anything blocks the merge. End the summary with the verdict marker on its own line, for the head commit you reviewed:
+   summary review with `gh pr review <n> --comment` that states plainly whether anything blocks the merge. End the summary with the verdict marker on its own line, for the head commit you reviewed (an attribution footer added by the posting tool may follow it):
    `<!-- cad-review verdict=pass sha=<full 40-character head sha> -->` when nothing blocking is left, otherwise
    `verdict=block`. Repos with merge gates read it (cad-agent: the latest verdict must be pass, on the PR's head
    commit); then re-run them: `gh workflow run gates.yml -R <owner>/<repo> -f pr=<n>`.

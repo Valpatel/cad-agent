@@ -44,7 +44,7 @@ export function socialProblems(html, { origin }) {
     const count = html.split(`<meta ${key}="${name}" `).length - 1;
     const got = metaValue(html, key, name);
     if (count !== 1) problems.push(`${name}: ${count} tags, not one`);
-    else if (!got) problems.push(`${name} is empty`);
+    else if (!got && expected !== '') problems.push(`${name} is empty`);   // a page whose own description is empty passes it on
     else if (expected && got !== expected) problems.push(`${name} is "${got}", not the page's own "${expected}"`);
   }
   if (!/<link rel="apple-touch-icon" href="\/apple-touch-icon\.png">/.test(html)) problems.push('no apple-touch-icon link');

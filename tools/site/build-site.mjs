@@ -455,7 +455,12 @@ const homeHref = (h, at) => {
   if (anchor === undefined) return pageURL(file);
   const built = path.join(out, pageURL(file).slice(1) + '.html');
   if (!existsSync(built)) throw new Error(`docs/home.yaml ${at}: ${file} is not built before the home page, so #${anchor} cannot be checked`);
-  if (!readFileSync(built, 'utf8').includes(` id="${anchor}"`)) throw new Error(`docs/home.yaml ${at}: ${file} has no section #${anchor}`);
+  if (!readFileSync(built, 'utf8').includes(` id="${anchor}"`)) {
+    // A draft (--worktree) links the page and says so, as the catalogue does for a missing heading (site-catalog.mjs).
+    if (!WORKTREE) throw new Error(`docs/home.yaml ${at}: ${file} has no section #${anchor}`);
+    console.warn(`draft: docs/home.yaml ${at}: ${file} has no section #${anchor}; linking the page`);
+    return pageURL(file);
+  }
   return `${pageURL(file)}#${anchor}`;
 };
 const homeImg = async (src, at, attrs = '') => {
@@ -661,7 +666,7 @@ const useCard = `<section class="use-band" id="use-it" aria-labelledby="use-titl
 ${INSTALL.map(([id, name, href]) => `<div class="os-panel panel-${id}"><a class="install-guide" href="${esc(href)}">Install on ${esc(name)} →</a></div>`).join('')}</div>
 <p class="use-lead">Use the knowledge with hosted agents or local/open models.</p>
 <ul class="agent-badges" aria-label="Agents it works with">${AGENTS.map(([name, mark]) => `<li><span class="agent-badge"><span class="agent-mark" aria-hidden="true">${esc(mark)}</span>${esc(name)}</span></li>`).join('')}</ul></div>
-<div class="use-paste"><p class="paste-title">Or paste this into your agent and finish the sentence with what you want to build.</p>
+<div class="use-paste"><p class="paste-title">Or paste this, then name what to build:</p>
 <cad-copy class="agent-copy" label="Copy prompt"><pre class="agent-box" aria-label="The line to paste into your agent">${esc(pasteLine)}</pre></cad-copy>
 ${useLoop}
 <p class="use-note">No telemetry. Your agent sends what it learns as a pull request or issue, only when you say yes. <a href="/docs/agent-workflow#install">Install by hand</a> · Names belong to their owners; no endorsement implied.</p></div>

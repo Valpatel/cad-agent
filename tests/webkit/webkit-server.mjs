@@ -9,6 +9,9 @@ export async function serveWebkit(routes = new Map(), { cacheControl = 'no-store
     try {
       const url = new URL(req.url, 'http://localhost');
       if (routes.has(url.pathname)) { await routes.get(url.pathname)(req, res, url); return; }
+      // The kit's standalone viewers ask their host for a top bar (ui/appnav.js, <root>/site/nav.json); this host is a
+      // project without one. A test that needs a bar or a missing file routes /site/nav.json itself (#804).
+      if (url.pathname === '/site/nav.json') { res.writeHead(200, { 'Content-Type': 'application/json' }).end('{"title":"","nav":[]}\n'); return; }
       if (!url.pathname.startsWith('/kit/')) { res.writeHead(404).end(); return; }
       const target = path.resolve(kit, '.' + decodeURIComponent(url.pathname.slice(4)));
       if (!target.startsWith(kit)) { res.writeHead(403).end(); return; }

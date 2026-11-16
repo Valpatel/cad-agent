@@ -1499,17 +1499,37 @@ async function folderMapPhoneProblems(page, where) {
       await view.evaluate(v => { v.scrollLeft = 0; });
       // Reveal the target before focusing it, so native vertical focus scrolling does not overlap this key test.
       await view.scrollIntoViewIfNeeded();
-      // The trace starts before the focus, so the focus and the key stay next to each other as the check always had them.
-      const trace = await keyboardTraceStart(view);
+      // DIAGNOSTIC branch only: CAD_AGENT_STRESS_ARM picks the check. control: dev's check, no trace. instrumented: #773's
+      // check, with each poll's timing kept. fix: the same 1000 ms bound, measured on the page's clock from before the
+      // focus, decided only by a value the page read after that bound (a browser that does not answer is its own finding).
+      const arm = process.env.CAD_AGENT_STRESS_ARM || 'instrumented';
+      const trace = arm === 'control' ? null : await keyboardTraceStart(view);
       await view.focus();
       await page.keyboard.press('ArrowRight');
-      // Poll from the test process: page-context animation-frame polling misses native scrolling when
-      // application JavaScript is disabled. The same actual keyboard delta and time bound still apply.
       let scrolled = true;
-      await expect.poll(() => view.evaluate(v => v.scrollLeft), { timeout: 1000 }).toBeGreaterThan(0).catch(() => { scrolled = false; });
+      const polls = [];
+      if (arm === 'fix') {
+        let verdict = 'pending';
+        await expect.poll(async () => {
+          const sent = Date.now(), s = await view.evaluate(v => ({ now: performance.now(), left: v.scrollLeft }));
+          polls.push({ sent, received: Date.now(), pageMs: Math.round(s.now - trace.pageNow), left: s.left });
+          verdict = s.left > 0 ? 'scrolled' : s.now - trace.pageNow >= 1000 ? 'still' : 'pending';
+          return verdict;
+        }, { timeout: 30000 }).not.toBe('pending').catch(() => {});
+        if (verdict === 'pending') problems.push(`${where}: the page did not answer for 30 s after ArrowRight`);
+        scrolled = verdict === 'scrolled';
+      } else {
+        await expect.poll(async () => {
+          const sent = Date.now(), left = await view.evaluate(v => v.scrollLeft);
+          if (arm === 'instrumented') polls.push({ sent, received: Date.now(), left });
+          return left;
+        }, { timeout: 1000 }).toBeGreaterThan(0).catch(() => { scrolled = false; });
+      }
       if (!scrolled) {
         problems.push(`${where}: the focused diagram does not scroll with ArrowRight`);
-        await keyboardFailureEvidence(page, view, where, trace);
+        const leftAfter = await view.evaluate(v => v.scrollLeft).catch(e => e.message);
+        console.log(`STRESS KEY FAILURE arm=${arm} ${where}: scrollLeft read after the verdict ${leftAfter}; polls ${JSON.stringify(polls)}`);
+        if (trace) await keyboardFailureEvidence(page, view, where, { ...trace, polls });
       }
       await view.evaluate(v => { window.__cadKeyboardTrace?.stop(); delete window.__cadKeyboardTrace; v.scrollLeft = 0; v.blur(); });
     }
@@ -1532,7 +1552,7 @@ function keyboardTraceStart(view) {
     for (const type of ['focusin', 'focusout']) window.addEventListener(type, log, { capture: true, signal });
     document.addEventListener('scroll', log, { capture: true, signal });   // scroll does not bubble; capture sees every scroller's
     window.__cadKeyboardTrace = { events, name, stop: () => controller.abort() };
-    return { at: new Date().toISOString(), active: name(document.activeElement), scrollLeft: v.scrollLeft, window: [scrollX, scrollY],
+    return { pageNow: performance.now(), at: new Date().toISOString(), active: name(document.activeElement), scrollLeft: v.scrollLeft, window: [scrollX, scrollY],
       tabindex: v.getAttribute('tabindex'), visualViewportScale: visualViewport?.scale ?? null, devicePixelRatio };
   }).catch(error => ({ error: error.message }));
 }
@@ -1542,7 +1562,7 @@ async function keyboardFailureEvidence(page, view, where, before) {
   // snapshot at the failure only, so a regression that fails every check still ends inside the job's time limit.
   // Constants and counters live here and on globalThis, not in module variables: the parts run inside this module's
   // top-level await, before a declaration below them is initialised.
-  const KEYBOARD_EVIDENCE_LIMIT = 5;
+  const KEYBOARD_EVIDENCE_LIMIT = 40;   // DIAGNOSTIC branch: raised from 5
   try {
     const at = () => view.evaluate(v => {
       const cs = getComputedStyle(v), trace = window.__cadKeyboardTrace;
@@ -2541,7 +2561,7 @@ async function jumpProblems() {
 async function stressRun(partsByName, diagramPages) {
   const mode = process.env.CAD_AGENT_STRESS, load = process.env.CAD_AGENT_STRESS_LOAD || 'none';
   const minutes = Number(process.env.CAD_AGENT_STRESS_MINUTES || 20), began = Date.now(), deadline = began + minutes * 60000;
-  const stats = { mode, load, minutes, engine: engine.name(), browserVersion: browser.version(), checks: 0, rounds: 0, failures: [], otherProblems: [], errors: [],
+  const stats = { mode, load, arm: process.env.CAD_AGENT_STRESS_ARM || 'instrumented', minutes, engine: engine.name(), browserVersion: browser.version(), checks: 0, rounds: 0, failures: [], otherProblems: [], errors: [],
     loadRuns: 0, loadFindings: 0, loadErrors: [] };
   const loadLane = async () => {
     if (load !== 'routes') return;
@@ -2556,7 +2576,7 @@ async function stressRun(partsByName, diagramPages) {
   await Promise.all([work(), loadLane()]);
   if (mode === 'keyboard') stats.checks = globalThis.__stressKeyboardChecks || 0;
   stats.seconds = Math.round((Date.now() - began) / 1000);
-  const out = await mkdtemp(path.join(tmpdir(), `cad-agent-stress-${mode}-${load}-`));
+  const out = await mkdtemp(path.join(tmpdir(), `cad-agent-stress-${mode}-${load}-${process.env.CAD_AGENT_STRESS_ARM || 'instrumented'}-`));
   await writeFile(path.join(out, 'summary.json'), JSON.stringify(stats, null, 2) + '\n');
   console.log(`STRESS SUMMARY ${out}: ${JSON.stringify({ ...stats, failures: stats.failures.length, otherProblems: stats.otherProblems.length,
     errors: stats.errors.length, loadErrors: stats.loadErrors.length })}`);
@@ -2593,7 +2613,7 @@ async function stressNavigation(deadline, partsByName, stats) {
       const started = Date.now();
       try { const found = await partsByName[name](); stats.rounds++; stats.otherProblems.push(...found.map(f => `${name}: ${f}`)); }
       catch (error) {
-        const failure = { part: name, message: String(error.message).slice(0, 6000), at: Date.now(), sincePartStartMs: Date.now() - started };
+        const failure = { part: name, message: String(error.message), at: Date.now(), sincePartStartMs: Date.now() - started };
         const target = /navigating to "([^"]+)"/.exec(error.message)?.[1] ?? /"url":"([^"]+)"/.exec(error.message)?.[1];
         if (target && !error.navigation) {
           failure.server = await previewServerEvidence(new URL(target).pathname, started - 1000).catch(e => ({ unavailable: e.message }));
@@ -2625,8 +2645,20 @@ async function stressOutline(deadline, stats) {
       for (const i of unreachable) {
         stats.checks++;
         await tall.evaluate(() => scrollTo({ top: 0, behavior: 'instant' }));
+        // What the click does: where it lands, any hashchange, and the page's scroll from before the click.
+        await tall.evaluate(() => {
+          const t0 = performance.now(), log = window.__stressClick = [];
+          const name = e => e === document ? 'document' : `${e.tagName?.toLowerCase()}${e.className && typeof e.className === 'string' ? '.' + e.className.trim().split(/\s+/).join('.') : ''}${e.hash ? e.hash : ''}`;
+          for (const type of ['pointerdown', 'click']) addEventListener(type, e => log.push({ type, ms: Math.round(performance.now() - t0), target: name(e.target),
+            text: e.target.textContent?.trim().slice(0, 30), scrollY: Math.round(scrollY), x: e.clientX, y: e.clientY }), { capture: true });
+          addEventListener('hashchange', () => log.push({ type: 'hashchange', ms: Math.round(performance.now() - t0), hash: location.hash, scrollY: Math.round(scrollY) }));
+          addEventListener('scroll', () => { if (log.length < 120) log.push({ type: 'scroll', ms: Math.round(performance.now() - t0), scrollY: Math.round(scrollY) }); }, { passive: true });
+        });
+        if (process.env.CAD_AGENT_STRESS_ARM === 'fix')   // reveal the link without the page's smooth scrolling, then click
+          await outline.nth(i).evaluate(a => a.scrollIntoView({ block: 'nearest', behavior: 'instant' }));
         const clickedAt = Date.now();
         await outline.nth(i).click();
+        const clickReturnedMs = Date.now() - clickedAt;
         // The suite's own settle: still for 15 animation frames, or 10 s. Recorded: each change of scrollY, and the frames.
         const settle = await tall.evaluate(() => new Promise(done => {
           const t0 = performance.now(), changes = [];
@@ -2652,7 +2684,8 @@ async function stressOutline(deadline, stats) {
           const id = setInterval(() => { if (scrollY !== last) { last = scrollY; changes.push([Math.round(performance.now() - t0), Math.round(scrollY)]); } }, 25);
           setTimeout(() => { clearInterval(id); done(changes.slice(0, 80)); }, 3000);
         }));
-        const failure = { where: `stress round ${stats.rounds} 1366x1600 /docs/explore outline ${i}`, clickedAt, settle, atFailure, laterChanges: later, after3s: await state() };
+        const failure = { where: `stress round ${stats.rounds} 1366x1600 /docs/explore outline ${i}`, arm: process.env.CAD_AGENT_STRESS_ARM || 'instrumented', clickedAt, clickReturnedMs, settle, atFailure, laterChanges: later, after3s: await state(),
+          clickLog: await tall.evaluate(() => window.__stressClick) };
         stats.failures.push(failure);
         const out = await mkdtemp(path.join(tmpdir(), 'cad-agent-outline-stress-'));
         await writeFile(path.join(out, 'receipt.json'), JSON.stringify(failure, null, 2) + '\n');

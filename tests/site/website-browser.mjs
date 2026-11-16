@@ -1501,11 +1501,11 @@ async function folderMapPhoneProblems(page, where) {
       const trace = await keyboardTraceStart(view);
       await view.focus();
       await page.keyboard.press('ArrowRight');
-      const { verdict, polls } = await keyboardVerdict(view, trace.pageNow);
-      if (verdict === 'pending') problems.push(`${where}: the page did not answer for 30 s after ArrowRight`);
-      else if (verdict === 'still') {
-        problems.push(`${where}: the focused diagram does not scroll with ArrowRight`);
-        await keyboardFailureEvidence(page, view, where, { ...trace, polls });
+      const result = await keyboardVerdict(view, trace);
+      if (result.verdict === 'pending') problems.push(`${where}: the page did not answer for 30 s after ArrowRight`);
+      else if (result.verdict === 'still') {
+        problems.push(`${where}: the focused diagram does not scroll with ArrowRight within 1000 ms (${result.detail})`);
+        await keyboardFailureEvidence(page, view, where, { ...trace, verdict: result });
       }
       await view.evaluate(v => { window.__cadKeyboardTrace?.stop(); delete window.__cadKeyboardTrace; v.scrollLeft = 0; v.blur(); });
     }
@@ -1513,30 +1513,52 @@ async function folderMapPhoneProblems(page, where) {
   return problems;
 }
 
-/** Whether the focused view scrolled within 1000 ms of `from`, a time on the page's own clock (performance.now) read
- * before the focus. Polled from the test process (page-context animation-frame polling misses native scrolling when
- * application JavaScript is disabled), but the bound is the page's: a view that still reads 0 when the page itself is
- * 1000 ms past `from` has not scrolled ('still'); one that reads more than 0 has ('scrolled'). Bounding the poll on the
- * test process's clock instead also counted each reply's trip back: in WebKit, with the other lane's load, one evaluate
- * took over 900 ms to answer, so the check failed although the page had scrolled within 40 ms (#719). A page that gives
- * no answer for 30 s is 'pending', reported as its own finding rather than as a scroll it cannot show. */
-async function keyboardVerdict(view, from) {
-  let verdict = 'pending';
+/** Whether the focused view scrolled within 1000 ms of the key, on the page's own clock (performance.now).
+ *
+ * It passes ('scrolled') if and only if the page's own record shows scrollLeft above 0 no later than 1000 ms after the
+ * key: the time of the view's first scroll event that leaves it above 0, or the time of a read made in the page (the
+ * value and performance.now() taken in one page task) that saw it above 0, whichever is earlier. Both times can only be
+ * at or after the scroll itself, so a scroll that starts after the bound can never pass. The key's time is the page's
+ * own record of the ArrowRight keydown; with page JavaScript disabled the page's listeners do not run, so the bound
+ * starts at the trace, read just before the focus (earlier, so stricter). It fails ('still') once the page's clock is
+ * past the bound with no such record, or when the earliest record is past the bound. When a reply arrives no longer
+ * matters: measured on the test process's clock, the bound also counted each reply's trip back, and in WebKit with the
+ * other lane's load one evaluate took over 900 ms to answer, so the check failed although the page had scrolled within
+ * 40 ms (#719). A page that gives no answer for 30 s is 'pending', reported as its own finding. */
+async function keyboardVerdict(view, trace) {
+  let result = { verdict: 'pending' }, earliestRead = null, firstAnswer = null;
   const polls = [];
   await expect.poll(async () => {
-    const sent = Date.now(), s = await view.evaluate(v => ({ now: performance.now(), left: v.scrollLeft }));
-    from ??= s.now;   // no trace (its evaluate failed): the bound starts at the first answer
-    if (polls.length < 40) polls.push({ sent, received: Date.now(), pageMs: Math.round(s.now - from), left: s.left });
-    verdict = s.left > 0 ? 'scrolled' : s.now - from >= 1000 ? 'still' : 'pending';
-    return verdict;
+    const sent = Date.now();
+    const s = await view.evaluate(v => {
+      const t = window.__cadKeyboardTrace;
+      return { now: performance.now(), left: v.scrollLeft, listening: !!t?.listening, keyAt: t?.keyAt ?? null,
+        firstScrollAt: t?.firstScrollAt ?? null, frames: t?.frames ? [...t.frames] : [] };
+    });
+    if (s.left > 0) earliestRead ??= s.now;
+    firstAnswer ??= s.now;
+    if (polls.length < 40) polls.push({ sent, received: Date.now(), pageNow: Math.round(s.now), left: s.left, keyAt: s.keyAt, firstScrollAt: s.firstScrollAt });
+    const start = s.keyAt ?? trace.pageNow ?? firstAnswer, bound = start + 1000;
+    const seen = [s.firstScrollAt, earliestRead].filter(t => t !== null);
+    const at = seen.length ? Math.min(...seen) : null;
+    if (at === null && s.now < bound) return 'pending';
+    // The longest the page drew no frame within the bound: a page blocked by load shows here, rather than as a guess.
+    const inBound = [start, ...s.frames.filter(f => f > start && f < bound), Math.min(s.now, bound)];
+    const stall = Math.round(Math.max(...inBound.slice(1).map((f, i) => f - inBound[i])));
+    const from = s.keyAt !== null ? 'the key' : 'just before the focus';
+    result = at !== null && at <= bound ? { verdict: 'scrolled', ms: Math.round(at - start) }
+      : { verdict: 'still', detail: `${at === null ? 'no scroll by' : `first seen scrolled at ${Math.round(at - start)} ms, after`} 1000 ms from ${from} on the page's clock${
+        s.listening && stall > 500 ? `; the page drew no frame for ${stall} ms of that time` : ''}${s.listening ? '' : '; page JavaScript off, from reads in the page only'}` };
+    return result.verdict;
   }, { timeout: 30000, intervals: [100] }).not.toBe('pending').catch(() => {});
-  return { verdict, polls };
+  return { ...result, polls };
 }
 
-/** Failure evidence for the keyboard check above (#719); it never decides the result. Records the key, focus and scroll
- * events the page sees from here on (scrolls of any element or of the document), with the view's and the window's
- * position at each, until the check removes the listeners. With page JavaScript disabled the listeners may not run, so
- * an empty list there shows nothing. */
+/** The page's own record for the keyboard check above (#719), started before the focus: the time of the ArrowRight
+ * keydown, the time of the view's first scroll event that leaves it above 0 and the animation-frame times, which the
+ * verdict reads; and, for the failure evidence only, the key, focus and scroll events the page sees (scrolls of any
+ * element or of the document), with the view's and the window's position at each, until the check removes the
+ * listeners. With page JavaScript disabled the listeners do not run (`listening` is false) and the record is empty. */
 function keyboardTraceStart(view) {
   return view.evaluate(v => {
     const name = e => !e ? null : e === v ? 'the diagram view' : e === document ? 'document' : e === window ? 'window'
@@ -1547,7 +1569,14 @@ function keyboardTraceStart(view) {
     for (const type of ['keydown', 'keyup']) window.addEventListener(type, log, { signal });   // bubbling: after the page's own handlers
     for (const type of ['focusin', 'focusout']) window.addEventListener(type, log, { capture: true, signal });
     document.addEventListener('scroll', log, { capture: true, signal });   // scroll does not bubble; capture sees every scroller's
-    window.__cadKeyboardTrace = { events, name, stop: () => controller.abort() };
+    const trace = window.__cadKeyboardTrace = { events, name, stop: () => controller.abort(), listening: false, keyAt: null, firstScrollAt: null, frames: [] };
+    window.addEventListener('keydown', e => { if (e.key === 'ArrowRight') trace.keyAt ??= performance.now(); }, { capture: true, signal });
+    v.addEventListener('scroll', () => { if (v.scrollLeft > 0) trace.firstScrollAt ??= performance.now(); }, { signal });
+    const frame = time => { if (signal.aborted) return; if (trace.frames.length < 600) trace.frames.push(time); requestAnimationFrame(frame); };
+    requestAnimationFrame(frame);
+    // Whether this page runs listeners at all (not with page JavaScript disabled).
+    const probe = () => { trace.listening = true; };
+    v.addEventListener('cad-keyboard-probe', probe, { once: true, signal }); v.dispatchEvent(new Event('cad-keyboard-probe'));
     return { pageNow: performance.now(), at: new Date().toISOString(), active: name(document.activeElement), scrollLeft: v.scrollLeft, window: [scrollX, scrollY],
       tabindex: v.getAttribute('tabindex'), visualViewportScale: visualViewport?.scale ?? null, devicePixelRatio };
   }).catch(error => ({ error: error.message }));
@@ -1570,7 +1599,8 @@ async function keyboardFailureEvidence(page, view, where, before) {
     const atFailure = await at();
     // Event-loop lag of this test process over the last 5 s, to place the failure against the other lane's load.
     const testProcessLag = testLag.filter(l => l.at >= Date.now() - 5000);
-    const kept = globalThis.__cadKeyboardEvidenceKept = (globalThis.__cadKeyboardEvidenceKept ?? 0) + 1;
+    // The planted controls below always keep their evidence and do not use up the slots meant for real failures.
+    const kept = where.startsWith('planted ') ? 0 : globalThis.__cadKeyboardEvidenceKept = (globalThis.__cadKeyboardEvidenceKept ?? 0) + 1;
     if (kept > KEYBOARD_EVIDENCE_LIMIT) {
       console.log(`Diagram keyboard failure evidence (${where}): full evidence skipped after ${KEYBOARD_EVIDENCE_LIMIT} failures; at the failure ${JSON.stringify({ before, atFailure, testProcessLag })}`);
       return;
@@ -1594,7 +1624,7 @@ async function keyboardFailureEvidence(page, view, where, before) {
     const siteRevision = JSON.parse(await readFile(path.join(dir, 'version.json'), 'utf8')).revision;
     const after = await at();
     const receipt = { where, url: page.url(), engine: browser.browserType().name(), browserVersion: browser.version(), siteRevision,
-      helper: 'folderMapPhoneProblems keyboard check: focus, keyboard.press ArrowRight, scrollLeft > 0 within 1000 ms of page time (keyboardVerdict)',
+      helper: 'folderMapPhoneProblems keyboard check: focus, keyboard.press ArrowRight, keyboardVerdict (scrollLeft > 0 within 1000 ms of the key on the page clock)',
       before, atFailure, testProcessLag, movedLaterMs: lateMs, movedAfterRepaintMs: afterRepaintMs, after };
     const out = await mkdtemp(path.join(tmpdir(), 'cad-agent-diagram-keyboard-'));
     await writeFile(path.join(out, 'receipt.json'), JSON.stringify(receipt, null, 2) + '\n');
@@ -1610,7 +1640,7 @@ async function folderMapPhoneControls(page) {
     svgStyle: v.querySelector('svg').getAttribute('style') }));
   if (!await view.evaluate(v => v.scrollWidth > v.clientWidth + 1)) return ['phone scroller control needs an actual wide drawing'];
   for (const [fault, expected] of [['shrink', 'shrinks its labels'], ['focus', 'not an accessible'],
-    ['overflow', 'not an accessible'], ['keyboard', 'does not scroll with ArrowRight']]) {
+    ['overflow', 'not an accessible'], ['keyboard', 'does not scroll with ArrowRight'], ['late', 'does not scroll with ArrowRight']]) {
     try {
       await view.evaluate((v, fault) => {
         if (fault === 'shrink') v.querySelector('svg').style.width = `${v.querySelector('svg').viewBox.baseVal.width / 2}px`;
@@ -1618,6 +1648,11 @@ async function folderMapPhoneControls(page) {
         if (fault === 'overflow') v.style.overflowX = 'hidden';
         if (fault === 'keyboard') {
           v.__phoneControl = e => { if (e.key === 'ArrowRight') e.preventDefault(); };
+          v.addEventListener('keydown', v.__phoneControl);
+        }
+        // Pins the bound: the key does not scroll, and the drawing moves 1500 ms later, which must still fail.
+        if (fault === 'late') {
+          v.__phoneControl = e => { if (e.key === 'ArrowRight') { e.preventDefault(); v.__phoneLate ??= setTimeout(() => { v.scrollLeft = 40; }, 1500); } };
           v.addEventListener('keydown', v.__phoneControl);
         }
       }, fault);
@@ -1629,6 +1664,7 @@ async function folderMapPhoneControls(page) {
         restore(v, 'style', original.style); restore(v, 'tabindex', original.tab);
         restore(v.querySelector('svg'), 'style', original.svgStyle);
         if (v.__phoneControl) { v.removeEventListener('keydown', v.__phoneControl); delete v.__phoneControl; }
+        if (v.__phoneLate) { clearTimeout(v.__phoneLate); delete v.__phoneLate; }
         v.scrollLeft = 0; v.blur();
       }, original);
     }

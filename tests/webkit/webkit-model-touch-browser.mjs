@@ -17,7 +17,9 @@
  * auto-height overflow-x:auto and an auto-height overflow-y:auto wrapper holding the box's content (wrappers that
  * cannot scroll do not count),
  * and a 120 px viewer whose only wrapper is overflow-x:auto; it pins the threshold with a 422/423 px viewer at 390x844,
- * and a pointer that went down without a lift that must not stop the next one-finger turn.
+ * a pointer that went down without a lift that must not stop the next one-finger turn, and a viewer moved into the box
+ * at the same size (re-decided after the move; in Chromium the element's ResizeObserver also fires on the move, so this
+ * does not isolate the reconnect call).
  *
  * Chromium gets real touch input through CDP Input.dispatchTouchEvent in a hasTouch/isMobile context, so the browser's
  * own touch-action and scroll arbitration decides the outcome. That is emulated touch in desktop Chromium: Safari's
@@ -373,6 +375,16 @@ async function nestedBox() {
     await p.evaluate(h => { document.getElementById('box').style.height = `${h}px`; }, height);
     const ok = await p.waitForFunction(want => document.querySelector('#big canvas').style.touchAction === want, want, { timeout: 10000 }).then(() => true, () => false);
     check(ok, `box: after the box became ${height} px the 300 px viewer did not switch to ${want}`);
+  }
+  // Moved into the 320 px box at the same size: the rule is decided again (on reconnect, and in Chromium also by the
+  // element's ResizeObserver, which reports again after a move), so the 300 px viewer gives vertical swipes to the box.
+  {
+    await p.evaluate(() => Object.assign(document.getElementById('smallx').style, { height: '300px', width: '300px' }));
+    const before = await p.waitForFunction(() => document.querySelector('#smallx canvas').style.touchAction === 'pinch-zoom', null, { timeout: 10000 }).then(() => true, () => false);
+    check(before, `box: a 300 px viewer on the 844 px page must take vertical drags before the move, got ${await action('smallx')}`);
+    await p.evaluate(() => document.getElementById('box').prepend(document.getElementById('smallx')));
+    const after = await p.waitForFunction(() => document.querySelector('#smallx canvas').style.touchAction === 'pan-y pinch-zoom', null, { timeout: 10000 }).then(() => true, () => false);
+    check(after, `box: a 300 px viewer moved into the 320 px box must leave vertical swipes to it, got ${await action('smallx')}`);
   }
   check(errors.length === 0, `box: page errors ${errors.join('; ')}`);
   await context.close();

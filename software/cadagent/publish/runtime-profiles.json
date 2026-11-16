@@ -14,7 +14,7 @@
             "assembly/playback.js",
             "model/viewer.js"
           ],
-          "sha256": "e70c2d89fe631a159eefe8b0bb9a28013fa6ca621d10eb240f83322fd7779a5a"
+          "sha256": "dff223e998bb65ab301e10e729b21c2c596276771a87a0cca4a318079f7d1de5"
         },
         "assembly/playback.js": {
           "requires": [],
@@ -37,9 +37,10 @@
             "ui/hud.css",
             "model/viewer.js",
             "assembly/guide.js",
-            "vendor/three/three.module.min.js"
+            "vendor/three/three.module.min.js",
+            "ui/appnav.js"
           ],
-          "sha256": "5257149b2f9523840e49c66501678a3ff4ba9721aef3c457d8c5c75c14b5c927"
+          "sha256": "f158e86975b71df5dc1d728bb31d9997b205b4ddb31931867185a97691c18376"
         },
         "model/viewer.js": {
           "requires": [
@@ -56,6 +57,10 @@
         "package.json": {
           "requires": [],
           "sha256": "3ca9d4afd21425087cf31893b8f9f63c81b0b8408db5e343ca76e5f8aa26ab9a"
+        },
+        "ui/appnav.js": {
+          "requires": [],
+          "sha256": "3a896c85ca255960505f83ee64db22fffc23ed7835cc8429b5d209a5df0d2795"
         },
         "ui/hud.css": {
           "requires": [

@@ -604,7 +604,7 @@ def _guide_page(bundle) -> str:
     back = "../../" + bundle.identifier + "/index.html"
     guide_sha = hashlib.sha256(bundle.files[bundle.path]).hexdigest()
     interactive = ("../_cadagent/model/viewer.html?guide=" + quote(target, safe="") + "&back=" + quote(back, safe="")
-                   + "&sha256=" + guide_sha)
+                   + "&sha256=" + guide_sha + "&nav=0")   # the release page is its own way back: no host top bar
     rows = []
     for step in guide["steps"]:
         poster = step.get("poster")

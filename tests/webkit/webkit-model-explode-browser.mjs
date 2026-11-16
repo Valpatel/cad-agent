@@ -1,0 +1,115 @@
+/** <cad-model>'s Explode tween on its first animation frame (#680), through the real button in a real browser.
+ *
+ * A browser may hand the first requestAnimationFrame callback a timestamp a fraction of a millisecond earlier than the
+ * performance.now() the click handler read. This suite makes that deterministic: once the viewer is ready it replaces
+ * performance.now and requestAnimationFrame with a frozen clock and a manual frame queue, so each frame runs at a
+ * timestamp the test chooses. Each case activates Explode by pointer or Enter, with ordinary or reduced motion, runs
+ * the first frame 0.5 ms before the event, and checks the pose (world-space mesh landmarks), completion, reverse,
+ * a mid-flight reversal, the off-screen frame stop and that no uncaught error reaches the page.
+ * Limits: the clock shim replaces the browser's own frame timing, so this proves the tween's arithmetic and control
+ * wiring, not any engine's real frame scheduling; it runs in Chromium or WebKit (PLAYWRIGHT_BROWSER), not on devices.
+ */
+import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
+import { chromium, webkit } from '../site/npm-context.mjs';
+import { serveWebkit } from './webkit-server.mjs';
+
+const fixture = new URL('../fixtures/model/', import.meta.url);
+const [json, bin] = await Promise.all(['two-parts.json', 'two-parts.bin'].map(n => readFile(new URL(n, fixture))));
+const routes = new Map([
+  ['/favicon.ico', (_, res) => res.writeHead(204).end()],
+  ['/m/two-parts.json', (_, res) => res.end(json)],
+  ['/m/two-parts.bin', (_, res) => res.end(bin)],
+  ['/index.html', (_, res) => { res.setHeader('Content-Type', 'text/html'); res.end(`<!doctype html><meta name="viewport" content="width=device-width"><link rel="stylesheet" href="/kit/model/model.css"><style>body{margin:0}cad-model{display:block;width:100%;height:60vh;min-height:230px}#spacer{height:300vh}</style><script type="module" src="/kit/model/model.js"></script><cad-model src="/m/two-parts.json" loading="eager" turn="0" label="Fixture"></cad-model><div id="spacer"></div>`); }],
+]);
+
+const engine = process.env.PLAYWRIGHT_BROWSER === 'webkit' ? webkit : chromium;
+const site = await serveWebkit(routes);
+const browser = await engine.launch(engine === chromium ? { executablePath: process.env.CHROMIUM_EXECUTABLE, headless: true } : { headless: true });
+const EARLY = 0.5;                          // ms: the first frame's timestamp precedes the event's start by this much
+const landmarks = page => page.evaluate(() => Object.values(document.querySelector('cad-model').captureAssemblyLandmarks({ tetra: [0, 1, 2, 3], 'box.v2': [0, 1, 2, 3] }).components).flat(2));
+const gap = (a, b) => Math.max(...a.map((n, i) => Math.abs(n - b[i])));
+let passed = 0;
+
+try {
+  for (const input of ['pointer', 'keyboard']) for (const motion of ['no-preference', 'reduce']) {
+    const name = `${input}/${motion}`, errors = [];
+    const context = await browser.newContext({ viewport: { width: 900, height: 700 }, reducedMotion: motion });
+    const page = await context.newPage(); page.on('pageerror', e => errors.push(e.message));
+    try {
+      await page.goto(`${site.url}/index.html`);
+      await page.waitForFunction(() => document.querySelector('cad-model')?.dataset.state === 'ready', null, { timeout: 20000 });
+      await page.waitForTimeout(300);       // let the loop's own start-up frames finish before freezing the clock
+      await page.evaluate(() => {
+        let clock = Math.ceil(performance.now()) + 1000, id = 0; const queue = new Map(), caught = [];
+        Object.defineProperty(performance, 'now', { configurable: true, value: () => clock });
+        window.requestAnimationFrame = cb => { queue.set(++id, cb); return id; };
+        window.cancelAnimationFrame = i => { queue.delete(i); };
+        window.__clock = {
+          now: () => clock, advance: ms => { clock += ms; return clock; }, pending: () => queue.size,
+          // Run queued frames at timestamp ts; an exception escapes to the page as the real one would.
+          frame(ts) { const cbs = [...queue.values()]; queue.clear(); for (const cb of cbs) try { cb(ts); } catch (e) { caught.push(e.message); setTimeout(() => { throw e; }); } return caught.length; },
+          caught,
+        };
+      });
+      const model = page.locator('cad-model'), button = model.getByRole('button', { name: 'Explode', exact: true });
+      const activate = async () => { if (input === 'pointer') await button.click(); else { await button.focus(); await page.keyboard.press('Enter'); } };
+      // Run the first frame EARLY ms before the event's start, then frames until the tween stops asking for more.
+      const settle = async start => {
+        await page.evaluate(ts => window.__clock.frame(ts), start - EARLY);
+        const first = await landmarks(page);
+        for (let t = start + 150; await page.evaluate(() => window.__clock.pending()) && t <= start + 2000; t += 150)
+          await page.evaluate(ts => { window.__clock.advance(150); window.__clock.frame(ts); }, t);
+        return first;
+      };
+      const assembled = await landmarks(page);
+
+      let start = await page.evaluate(() => window.__clock.now());
+      await activate();
+      assert.equal(await button.getAttribute('aria-pressed'), 'true', `${name}: Explode is pressed`);
+      if (motion === 'no-preference') assert.equal(await page.evaluate(() => window.__clock.pending()), 1, `${name}: one frame queued`);
+      let first = await settle(start);
+      assert.deepEqual(await page.evaluate(() => window.__clock.caught), [], `${name}: early first frame throws nothing`);
+      if (motion === 'no-preference') assert.ok(gap(first, assembled) < 1e-6, `${name}: first frame keeps the assembled pose`);
+      const exploded = await landmarks(page);
+      assert.ok(gap(exploded, assembled) > 0.5, `${name}: the parts came apart`);
+      assert.equal(await page.evaluate(() => window.__clock.pending()), 0, `${name}: frames stop once the tween completes`);
+
+      start = await page.evaluate(() => window.__clock.now());
+      await activate();
+      assert.equal(await button.getAttribute('aria-pressed'), 'false', `${name}: Explode released`);
+      first = await settle(start);
+      if (motion === 'no-preference') assert.ok(gap(first, exploded) < 1e-6, `${name}: reverse first frame keeps the exploded pose`);
+      assert.ok(gap(await landmarks(page), assembled) < 1e-6, `${name}: reverse returns to the assembled pose`);
+
+      if (motion === 'no-preference') {
+        // Reverse mid-flight: the second tween starts from wherever the first had reached, also with an early frame.
+        start = await page.evaluate(() => window.__clock.now());
+        await activate();
+        await page.evaluate(ts => window.__clock.frame(ts), start - EARLY);
+        await page.evaluate(() => window.__clock.frame(window.__clock.advance(300)));
+        const middle = await landmarks(page);
+        assert.ok(gap(middle, assembled) > 1e-3 && gap(middle, exploded) > 1e-3, `${name}: tween part way`);
+        // Off screen, the pending frame is cancelled and none is requested; back on screen, the tween resumes.
+        await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+        await page.waitForFunction(() => window.__clock.pending() === 0);
+        await page.waitForTimeout(100);
+        assert.equal(await page.evaluate(() => window.__clock.pending()), 0, `${name}: no frames off screen`);
+        await page.evaluate(() => window.scrollTo(0, 0));
+        await page.waitForFunction(() => window.__clock.pending() === 1);
+        start = await page.evaluate(() => window.__clock.now());
+        await activate();
+        assert.equal(await button.getAttribute('aria-pressed'), 'false', `${name}: mid-flight reversal`);
+        first = await settle(start);
+        assert.ok(gap(first, middle) < 1e-6, `${name}: reversal's early first frame holds the mid-flight pose`);
+        assert.ok(gap(await landmarks(page), assembled) < 1e-6, `${name}: reversal completes assembled`);
+      }
+      assert.deepEqual(await page.evaluate(() => window.__clock.caught), [], `${name}: no frame threw`);
+      await page.waitForTimeout(50);
+      assert.deepEqual(errors, [], `${name}: no uncaught page error`);
+      assert.equal(await model.getAttribute('data-state'), 'ready', `${name}: viewer still ready`);
+      console.log(`ok ${name}`); passed++;
+    } finally { await context.close(); }
+  }
+} finally { await browser.close(); await site.close(); }
+console.log(`model explode first frame: ${passed}/4 cases passed in ${engine.name()}`);

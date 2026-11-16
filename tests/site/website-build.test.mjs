@@ -616,6 +616,65 @@ test('every lesson page has a diagram, and the home page links to knowledge with
   assert.match(home, /src="\/docs\/img\/hero\/learning-loop\.svg"/);
 });
 
+test('the turret recording matches its SOURCE.json record (tools/site/figures/gyropup-turret.mjs --check)', () => {
+  execFileSync(process.execPath, ['tools/site/figures/gyropup-turret.mjs', '--check'], { cwd: root, stdio: 'pipe' });
+});
+
+test('the home page shows what runs, then what is in cad-agent, in order, every new link resolves and the twins say the same (#748)', async () => {
+  const home = await readFile(path.join(out, 'index.html'), 'utf8');
+  const order = ['class="hero learning-hero"', 'id="built-with"', 'id="stack"', 'id="use-it"', 'id="outputs"', 'id="frontier-to-local"', 'class="section help-band"'];
+  const at = order.map(m => home.indexOf(m));
+  assert.ok(at.every(i => i > 0), `every section is on the page: ${order.filter((m, i) => at[i] < 0)}`);
+  assert.deepEqual([...at].sort((a, b) => a - b), at, 'hero, see it run, stack, install, checks, frontier to local, help: things that move come first');
+  assert.match(home, /<title>cad-agent · Open-source CAD libraries, simulators, checks and tools for agents<\/title>/);
+  assert.match(home, /<meta name="description" content="An open-source stack of CAD libraries[^"]*">/);
+  assert.doesNotMatch(home, /[Tt]wo layers/, 'the stack is a cake of tooling, not two layers');
+  const stack = home.slice(home.indexOf('id="stack"'), home.indexOf('id="use-it"'));
+  const layers = [...stack.matchAll(/<div class="cake-layer" data-layer="\d+"><div class="cake-head"><h3>([^<]+)<\/h3>/g)].map(m => m[1]);
+  assert.deepEqual(layers, ['Agent kit', 'Knowledge', 'Command-line tools', 'Web widgets', 'Checks and tests', 'Simulators', 'Libraries', 'Built on'], 'top layer first, built on at the bottom');
+  // A dashed block is planned and links its issue; a solid block links a page and never an issue.
+  for (const [, cls, href] of stack.matchAll(/<a class="(cake-block(?: cake-planned)?)" href="([^"]+)"/g))
+    assert.equal(/cake-planned/.test(cls), /\/issues\/\d+$/.test(href), `${href}: planned blocks, and only they, link an issue`);
+  assert.ok((stack.match(/cake-planned/g) || []).length >= 5, 'where it is headed is visible');
+  assert.doesNotMatch(stack, /<img|pill-maturity/, 'blocks, not pictures or pills');
+  // Counts are computed: the command count is the CLI's own.
+  const cli = git('show', 'HEAD:software/cadagent/cli.py');
+  const commandCount = (cli.match(/sub\.add_parser\("/g) || []).length;
+  assert.match(stack, new RegExp(`<span class="cake-name">Commands</span><span class="cake-count">${commandCount}</span>`));
+  // References: every record is counted, and separately the ones read at source, as the register's own totals say.
+  const { totals } = JSON.parse(await readFile(path.join(out, 'catalog/references/index.json'), 'utf8'));
+  assert.match(stack, new RegExp(`Reference records</span><span class="cake-count">${totals.records.toLocaleString('en-US')}</span>`));
+  assert.match(stack, new RegExp(`Sources read</span><span class="cake-count">${totals.sources.toLocaleString('en-US')}</span>`));
+  assert.match(stack, /<a class="cake-skip" href="#use-it">/, 'a keyboard reader can skip the stack');
+  // A planned block's `until:` file must not exist yet; once it does, the block becomes solid (the build refuses).
+  const yamlHome = YAML.parse(git('show', 'HEAD:docs/home.yaml'));
+  const tracked = new Set(git('ls-tree', '-r', '--name-only', 'HEAD').split('\n'));
+  for (const b of yamlHome.stack.flatMap(l => l.blocks).filter(b => b.until)) assert.ok(!tracked.has(b.until), `${b.until} exists: ${b.label} is built`);
+  assert.doesNotMatch(home, /Check, simulate|fits-ours/, 'the duplicate section is gone');
+  assert.equal((home.match(/class="run-mini"/g) || []).length, 3, 'robot replay, SCADA and a build guide');
+  assert.ok(home.indexOf('class="run-card run-turret"') < home.indexOf('<cad-model ') && home.lastIndexOf('<cad-model ') < home.indexOf('class="run-minis"'), 'the turret leads, then the two viewers, then the toolkit cards');
+  assert.match(home, /href="https:\/\/gyropup\.com\/designer\/sim"/);
+  assert.match(home, /class="more-checks"/);
+  // Every local link the new sections add lands on a published page, and every #anchor on a real id.
+  const added = home.slice(home.indexOf('id="built-with"'), home.indexOf('class="section help-band"'));
+  for (const [, href] of added.matchAll(/href="(\/[^"]*)"/g)) {
+    const file = resolve(href);
+    assert.ok(file, `${href} is published`);
+    const hash = href.split('#')[1];
+    if (hash) assert.ok((await ids(file)).has(hash), `${href}: no id ${hash}`);
+  }
+  for (const f of ['index.md', 'llms.txt']) {
+    const text = await readFile(path.join(out, f), 'utf8');
+    assert.match(text, /## What is in cad-agent/, `${f} lists the stack`);
+    for (const layer of ['Agent kit', 'Knowledge', 'Command-line tools', 'Web widgets', 'Checks and tests', 'Simulators', 'Libraries', 'Built on'])
+      assert.ok(text.includes(`- **${layer}**`), `${f}: ${layer}`);
+  }
+  const twin = await readFile(path.join(out, 'index.md'), 'utf8');
+  const heads = ['### See it run', '### What is in cad-agent', '### What the checks compute', '### From frontier to local'].map(h => twin.indexOf(h));
+  assert.ok(heads.every(i => i > 0) && heads.every((v, i) => !i || v > heads[i - 1]), 'index.md follows the page: see it run, the stack, checks, frontier to local');
+  assert.match(twin, /No local or open model has been measured yet/, 'the twin keeps the honest eval status');
+});
+
 test('a moved source stub uses public redirect identity and every invalid target or rule fails', async () => {
   const wt = path.join(tmp, 'wt-redirects');
   execFileSync('git', ['worktree', 'add', '--detach', '--quiet', wt, 'HEAD'], { cwd: root });

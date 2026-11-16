@@ -47,7 +47,7 @@ flowchart TD
 |---|---|
 | [build-site.mjs](build-site.mjs) | Build HTML, Markdown twins, catalogue, references and agent indexes |
 | [pages-build.mjs](pages-build.mjs) | Fetch required public history and enforce release-build validation |
-| [preview-site.mjs](preview-site.mjs) | Serve the result with Pages-style routes and headers |
+| [preview-site.mjs](preview-site.mjs) | Serve the result with Pages-style routes and headers; started with an IPC channel, it keeps a record of recent requests for a failing browser test (#686) |
 | [publication.mjs](publication.mjs), [page-sources.json](page-sources.json) | Dependency-free source selection and stable public page identity |
 | [compiler/](compiler/README.md) | Compilers, rendering helpers and permanent redirect data |
 | [figures/](figures/README.md) | Explorer stills and existing-viewer picture scripts |

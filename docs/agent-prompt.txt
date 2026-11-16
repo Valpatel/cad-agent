@@ -2,23 +2,38 @@ Install cad-agent from https://cad-agent.valpatel.com/llms.txt, then use it for:
 
 How to install cad-agent (github.com/Valpatel/cad-agent, MIT) and work with it:
 
-1. Install, or update, in a terminal. It needs git, adds uv if missing, and
-   puts the kit in ~/cad-agent, the cad-agent command in ~/.local/bin and the
-   skills in ~/.claude/skills and ~/.agents/skills. Use the platform's
-   pinned download and checksum-before-execution block at
+1. Already installed? If installation or updates are disallowed, leave the
+   installation unchanged. Find the executable (`command -v cad-agent` on
+   POSIX, `Get-Command cad-agent` in PowerShell) and inspect its launcher to
+   identify the Python it uses. In that Python, use `-B` to disable bytecode
+   writes and inspect `cadagent.__file__`, `cadagent.__version__`, and available
+   distribution version and `direct_url.json` metadata. Editable metadata can
+   be stale; a non-editable install's URL describes its source, not a live
+   checkout. If the launcher or provider cannot be identified, say so.
+   Reuse it only within the user's
+   authorized scope; record its checkout and commit if verifiable, otherwise
+   say they are unknown. Report missing dependencies and version limits.
+   When updates are allowed, run `cad-agent update` first. For a new install,
+   it needs git, adds uv if missing, and puts the kit in ~/cad-agent, the
+   cad-agent command in ~/.local/bin and the skills in ~/.claude/skills and
+   ~/.agents/skills. Use the platform's pinned download and
+   checksum-before-execution block at
    https://cad-agent.valpatel.com/docs/agent-workflow#install
    Stop on a failed download or checksum mismatch; do not pipe a download
-   straight into a shell.
-   Already installed? Run `cad-agent update` first. More tools: add
-   --extras fea,sim (strength; airflow, topology, renders), robot, explore.
+   straight into a shell. More tools: add --extras fea,sim (strength; airflow,
+   topology, renders), robot, explore.
    Fetch pages with curl or your web tool; from Python, send a User-Agent
    header, because the site blocks Python urllib's default one.
-2. After installation, read `~/cad-agent/docs/agent-prompt.txt` in full
-   from the installed checkout before designing. A web summary can omit
-   requirements. Use your chosen checkout if CAD_AGENT_DIR differs.
+2. Before designing, read `~/cad-agent/docs/agent-prompt.txt` in full for
+   the default installation, or `docs/agent-prompt.txt` in the actual
+   provider checkout identified above. A web summary can omit requirements.
+   CAD_AGENT_DIR is an installation-path hint, not proof of the loaded provider;
+   verify it. If no checkout can be established, say so instead of assuming
+   that path exists.
    Look before you write code: fetch cad-agent.valpatel.com/llms.txt, then
    the page or catalog/<area>.json it points to (any page also as .md),
-   and `cad-agent <command> --help`. Skills: ~/cad-agent/.agents/skills/*/SKILL.md.
+   and `cad-agent <command> --help`. Skills are in the same provider checkout:
+   ~/cad-agent/.agents/skills/*/SKILL.md for the default installation.
 3. Build with the kit's tested commands and checks, not formulas from
    memory. Start with `cad-agent init my-part` and change it; then
    `cad-agent all` builds, exports and runs every check. Before drawing a
@@ -29,7 +44,7 @@ How to install cad-agent (github.com/Valpatel/cad-agent, MIT) and work with it:
 4. Give back, through GitHub only: cad-agent collects no telemetry. When a
    tool is missing or wrong, you find a better source or you learn a lesson,
    write cad-agent-report.md with these headings: Model, Harness, cad-agent
-   commit (git -C "$HOME/cad-agent" rev-parse --short HEAD), Layer (the
+   commit (actual provider checkout's Git revision, or unknown), Layer (the
    cad-agent tool, or the upstream it wraps, with its version), Building,
    Missing or learned, Sources (links), Confidence (low, medium or high).
    Leave out anything private. Show it to your user, and send it only if

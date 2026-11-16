@@ -534,7 +534,7 @@ function areaMd(slug, m, ORIGIN) {
 function indexMd(m, ORIGIN) {
   const all = [...m.refs.records.values()], read = all.filter(r => r.status === 'source').length, L = labels(m.refs.vocab);
   return [`# References`, '', `${plural(all.length, 'record')}: ${plural(read, 'read source')} that the rules and checks cite, and ${plural(all.length - read, 'record')} catalogued from the Reference Map, not yet read (snippet-only: listed and linked, never cited).`, '',
-    `Counts per area as JSON: ${ORIGIN}/catalog/references/index.json; every record in brief, for a mirror: ${ORIGIN}/catalog/references/records.json`, '', '## Areas', '',
+    `Counts per area as JSON: ${ORIGIN}/catalog/references/index.json and every record in brief, for a mirror: ${ORIGIN}/catalog/references/records.json`, '', '## Areas', '',
     ...m.pages.map(slug => { const list = m.byArea.get(slug) || []; const r = list.filter(x => x.status === 'source').length; return `- [${m.area(slug).title}](references/${slug}.md): ${list.length} (${r} read, ${list.length - r} catalogued)`; }),
     '', ...(m.rows.length ? ['## Coverage', '', ...m.rows.map(row => `- ${mdText(row.topic)}: ${L.coverage(row.status)}`), ''] : [])].join('\n');
 }
@@ -543,7 +543,7 @@ function indexMd(m, ORIGIN) {
 export function llmsSection(m, ORIGIN) {
   const all = [...m.refs.records.values()], read = all.filter(r => r.status === 'source').length;
   return ['## References', '',
-    `The reference knowledge base: ${all.length} records, ${read} read sources that rules and checks cite and ${all.length - read} catalogued from a survey (snippet-only: listed and linked, never cited until read). Counts per area: ${ORIGIN}/catalog/references/index.json; one area's records: ${ORIGIN}/catalog/references/<area>.json; every record in brief (for a mirror): ${ORIGIN}/catalog/references/records.json. \`[ref:<id>]\` in any page links to its record. The people and organisations behind the read sources: ${ORIGIN}/docs/experts.md`, '',
+    `The reference knowledge base: ${all.length} records, ${read} read sources that rules and checks cite and ${all.length - read} catalogued from a survey (snippet-only: listed and linked, never cited until read). Counts per area: ${ORIGIN}/catalog/references/index.json (one area's records: ${ORIGIN}/catalog/references/<area>.json, and every record in brief, for a mirror: ${ORIGIN}/catalog/references/records.json ). \`[ref:<id>]\` in any page links to its record. The people and organisations behind the read sources: ${ORIGIN}/docs/experts.md`, '',
     ...m.pages.map(slug => {
       const list = m.byArea.get(slug) || [], r = list.filter(x => x.status === 'source').length;
       return `- [${m.area(slug).title}](${ORIGIN}/references/${slug}.md): ${plural(list.length, 'record')} (${r} read, ${list.length - r} catalogued); ${ORIGIN}/catalog/references/${slug}.json`;

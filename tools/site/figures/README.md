@@ -31,6 +31,7 @@ flowchart TD
 | [site-kit-pictures.mjs](site-kit-pictures.mjs) | Capture web-kit examples. |
 | [toolkit-examples.mjs](toolkit-examples.mjs) | Copy the existing synthetic assembly closure and capture the actual guide and original-file viewers with hash receipts. |
 | [site-model-poster.mjs](site-model-poster.mjs) | Draw matching model poster/card. |
+| [social-card.mjs](social-card.mjs) | Draw the link card (1200 x 630) and touch icon from the emblem, fonts and model poster, with a hash record; `--check` verifies it. |
 | [site-packet-pictures.py](site-packet-pictures.py) | Render delivery packet pictures. |
 | [torsion-snap-still.mjs](torsion-snap-still.mjs) | Snapshot the torsion snap example. |
 

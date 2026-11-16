@@ -129,7 +129,9 @@ function track(server) {
       record: { from: record.requests[0]?.receivedAt ?? null, requests: record.requests.length, keepMs: KEEP_MS,
         maxRecords: MAX_RECORDS, droppedThrough: record.droppedThrough || null, droppedByBound: record.droppedByBound },
       // DIAGNOSTIC branch only: the first ten in the window too, not only the last ten.
-      matchingFirst: record.requests.filter(r => r.path === message.path && inWindow(r)).slice(0, 10),
+      matchingAll: record.requests.filter(r => r.path === message.path && inWindow(r)).slice(0, 300)
+        .map(r => ({ ...r, socket: socketView(record.sockets.find(s => s.id === r.socket)) ?? r.socket })),
+      allInWindow: windowed.slice(0, 3000).map(r => [r.id, r.receivedAt, r.path, r.status ?? null, r.headersAt ?? null, r.finishedAt ?? null, r.socket ?? null]),
       matching: record.requests.filter(r => r.path === message.path && inWindow(r)).slice(-10)
         .map(r => ({ ...r, socket: socketView(record.sockets.find(s => s.id === r.socket)) ?? r.socket })),
       window: { requests: windowed.length, unanswered: windowed.filter(r => !r.headersAt).slice(-10),

@@ -39,7 +39,7 @@ export async function sameSectionOutlineProblems(browser, base) {
   page.on('pageerror', e => errors.push(e.message));
   page.on('console', m => { if (m.type() === 'error') errors.push(m.text()); });
   try {
-    await page.goto(base + '/docs/toolkit', { waitUntil: 'networkidle' });
+    await stressGoto(page, base + '/docs/toolkit', 'networkidle');
     await page.waitForFunction(() => customElements.get('cad-nav'), null, { timeout: 2000 });
     // Assemble a detached fixture before connecting it, so the real component sees its complete article and children.
     await page.evaluate(() => {
@@ -284,7 +284,7 @@ export async function readerOutlineClickProblems(browser, base) {
     return {target:a.hash,article:scrollY,panel:p.scrollTop,padding:getComputedStyle(p).scrollPaddingTop,controlsHeight:c.height,top:r.top,bottom:r.bottom,controlsBottom:c.bottom,hit:a.contains(document.elementFromPoint(r.x+r.width/2,r.y+r.height/2))};
   },alignment);
   try{
-    await page.goto(base+'/docs/toolkit',{waitUntil:'networkidle'});await page.waitForSelector('cad-nav[data-ready]');
+    await stressGoto(page, base+'/docs/toolkit','networkidle');await page.waitForSelector('cad-nav[data-ready]');
     await scrollOutline(page,await page.evaluate(()=>document.body.scrollHeight/2));await page.locator('.cad-nav-panel').evaluate(p=>p.scrollTop=0);
     await scrollOutline(page,await page.evaluate(()=>document.body.scrollHeight*.85));
     await page.evaluate(()=>{document.documentElement.style.scrollBehavior='';scrollTo({top:0,behavior:'instant'});});
@@ -336,7 +336,7 @@ export async function readerOverflowProblems(browser, base) {
     }
   };
   try{
-    await page.goto(base+'/docs/toolkit',{waitUntil:'networkidle'});await page.waitForSelector('cad-nav[data-ready]');
+    await stressGoto(page, base+'/docs/toolkit','networkidle');await page.waitForSelector('cad-nav[data-ready]');
     const panel=page.locator('.cad-nav-panel');await panel.evaluate(p=>{for(const group of p.querySelectorAll('details'))group.open=false;});const folded=await current({width:1920,height:1080,overflow:false,position:'sticky'});
     states.push({folded});if(!folded.fits||folded.contain!=='auto')problems.push('reader overflow: folded fitting tree traps wheel input');
     const old=await page.addStyleTag({content:'cad-nav .cad-nav-panel{overscroll-behavior-y:contain!important}'});const planted=await state();states.push({blanketContainRejected:planted.fits&&planted.contain!=='auto'});if(!(planted.fits&&planted.contain!=='auto'))problems.push('reader overflow: old blanket-contain control not rejected');await old.evaluate(el=>el.remove());
@@ -352,4 +352,23 @@ export async function readerOverflowProblems(browser, base) {
     await page.setViewportSize({width:390,height:844});const mobile=await current({width:390,height:844,overflow:false,position:'static'});states.push({mobile});if(mobile.position!=='static'||mobile.contain!=='auto')problems.push('reader overflow: mobile retains containment');
   }finally{await page.close();await writeFile(path.join(evidence,'receipt.json'),JSON.stringify({states,problems},null,2));console.log('Reader overflow evidence: '+evidence);}
   return problems;
+}
+
+/** DIAGNOSTIC branch only (#686): the same navigation, with the browser's side of it kept on a failure. */
+async function stressGoto(page, url, waitUntil) {
+  const began = Date.now(), log = [], t = () => Date.now() - began;
+  const clean = u => { try { const x = new URL(u); return x.origin + x.pathname; } catch { return String(u).slice(0, 80); } };
+  const on = [['request', r => log.length < 80 && log.push({ ms: t(), ev: 'request', url: clean(r.url()), type: r.resourceType(), nav: r.isNavigationRequest() })],
+    ['response', r => log.length < 80 && log.push({ ms: t(), ev: 'response', url: clean(r.url()), status: r.status() })],
+    ['requestfinished', r => log.length < 80 && log.push({ ms: t(), ev: 'finished', url: clean(r.url()) })],
+    ['requestfailed', r => log.length < 80 && log.push({ ms: t(), ev: 'failed', url: clean(r.url()), error: r.failure()?.errorText })],
+    ['framenavigated', f => f === page.mainFrame() && log.push({ ms: t(), ev: 'committed', url: clean(f.url()) })],
+    ['domcontentloaded', () => log.push({ ms: t(), ev: 'domcontentloaded' })], ['load', () => log.push({ ms: t(), ev: 'load' })]];
+  for (const [e, f] of on) page.on(e, f);
+  try { return await page.goto(url, { waitUntil }); }
+  catch (error) {
+    let pageUrl; try { pageUrl = clean(page.url()); } catch (e) { pageUrl = e.message; }
+    error.message += `\nSTRESS BROWSER SIDE ${JSON.stringify({ url: clean(url), waitUntil, began, pageUrl, log })}`;
+    throw error;
+  } finally { for (const [e, f] of on) page.off(e, f); }
 }

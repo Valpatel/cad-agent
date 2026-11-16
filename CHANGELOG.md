@@ -9,6 +9,54 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
 
 ## Unreleased
 
+## v0.45.0 (2026-11-16)
+
+**New**
+- `tools/site/figures/gyropup-turret.mjs` records Gyropup's turret browser playground from a clean local checkout into
+  `docs/img/gyropup/turret-playground.webp` and a reduced-motion still, with its commit in `SOURCE.json`. It is a
+  playground of a work-in-progress prototype, not physics validation (#748).
+- `cad-pr-review` skill: one review-criteria page (severities, checks for every PR and by change type, the evidence
+  each needs, what a pass verdict does not mean), independence rules for the reviewer, and "Merging without the
+  owner": when an agent merges into `dev`, which PRs need the owner's go-ahead recorded on the PR first (it never
+  replaces a gate), and a post-merge checklist
+  (#750).
+- `cad-pr-review` and `cad-pr-reviewer` give the GitHub MCP tool beside each `gh` command, including the gate re-run
+  and the merge, and a stated substitute for the local `tools/ci_gates.py` run in a session without `gh`; what the
+  MCP merge needs under the ruleset and what its refusals mean (#750).
+- `python3 tools/ci/preflight.py`: before pushing, lists the checks CI runs for the files a branch changes (since `origin/dev`, plus uncommitted ones, or `--paths`) and runs those this machine can. Checks it cannot run (a missing Playwright engine or build, a Python minor CI pins for a version-sensitive check, uninstalled Node dependencies, Windows) are reported as `not run` with the reason, never as passed, and listed again at the end; slow ones run with `--slow`. A step that exists only for CI (the SCADA recapture after a failed provenance check) is listed as `ci only` with its reason and never run. Editing a workflow file selects every check that workflow runs. It exits 0 only when every selected check ran and passed (or none was selected, said as such), 1 when one failed and 3 when some did not run here; a pass on another browser, Python or Node than CI's is counted separately. `--list`, `--json` and `--only` serve agents. The path-to-check mapping is `.github/ci-checks.json`, and `tests/repo/ci/test_ci_checks.py` fails when a pull-request workflow gains a check it does not mirror (#759).
+- CI: when the SCADA gallery and scenario provenance check fails, the `scada (chromium)` job regenerates the stale outputs on its pinned shell and uploads them, with a hash manifest, as the `scada-recapture-<head SHA>` artifact; an author without that shell commits it unchanged instead of editing capture hashes (#762).
+
+**Changed**
+- Architecture explanations use subject-specific animated SVGs, with a complete inline gallery and static alternatives.
+- The agent guide explains how to identify and reuse an authorized existing toolkit when a workspace disallows installation or updates, and records provider provenance without assuming a default checkout (#743).
+- The home page leads with what runs: "See it run" sits under the hero, with Gyropup's turret playground first, then
+  the two 3D viewers and cards that open `/toolkit` robot replay, SCADA and build-guide examples (#748).
+- A new "What is in cad-agent" figure shows the stack as a layer cake of blocks, from the open source it is built on,
+  through the libraries, simulators, checks and tests, web widgets and command-line tools, to knowledge and the agent
+  kit. Counts (commands, skills, formulas, tests, references, …) are computed by the build; dashed blocks are planned
+  and link their issue. The README, `index.md`, `llms.txt` and the page title say the same (#748).
+- The checks reel keeps its animated tiles; three more checks stay one click away as text links. A "From frontier to
+  local" section says what the evals measure today and what is next (#748).
+- `/toolkit` example cards carry anchors (`/toolkit#robot-replay`, `#scada-simulations`, `#assembly`, …) (#748).
+- `cad-agent agents install` reports `cad-pr-review` and `cad-pr-reviewer` as needing GitHub access through `gh` or
+  the GitHub MCP tools, which it cannot check from here, instead of `gh` alone (#750).
+- The `cad-remote-runs` skill has a "Working from a cloud container" section: GitHub through MCP tools when `gh` is
+  missing, worktrees and venvs, Chromium-only Playwright, Python 3.12 for provenance checks, regenerating provenance
+  receipts with their generators (never editing a hash), slow steps and an orchestration pattern. `AGENTS.md` points at it, and
+  `.agents/SYMPTOM-INDEX.md` finds the dated evidence by its error text (#758).
+
+**Fixed**
+- `<cad-model>` (`kit/model/model.js`): on a touch screen a one-finger drag now turns the model without scrolling the page; two fingers still zoom the page. It turns the model up and down as well as sideways only while the viewer is at most half as tall as the space that scrolls past it; a taller viewer leaves vertical swipes to the page and turns only sideways (the rule, its limits and the phone figures are in the #769 bullet below) (#650, #769). Two fingers never zoom or pan the model itself (it has no pinch zoom), and a second finger cancels a one-finger turn. Checked with real touch input in Chromium's emulated phone mode only; dragging in Safari and on a physical phone is not yet checked.
+- `<cad-model>`: the turntable never steps backwards when a frame is stamped before the previous one.
+- `<cad-model>`: Explode no longer throws `Invalid explode factor` when the browser's first animation frame is timestamped slightly before the click or Enter press; the tween clamps its progress at both ends (#680).
+- Website visual-layout checks recognize visible images inside inline picture wrappers while retaining hidden-image and minimum-size checks.
+- SCADA Explorer: live ticks no longer rewrite unchanged text on Pause/Run and the sound controls, so a click whose press and release straddle a tick keeps its target; WebKit could drop such a click and leave the session running (#745).
+- SCADA Explorer browser suite: pausing is verified rather than assumed, and a fake-clock check places a tick inside the Pause click, then proves paused and running session round trips restore exactly, with ticks resuming only after import (#745).
+- `tools/ci_gates.py` review gate: a verdict marker followed by one attribution footer that the posting tool appends (a `---` line, then one `_Generated by [Name](https://...)_` line) now counts, so a reviewer in a cloud session can clear the gate. Any other text after the marker, a second footer or a footer with no marker still voids it (#751).
+- `<cad-model>` (`kit/model/model.js`): on a touch screen a viewer now takes vertical drags only while it is at most half as tall as the space that scrolls past it: the visible viewport, or the shortest box around it that can scroll vertically (a scrolling `overflow-y` with content taller than the box) when that is shorter. What lies beside a viewer is no longer counted as free, because it may be another viewer. With two viewers side by side in phone landscape (844×390, 740×360, 932×430) a vertical swipe on the home page layout now scrolls from all 35 sampled start points, where before it scrolled from 5 (the gutters). Those viewers now turn only under sideways drags in phone landscape (in portrait they still turn both ways). A viewer nearly as tall as its scrollable box lets the box scroll again, also behind wrappers that cannot scroll themselves; a wrapper with only `overflow-x:auto` no longer counts (#769).
+- `<cad-model>`: a second finger on the canvas ends a one-finger turn and is itself ignored, so a pinch zooms the page and leaves the view alone (#769).
+- Limits: checked with emulated touch in desktop Chromium only, not in Safari, Chrome on Android or on a physical phone. In portrait the home page's viewers keep vertical turning, and with the first viewer centred a vertical swipe scrolls from 18 of 35 sampled start points at 390×844, 28 at 412×915 and 15 at 360×640; with both viewers on screen at the worst offset, from 7, 7 and 14 (about 51–62 % of the screen takes the swipe, and only the band between the cards and the side gutters scroll). The page is never trapped there, and this is the same as before. On a page that does not scroll at all, a viewer taller than half the viewport now turns only sideways. The rule is decided again when the viewer, the viewport or a scrolling box around it changes size, or the viewer is connected again; not when an ancestor's `overflow` changes or its content starts to overflow without a resize (#769).
+
 ## v0.44.1 (2026-11-14)
 
 **Changed**

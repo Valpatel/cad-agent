@@ -9,7 +9,7 @@
    "part": "wheel_link",
    "case": "E1",
    "safety_factor": 3.15,
-   "target": 2.0,
+   "target": 2,
    "ok": true,
    "material": "PA6-CF along the layers (humid)",
    "tets": 52134,
@@ -21,6 +21,58 @@
    "source": "exports/leg/leg-stand-iso.png",
    "width": 601,
    "height": 861
+  },
+  "turret-playground": {
+   "file": "turret-playground.webp",
+   "page": "software/site/designer/sim.html?design=turret-box",
+   "public": "https://gyropup.com/designer/sim?design=turret-box",
+   "project": "Valpatel/gyropup",
+   "revision": "41c5c266569d6141ecda28711188343b54ab43d8",
+   "committed": "2026-11-11T15:25:14-08:00",
+   "generator": {
+    "path": "tools/site/figures/gyropup-turret.mjs",
+    "sha256": "1c792faa7998f837d0b078c46fc5d477bbbc2e78e1921e96252f1e92797c57c5"
+   },
+   "browser": {
+    "engine": "chromium",
+    "version": "153.0.8010.12",
+    "webgl": "SwiftShader (software)"
+   },
+   "actions": "hold ARM (Space), then hold FIRE (F) for automatic fire, then release both",
+   "frames": 72,
+   "width": 720,
+   "viewport": {
+    "width": 960,
+    "height": 600
+   },
+   "crop": {
+    "x": 0.03,
+    "y": 0.18,
+    "w": 0.92,
+    "h": 0.77
+   },
+   "camera": {
+    "orbit_drag_px": [
+     -35,
+     -4
+    ],
+    "zoom_at_px": [
+     300,
+     320
+    ],
+    "zoom_steps": 2
+   },
+   "duration_ms": 7749,
+   "timing": "each frame lasts the playground time it covers (2 rendered steps of at most 50 ms each), not wall time",
+   "sha256": "ba9914d7a97646c712b9961e91947bc4cccffe540f372d615bbc60b81e49836b",
+   "still": {
+    "file": "turret-playground-still.webp",
+    "frame": 48,
+    "sha256": "d1347fbfbd15efa49f456cd38ce290116886ced112c1eb1105d0afd02e71e8fd"
+   },
+   "served_sources": 149,
+   "served_sources_sha256": "012a082a9e6a58be623dc536c31e615852128b8ced7d33f14acfbe36e2509f81",
+   "limits": "A browser playground of an unqualified work-in-progress prototype (the page says PLAYGROUND - WIP). Ball flight is the playground's simplified model, not physics validation; no hardware was tested."
   }
  },
  "released_hardware_audit": {

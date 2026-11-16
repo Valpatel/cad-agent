@@ -142,6 +142,8 @@ class Requirement:
 REQUIREMENTS: Dict[str, Requirement] = {
     "git": Requirement("`git`", lambda: None if _on_path("git") else "`git` is not on PATH"),
     "gh": Requirement("`gh` logged in", _gh_logged_in),
+    # Either route works; the GitHub MCP tools belong to the agent's harness, so cad-agent cannot see them from here.
+    "github": Requirement("GitHub access (`gh` logged in, or the GitHub MCP tools)", None),
     "ssh": Requirement("`ssh`", lambda: None if _on_path("ssh") else "`ssh` is not on PATH"),
     "rsync": Requirement("`rsync`", lambda: None if _on_path("rsync") else "`rsync` is not on PATH"),
     "playwright": Requirement("Playwright and Google Chrome", _playwright),

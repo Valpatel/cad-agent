@@ -59,7 +59,8 @@ const openTarget = () => {
   if (!target) return;
   let opened = false;
   for (let d = target.closest('details'); d; d = d.parentElement?.closest('details')) if (!d.open) { d.open = true; opened = true; }
-  if (opened) target.scrollIntoView({ block: 'start' });
+  // At once, as the browser lands on any other # address: the page's smooth scrolling would leave the reader mid-way.
+  if (opened) target.scrollIntoView({ block: 'start', behavior: 'instant' });
 };
 openTarget();
 addEventListener('hashchange', openTarget);

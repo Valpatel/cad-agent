@@ -10,7 +10,7 @@ h1{margin:.15em 0;font-size:clamp(25px,2.3vw,42px);line-height:1.15}.replay-assu
 .cad-replay-host .cad-viewer-viewport{background:var(--viewer-bg)}
 .replay-controls{display:flex;align-items:center;flex-wrap:wrap;gap:10px;padding:10px 12px;background:var(--viewer-surface);border-bottom:1px solid var(--viewer-line)}
 .replay-controls>label{display:flex;align-items:center;gap:8px}.replay-controls .replay-time{flex:1 1 180px;min-width:120px}.replay-time input{min-height:44px;min-width:60px;flex:1}
-.replay-scenario select{min-height:44px;max-width:min(100%,34ch)}
+.replay-scenario select{min-height:44px;max-width:min(100%,50ch)}
 .replay-summary{padding:8px 12px;background:var(--viewer-surface);border-top:1px solid var(--viewer-line);min-width:0;overflow-wrap:anywhere;font-size:14px;line-height:1.4}
 .cad-replay-host{grid-template-columns:minmax(0,1fr)}.cad-replay-host.cad-replay-summarised{grid-template-rows:auto auto minmax(0,1fr) auto auto}.replay-summary p{margin:0}.replay-summary dl{display:flex;flex-wrap:wrap;gap:2px 18px;margin:4px 0}.replay-summary dl div{display:flex;flex-wrap:wrap;gap:0 6px;min-width:0}.replay-summary dt{color:var(--viewer-muted)}.replay-summary dd{margin:0}
 .replay-verdict{text-transform:uppercase;letter-spacing:.04em}.replay-verdict[data-pass="false"]{color:var(--danger,#b42318)}.replay-summary-note{color:var(--viewer-muted);font-size:13px}

@@ -78,7 +78,7 @@
   "software/cadagent/webkit/simulation/viewer.js": "3946e826be08cf147debea2bf585fc67cd3a34f96acc0f586025a1bd99488f77",
   "software/cadagent/webkit/simulation/scene.js": "f510e789c9279004f56f38f6cde3de45c289d4c77c5d168e71deaa2a6740fb26",
   "software/cadagent/webkit/simulation/scenarios.js": "2f9a955b3bac1de6c6b5a6b2b023aaa2613c2ced94e0303553f46a571b24868f",
-  "software/cadagent/webkit/simulation/viewer.css": "7ee4e0047d12eccc4b74f4e3dc48dba5d49ae9b94a543382431cc8d8a8342e6b",
+  "software/cadagent/webkit/simulation/viewer.css": "f91a4c694953293d839f2589090aa71291f2bf0164e224625ded86641cc60fc6",
   "software/cadagent/webkit/simulation/examples/gyropup-v2/viewer.html": "fed7dee4ce8ebbcf12dab94004f17c3824760f6b3e1ba4b8489588111629b6f8",
   "software/cadagent/webkit/simulation/examples/gyropup-v2/index.json": "007ea8706f7d0816e1cfb57acaa28505eafd0f506b522da161ac8c4273548180",
   "software/cadagent/webkit/simulation/examples/gyropup-v2/robot.json": "3f1cfd02367d22adf242bb9cf7887f83e12be6c5897eb34aa8092d33c82f8314",

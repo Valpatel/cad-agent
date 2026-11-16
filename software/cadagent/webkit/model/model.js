@@ -11,8 +11,8 @@
  * nothing moves when the 3D view arrives. three.js and the model load only after the page has loaded, when the
  * element is near the screen and the browser is idle; with Save-Data on, a button loads them instead. The model
  * turns slowly (not with reduced motion; a button pauses it), turns under a drag (on touch screens one finger turns it
- * and two zoom the page; a viewer too big to scroll past leaves vertical swipes to the page), names the part under the
- * pointer or a tap, and comes apart with "Explode". No wheel zoom, so the page scrolls normally. Rendering stops
+ * and two zoom the page; a viewer more than half as tall as the space that scrolls past it leaves vertical swipes to
+ * that space), names the part under the pointer or a tap, and comes apart with "Explode". No wheel zoom, so the page scrolls normally. Rendering stops
  * while the element is off screen or the tab is hidden. Without WebGL or DecompressionStream the poster stays
  * (data-state="error").
  *
@@ -390,18 +390,40 @@ class CadModel extends (typeof HTMLElement === 'undefined' ? class {} : HTMLElem
       label.textContent = mesh ? partLabel(mesh.userData.part.name) : 'Drag to turn';
       request();
     };
-    // Touch (#650): one finger turns the model both ways without scrolling the page; two fingers still zoom the page.
-    // Taking vertical drags could trap scrolling under a viewer that fills the screen, so it takes them only while a
-    // quarter of the visible viewport's height or width stays outside it; otherwise vertical swipes scroll the page.
+    // Touch (#650, #769): one finger turns the model both ways without scrolling the page; two fingers still zoom the page.
+    // Taking vertical drags could trap scrolling, so the viewer takes them only while it is at most half as tall as the
+    // space that scrolls past it: the visible viewport, or the nearest scrollable ancestor's box when that is shorter.
+    // Height alone decides, since what lies beside a viewer may be another viewer rather than page: a row of viewers then
+    // leaves at least half of that space's height free for vertical swipes wherever it sits. A taller viewer leaves
+    // vertical swipes to the page (or the box) and still turns under sideways drags. It is decided again when the
+    // viewer, the viewport or that box changes size, never per frame.
+    let port = null;                     // the scrollable ancestor being watched, if any
+    const scroller = () => {
+      for (let el = this.assignedSlot ?? this.parentElement ?? this.getRootNode().host; el && el !== document.body && el !== document.documentElement;
+        el = el.assignedSlot ?? el.parentElement ?? el.getRootNode().host)
+        if (/^(auto|scroll|overlay)$/.test(getComputedStyle(el).overflowY)) return el;
+      return null;
+    };
+    const portObserver = new ResizeObserver(() => arbitrate());
+    disposers.push(() => portObserver.disconnect());
     const arbitrate = () => {
-      const vv = window.visualViewport, w = vv?.width ?? innerWidth, h = vv?.height ?? innerHeight;
-      canvas.style.touchAction = this.clientHeight <= h * 0.75 || this.clientWidth <= w * 0.75 ? 'pinch-zoom' : 'pan-y pinch-zoom';
+      if (disposed) return;
+      const found = scroller();
+      if (found !== port) { portObserver.disconnect(); if (found) portObserver.observe(found); port = found; }
+      const vv = window.visualViewport, h = Math.min(vv?.height ?? innerHeight, port ? port.clientHeight : Infinity);
+      canvas.style.touchAction = this.clientHeight <= h / 2 ? 'pinch-zoom' : 'pan-y pinch-zoom';
     };
     for (const target of [window, window.visualViewport].filter(Boolean)) {
       target.addEventListener('resize', arbitrate);
       disposers.push(() => target.removeEventListener('resize', arbitrate));
     }
+    // Pointers down on the canvas. A second one is a pinch, which belongs to the page: it ends the turn without inertia
+    // and is itself ignored, so the view stays as it is until every finger lifts.
+    const down = new Set();
     canvas.addEventListener('pointerdown', e => {
+      if (e.isPrimary) down.clear();   // a new gesture: no pointer is down any more, even if a lift went unseen
+      down.add(e.pointerId);
+      if (down.size > 1) { if (drag) { drag = null; spin = 0; lastInput = performance.now(); } return; }
       drag = { id: e.pointerId, x: e.clientX, y: e.clientY, moved: 0, t: performance.now() };
       spin = 0; lastInput = performance.now();
       canvas.setPointerCapture?.(e.pointerId);
@@ -419,6 +441,7 @@ class CadModel extends (typeof HTMLElement === 'undefined' ? class {} : HTMLElem
       } else if (e.pointerType === 'mouse') highlight(pick(e.clientX, e.clientY));
     });
     const release = e => {
+      down.delete(e.pointerId);
       if (!drag || e.pointerId !== drag.id) return;
       if (drag.moved < 6) highlight(pick(e.clientX, e.clientY));   // a tap or click names the part
       if (performance.now() - drag.t > 80) spin = 0;
@@ -427,7 +450,7 @@ class CadModel extends (typeof HTMLElement === 'undefined' ? class {} : HTMLElem
       request();
     };
     canvas.addEventListener('pointerup', release);
-    canvas.addEventListener('pointercancel', e => { if (drag && e.pointerId === drag.id) { drag = null; spin = 0; } });
+    canvas.addEventListener('pointercancel', e => { down.delete(e.pointerId); if (drag && e.pointerId === drag.id) { drag = null; spin = 0; } });
     canvas.addEventListener('pointerleave', e => { if (e.pointerType === 'mouse' && !drag) highlight(null); });
     pause.addEventListener('click', () => {
       paused = !paused;

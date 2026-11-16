@@ -112,7 +112,6 @@ that way (marker, blank line, `---`, footer) counts. Any other text after the ma
 | Merge | `merge_pull_request` has no `--admin` switch. Observed, not documented GitHub behaviour (2026-11-16, PRs #752, #749, #757, #760, #763, #765, #768, from the project's maintainer account): the call gets through the ruleset, and the required checks and resolved threads still apply. The ruleset lets only the admin role update `dev`, so a session on another account is refused and stops. |
 | "All comments must be resolved" | A thread is open (seen on #727, 2026-11-16). It is resolved only after the author's fix or reply is on it; never resolve an unanswered thread to get a merge through. |
 | "Required status check … is failing" | A gate or CI is red (seen on #752 before its gate was green, 2026-11-16). For a review gate that has not read a new verdict, re-run the gates; otherwise fix it on the branch (a new head, which needs a new verdict), or stop; never re-post a status by hand. A required check that has not reported yet means wait. |
-
 | Re-run of failed jobs | Only after the whole workflow run has finished; while any job runs, GitHub refuses with "This workflow is already running" (observed 2026-11-16). |
 
 For any other refusal, stop and report; never change a ruleset or setting to get through.

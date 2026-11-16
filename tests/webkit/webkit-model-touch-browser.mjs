@@ -14,7 +14,8 @@
  * gutters scroll). The page is never trapped there, and those figures are the same as before #769.
  *
  * The box check puts a 300 px and a 120 px viewer in a 320 px overflow-y:auto box, the 300 px one again behind an
- * auto-height overflow-x:auto and an auto-height overflow-y:auto wrapper (wrappers that cannot scroll do not count),
+ * auto-height overflow-x:auto and an auto-height overflow-y:auto wrapper holding the box's content (wrappers that
+ * cannot scroll do not count),
  * and a 120 px viewer whose only wrapper is overflow-x:auto; it pins the threshold with a 422/423 px viewer at 390x844,
  * and a pointer that went down without a lift that must not stop the next one-finger turn.
  *
@@ -30,7 +31,8 @@ import { chromium, webkit } from '../site/npm-context.mjs';
 import { serveWebkit } from './webkit-server.mjs';
 
 const models = new URL('../../tools/site/assets/models/', import.meta.url);
-const assets = new URL('../../tools/site/assets/', import.meta.url), fixture = new URL('../fixtures/model/', import.meta.url);
+const siteCss = new URL('../../tools/site/assets/site.css', import.meta.url), homeCss = new URL('../../tools/site/assets/home.css', import.meta.url);
+const fixture = new URL('../fixtures/model/', import.meta.url);
 const file = (name, type, from = models) => async (_, res) => res.writeHead(200, { 'Content-Type': type, 'Cache-Control': 'no-store' }).end(await readFile(new URL(name, from)));
 // The homepage "Built with cad-agent" layout (tools/site/assets/home.css): two columns, one below 700 px, square viewers.
 const page = `<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
@@ -59,15 +61,15 @@ const nested = `<!doctype html><html lang="en"><meta charset="utf-8"><meta name=
 <style>body{margin:0}.filler{height:900px}.box{height:320px;overflow-y:auto;margin:0 24px 400px;border:1px solid}.pad{height:260px}
 .tail{height:900px}cad-model{aspect-ratio:auto;width:100%}</style><div class="filler"></div><div class="box" id="box"><div class="pad"></div>
 ${viewer('big', 300)}<div class="pad"></div>${viewer('small', 120)}<div class="tail"></div></div>
-<div class="box" id="boxx"><div class="pad"></div><div style="overflow-x:auto">${viewer('bigx', 300)}</div><div class="tail"></div></div>
-<div class="box" id="boxy"><div class="pad"></div><div style="overflow-y:auto">${viewer('bigy', 300)}</div><div class="tail"></div></div>
+<div class="box" id="boxx"><div style="overflow-x:auto"><div class="pad"></div>${viewer('bigx', 300)}<div class="tail"></div></div></div>
+<div class="box" id="boxy"><div style="overflow-y:auto"><div class="pad"></div>${viewer('bigy', 300)}<div class="tail"></div></div></div>
 <div style="overflow-x:auto;margin:0 24px">${viewer('smallx', 120)}</div><div class="filler"></div><script type="module" src="/kit/model/model.js"></script></html>`;
 const site = await serveWebkit(new Map([
   ['/', (_, res) => res.writeHead(200, { 'Content-Type': 'text/html' }).end(page)],
   ['/home', (_, res) => res.writeHead(200, { 'Content-Type': 'text/html' }).end(home)],
   ['/nested', (_, res) => res.writeHead(200, { 'Content-Type': 'text/html' }).end(nested)],
-  ['/web/site.css', file('site.css', 'text/css', assets)],
-  ['/web/home.css', file('home.css', 'text/css', assets)],
+  ['/web/site.css', file(siteCss.href, 'text/css')],
+  ['/web/home.css', file(homeCss.href, 'text/css')],
   ['/m/two-parts.json', file('two-parts.json', 'application/json', fixture)],
   ['/m/two-parts.bin', file('two-parts.bin', 'application/octet-stream', fixture)],
   ['/favicon.ico', (_, res) => res.writeHead(204).end()],

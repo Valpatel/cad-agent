@@ -1083,7 +1083,7 @@ def cmd_update(args: argparse.Namespace) -> int:
     if why:
         cmd = agentkit.reinstall_command(root, extras)
         agentkit.reinstall_pending(root, extras)
-        if os.name == "nt" and cmd[0] == "uv":       # this process holds cad-agent.exe: the installer finishes it
+        if os.name == "nt" and cmd[1:3] == ["tool", "install"]:  # uv: this process holds cad-agent.exe, install.ps1 finishes
             _update_notes(root, moved["old"], args.project)
             _say(f"update: {why}; finish with: " + " ".join(cmd) + ", then cad-agent update --reinstalled and "
                  "cad-agent agents install (install.ps1 does this)")

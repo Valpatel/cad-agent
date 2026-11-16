@@ -657,62 +657,151 @@ def pull(root: Path, ref: Optional[str] = None) -> dict:
 
 
 _RECEIPT_STRING = r'"(?:[^"\\]|\\.)*"|\'[^\']*\''          # TOML basic or literal string
-_RECEIPT_VALUE = re.compile(r'([A-Za-z0-9_-]+)\s*=\s*(' + _RECEIPT_STRING + r'|\[[^\]]*\])')
+_RECEIPT_VALUE = re.compile(r'([A-Za-z0-9_-]+)\s*=\s*(' + _RECEIPT_STRING + r'|\[\s*(?:(?:' + _RECEIPT_STRING +
+                            r')\s*,?\s*)*\])')
 
 
 def _receipt_string(value: str) -> str:
     return json.loads(value) if value.startswith('"') else value[1:-1]
 
 
+class ReceiptUnreadable(ValueError):
+    """uv's receipt is there but this Python cannot read it with certainty (no tomllib, and a form uv does not write)."""
+
+
 def _receipt_requirements(text: str) -> List[dict]:
-    """The ``[tool] requirements`` inline tables of uv's ``uv-receipt.toml``. tomllib where Python has it (3.11+);
-    on 3.10 a reader for the form uv writes: one ``{ key = "string" | ["strings"] }`` table per requirement (#799)."""
+    """The ``[tool] requirements`` inline tables of uv's ``uv-receipt.toml``. tomllib where Python has it (3.11+).
+    On 3.10, a reader for exactly the form uv writes: ``requirements = [`` then inline tables of ``key = "string"`` and
+    ``key = ["strings"]``, separated by commas, then ``]``. Anything else (a comment, a nested table, an array of
+    tables, a ``{`` or ``]`` inside a string, more text before the closing bracket) raises ReceiptUnreadable rather
+    than be guessed at (#799)."""
     try:
         import tomllib
-        reqs = tomllib.loads(text).get("tool", {}).get("requirements", [])
-        return [r for r in reqs if isinstance(r, dict)] if isinstance(reqs, list) else []
     except ImportError:
-        pass
-    except ValueError:
+        tomllib = None
+    if tomllib is not None:
+        try:
+            reqs = tomllib.loads(text).get("tool", {}).get("requirements", [])
+        except ValueError as exc:
+            raise ReceiptUnreadable(str(exc)) from None
+        return [r for r in reqs if isinstance(r, dict)] if isinstance(reqs, list) else []
+    head = re.search(r"^requirements\s*=\s*\[", text, re.M)
+    if head is None:
+        if re.search(r"requirements", text):
+            raise ReceiptUnreadable("requirements in a form other than uv's")
         return []
-    block = re.search(r"^requirements\s*=\s*\[(.*?)^\]", text, re.S | re.M) or \
-        re.search(r"^requirements\s*=\s*\[(.*?\})\s*\]\s*$", text, re.S | re.M)
-    out = []
-    for table in re.findall(r"\{([^{}]*)\}", block.group(1) if block else ""):
+    body, out, rest = text[head.end():], [], ""
+    pos = 0
+    while True:
+        m = re.compile(r"\s*,?\s*(\{)").match(body, pos)
+        if not m:
+            break
+        close = body.find("}", m.end())
+        table = body[m.end():close] if close >= 0 else ""
         req: dict = {}
+        leftover = _RECEIPT_VALUE.sub("", table)
+        if close < 0 or leftover.replace(",", "").strip():
+            raise ReceiptUnreadable("a requirement table this reader does not understand")
         for key, value in _RECEIPT_VALUE.findall(table):
-            try:
-                req[key] = (_receipt_string(value) if value[0] in "\"'" else
-                            [_receipt_string(v) for v in re.findall(_RECEIPT_STRING, value)])
-            except ValueError:
-                continue
+            req[key] = (_receipt_string(value) if value[0] in "\"'" else
+                        [_receipt_string(v) for v in re.findall(_RECEIPT_STRING, value)])
         out.append(req)
+        pos = close + 1
+    rest = body[pos:]
+    if not re.match(r"\s*,?\s*\]\s*(?:\n|$)", rest):
+        raise ReceiptUnreadable("text this reader does not understand in the requirements list")
     return out
+
+
+def _receipt_text() -> str:
+    return _text(Path(sys.prefix) / "uv-receipt.toml")
 
 
 def _receipt_extras() -> Optional[List[str]]:
     """The extras uv recorded when it installed this cad-agent (``uv-receipt.toml`` in the tool environment), or None
-    for an install uv did not make."""
-    text = _text(Path(sys.prefix) / "uv-receipt.toml")
+    for an install uv did not make, or a receipt this Python cannot read (then the installed packages decide)."""
+    text = _receipt_text()
     if not text:
         return None
-    for req in _receipt_requirements(text):
+    try:
+        reqs = _receipt_requirements(text)
+    except ReceiptUnreadable:
+        return None
+    for req in reqs:
         if req.get("name") == "cad-agent":
             return sorted(str(e) for e in req.get("extras") or [])
     return None
 
 
-def _receipt_with() -> List[str]:
-    """The packages uv recorded beside cad-agent (``uv tool install --with``), as requirement strings, so a reinstall
-    keeps them: uv rebuilds the environment from exactly the requirements it is given."""
-    out = []
-    for req in _receipt_requirements(_text(Path(sys.prefix) / "uv-receipt.toml")):
-        if not isinstance(req.get("name"), str) or req["name"] == "cad-agent":
+_GIT_REFS = ("rev", "tag", "branch")
+
+
+def _with_args(req: dict) -> Optional[List[str]]:
+    """The ``uv tool install`` arguments that add one receipt row again from the same source, or None when uv's command
+    line cannot say it exactly. Never a bare name for a package that came from a folder, file, URL or Git: the index
+    could hold another package of that name (#799)."""
+    name, extras, marker = req.get("name"), req.get("extras") or [], req.get("marker")
+    known = {"name", "extras", "specifier", "marker", "directory", "editable", "path", "url", "git"}
+    if (set(req) - known or not isinstance(name, str) or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]*", name)
+            or not isinstance(extras, list) or not all(isinstance(e, str) for e in extras)
+            or not isinstance(marker, (str, type(None))) or not isinstance(req.get("specifier", ""), str)):
+        return None
+    spec = name + (f"[{','.join(extras)}]" if extras else "")
+    sources = [k for k in ("directory", "editable", "path", "url", "git") if k in req]
+    if not sources:
+        return ["--with", spec + req.get("specifier", "") + (f"; {marker}" if marker else "")]
+    value = req[sources[0]]
+    if len(sources) > 1 or req.get("specifier") or not isinstance(value, str):
+        return None
+    tail = f" ; {marker}" if marker else ""
+    from urllib.parse import parse_qsl, urlsplit
+    if sources[0] == "editable":
+        return ["--with-editable", value] if Path(value).is_absolute() and not extras and not marker else None
+    if sources[0] in ("directory", "path"):
+        return ["--with", f"{spec} @ {Path(value).as_uri()}{tail}"] if Path(value).is_absolute() else None
+    url = urlsplit(value)
+    if sources[0] == "url":
+        return ["--with", f"{spec} @ {value}{tail}"] if url.scheme in ("https", "http", "file") and \
+            not url.query and not url.fragment else None
+    query = parse_qsl(url.query, keep_blank_values=True)
+    keys = [k for k, _ in query]
+    if url.fragment or len(set(keys)) != len(keys) or set(keys) - {*_GIT_REFS, "subdirectory"} or \
+            sum(k in _GIT_REFS for k in keys) > 1:
+        return None
+    q = dict(query)
+    ref = next((q[k] for k in _GIT_REFS if k in q), "")
+    base = url._replace(query="").geturl()
+    target = (base if base.startswith("git+") else "git+" + base) + (f"@{ref}" if ref else "") + \
+        (f"#subdirectory={q['subdirectory']}" if q.get("subdirectory") else "")
+    return ["--with", f"{spec} @ {target}{tail}"]
+
+
+def _receipt_with() -> Tuple[List[str], List[str]]:
+    """The packages uv recorded beside cad-agent (``uv tool install --with`` and ``--with-editable``) as arguments that
+    add each one again from its recorded source, so a reinstall keeps them (uv rebuilds the environment from exactly
+    the requirements it is given); and the names of the ones it cannot add again exactly, which the person must add
+    again themselves. A receipt this Python cannot read gives no arguments and ``["(unreadable receipt)"]``."""
+    try:
+        reqs = _receipt_requirements(_receipt_text())
+    except ReceiptUnreadable:
+        return [], ["(the packages added with --with: uv's receipt could not be read here)"]
+    args: List[str] = []
+    dropped: List[str] = []
+    for req in reqs:
+        if req.get("name") == "cad-agent":
             continue
-        extras = req.get("extras") or []
-        text = req["name"] + (f"[{','.join(map(str, extras))}]" if extras else "") + str(req.get("specifier") or "")
-        out.append(text + (f"; {req['marker']}" if req.get("marker") else ""))
-    return out
+        again = _with_args(req)
+        if again is None:
+            dropped.append(str(req.get("name") or req))
+        else:
+            args += again
+    return args, dropped
+
+
+def _warn_dropped(dropped: List[str]) -> None:
+    if dropped:
+        print("cad-agent: not carried over by the reinstall (add them again yourself, from where they came): "
+              + ", ".join(dropped), file=sys.stderr)
 
 
 def installed_extras(root: Path) -> List[str]:
@@ -767,16 +856,19 @@ def _uv() -> Optional[str]:
 
 def _uv_tool_install(root: Path, extras: List[str], uv: str) -> List[str]:
     spec = f"{root}[{','.join(extras)}]" if extras else str(root)
+    again, dropped = _receipt_with()
+    _warn_dropped(dropped)
     return [uv, "tool", "install", "--quiet", "--force", "--editable", "--python",
-            f"{sys.version_info.major}.{sys.version_info.minor}", spec,
-            *[a for w in _receipt_with() for a in ("--with", w)]]
+            f"{sys.version_info.major}.{sys.version_info.minor}", spec, *again]
 
 
 def reinstall_command(root: Path, extras: List[str]) -> List[str]:
     """How to reinstall this cad-agent with ``extras``: uv's tool install when that is how it was installed (keeping
-    the packages added with ``--with``), else pip into the running environment (an older, venv install)."""
-    if _uv_tool_env() and shutil.which("uv"):
-        return _uv_tool_install(root, extras, "uv")
+    the packages added with ``--with``; uv found on PATH or in the installer's folder, which may not be on PATH), else
+    pip into the running environment (an older, venv install)."""
+    uv = _uv()
+    if _uv_tool_env() and uv:
+        return _uv_tool_install(root, extras, uv)
     spec = f"{root}[{','.join(extras)}]" if extras else str(root)
     return [sys.executable, "-m", "pip", "install", "--quiet", "-e", spec]
 

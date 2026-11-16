@@ -102,8 +102,10 @@ try {
     ['header', headerProblems],          // painted text can collide even when the flex boxes and page do not overflow
     ['cantilever', cantileverProblems],  // the snap-arm explorer on /docs/compliant (#137), below
     ['fold', foldProblems],              // the page tree's fold on phones, with and without nav.js (#134)
-    ['outline visibility', () => sameSectionOutlineProblems(browser, base)],
-    ['reader scroll boundary', async () => [...await readerBoundaryProblems(browser, base), ...await readerOutlineClickProblems(browser, base), ...await readerOverflowProblems(browser, base)]],
+    ['outline visibility', () => sameSectionOutlineProblems(browser, base, { serverEvidence: previewServerEvidence })],
+    // Each reader navigation timeout also keeps the preview server's record of it (#686).
+    ['reader scroll boundary', async () => [...await readerBoundaryProblems(browser, base, { serverEvidence: previewServerEvidence }),
+      ...await readerOutlineClickProblems(browser, base, { serverEvidence: previewServerEvidence }), ...await readerOverflowProblems(browser, base, { serverEvidence: previewServerEvidence })]],
     ['jump', jumpProblems],              // outline jumps: released by the reader's wheel, not by a stall
     ['fourbar', fourbarProblems],        // the four-bar animator on /docs/linkages (#159), below
     ['fanCurve', fanCurveProblems],      // the fan-curve explorer on /docs/fans (#160), below
@@ -1587,7 +1589,7 @@ async function previewServerEvidence(pathname, since, limit = 2000) {
  * The browser's view (pending and failed requests, main-frame commits, the DOM) is joined to the preview server's
  * own record of the document request (received? headers written? finished? on a new or reused socket?), its
  * event-loop lag and sockets, and this process's lag: the times are epoch ms from both processes on one host. */
-async function navigateDiagram(page, url, where, timeout = 30000) {
+async function navigateDiagram(page, url, where, timeout = 30000, waitUntil = 'load') {
   const pending = new Map(), failed = [], committed = [], began = Date.now();
   const cleanURL = value => { const u = new URL(value); return u.protocol === 'about:' ? value.split(/[?#]/)[0] : u.origin + u.pathname; }; // no queries or fragments
   // for URLs the browser reports: one that does not parse is noted, never thrown over the navigation error
@@ -1599,7 +1601,7 @@ async function navigateDiagram(page, url, where, timeout = 30000) {
   const navigated = frame => { if (frame === page.mainFrame() && committed.length < 10) committed.push({ url: reportedURL(frame.url()), at: Date.now() }); };
   const listeners = [['request', request], ['response', response], ['requestfinished', finished], ['requestfailed', rejected], ['framenavigated', navigated]];
   for (const [event, listener] of listeners) page.on(event, listener);
-  try { return await page.goto(url, { waitUntil: 'load', timeout }); }
+  try { return await page.goto(url, { waitUntil, timeout }); }
   catch (cause) {
     const evidence = { where, url: cleanURL(url), viewport: page.viewportSize(), timeout, began,
       pageUrl: reportedURL(page.url()), committed: [...committed],
@@ -2222,7 +2224,8 @@ async function foldProblems() {
     if (mode === 'slow') await page.route('**/kit/documents/nav.js', async r => { await held; await r.continue(); });
     if (mode === 'blocked') await page.route('**/kit/documents/nav.js', r => r.abort());
     if (mode === 'failing') await page.route('**/kit/documents/nav.js', r => r.fulfill({ contentType: 'text/javascript', body: 'throw new Error("nav.js fails on purpose")' }));
-    await page.goto(base + '/docs/toolkit', { waitUntil: mode === 'slow' ? 'domcontentloaded' : 'load' });
+    // Through the diagram navigation's evidence (#686): a timeout keeps the browser's and the preview server's record.
+    await navigateDiagram(page, base + '/docs/toolkit', `fold ${width}px ${mode}`, 30000, mode === 'slow' ? 'domcontentloaded' : 'load');
     const js = mode !== 'none';
     // nav.js has run or failed (with JavaScript off, Playwright cannot wait on a promise in the page; held back, it
     // has not arrived, and the rest of the page settles first: its diagrams render while nav.js is held back).

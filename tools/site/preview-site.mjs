@@ -119,6 +119,8 @@ function track(server) {
     const since = Number(message.since) || 0, inWindow = r => r.receivedAt >= since;
     const windowed = record.requests.filter(inWindow);
     const socketView = s => record.open.has(s) ? { ...s, bytesRead: record.open.get(s).bytesRead } : s;
+    const matched = record.requests.filter(r => r.path === message.path && inWindow(r));
+    const withSocket = r => ({ ...r, socket: socketView(record.sockets.find(s => s.id === r.socket)) ?? r.socket });
     process.send({ id: message.id, now: Date.now(), pid: process.pid,
       clock: 'Date.now() epoch ms in the preview server process',
       keepAlive: { keepAliveTimeout: server.keepAliveTimeout, keepAliveTimeoutBuffer: server.keepAliveTimeoutBuffer,
@@ -128,8 +130,10 @@ function track(server) {
       coversWindow: record.droppedThrough < since,
       record: { from: record.requests[0]?.receivedAt ?? null, requests: record.requests.length, keepMs: KEEP_MS,
         maxRecords: MAX_RECORDS, droppedThrough: record.droppedThrough || null, droppedByBound: record.droppedByBound },
-      matching: record.requests.filter(r => r.path === message.path && inWindow(r)).slice(-10)
-        .map(r => ({ ...r, socket: socketView(record.sockets.find(s => s.id === r.socket)) ?? r.socket })),
+      // The first ten and the last ten in the window: a stalled request is usually the window's first, and a busy
+      // window (the other lane navigating to the same page) would push it out of the last ten (#686).
+      matchingFirst: matched.slice(0, 10).map(withSocket),
+      matching: matched.slice(-10).map(withSocket),
       window: { requests: windowed.length, unanswered: windowed.filter(r => !r.headersAt).slice(-10),
         unfinished: windowed.filter(r => !r.finishedAt).length,
         socketsOpened: record.sockets.filter(s => s.openedAt >= since).length,

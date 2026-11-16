@@ -46,6 +46,7 @@ test('an IPC parent can read the server record of each request, its socket and i
     for(let n=1;n<=2;n++){socket.write('GET /recorded?q=private HTTP/1.1\r\nHost: x\r\n\r\n');while(text.split('Recorded').length<=n)await new Promise(r=>setTimeout(r,10));}
     const record=await ask('/recorded',since);
     assert.equal(record.matching.length,2);
+    assert.deepEqual(record.matchingFirst.map(r=>r.id),record.matching.map(r=>r.id),'with two requests the first ten are the last ten');
     const [first,second]=record.matching;
     for(const r of record.matching){
       assert.equal(r.status,200);assert.equal(r.path,'/recorded');assert.equal(r.file,'/recorded.html');
@@ -58,9 +59,35 @@ test('an IPC parent can read the server record of each request, its socket and i
     assert.equal(record.keepAlive.keepAliveTimeout,5000);assert(record.lag.maxMs>=0);
     assert.deepEqual((await ask('/never-requested',since)).matching,[]);
     await closed;   // Node closes the idle keep-alive socket (keepAliveTimeout plus its buffer, about 6 s)
-    const after=await ask('/recorded',since);
-    assert.equal(after.openSockets,0);assert.equal(after.window.socketsClosedIdle,1);
+    // The client sees the close before the server's own 'close' event has run (on a loaded runner that can be some
+    // time later), so wait for the server's record to say the socket closed: bounded, and failing with what it saw.
+    let after;
+    for(const until=Date.now()+10000;;await new Promise(r=>setTimeout(r,20))){
+      after=await ask('/recorded',since);
+      if(after.matching[1]?.socket?.closedAt||Date.now()>until)break;
+    }
+    const seen=JSON.stringify({openSockets:after.openSockets,socketsClosedIdle:after.window.socketsClosedIdle,socket:after.matching[1]?.socket});
+    assert(after.matching[1]?.socket?.closedAt,`the server recorded the idle socket's close within 10 s of the client seeing it: ${seen}`);
+    assert.equal(after.openSockets,0,seen);assert.equal(after.window.socketsClosedIdle,1,seen);
     assert(after.matching[1].socket.idleTimeoutAt>=after.matching[1].finishedAt);
+  } finally {server?.kill();await rm(dir,{recursive:true,force:true});}
+});
+
+// Both ends of a busy window (#686): the first ten requests to a path, where a stalled one usually is, and the last ten.
+test('the evidence answer lists the first ten and the last ten requests to the path in its window',async()=>{
+  const dir=await mkdtemp(path.join(os.tmpdir(),'cad-agent-preview-ends-'));
+  let server;
+  try {
+    await writeFile(path.join(dir,'busy.html'),'<h1>Busy</h1>');
+    server=spawn(process.execPath,[path.resolve(import.meta.dirname,'../../tools/site/preview-site.mjs'),'--dir',dir,'--port','0'],{stdio:['pipe','pipe','inherit','ipc']});
+    const base=await new Promise((resolve,reject)=>{server.stdout.on('data',data=>{const url=String(data).match(/http:\/\/[\d.]+:\d+/);if(url)resolve(url[0]);});server.once('exit',code=>reject(new Error(`preview exited ${code}`)));});
+    const since=Date.now();
+    for(let n=1;n<=12;n++)assert.equal((await fetch(base+'/busy')).status,200);   // one after another: ids in order
+    const record=await new Promise(resolve=>{const id=Math.random();server.on('message',function on(m){if(m.id===id){server.off('message',on);resolve(m);}});server.send({type:'preview-evidence',id,path:'/busy',since});});
+    const ids=list=>list.map(r=>r.id), run=(from,to)=>Array.from({length:to-from+1},(_,i)=>from+i);
+    assert.equal(record.window.requests,12,JSON.stringify(record.window));   // a fresh server: these are requests 1 to 12
+    assert.deepEqual(ids(record.matchingFirst),run(1,10),'the first ten, in order');
+    assert.deepEqual(ids(record.matching),run(3,12),'the last ten, in order');
   } finally {server?.kill();await rm(dir,{recursive:true,force:true});}
 });
 

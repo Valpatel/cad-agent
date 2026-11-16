@@ -5,6 +5,8 @@ install it with `cad-agent agents install`): the `cad-work-tracking`, `cad-pr-re
 `cad-pr-reviewer` and `cad-resume` subagents. Assume the session can end at any time: every piece of work has a
 GitHub issue, is pushed in clean commits as it goes and has an early draft PR, so another computer can pick it up.
 
+In a cloud container (no `gh`, GitHub through MCP tools), read [Working from a cloud container](.agents/skills/cad-remote-runs/SKILL.md#working-from-a-cloud-container) first.
+
 **Classify tracked issues with the canonical [issue labels](.agents/skills/cad-work-tracking/issue-labels.md).**
 Use exactly one `scope:` label; `stage:design-review` independently marks a pending design decision. Read the latest
 comments before classifying or resuming, keep unrelated labels, and write outcome/evidence/acceptance rather than

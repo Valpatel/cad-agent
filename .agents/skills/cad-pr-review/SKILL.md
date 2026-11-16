@@ -73,8 +73,8 @@ flowchart TD
   which agent role wrote it, what it ran, and whether any item under
   [Needs the owner's go-ahead](#needs-the-owners-go-ahead) applies to the diff (and which; for a release PR, that
   none needs its own). A re-review says whether the new commits stay within the earlier findings and accepts or
-  rejects each reply to a blocking finding. Its last line is the
-  verdict marker for the head commit you reviewed:
+  rejects each reply to a blocking finding. Its last line is the verdict marker for the head commit you reviewed (an
+  attribution footer added by the posting tool may follow it):
   `<!-- cad-review verdict=pass sha=<full 40-character head sha> -->` when nothing blocking is left, otherwise
   `verdict=block`. A re-review after fixes posts a new summary with a new marker. Where the repo has merge gates,
   re-run them so they read it. Do not approve or merge unless the repo's rules give the reviewer that role.

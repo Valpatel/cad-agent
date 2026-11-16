@@ -118,13 +118,24 @@ flowchart TD
 
 ## Animated explanations
 
-Use motion to explain a handoff or state change, with all labels readable in a still frame. Prefer an owned,
-self-contained SVG in the existing topic or library `img/` folder; preserve library-local paths for copied kits.
+Use motion to explain a handoff or state change, with all labels readable in a still frame.
+
+Choose the composition from the subject: a feedback loop, source funnel, comparison plot or state fan-out should
+look different at a glance. Share typography and colors, not one box arrangement with swapped labels. Topic gallery
+READMEs display every authored figure inline, with a short explanation and source/static links; a filename list
+alone is not a visual gallery. Review the whole set together as well as each figure at its embedded reading size.
+
+<details>
+<summary>SVG authoring and verification</summary>
+
+Prefer an owned, self-contained SVG in the existing topic or library `img/` folder; preserve library-local paths for copied kits.
 Use CSS without scripts, external fonts or remote assets. Give each SVG a title, description and meaningful alt text.
 Keep the generator and source owners discoverable; `--check` must detect stale output. Use a `<picture>` with a
 static SVG for `prefers-reduced-motion`, as well as an internal reduced-motion rule. Validate actual SVG image mode,
 not just inline DOM: check motion, its disabled state, text bounds, narrow rendering and light/dark surroundings.
 Animation timing is illustrative unless a source-bound measurement establishes otherwise.
+
+</details>
 
 The [architecture figures](../img/architecture/README.md) explain current handoffs. Existing symbol galleries and
 engineering figures retain their own generators and evidence; do not replace them with decorative flowcharts.

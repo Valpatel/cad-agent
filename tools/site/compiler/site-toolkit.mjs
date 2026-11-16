@@ -175,7 +175,7 @@ export function toolkitCapabilities(m, {catalog = [], has} = {}) {
   return cards;
 }
 
-const capabilityCard = c => `<article class="toolkit-card toolkit-capability" data-toolkit-capability="${esc(c.id)}"><a class="toolkit-image-link" href="${esc(c.href)}" tabindex="-1"><img src="${esc(c.image)}" alt="${esc(c.alt)}" width="800" height="500" loading="lazy"${c.fit==='contain'?' class="toolkit-contain"':''}></a><div class="toolkit-card-body"><p class="toolkit-card-kicker">${esc(c.kind)}</p><h2>${esc(c.title)}</h2><p>${esc(c.description)}</p><div class="toolkit-card-actions"><a class="button" data-toolkit-launch href="${esc(c.href)}">${esc(c.action)}</a><a href="${esc(c.docs)}">${c.id==='scada-simulations'?'All simulations':'Guide'}</a></div></div></article>`;
+const capabilityCard = c => `<article class="toolkit-card toolkit-capability" id="${esc(c.id)}" data-toolkit-capability="${esc(c.id)}"><a class="toolkit-image-link" href="${esc(c.href)}" tabindex="-1"><img src="${esc(c.image)}" alt="${esc(c.alt)}" width="800" height="500" loading="lazy"${c.fit==='contain'?' class="toolkit-contain"':''}></a><div class="toolkit-card-body"><p class="toolkit-card-kicker">${esc(c.kind)}</p><h2>${esc(c.title)}</h2><p>${esc(c.description)}</p><div class="toolkit-card-actions"><a class="button" data-toolkit-launch href="${esc(c.href)}">${esc(c.action)}</a><a href="${esc(c.docs)}">${c.id==='scada-simulations'?'All simulations':'Guide'}</a></div></div></article>`;
 
 /** Generated routes remain in the existing site frame, with Markdown twins and a machine-readable index. */
 export function toolkitPages(m, {catalog = [], has} = {}) {

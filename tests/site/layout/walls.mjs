@@ -31,10 +31,17 @@ export function longestStretch(selector) {
       if (!d.querySelector(':scope > summary')?.contains(el)) return true;
     return false;
   };
-  const spans = [...content.querySelectorAll(selector)]
-    .filter(el => (!el.parentElement.closest(selector) || el.matches('.cad-diagram')) && !folded(el))
-    .map(el => el.getBoundingClientRect()).filter(r => r.width >= 120 && r.height >= 80)
-    .map(r => [r.top + scrollY, r.bottom + scrollY]).sort((a, b) => a[0] - b[0]);
+  // Inline <picture> (or display:contents) can have no useful box while its <img> is visible.
+  // Deduplicate only against ancestors that themselves meet the visual size/visibility contract.
+  const candidates = [...content.querySelectorAll(selector)].filter(el => !folded(el))
+    .map(el => ({ el, box: el.getBoundingClientRect() })).filter(({ box }) => box.width >= 120 && box.height >= 80);
+  const visible = new Set(candidates.map(({ el }) => el));
+  const spans = candidates.filter(({ el }) => {
+    if (el.matches('.cad-diagram')) return true;
+    for (let parent = el.parentElement; parent && parent !== content; parent = parent.parentElement)
+      if (visible.has(parent)) return false;
+    return true;
+  }).map(({ box: r }) => [r.top + scrollY, r.bottom + scrollY]).sort((a, b) => a[0] - b[0]);
   let at = top, worst = 0, from = top;
   for (const [start, end] of spans) {
     if (start - at > worst) { worst = start - at; from = at; }
@@ -66,6 +73,11 @@ export function plantedStretches(selector, longestStretch) {
     open: [text(700) + `<details open><summary style="height:20px;display:block">more</summary>${pic(400, 300)}</details>` + text(1000), 1000],
     folded: [text(700) + `<details><summary style="height:20px;display:block">more</summary>${pic(400, 300)}</details>` + text(700), 1420],
     summary: [text(700) + `<details><summary style="display:block">${pic(120, 90)}</summary>${pic(400, 300)}</details>` + text(600), 700],
+    // A zero-height inline picture must not hide its visible, block-level image from the measure.
+    picture: [text(700) + `<picture>${pic(400, 200)}</picture>` + text(800), 800],
+    contents: [text(700) + `<picture style="display:contents">${pic(400, 200)}</picture>` + text(800), 800],
+    smallPicture: [text(900) + `<picture>${pic(100, 60)}</picture>` + text(1040), 2000],
+    foldedPicture: [text(700) + `<details><summary style="height:20px;display:block">more</summary><picture>${pic(400, 300)}</picture></details>` + text(700), 1420],
     // a diagram counts once, however many <svg> it holds
     diagram: [text(500) + `<div class="cad-diagram" style="width:400px;height:300px;margin:0;padding:0;box-sizing:border-box"><svg width="400" height="300"></svg><svg width="10" height="10"></svg></div>` + text(800), 800],
   };

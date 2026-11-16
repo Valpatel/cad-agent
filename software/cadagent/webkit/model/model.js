@@ -464,7 +464,8 @@ class CadModel extends (typeof HTMLElement === 'undefined' ? class {} : HTMLElem
       last = now;
       let more = false;
       if (anim) {
-        const k = Math.min(1, (now - anim.t0) / 900), ease = k < 0.5 ? 4 * k ** 3 : 1 - (-2 * k + 2) ** 3 / 2;
+        // Clamp both ends: the first frame's timestamp can precede the event's performance.now() by a fraction of a ms (#680).
+        const k = Math.max(0, Math.min(1, (now - anim.t0) / 900)), ease = k < 0.5 ? 4 * k ** 3 : 1 - (-2 * k + 2) ** 3 / 2;
         setExplode(anim.from + (anim.to - anim.from) * ease);
         if (k >= 1) anim = null; else more = true;
       }

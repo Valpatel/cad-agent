@@ -1,6 +1,6 @@
 ---
 name: cad-remote-runs
-description: Use before starting any CAD/FEA/CFD/topology run or full pipeline that takes more than a few minutes or several GB of memory. Run it on a compute host instead of the workstation the agents share, detached so it survives the session, recorded in the GitHub issue (host, command, log, done marker, how to collect results) so any machine can pick it up, and its results pulled back and committed.
+description: Use before starting any CAD/FEA/CFD/topology run or full pipeline that takes more than a few minutes or several GB of memory, and when the agent itself works from a cloud container. Run a long job on a compute host instead of the workstation the agents share, detached so it survives the session, recorded in the GitHub issue (host, command, log, done marker, how to collect results) so any machine can pick it up, and its results pulled back and committed.
 metadata:
   requires: "git gh ssh compute-host"
   optional: "rsync"
@@ -92,5 +92,60 @@ flowchart TD
 - Pull the results back (`rsync -a <host>:<repo>/<result paths> <local paths>`), commit them with the command that
   made them in the message, push, and tick the issue.
 - Leave the host clean: stop containers you started, delete large scratch case folders you no longer need.
+
+## Working from a cloud container
+
+For an agent that itself runs in a hosted cloud container; the Needs line above does not apply here. Each point
+links dated evidence that says what was observed only once.
+
+- **GitHub.** Reads work without a grant on public repositories; a push or issue creation that fails with
+  "Claude doesn't have GitHub access" needs the owner to give the GitHub App access to the repository. `gh` may be
+  missing or logged out; use the GitHub MCP tools. The [review skill](../cad-pr-review/SKILL.md) on `dev` covers `gh`
+  only; MCP routes ([#750](https://github.com/Valpatel/cad-agent/issues/750), PR #755) and a gate that reads a cloud
+  reviewer's verdict ([#751](https://github.com/Valpatel/cad-agent/issues/751), PR #752) are open. Until they merge,
+  leave merges to a `gh` session or the owner. Post status as comments: a description edit restarts CI
+  ([evidence](../../inbox/agents/2026-11-15-cloud-sessions-reach-github-through-mcp.md)).
+- **Checkouts.** Leave the session's own clone and its designated branch alone; make each topic worktree beside it
+  with `git worktree add --no-track` on a `feat/`, `fix/` or `docs/` branch from `origin/dev`. Ask the owner before
+  pushing any branch other than the one the session designates. Give each worktree its own venv and check
+  `cadagent.__file__` ([evidence](../../inbox/agents/2026-11-15-cloud-sessions-need-own-worktrees-and-fresh-reviewers.md)).
+- **Provenance receipts.** Never edit a recorded hash ([SCADA tools](../../../tools/webkit/scada/README.md));
+  regenerate with the generator. SCADA explorer sources need `thumbnails:scenarios` on the pinned shell, which the
+  container lacks: stop and ask the owner, attaching any same-build comparison as evidence. For `model.js`, see
+  below. PR #763 (open) proposes a CI recapture ([evidence](../../inbox/agents/2026-11-15-cloud-containers-limit-browser-and-provenance-evidence.md)).
+- **Browsers and Python:** Chromium only (report WebKit as not run locally); Python 3.12 for provenance checks.
+
+<details>
+<summary>Browsers, Python, slow steps, site checks and the orchestration that worked</summary>
+
+- **`model.js` poster:** `node tools/site/figures/site-model-poster.mjs --model j501` uses whatever Chrome the
+  machine has and always rewrites `j501.webp` and its receipt. If the poster's bytes change, report it in the PR as a
+  new render from this container's browser, or ask the owner; never keep the old image with a new hash.
+- **SCADA recapture:** #763's CI route reproduces captures byte for byte, but the first recapture re-baselines all
+  thumbnails (about 9 MB), because the committed ones were rendered with different fonts.
+- **Browsers:** only Playwright's Chromium is installed, newer than the pinned `@playwright/test` expects; WebKit is
+  absent and stays so, and CI decides for it.
+- **Python:** the npm scripts call `python3`; only 3.12 reproduces the CI hashes, so put a 3.12 venv first on `PATH`.
+- **Browser variables:** `CHROMIUM_EXECUTABLE` for `tests/webkit/{assembly,host,simulation}/browser.mjs`,
+  `webkit-fea-browser.mjs` and `webkit-stage-browser.mjs`; `PLAYWRIGHT_EXECUTABLE_PATH` for the SCADA explorer
+  suite. The `tests/site` suites, `webkit-diagrams-browser.mjs`, `webkit-part-table-browser.mjs`, `files/browser.mjs`
+  and `assembly/release-browser.mjs` take only `PLAYWRIGHT_CHANNEL`; unset, channel `chrome` reaches the installed
+  Chromium through a `google-chrome` wrapper.
+- **Slow steps:** the site build takes 3 to 5 minutes (longer with an empty diagram cache) and the catalogue browser
+  suite about 4.5 minutes a run (observed once); #756's touch suite, not on `dev`, about 4 minutes. Run them once.
+- **Site checks in the browser job:** a folder README lists every file in it, a new `__init__.py` included
+  (`node --test tests/site/website-repo-map.test.mjs`: seconds, no browser or build); a folder map's Mermaid fits
+  the page column (top down, at most three boxes per row); added prose can push a page past the 1200 px
+  wall-of-text limit. Build the site and run `tests/site/website-browser.mjs` after a docs change.
+- **Orchestration:** one orchestrating session; implementers each in its own worktree and branch; a cheaper checker
+  for CI logs and issues; and a freshly started reviewer given only the PR. All post through one account, so the
+  reviewer's independence is procedural and the gate cannot check it. Answer nits on the thread and carry them to
+  the next change of the same lines rather than pushing after a pass, so the reviewed head stays reviewed.
+
+Limits: from one session on 2026-11-15. The 403 text, the owner's go-ahead for topic branches, the shared-venv
+mix-up, the catalogue timing, two MCP quirks, the byte-identical j501 poster and the three site-check failures
+were observed once; container images change.
+
+</details>
 
 [Folder map](README.md)

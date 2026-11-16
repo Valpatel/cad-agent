@@ -154,7 +154,7 @@ export async function homepageModelProblems(browser, base) {
     await page.goto(base+'/',{waitUntil:'networkidle'});
     const early = await page.evaluate(() => performance.getEntriesByType('resource').filter(r => /three\.module|\/web\/models\/.*\.(json|bin)/.test(r.name)).length);
     if (early) out.push('project data was fetched while still at the learning hero');
-    await page.locator('#built-with').evaluate(el => { document.documentElement.style.scrollBehavior='auto'; el.scrollIntoView({block:'start'}); });
+    await page.locator('#built-with .project-viewers').evaluate(el => { document.documentElement.style.scrollBehavior='auto'; el.scrollIntoView({block:'start'}); });
     const j501 = page.locator('cad-model[src$="j501.json"]');
     const gyro = page.locator('cad-model[src$="gyropup.json"]');
     await page.waitForFunction(() => document.querySelector('cad-model[src$="j501.json"]')?.dataset.state === 'loading');
@@ -231,7 +231,7 @@ export async function homepageLateDrawProblems(browser, base, receipt = {}) {
         }
     });
     await page.goto(base+'/',{waitUntil:'networkidle'});
-    await page.locator('#built-with').evaluate(el=>{document.documentElement.style.scrollBehavior='auto';el.scrollIntoView({block:'start'});});
+    await page.locator('#built-with .project-viewers').evaluate(el=>{document.documentElement.style.scrollBehavior='auto';el.scrollIntoView({block:'start'});});
     await page.waitForFunction(()=>document.querySelector('cad-model[src$="j501.json"]')?.dataset.state==='error',null,{timeout:20000});
     await page.waitForFunction(()=>document.querySelector('cad-model[src$="gyropup.json"]')?.dataset.state==='ready',null,{timeout:20000});
     const target=page.locator('cad-model[src$="j501.json"]');
@@ -252,6 +252,13 @@ export async function homepageLateDrawProblems(browser, base, receipt = {}) {
   return out;
 }
 
+/** Wait for a lazy image's own load before decode(). Scrolling only starts the request; Chromium r1194 (Playwright 1.56)
+ * rejects decode() on a lazy image whose load has not started with EncodingError, which newer Chrome waits out. Since #748
+ * moved the reel below the viewers, its images are no longer inside the lazy-load distance at first paint. */
+const loadedThenDecoded = el => (el.complete ? Promise.resolve()
+  : new Promise((ok, no) => { el.addEventListener('load', ok, { once: true }); el.addEventListener('error', () => no(new Error('image failed to load: ' + el.currentSrc)), { once: true }); }))
+  .then(() => el.decode());
+
 /** Every displayed computed SVG is tested through its real picture consumer. */
 export async function resultImageMotionProblems(browser, base, receipt = {}) {
   receipt.images=[];
@@ -260,12 +267,13 @@ export async function resultImageMotionProblems(browser, base, receipt = {}) {
   const page=await ctx.newPage();
   try {
     await page.goto(base+'/',{waitUntil:'networkidle'});
-    const images=page.locator('.reel-tile picture img, .fit-media picture img');
-    if(await images.count()!==11)out.push('expected eight reel images and all three displayed check/simulation images');
+    // Five animated reel results (the snap fit is inline SVG) and the turret playground recording (#748).
+    const images=page.locator('.reel-tile picture img, .run-media picture img');
+    if(await images.count()!==6)out.push('expected five animated reel images and the turret recording');
     for(const image of await images.all()) {
-      await image.scrollIntoViewIfNeeded();await image.evaluate(el=>el.decode());
+      await image.scrollIntoViewIfNeeded();await image.evaluate(loadedThenDecoded);
       const state=await image.evaluate(el=>({src:el.getAttribute('src'),current:new URL(el.currentSrc).pathname,loaded:el.complete&&el.naturalWidth>0}));
-      if(!state.loaded||!state.current.includes('/result-stills/'))out.push('result did not select its finished image: '+JSON.stringify(state));
+      if(!state.loaded||!(state.current.includes('/result-stills/')||state.current.endsWith('-still.webp')))out.push('result did not select its finished image: '+JSON.stringify(state));
       const first=await image.screenshot();await page.waitForTimeout(300);const second=await image.screenshot();
       const stable=first.equals(second);receipt.images.push({...state,stable});
       if(!stable)out.push('computed image still moves under reduced motion: '+state.src);
@@ -279,7 +287,7 @@ export async function resultImageMotionProblems(browser, base, receipt = {}) {
     await cp.route('**/result-stills/thermal-history-still.svg',r=>r.fulfill({contentType:'image/svg+xml',body:'<svg xmlns="http://www.w3.org/2000/svg" width="760" height="390"><rect width="760" height="390" fill="black"/><rect width="180" height="390" fill="cyan"><animate attributeName="x" values="0;580;0" dur="2s" repeatCount="indefinite"/></rect></svg>'}));
     await cp.goto(base+'/',{waitUntil:'networkidle'});
     const image=cp.locator('.reel-tile img[src$="thermal-history.svg"]');
-    await image.scrollIntoViewIfNeeded();await image.evaluate(el=>el.decode());
+    await image.scrollIntoViewIfNeeded();await image.evaluate(loadedThenDecoded);
     const first=await image.screenshot();await cp.waitForTimeout(300);const second=await image.screenshot();
     receipt.movingControlObserved=!first.equals(second);
     if(!receipt.movingControlObserved)out.push('moving reduced-image control was not observable; stillness probe is inconclusive');

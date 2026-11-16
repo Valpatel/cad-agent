@@ -6,7 +6,7 @@ Dated incidents preserve evidence, causes, corrective rules and limits. Start fr
 ```mermaid
 flowchart LR
     I["inbox/"] --> P["publish/"]
-    I --> A["agents/<br/>installation + checkouts"]
+    I --> A["agents/<br/>setup, checkouts,<br/>cloud sessions"]
     I --> R["review/<br/>gate scope + evidence"]
     I --> S["../SYMPTOM-INDEX.md"]
     S --> L["../../docs/lessons/"]
@@ -15,7 +15,7 @@ flowchart LR
 | Location | Contents |
 | --- | --- |
 | [publish/](publish/README.md) | Browser, document compilation and displayed CAD provenance incidents. |
-| [agents/](agents/README.md) | Instruction discovery, installer/update boundaries and checkout path consumers. |
+| [agents/](agents/README.md) | Instruction discovery, installer/update boundaries, checkout path consumers and cloud-container sessions. |
 | [review/](review/README.md) | Assembly/relation gate scope, source geometry and recoverable validation evidence. |
 | Dated files here | Other operational incidents, grouped further when a domain grows. |
 

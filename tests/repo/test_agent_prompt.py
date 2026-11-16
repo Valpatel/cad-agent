@@ -72,7 +72,7 @@ def test_commands_are_public_and_name_real_commands(tmp_path, monkeypatch):
             qe.commands(control)
     with pytest.raises(ValueError, match="exactly one"):
         qe.commands(qe.INSTALL_GUIDE.read_text() * 2)
-    assert "`cad-agent update`" in BLOCK, "an agent that finds it installed updates first"
+    assert "`cad-agent update`" in BLOCK, "the normal permitted update path remains available"
     from cadagent.cli import build_parser
     names = set(build_parser()._subparsers._group_actions[0].choices)
     named = set(re.findall(r"(?:bin/|`)cad-agent\"? ([a-z][a-z0-9-]+)", BLOCK))
@@ -159,6 +159,39 @@ def test_the_block_asks_nothing_risky():
     assert not piped, "the agent reads the canonical checked guide, without an unsafe pipe shortcut"
     assert not re.search(r"sudo|--force|rm -rf|token|password|secret|ignore (?:previous|all)|maintainer", BLOCK, re.I)
     assert "gh issue create -R Valpatel/cad-agent" in BLOCK and "--label" not in BLOCK   # outsiders cannot set labels
+
+
+def test_existing_install_respects_constraints_and_identifies_provider():
+    def check(text):
+        flat = " ".join(text.split())
+        assert "If installation or updates are disallowed, leave the installation unchanged." in flat
+        assert "`command -v cad-agent` on POSIX, `Get-Command cad-agent` in PowerShell" in flat
+        assert "inspect its launcher to identify the Python it uses" in flat
+        assert "use `-B` to disable bytecode writes" in flat
+        assert "`cadagent.__file__`, `cadagent.__version__`" in flat
+        assert "distribution version and `direct_url.json` metadata" in flat
+        assert "Editable metadata can be stale" in flat
+        assert "a non-editable install's URL describes its source, not a live checkout" in flat
+        assert "Reuse it only within the user's authorized scope" in flat
+        assert "otherwise say they are unknown" in flat
+        assert "Report missing dependencies and version limits." in flat
+        assert "When updates are allowed, run `cad-agent update` first." in flat
+        assert "actual provider checkout identified above" in flat
+        assert "CAD_AGENT_DIR is an installation-path hint, not proof of the loaded provider" in flat
+        assert "actual provider checkout's Git revision, or unknown" in flat
+
+    check(GUIDE)
+    for control in (
+        GUIDE.replace("If installation or updates are disallowed, leave the\n   installation unchanged.", "Always update."),
+        GUIDE.replace("its launcher to\n   identify the Python it uses", "the default checkout"),
+        GUIDE.replace("use `-B` to disable bytecode\n   writes", "import normally"),
+        GUIDE.replace("Editable metadata can\n   be stale", "Metadata is always current"),
+        GUIDE.replace("Report missing dependencies and version limits.", ""),
+        GUIDE.replace("CAD_AGENT_DIR is an installation-path hint, not proof of the loaded provider", "Use CAD_AGENT_DIR"),
+        GUIDE.replace("actual provider checkout's Git revision, or unknown", "$HOME/cad-agent"),
+    ):
+        with pytest.raises(AssertionError):
+            check(control)
 
 
 def _planted(tmp_path: Path, report: str, calls: list) -> Path:

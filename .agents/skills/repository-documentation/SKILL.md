@@ -103,6 +103,8 @@ Repair factual drift in the current owner. Reconcile architecture findings with 
 For workflow illustrations, reuse the owned animation tooling and the
 [animated explanation rules](../../../docs/practice/style-guide.md#animated-explanations).
 Keep still alternatives and meaningful labels, test SVG image-mode rendering, and separate conceptual handoffs from
-measured engineering evidence. A diagram must not imply that a planned shared host or model adapter already exists.
+measured engineering evidence. A diagram must not imply that a planned shared host or model adapter already exists. Choose a subject-specific
+composition and motion; inspect the full set together to catch repeated templates that obscure different meanings.
+A topic gallery embeds every authored figure with its static alternative and source link, not only the first preview.
 
 </details>

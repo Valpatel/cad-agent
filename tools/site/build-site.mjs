@@ -10,7 +10,7 @@ import {topicSprite, readerNav, updateTime, articleOutline} from './compiler/sit
  * browser, leaves them to the reader's browser, as before (#132).
  */
 import { readFile, writeFile, mkdir, rm, readdir } from 'node:fs/promises';
-import { readFileSync } from 'node:fs';
+import { readFileSync, existsSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import path from 'node:path';
@@ -24,7 +24,7 @@ import { drawBoth, drawDiagrams } from './compiler/site-diagrams.mjs';         /
 import { ON, fold, pagePlacer } from './compiler/site-pages.mjs';    // docs/pages.yaml: bands, section cards, figures, folds
 import { SECTIONS, createPublication, validateRedirects, folderMapSources } from './publication.mjs';
 import { loadReferences, referenceModel, referenceSite, linkTags, mdTags, healthOf } from './compiler/site-references.mjs';   // /references (#323)
-import {SCADA_INPUTS, TOOLKIT_ROUTES, scadaToolkitModel, toolkitPages, toolkitFullText} from './compiler/site-toolkit.mjs';
+import {SCADA_INPUTS, TOOLKIT_ROUTES, scadaToolkitModel, toolkitPages, toolkitFullText, toolkitCapabilities} from './compiler/site-toolkit.mjs';
 
 // --root DIR builds another checkout of this repo (the tests use a scratch worktree); the build tools still run from here.
 const rootArg = process.argv.indexOf('--root');
@@ -196,11 +196,11 @@ const kitDemos = body => Object.entries(KIT_DEMOS).filter(([tag]) => body.includ
 const THEME_BUTTON = '<button type="button" class="theme-toggle" aria-pressed="false" title="Dark theme" hidden><span class="visually-hidden">Dark theme</span>' +
   '<svg class="sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>' +
   '<svg class="moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg></button>';
-function frame({ title, body, md, description = LEDE, current = '', page = 'doc', css = [], updated = committed, url = current || '/' }) {
+function frame({ title, fullTitle, body, md, description = LEDE, current = '', page = 'doc', css = [], updated = committed, url = current || '/' }) {
   // Cloudflare's documented region guard preserves package@version code literals without changing zone settings,
   // compression or CSP. Keep the guard outside the authored elements; verify actual hosted bytes after release.
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>${esc(title === TAGLINE ? 'cad-agent · ' + TAGLINE : title + ' · cad-agent')}</title>
+<title>${esc(fullTitle || (title === TAGLINE ? 'cad-agent · ' + TAGLINE : title + ' · cad-agent'))}</title>
 <meta name="description" content="${esc(description)}">${current ? `<link rel="canonical" href="${esc(ORIGIN + current)}">` : ''}
 <script src="/kit/ui/theme.js"></script><link rel="icon" href="/web/icon.svg"><link rel="preload" href="/kit/vendor/fonts/inter.woff2" as="font" type="font/woff2" crossorigin><link rel="preload" href="/kit/vendor/fonts/jetbrains-mono.woff2" as="font" type="font/woff2" crossorigin><link rel="stylesheet" href="/web/site.css"><link rel="stylesheet" href="/kit/documents/diagrams.css">${css.map(c => `<link rel="stylesheet" href="${c}">`).join('')}${kitDemos(body)}
 ${md ? `<link rel="alternate" type="text/markdown" href="${esc(md)}" title="Markdown for agents">` : ''}
@@ -480,7 +480,7 @@ const checkNumbers = (r, at) => {
   for (const n of [fea.tets.toLocaleString('en-US'), String(fea.safety_factor), Number(fea.target).toFixed(1)])
     if (!quotes(n)) throw new Error(`docs/home.yaml ${at}: the caption does not quote ${n} from docs/img/gyropup/SOURCE.json`);
 };
-const reel = [], homeMd = { reel: [], ours: [] };
+const reel = [], homeMd = { reel: [] };
 for (const [i, r] of home.reel.entries()) {
   const at = `reel[${i}]`;
   for (const k of ['img', 'tool', 'title', 'caption', 'alt', 'href', 'on']) if (!r[k]) throw new Error(`docs/home.yaml ${at} has no ${k}`);
@@ -494,29 +494,120 @@ for (const [i, r] of home.reel.entries()) {
 // The snap-fit demo is drawn from its geometry in this build (tools/site/compiler/snap-demo.mjs), so it joins the reel inline.
 reel.splice(3, 0, `<li class="reel-tile reel-snap"><a class="reel-media" href="/docs/compliant" tabindex="-1" aria-hidden="true">${SNAP.svg}</a>
 <p class="reel-tool"><code>cad-agent snapfit</code></p><h3><a href="/docs/compliant">One part, no screws</a></h3><p>A cantilever snap fit animated from its own geometry: contact and root strain computed against the material and the print's layer direction.</p><p class="reel-credit">Drawn by this site's build from the snap-fit geometry</p></li>`);
-const fitsTile = async (t, i) => {
-  const at = `fits.ours[${i}]`;
-  const levels = t.maturity ? [t.maturity] : (t.areas || []).map(a => {
-    if (!areaMaturity.has(a)) throw new Error(`docs/home.yaml ${at}: no area ${a} in docs/areas.yaml`);
-    return areaMaturity.get(a);
-  });
-  if (!levels.length || levels.some(l => !LADDER.includes(l))) throw new Error(`docs/home.yaml ${at}: a maturity on the ladder (${LADDER.join(', ')}), from areas or stated with a why`);
-  if (t.maturity && !t.why) throw new Error(`docs/home.yaml ${at}: a stated maturity needs its why`);
-  const level = levels.reduce((lo, l) => LADDER.indexOf(l) < LADDER.indexOf(lo) ? l : lo);      // the least mature area decides
-  homeMd.ours.push(`- [${t.title}](${/^https:/.test(t.href) ? t.href : ORIGIN + pageURL(t.href)}) (${level}): ${t.does}`);
-  const step = LADDER.indexOf(level);
-  return `<li class="fit-tile"><a href="${esc(homeHref(t.href, at))}">${t.img ? `<span class="fit-media">${await homePicture(t.img, at, ' alt="" loading="lazy" decoding="async"')}</span>`
-  : t.cmd ? `<span class="fit-media fit-cmd"><code>$ ${esc(t.cmd)}</code></span>`
-  : step === 0 ? '<span class="fit-media fit-empty">not built yet</span>' : (() => { throw new Error(`docs/home.yaml ${at}: a built block needs an img or a cmd`); })()}
-<span class="fit-title">${esc(t.title)}</span></a><p>${esc(t.does)}</p>
-</li>`;
+// A /toolkit link names one of that page's examples, which carry these ids (tools/site/compiler/site-toolkit.mjs).
+const toolkitCards = new Map(toolkitCapabilities(scada, { catalog: catalog.items, has: f => tracked.includes(f) }).map(c => [c.id, c]));
+const stackHref = (h, at) => {
+  const m = h.match(/^\/toolkit(?:#([\w-]+))?$/);
+  // A generated site route (/references, /catalog) must already be in the output; an outside link must be plain https.
+  if (!m && /^\/[a-z][\w/-]*$/.test(h)) {
+    if (![h.slice(1) + '.html', h.slice(1) + '/index.html'].some(f => existsSync(path.join(out, f)))) throw new Error(`docs/home.yaml ${at}: ${h} is not a page this build writes`);
+    return h;
+  }
+  if (/^https:/.test(h)) { let u; try { u = new URL(h); } catch { u = null; } if (!u || u.username || u.password || u.protocol !== 'https:') throw new Error(`docs/home.yaml ${at}: ${h} is not a plain https link`); return h; }
+  if (!m) return homeHref(h, at);
+  if (m[1] && !toolkitCards.has(m[1])) throw new Error(`docs/home.yaml ${at}: /toolkit has no example #${m[1]}`);
+  return h;
 };
-const upstreamByName = new Map(upstreams.map(u => [u.name, u]));
-const makeChip = (m, i) => {
-  const u = m.upstream && upstreamByName.get(m.upstream);
-  if (m.upstream && !u) throw new Error(`docs/home.yaml fits.make[${i}]: ${m.upstream} is not in software/vendor/upstreams/registry.yaml`);
-  return `<li><span class="make-name"><a href="${esc(homeHref(m.href, `fits.make[${i}]`))}"><b>${esc(m.name)}</b></a>${u ? ` <span class="pill pill-${esc(u.status)}">${esc(STATUS_NOTE[u.status] || u.status)}</span><span class="pill">${esc(u.license)}</span><span class="pill" title="GitHub stars when surveyed">★ ${Number(u.stars).toLocaleString('en-US')}</span>` : ''}</span><span>${esc(m.does)}</span>${m.note ? `<small>${esc(m.note)}</small>` : ''}</li>`;
+const absolute = h => /^https:/.test(h) ? h : h.startsWith('/') ? ORIGIN + h : ORIGIN + pageURL(h);
+// What is in cad-agent (#748): a layer cake, top layer first. A block is in the repo today unless it is `planned:`
+// with an issue (drawn dashed, linking the issue). Every count is computed here from the repo, never typed.
+const trackedText = async f => (await readBuf(f)).toString('utf8');
+const countLines = async (files, re) => (await Promise.all(files.map(async f => ((await trackedText(f)).match(re) || []).length))).reduce((a, b) => a + b, 0);
+const processProfiles = YAML.parse(await read('docs/research/process-profiles.yaml'));
+const evalCandidates = YAML.parse(await read('tests/fixtures/evaluation/candidates.yaml'));
+const COUNTS = {
+  skills: pages.filter(p => p.section === 'skills').length,
+  agents: pages.filter(p => p.section === 'agents').length,
+  'eval-jobs': new Set(tracked.filter(f => /^tests\/fixtures\/evaluation\/jobs\/[^/]+\/job\.json$/.test(f))).size,
+  'eval-tasks': (evalCandidates.tasks || evalCandidates.candidates || []).length,
+  guides: pages.filter(p => p.section === 'docs').length,
+  lessons: lessonCount,
+  references: refModel.refs.records.size,
+  // Read at source or better (read, verified-at-source, encoded); the rest are catalogued from a search snippet only.
+  'sources-read': [...refModel.refs.records.values()].filter(r => r.status === 'source').length,
+  catalogue: catalog.items.length,
+  commands: commands.length,
+  formulas: await countLines(tracked.filter(f => /^software\/cadagent\/formulas\/[^/]+\.py$/.test(f)), /^@formula\(/gm),
+  'process-rules': (processProfiles.rules || []).length,
+  // Test functions: pytest `def test_` and node:test `test(`; browser scripts are counted as none.
+  tests: await countLines(tracked.filter(f => /^tests\/.*(?:\/test_[^/]+\.py|\.test\.mjs)$/.test(f)), /^\s*(?:async\s+)?def test_\w+|^test\(/gm),
 };
+for (const [k, v] of Object.entries(COUNTS)) if (!Number.isInteger(v) || v <= 0) throw new Error(`home page count ${k} is ${v}: fix its source or drop the count`);
+const ISSUES = `${REPO}/issues/`;
+homeMd.cake = [];
+const seenBlocks = new Set();
+const cakeLayers = home.stack.map((layer, li) => {
+  const at = `stack[${li}]`;
+  if (!layer.layer || !layer.caption || !layer.blocks?.length) throw new Error(`docs/home.yaml ${at}: a layer has a name, a caption and blocks`);
+  if (layer.caption.split(/\s+/).length > 8) throw new Error(`docs/home.yaml ${at}: keep the caption to eight words`);
+  const md = [];
+  const blocks = layer.blocks.map((b, bi) => {
+    const bat = `${at}.blocks[${bi}]`;
+    if (!b.label) throw new Error(`docs/home.yaml ${bat} has no label`);
+    if (seenBlocks.has(b.label.toLowerCase())) throw new Error(`docs/home.yaml ${bat}: ${b.label} is already a block`);
+    seenBlocks.add(b.label.toLowerCase());
+    if (b.planned) {
+      if (!Number.isInteger(b.planned) || b.href || b.count) throw new Error(`docs/home.yaml ${bat}: a planned block names only its open issue`);
+      // `until:` names the file that will exist once the work lands: then the block must become solid.
+      if (b.until && tracked.includes(b.until)) throw new Error(`docs/home.yaml ${bat}: ${b.until} now exists, so ${b.label} is built: make it a solid block with its page`);
+      md.push(`${b.label} (planned, [#${b.planned}](${ISSUES}${b.planned}))`);
+      return `<li><a class="cake-block cake-planned" href="${ISSUES}${b.planned}"><span class="cake-name">${esc(b.label)}</span><span class="cake-count">#${b.planned}</span></a></li>`;
+    }
+    if (!b.href) throw new Error(`docs/home.yaml ${bat}: a block in the repo today links its page`);
+    let n = null;
+    if (b.count) { if (!(b.count in COUNTS)) throw new Error(`docs/home.yaml ${bat}: count ${b.count} is not one the build computes (${Object.keys(COUNTS).join(', ')})`); n = COUNTS[b.count]; }
+    if (b.commands) {
+      const missing = b.commands.filter(c => !commandNames.has(c));
+      if (missing.length) throw new Error(`docs/home.yaml ${bat}: ${missing.join(', ')} not cad-agent commands`);
+      n = b.commands.length;
+    }
+    const href = stackHref(b.href, bat);
+    md.push(`[${b.label}${n != null ? ` (${n.toLocaleString('en-US')})` : ''}](${absolute(b.href)})`);
+    return `<li${b.commands ? ' class="cake-family"' : ''}><a class="cake-block" href="${esc(href)}"${b.commands ? ` title="${esc(b.commands.map(c => 'cad-agent ' + c).join(', '))}"` : ''}><span class="cake-name">${esc(b.label)}</span>${b.note ? `<span class="cake-note">${esc(b.note)}</span>` : ''}${n != null ? `<span class="cake-count">${n.toLocaleString('en-US')}</span>` : ''}</a></li>`;
+  }).join('');
+  homeMd.cake.push(`- **${layer.layer}** (${layer.caption}): ${md.join(' · ')}`);
+  return `<div class="cake-layer" data-layer="${li}"><div class="cake-head"><h3>${esc(layer.layer)}</h3><p>${esc(layer.caption)}</p></div><ul>${blocks}</ul></div>`;
+}).join('');
+// See it run: the turret recording quotes its own SOURCE.json record, so a new capture cannot leave an old caption.
+const turret = home.showcase.turret, turretRec = gyropupSource.pictures['turret-playground'];
+if (!turretRec || `docs/img/gyropup/${turretRec.file}` !== turret.img || `docs/img/gyropup/${turretRec.still.file}` !== turret.still)
+  throw new Error('docs/home.yaml showcase.turret: its picture and still are the ones recorded in docs/img/gyropup/SOURCE.json');
+if (!/work-in-progress/.test(turret.caption) || !/not physics validation/.test(turret.caption)) throw new Error('docs/home.yaml showcase.turret: the caption states it is a work-in-progress playground, not physics validation');
+const turretCaption = turret.caption.replace('{revision}', turretRec.revision.slice(0, 7));
+const turretCard = `<article class="run-card run-turret"><a class="run-media" href="${esc(homeHref(turret.href, 'showcase.turret'))}" tabindex="-1" aria-hidden="true">${await homePicture(turret.img, 'showcase.turret', ' alt="" loading="lazy" decoding="async"', turret.still)}</a><div class="run-body"><p class="run-kicker">Browser playground · work in progress</p><h3><a href="${esc(turret.href)}">${esc(turret.title)} ↗</a></h3><p>${esc(turretCaption)}</p><p class="run-links"><a href="${esc(turretRec.public.replace(/\?.*/, ''))}">Open the playground</a> · <a href="https://github.com/${esc(turretRec.project)}/tree/${esc(turretRec.revision)}">Recorded source</a> · <a href="${REPO}/blob/dev/docs/img/gyropup/SOURCE.json">Recording record</a></p></div><span class="visually-hidden">${esc(turret.alt)}</span></article>`;
+homeMd.run = [`- [${turret.title}](${turret.href}): ${turretCaption}`];
+const runCards = home.showcase.cards.map((c, i) => {
+  const card = toolkitCards.get(c.toolkit);
+  if (!card) throw new Error(`docs/home.yaml showcase.cards[${i}]: ${c.toolkit} is not a /toolkit example`);
+  if (!c.caption) throw new Error(`docs/home.yaml showcase.cards[${i}] has no caption`);
+  homeMd.run.push(`- [${card.title}](${ORIGIN}/toolkit#${card.id}): ${c.caption}`);
+  return `<li class="run-mini"><a class="run-mini-media" href="/toolkit#${esc(card.id)}" tabindex="-1" aria-hidden="true"><img src="${esc(card.image)}" alt="" width="800" height="500" loading="lazy" decoding="async"></a><div><h3><a href="/toolkit#${esc(card.id)}">${esc(card.title)}</a></h3><p>${esc(c.caption)}</p></div></li>`;
+}).join('');
+// More checks: results that stay one click away as text (their animated figures live on the linked pages).
+const moreChecks = home.more_checks.map((m, i) => {
+  const at = `more_checks[${i}]`;
+  for (const k of ['title', 'tool', 'href', 'caption']) if (!m[k]) throw new Error(`docs/home.yaml ${at} has no ${k}`);
+  homeMd.reel.push(`- [${m.title}](${absolute(m.href)}): ${m.caption} (\`${m.tool}\`)`);
+  return `<li><a href="${esc(homeHref(m.href, at))}">${esc(m.title)}</a> <code>${esc(realTool(m.tool, at))}</code></li>`;
+}).join('');
+// The loop as a figure: the steps in order and the way back to the start (the cards below say how far each has got).
+const ARC_SUB = ['frontier models, real builds', 'reviewed PRs with tests', 'references, checks, tools', 'free, open and local models'];
+const arcLoop = `<svg class="arc-loop" viewBox="0 0 800 132" role="img" aria-label="The loop: people on frontier models use cad-agent on real projects, improve it, the project gathers the best references, checks and tools, and evals measure whether smaller, open and local models can do the same work; then the next round begins">
+<defs><marker id="arc-arrow" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path class="tip" d="M0 0L8 4L0 8z"/></marker></defs>
+${home.arc.map((st, i) => `<g transform="translate(${8 + i * 198} 8)"><rect class="box${i === 3 ? ' out' : ''}" width="178" height="74" rx="12"/><text class="num" x="14" y="24" font-size="16" font-weight="750">${i + 1}</text><text class="name" x="14" y="45" font-size="12.5" font-weight="700">${esc(st.title)}</text><text class="sub" x="14" y="63" font-size="10.5">${esc(ARC_SUB[i])}</text></g>${i < 3 ? `<path class="flow" d="M${188 + i * 198} 45h16" stroke-width="2" marker-end="url(#arc-arrow)"/>` : ''}`).join('')}
+<path class="flow" d="M700 84v20a8 8 0 0 1-8 8H105a8 8 0 0 1-8-8v-14" fill="none" stroke-width="2" stroke-dasharray="4 4" marker-end="url(#arc-arrow)"/>
+<text class="sub" x="400" y="128" text-anchor="middle" font-size="11">what the evals show feeds the next round</text></svg>`;
+if (home.arc.length !== ARC_SUB.length) throw new Error('docs/home.yaml arc: four steps, as the loop figure draws them');
+// From frontier to local: each step says what holds today and what is next.
+homeMd.arc = [];
+const arcSteps = home.arc.map((s, i) => {
+  const at = `arc[${i}]`;
+  for (const k of ['title', 'today', 'next', 'href']) if (!s[k]) throw new Error(`docs/home.yaml ${at} has no ${k}`);
+  const today = s.today.replace(/\{([\w-]+)\}/g, (all, k) => k === 'catalog' ? catalog.items.length.toLocaleString('en-US')
+    : k in COUNTS ? COUNTS[k].toLocaleString('en-US') : (() => { throw new Error(`docs/home.yaml ${at}: no count ${k}`); })());
+  homeMd.arc.push(`${i + 1}. [${s.title}](${absolute(s.href)}). Today: ${today} Next: ${s.next}`);
+  return `<li class="arc-step"><span class="arc-num" aria-hidden="true">${i + 1}</span><h3><a href="${esc(homeHref(s.href, at))}">${esc(s.title)}</a></h3><p><b>Today.</b> ${esc(today)}</p><p class="arc-next"><b>Next.</b> ${esc(s.next)}</p></li>`;
+}).join('');
 // The hero model (web/models/, from tools/gyropup_showcase.py) and its still poster (tools/site/figures/site-model-poster.mjs).
 const heroModel = JSON.parse(await read(ASSETS + '/models/gyropup.json'));
 const j501Model = JSON.parse(await read(ASSETS + '/models/j501.json'));
@@ -576,35 +667,54 @@ function titlePixelLine(label, y=0) {
 const titleWide = titlePixelLine('MACHINES BUILDING MACHINES');
 const titleNarrow = titlePixelLine('MACHINES') + titlePixelLine('BUILDING MACHINES', 10);
 const pixelHeading = `<h1 class="pixel-title"><span class="pixel-title-text">Machines building machines</span><svg class="pixel-title-wide" viewBox="0 0 155 9" aria-hidden="true" focusable="false" shape-rendering="crispEdges"><path class="pixel-title-shadow" transform="translate(0 1)" d="${titleWide}"/><path fill="currentColor" d="${titleWide}"/></svg><svg class="pixel-title-narrow" viewBox="0 0 101 19" aria-hidden="true" focusable="false" shape-rendering="crispEdges"><path class="pixel-title-shadow" transform="translate(0 1)" d="${titleNarrow}"/><path fill="currentColor" d="${titleNarrow}"/></svg></h1>`;
+// The home page's lede says what cad-agent is and where it is headed (#748); the title and description say the same.
+const HOME_LEDE = ['cad-agent is an open-source stack of CAD libraries, simulators, deterministic checks, web widgets and command-line tools, with knowledge and an agent kit on top.',
+  'It is headed toward free, open and local models doing the CAD work frontier models do today.'];
+const HOME_TITLE = 'cad-agent · Open-source CAD libraries, simulators, checks and tools for agents';
+const HOME_DESCRIPTION = 'An open-source stack of CAD libraries, simulators, deterministic checks, web widgets and command-line tools, with knowledge and an agent kit on top.';
 const landing = `<div class="wrap"><section class="hero learning-hero">
 <div class="hero-head"><p class="eyebrow"><span class="status-dot" aria-hidden="true"></span>Shared knowledge. Better things.</p>
 ${pixelHeading}
-<p class="intro">cad-agent is an open-source CAD toolkit where AI agents share knowledge, test designs, and improve through human feedback.</p></div>
+<p class="intro">${HOME_LEDE.map(esc).join(' ')}</p></div>
 <figure class="learning-art"><picture><source media="(prefers-reduced-motion: reduce) and (max-width:600px)" srcset="/docs/img/hero/learning-loop-mobile-still.svg" width="956" height="710"><source media="(prefers-reduced-motion: reduce)" srcset="/docs/img/hero/learning-loop-still.svg" width="1536" height="768"><source media="(max-width:600px)" srcset="/docs/img/hero/learning-loop-mobile.svg" width="956" height="710"><img src="/docs/img/hero/learning-loop.svg" width="1536" height="768" fetchpriority="high" alt="An original pixel-art orbital workshop: robots assemble, test and teach a new robot, which joins the builders as the next chassis arrives"></picture><figcaption>Every build can improve the shared knowledge and checks behind the next one.</figcaption></figure>
 <div class="hero-actions"><div class="actions"><a class="button primary" href="#use-it">Build with your agent ↓</a><a class="button" href="/explore">Explore the knowledge</a><a class="button quiet" href="${REPO}">GitHub ↗</a></div></div>
-</section></div>
-${useCard}
-<section class="reel-band" id="outputs"><div class="wrap"><div class="lead"><h2>What the code <span>computes.</span></h2><p>Outputs of cad-agent's tools with the numbers they computed: on Gyropup, on a printed enclosure, on this repo's test fixtures and on worked examples. Each tile says which, and opens the page that explains it.</p></div>
-<ul class="reel">${reel.join('')}</ul></div></section>
-<div class="wrap"><section class="section fits" aria-labelledby="fits-title"><div class="lead"><h2 id="fits-title">Check, simulate,<br><span>explain, measure.</span></h2><p>Real outputs, traceable inputs and explicit limits. Every example opens the method and the evidence behind it.</p></div><div class="fits-ours"><ul>${(await Promise.all(home.fits.ours.map(fitsTile))).join('')}</ul></div></section>
-<section class="section built-with" id="built-with"><div class="lead"><h2>Built with <span>cad-agent.</span></h2><p>Useful things made with the toolkit. Turn them around, explore the parts, and follow the projects.</p></div><div class="project-viewers">
+</section>
+<section class="section built-with" id="built-with" aria-labelledby="run-title"><div class="lead"><h2 id="run-title">See it <span>run.</span></h2><p>Real models and simulations you can turn, play and stop. Each says what it is and what it does not prove.</p></div>${turretCard}
+<div class="project-viewers">
 <article><h3>Gyropup</h3><cad-model src="/web/models/gyropup.json" label="Gyropup" style="aspect-ratio:1"><img class="cad-model-poster" src="/web/models/gyropup.webp" width="1200" height="1200" loading="lazy" alt="Current collected Gyropup assembly"></cad-model><p>A wheel-legged robot that brings mechanical design, motion and electronics together. This simplified view leaves out interior hardware.</p><p><a href="${esc(heroModel.source.repo + '/tree/' + heroModel.source.revision)}">Exact CAD source</a> · <a href="https://gyropup.com">Project</a></p></article>
 <article><h3>J501 AGX Orin enclosure</h3><cad-model src="/web/models/j501.json" label="J501 enclosure with real carrier board" style="aspect-ratio:1"><img class="cad-model-poster" src="/web/models/j501.webp" width="1200" height="1200" loading="lazy" alt="J501 enclosure and real carrier board, assembled from exported CAD"></cad-model><p>A printed home for a Jetson AGX Orin computer, shown with its real carrier board. A fit-check prototype, not a physically qualified enclosure.</p><p><a href="${esc(j501Model.source.repo + '/tree/' + j501Model.source.revision)}">Exact CAD snapshot</a> · <a href="https://github.com/mvalancy/j501-agx-orin">Project and evidence</a> · <a href="/web/models/j501-source.json">Model provenance</a></p></article>
-</div></section>
+</div>
+<ul class="run-minis">${runCards}</ul></section>
+<section class="section stack" id="stack" aria-labelledby="stack-title"><div class="lead"><h2 id="stack-title">What is in <span>cad-agent.</span></h2><p>Everything above is built from this stack: open source underneath, our libraries and tools in the middle, knowledge and an agent kit on top. Each block opens its page.</p></div>
+<ul class="cake-legend"><li><span class="cake-key"></span>In cad-agent today</li><li><span class="cake-key cake-key-planned"></span>Where we are headed (its issue)</li></ul>
+<a class="cake-skip" href="#use-it">Skip the stack</a><div class="cake" role="figure" aria-labelledby="stack-title" data-visual>${cakeLayers}</div></section></div>
+${useCard}
+<section class="reel-band" id="outputs"><div class="wrap"><div class="lead"><h2>What the checks <span>compute.</span></h2><p>Outputs of cad-agent's tools with the numbers they computed: on this repo's test fixtures and on worked examples. Each tile says which, and opens the page that explains it.</p></div>
+<ul class="reel">${reel.join('')}</ul>
+<div class="more-checks"><p>More checks</p><ul>${moreChecks}</ul></div></div></section>
+<div class="wrap"><section class="section arc" id="frontier-to-local" aria-labelledby="arc-title"><div class="lead"><h2 id="arc-title">From frontier <span>to local.</span></h2><p>The plan, and how far it has got. People on frontier models improve cad-agent on real work; evals will show when cheaper and local models can do the same. <a href="${esc(homeHref('docs/vision.md', 'arc'))}">The vision</a> · <a href="${esc(homeHref('docs/practice/standard-evaluation.md', 'arc'))}">What the evals measure</a></p></div>
+${arcLoop}<ol class="arc-steps">${arcSteps}</ol></section>
 <section class="section help-band"><div class="lead"><h2>Help us <span>improve!</span></h2><p>Found a mistake, a better tool, or a page that wasted your time? It takes a minute, and ideas we use are credited by name.</p></div>
 <div class="help-actions"><a class="button primary" href="${esc(feedbackURL('home page', '/'))}">Give feedback</a><a class="button" href="${REPO}/issues">See open issues</a><a class="button" href="/CONTRIBUTING">How to contribute</a></div></section></div>`;
-await writeFile(path.join(out, 'index.html'), frame({ title: TAGLINE, body: landing, md: '/index.md', current: '/', page: 'landing', css: ['/web/snap-demo.css', '/kit/model/model.css', '/web/home.css'] }));
+await writeFile(path.join(out, 'index.html'), frame({ title: TAGLINE, fullTitle: HOME_TITLE, description: HOME_DESCRIPTION, body: landing, md: '/index.md', current: '/', page: 'landing', css: ['/web/snap-demo.css', '/kit/model/model.css', '/web/home.css'] }));
 
 // ----------------------------------------------------------------------------- agent files
 const bySection = id => pages.filter(p => p.section === id);
+// What is in cad-agent, in llms.txt after its preamble; index.md moves it below "See it run", as the page shows it.
+const CAKE_MD = `## What is in cad-agent
+
+Top layer first. Planned blocks name their issue.
+
+${homeMd.cake.join('\n')}
+`;
 const llms = `# cad-agent
 
 > ${TAGLINE}. ${LEDE}
 
-cad-agent is an open-source toolkit and knowledge base for AI agents that design hardware: CAD models, assemblies,
-simulation and print releases. It maps the best free tools, demonstrates them on real projects and fills the gaps with
+${HOME_LEDE.join(' ')} It maps the best free tools, demonstrates them on real projects and fills the gaps with
 tested tools of its own. Every page on this site has a Markdown twin at the same path with a .md extension.
 
+${CAKE_MD}
 - Source: ${REPO} (MIT). Install and use: the checked guide below (then \`cad-agent update\` to update).
   cad-agent collects no telemetry.
 - Machine-readable catalogue: ${ORIGIN}/catalog.json (schema ${catalog.schema}; ${catalog.items.length} entries, each with an id, kind,
@@ -657,25 +767,27 @@ ${refSite.llms}
 `;
 await writeFile(path.join(out, 'llms.txt'), llms);
 // The homepage twin keeps the same current story and evidenced examples as the rendered entrance.
-await writeFile(path.join(out, 'index.md'), `${llms.replace(/\n*$/, '\n')}
+await writeFile(path.join(out, 'index.md'), `${llms.replace(CAKE_MD, '').replace(/\n*$/, '\n')}
 ## Machines building machines
 
-cad-agent is an open-source CAD toolkit where AI agents share knowledge, test designs, and improve through human feedback.
+${HOME_LEDE.join(' ')}
 
 [The original learning illustration](${ORIGIN}/docs/img/hero/learning-loop.svg) is conceptual process artwork, not an engineering result or a claim of automatic model training.
 
-### What the code computes
-
-${homeMd.reel.join('\n')}
-
-### Check, simulate, explain, measure
-
-${homeMd.ours.join('\n')}
-
-### Built with cad-agent
+### See it run
 
 - [Gyropup](${heroModel.source.repo}/tree/${heroModel.source.revision}): a wheel-legged robot; the web assembly omits interior hardware.
 - [J501 project](https://github.com/mvalancy/j501-agx-orin): an enclosure around a real carrier board; [model provenance](${ORIGIN}/web/models/j501-source.json) records this prototype's captured inputs and display-only simplification. Physical qualification and final current-source adoption remain separate.
+${homeMd.run.join('\n')}
+
+${CAKE_MD.replace('## What is in cad-agent', '### What is in cad-agent')}
+### What the checks compute
+
+${homeMd.reel.join('\n')}
+
+### From frontier to local
+
+${homeMd.arc.join('\n')}
 `);
 await writeFile(path.join(out, 'llms-full.txt'), `# cad-agent: full text\n\n> ${TAGLINE}. ${LEDE}\n\n` +
   pages.map(p => `\n\n---\n\nSource: ${ORIGIN}/${publicPath(p.file)}\n\n${twinMd(p.file, p.body, true).trim()}\n`).join('') +

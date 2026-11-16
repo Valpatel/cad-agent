@@ -62,7 +62,7 @@ const redirects = new Map((await readFile(path.join(dir, '_redirects'), 'utf8').
  * 20,000 in KEEP_MS. A hard bound of --record-max requests (default 50,000, about 300 bytes each, so some 15 MB; the
  * option is there for the test) and as many sockets holds all the same: past it the oldest finished records go first. Any request dropped while still
  * inside a window makes that answer's coversWindow false and its truncated count non-zero, never silently. */
-const KEEP_MS = 120000, MAX_RECORDS = Number(arg('--record-max', 50000)) || 50000;
+const KEEP_MS = 120000, MAX_RECORDS = Math.max(1, Number(arg('--record-max', 50000)) || 50000);
 const record = { requests: [], sockets: [], lag: [], nextRequest: 1, nextSocket: 1, open: new Map(),
   droppedThrough: 0, droppedByBound: 0 };
 const slot = Symbol('preview record');
@@ -103,8 +103,16 @@ function track(server) {
     if (record.requests.length > MAX_RECORDS) prune();
     const writeHead = res.writeHead;
     res.writeHead = function (status, ...rest) { Object.assign(r, { status, headersAt: Date.now() }); return writeHead.call(this, status, ...rest); };
-    // bytesWritten: what this socket had handed to the kernel when the response left Node
-    res.on('finish', () => { Object.assign(r, { finishedAt: Date.now(), socketBytesWritten: req.socket.bytesWritten }); if (s) s.lastFinishedAt = r.finishedAt; });
+    // 'finish' means Node has handed the whole response to the socket, not that the kernel or the client took it.
+    // unsentBytes: what Node still held in the socket's buffer then (large bodies to a slow reader, or a client that
+    // stopped reading); socketBytesWritten: what the socket had passed to the kernel. A socket already destroyed
+    // at 'finish' never delivered the rest: that response is marked aborted.
+    res.on('finish', () => {
+      Object.assign(r, { finishedAt: Date.now(), socketBytesWritten: req.socket.bytesWritten, unsentBytes: req.socket.writableLength,
+        socketDestroyed: req.socket.destroyed });
+      if (r.socketDestroyed) r.aborted = true;
+      if (s) s.lastFinishedAt = r.finishedAt;
+    });
     res.on('close', () => { r.closedAt = Date.now(); if (!res.writableFinished) r.aborted = true; });
   });
   let expected = Date.now() + 100, ticks = 0;
@@ -139,6 +147,7 @@ function track(server) {
         socketsOpened: record.sockets.filter(s => s.openedAt >= since).length,
         // connected but no request reached the parser: bytesRead tells "sent nothing" from "sent something unparsed"
         socketsWithoutRequest: record.sockets.filter(s => s.openedAt >= since && !s.requests).slice(-10).map(socketView),
+        // 0 while keepAliveTimeout is 0 (below): a non-zero count means idle closes are back
         socketsClosedIdle: record.sockets.filter(s => s.idleTimeoutAt >= since).length },
       lag: { samplesOver20ms: record.lag.filter(l => l.at >= since).slice(-20),
         maxMs: Math.max(0, ...record.lag.filter(l => l.at >= since).map(l => l.lateMs)) } });
@@ -171,6 +180,13 @@ const server = createServer(async (req, res) => {
   res.writeHead(status, { 'content-type': TYPES[path.extname(file)] || 'application/octet-stream', ...headersFor(rules, pathname) });
   res.end(req.method === 'HEAD' ? undefined : body);
 });
+// Idle keep-alive connections stay open until the client closes them (#686). Node's default closes an idle socket
+// after keepAliveTimeout (5 s) plus keepAliveTimeoutBuffer (1 s); a client that reuses its pooled socket at that
+// moment writes into a closing socket and gets "socket hang up" or ECONNRESET: measured against this server with
+// Playwright's request context (the agent route.fetch uses), 13 of 1,000 reuses 5,994 to 6,006 ms after the last
+// response failed so. 0 turns the idle timeout off, so the server never starts that close. Keep-alive stays on
+// (unlike "Connection: close"), so browsers and clients reuse connections as they do against Pages.
+server.keepAliveTimeout = 0;
 if (process.argv[1] === import.meta.filename) {
   if (process.send) track(server);
   server.listen(port, host, () => console.log(`Serving ${path.relative(process.cwd(), dir) || dir} at http://${host}:${server.address().port}/`));

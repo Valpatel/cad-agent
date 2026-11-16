@@ -29,7 +29,7 @@ test('directory applications retain a slash so their relative module URLs resolv
 });
 
 // The server's own request record, asked for over IPC by a browser test whose page request stalls (#686).
-test('an IPC parent can read the server record of each request, its socket and idle closes',async()=>{
+test('an IPC parent can read the server record of each request and its socket; an idle socket stays open',{timeout:60000},async()=>{
   const dir=await mkdtemp(path.join(os.tmpdir(),'cad-agent-preview-record-'));
   let server;
   try {
@@ -39,11 +39,12 @@ test('an IPC parent can read the server record of each request, its socket and i
     const base=await new Promise((resolve,reject)=>{server.stdout.on('data',data=>{const url=String(data).match(/http:\/\/[\d.]+:\d+/);if(url)resolve(url[0]);});server.once('exit',code=>reject(new Error(`preview exited ${code}`)));});
     const ask=(pathname,since)=>new Promise(resolve=>{const id=Math.random();server.on('message',function on(m){if(m.id===id){server.off('message',on);resolve(m);}});server.send({type:'preview-evidence',id,path:pathname,since});});
     const since=Date.now();
-    // a raw keep-alive socket: two requests on it, then the server's idle close
+    // a raw keep-alive socket: two requests on it, an idle gap past Node's default idle close, a third, then the client's close
     const socket=net.connect(new URL(base).port,'127.0.0.1');
     let text='';socket.on('data',d=>{text+=d;});
-    const closed=new Promise(resolve=>socket.on('close',resolve));
-    for(let n=1;n<=2;n++){socket.write('GET /recorded?q=private HTTP/1.1\r\nHost: x\r\n\r\n');while(text.split('Recorded').length<=n)await new Promise(r=>setTimeout(r,10));}
+    let ending=false,closedByServer=false;socket.on('close',()=>{closedByServer=!ending;});
+    const send=async n=>{socket.write('GET /recorded?q=private HTTP/1.1\r\nHost: x\r\n\r\n');while(text.split('Recorded').length<=n)await new Promise(r=>setTimeout(r,10));};
+    for(let n=1;n<=2;n++)await send(n);
     const record=await ask('/recorded',since);
     assert.equal(record.matching.length,2);
     assert.deepEqual(record.matchingFirst.map(r=>r.id),record.matching.map(r=>r.id),'with two requests the first ten are the last ten');
@@ -56,20 +57,29 @@ test('an IPC parent can read the server record of each request, its socket and i
     assert.equal(first.socket.id,second.socket.id,'both requests were on one socket');
     assert.deepEqual([first.onSocket,second.onSocket],[1,2]);assert(second.idleBeforeMs>=0);
     assert.equal(record.window.unfinished,0);assert.equal(record.openSockets,1);
-    assert.equal(record.keepAlive.keepAliveTimeout,5000);assert(record.lag.maxMs>=0);
+    // No idle close (#686): Node's default closes an idle socket after 6 s, and a client reusing it at that moment gets
+    // "socket hang up". The server keeps it open until the client closes it.
+    assert.equal(record.keepAlive.keepAliveTimeout,0);assert(record.lag.maxMs>=0);
     assert.deepEqual((await ask('/never-requested',since)).matching,[]);
-    await closed;   // Node closes the idle keep-alive socket (keepAliveTimeout plus its buffer, about 6 s)
-    // The client sees the close before the server's own 'close' event has run (on a loaded runner that can be some
-    // time later), so wait for the server's record to say the socket closed: bounded, and failing with what it saw.
+    await new Promise(r=>setTimeout(r,6500));
+    assert.equal(closedByServer,false,'the server closed an idle keep-alive socket');
+    await send(3);
+    const reused=await ask('/recorded',since);
+    assert.equal(reused.matching.length,3);assert.equal(reused.matching[2].socket.id,first.socket.id);assert.equal(reused.matching[2].onSocket,3);
+    assert(reused.matching[2].idleBeforeMs>=6000,JSON.stringify(reused.matching[2]));assert.equal(reused.window.socketsClosedIdle,0);
+    ending=true;socket.end();
+    // The client's close reaches the server's own 'close' handler later (on a loaded runner, some time later), so wait
+    // for the server's record to say the socket closed: bounded, and failing with what it saw.
     let after;
     for(const until=Date.now()+10000;;await new Promise(r=>setTimeout(r,20))){
       after=await ask('/recorded',since);
-      if(after.matching[1]?.socket?.closedAt||Date.now()>until)break;
+      if(after.matching[2]?.socket?.closedAt||Date.now()>until)break;
     }
-    const seen=JSON.stringify({openSockets:after.openSockets,socketsClosedIdle:after.window.socketsClosedIdle,socket:after.matching[1]?.socket});
-    assert(after.matching[1]?.socket?.closedAt,`the server recorded the idle socket's close within 10 s of the client seeing it: ${seen}`);
-    assert.equal(after.openSockets,0,seen);assert.equal(after.window.socketsClosedIdle,1,seen);
-    assert(after.matching[1].socket.idleTimeoutAt>=after.matching[1].finishedAt);
+    const seen=JSON.stringify({openSockets:after.openSockets,socketsClosedIdle:after.window.socketsClosedIdle,socket:after.matching[2]?.socket});
+    assert(after.matching[2]?.socket?.closedAt,`the server recorded the client's close within 10 s: ${seen}`);
+    assert.equal(after.openSockets,0,seen);assert.equal(after.window.socketsClosedIdle,0,seen);
+    assert.equal(after.matching[2].socket.idleTimeoutAt,undefined,seen);
+    for(const r of after.matching)assert.equal(r.aborted,undefined,JSON.stringify(r));
   } finally {server?.kill();await rm(dir,{recursive:true,force:true});}
 });
 
@@ -93,7 +103,7 @@ test('the evidence answer lists the first ten and the last ten requests to the p
 
 // The record is kept by time, not count (#686): a stalled request survives more traffic than the old 2,000-entry ring
 // held, and when the hard bound does drop requests inside the window, the answer says so instead of looking empty.
-test('the server record keeps the stalled request through heavy traffic and states when its window is truncated',async()=>{
+test('the server record keeps the stalled request through heavy traffic and states when its window is truncated',{timeout:60000},async()=>{
   const dir=await mkdtemp(path.join(os.tmpdir(),'cad-agent-preview-bound-'));
   const servers=[];
   try {
@@ -131,4 +141,19 @@ test('the server record keeps the stalled request through heavy traffic and stat
     assert.equal(cut.big.matching.length,1,'the unfinished request is never the one dropped');
     assert(cut.small.window.requests<2501&&cut.small.record.requests<=1000);
   } finally {for(const server of servers)server.kill();await rm(dir,{recursive:true,force:true});}
+});
+
+// A --record-max below one would empty the record; it is held at one (#686 review of #768).
+test('a record bound below one is held at one',{timeout:30000},async()=>{
+  const dir=await mkdtemp(path.join(os.tmpdir(),'cad-agent-preview-clamp-'));
+  let server;
+  try {
+    await writeFile(path.join(dir,'one.html'),'<p>one</p>');
+    server=spawn(process.execPath,[path.resolve(import.meta.dirname,'../../tools/site/preview-site.mjs'),'--dir',dir,'--port','0','--record-max','-5'],{stdio:['pipe','pipe','inherit','ipc']});
+    const base=await new Promise((resolve,reject)=>{server.stdout.on('data',data=>{const url=String(data).match(/http:\/\/[\d.]+:\d+/);if(url)resolve(url[0]);});server.once('exit',code=>reject(new Error(`preview exited ${code}`)));});
+    const since=Date.now();
+    assert.equal((await fetch(base+'/one')).status,200);
+    const record=await new Promise(resolve=>{const id=Math.random();server.on('message',function on(m){if(m.id===id){server.off('message',on);resolve(m);}});server.send({type:'preview-evidence',id,path:'/one',since});});
+    assert.equal(record.record.maxRecords,1);assert.equal(record.matching.length,1);
+  } finally {server?.kill();await rm(dir,{recursive:true,force:true});}
 });

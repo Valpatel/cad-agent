@@ -1,4 +1,6 @@
 /** Representative widescreen acceptance (#703), using the same built pages and browser as the main suite. */
+import { navigate } from '../navigation.mjs';
+
 export const WIDE_VIEWPORTS = [
   { width: 1920, height: 1080 }, { width: 2560, height: 1440 },
   { width: 3440, height: 1440 }, { width: 3840, height: 2160 },
@@ -112,7 +114,7 @@ export async function wideLayoutProblems(browser, base, { onMeasurement = () => 
         const seen = [];
         page.on('pageerror', error => seen.push(`page error: ${error.message}`));
         try {
-          const response = await page.goto(base + route, { waitUntil: 'networkidle' });
+          const response = await navigate(page, base + route, { waitUntil: 'networkidle' });
           if (response?.status() !== 200) seen.push(`HTTP ${response?.status()}`);
           await settled(page);
           const measurement = await page.evaluate(wideGeometrySnapshot, route);

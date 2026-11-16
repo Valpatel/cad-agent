@@ -2,6 +2,7 @@
 import { mkdtemp, writeFile, readFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
+import { fetchThrough, navigate, partHandler } from '../navigation.mjs';
 
 export function heroStillState() {
   const alpha = el => {
@@ -47,7 +48,7 @@ export async function reducedHeroProblems(browser, base) {
   const page = await browser.newPage({ viewport: { width: 360, height: 800 }, reducedMotion: 'reduce' });
   const source = `${base}/docs/img/hero/gyropup-leg.svg`;
   const read = async url => {
-    const response = await page.goto(url);
+    const response = await navigate(page, url);
     if (response?.status() !== 200) throw new Error(`SVG still source returned ${response?.status()}`);
     // Match the README's responsive image sizing; retain the SVG's real viewBox, CSS and geometry.
     await page.locator('svg').evaluate(svg => { svg.style.width = '100%'; svg.style.height = 'auto'; });
@@ -56,12 +57,12 @@ export async function reducedHeroProblems(browser, base) {
   };
   try {
     problems.push(...heroStillProblems(await read(source)).map(p => `reduced-motion hero: ${p}`));
-    await page.route(source + '?hidden-control', async route => {
-      const response = await route.fetch();
+    await page.route(source + '?hidden-control', partHandler(async route => {
+      const response = await fetchThrough(route);
       const body = (await response.text()).replace('</svg>',
         '<style>@media(prefers-reduced-motion:reduce){.draw{opacity:0!important}}</style></svg>');
       await route.fulfill({ response, body });
-    });
+    }));
     const bad = await read(source + '?hidden-control');
     if (!bad.reduced || bad.animations !== 0) problems.push('hidden-drawing control did not retain reduced motion and zero animations');
     if (!heroStillProblems(bad).includes('SVG drawing is hidden or empty'))
@@ -82,7 +83,7 @@ async function readmePictureProblems(browser, base, basename, options = {}) {
   const open = async reducedMotion => {
     const page = await browser.newPage({ viewport: { width: 390, height: 800 }, reducedMotion });
     try {
-      const response = await page.goto(base + (options.route || '/README'), { waitUntil: 'networkidle' });
+      const response = await navigate(page, base + (options.route || '/README'), { waitUntil: 'networkidle' });
       if (response?.status() !== 200) throw new Error(`README returned ${response?.status()}`);
       await page.locator(selector).evaluate(img => img.decode());
       return page;
@@ -113,13 +114,13 @@ async function readmePictureProblems(browser, base, basename, options = {}) {
     if (await changes(image, 'reduced')) problems.push('README image still animates with reduced motion');
     // A cached screenshot or an animation-disabled screenshot API must not pass this check.
     const source = base + stillPath + '?broken-motion-control';
-    await page.route(source, async route => {
-      const response = await route.fetch();
+    await page.route(source, partHandler(async route => {
+      const response = await fetchThrough(route);
       const body = (await response.text()).replace('</svg>',
         '<style>:root{animation:broken-motion 8s linear infinite!important}' +
         '@keyframes broken-motion{from{opacity:.1}to{opacity:1}}</style></svg>');
       await route.fulfill({ response, body });
-    });
+    }));
     await image.evaluate((img, source) => { img.closest('picture').querySelector('source').srcset = source; }, source);
     await page.waitForFunction(({ selector, source }) => document.querySelector(selector)?.currentSrc === source,
       { selector, source });
@@ -151,20 +152,9 @@ export async function homepageModelProblems(browser, base) {
       if (attempts === 1) { await firstGate; return route.fulfill({status:503,body:'deliberate loader failure'}); }
       await retryGate; return route.continue();
     });
-    // The load event, not network idle: the viewers may now start loading on their own, and the held first j501.bin
-    // request would keep the network busy until this check releases it.
-    await page.goto(base+'/',{waitUntil:'load'});
-    // Since #748 the viewers lead "See it run" just under the hero, so on a tall desktop screen they are within the
-    // viewer's own 300px look-ahead and may load. They must never compete with the first paint: nothing before the
-    // load event, and nothing at all while they are still further below the first screen than that look-ahead.
-    const early = await page.evaluate(() => {
-      const nav = performance.getEntriesByType('navigation')[0];
-      const data = performance.getEntriesByType('resource').filter(r => /three\.module|\/web\/models\/.*\.(json|bin)/.test(r.name));
-      const top = document.querySelector('#built-with .project-viewers').getBoundingClientRect().top;
-      return { beforeLoad: data.filter(r => r.startTime < nav.loadEventEnd).length, far: top > innerHeight + 300, fetched: data.length };
-    });
-    if (early.beforeLoad) out.push('project data was fetched before the home page finished loading');
-    if (early.far && early.fetched) out.push('project data was fetched while the viewers were still far below the first screen');
+    await navigate(page, base+'/',{waitUntil:'networkidle'});
+    const early = await page.evaluate(() => performance.getEntriesByType('resource').filter(r => /three\.module|\/web\/models\/.*\.(json|bin)/.test(r.name)).length);
+    if (early) out.push('project data was fetched while still at the learning hero');
     await page.locator('#built-with .project-viewers').evaluate(el => { document.documentElement.style.scrollBehavior='auto'; el.scrollIntoView({block:'start'}); });
     const j501 = page.locator('cad-model[src$="j501.json"]');
     const gyro = page.locator('cad-model[src$="gyropup.json"]');
@@ -191,7 +181,7 @@ export async function homepageModelProblems(browser, base) {
     const p = await ctx.newPage();
     try {
       if (mode==='no-webgl') await p.addInitScript(() => { const original=HTMLCanvasElement.prototype.getContext; HTMLCanvasElement.prototype.getContext=function(kind,...args){return /webgl/i.test(kind)?null:original.call(this,kind,...args);}; });
-      await p.goto(base+'/',{waitUntil:'networkidle'});
+      await navigate(p, base+'/',{waitUntil:'networkidle'});
       if (mode==='no-webgl') {
         for (const model of await p.locator('cad-model').all()) {
           await model.evaluate(el=>{document.documentElement.style.scrollBehavior='auto';el.scrollIntoView({block:'center'});});
@@ -241,7 +231,7 @@ export async function homepageLateDrawProblems(browser, base, receipt = {}) {
           };
         }
     });
-    await page.goto(base+'/',{waitUntil:'networkidle'});
+    await navigate(page, base+'/',{waitUntil:'networkidle'});
     await page.locator('#built-with .project-viewers').evaluate(el=>{document.documentElement.style.scrollBehavior='auto';el.scrollIntoView({block:'start'});});
     await page.waitForFunction(()=>document.querySelector('cad-model[src$="j501.json"]')?.dataset.state==='error',null,{timeout:20000});
     await page.waitForFunction(()=>document.querySelector('cad-model[src$="gyropup.json"]')?.dataset.state==='ready',null,{timeout:20000});
@@ -277,7 +267,7 @@ export async function resultImageMotionProblems(browser, base, receipt = {}) {
   const ctx=await browser.newContext({viewport:{width:1366,height:900},reducedMotion:'reduce'});
   const page=await ctx.newPage();
   try {
-    await page.goto(base+'/',{waitUntil:'networkidle'});
+    await navigate(page, base+'/',{waitUntil:'networkidle'});
     // Five animated reel results (the snap fit is inline SVG) and the turret playground recording (#748).
     const images=page.locator('.reel-tile picture img, .run-media picture img');
     if(await images.count()!==6)out.push('expected five animated reel images and the turret recording');
@@ -296,7 +286,7 @@ export async function resultImageMotionProblems(browser, base, receipt = {}) {
   const cp=await control.newPage();
   try {
     await cp.route('**/result-stills/thermal-history-still.svg',r=>r.fulfill({contentType:'image/svg+xml',body:'<svg xmlns="http://www.w3.org/2000/svg" width="760" height="390"><rect width="760" height="390" fill="black"/><rect width="180" height="390" fill="cyan"><animate attributeName="x" values="0;580;0" dur="2s" repeatCount="indefinite"/></rect></svg>'}));
-    await cp.goto(base+'/',{waitUntil:'networkidle'});
+    await navigate(cp, base+'/',{waitUntil:'networkidle'});
     const image=cp.locator('.reel-tile img[src$="thermal-history.svg"]');
     await image.scrollIntoViewIfNeeded();await image.evaluate(loadedThenDecoded);
     const first=await image.screenshot();await cp.waitForTimeout(300);const second=await image.screenshot();

@@ -1506,16 +1506,141 @@ async function folderMapPhoneProblems(page, where) {
       await view.evaluate(v => { v.scrollLeft = 0; });
       // Reveal the target before focusing it, so native vertical focus scrolling does not overlap this key test.
       await view.scrollIntoViewIfNeeded();
-      await view.focus();
-      await page.keyboard.press('ArrowRight');
-      // Poll from the test process: page-context animation-frame polling misses native scrolling when
-      // application JavaScript is disabled. The same actual keyboard delta and time bound still apply.
-      await expect.poll(() => view.evaluate(v => v.scrollLeft), { timeout: 1000 }).toBeGreaterThan(0)
-        .catch(() => problems.push(`${where}: the focused diagram does not scroll with ArrowRight`));
-      await view.evaluate(v => { v.scrollLeft = 0; v.blur(); });
+      // The trace starts before the focus, so the focus and the key stay next to each other as the check always had them.
+      const trace = await keyboardTraceStart(view);
+      if (trace.error) problems.push(`${where}: the keyboard check could not start its record in the page (${trace.error})`);
+      else {
+        await view.focus();
+        await page.keyboard.press('ArrowRight');
+        const result = await keyboardVerdict(view, trace);
+        if (result.verdict === 'pending') problems.push(`${where}: the page did not answer for 30 s after ArrowRight`);
+        else if (result.verdict === 'still') {
+          problems.push(`${where}: the focused diagram does not scroll with ArrowRight within 1000 ms (${result.detail})`);
+          await keyboardFailureEvidence(page, view, where, { ...trace, verdict: result });
+        }
+      }
+      await view.evaluate(v => { window.__cadKeyboardTrace?.stop(); delete window.__cadKeyboardTrace; v.scrollLeft = 0; v.blur(); });
     }
   }
   return problems;
+}
+
+/** Whether the focused view scrolled within 1000 ms of the key, on the page's own clock (performance.now).
+ *
+ * It passes ('scrolled') if and only if the page's own record shows scrollLeft above 0 no later than 1000 ms after the
+ * key: the time of the view's first scroll event that leaves it above 0, or the time of a read made in the page (the
+ * value read first, then performance.now(), in one page task) that saw it above 0, whichever is earlier. Both times
+ * can only be at or after the scroll itself, so a scroll that starts after the bound can never pass. The key's time is
+ * the page's own record of the ArrowRight keydown; with page JavaScript disabled the page's listeners do not run, so
+ * the bound starts at the trace, read just before the focus (earlier, so stricter). Nothing here asks the page to draw:
+ * the record is listeners and reads only, so the page keeps the rendering cadence a reader's page would have. It fails ('still') once the page's clock is
+ * past the bound with no such record, or when the earliest record is past the bound. When a reply arrives no longer
+ * matters: measured on the test process's clock, the bound also counted each reply's trip back, and in WebKit with the
+ * other lane's load one evaluate took over 900 ms to answer, so the check failed although the page had scrolled within
+ * 40 ms (#719). A page that gives no answer for 30 s is 'pending', reported as its own finding. */
+async function keyboardVerdict(view, trace) {
+  let result = { verdict: 'pending' }, earliestRead = null;
+  const polls = [];
+  await expect.poll(async () => {
+    const sent = Date.now();
+    const s = await view.evaluate(v => {
+      const t = window.__cadKeyboardTrace;
+      const left = v.scrollLeft, now = performance.now();   // the value first, so its time is at or after it
+      return { now, left, listening: !!t?.listening, keyAt: t?.keyAt ?? null, firstScrollAt: t?.firstScrollAt ?? null };
+    });
+    if (s.left > 0) earliestRead ??= s.now;
+    if (polls.length < 40) polls.push({ sent, received: Date.now(), pageNow: Math.round(s.now), left: s.left, keyAt: s.keyAt, firstScrollAt: s.firstScrollAt });
+    const start = s.keyAt ?? trace.pageNow, bound = start + 1000;
+    const seen = [s.firstScrollAt, earliestRead].filter(t => t !== null);
+    const at = seen.length ? Math.min(...seen) : null;
+    if (at === null && s.now < bound) return 'pending';
+    const from = s.keyAt !== null ? 'the key' : 'just before the focus';
+    result = at !== null && at <= bound ? { verdict: 'scrolled', ms: Math.round(at - start) }
+      : { verdict: 'still', detail: `${at === null ? 'no scroll by' : `first seen scrolled at ${Math.round(at - start)} ms, after`} 1000 ms from ${from} on the page's clock${
+        s.listening ? '' : '; page JavaScript off, from reads in the page only'}` };
+    return result.verdict;
+  }, { timeout: 30000, intervals: [100] }).not.toBe('pending').catch(() => {});
+  return { ...result, polls };
+}
+
+/** The page's own record for the keyboard check above (#719), started before the focus: the time of the ArrowRight
+ * keydown and the time of the view's first scroll event that leaves it above 0, which the verdict reads; and, for the
+ * failure evidence only, the key, focus and scroll events the page sees (scrolls of any
+ * element or of the document), with the view's and the window's position at each, until the check removes the
+ * listeners. With page JavaScript disabled the listeners do not run (`listening` is false) and the record is empty.
+ * Listeners only: no animation-frame loop or other work that would make the page draw frames it would not draw for a
+ * reader, so a scroll that waits for a rendering update shows as it would for them. Whether the page was blocked can be
+ * read afterwards only from the gaps between recorded event times and the test process's lag, not from frames. */
+function keyboardTraceStart(view) {
+  return view.evaluate(v => {
+    const name = e => !e ? null : e === v ? 'the diagram view' : e === document ? 'document' : e === window ? 'window'
+      : `${e.tagName?.toLowerCase()}${e.id ? '#' + e.id : ''}${typeof e.className === 'string' && e.className ? '.' + e.className.trim().split(/\s+/).join('.') : ''}`;
+    const t0 = performance.now(), events = [], controller = new AbortController(), signal = controller.signal;
+    const log = e => { if (events.length < 60) events.push({ type: e.type, key: e.key, ms: Math.round(performance.now() - t0), trusted: e.isTrusted,
+      target: name(e.target), prevented: e.defaultPrevented, active: name(document.activeElement), scrollLeft: v.scrollLeft, window: [scrollX, scrollY] }); };
+    for (const type of ['keydown', 'keyup']) window.addEventListener(type, log, { signal });   // bubbling: after the page's own handlers
+    for (const type of ['focusin', 'focusout']) window.addEventListener(type, log, { capture: true, signal });
+    document.addEventListener('scroll', log, { capture: true, signal });   // scroll does not bubble; capture sees every scroller's
+    const trace = window.__cadKeyboardTrace = { events, name, stop: () => controller.abort(), listening: false, keyAt: null, firstScrollAt: null };
+    window.addEventListener('keydown', e => { if (e.key === 'ArrowRight') trace.keyAt ??= performance.now(); }, { capture: true, signal });
+    v.addEventListener('scroll', () => { if (v.scrollLeft > 0) trace.firstScrollAt ??= performance.now(); }, { signal });
+    // Whether this page runs listeners at all (not with page JavaScript disabled).
+    const probe = () => { trace.listening = true; };
+    v.addEventListener('cad-keyboard-probe', probe, { once: true, signal }); v.dispatchEvent(new Event('cad-keyboard-probe'));
+    return { pageNow: performance.now(), at: new Date().toISOString(), active: name(document.activeElement), scrollLeft: v.scrollLeft, window: [scrollX, scrollY],
+      tabindex: v.getAttribute('tabindex'), visualViewportScale: visualViewport?.scale ?? null, devicePixelRatio };
+  }).catch(error => ({ error: error.message }));
+}
+
+async function keyboardFailureEvidence(page, view, where, before) {
+  // At most this many failures in a run get the full evidence (3 s of waiting and a receipt each); the rest get the
+  // snapshot at the failure only, so a regression that fails every check still ends inside the job's time limit.
+  // Constants and counters live here and on globalThis, not in module variables: the parts run inside this module's
+  // top-level await, before a declaration below them is initialised.
+  const KEYBOARD_EVIDENCE_LIMIT = 5;
+  try {
+    const at = () => view.evaluate(v => {
+      const cs = getComputedStyle(v), trace = window.__cadKeyboardTrace;
+      return { at: new Date().toISOString(), scrollLeft: v.scrollLeft, scrollWidth: v.scrollWidth, clientWidth: v.clientWidth, active: trace?.name(document.activeElement),
+        viewFocused: document.activeElement === v, focusVisible: v.matches(':focus-visible'), documentFocused: document.hasFocus(),
+        overflowX: cs.overflowX, scrollBehavior: cs.scrollBehavior, rootScrollBehavior: getComputedStyle(document.documentElement).scrollBehavior,
+        scrollSnapType: cs.scrollSnapType, window: [scrollX, scrollY], box: v.getBoundingClientRect().toJSON(), events: trace?.events ? [...trace.events] : null };
+    });
+    const atFailure = await at();
+    // Event-loop lag of this test process over the last 5 s, to place the failure against the other lane's load.
+    const testProcessLag = testLag.filter(l => l.at >= Date.now() - 5000);
+    // The planted controls below always keep their evidence and do not use up the slots meant for real failures.
+    const kept = where.startsWith('planted ') ? 0 : globalThis.__cadKeyboardEvidenceKept = (globalThis.__cadKeyboardEvidenceKept ?? 0) + 1;
+    if (kept > KEYBOARD_EVIDENCE_LIMIT) {
+      console.log(`Diagram keyboard failure evidence (${where}): full evidence skipped after ${KEYBOARD_EVIDENCE_LIMIT} failures; at the failure ${JSON.stringify({ before, atFailure, testProcessLag })}`);
+      return;
+    }
+    // Only evidence; the check above has already failed. Does the drawing still move, late (a slow or stalled scroll
+    // animation), or only once something makes the page paint again, or never (no scroll was started)? The repaint is a
+    // change to the view's outline, put back after. Its limit: movedAfterRepaintMs set means "did not move for 2 s, then
+    // moved within 1 s of the outline change"; it cannot tell a repaint that released the scroll from one that came at
+    // the moment the scroll would have come anyway.
+    const moved = timeout => {
+      const from = Date.now();
+      return expect.poll(() => view.evaluate(v => v.scrollLeft), { timeout }).toBeGreaterThan(0).then(() => Date.now() - from, () => null);
+    };
+    const lateMs = await moved(2000);
+    let afterRepaintMs = null;
+    if (lateMs === null) {
+      const old = await view.evaluate(v => { const old = v.style.outlineOffset; v.style.outlineOffset = '5px'; return old; });
+      try { afterRepaintMs = await moved(1000); }
+      finally { await view.evaluate((v, old) => { v.style.outlineOffset = old; }, old); }
+    }
+    const siteRevision = JSON.parse(await readFile(path.join(dir, 'version.json'), 'utf8')).revision;
+    const after = await at();
+    const receipt = { where, url: page.url(), engine: browser.browserType().name(), browserVersion: browser.version(), siteRevision,
+      helper: 'folderMapPhoneProblems keyboard check: focus, keyboard.press ArrowRight, keyboardVerdict (scrollLeft > 0 within 1000 ms of the key on the page clock)',
+      before, atFailure, testProcessLag, movedLaterMs: lateMs, movedAfterRepaintMs: afterRepaintMs, after };
+    const out = await mkdtemp(path.join(tmpdir(), 'cad-agent-diagram-keyboard-'));
+    await writeFile(path.join(out, 'receipt.json'), JSON.stringify(receipt, null, 2) + '\n');
+    console.log(`Diagram keyboard failure evidence (${where}): ${out} ${JSON.stringify({ before, atFailure: { ...atFailure, events: undefined },
+      testProcessLag, movedLaterMs: lateMs, movedAfterRepaintMs: afterRepaintMs, events: after.events })}`);
+  } catch (error) { console.log(`Diagram keyboard failure evidence (${where}) could not be kept: ${error.message}`); }
 }
 
 /** Counterexamples on an actual wide map: a screenshot that merely fits is not enough. */
@@ -1525,7 +1650,7 @@ async function folderMapPhoneControls(page) {
     svgStyle: v.querySelector('svg').getAttribute('style') }));
   if (!await view.evaluate(v => v.scrollWidth > v.clientWidth + 1)) return ['phone scroller control needs an actual wide drawing'];
   for (const [fault, expected] of [['shrink', 'shrinks its labels'], ['focus', 'not an accessible'],
-    ['overflow', 'not an accessible'], ['keyboard', 'does not scroll with ArrowRight']]) {
+    ['overflow', 'not an accessible'], ['keyboard', 'does not scroll with ArrowRight'], ['late', 'does not scroll with ArrowRight']]) {
     try {
       await view.evaluate((v, fault) => {
         if (fault === 'shrink') v.querySelector('svg').style.width = `${v.querySelector('svg').viewBox.baseVal.width / 2}px`;
@@ -1533,6 +1658,11 @@ async function folderMapPhoneControls(page) {
         if (fault === 'overflow') v.style.overflowX = 'hidden';
         if (fault === 'keyboard') {
           v.__phoneControl = e => { if (e.key === 'ArrowRight') e.preventDefault(); };
+          v.addEventListener('keydown', v.__phoneControl);
+        }
+        // Pins the bound: the key does not scroll, and the drawing moves 1500 ms later, which must still fail.
+        if (fault === 'late') {
+          v.__phoneControl = e => { if (e.key === 'ArrowRight') { e.preventDefault(); v.__phoneLate ??= setTimeout(() => { v.scrollLeft = 40; }, 1500); } };
           v.addEventListener('keydown', v.__phoneControl);
         }
       }, fault);
@@ -1544,6 +1674,7 @@ async function folderMapPhoneControls(page) {
         restore(v, 'style', original.style); restore(v, 'tabindex', original.tab);
         restore(v.querySelector('svg'), 'style', original.svgStyle);
         if (v.__phoneControl) { v.removeEventListener('keydown', v.__phoneControl); delete v.__phoneControl; }
+        if (v.__phoneLate) { clearTimeout(v.__phoneLate); delete v.__phoneLate; }
         v.scrollLeft = 0; v.blur();
       }, original);
     }

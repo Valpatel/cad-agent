@@ -85,8 +85,9 @@ follow `cad-work-tracking`: an issue per change, an early draft PR with `Closes 
    git worktree add --no-track ../worktrees/<topic> -b feat/<topic> origin/dev
    cd ../worktrees/<topic> && git push -u origin feat/<topic>     # the branch tracks itself, not dev
    ```
-   Agents give absolute paths in every command they run for a worktree: a relative path in a backgrounded command
-   once wrote a file into the canonical checkout.
+   Run the commands above from `repo/` as shown. In every other command an agent runs for a worktree, above all a
+   backgrounded one, name the worktree by its absolute path: a relative path in a backgrounded command once wrote
+   a file into the canonical checkout (observed 2026-11-16, in the session that filed #772).
 3. **Commit and push** small, focused changes with tests (in `tests/<domain>/`: [where files go](#where-files-go)) as you go, not in one batch at the end. Keep the package generic: anything specific to one
    product stays in that product's repository. A new docs or research page, `cad-agent` command, skill, agent or
    `docs/lessons/` folder also gets its line in [`docs/areas.yaml`](../docs/areas.yaml), the topic tree ([docs/vision.md](../docs/vision.md)):

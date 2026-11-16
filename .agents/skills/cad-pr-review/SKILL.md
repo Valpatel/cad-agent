@@ -112,7 +112,7 @@ that way (marker, blank line, `---`, footer) counts. Any other text after the ma
 | Merge | `merge_pull_request` has no `--admin` switch. Observed, not documented GitHub behaviour (2026-11-16, PRs #752, #749, #757, #760, #763, #765, #768, from the project's maintainer account): the call gets through the ruleset, and the required checks and resolved threads still apply. The ruleset lets only the admin role update `dev`, so a session on another account is refused and stops. |
 | "All comments must be resolved" | A thread is open (seen on #727, 2026-11-16). It is resolved only after the author's fix or reply is on it; never resolve an unanswered thread to get a merge through. |
 | "Required status check … is failing" | A gate or CI is red (seen on #752 before its gate was green, 2026-11-16). For a review gate that has not read a new verdict, re-run the gates; otherwise fix it on the branch (a new head, which needs a new verdict), or stop; never re-post a status by hand. A required check that has not reported yet means wait. |
-| Re-run of failed jobs | Only after the whole workflow run has finished; while any job runs, GitHub refuses with "This workflow is already running" (observed 2026-11-16). |
+| Re-run of failed jobs | This row grants nothing: the author side may re-run a failed job once, only for a failure the diff did not cause, with the failing step quoted on the PR; the reviewer never re-runs. GitHub accepts a re-run only after the whole workflow run has finished; while any job runs it has refused with "This workflow is already running" (observed 2026-11-16). |
 
 For any other refusal, stop and report; never change a ruleset or setting to get through.
 
@@ -144,8 +144,8 @@ flowchart TD
   issue (read the latest `lease=` time in the
   [work-claim comments](../cad-work-tracking/SKILL.md#work-claims-sharing-issues-between-agents)), or the claim
   holder has said on the PR, with its `agent=` tag, that it is ready to merge. The merging session never ends
-  another session's claim or writes that statement for it. Otherwise ask on the PR and wait. **Limit:** every session posts through one
-  account, so this is procedural; GitHub cannot show which session wrote a comment;
+  another session's claim or writes that statement for it. Otherwise ask on the PR and wait. **Limit:** every
+  session posts through one account, so this is procedural; GitHub cannot show which session wrote a comment;
 - none of the items under [Needs the owner's go-ahead](#needs-the-owners-go-ahead) applies, by the reviewer's
   statement and by the merging agent's own check at merge time; if either finds one, it applies, and it is cleared
   only by the owner's go-ahead recorded as described there. Three items are not properties of the diff and can
@@ -242,13 +242,14 @@ The items:
    saying what is left.
 3. The tracking issue ticked, and your own work claim ended with `done`
    ([cad-work-tracking](../cad-work-tracking/SKILL.md)). For someone else's PR, comment for the claim holder instead.
-4. The merged head branch deleted on origin, once its tip there equals the PR's merged head SHA (nothing was pushed
-   after the merge). In a cloud session the git proxy refuses the delete (HTTP 403, observed 2026-11-16): do not
-   retry; name the branch to the owner in the PR or issue.
-5. Your own worktree removed after the venv check in
-   [CONTRIBUTING.md](../../../.github/CONTRIBUTING.md#workflow), once `git status` there is clean and its head is
-   on `origin/dev` (`git merge-base --is-ancestor HEAD origin/dev` after a fetch); then its venv and temp folder,
-   and the local branch.
+4. Your own worktree removed after the venv check in
+   [CONTRIBUTING.md](../../../.github/CONTRIBUTING.md#workflow), once `git status --ignored` there shows nothing
+   to keep (`git worktree remove` deletes ignored files without asking) and its head is on `origin/dev`
+   (`git merge-base --is-ancestor HEAD origin/dev` after a fetch); then its venv and temp folder, and the local
+   branch.
+5. The merged head branch deleted on origin, once its tip there equals the PR's merged head SHA (nothing was pushed
+   after the merge) and no open PR uses it as its base. In a cloud session the git proxy has refused the delete
+   (HTTP 403, observed 2026-11-16); if it does, do not retry: name the branch to the owner in the PR or issue.
 6. Open PRs into `dev` that are stacked on the merged branch or now conflict: say on each that `dev` moved. Their
    sessions merge `dev` in (a new head, which needs a new verdict); never update another session's branch.
 7. For user-visible changes: after the next release, the live site checked for the change, and the result

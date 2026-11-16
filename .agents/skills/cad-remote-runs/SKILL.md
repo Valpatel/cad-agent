@@ -113,7 +113,8 @@ links dated evidence that says what was observed only once.
 - **Provenance receipts.** Never edit a recorded hash ([SCADA tools](../../../tools/webkit/scada/README.md));
   regenerate with the generator. SCADA explorer sources need `thumbnails:scenarios` on the pinned shell, which the
   container lacks: push the source change and commit CI's recapture artifact unchanged, as that README says (on
-  `dev` since #763). For `model.js`, see below ([evidence](../../inbox/agents/2026-11-15-cloud-containers-limit-browser-and-provenance-evidence.md)).
+  `dev` since #763). For `model.js`, see below
+  ([evidence](../../inbox/agents/2026-11-15-cloud-containers-limit-browser-and-provenance-evidence.md)).
 - **Browsers and Python:** Chromium only (report WebKit as not run locally); Python 3.12 for provenance checks.
 
 <details>
@@ -124,7 +125,8 @@ links dated evidence that says what was observed only once.
   new render from this container's browser, or ask the owner; never keep the old image with a new hash.
 - **SCADA recapture:** fetch the `scada-recapture-<head SHA>` artifact with the GitHub MCP `actions_get`
   `download_workflow_run_artifact` method (a short-lived signed URL; no `gh` login), unpack it into an empty scratch
-  folder, and check its files against the manifest before copying them in. Two demonstration runs gave
+  folder, check its files against the manifest, then copy them in and delete the paths the manifest lists under
+  `deleted`. Two demonstration runs gave
   byte-identical captures; the one-time re-baseline of the 63 scenario thumbnails merged with #753
   ([run](https://github.com/Valpatel/cad-agent/issues/762#issuecomment-6908091812)).
 - **Browsers:** only Playwright's Chromium is installed, newer than the pinned `@playwright/test` expects; WebKit is

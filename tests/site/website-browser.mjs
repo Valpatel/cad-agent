@@ -16,7 +16,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { chromium, webkit, expect } from './npm-context.mjs';
 import { builtSite } from './built-site.mjs';
-import { configureNavigation, fetchThrough, inLanes, navigate, navigationFailure, ownContexts, partHandler } from './navigation.mjs';
+import { configureNavigation, fetchThrough, inLanes, navigate, navigationFailure, ownContexts, partHandler, watchRoutes } from './navigation.mjs';
 import { folderMapPath } from '../../tools/site/publication.mjs';
 import { reducedHeroProblems, repositoryHeroProblems, homepageModelProblems, homepageViewerGateProblems, heroRecordingProblems, learningPictureProblems, homepageLateDrawProblems, resultImageMotionProblems } from './layout/motion.mjs';
 import { outlineEntryState, scrollOutline, sameSectionOutlineProblems, readerBoundaryProblems, readerOutlineClickProblems, readerOverflowProblems } from './layout/outline.mjs';
@@ -53,6 +53,7 @@ const browser = await engine.launch(launchOptions);
 // Every navigation below goes through navigate (tests/site/navigation.mjs, #686): a failed one keeps the browser's and
 // the preview server's record, and becomes a finding of its part (runPart, in inLanes) instead of ending the run.
 ownContexts(browser);
+watchRoutes(browser);   // a failed navigation's receipt says which route handler, if any, its document went through
 configureNavigation({ serverEvidence: previewServerEvidence, testLag, fullEvidenceLimit: 5 });
 // A reference area page (#323): the one route with the records' charts, table and filters (a small area, so the
 // theme part's text walk stays short; the walls part measures every reference page).
@@ -1239,10 +1240,72 @@ async function navigationStallControl() {
     stallControl.problems.push(`a fault in the evidence replaced or lost the original navigation error: ${String(caught?.message).split('\n')[0]}`);
   else if (!/planted evidence-collection fault/.test(fault.evidence?.evidenceError ?? '') || !fault.receipt)
     stallControl.problems.push('a fault in the evidence was not recorded in a receipt');
+  await routeHopControls(context);
   // The stall itself, not caught here: the part must end on it and report it.
   await navigate(page, held, { waitUntil: 'load', timeout: STALL_MS }, { where: 'planted navigation stall, 360px, JavaScript disabled', viewport: { width: 360, height: 800 }, javaScriptEnabled: false, planted: true });
   stallControl.problems.push('the planted navigation stall loaded');
   return [];
+}
+
+/** Two planted route hops (#686), each on a page of its own in the stall control's context, against the preview
+ * server: a route handler that never answers the document, and one that fetches it, then fulfils only once the
+ * navigation has failed (released by the receipt's planted after-failure action, so the order is fixed, not timed).
+ * Each receipt must say which route the page had, that the handler ran, what it called and how that settled, and that
+ * the page saw no response. Both handlers are released and their pages closed before this returns. */
+async function routeHopControls(context) {
+  const say = problem => stallControl.problems.push(`route hop control: ${problem}`);
+  const failed = async (name, page, target, diag = {}) => {
+    try { await navigate(page, target, { waitUntil: 'load', timeout: STALL_MS }, { where: `planted route hop: ${name}`, planted: true, ...diag }); }
+    catch (error) {
+      const evidence = navigationFailure(error)?.evidence;
+      if (!evidence) { say(`${name}: the failed navigation kept no evidence: ${String(error?.message).split('\n')[0]}`); return null; }
+      const document = Array.isArray(evidence.documents) ? evidence.documents.find(d => d.url === new URL(target).origin + new URL(target).pathname) : null;
+      if (!document) { say(`${name}: the receipt has no row for the document: ${JSON.stringify(evidence.documents).slice(0, 400)}`); return null; }
+      if (!evidence.routing?.watched || !evidence.routing.page.length) say(`${name}: the receipt lost the page's route: ${JSON.stringify(evidence.routing)}`);
+      if (document.events?.request !== true) say(`${name}: the receipt lost which events the document got: ${JSON.stringify(document.events)}`);
+      return { evidence, document, route: document.route };
+    }
+    say(`${name}: the navigation loaded`);
+    return null;
+  };
+  // 1. The handler is called and never answers: the page's request is held by Playwright for the whole timeout.
+  let release;
+  const gate = new Promise(ok => { release = ok; });
+  const never = await context.newPage();
+  const neverURL = `${base}/docs/toolkit`;
+  await never.route(neverURL, async route => { await gate; await route.abort('aborted').catch(() => {}); });
+  const one = await failed('a handler that never answers', never, neverURL);
+  if (one && one.document.events?.response !== false) say(`a handler that never answers: the page saw a response: ${JSON.stringify(one.document.events)}`);
+  if (one && (typeof one.route !== 'object' || one.route.handlers?.[0]?.outcome !== 'running' || one.route.calls?.length !== 0))
+    say(`a handler that never answers: the receipt does not show a running handler with no calls: ${JSON.stringify(one.route).slice(0, 400)}`);
+  // 2. The handler fetches the page at once, then fulfils only after the navigation has failed.
+  let fetched, fulfilled, letFulfil;
+  const fulfilNow = new Promise(ok => { letFulfil = ok; });
+  const fetchedOnce = new Promise(ok => { fetched = ok; });
+  const slow = await context.newPage();
+  const slowURL = `${base}/docs/linkages`;
+  await slow.route(slowURL, async route => {
+    let response;
+    try { response = await route.fetch(); } catch (error) { say(`a late fulfil: the handler's fetch failed: ${error.message}`); await route.abort().catch(() => {}); fetched(); return; }
+    fetched();
+    await fulfilNow;
+    fulfilled = route.fulfill({ response });
+    await fulfilled.catch(() => {});
+  });
+  const two = await failed('a fulfil after the failure', slow, slowURL, { afterFailure: async () => {
+    await fetchedOnce; letFulfil();
+    await new Promise(ok => setTimeout(ok, 0));   // the handler's turn to call fulfill
+    await fulfilled?.catch(() => {});
+  } });
+  if (two) {
+    const [fetch, fulfil] = two.route?.calls ?? [];
+    if (fetch?.method !== 'fetch' || fetch.outcome !== 'resolved' || fetch.status !== 200 || !(fetch.bodyBytes > 0))
+      say(`a late fulfil: the receipt does not show the handler's fetch resolved with a 200 and its body size: ${JSON.stringify(fetch)}`);
+    if (fulfil?.method !== 'fulfill' || fulfil.outcome === 'pending' || !(fulfil.calledAtMs >= two.evidence.elapsedMs))
+      say(`a late fulfil: the receipt does not show a fulfil called after the failure and settled: ${JSON.stringify(fulfil)} (failed at ${two.evidence.elapsedMs} ms)`);
+  }
+  release(); letFulfil();
+  await Promise.all([never.close(), slow.close()]);
 }
 
 async function stallControlProblems(parts, found, finished) {
@@ -1265,6 +1328,9 @@ async function stallControlProblems(parts, found, finished) {
     const held = evidence.pending?.find(r => r.type === 'document' && r.url === stallControl.url);
     if (evidence.part !== STALL_CONTROL || evidence.url !== stallControl.url || !held || held.status !== undefined || evidence.committed?.sinceBegan !== false)
       out.push(`the receipt lost the browser's record of the pending document: ${JSON.stringify({ part: evidence.part, url: evidence.url, pending: evidence.pending, committed: evidence.committed }).slice(0, 400)}`);
+    const document = Array.isArray(evidence.documents) ? evidence.documents.find(d => d.url === stallControl.url) : null;
+    if (!document || document.events?.response !== false || !/^no route on the page or its context/.test(document.route))
+      out.push(`the receipt does not say the held document got no response and passed through no route handler: ${JSON.stringify(evidence.documents).slice(0, 400)}`);
     if (typeof evidence.server?.coversWindow !== 'boolean' || !evidence.server.window || !Array.isArray(evidence.server.matchingFirst) || !(evidence.server.lag?.maxMs >= 0))
       out.push(`the receipt lost the preview server's record: ${JSON.stringify(evidence.server).slice(0, 400)}`);
     if (!(evidence.testProcessLag?.maxMs >= 0) || evidence.engine?.name !== engine.name() || !evidence.engine.version || evidence.evidenceError)

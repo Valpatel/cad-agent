@@ -534,7 +534,7 @@ def default_nav(root: Path, html_pages: Optional[List[str]] = None, site_pages: 
     return nav
 
 
-_INJECT = ('<script type="module">import {{ mountAppNav }} from "{kit}appnav.js";'
+_INJECT = ('<script type="module">import {{ mountAppNav }} from "{kit}ui/appnav.js";'
            'mountAppNav({{ root: "/", current: {current}, injected: true }});</script>')
 _OPT_OUT = re.compile(rb'<meta[^>]+name=["\']cadagent-nav["\'][^>]+content=["\']off["\']', re.I)
 

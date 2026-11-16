@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 
 import pytest
 
@@ -250,7 +251,11 @@ def test_served_project_pages_get_the_top_bar(tmp_path):
         with urllib.request.urlopen(head) as r, urllib.request.urlopen(base + "preview/sim.html") as g:
             assert r.headers["Content-Length"] == g.headers["Content-Length"] == str(len(g.read()))
         with urllib.request.urlopen(base + site.KIT_URL.lstrip("/") + "model/viewer.html") as r:
-            assert "mountAppNav" in r.read().decode(), "the web kit's pages get the bar too"
+            viewer = r.read().decode()
+            assert "mountAppNav" in viewer, "the web kit's pages get the bar too"
+        module = re.search(r'import \{ mountAppNav \} from "([^"]+)"', viewer).group(1)
+        with urllib.request.urlopen(base + module.lstrip("/")) as r:      # #799: it was a 404
+            assert r.status == 200 and "export async function mountAppNav" in r.read().decode()
     finally:
         server.shutdown()
         server.server_close()

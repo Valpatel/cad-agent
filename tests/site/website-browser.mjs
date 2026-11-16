@@ -54,7 +54,10 @@ const browser = await engine.launch(launchOptions);
 // the preview server's record, and becomes a finding of its part (runPart, in inLanes) instead of ending the run.
 ownContexts(browser);
 watchRoutes(browser);   // a failed navigation's receipt says which route handler, if any, its document went through
-configureNavigation({ serverEvidence: previewServerEvidence, testLag, fullEvidenceLimit: 5 });
+// DIAGNOSTIC (#686, do-not-merge branch ci/686-stall-hop-lab): CAD_AGENT_LAB_686=loop|parts repeats navigations until
+// CAD_AGENT_LAB_MINUTES pass and prints every stall's whole receipt (stallLab, at the end of this file).
+const LAB = process.env.CAD_AGENT_LAB_686 || '';
+configureNavigation({ serverEvidence: previewServerEvidence, testLag, fullEvidenceLimit: LAB ? Infinity : 5 });
 // A reference area page (#323): the one route with the records' charts, table and filters (a small area, so the
 // theme part's text walk stays short; the walls part measures every reference page).
 const REFS = '/references/laser-cutting';
@@ -786,11 +789,14 @@ try {
       return problems;
     }],
   ];
-  const { found, finished } = await inLanes(parts, { lanes: LANES, label: engine.name() });
-  problems.push(...await stallControlProblems(parts, found, finished));
-  for (const [i, list] of found.entries()) if (parts[i][0] !== STALL_CONTROL) problems.push(...list);
-  assert.deepEqual(problems, []);
-  console.log(`${engine.name()}: ${ROUTES.length} routes at 360 and 1366 px under the site CSP PASS`);
+  if (LAB) await stallLab(parts);
+  else {
+    const { found, finished } = await inLanes(parts, { lanes: LANES, label: engine.name() });
+    problems.push(...await stallControlProblems(parts, found, finished));
+    for (const [i, list] of found.entries()) if (parts[i][0] !== STALL_CONTROL) problems.push(...list);
+    assert.deepEqual(problems, []);
+    console.log(`${engine.name()}: ${ROUTES.length} routes at 360 and 1366 px under the site CSP PASS`);
+  }
 } finally {
   await browser.close();
   server.kill();
@@ -2672,4 +2678,92 @@ async function jumpProblems() {
   }
   await page.close();
   return out;
+}
+
+/** DIAGNOSTIC (#686): repeat navigations in WebKit until the time is up, and print every stall's whole receipt.
+ * loop: two lanes of fresh contexts or pages, each navigating to docs pages through one of the route set-ups the suite
+ * has (none; a script route, as fourbar and the explorers' script-off pass; a handler that continues the document; a
+ * handler that fetches it and fulfils it, as fetchThrough does), JavaScript on and off.
+ * parts: the suite's navigation-heavy parts (fold, fourbar, the explorers, reader scroll boundary), round after round.
+ * Nothing is retried and no timeout changes: a navigation keeps the suite's 30 s. */
+async function stallLab(parts) {
+  const minutes = Number(process.env.CAD_AGENT_LAB_MINUTES || 40), deadline = Date.now() + minutes * 60000, began = Date.now();
+  const stalls = [], tally = {}, errors = [];
+  const report = async (label, evidence) => {
+    stalls.push(label);
+    const docs = Array.isArray(evidence?.documents) ? evidence.documents : [];
+    console.log(`LAB STALL ${stalls.length} (${label}) HOPS: ` + JSON.stringify({ routing: evidence?.routing,
+      documents: docs.map(({ timing, ...d }) => ({ ...d, timing })), routeHops: evidence?.routeHops,
+      committed: evidence?.committed, currentURL: evidence?.currentURL, elapsedMs: evidence?.elapsedMs }));
+    console.log(`LAB STALL ${stalls.length} (${label}) RECEIPT: ` + JSON.stringify(evidence));
+  };
+  if (LAB === 'parts') {
+    const names = new Set(['fold', 'fourbar', 'cad-torsion-snap', 'cad-printed-boss', 'reader scroll boundary']);
+    const chosen = parts.filter(([name]) => names.has(name));
+    let round = 0;
+    while (Date.now() < deadline) {
+      round++;
+      let result;
+      try { result = await inLanes(chosen, { lanes: LANES, label: `lab round ${round}` }); }
+      catch (error) { errors.push(String(error?.message).split('\n')[0]); console.log(`LAB ERROR round ${round}: ${String(error?.stack || error).slice(0, 1500)}`); continue; }
+      for (const [i, list] of result.found.entries()) {
+        const name = chosen[i][0];
+        tally[name] = tally[name] ?? { runs: 0, stalls: 0, findings: 0 };
+        tally[name].runs++;
+        for (const finding of list) {
+          const receipt = finding.match(/navigation evidence: (\S*cad-agent-navigation-\S+)/)?.[1];
+          if (!receipt) { tally[name].findings++; console.log(`LAB FINDING (${name}, round ${round}): ${finding.slice(0, 600)}`); continue; }
+          tally[name].stalls++;
+          let evidence = null;
+          try { evidence = JSON.parse(await readFile(path.join(receipt, 'navigation-failure.json'), 'utf8')); } catch (error) { console.log(`LAB: receipt unreadable: ${error.message}`); }
+          await report(`${name}, round ${round}: ${finding.split('\n')[0].slice(0, 200)}`, evidence);
+        }
+      }
+      console.log(`LAB progress: round ${round}, ${Math.round((Date.now() - began) / 60000)} min, ${stalls.length} stalls`);
+    }
+  } else {
+    const PAGES = ['/docs/toolkit', '/docs/linkages', '/docs/screw-bosses', '/docs/vision', '/docs/compliant', '/repo/folders/d-software/d-cadagent/README'];
+    const SETUPS = [
+      { name: 'no route, fresh context, JS off', fresh: 'context', js: false },
+      { name: 'no route, newPage, JS on', fresh: 'page', js: true },
+      { name: 'script route (abort), newPage, JS on', fresh: 'page', js: true, route: 'script' },
+      { name: 'script route (abort), fresh context, JS off', fresh: 'context', js: false, route: 'script' },
+      { name: 'document handler continue, fresh context, JS off', fresh: 'context', js: false, route: 'continue' },
+      { name: 'document handler fetch+fulfill, newPage, JS on', fresh: 'page', js: true, route: 'fulfill' },
+    ];
+    let iteration = 0, navigations = 0;
+    const lane = async laneNo => {
+      while (Date.now() < deadline) {
+        const i = iteration++, setup = SETUPS[i % SETUPS.length], pageNames = [PAGES[i % PAGES.length], PAGES[(i + 1 + Math.floor(i / PAGES.length)) % PAGES.length]];
+        const t = tally[setup.name] = tally[setup.name] ?? { navigations: 0, stalls: 0, firstNavigationStalls: 0 };
+        let context = null;
+        try {
+          const options = { viewport: { width: i % 2 ? 1366 : 360, height: 800 }, javaScriptEnabled: setup.js };
+          const page = setup.fresh === 'page' ? await browser.newPage(options) : await (context = await browser.newContext(options)).newPage();
+          context ??= page.context();
+          if (setup.route === 'script') await page.route('**/kit/calculators/*.js', r => r.abort());
+          if (setup.route === 'continue') await page.route('**/docs/*', r => r.continue());
+          if (setup.route === 'fulfill') await page.route('**/docs/*', async r => {
+            try { const response = await fetchThrough(r); await r.fulfill({ response }); } catch (error) { console.log(`LAB fetch failed: ${String(error?.message).split('\n')[0]}`); }
+          });
+          for (const [k, route] of pageNames.entries()) {
+            navigations++; t.navigations++;
+            try { await navigate(page, base + route, { waitUntil: 'load', timeout: 30000 }, { where: `lab lane ${laneNo} #${i} ${setup.name} ${route} nav ${k + 1}` }); }
+            catch (error) {
+              t.stalls++; if (k === 0) t.firstNavigationStalls++;
+              await report(`lane ${laneNo} #${i} ${setup.name} ${route} nav ${k + 1}: ${String(error?.message).split('\n')[0]}`, navigationFailure(error)?.evidence ?? null);
+              break;
+            }
+          }
+        } catch (error) { errors.push(String(error?.message).split('\n')[0]); console.log(`LAB ERROR #${i}: ${String(error?.stack || error).slice(0, 1000)}`); }
+        finally { try { await Promise.race([context?.close(), new Promise(ok => setTimeout(ok, 10000))]); } catch { /* closed */ } }
+        if (i % 200 === 0) console.log(`LAB progress: ${i} iterations, ${navigations} navigations, ${Math.round((Date.now() - began) / 60000)} min, ${stalls.length} stalls`);
+      }
+    };
+    await Promise.all(Array.from({ length: LANES }, (_, k) => lane(k + 1)));
+    tally.total = { iterations: iteration, navigations };
+  }
+  console.log(`LAB SUMMARY (${LAB}, ${engine.name()} ${browser.version()}, ${Math.round((Date.now() - began) / 60000)} min): ` +
+    JSON.stringify({ stalls: stalls.length, tally, errors: errors.slice(0, 20), errorCount: errors.length }));
+  for (const label of stalls) console.log(`LAB STALL: ${label}`);
 }

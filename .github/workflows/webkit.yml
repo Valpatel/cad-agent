@@ -1,10 +1,11 @@
 name: Webkit components
+# DIAGNOSTIC branch only (ci/686-stall-hop-lab, never merged): repeats WebKit navigations for #686 and prints every
+# stall's whole receipt. The normal browser and scada jobs are left out to save runner minutes.
 on:
   pull_request:
-  push:
-    branches: [dev, main]
 jobs:
-  browser:
+  lab:
+    name: lab (webkit ${{ matrix.mode }} ${{ matrix.shard }})
     runs-on: ubuntu-24.04
     # Same Playwright release as tools/site/package-lock.json; browsers and Noble system dependencies are baked in.
     # Pin the registry manifest, not a mutable tag; the image avoids repeated browser and apt provisioning.
@@ -16,11 +17,14 @@ jobs:
         shell: bash
     # The complete site now includes 704 folder maps. Both engines still visit every applicable page/theme/width;
     # allow that expanded coverage plus the build and component suites without changing per-action timeouts.
-    timeout-minutes: 45
+    timeout-minutes: 70
     strategy:
       fail-fast: false
       matrix:
-        engine: [chromium, webkit]
+        include:
+          - { engine: webkit, mode: loop, shard: 1 }
+          - { engine: webkit, mode: loop, shard: 2 }
+          - { engine: webkit, mode: parts, shard: 1 }
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1   # v7.0.1
       # The hosted checkout is mounted into a root-owned test container; trust this exact CI workspace only.
@@ -61,169 +65,15 @@ jobs:
           node tools/site/build-site.mjs --out "$RUNNER_TEMP/site" | tee "$RUNNER_TEMP/site.log"
           echo "CAD_AGENT_SITE=$RUNNER_TEMP/site" >> "$GITHUB_ENV"
           grep -q ', 0 drawn' "$RUNNER_TEMP/site.log" || echo "drew=true" >> "$GITHUB_OUTPUT"
-      # Ordinary source-only owner maps keep their source namespace; validate their actual diagrams without
-      # publishing new catalogue routes. Save these committed-source drawings before fixture tests add their own.
-      - name: Check folder map diagrams
-        id: maps
-        if: matrix.engine == 'chromium'
-        run: node --test --test-name-pattern='all owned folder diagrams' tests/site/website-repo-map.test.mjs
-        env:
-          CAD_AGENT_REPO_MAP_DIAGRAMS: '1'
-      # Saved only when the site or actual source maps drew something the cache lacked, before fixture drawings.
-      - uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9   # v6.1.0
-        if: steps.site.outputs.drew == 'true' || steps.maps.outputs.drew == 'true'
-        with:
-          path: .cache/site-diagrams
-          key: ${{ steps.diagrams.outputs.key }}-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.engine }}
-      - run: npm run test:webkit-unit
-        working-directory: tools/site
-      # The build's own tests do not depend on the engine (their diagrams are drawn in Chromium either way), so they run
-      # once, in the Chromium job.
-      - run: node --test tests/site/website-*.test.mjs tests/site/toolkit/website-*.test.mjs
-        if: matrix.engine == 'chromium'
-      - run: node tests/site/website-browser.mjs
+      - name: Repeat navigations and print each stall's receipt
+        run: node tests/site/website-browser.mjs
         env:
           PLAYWRIGHT_CHANNEL: chromium
           PLAYWRIGHT_BROWSER: ${{ matrix.engine }}
-      - run: node tests/site/toolkit/website-catalog-browser.mjs
-        env:
-          PLAYWRIGHT_CHANNEL: chromium
-          PLAYWRIGHT_BROWSER: ${{ matrix.engine }}
-      - run: npm run test:assembly-guide
-        working-directory: tools/site
-        env:
-          PLAYWRIGHT_CHANNEL: chromium
-          PLAYWRIGHT_BROWSER: ${{ matrix.engine }}
-      - run: npm run test:fea
-        working-directory: tools/site
-        env:
-          PLAYWRIGHT_CHANNEL: chromium
-          PLAYWRIGHT_BROWSER: ${{ matrix.engine }}
-      - run: npm run test:stage
-        working-directory: tools/site
-        env:
-          PLAYWRIGHT_CHANNEL: chromium
-          PLAYWRIGHT_BROWSER: ${{ matrix.engine }}
-          TEST_SOURCE_REVISION: ${{ github.sha }}
-      - run: npm run test:model-explode
-        working-directory: tools/site
-        env:
-          PLAYWRIGHT_CHANNEL: chromium
-          PLAYWRIGHT_BROWSER: ${{ matrix.engine }}
-      - run: npm run test:part-table
-        working-directory: tools/site
-        env:
-          PLAYWRIGHT_CHANNEL: chromium
-          PLAYWRIGHT_BROWSER: ${{ matrix.engine }}
-      - run: npm run test:model-touch
-        working-directory: tools/site
-        env:
-          PLAYWRIGHT_CHANNEL: chromium
-          PLAYWRIGHT_BROWSER: ${{ matrix.engine }}
-      - run: npm run test:file-viewer
-        working-directory: tools/site
-        env:
-          PLAYWRIGHT_CHANNEL: chromium
-          PLAYWRIGHT_BROWSER: ${{ matrix.engine }}
-      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0   # v7.1.0
-        with:
-          python-version: '3.12'
-      # Invoke pip through setup-python's interpreter; cached script launchers can contain host-only paths.
-      - run: python -m pip install -e ".[site]"
-      - run: npm run test:assembly-release
-        working-directory: tools/site
-        env:
-          PLAYWRIGHT_CHANNEL: chromium
-          PLAYWRIGHT_BROWSER: ${{ matrix.engine }}
-      - run: npm run test:diagrams
-        working-directory: tools/site
-        env:
-          PLAYWRIGHT_CHANNEL: chromium
-          PLAYWRIGHT_BROWSER: ${{ matrix.engine }}
+          CAD_AGENT_LAB_686: ${{ matrix.mode }}
+          CAD_AGENT_LAB_MINUTES: '40'
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9   # v7.0.2
         if: always()
         with:
-          name: webkit-${{ matrix.engine }}
-          path: /tmp/cad-agent-*
-  scada:
-    runs-on: ubuntu-24.04
-    container:
-      image: mcr.microsoft.com/playwright:v1.56.1-noble@sha256:f1e7e01021efd65dd1a2c56064be399f3e4de00fd021ac561325f2bfbb2b837a
-      options: --init --ipc=host
-    defaults:
-      run:
-        shell: bash
-    timeout-minutes: 15
-    strategy:
-      fail-fast: false
-      matrix:
-        engine: [chromium, webkit]
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version: 22
-          cache: npm
-          cache-dependency-path: |
-            tools/site/package-lock.json
-            tools/webkit/scada/package-lock.json
-      - run: npm ci --ignore-scripts
-        working-directory: tools/site
-      - run: npm ci --ignore-scripts
-        working-directory: tools/webkit/scada
-      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
-        if: matrix.engine == 'chromium'
-        with:
-          python-version: '3.12'
-      - name: Check SCADA models, contracts and generated registries
-        if: matrix.engine == 'chromium'
-        working-directory: tools/webkit/scada
-        run: |
-          npm test
-          npm run check:schema
-          npm run check:metadata
-          npm run check:default-baseline
-      - name: Check SCADA gallery and scenario provenance
-        id: scada_provenance
-        if: matrix.engine == 'chromium'
-        working-directory: tools/webkit/scada
-        env:
-          PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/scada-python-browsers
-        run: |
-          python -m pip install -r ui/requirements.txt
-          # Python capture tooling has its own pinned Playwright release; the
-          # container's browsers belong to the separate Node browser test suite.
-          python -m playwright install chromium --only-shell
-          npm run gallery:check
-          npm run thumbnails:check
-          npm run topologies:check
-          npm run docs:scenarios:check
-          npm run thumbnails:scenarios:check
-      # Only after that step failed: regenerate what is stale on the same pinned shell and offer it as an artifact,
-      # so an author without that shell can commit a real capture (tools/webkit/scada/README.md). The job still fails;
-      # nothing is committed, and the script stages only files its generators own (never the frozen baseline).
-      - name: Recapture stale SCADA provenance on the pinned shell
-        id: scada_recapture
-        if: failure() && steps.scada_provenance.outcome == 'failure'
-        env:
-          PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/scada-python-browsers
-          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-        run: python tools/webkit/scada/recapture.py --out "$RUNNER_TEMP/scada-recapture"
-      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        if: failure() && steps.scada_recapture.outcome == 'success'
-        with:
-          name: scada-recapture-${{ github.event.pull_request.head.sha || github.sha }}
-          path: ${{ runner.temp }}/scada-recapture/
-          include-hidden-files: true
-          if-no-files-found: error
-          retention-days: 14
-      - name: Exercise shared SCADA simulation controls
-        run: node tests/webkit/scada/explorer/browser.mjs
-        env:
-          PLAYWRIGHT_CHANNEL: chromium
-          PLAYWRIGHT_BROWSER: ${{ matrix.engine }}
-      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        if: always()
-        with:
-          name: scada-${{ matrix.engine }}
-          path: /tmp/cad-agent-scada-explorer
+          name: lab-${{ matrix.engine }}-${{ matrix.mode }}-${{ matrix.shard }}
+          path: /tmp/cad-agent-navigation-*

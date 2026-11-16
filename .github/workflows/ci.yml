@@ -1,9 +1,7 @@
 name: CI
 
+# DIAGNOSTIC branch only (ci/686-stall-hop-lab, never merged): no pull_request trigger, to save runner minutes.
 on:
-  pull_request:
-    # 'edited' re-runs CI when a PR's base branch changes (e.g. retargeted from main to dev)
-    types: [opened, synchronize, reopened, edited]
   push:
     branches: [main, dev]
   workflow_dispatch:

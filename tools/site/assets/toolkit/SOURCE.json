@@ -1,7 +1,7 @@
 {
   "schema": "cad-agent.toolkit-examples/1",
   "scope": "Actual viewer previews and byte-identical synthetic assembly fixture; no physical or project qualification.",
-  "sourceHead": "b6df53301bfe042df9d4964e8ff32bdf245569ea",
+  "sourceHead": "54c6a6c8e7a4eaba7cdd0342bbab7a16cf52f14d",
   "fixtureRevision": "1111111111111111111111111111111111111111",
   "generator": {
     "path": "tools/site/figures/toolkit-examples.mjs",
@@ -96,7 +96,7 @@
         "software/cadagent/webkit/model/stage.js": "f62b95e16a99e06686d32454397948fd50a67a973736ffc76a03b82f5e54b486",
         "software/cadagent/webkit/model/viewer.html": "f158e86975b71df5dc1d728bb31d9997b205b4ddb31931867185a97691c18376",
         "software/cadagent/webkit/model/viewer.js": "41100a263ff0204482258d5da85a27ba0da09eecfa848b8751791b06edd01241",
-        "software/cadagent/webkit/ui/appnav.js": "f5fee0fdb75336d0966bfa8478b9ae325a708ee60858d6efc0556c395f5ff367",
+        "software/cadagent/webkit/ui/appnav.js": "3a896c85ca255960505f83ee64db22fffc23ed7835cc8429b5d209a5df0d2795",
         "software/cadagent/webkit/ui/hud.css": "0a1fbf7e9e796c7bf5d7cb9062b34374da937975e851ad2cce6b8cdb1827325a",
         "software/cadagent/webkit/ui/panel.js": "94c7a99a7d2d0fbf6305b77d0211487453994b5d5426aacc3f1d01d3020a7d9b",
         "software/cadagent/webkit/ui/theme.css": "370dfb29b28c760d48332316651492d0853c3e3aa9bc355e8a7edb1a4b12cf47",

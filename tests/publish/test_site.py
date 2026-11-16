@@ -224,7 +224,7 @@ def test_default_nav_normalises_and_dedupes_paths(tmp_path):
 
 
 def test_served_project_pages_get_the_top_bar(tmp_path):
-    import threading, urllib.request
+    import threading, urllib.parse, urllib.request
     root = _project(tmp_path)
     (root / "preview").mkdir()
     (root / "preview" / "index.html").write_text("<html><body><h1>Renders</h1></body></html>")
@@ -250,11 +250,14 @@ def test_served_project_pages_get_the_top_bar(tmp_path):
         head = urllib.request.Request(base + "preview/sim.html", method="HEAD")
         with urllib.request.urlopen(head) as r, urllib.request.urlopen(base + "preview/sim.html") as g:
             assert r.headers["Content-Length"] == g.headers["Content-Length"] == str(len(g.read()))
-        with urllib.request.urlopen(base + site.KIT_URL.lstrip("/") + "model/viewer.html") as r:
+        viewer_url = base + site.KIT_URL.lstrip("/") + "model/viewer.html"
+        with urllib.request.urlopen(viewer_url) as r:
             viewer = r.read().decode()
             assert "mountAppNav" in viewer, "the web kit's pages get the bar too"
-        module = re.search(r'import \{ mountAppNav \} from "([^"]+)"', viewer).group(1)
-        with urllib.request.urlopen(base + module.lstrip("/")) as r:      # #799: it was a 404
+        # the viewer mounts the bar itself (#804, a relative import), so the server leaves it alone; either way the
+        # module it imports is served
+        module = re.search(r'import \{ mountAppNav \} from ["\']([^"\']+)["\']', viewer).group(1)
+        with urllib.request.urlopen(urllib.parse.urljoin(viewer_url, module)) as r:      # #799: it was a 404
             assert r.status == 200 and "export async function mountAppNav" in r.read().decode()
     finally:
         server.shutdown()

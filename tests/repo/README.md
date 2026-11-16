@@ -72,6 +72,7 @@ Related: [tests](../README.md) · [where files go](../../.github/CONTRIBUTING.md
 
 | File or folder | Purpose |
 |---|---|
+| [test_archive_pointers.py](test_archive_pointers.py) | Offline-mirror archive pointers from a manifest: layout kept, idempotent, never overwritten. |
 | [test_import_refmap.py](test_import_refmap.py) | Reference importer canonical output and split records. |
 | [test_markdown_images.py](test_markdown_images.py) | Committed Markdown image destinations. |
 | [test_references_health.py](test_references_health.py) | Reference registry health and maintenance layout. |

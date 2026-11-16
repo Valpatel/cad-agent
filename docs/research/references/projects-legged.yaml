@@ -790,6 +790,11 @@ sources:
     estimate: 0.4
     sources: 1
   summary: Printed cycloidal actuators; limitations stated.
+  archive:
+    sha256: 522711d885003aeccf908f3b0ac5f9e9e48a63f97a0467e15f58ada6cde7d18b
+    kind: pdf
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: 8c72a8ca04fec8bd
 - id: q8bot-five-bar-miniature-quadruped
@@ -822,6 +827,11 @@ sources:
     estimate: 0.4
     sources: 1
   summary: Five-bar leg tip geometry lessons.
+  archive:
+    sha256: bc0b968d102c0398bb678074e1d2adeacf03e32b06e43c1d99985f289774e55d
+    kind: pdf
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: 1fb6ec2abdaf48c8
 - id: apirrone-open-duck-mini

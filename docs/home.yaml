@@ -192,7 +192,8 @@ stack:
     href: docs/toolkit.md
   - label: three.js
     href: software/cadagent/webkit/vendor/README.md
-# See it run: the two viewers are written by the build from their model sources; these are the cards beside them.
+# The turret recording sits in the hero beside the headline (#748). See it run: the two viewers are written by the build
+# from their model sources; these are the cards below them.
 showcase:
   turret:
     img: docs/img/gyropup/turret-playground.webp
@@ -201,6 +202,9 @@ showcase:
     caption: Gyropup's browser playground, model "Turret on the Orin AGX box", armed and firing foam balls at
       targets. Recorded from Gyropup {revision} by tools/site/figures/gyropup-turret.mjs. An unqualified
       work-in-progress prototype; the ball flight is the playground's simplified model, not physics validation.
+    # The hero's one line beside the recording (#748); the full caption above goes to index.md and llms.txt.
+    hero_caption: A work-in-progress prototype in Gyropup's browser playground, firing foam balls at targets. The
+      ball flight is the playground's simplified model, not physics validation.
     alt: A foam-ball turret on a compute box fires a stream of balls at targets in a 3D yard
     href: https://gyropup.com/designer/sim
   cards:

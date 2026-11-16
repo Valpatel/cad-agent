@@ -112,8 +112,9 @@ links dated evidence that says what was observed only once.
   `cadagent.__file__` ([evidence](../../inbox/agents/2026-11-15-cloud-sessions-need-own-worktrees-and-fresh-reviewers.md)).
 - **Provenance receipts.** Never edit a recorded hash ([SCADA tools](../../../tools/webkit/scada/README.md));
   regenerate with the generator. SCADA explorer sources need `thumbnails:scenarios` on the pinned shell, which the
-  container lacks: stop and ask the owner, attaching any same-build comparison as evidence. For `model.js`, see
-  below. PR #763 (open) proposes a CI recapture ([evidence](../../inbox/agents/2026-11-15-cloud-containers-limit-browser-and-provenance-evidence.md)).
+  container lacks: push the source change and commit CI's recapture artifact unchanged, as that README says (on
+  `dev` since #763). For `model.js`, see below
+  ([evidence](../../inbox/agents/2026-11-15-cloud-containers-limit-browser-and-provenance-evidence.md)).
 - **Browsers and Python:** Chromium only (report WebKit as not run locally); Python 3.12 for provenance checks.
 
 <details>
@@ -122,8 +123,12 @@ links dated evidence that says what was observed only once.
 - **`model.js` poster:** `node tools/site/figures/site-model-poster.mjs --model j501` uses whatever Chrome the
   machine has and always rewrites `j501.webp` and its receipt. If the poster's bytes change, report it in the PR as a
   new render from this container's browser, or ask the owner; never keep the old image with a new hash.
-- **SCADA recapture:** #763's CI route reproduces captures byte for byte, but the first recapture re-baselines all
-  thumbnails (about 9 MB), because the committed ones were rendered with different fonts.
+- **SCADA recapture:** fetch the `scada-recapture-<head SHA>` artifact with the GitHub MCP `actions_get`
+  `download_workflow_run_artifact` method (a short-lived signed URL; no `gh` login), unpack it into an empty scratch
+  folder, check its files against the manifest, then copy them in and delete the paths the manifest lists under
+  `deleted`. Two demonstration runs gave
+  byte-identical captures; the one-time re-baseline of the 63 scenario thumbnails merged with #753
+  ([run](https://github.com/Valpatel/cad-agent/issues/762#issuecomment-6908091812)).
 - **Browsers:** only Playwright's Chromium is installed, newer than the pinned `@playwright/test` expects; WebKit is
   absent and stays so, and CI decides for it.
 - **Python:** the npm scripts call `python3`; only 3.12 reproduces the CI hashes, so put a 3.12 venv first on `PATH`.
@@ -136,7 +141,8 @@ links dated evidence that says what was observed only once.
   suite about 4.5 minutes a run (observed once); #756's touch suite, not on `dev`, about 4 minutes. Run them once.
 - **Site checks in the browser job:** a folder README lists every file in it, a new `__init__.py` included
   (`node --test tests/site/website-repo-map.test.mjs`: seconds, no browser or build); a folder map's Mermaid fits
-  the page column (top down, at most three boxes per row); added prose can push a page past the 1200 px
+  the article column at a 1100 px window less 17 px for a scrollbar (641 px on the page that failed on #766, though
+  it was already top down with three boxes per row); added prose can push a page past the 1200 px
   wall-of-text limit. Build the site and run `tests/site/website-browser.mjs` after a docs change.
 - **Orchestration:** one orchestrating session; implementers each in its own worktree and branch; a cheaper checker
   for CI logs and issues; and a freshly started reviewer given only the PR. All post through one account, so the

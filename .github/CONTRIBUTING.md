@@ -85,19 +85,25 @@ follow `cad-work-tracking`: an issue per change, an early draft PR with `Closes 
    git worktree add --no-track ../worktrees/<topic> -b feat/<topic> origin/dev
    cd ../worktrees/<topic> && git push -u origin feat/<topic>     # the branch tracks itself, not dev
    ```
+   Run the commands above from `repo/` as shown. In every other command an agent runs for a worktree, above all a
+   backgrounded one, name the worktree by its absolute path: a relative path in a backgrounded command once wrote
+   a file into the canonical checkout (observed 2026-11-16, in the session that filed #772).
 3. **Commit and push** small, focused changes with tests (in `tests/<domain>/`: [where files go](#where-files-go)) as you go, not in one batch at the end. Keep the package generic: anything specific to one
    product stays in that product's repository. A new docs or research page, `cad-agent` command, skill, agent or
    `docs/lessons/` folder also gets its line in [`docs/areas.yaml`](../docs/areas.yaml), the topic tree ([docs/vision.md](../docs/vision.md)):
    `tests/repo/test_areas.py` fails until it does. When two open PRs cross, the one that merges second adds the line, after
    merging `dev` and re-running CI (`dev` does not require branches to be up to date).
 4. **Open a PR into `dev`** early, as a draft if it is unfinished (`gh pr create --draft --base dev`), with `Closes #<issue>`; fill in the template, including what projects using
-   cad-agent must change.
+   cad-agent must change. Do not edit the description afterwards: an edit re-runs `ci.yml` and `gates.yml` (both
+   trigger on `edited`). Post updates as comments.
 5. **CI** (`.github/workflows/ci.yml`) runs `core` on Python 3.10 and 3.12 (required dependencies only; optional
    features must skip cleanly) and `full` on 3.12 (CAD, FEA, robot and site extras, imported loudly before the tests;
    the `cad` and `sim` extras need 3.11 or newer);
    `webkit.yml` runs the browser suites and `gates.yml` the [gates](#gates). CI's `supply-chain` job runs the offline
    [supply-chain report](../.agents/skills/cad-supply-chain/SKILL.md): a PR that adds a dependency, vendored file or catalogue
    entry pastes its rows (`python3 tools/resource_audit.py rows --base origin/dev --online`) under "Supply chain".
+   A PR that adds a check step to a pull-request workflow, or makes a suite name a new repo file, updates
+   [`ci-checks.json`](ci-checks.json) in the same PR: `tests/repo/ci/test_ci_checks.py` fails until it does.
 6. **Review.** Every PR gets a review from a person or from a separate review agent that did not write the change,
    posted as PR comments (the `cad-pr-reviewer` subagent, or a separate Codex session with that skill), ending with
    the verdict marker that the `review` gate reads. The author answers or fixes each comment and resolves it.
@@ -106,6 +112,8 @@ follow `cad-work-tracking`: an issue per change, an early draft PR with `Closes 
    `cadagent` comes from. Repoint those to the reviewed `dev` checkout below, verify imports and other path consumers,
    then run `git worktree remove ../worktrees/<topic>` from the canonical `repo/` checkout. Preserve dirty, untracked,
    ignored and unincorporated work; do not force removal or delete an active provider just to reduce folder count.
+   Then delete the local branch and the merged head branch on origin, once its tip there equals the PR's merged
+   head; the full close-out is [After the merge](../.agents/skills/cad-pr-review/SKILL.md#after-the-merge).
 
 ## Where files go
 

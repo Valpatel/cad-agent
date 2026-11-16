@@ -927,7 +927,7 @@ docs/research/simulation-tools.md:
       below: "Machine: Bambu Lab P1S"
       img: docs/img/plates/gyropup-plates.svg
       shows: diagram
-      drawn_by: tools/plates_figure.py
+      drawn_by: tools/figures/plates_figure.py
       tool: cadagent.manufacturing.plates
       on: gyropup
       caption: "What the toolkit built beside this command line: cad-agent slice runs it for grams and print time, and cad-agent export-3mf packs every printed part onto plates in one Bambu Studio project, one filament a plate, to open, check and slice. Gyropup's 45 printed parts on 19 plates of 256 mm: 14 of PA6-CF, 3 of PETG and 2 of TPU."

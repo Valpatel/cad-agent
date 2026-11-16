@@ -574,8 +574,18 @@ if (!turretRec || `docs/img/gyropup/${turretRec.file}` !== turret.img || `docs/i
   throw new Error('docs/home.yaml showcase.turret: its picture and still are the ones recorded in docs/img/gyropup/SOURCE.json');
 if (!/work-in-progress/.test(turret.caption) || !/not physics validation/.test(turret.caption)) throw new Error('docs/home.yaml showcase.turret: the caption states it is a work-in-progress playground, not physics validation');
 const turretCaption = turret.caption.replace('{revision}', turretRec.revision.slice(0, 7));
-const turretCard = `<article class="run-card run-turret"><a class="run-media" href="${esc(homeHref(turret.href, 'showcase.turret'))}" tabindex="-1" aria-hidden="true">${await homePicture(turret.img, 'showcase.turret', ' alt="" loading="lazy" decoding="async"', turret.still)}</a><div class="run-body"><p class="run-kicker">Browser playground · work in progress</p><h3><a href="${esc(turret.href)}">${esc(turret.title)} ↗</a></h3><p>${esc(turretCaption)}</p><p class="run-links"><a href="${esc(turretRec.public.replace(/\?.*/, ''))}">Open the playground</a> · <a href="https://github.com/${esc(turretRec.project)}/tree/${esc(turretRec.revision)}">Recorded source</a> · <a href="${REPO}/blob/dev/docs/img/gyropup/SOURCE.json">Recording record</a></p></div><span class="visually-hidden">${esc(turret.alt)}</span></article>`;
-homeMd.run = [`- [${turret.title}](${turret.href}): ${turretCaption}`];
+// The hero shows the recording beside the headline (#748), so a first-time visitor sees a real running example on the
+// first screen. The 9 KB still is the image the page loads and paints; once the page has loaded, web/site.js swaps in
+// the 324 KB animation from data-motion-src (not under reduced motion, and never without script), at the same
+// explicit size, so it neither delays the first paint nor shifts anything.
+if (!/work-in-progress/.test(turret.hero_caption || '') || !/not physics validation/.test(turret.hero_caption)) throw new Error('docs/home.yaml showcase.turret.hero_caption: one line that states it is a work-in-progress prototype, not physics validation');
+const turretSize = imageSize(await readBuf(turret.img), turret.img);
+await homeImg(turret.img, 'showcase.turret');
+const turretStill = await homeImg(turret.still, 'showcase.turret.still', ` alt="" fetchpriority="high" decoding="async" data-motion-src="/${esc(turret.img)}"`);
+if (!turretStill.includes(` width="${turretSize.width}" height="${turretSize.height}"`)) throw new Error('docs/home.yaml showcase.turret: the still and the animation must be the same size, so the swap moves nothing');
+const turretHero = `<figure class="hero-run"><a class="run-media" href="${esc(homeHref(turret.href, 'showcase.turret'))}" tabindex="-1" aria-hidden="true"><picture><source media="(prefers-reduced-motion: reduce)" srcset="/${esc(turret.still)}">${turretStill}</picture></a><figcaption><p class="run-kicker">Recorded in the browser · work in progress</p><h2 class="hero-run-title"><a href="${esc(turret.href)}">${esc(turret.title)} ↗</a></h2><p>${esc(turret.hero_caption)}</p><p class="run-links"><a href="${esc(turretRec.public.replace(/\?.*/, ''))}">Open the playground</a> · <a href="https://github.com/${esc(turretRec.project)}/tree/${esc(turretRec.revision)}">Recorded from ${esc(turretRec.revision.slice(0, 7))}</a> · <a href="${REPO}/blob/dev/docs/img/gyropup/SOURCE.json">Recording record</a></p></figcaption><span class="visually-hidden">${esc(turret.alt)}</span></figure>`;
+const turretMd = `- [${turret.title}](${turret.href}): ${turretCaption}`;
+homeMd.run = [];
 const runCards = home.showcase.cards.map((c, i) => {
   const card = toolkitCards.get(c.toolkit);
   if (!card) throw new Error(`docs/home.yaml showcase.cards[${i}]: ${c.toolkit} is not a /toolkit example`);
@@ -668,21 +678,22 @@ const titleWide = titlePixelLine('MACHINES BUILDING MACHINES');
 const titleNarrow = titlePixelLine('MACHINES') + titlePixelLine('BUILDING MACHINES', 10);
 const pixelHeading = `<h1 class="pixel-title"><span class="pixel-title-text">Machines building machines</span><svg class="pixel-title-wide" viewBox="0 0 155 9" aria-hidden="true" focusable="false" shape-rendering="crispEdges"><path class="pixel-title-shadow" transform="translate(0 1)" d="${titleWide}"/><path fill="currentColor" d="${titleWide}"/></svg><svg class="pixel-title-narrow" viewBox="0 0 101 19" aria-hidden="true" focusable="false" shape-rendering="crispEdges"><path class="pixel-title-shadow" transform="translate(0 1)" d="${titleNarrow}"/><path fill="currentColor" d="${titleNarrow}"/></svg></h1>`;
 // The home page's lede says what cad-agent is and where it is headed (#748); the title and description say the same.
-const HOME_LEDE = ['cad-agent is an open-source stack of CAD libraries, simulators, deterministic checks, web widgets and command-line tools, with knowledge and an agent kit on top.',
-  'It is headed toward free, open and local models doing the CAD work frontier models do today.'];
+const HOME_LEDE = ['An open-source stack of CAD libraries, simulators, deterministic checks, web widgets and command-line tools, with knowledge and an agent kit on top.',
+  'Frontier models use it for CAD work today; it is headed toward free, open and local ones.'];
 const HOME_TITLE = 'cad-agent · Open-source CAD libraries, simulators, checks and tools for agents';
 const HOME_DESCRIPTION = 'An open-source stack of CAD libraries, simulators, deterministic checks, web widgets and command-line tools, with knowledge and an agent kit on top.';
 const landing = `<div class="wrap"><section class="hero learning-hero">
 <div class="hero-head"><p class="eyebrow"><span class="status-dot" aria-hidden="true"></span>Shared knowledge. Better things.</p>
 ${pixelHeading}
 <p class="intro">${HOME_LEDE.map(esc).join(' ')}</p></div>
-<figure class="learning-art"><picture><source media="(prefers-reduced-motion: reduce) and (max-width:600px)" srcset="/docs/img/hero/learning-loop-mobile-still.svg" width="956" height="710"><source media="(prefers-reduced-motion: reduce)" srcset="/docs/img/hero/learning-loop-still.svg" width="1536" height="768"><source media="(max-width:600px)" srcset="/docs/img/hero/learning-loop-mobile.svg" width="956" height="710"><img src="/docs/img/hero/learning-loop.svg" width="1536" height="768" fetchpriority="high" alt="An original pixel-art orbital workshop: robots assemble, test and teach a new robot, which joins the builders as the next chassis arrives"></picture><figcaption>Every build can improve the shared knowledge and checks behind the next one.</figcaption></figure>
 <div class="hero-actions"><div class="actions"><a class="button primary" href="#use-it">Build with your agent ↓</a><a class="button" href="/explore">Explore the knowledge</a><a class="button quiet" href="${REPO}">GitHub ↗</a></div></div>
+${turretHero}
 </section>
-<section class="section built-with" id="built-with" aria-labelledby="run-title"><div class="lead"><h2 id="run-title">See it <span>run.</span></h2><p>Real models and simulations you can turn, play and stop. Each says what it is and what it does not prove.</p></div>${turretCard}
+<figure class="learning-art learning-band"><picture><source media="(prefers-reduced-motion: reduce) and (max-width:600px)" srcset="/docs/img/hero/learning-loop-mobile-still.svg" width="956" height="710"><source media="(prefers-reduced-motion: reduce)" srcset="/docs/img/hero/learning-loop-still.svg" width="1536" height="768"><source media="(max-width:600px)" srcset="/docs/img/hero/learning-loop-mobile.svg" width="956" height="710"><img src="/docs/img/hero/learning-loop.svg" width="1536" height="768" decoding="async" alt="An original pixel-art orbital workshop: robots assemble, test and teach a new robot, which joins the builders as the next chassis arrives"></picture><figcaption>Every build can improve the shared knowledge and checks behind the next one.</figcaption></figure>
+<section class="section built-with" id="built-with" aria-labelledby="run-title"><div class="lead"><h2 id="run-title">See it <span>run.</span></h2><p>Two real projects you can turn in the browser, then replays, connected systems and build guides from the toolkit. Each says what it is and what it does not prove.</p></div>
 <div class="project-viewers">
-<article><h3>Gyropup</h3><cad-model src="/web/models/gyropup.json" label="Gyropup" style="aspect-ratio:1"><img class="cad-model-poster" src="/web/models/gyropup.webp" width="1200" height="1200" loading="lazy" alt="Current collected Gyropup assembly"></cad-model><p>A wheel-legged robot that brings mechanical design, motion and electronics together. This simplified view leaves out interior hardware.</p><p><a href="${esc(heroModel.source.repo + '/tree/' + heroModel.source.revision)}">Exact CAD source</a> · <a href="https://gyropup.com">Project</a></p></article>
-<article><h3>J501 AGX Orin enclosure</h3><cad-model src="/web/models/j501.json" label="J501 enclosure with real carrier board" style="aspect-ratio:1"><img class="cad-model-poster" src="/web/models/j501.webp" width="1200" height="1200" loading="lazy" alt="J501 enclosure and real carrier board, assembled from exported CAD"></cad-model><p>A printed home for a Jetson AGX Orin computer, shown with its real carrier board. A fit-check prototype, not a physically qualified enclosure.</p><p><a href="${esc(j501Model.source.repo + '/tree/' + j501Model.source.revision)}">Exact CAD snapshot</a> · <a href="https://github.com/mvalancy/j501-agx-orin">Project and evidence</a> · <a href="/web/models/j501-source.json">Model provenance</a></p></article>
+<article><h3>Gyropup</h3><cad-model src="/web/models/gyropup.json" label="Gyropup" loading="scroll" style="aspect-ratio:1"><img class="cad-model-poster" src="/web/models/gyropup.webp" width="1200" height="1200" loading="lazy" alt="Current collected Gyropup assembly"></cad-model><p>A wheel-legged robot that brings mechanical design, motion and electronics together. This simplified view leaves out interior hardware.</p><p><a href="${esc(heroModel.source.repo + '/tree/' + heroModel.source.revision)}">Exact CAD source</a> · <a href="https://gyropup.com">Project</a></p></article>
+<article><h3>J501 AGX Orin enclosure</h3><cad-model src="/web/models/j501.json" label="J501 enclosure with real carrier board" loading="scroll" style="aspect-ratio:1"><img class="cad-model-poster" src="/web/models/j501.webp" width="1200" height="1200" loading="lazy" alt="J501 enclosure and real carrier board, assembled from exported CAD"></cad-model><p>A printed home for a Jetson AGX Orin computer, shown with its real carrier board. A fit-check prototype, not a physically qualified enclosure.</p><p><a href="${esc(j501Model.source.repo + '/tree/' + j501Model.source.revision)}">Exact CAD snapshot</a> · <a href="https://github.com/mvalancy/j501-agx-orin">Project and evidence</a> · <a href="/web/models/j501-source.json">Model provenance</a></p></article>
 </div>
 <ul class="run-minis">${runCards}</ul></section>
 <section class="section stack" id="stack" aria-labelledby="stack-title"><div class="lead"><h2 id="stack-title">What is in <span>cad-agent.</span></h2><p>Everything above is built from this stack: open source underneath, our libraries and tools in the middle, knowledge and an agent kit on top. Each block opens its page.</p></div>
@@ -700,7 +711,16 @@ await writeFile(path.join(out, 'index.html'), frame({ title: TAGLINE, fullTitle:
 
 // ----------------------------------------------------------------------------- agent files
 const bySection = id => pages.filter(p => p.section === id);
-// What is in cad-agent, in llms.txt after its preamble; index.md moves it below "See it run", as the page shows it.
+// See it run and What is in cad-agent, in llms.txt after its preamble in the page's order; index.md moves both into
+// its own outline, where the turret recording sits with the headline as the page shows it.
+const VIEWERS_MD = [`- [Gyropup](${heroModel.source.repo}/tree/${heroModel.source.revision}): a wheel-legged robot in an interactive 3D viewer; the web assembly omits interior hardware.`,
+  `- [J501 project](https://github.com/mvalancy/j501-agx-orin): an enclosure around a real carrier board in an interactive 3D viewer; [model provenance](${ORIGIN}/web/models/j501-source.json) records this prototype's captured inputs and display-only simplification. Physical qualification and final current-source adoption remain separate.`];
+const RUN_MD = `## See it run
+
+Recorded and live examples from the home page. Each says what it is and what it does not prove.
+
+${[turretMd, ...VIEWERS_MD, ...homeMd.run].join('\n')}
+`;
 const CAKE_MD = `## What is in cad-agent
 
 Top layer first. Planned blocks name their issue.
@@ -714,6 +734,7 @@ const llms = `# cad-agent
 ${HOME_LEDE.join(' ')} It maps the best free tools, demonstrates them on real projects and fills the gaps with
 tested tools of its own. Every page on this site has a Markdown twin at the same path with a .md extension.
 
+${RUN_MD}
 ${CAKE_MD}
 - Source: ${REPO} (MIT). Install and use: the checked guide below (then \`cad-agent update\` to update).
   cad-agent collects no telemetry.
@@ -767,18 +788,20 @@ ${refSite.llms}
 `;
 await writeFile(path.join(out, 'llms.txt'), llms);
 // The homepage twin keeps the same current story and evidenced examples as the rendered entrance.
-await writeFile(path.join(out, 'index.md'), `${llms.replace(CAKE_MD, '').replace(/\n*$/, '\n')}
+await writeFile(path.join(out, 'index.md'), `${llms.replace(RUN_MD + '\n', '').replace(CAKE_MD, '').replace(/\n*$/, '\n')}
 ## Machines building machines
 
 ${HOME_LEDE.join(' ')}
+
+Running beside the headline:
+
+${turretMd}
 
 [The original learning illustration](${ORIGIN}/docs/img/hero/learning-loop.svg) is conceptual process artwork, not an engineering result or a claim of automatic model training.
 
 ### See it run
 
-- [Gyropup](${heroModel.source.repo}/tree/${heroModel.source.revision}): a wheel-legged robot; the web assembly omits interior hardware.
-- [J501 project](https://github.com/mvalancy/j501-agx-orin): an enclosure around a real carrier board; [model provenance](${ORIGIN}/web/models/j501-source.json) records this prototype's captured inputs and display-only simplification. Physical qualification and final current-source adoption remain separate.
-${homeMd.run.join('\n')}
+${[...VIEWERS_MD, ...homeMd.run].join('\n')}
 
 ${CAKE_MD.replace('## What is in cad-agent', '### What is in cad-agent')}
 ### What the checks compute

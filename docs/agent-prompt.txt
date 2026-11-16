@@ -9,7 +9,9 @@ How to install cad-agent (github.com/Valpatel/cad-agent, MIT) and work with it:
    writes and inspect `cadagent.__file__`, `cadagent.__version__`, and available
    distribution version and `direct_url.json` metadata. Editable metadata can
    be stale; a non-editable install's URL describes its source, not a live
-   checkout. If the launcher or provider cannot be identified, say so.
+   checkout. `cad-agent --version` prints the version and the package
+   folder it runs from. If the launcher or provider cannot be identified,
+   say so.
    Reuse it only within the user's
    authorized scope; record its checkout and commit if verifiable, otherwise
    say they are unknown. Report missing dependencies and version limits.
@@ -37,8 +39,9 @@ How to install cad-agent (github.com/Valpatel/cad-agent, MIT) and work with it:
 3. Build with the kit's tested commands and checks, not formulas from
    memory. Start with `cad-agent init my-part` and change it; then
    `cad-agent all` builds, exports and runs every check. Before drawing a
-   feature, run `cad-agent rules <feature>` (or `cad-agent choose joining`)
-   and design to the card. Say what each
+   feature, run `cad-agent rules <feature>` and design to the card; to
+   choose how parts join, give the joint's load in N and the material:
+   `cad-agent choose joining --load 20 --material petg`. Say what each
    check assumes: CAD and simulation narrow a design down, they do not
    prove that a printed part fits or holds.
 4. Give back, through GitHub only: cad-agent collects no telemetry. When a

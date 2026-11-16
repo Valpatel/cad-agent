@@ -622,7 +622,7 @@ test('the turret recording matches its SOURCE.json record (tools/site/figures/gy
 
 test('the home page shows what runs, then what is in cad-agent, in order, every new link resolves and the twins say the same (#748)', async () => {
   const home = await readFile(path.join(out, 'index.html'), 'utf8');
-  const order = ['class="hero learning-hero"', 'id="built-with"', 'id="stack"', 'id="use-it"', 'id="outputs"', 'id="frontier-to-local"', 'class="section help-band"'];
+  const order = ['class="hero learning-hero"', 'class="learning-art learning-band"', 'id="built-with"', 'id="stack"', 'id="use-it"', 'id="outputs"', 'id="frontier-to-local"', 'class="section help-band"'];
   const at = order.map(m => home.indexOf(m));
   assert.ok(at.every(i => i > 0), `every section is on the page: ${order.filter((m, i) => at[i] < 0)}`);
   assert.deepEqual([...at].sort((a, b) => a - b), at, 'hero, see it run, stack, install, checks, frontier to local, help: things that move come first');
@@ -652,7 +652,16 @@ test('the home page shows what runs, then what is in cad-agent, in order, every 
   for (const b of yamlHome.stack.flatMap(l => l.blocks).filter(b => b.until)) assert.ok(!tracked.has(b.until), `${b.until} exists: ${b.label} is built`);
   assert.doesNotMatch(home, /Check, simulate|fits-ours/, 'the duplicate section is gone');
   assert.equal((home.match(/class="run-mini"/g) || []).length, 3, 'robot replay, SCADA and a build guide');
-  assert.ok(home.indexOf('class="run-card run-turret"') < home.indexOf('<cad-model ') && home.lastIndexOf('<cad-model ') < home.indexOf('class="run-minis"'), 'the turret leads, then the two viewers, then the toolkit cards');
+  // The turret recording runs beside the headline on the first screen; See it run then leads with the two viewers.
+  const hero = home.slice(home.indexOf('class="hero learning-hero"'), home.indexOf('class="learning-art learning-band"'));
+  assert.match(hero, /<figure class="hero-run"><a class="run-media" href="https:\/\/gyropup\.com\/designer\/sim"[^>]*><picture><source media="\(prefers-reduced-motion: reduce\)" srcset="\/docs\/img\/gyropup\/turret-playground-still\.webp"><img src="\/docs\/img\/gyropup\/turret-playground-still\.webp" width="720" height="336" alt="" fetchpriority="high" decoding="async" data-motion-src="\/docs\/img\/gyropup\/turret-playground\.webp">/, 'the hero loads the 9 KB still at its explicit size; the animation is swapped in after load, never under reduced motion');
+  assert.match(await readFile(path.join(out, 'web/site.js'), 'utf8'), /data-motion-src[\s\S]*prefers-reduced-motion: reduce/, 'site.js swaps the animation in, and not under reduced motion');
+  assert.match(hero, /work-in-progress prototype[^<]*not physics validation/, 'the hero caption states its limits');
+  assert.ok(hero.indexOf('class="pixel-title"') < hero.indexOf('class="intro"') && hero.indexOf('class="intro"') < hero.indexOf('class="hero-actions"') && hero.indexOf('class="hero-actions"') < hero.indexOf('class="hero-run"'), 'source and focus order: headline, lede, actions, then the recording');
+  assert.equal((home.match(/<cad-model src="\/web\/models\/[a-z0-9]+\.json" label="[^"]*" loading="scroll"/g) || []).length, 2, 'the home viewers wait for the reader to scroll or reach them');
+  assert.doesNotMatch(home.slice(home.indexOf('id="built-with"')), /turret-playground/, 'See it run does not repeat the recording');
+  assert.ok(home.indexOf('id="built-with"') < home.indexOf('<cad-model ') && home.lastIndexOf('<cad-model ') < home.indexOf('class="run-minis"'), 'See it run: the two viewers, then the toolkit cards');
+  assert.doesNotMatch(home.slice(home.indexOf('class="learning-art learning-band"'), home.indexOf('id="built-with"')), /fetchpriority="high"/, 'the pixel-art band does not compete with the recording');
   assert.match(home, /href="https:\/\/gyropup\.com\/designer\/sim"/);
   assert.match(home, /class="more-checks"/);
   // Every local link the new sections add lands on a published page, and every #anchor on a real id.
@@ -668,7 +677,13 @@ test('the home page shows what runs, then what is in cad-agent, in order, every 
     assert.match(text, /## What is in cad-agent/, `${f} lists the stack`);
     for (const layer of ['Agent kit', 'Knowledge', 'Command-line tools', 'Web widgets', 'Checks and tests', 'Simulators', 'Libraries', 'Built on'])
       assert.ok(text.includes(`- **${layer}**`), `${f}: ${layer}`);
+    // The running examples, the same ones the page shows (#748): the turret recording, the two viewers, the three cards.
+    for (const example of ["[Gyropup's turret playground](https://gyropup.com/designer/sim)", '[Gyropup](', '[J501 project](', '/toolkit#robot-replay', '/toolkit#scada-simulations', '/toolkit#assembly'])
+      assert.ok(text.includes(example), `${f}: ${example}`);
+    assert.match(text, /not physics validation/, `${f}: the turret's limits`);
   }
+  const llmsText = await readFile(path.join(out, 'llms.txt'), 'utf8');
+  assert.ok(llmsText.indexOf('## See it run') > 0 && llmsText.indexOf('## See it run') < llmsText.indexOf('## What is in cad-agent'), 'llms.txt: see it run, then the stack, as the page shows them');
   const twin = await readFile(path.join(out, 'index.md'), 'utf8');
   const heads = ['### See it run', '### What is in cad-agent', '### What the checks compute', '### From frontier to local'].map(h => twin.indexOf(h));
   assert.ok(heads.every(i => i > 0) && heads.every((v, i) => !i || v > heads[i - 1]), 'index.md follows the page: see it run, the stack, checks, frontier to local');

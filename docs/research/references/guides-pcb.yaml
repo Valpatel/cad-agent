@@ -45,6 +45,11 @@ sources:
     evidence: No second source checked.
   summary: 'Vendor blog on annular rings and via reliability; search snippet only, capability page not returned. Note: Snippet
     figures came via third parties; verify on JLCPCB capabilities page'
+  archive:
+    sha256: f6518b10e6d7313df36462b50e7422c7ef7424b3e1882551c314f41bf39d4b3f
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: cfd1054c0a835d42
 - id: jlcpcb-dfm-dfa-guidelines-for-pcb-assembly
@@ -176,6 +181,11 @@ sources:
     evidence: No second source checked.
   summary: 'Service specs: 2-layer 6 mil trace/clearance, 10 mil min drill; four-layer page lists 5 mil rules, 4 mil annular
     ring. Note: 2-layer annular ring not confirmed in snippet'
+  archive:
+    sha256: 4841c1e8259132e185d841776d97794d7372197df8ed8f7821ddfe1a52284de6
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: bb2618a34d9f4e5e
 - id: sierra-circuits-pcb-design-guides
@@ -213,6 +223,11 @@ sources:
     sources: 1
   summary: 'Series of design guides: vias, stack-up, trace/space, high-power creepage, IPC handbook; some gated. Note: Marketing-heavy;
     snippets only, guide text not read'
+  archive:
+    sha256: db2f8c90806bfcdfa224c7d73b397607231ecdb71a821d1005e2ab88ac0f048f
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: fc9679a09c41d9cb
 - id: sierra-circuits-pcb-via-design-guide
@@ -249,6 +264,11 @@ sources:
     estimate: 0.4
     sources: 1
   summary: 'Via guide covering common DFM mistakes, drill file setup and clearance guidelines. Note: Numbers not in snippet'
+  archive:
+    sha256: 9d3f0a33e808be050875e76fc33bdba12cb28373d90ffaab810e64a9686a3ad9
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: 4dbdf6aa7e5371ef
 - id: eurocircuits-current-pcb-design-guidelines
@@ -290,6 +310,11 @@ sources:
     evidence: No second source checked.
   summary: 'Guidelines with classification table and panelisation; pooled min track/space 0.100 mm vs 0.090 mm non-pooled.
     Note: Values from STANDARD pool snippet; guideline PDF not read'
+  archive:
+    sha256: b619e754f50af08f7f13aa4eba288d95574e27ee513a6747abaa6e165b344d5c
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: d97afec74fd5fb60
 - id: eurocircuits-standard-pool-services
@@ -380,6 +405,11 @@ sources:
     estimate: 0.4
     sources: 1
   summary: 'Altium resource article on common DFM errors; only title seen in results. Note: Content not visible in snippet'
+  archive:
+    sha256: 45dcd729d954ffa11d84e38992e42ee74c7abca409c3413c7da604bb992ad4eb
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: ba476736c2902b6e
 - id: altium-are-fiducial-markers-still-necessary
@@ -421,6 +451,11 @@ sources:
     evidence: No second source checked.
   summary: 'Fiducial placement for machine assembly; two local fiducials let machine verify component rotation. Note: Rule
     figures from a different guide in the same results'
+  archive:
+    sha256: 7dcf0b6d1c20ce426a4946668c5e6528d7d95e82a05a077b12bf727da59f9857
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: 9f95675fdaa418ed
 - id: texas-instruments-ti-spraa99-pcb-dfm-guidance-ti-document
@@ -462,6 +497,11 @@ sources:
     evidence: No second source checked.
   summary: 'TI application note DFM guidance; spacing between SMD bodies and BGA clearance. Note: BGA figure from one document;
     verify'
+  archive:
+    sha256: e38a901cfc87d03146beee2f8ac59f6a6484f1ffdd05236c10f423ff05493a7e
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: 728c6d79162e88e5
 - id: sierra-circuits-ipc-2221-generic-standard-on-printed-board
@@ -499,6 +539,11 @@ sources:
     sources: 1
   summary: 'Summary of IPC-2221B: conductor spacing by voltage (Table 6-1), hole size, base for IPC-2222 rigid boards. Note:
     Vendor summary; standard itself paid; revisions inconsistently reported'
+  archive:
+    sha256: f92ebaf7d0af8ce4cdaf0c204d333efcbe9f71c6eeea0ed035dc94fcfbf5405a
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: 6a9422dba21e1c8e
 - id: spresxm-claude-pcb-designer

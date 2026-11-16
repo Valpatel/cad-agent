@@ -195,10 +195,10 @@
     "software/cadagent/webkit/scada/ui/src/symbols/power/power.css": "61ef55ffc564a2cb9b6f7b1b96e7b3b938131ff4d811fa6a0b143b0e52accabf",
     "software/cadagent/webkit/scada/ui/src/symbols/power/primitives.mjs": "fda1571381fc728b315cc09701ef76be5c921f8eb12670c54614019c3a4a4f79",
     "software/cadagent/webkit/scada/ui/src/symbols/valve-position.mjs": "f72f818fded726024ebd87f0c5eeaf6632308bfb328d9a1e994e51e385ce6382",
-    "software/cadagent/webkit/scada/ui/src/viewer/camera.mjs": "cafafc6b51100907108cd9c8e4cd85d8620769ca0c13b90f7959ba7cb0916273",
+    "software/cadagent/webkit/scada/ui/src/viewer/camera.mjs": "1cd0f8175b700204268c48aea2fc638920d84a42d1c92cb133ae358e2823f4ef",
     "software/cadagent/webkit/scada/ui/src/viewer/process-layout.mjs": "f19c06cc6d086d63f880f9dfbe4db41c5a2143ab4b169bb63a06f000ebfc292d",
     "software/cadagent/webkit/scada/ui/src/viewer/viewer.css": "658e5ae5555c3e38c4a139e9462e638620c19178bdf9de9d0e7af125262a85c6",
-    "software/cadagent/webkit/scada/ui/src/viewer/viewer.mjs": "cf48bc2f75c0a88a807d865bfd011b4c47319774bb66d2fa414f0c03bd4e368b",
+    "software/cadagent/webkit/scada/ui/src/viewer/viewer.mjs": "fb8e33c4eb234ed3ecf3c273bfeafaebfc5dbc032423a600f0032d4fa1f0b1c9",
     "software/cadagent/webkit/scada/ui/src/workspace/popover.css": "7192413b02f647ac2b21960ab35cfc5ec3e7a0232568816c574d0862cbc937fc",
     "software/cadagent/webkit/scada/ui/src/workspace/popover.mjs": "4fdd4689d24712ca312aeaa9444d46140fa26300a6bb822d63326ba0d50606d5",
     "software/cadagent/webkit/scada/ui/src/workspace/workspace.css": "ab34edc9ab0e19d181b50a7cb33c8f33f406113d195dd367728f16688e05fafd",
@@ -3327,8 +3327,8 @@
       "path": "img/thumbnails/power-utilities/power-substation-gis/preview.jpg",
       "width": 1398,
       "height": 1173,
-      "bytes": 134223,
-      "sha256": "5b6d3d097d88df231e52c3494c92852742f622eeb4b4338bb766554357c923da"
+      "bytes": 134192,
+      "sha256": "c89f2cd13e1ad5ccee632c784ac2ee199565619146283a8605f9fe8d89df975d"
     },
     {
       "id": "power-hvdc-interface",
@@ -3390,8 +3390,8 @@
       "path": "img/thumbnails/power-utilities/power-hvdc-interface/preview.jpg",
       "width": 1398,
       "height": 1173,
-      "bytes": 125711,
-      "sha256": "8f3ee7301d4dce00f05f8adf5aaa9397e83032912493d58b1887853743f62e55"
+      "bytes": 125739,
+      "sha256": "ca87798e749a505e425dd95667ad9823185a96cdfcd36085ae2b328e3815306b"
     },
     {
       "id": "power-solar-pv",
@@ -3713,8 +3713,8 @@
       "path": "img/thumbnails/power-utilities/power-csp-tower/preview.jpg",
       "width": 1398,
       "height": 1196,
-      "bytes": 164313,
-      "sha256": "371060a68e7784828849d940dc4a4622d928c54c249057349ea4d132de0f2c68"
+      "bytes": 164329,
+      "sha256": "4329591f36487776e69785f7af875cb85c6fe7041d644bba36118481a27aa461"
     },
     {
       "id": "power-csp-trough",
@@ -3975,8 +3975,8 @@
       "path": "img/thumbnails/power-utilities/power-geothermal-binary/preview.jpg",
       "width": 1398,
       "height": 1173,
-      "bytes": 133977,
-      "sha256": "913827564a73cdc1f79b674135f4a4f19fb8045c1ae3c0bab1020e7e59a75307"
+      "bytes": 133978,
+      "sha256": "485ef977af58e2d1bf9753ed0ef67a114be25477f5fea8f3c7ddbe621ddf51cf"
     },
     {
       "id": "power-geothermal-dry-steam",
@@ -4677,8 +4677,8 @@
     "path": "img/thumbnails/contact-sheet.jpg",
     "width": 2000,
     "height": 7389,
-    "bytes": 1805783,
-    "sha256": "b8a6215c5ab2338c936de8d52f0daa63967f7a5da112952b8592dddd503d829b"
+    "bytes": 1805759,
+    "sha256": "0c88ad8c1a7530a21619097d2b30d86bf1dee429a68618e024c756de6bb88f50"
   },
   "capture_implementation_sha256": "6be498cb860d8db344613576ad3934e3cafd137268f52a549d7b20cf6d77dc42"
 }

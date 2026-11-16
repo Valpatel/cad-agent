@@ -7,26 +7,39 @@
 @keyframes knowledge-ring{0%{transform:scale(.75);opacity:0}15%{opacity:.6}85%,100%{transform:scale(1.65);opacity:0}}
 @keyframes knowledge-glow{50%{transform:scale(1.2);opacity:.65}}
 @media(prefers-reduced-motion:reduce){.learning-hero .status-dot::before,.learning-hero .status-dot::after{animation:none}}
-.learning-hero{display:block;padding-top:52px}.learning-hero .hero-head{max-width:940px}.learning-hero h1{font-size:clamp(38px,4.8vw,72px);line-height:1.04;letter-spacing:-.055em}.learning-hero .intro-sub{max-width:840px;font-size:17px;line-height:1.65}.learning-art{margin:32px 0 22px}.learning-art img{display:block;width:100%;height:auto;border-radius:24px}.learning-art figcaption{font-size:12px;line-height:1.6;color:var(--muted);margin-top:10px;max-width:850px}.learning-hero .hero-actions{margin-bottom:20px}.project-viewers{display:grid;grid-template-columns:1fr 1fr;gap:24px}.project-viewers article{border:1px solid var(--line-2);border-radius:20px;padding:22px;background:var(--card);min-width:0}.project-viewers h3{font-size:22px;margin:0 0 12px}.project-viewers cad-model{display:block;width:100%;border-radius:14px;--cad-model-fg:var(--ink);--cad-model-chip:var(--glass);--cad-model-line:var(--line-3);--cad-model-chip-on:var(--cream);--cad-model-focus:var(--orange)}.project-viewers p{font-size:14px;line-height:1.65;color:var(--muted)}.learning-hero .hero-head h1 span{color:var(--orange)}@media(max-width:700px){.learning-hero{padding-top:26px}.learning-hero .intro-sub{font-size:15px}.project-viewers{grid-template-columns:1fr}.project-viewers article{padding:16px}.learning-art{margin-top:24px}.learning-art img{border-radius:16px}}
-/* The idea and most of the cinematic scene should fit a common desktop viewport. */
-.learning-hero{padding:24px 0 32px}.learning-hero h1{font-size:clamp(36px,4.1vw,58px);margin-bottom:16px}.learning-hero .intro{font-size:18px;font-weight:500;line-height:1.5;max-width:850px;margin:0}.learning-art{margin:20px 0 14px}.learning-art figcaption{margin-top:7px}.learning-hero .hero-actions{margin-bottom:0}@media(max-width:700px){.learning-hero{padding:20px 0 28px}.learning-hero h1{font-size:36px}.learning-hero .intro{font-size:16px}.learning-art{margin-top:18px}}
-.reel-media.reel-recorded{height:340px;display:grid;grid-template-rows:170px 150px;gap:4px;padding:8px}.reel-recorded .recorded-field{position:relative;display:block;overflow:hidden;border-radius:8px;background:#fffdf5}.reel-recorded .recorded-field img{width:100%;height:100%;object-fit:contain}.reel-recorded>img{width:100%;height:150px;object-fit:contain}.recorded-field::after{content:"";position:absolute;inset:0;border:2px solid #77cfbb;clip-path:inset(0 50% 0 0);animation:recorded-case 12s ease-in-out infinite;pointer-events:none}@keyframes recorded-case{0%,35%{clip-path:inset(0 50% 0 0)}55%,90%{clip-path:inset(0 0 0 50%)}100%{clip-path:inset(0 50% 0 0)}}@media(prefers-reduced-motion:reduce){.recorded-field::after{animation:none;clip-path:none}}
-.reel-media>picture,.run-media>picture{display:block;width:100%;height:100%}.reel-media.reel-recorded>picture{height:150px}.reel-recorded>picture img{height:150px;object-fit:contain}
-
-/* The accepted 16-bit scene and original pixel lettering share a crisp, restrained frame. */
-.learning-hero .pixel-title{max-width:930px;margin:18px 0 22px;line-height:1;color:var(--ink);position:relative}.pixel-title-text{position:absolute;width:1px;height:1px;padding:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap}.pixel-title svg{display:block;width:100%;height:auto;overflow:visible}.pixel-title .pixel-title-shadow{fill:var(--orange);opacity:.72}.pixel-title .pixel-title-narrow{display:none}.learning-art img{image-rendering:pixelated;border-radius:4px}.learning-hero .eyebrow{letter-spacing:.1em}@media(max-width:700px){.learning-hero .pixel-title{margin:14px 0 18px}.pixel-title .pixel-title-wide{display:none}.pixel-title .pixel-title-narrow{display:block}.learning-art img{border-radius:2px}}
-/* Compose the introduction beside its scene on a wide screen. The artwork keeps
-   its aspect ratio without turning a wider browser into a taller landing page. */
-@media(min-width:1600px){
-  .learning-hero{display:grid;grid-template-columns:minmax(420px,.8fr) minmax(0,1.2fr);grid-template-areas:"head art" "actions art";gap:24px clamp(32px,3vw,96px);align-items:center;padding:40px 0 48px}
-  .learning-hero .hero-head{grid-area:head;align-self:end;min-width:0}
-  .learning-hero .hero-actions{grid-area:actions;align-self:start}
-  .learning-art{grid-area:art;min-width:0;margin:0}
-  .learning-art img{max-height:min(72dvh,900px);object-fit:contain}
-  .learning-hero .intro{max-width:64ch}
-  .project-viewers cad-model{height:clamp(420px,66dvh,1000px)}
-  .project-viewers p{max-width:80ch}
+.project-viewers{display:grid;grid-template-columns:1fr 1fr;gap:24px}.project-viewers article{border:1px solid var(--line-2);border-radius:20px;padding:22px;background:var(--card);min-width:0}.project-viewers h3{font-size:22px;margin:0 0 12px}.project-viewers cad-model{display:block;width:100%;border-radius:14px;--cad-model-fg:var(--ink);--cad-model-chip:var(--glass);--cad-model-line:var(--line-3);--cad-model-chip-on:var(--cream);--cad-model-focus:var(--orange)}.project-viewers p{font-size:14px;line-height:1.65;color:var(--muted)}@media(max-width:700px){.project-viewers{grid-template-columns:1fr}.project-viewers article{padding:16px}}
+/* The hero (#748): the headline beside a real running example, so the first screen shows output, not only words.
+   Source, reading and focus order are the same at every width: headline, lede, actions, then the recording. Below
+   1000px they stack; from 1000px the recording takes the right-hand column beside the other three. */
+.learning-hero{display:grid;grid-template-columns:minmax(0,1fr);gap:20px;align-items:start;padding:22px 0 30px}
+.learning-hero .hero-head,.learning-hero .hero-actions{min-width:0}.learning-hero .hero-actions{margin:0}
+.learning-hero .eyebrow{letter-spacing:.1em}
+.learning-hero .pixel-title{max-width:930px;margin:14px 0 18px;line-height:1;color:var(--ink);position:relative}.pixel-title-text{position:absolute;width:1px;height:1px;padding:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap}.pixel-title svg{display:block;width:100%;height:auto;overflow:visible}.pixel-title .pixel-title-shadow{fill:var(--orange);opacity:.72}.pixel-title .pixel-title-narrow{display:none}
+.learning-hero .intro{font-size:18px;font-weight:500;line-height:1.55;max-width:62ch;margin:0}
+.hero-run{margin:0;min-width:0;border:1px solid var(--line-2);border-radius:calc(20px*var(--round));background:var(--card);padding:10px 10px 14px}
+.hero-run .run-media{background:var(--image) center/cover no-repeat}
+.hero-run figcaption{padding:12px 6px 0}
+.hero-run .run-kicker{margin:0 0 2px!important}
+.hero-run-title{font-size:19px;letter-spacing:-.3px;line-height:1.3;margin:0 0 4px}.hero-run-title a{text-decoration:none;color:var(--ink)}
+.hero-run p{font-size:13.5px;line-height:1.55;color:var(--muted);margin:0}.hero-run .run-links{margin-top:6px;font-size:13px}
+@media(min-width:1000px){
+  .learning-hero{grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);column-gap:clamp(32px,4vw,72px);row-gap:24px;align-items:center;padding:36px 0 40px}
+  .learning-hero .hero-head{grid-column:1;grid-row:1;align-self:end}.learning-hero .hero-actions{grid-column:1;grid-row:2;align-self:start}.learning-hero .hero-run{grid-column:2;grid-row:1/span 2}
+  .pixel-title .pixel-title-wide{display:none}.pixel-title .pixel-title-narrow{display:block}
+  .learning-hero .pixel-title{margin:14px 0 22px}
+  .learning-hero .actions{gap:12px}
 }
+/* Between 1000 and 1279px the hero's left column is too narrow for three actions on one row; the header carries GitHub. */
+@media(min-width:1000px) and (max-width:1279px){.learning-hero .button.quiet{display:none}}
+@media(max-width:700px){.learning-hero{padding:16px 0 26px;gap:16px}.learning-hero .pixel-title{margin:12px 0 14px}.pixel-title .pixel-title-wide{display:none}.pixel-title .pixel-title-narrow{display:block}.learning-hero .intro{font-size:16px}.hero-run{padding:8px 8px 12px}.hero-run-title{font-size:17px}}
+/* The pixel-art workshop stays as brand: a slim cropped band between the hero and the examples, its robots in frame.
+   The crop keeps one aspect ratio, so the same part of the scene shows at every width. */
+.learning-band{margin:0 0 6px}
+.learning-band picture{display:block;aspect-ratio:1536/310;max-height:300px;overflow:hidden;border-radius:calc(14px*var(--round));background:var(--image)}
+.learning-band img{display:block;width:100%;height:100%;object-fit:cover;object-position:50% 70%;image-rendering:pixelated}
+.learning-band figcaption{font-size:12px;line-height:1.6;color:var(--muted);margin-top:8px;max-width:850px}
+@media(max-width:600px){.learning-band picture{aspect-ratio:956/380;border-radius:10px}}
+@media(min-width:1600px){.learning-hero .intro{max-width:56ch}.project-viewers cad-model{height:clamp(420px,66dvh,1000px)}.project-viewers p{max-width:80ch}}
 
 /* What is in cad-agent (#748): a layer cake of blocks, top layer first; solid = in the repo today, dashed = planned. */
 .stack{padding:56px 0 24px}
@@ -50,14 +63,12 @@
 .cake-planned .cake-count{font-weight:500}
 .cake-skip{position:absolute;left:-9999px;top:auto}
 .cake-skip:focus{position:static;display:inline-block;margin:0 0 10px;padding:8px 14px;border-radius:calc(8px*var(--round));background:var(--ink);color:var(--cream);font-weight:700}
-/* See it run: the turret recording leads, then the two viewers, then a row of three links into /toolkit. */
+/* See it run: the two viewers, then a row of three links into /toolkit; .run-media, .run-kicker and .run-links serve the hero card. */
 .built-with{padding-top:40px}
-.run-card{position:relative;display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:24px;align-items:center;border:1px solid var(--line-2);border-radius:calc(20px*var(--round));background:var(--card);padding:16px;margin-bottom:24px;min-width:0}
 .run-media{display:block;border-radius:calc(12px*var(--round));overflow:hidden;background:var(--image)}
 .run-media img{display:block;width:100%;height:auto}
 .run-kicker{font:650 11px/1.6 var(--mono)!important;letter-spacing:.08em;text-transform:uppercase;color:var(--eyebrow)!important;margin:0 0 6px!important}
-.run-card h3{font-size:26px;letter-spacing:-.5px;margin:0 0 10px}.run-card h3 a{text-decoration:none}
-.run-card p{font-size:14px;line-height:1.65;color:var(--muted);margin:0}.run-card .run-links{margin-top:12px;font-size:13px}.run-links a{color:var(--link)}
+.run-links a{color:var(--link)}
 .run-minis{list-style:none;margin:24px 0 0;padding:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}
 .run-mini{position:relative;display:flex;flex-direction:column;border:1px solid var(--line-2);border-radius:calc(18px*var(--round));background:var(--card);padding:10px 10px 14px;min-width:0}
 .run-mini:hover{border-color:var(--accent)}.run-mini:has(h3 a:focus-visible){outline:3px solid var(--focus);outline-offset:3px}.run-mini h3 a:focus-visible{outline:none}
@@ -83,10 +94,10 @@
 .arc-step .arc-next{margin:0;padding-top:8px;border-top:1px dashed var(--line-dash)}
 .arc .lead p a{color:var(--link)}
 @media(min-width:1051px){.reel-band .reel{grid-template-columns:repeat(3,minmax(0,1fr))}}
-@media(max-width:1050px){.arc-steps{grid-template-columns:repeat(2,minmax(0,1fr))}.run-card{grid-template-columns:1fr;gap:14px}}
+@media(max-width:1050px){.arc-steps{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:760px){.arc-loop{display:none}.cake{gap:4px}.cake-layer{display:block;padding:8px 10px}.cake-head{margin:0 0 2px}.cake-head h3{font-size:14.5px}.cake-head p{display:none}
 .cake-note{display:none}
 .cake ul{display:block;line-height:1.75;font-size:13px}.cake li{display:inline}.cake li.cake-family{display:none}.cake li+li::before{content:" · ";color:var(--muted)}
 .cake-block{display:inline;padding:0;border:0;background:none;font-size:13px;font-weight:600;text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--line-3)}
-.cake-block .cake-count{margin-left:.3em}.cake-key{height:0;border-width:0 0 2px;border-radius:0;background:none}.cake-key-planned{border-bottom-style:dashed}.cake-planned{text-decoration-style:dashed;text-decoration-color:var(--orange)}.arc-steps{grid-template-columns:1fr}.run-minis{grid-template-columns:1fr}.run-card h3{font-size:21px}.built-with{padding-top:24px}}
+.cake-block .cake-count{margin-left:.3em}.cake-key{height:0;border-width:0 0 2px;border-radius:0;background:none}.cake-key-planned{border-bottom-style:dashed}.cake-planned{text-decoration-style:dashed;text-decoration-color:var(--orange)}.arc-steps{grid-template-columns:1fr}.run-minis{grid-template-columns:1fr}.built-with{padding-top:24px}}
 @media(prefers-reduced-motion:reduce){.cake-block,.run-mini{transition:none}}

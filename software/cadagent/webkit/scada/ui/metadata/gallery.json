@@ -37,10 +37,10 @@
     "software/cadagent/webkit/scada/ui/src/symbols/power/power.css": "61ef55ffc564a2cb9b6f7b1b96e7b3b938131ff4d811fa6a0b143b0e52accabf",
     "software/cadagent/webkit/scada/ui/src/symbols/power/primitives.mjs": "fda1571381fc728b315cc09701ef76be5c921f8eb12670c54614019c3a4a4f79",
     "software/cadagent/webkit/scada/ui/src/symbols/valve-position.mjs": "f72f818fded726024ebd87f0c5eeaf6632308bfb328d9a1e994e51e385ce6382",
-    "software/cadagent/webkit/scada/ui/src/viewer/camera.mjs": "cafafc6b51100907108cd9c8e4cd85d8620769ca0c13b90f7959ba7cb0916273",
+    "software/cadagent/webkit/scada/ui/src/viewer/camera.mjs": "1cd0f8175b700204268c48aea2fc638920d84a42d1c92cb133ae358e2823f4ef",
     "software/cadagent/webkit/scada/ui/src/viewer/process-layout.mjs": "f19c06cc6d086d63f880f9dfbe4db41c5a2143ab4b169bb63a06f000ebfc292d",
     "software/cadagent/webkit/scada/ui/src/viewer/viewer.css": "658e5ae5555c3e38c4a139e9462e638620c19178bdf9de9d0e7af125262a85c6",
-    "software/cadagent/webkit/scada/ui/src/viewer/viewer.mjs": "cf48bc2f75c0a88a807d865bfd011b4c47319774bb66d2fa414f0c03bd4e368b",
+    "software/cadagent/webkit/scada/ui/src/viewer/viewer.mjs": "fb8e33c4eb234ed3ecf3c273bfeafaebfc5dbc032423a600f0032d4fa1f0b1c9",
     "software/cadagent/webkit/scada/ui/src/workspace/popover.css": "7192413b02f647ac2b21960ab35cfc5ec3e7a0232568816c574d0862cbc937fc",
     "software/cadagent/webkit/scada/ui/src/workspace/popover.mjs": "4fdd4689d24712ca312aeaa9444d46140fa26300a6bb822d63326ba0d50606d5",
     "software/cadagent/webkit/scada/ui/src/workspace/workspace.css": "ab34edc9ab0e19d181b50a7cb33c8f33f406113d195dd367728f16688e05fafd",
@@ -100,9 +100,9 @@
         {
           "text": "digester",
           "x": 20,
-          "y": 337,
-          "width": 48.171875,
-          "height": 11
+          "y": 336,
+          "width": 40,
+          "height": 13
         }
       ],
       "type": "digester",
@@ -243,9 +243,9 @@
         {
           "text": "tank",
           "x": 20,
-          "y": 337,
-          "width": 24.09375,
-          "height": 11
+          "y": 336,
+          "width": 20,
+          "height": 13
         }
       ],
       "type": "tank",
@@ -398,9 +398,9 @@
         {
           "text": "gas-holder",
           "x": 20,
-          "y": 337,
-          "width": 60.21875,
-          "height": 11
+          "y": 336,
+          "width": 50,
+          "height": 13
         }
       ],
       "type": "gas-holder",
@@ -543,9 +543,9 @@
         {
           "text": "mixing-tank",
           "x": 20,
-          "y": 337,
-          "width": 66.234375,
-          "height": 11
+          "y": 336,
+          "width": 55,
+          "height": 13
         }
       ],
       "type": "mixing-tank",
@@ -684,9 +684,9 @@
         {
           "text": "reactor",
           "x": 20,
-          "y": 337,
-          "width": 42.15625,
-          "height": 11
+          "y": 336,
+          "width": 35,
+          "height": 13
         }
       ],
       "type": "reactor",
@@ -825,9 +825,9 @@
         {
           "text": "clarifier",
           "x": 20,
-          "y": 337,
-          "width": 54.1875,
-          "height": 11
+          "y": 336,
+          "width": 45,
+          "height": 13
         }
       ],
       "type": "clarifier",
@@ -966,9 +966,9 @@
         {
           "text": "silo",
           "x": 20,
-          "y": 337,
-          "width": 24.09375,
-          "height": 11
+          "y": 336,
+          "width": 20,
+          "height": 13
         }
       ],
       "type": "silo",
@@ -1107,9 +1107,9 @@
         {
           "text": "heat-exchanger",
           "x": 20,
-          "y": 337,
-          "width": 84.296875,
-          "height": 11
+          "y": 336,
+          "width": 70,
+          "height": 13
         }
       ],
       "type": "heat-exchanger",
@@ -1266,9 +1266,9 @@
         {
           "text": "heat-exchanger / water-water",
           "x": 20,
-          "y": 337,
-          "width": 168.578125,
-          "height": 11
+          "y": 336,
+          "width": 140,
+          "height": 13
         }
       ],
       "type": "heat-exchanger",
@@ -1425,9 +1425,9 @@
         {
           "text": "heat-exchanger / heavy-water-water",
           "x": 20,
-          "y": 337,
-          "width": 204.703125,
-          "height": 11
+          "y": 336,
+          "width": 170,
+          "height": 13
         }
       ],
       "type": "heat-exchanger",
@@ -1584,9 +1584,9 @@
         {
           "text": "heat-exchanger / helium-water",
           "x": 20,
-          "y": 337,
-          "width": 174.609375,
-          "height": 11
+          "y": 336,
+          "width": 145,
+          "height": 13
         }
       ],
       "type": "heat-exchanger",
@@ -1743,9 +1743,9 @@
         {
           "text": "heat-exchanger / sodium-sodium",
           "x": 20,
-          "y": 337,
-          "width": 180.625,
-          "height": 11
+          "y": 336,
+          "width": 150,
+          "height": 13
         }
       ],
       "type": "heat-exchanger",
@@ -1902,9 +1902,9 @@
         {
           "text": "heat-exchanger / salt-salt",
           "x": 20,
-          "y": 337,
-          "width": 156.546875,
-          "height": 11
+          "y": 336,
+          "width": 130,
+          "height": 13
         }
       ],
       "type": "heat-exchanger",
@@ -2061,9 +2061,9 @@
         {
           "text": "heat-exchanger / salt-water",
           "x": 20,
-          "y": 337,
-          "width": 162.5625,
-          "height": 11
+          "y": 336,
+          "width": 135,
+          "height": 13
         }
       ],
       "type": "heat-exchanger",
@@ -2220,9 +2220,9 @@
         {
           "text": "heat-exchanger / thermal-fluid-water",
           "x": 20,
-          "y": 337,
-          "width": 216.75,
-          "height": 11
+          "y": 336,
+          "width": 180,
+          "height": 13
         }
       ],
       "type": "heat-exchanger",
@@ -2379,9 +2379,9 @@
         {
           "text": "heat-exchanger / geothermal-working-fluid",
           "x": 20,
-          "y": 337,
-          "width": 246.84375,
-          "height": 11
+          "y": 336,
+          "width": 205,
+          "height": 13
         }
       ],
       "type": "heat-exchanger",
@@ -2531,9 +2531,9 @@
         {
           "text": "filter",
           "x": 20,
-          "y": 337,
-          "width": 36.125,
-          "height": 11
+          "y": 336,
+          "width": 30,
+          "height": 13
         }
       ],
       "type": "filter",
@@ -2682,9 +2682,9 @@
         {
           "text": "gas-treatment",
           "x": 20,
-          "y": 337,
-          "width": 78.28125,
-          "height": 11
+          "y": 336,
+          "width": 65,
+          "height": 13
         }
       ],
       "type": "gas-treatment",
@@ -2831,9 +2831,9 @@
         {
           "text": "boiler",
           "x": 20,
-          "y": 337,
-          "width": 36.125,
-          "height": 11
+          "y": 336,
+          "width": 30,
+          "height": 13
         }
       ],
       "type": "boiler",
@@ -2998,9 +2998,9 @@
         {
           "text": "boiler / gas-fired",
           "x": 20,
-          "y": 337,
-          "width": 108.375,
-          "height": 11
+          "y": 336,
+          "width": 90,
+          "height": 13
         }
       ],
       "type": "boiler",
@@ -3165,9 +3165,9 @@
         {
           "text": "boiler / solid-fuel",
           "x": 20,
-          "y": 337,
-          "width": 114.390625,
-          "height": 11
+          "y": 336,
+          "width": 95,
+          "height": 13
         }
       ],
       "type": "boiler",
@@ -3332,9 +3332,9 @@
         {
           "text": "boiler / liquid-fuel",
           "x": 20,
-          "y": 337,
-          "width": 120.421875,
-          "height": 11
+          "y": 336,
+          "width": 100,
+          "height": 13
         }
       ],
       "type": "boiler",
@@ -3492,9 +3492,9 @@
         {
           "text": "flare",
           "x": 20,
-          "y": 337,
-          "width": 30.109375,
-          "height": 11
+          "y": 336,
+          "width": 25,
+          "height": 13
         }
       ],
       "type": "flare",
@@ -3643,9 +3643,9 @@
         {
           "text": "pump",
           "x": 20,
-          "y": 337,
-          "width": 24.09375,
-          "height": 11
+          "y": 336,
+          "width": 20,
+          "height": 13
         }
       ],
       "type": "pump",
@@ -3816,9 +3816,9 @@
         {
           "text": "pump / water",
           "x": 20,
-          "y": 337,
-          "width": 72.25,
-          "height": 11
+          "y": 336,
+          "width": 60,
+          "height": 13
         }
       ],
       "type": "pump",
@@ -3989,9 +3989,9 @@
         {
           "text": "pump / thermal-fluid",
           "x": 20,
-          "y": 337,
-          "width": 120.421875,
-          "height": 11
+          "y": 336,
+          "width": 100,
+          "height": 13
         }
       ],
       "type": "pump",
@@ -4162,9 +4162,9 @@
         {
           "text": "pump / helium",
           "x": 20,
-          "y": 337,
-          "width": 78.28125,
-          "height": 11
+          "y": 336,
+          "width": 65,
+          "height": 13
         }
       ],
       "type": "pump",
@@ -4335,9 +4335,9 @@
         {
           "text": "pump / sodium",
           "x": 20,
-          "y": 337,
-          "width": 78.28125,
-          "height": 11
+          "y": 336,
+          "width": 65,
+          "height": 13
         }
       ],
       "type": "pump",
@@ -4508,9 +4508,9 @@
         {
           "text": "pump / salt",
           "x": 20,
-          "y": 337,
-          "width": 66.234375,
-          "height": 11
+          "y": 336,
+          "width": 55,
+          "height": 13
         }
       ],
       "type": "pump",
@@ -4681,9 +4681,9 @@
         {
           "text": "pump / heavy-water",
           "x": 20,
-          "y": 337,
-          "width": 108.375,
-          "height": 11
+          "y": 336,
+          "width": 90,
+          "height": 13
         }
       ],
       "type": "pump",
@@ -4854,9 +4854,9 @@
         {
           "text": "pump / organic-working-fluid",
           "x": 20,
-          "y": 337,
-          "width": 168.578125,
-          "height": 11
+          "y": 336,
+          "width": 140,
+          "height": 13
         }
       ],
       "type": "pump",
@@ -5027,9 +5027,9 @@
         {
           "text": "pump / liquid-fuel",
           "x": 20,
-          "y": 337,
-          "width": 108.375,
-          "height": 11
+          "y": 336,
+          "width": 90,
+          "height": 13
         }
       ],
       "type": "pump",
@@ -5185,9 +5185,9 @@
         {
           "text": "submersible-pump",
           "x": 20,
-          "y": 337,
-          "width": 96.328125,
-          "height": 11
+          "y": 336,
+          "width": 80,
+          "height": 13
         }
       ],
       "type": "submersible-pump",
@@ -5350,9 +5350,9 @@
         {
           "text": "submersible-pump / water",
           "x": 20,
-          "y": 337,
-          "width": 144.5,
-          "height": 11
+          "y": 336,
+          "width": 120,
+          "height": 13
         }
       ],
       "type": "submersible-pump",
@@ -5515,9 +5515,9 @@
         {
           "text": "submersible-pump / thermal-fluid",
           "x": 20,
-          "y": 337,
-          "width": 192.65625,
-          "height": 11
+          "y": 336,
+          "width": 160,
+          "height": 13
         }
       ],
       "type": "submersible-pump",
@@ -5680,9 +5680,9 @@
         {
           "text": "submersible-pump / helium",
           "x": 20,
-          "y": 337,
-          "width": 150.515625,
-          "height": 11
+          "y": 336,
+          "width": 125,
+          "height": 13
         }
       ],
       "type": "submersible-pump",
@@ -5845,9 +5845,9 @@
         {
           "text": "submersible-pump / sodium",
           "x": 20,
-          "y": 337,
-          "width": 150.515625,
-          "height": 11
+          "y": 336,
+          "width": 125,
+          "height": 13
         }
       ],
       "type": "submersible-pump",
@@ -6010,9 +6010,9 @@
         {
           "text": "submersible-pump / salt",
           "x": 20,
-          "y": 337,
-          "width": 138.484375,
-          "height": 11
+          "y": 336,
+          "width": 115,
+          "height": 13
         }
       ],
       "type": "submersible-pump",
@@ -6175,9 +6175,9 @@
         {
           "text": "submersible-pump / heavy-water",
           "x": 20,
-          "y": 337,
-          "width": 180.625,
-          "height": 11
+          "y": 336,
+          "width": 150,
+          "height": 13
         }
       ],
       "type": "submersible-pump",
@@ -6340,9 +6340,9 @@
         {
           "text": "submersible-pump / organic-working-fluid",
           "x": 20,
-          "y": 337,
-          "width": 240.828125,
-          "height": 11
+          "y": 336,
+          "width": 200,
+          "height": 13
         }
       ],
       "type": "submersible-pump",
@@ -6505,9 +6505,9 @@
         {
           "text": "submersible-pump / liquid-fuel",
           "x": 20,
-          "y": 337,
-          "width": 180.625,
-          "height": 11
+          "y": 336,
+          "width": 150,
+          "height": 13
         }
       ],
       "type": "submersible-pump",
@@ -6663,9 +6663,9 @@
         {
           "text": "dosing-pump",
           "x": 20,
-          "y": 337,
-          "width": 66.234375,
-          "height": 11
+          "y": 336,
+          "width": 55,
+          "height": 13
         }
       ],
       "type": "dosing-pump",
@@ -6821,9 +6821,9 @@
         {
           "text": "blower",
           "x": 20,
-          "y": 337,
-          "width": 36.125,
-          "height": 11
+          "y": 336,
+          "width": 30,
+          "height": 13
         }
       ],
       "type": "blower",
@@ -6982,9 +6982,9 @@
         {
           "text": "blower / helium",
           "x": 20,
-          "y": 337,
-          "width": 90.3125,
-          "height": 11
+          "y": 336,
+          "width": 75,
+          "height": 13
         }
       ],
       "type": "blower",
@@ -7138,9 +7138,9 @@
         {
           "text": "compressor",
           "x": 20,
-          "y": 337,
-          "width": 60.21875,
-          "height": 11
+          "y": 336,
+          "width": 50,
+          "height": 13
         }
       ],
       "type": "compressor",
@@ -7296,9 +7296,9 @@
         {
           "text": "motor",
           "x": 20,
-          "y": 337,
-          "width": 30.109375,
-          "height": 11
+          "y": 336,
+          "width": 25,
+          "height": 13
         }
       ],
       "type": "motor",
@@ -7460,9 +7460,9 @@
         {
           "text": "generator",
           "x": 20,
-          "y": 337,
-          "width": 54.1875,
-          "height": 11
+          "y": 336,
+          "width": 45,
+          "height": 13
         }
       ],
       "type": "generator",
@@ -7625,9 +7625,9 @@
         {
           "text": "generator / natural-gas-enclosed",
           "x": 20,
-          "y": 337,
-          "width": 192.65625,
-          "height": 11
+          "y": 336,
+          "width": 160,
+          "height": 13
         }
       ],
       "type": "generator",
@@ -7792,9 +7792,9 @@
         {
           "text": "generator / natural-gas-industrial",
           "x": 20,
-          "y": 337,
-          "width": 204.703125,
-          "height": 11
+          "y": 336,
+          "width": 170,
+          "height": 13
         }
       ],
       "type": "generator",
@@ -7959,9 +7959,9 @@
         {
           "text": "generator / diesel-skid",
           "x": 20,
-          "y": 337,
-          "width": 138.484375,
-          "height": 11
+          "y": 336,
+          "width": 115,
+          "height": 13
         }
       ],
       "type": "generator",
@@ -8124,9 +8124,9 @@
         {
           "text": "generator / diesel-enclosed",
           "x": 20,
-          "y": 337,
-          "width": 162.5625,
-          "height": 11
+          "y": 336,
+          "width": 135,
+          "height": 13
         }
       ],
       "type": "generator",
@@ -8289,9 +8289,9 @@
         {
           "text": "generator / gasoline-portable",
           "x": 20,
-          "y": 337,
-          "width": 174.609375,
-          "height": 11
+          "y": 336,
+          "width": 145,
+          "height": 13
         }
       ],
       "type": "generator",
@@ -8441,9 +8441,9 @@
         {
           "text": "transformer",
           "x": 20,
-          "y": 337,
-          "width": 66.234375,
-          "height": 11
+          "y": 336,
+          "width": 55,
+          "height": 13
         }
       ],
       "type": "transformer",
@@ -8582,9 +8582,9 @@
         {
           "text": "breaker",
           "x": 20,
-          "y": 337,
-          "width": 42.15625,
-          "height": 11
+          "y": 336,
+          "width": 35,
+          "height": 13
         }
       ],
       "type": "breaker",
@@ -8719,9 +8719,9 @@
         {
           "text": "busbar",
           "x": 20,
-          "y": 337,
-          "width": 36.125,
-          "height": 11
+          "y": 336,
+          "width": 30,
+          "height": 13
         }
       ],
       "type": "busbar",
@@ -8867,9 +8867,9 @@
         {
           "text": "busbar / bidirectional",
           "x": 20,
-          "y": 337,
-          "width": 132.453125,
-          "height": 11
+          "y": 336,
+          "width": 110,
+          "height": 13
         }
       ],
       "type": "busbar",
@@ -9008,9 +9008,9 @@
         {
           "text": "battery",
           "x": 20,
-          "y": 337,
-          "width": 42.15625,
-          "height": 11
+          "y": 336,
+          "width": 35,
+          "height": 13
         }
       ],
       "type": "battery",
@@ -9149,9 +9149,9 @@
         {
           "text": "ups",
           "x": 20,
-          "y": 337,
-          "width": 18.0625,
-          "height": 11
+          "y": 336,
+          "width": 15,
+          "height": 13
         }
       ],
       "type": "ups",
@@ -9309,9 +9309,9 @@
         {
           "text": "solar-panel",
           "x": 20,
-          "y": 337,
-          "width": 66.234375,
-          "height": 11
+          "y": 336,
+          "width": 55,
+          "height": 13
         }
       ],
       "type": "solar-panel",
@@ -9460,9 +9460,9 @@
         {
           "text": "electrical-meter",
           "x": 20,
-          "y": 337,
-          "width": 96.328125,
-          "height": 11
+          "y": 336,
+          "width": 80,
+          "height": 13
         }
       ],
       "type": "electrical-meter",
@@ -9601,9 +9601,9 @@
         {
           "text": "gate-valve",
           "x": 20,
-          "y": 337,
-          "width": 60.21875,
-          "height": 11
+          "y": 336,
+          "width": 50,
+          "height": 13
         }
       ],
       "type": "gate-valve",
@@ -9756,9 +9756,9 @@
         {
           "text": "gate-valve / water",
           "x": 20,
-          "y": 337,
-          "width": 108.375,
-          "height": 11
+          "y": 336,
+          "width": 90,
+          "height": 13
         }
       ],
       "type": "gate-valve",
@@ -9911,9 +9911,9 @@
         {
           "text": "gate-valve / thermal-fluid",
           "x": 20,
-          "y": 337,
-          "width": 156.546875,
-          "height": 11
+          "y": 336,
+          "width": 130,
+          "height": 13
         }
       ],
       "type": "gate-valve",
@@ -10066,9 +10066,9 @@
         {
           "text": "gate-valve / helium",
           "x": 20,
-          "y": 337,
-          "width": 114.390625,
-          "height": 11
+          "y": 336,
+          "width": 95,
+          "height": 13
         }
       ],
       "type": "gate-valve",
@@ -10221,9 +10221,9 @@
         {
           "text": "gate-valve / sodium",
           "x": 20,
-          "y": 337,
-          "width": 114.390625,
-          "height": 11
+          "y": 336,
+          "width": 95,
+          "height": 13
         }
       ],
       "type": "gate-valve",
@@ -10376,9 +10376,9 @@
         {
           "text": "gate-valve / salt",
           "x": 20,
-          "y": 337,
-          "width": 102.359375,
-          "height": 11
+          "y": 336,
+          "width": 85,
+          "height": 13
         }
       ],
       "type": "gate-valve",
@@ -10531,9 +10531,9 @@
         {
           "text": "gate-valve / heavy-water",
           "x": 20,
-          "y": 337,
-          "width": 144.5,
-          "height": 11
+          "y": 336,
+          "width": 120,
+          "height": 13
         }
       ],
       "type": "gate-valve",
@@ -10686,9 +10686,9 @@
         {
           "text": "gate-valve / organic-working-fluid",
           "x": 20,
-          "y": 337,
-          "width": 204.703125,
-          "height": 11
+          "y": 336,
+          "width": 170,
+          "height": 13
         }
       ],
       "type": "gate-valve",
@@ -10841,9 +10841,9 @@
         {
           "text": "gate-valve / liquid-fuel",
           "x": 20,
-          "y": 337,
-          "width": 144.5,
-          "height": 11
+          "y": 336,
+          "width": 120,
+          "height": 13
         }
       ],
       "type": "gate-valve",
@@ -10989,9 +10989,9 @@
         {
           "text": "control-valve",
           "x": 20,
-          "y": 337,
-          "width": 78.28125,
-          "height": 11
+          "y": 336,
+          "width": 65,
+          "height": 13
         }
       ],
       "type": "control-valve",
@@ -11144,9 +11144,9 @@
         {
           "text": "control-valve / water",
           "x": 20,
-          "y": 337,
-          "width": 126.4375,
-          "height": 11
+          "y": 336,
+          "width": 105,
+          "height": 13
         }
       ],
       "type": "control-valve",
@@ -11299,9 +11299,9 @@
         {
           "text": "control-valve / thermal-fluid",
           "x": 20,
-          "y": 337,
-          "width": 174.609375,
-          "height": 11
+          "y": 336,
+          "width": 145,
+          "height": 13
         }
       ],
       "type": "control-valve",
@@ -11454,9 +11454,9 @@
         {
           "text": "control-valve / helium",
           "x": 20,
-          "y": 337,
-          "width": 132.453125,
-          "height": 11
+          "y": 336,
+          "width": 110,
+          "height": 13
         }
       ],
       "type": "control-valve",
@@ -11609,9 +11609,9 @@
         {
           "text": "control-valve / sodium",
           "x": 20,
-          "y": 337,
-          "width": 132.453125,
-          "height": 11
+          "y": 336,
+          "width": 110,
+          "height": 13
         }
       ],
       "type": "control-valve",
@@ -11764,9 +11764,9 @@
         {
           "text": "control-valve / salt",
           "x": 20,
-          "y": 337,
-          "width": 120.421875,
-          "height": 11
+          "y": 336,
+          "width": 100,
+          "height": 13
         }
       ],
       "type": "control-valve",
@@ -11919,9 +11919,9 @@
         {
           "text": "control-valve / heavy-water",
           "x": 20,
-          "y": 337,
-          "width": 162.5625,
-          "height": 11
+          "y": 336,
+          "width": 135,
+          "height": 13
         }
       ],
       "type": "control-valve",
@@ -12074,9 +12074,9 @@
         {
           "text": "control-valve / organic-working-fluid",
           "x": 20,
-          "y": 337,
-          "width": 222.765625,
-          "height": 11
+          "y": 336,
+          "width": 185,
+          "height": 13
         }
       ],
       "type": "control-valve",
@@ -12229,9 +12229,9 @@
         {
           "text": "control-valve / liquid-fuel",
           "x": 20,
-          "y": 337,
-          "width": 162.5625,
-          "height": 11
+          "y": 336,
+          "width": 135,
+          "height": 13
         }
       ],
       "type": "control-valve",
@@ -12377,9 +12377,9 @@
         {
           "text": "check-valve",
           "x": 20,
-          "y": 337,
-          "width": 66.234375,
-          "height": 11
+          "y": 336,
+          "width": 55,
+          "height": 13
         }
       ],
       "type": "check-valve",
@@ -12521,9 +12521,9 @@
         {
           "text": "check-valve / water",
           "x": 20,
-          "y": 337,
-          "width": 114.390625,
-          "height": 11
+          "y": 336,
+          "width": 95,
+          "height": 13
         }
       ],
       "type": "check-valve",
@@ -12665,9 +12665,9 @@
         {
           "text": "check-valve / thermal-fluid",
           "x": 20,
-          "y": 337,
-          "width": 162.5625,
-          "height": 11
+          "y": 336,
+          "width": 135,
+          "height": 13
         }
       ],
       "type": "check-valve",
@@ -12809,9 +12809,9 @@
         {
           "text": "check-valve / helium",
           "x": 20,
-          "y": 337,
-          "width": 120.421875,
-          "height": 11
+          "y": 336,
+          "width": 100,
+          "height": 13
         }
       ],
       "type": "check-valve",
@@ -12953,9 +12953,9 @@
         {
           "text": "check-valve / sodium",
           "x": 20,
-          "y": 337,
-          "width": 120.421875,
-          "height": 11
+          "y": 336,
+          "width": 100,
+          "height": 13
         }
       ],
       "type": "check-valve",
@@ -13097,9 +13097,9 @@
         {
           "text": "check-valve / salt",
           "x": 20,
-          "y": 337,
-          "width": 108.375,
-          "height": 11
+          "y": 336,
+          "width": 90,
+          "height": 13
         }
       ],
       "type": "check-valve",
@@ -13241,9 +13241,9 @@
         {
           "text": "check-valve / heavy-water",
           "x": 20,
-          "y": 337,
-          "width": 150.515625,
-          "height": 11
+          "y": 336,
+          "width": 125,
+          "height": 13
         }
       ],
       "type": "check-valve",
@@ -13385,9 +13385,9 @@
         {
           "text": "check-valve / organic-working-fluid",
           "x": 20,
-          "y": 337,
-          "width": 210.71875,
-          "height": 11
+          "y": 336,
+          "width": 175,
+          "height": 13
         }
       ],
       "type": "check-valve",
@@ -13529,9 +13529,9 @@
         {
           "text": "check-valve / liquid-fuel",
           "x": 20,
-          "y": 337,
-          "width": 150.515625,
-          "height": 11
+          "y": 336,
+          "width": 125,
+          "height": 13
         }
       ],
       "type": "check-valve",
@@ -13666,9 +13666,9 @@
         {
           "text": "relief-valve",
           "x": 20,
-          "y": 337,
-          "width": 72.25,
-          "height": 11
+          "y": 336,
+          "width": 60,
+          "height": 13
         }
       ],
       "type": "relief-valve",
@@ -13810,9 +13810,9 @@
         {
           "text": "relief-valve / water",
           "x": 20,
-          "y": 337,
-          "width": 120.421875,
-          "height": 11
+          "y": 336,
+          "width": 100,
+          "height": 13
         }
       ],
       "type": "relief-valve",
@@ -13954,9 +13954,9 @@
         {
           "text": "relief-valve / thermal-fluid",
           "x": 20,
-          "y": 337,
-          "width": 168.578125,
-          "height": 11
+          "y": 336,
+          "width": 140,
+          "height": 13
         }
       ],
       "type": "relief-valve",
@@ -14098,9 +14098,9 @@
         {
           "text": "relief-valve / helium",
           "x": 20,
-          "y": 337,
-          "width": 126.4375,
-          "height": 11
+          "y": 336,
+          "width": 105,
+          "height": 13
         }
       ],
       "type": "relief-valve",
@@ -14242,9 +14242,9 @@
         {
           "text": "relief-valve / sodium",
           "x": 20,
-          "y": 337,
-          "width": 126.4375,
-          "height": 11
+          "y": 336,
+          "width": 105,
+          "height": 13
         }
       ],
       "type": "relief-valve",
@@ -14386,9 +14386,9 @@
         {
           "text": "relief-valve / salt",
           "x": 20,
-          "y": 337,
-          "width": 114.390625,
-          "height": 11
+          "y": 336,
+          "width": 95,
+          "height": 13
         }
       ],
       "type": "relief-valve",
@@ -14530,9 +14530,9 @@
         {
           "text": "relief-valve / heavy-water",
           "x": 20,
-          "y": 337,
-          "width": 156.546875,
-          "height": 11
+          "y": 336,
+          "width": 130,
+          "height": 13
         }
       ],
       "type": "relief-valve",
@@ -14674,9 +14674,9 @@
         {
           "text": "relief-valve / organic-working-fluid",
           "x": 20,
-          "y": 337,
-          "width": 216.75,
-          "height": 11
+          "y": 336,
+          "width": 180,
+          "height": 13
         }
       ],
       "type": "relief-valve",
@@ -14818,9 +14818,9 @@
         {
           "text": "relief-valve / liquid-fuel",
           "x": 20,
-          "y": 337,
-          "width": 156.546875,
-          "height": 11
+          "y": 336,
+          "width": 130,
+          "height": 13
         }
       ],
       "type": "relief-valve",
@@ -14955,9 +14955,9 @@
         {
           "text": "butterfly-valve",
           "x": 20,
-          "y": 337,
-          "width": 90.3125,
-          "height": 11
+          "y": 336,
+          "width": 75,
+          "height": 13
         }
       ],
       "type": "butterfly-valve",
@@ -15110,9 +15110,9 @@
         {
           "text": "butterfly-valve / water",
           "x": 20,
-          "y": 337,
-          "width": 138.484375,
-          "height": 11
+          "y": 336,
+          "width": 115,
+          "height": 13
         }
       ],
       "type": "butterfly-valve",
@@ -15265,9 +15265,9 @@
         {
           "text": "butterfly-valve / thermal-fluid",
           "x": 20,
-          "y": 337,
-          "width": 186.640625,
-          "height": 11
+          "y": 336,
+          "width": 155,
+          "height": 13
         }
       ],
       "type": "butterfly-valve",
@@ -15420,9 +15420,9 @@
         {
           "text": "butterfly-valve / helium",
           "x": 20,
-          "y": 337,
-          "width": 144.5,
-          "height": 11
+          "y": 336,
+          "width": 120,
+          "height": 13
         }
       ],
       "type": "butterfly-valve",
@@ -15575,9 +15575,9 @@
         {
           "text": "butterfly-valve / sodium",
           "x": 20,
-          "y": 337,
-          "width": 144.5,
-          "height": 11
+          "y": 336,
+          "width": 120,
+          "height": 13
         }
       ],
       "type": "butterfly-valve",
@@ -15730,9 +15730,9 @@
         {
           "text": "butterfly-valve / salt",
           "x": 20,
-          "y": 337,
-          "width": 132.453125,
-          "height": 11
+          "y": 336,
+          "width": 110,
+          "height": 13
         }
       ],
       "type": "butterfly-valve",
@@ -15885,9 +15885,9 @@
         {
           "text": "butterfly-valve / heavy-water",
           "x": 20,
-          "y": 337,
-          "width": 174.609375,
-          "height": 11
+          "y": 336,
+          "width": 145,
+          "height": 13
         }
       ],
       "type": "butterfly-valve",
@@ -16040,9 +16040,9 @@
         {
           "text": "butterfly-valve / organic-working-fluid",
           "x": 20,
-          "y": 337,
-          "width": 234.8125,
-          "height": 11
+          "y": 336,
+          "width": 195,
+          "height": 13
         }
       ],
       "type": "butterfly-valve",
@@ -16195,9 +16195,9 @@
         {
           "text": "butterfly-valve / liquid-fuel",
           "x": 20,
-          "y": 337,
-          "width": 174.609375,
-          "height": 11
+          "y": 336,
+          "width": 145,
+          "height": 13
         }
       ],
       "type": "butterfly-valve",
@@ -16343,9 +16343,9 @@
         {
           "text": "pressure-transmitter",
           "x": 20,
-          "y": 337,
-          "width": 120.421875,
-          "height": 11
+          "y": 336,
+          "width": 100,
+          "height": 13
         }
       ],
       "type": "pressure-transmitter",
@@ -16484,9 +16484,9 @@
         {
           "text": "flow-meter",
           "x": 20,
-          "y": 337,
-          "width": 60.21875,
-          "height": 11
+          "y": 336,
+          "width": 50,
+          "height": 13
         }
       ],
       "type": "flow-meter",
@@ -16625,9 +16625,9 @@
         {
           "text": "temperature-sensor",
           "x": 20,
-          "y": 337,
-          "width": 108.375,
-          "height": 11
+          "y": 336,
+          "width": 90,
+          "height": 13
         }
       ],
       "type": "temperature-sensor",
@@ -16766,9 +16766,9 @@
         {
           "text": "level-sensor",
           "x": 20,
-          "y": 337,
-          "width": 72.25,
-          "height": 11
+          "y": 336,
+          "width": 60,
+          "height": 13
         }
       ],
       "type": "level-sensor",
@@ -16918,9 +16918,9 @@
         {
           "text": "gas-analyzer",
           "x": 20,
-          "y": 337,
-          "width": 72.25,
-          "height": 11
+          "y": 336,
+          "width": 60,
+          "height": 13
         }
       ],
       "type": "gas-analyzer",
@@ -17059,9 +17059,9 @@
         {
           "text": "plc-rack",
           "x": 20,
-          "y": 337,
-          "width": 48.171875,
-          "height": 11
+          "y": 336,
+          "width": 40,
+          "height": 13
         }
       ],
       "type": "plc-rack",
@@ -17207,9 +17207,9 @@
         {
           "text": "plc-cpu",
           "x": 20,
-          "y": 337,
-          "width": 42.15625,
-          "height": 11
+          "y": 336,
+          "width": 35,
+          "height": 13
         }
       ],
       "type": "plc-cpu",
@@ -17355,9 +17355,9 @@
         {
           "text": "remote-io",
           "x": 20,
-          "y": 337,
-          "width": 54.1875,
-          "height": 11
+          "y": 336,
+          "width": 45,
+          "height": 13
         }
       ],
       "type": "remote-io",
@@ -17505,9 +17505,9 @@
         {
           "text": "hmi",
           "x": 20,
-          "y": 337,
-          "width": 18.0625,
-          "height": 11
+          "y": 336,
+          "width": 15,
+          "height": 13
         }
       ],
       "type": "hmi",
@@ -17642,9 +17642,9 @@
         {
           "text": "scada-server",
           "x": 20,
-          "y": 337,
-          "width": 72.25,
-          "height": 11
+          "y": 336,
+          "width": 60,
+          "height": 13
         }
       ],
       "type": "scada-server",
@@ -17790,9 +17790,9 @@
         {
           "text": "network-switch",
           "x": 20,
-          "y": 337,
-          "width": 84.296875,
-          "height": 11
+          "y": 336,
+          "width": 70,
+          "height": 13
         }
       ],
       "type": "network-switch",
@@ -17940,9 +17940,9 @@
         {
           "text": "radio",
           "x": 20,
-          "y": 337,
-          "width": 30.109375,
-          "height": 11
+          "y": 336,
+          "width": 25,
+          "height": 13
         }
       ],
       "type": "radio",
@@ -18077,9 +18077,9 @@
         {
           "text": "pipe",
           "x": 20,
-          "y": 337,
-          "width": 24.09375,
-          "height": 11
+          "y": 336,
+          "width": 20,
+          "height": 13
         }
       ],
       "type": "pipe",
@@ -18221,9 +18221,9 @@
         {
           "text": "pipe / water",
           "x": 20,
-          "y": 337,
-          "width": 72.25,
-          "height": 11
+          "y": 336,
+          "width": 60,
+          "height": 13
         }
       ],
       "type": "pipe",
@@ -18365,9 +18365,9 @@
         {
           "text": "pipe / thermal-fluid",
           "x": 20,
-          "y": 337,
-          "width": 120.421875,
-          "height": 11
+          "y": 336,
+          "width": 100,
+          "height": 13
         }
       ],
       "type": "pipe",
@@ -18509,9 +18509,9 @@
         {
           "text": "pipe / helium",
           "x": 20,
-          "y": 337,
-          "width": 78.28125,
-          "height": 11
+          "y": 336,
+          "width": 65,
+          "height": 13
         }
       ],
       "type": "pipe",
@@ -18653,9 +18653,9 @@
         {
           "text": "pipe / sodium",
           "x": 20,
-          "y": 337,
-          "width": 78.28125,
-          "height": 11
+          "y": 336,
+          "width": 65,
+          "height": 13
         }
       ],
       "type": "pipe",
@@ -18797,9 +18797,9 @@
         {
           "text": "pipe / salt",
           "x": 20,
-          "y": 337,
-          "width": 66.234375,
-          "height": 11
+          "y": 336,
+          "width": 55,
+          "height": 13
         }
       ],
       "type": "pipe",
@@ -18941,9 +18941,9 @@
         {
           "text": "pipe / heavy-water",
           "x": 20,
-          "y": 337,
-          "width": 108.375,
-          "height": 11
+          "y": 336,
+          "width": 90,
+          "height": 13
         }
       ],
       "type": "pipe",
@@ -19085,9 +19085,9 @@
         {
           "text": "pipe / organic-working-fluid",
           "x": 20,
-          "y": 337,
-          "width": 168.578125,
-          "height": 11
+          "y": 336,
+          "width": 140,
+          "height": 13
         }
       ],
       "type": "pipe",
@@ -19229,9 +19229,9 @@
         {
           "text": "pipe / liquid-fuel",
           "x": 20,
-          "y": 337,
-          "width": 108.375,
-          "height": 11
+          "y": 336,
+          "width": 90,
+          "height": 13
         }
       ],
       "type": "pipe",
@@ -19366,9 +19366,9 @@
         {
           "text": "junction",
           "x": 20,
-          "y": 337,
-          "width": 48.171875,
-          "height": 11
+          "y": 336,
+          "width": 40,
+          "height": 13
         }
       ],
       "type": "junction",
@@ -19511,9 +19511,9 @@
         {
           "text": "conveyor",
           "x": 20,
-          "y": 337,
-          "width": 48.171875,
-          "height": 11
+          "y": 336,
+          "width": 40,
+          "height": 13
         }
       ],
       "type": "conveyor",
@@ -19669,9 +19669,9 @@
         {
           "text": "crusher",
           "x": 20,
-          "y": 337,
-          "width": 42.15625,
-          "height": 11
+          "y": 336,
+          "width": 35,
+          "height": 13
         }
       ],
       "type": "crusher",
@@ -19829,9 +19829,9 @@
         {
           "text": "vibrating-screen",
           "x": 20,
-          "y": 337,
-          "width": 96.328125,
-          "height": 11
+          "y": 336,
+          "width": 80,
+          "height": 13
         }
       ],
       "type": "vibrating-screen",
@@ -19985,9 +19985,9 @@
         {
           "text": "grinding-mill",
           "x": 20,
-          "y": 337,
-          "width": 78.28125,
-          "height": 11
+          "y": 336,
+          "width": 65,
+          "height": 13
         }
       ],
       "type": "grinding-mill",
@@ -20143,9 +20143,9 @@
         {
           "text": "rotary-kiln",
           "x": 20,
-          "y": 337,
-          "width": 66.234375,
-          "height": 11
+          "y": 336,
+          "width": 55,
+          "height": 13
         }
       ],
       "type": "rotary-kiln",
@@ -20316,9 +20316,9 @@
         {
           "text": "oven",
           "x": 20,
-          "y": 337,
-          "width": 24.09375,
-          "height": 11
+          "y": 336,
+          "width": 20,
+          "height": 13
         }
       ],
       "type": "oven",
@@ -20474,9 +20474,9 @@
         {
           "text": "rack-oven",
           "x": 20,
-          "y": 337,
-          "width": 54.1875,
-          "height": 11
+          "y": 336,
+          "width": 45,
+          "height": 13
         }
       ],
       "type": "rack-oven",
@@ -20639,9 +20639,9 @@
         {
           "text": "dryer",
           "x": 20,
-          "y": 337,
-          "width": 30.109375,
-          "height": 11
+          "y": 336,
+          "width": 25,
+          "height": 13
         }
       ],
       "type": "dryer",
@@ -20808,9 +20808,9 @@
         {
           "text": "extruder",
           "x": 20,
-          "y": 337,
-          "width": 48.171875,
-          "height": 11
+          "y": 336,
+          "width": 40,
+          "height": 13
         }
       ],
       "type": "extruder",
@@ -20968,9 +20968,9 @@
         {
           "text": "tablet-press",
           "x": 20,
-          "y": 337,
-          "width": 72.25,
-          "height": 11
+          "y": 336,
+          "width": 60,
+          "height": 13
         }
       ],
       "type": "tablet-press",
@@ -21130,9 +21130,9 @@
         {
           "text": "filling-line",
           "x": 20,
-          "y": 337,
-          "width": 72.25,
-          "height": 11
+          "y": 336,
+          "width": 60,
+          "height": 13
         }
       ],
       "type": "filling-line",
@@ -21292,9 +21292,9 @@
         {
           "text": "packaging-line",
           "x": 20,
-          "y": 337,
-          "width": 84.296875,
-          "height": 11
+          "y": 336,
+          "width": 70,
+          "height": 13
         }
       ],
       "type": "packaging-line",
@@ -21448,9 +21448,9 @@
         {
           "text": "granulator",
           "x": 20,
-          "y": 337,
-          "width": 60.21875,
-          "height": 11
+          "y": 336,
+          "width": 50,
+          "height": 13
         }
       ],
       "type": "granulator",
@@ -21610,9 +21610,9 @@
         {
           "text": "forming-machine",
           "x": 20,
-          "y": 337,
-          "width": 90.3125,
-          "height": 11
+          "y": 336,
+          "width": 75,
+          "height": 13
         }
       ],
       "type": "forming-machine",
@@ -21768,9 +21768,9 @@
         {
           "text": "drum-mixer",
           "x": 20,
-          "y": 337,
-          "width": 60.21875,
-          "height": 11
+          "y": 336,
+          "width": 50,
+          "height": 13
         }
       ],
       "type": "drum-mixer",
@@ -21926,9 +21926,9 @@
         {
           "text": "paper-machine",
           "x": 20,
-          "y": 337,
-          "width": 78.28125,
-          "height": 11
+          "y": 336,
+          "width": 65,
+          "height": 13
         }
       ],
       "type": "paper-machine",
@@ -22082,9 +22082,9 @@
         {
           "text": "weigh-hopper",
           "x": 20,
-          "y": 337,
-          "width": 72.25,
-          "height": 11
+          "y": 336,
+          "width": 60,
+          "height": 13
         }
       ],
       "type": "weigh-hopper",
@@ -22238,9 +22238,9 @@
         {
           "text": "screw-feeder",
           "x": 20,
-          "y": 337,
-          "width": 72.25,
-          "height": 11
+          "y": 336,
+          "width": 60,
+          "height": 13
         }
       ],
       "type": "screw-feeder",
@@ -22394,9 +22394,9 @@
         {
           "text": "centrifuge",
           "x": 20,
-          "y": 337,
-          "width": 60.21875,
-          "height": 11
+          "y": 336,
+          "width": 50,
+          "height": 13
         }
       ],
       "type": "centrifuge",
@@ -22552,9 +22552,9 @@
         {
           "text": "flotation-cell",
           "x": 20,
-          "y": 337,
-          "width": 84.296875,
-          "height": 11
+          "y": 336,
+          "width": 70,
+          "height": 13
         }
       ],
       "type": "flotation-cell",
@@ -22715,9 +22715,9 @@
         {
           "text": "membrane-filter",
           "x": 20,
-          "y": 337,
-          "width": 90.3125,
-          "height": 11
+          "y": 336,
+          "width": 75,
+          "height": 13
         }
       ],
       "type": "membrane-filter",
@@ -22858,9 +22858,9 @@
         {
           "text": "reverse-osmosis",
           "x": 20,
-          "y": 337,
-          "width": 90.3125,
-          "height": 11
+          "y": 336,
+          "width": 75,
+          "height": 13
         }
       ],
       "type": "reverse-osmosis",
@@ -23001,9 +23001,9 @@
         {
           "text": "distillation-column",
           "x": 20,
-          "y": 337,
-          "width": 114.390625,
-          "height": 11
+          "y": 336,
+          "width": 95,
+          "height": 13
         }
       ],
       "type": "distillation-column",
@@ -23168,9 +23168,9 @@
         {
           "text": "separator",
           "x": 20,
-          "y": 337,
-          "width": 54.1875,
-          "height": 11
+          "y": 336,
+          "width": 45,
+          "height": 13
         }
       ],
       "type": "separator",
@@ -23331,9 +23331,9 @@
         {
           "text": "separator / flash-water",
           "x": 20,
-          "y": 337,
-          "width": 138.484375,
-          "height": 11
+          "y": 336,
+          "width": 115,
+          "height": 13
         }
       ],
       "type": "separator",
@@ -23483,9 +23483,9 @@
         {
           "text": "cyclone",
           "x": 20,
-          "y": 337,
-          "width": 42.15625,
-          "height": 11
+          "y": 336,
+          "width": 35,
+          "height": 13
         }
       ],
       "type": "cyclone",
@@ -23624,9 +23624,9 @@
         {
           "text": "scrubber",
           "x": 20,
-          "y": 337,
-          "width": 48.171875,
-          "height": 11
+          "y": 336,
+          "width": 40,
+          "height": 13
         }
       ],
       "type": "scrubber",
@@ -23780,9 +23780,9 @@
         {
           "text": "cooling-tower",
           "x": 20,
-          "y": 337,
-          "width": 78.28125,
-          "height": 11
+          "y": 336,
+          "width": 65,
+          "height": 13
         }
       ],
       "type": "cooling-tower",
@@ -23947,9 +23947,9 @@
         {
           "text": "chiller",
           "x": 20,
-          "y": 337,
-          "width": 42.15625,
-          "height": 11
+          "y": 336,
+          "width": 35,
+          "height": 13
         }
       ],
       "type": "chiller",
@@ -24101,9 +24101,9 @@
         {
           "text": "evaporator",
           "x": 20,
-          "y": 337,
-          "width": 60.21875,
-          "height": 11
+          "y": 336,
+          "width": 50,
+          "height": 13
         }
       ],
       "type": "evaporator",
@@ -24266,9 +24266,9 @@
         {
           "text": "electrolyzer",
           "x": 20,
-          "y": 337,
-          "width": 72.25,
-          "height": 11
+          "y": 336,
+          "width": 60,
+          "height": 13
         }
       ],
       "type": "electrolyzer",
@@ -24420,9 +24420,9 @@
         {
           "text": "fuel-cell",
           "x": 20,
-          "y": 337,
-          "width": 54.1875,
-          "height": 11
+          "y": 336,
+          "width": 45,
+          "height": 13
         }
       ],
       "type": "fuel-cell",
@@ -24572,9 +24572,9 @@
         {
           "text": "wellhead",
           "x": 20,
-          "y": 337,
-          "width": 48.171875,
-          "height": 11
+          "y": 336,
+          "width": 40,
+          "height": 13
         }
       ],
       "type": "wellhead",
@@ -24738,9 +24738,9 @@
         {
           "text": "wellhead / steam-well",
           "x": 20,
-          "y": 337,
-          "width": 126.4375,
-          "height": 11
+          "y": 336,
+          "width": 105,
+          "height": 13
         }
       ],
       "type": "wellhead",
@@ -24904,9 +24904,9 @@
         {
           "text": "wellhead / geothermal-water",
           "x": 20,
-          "y": 337,
-          "width": 162.5625,
-          "height": 11
+          "y": 336,
+          "width": 135,
+          "height": 13
         }
       ],
       "type": "wellhead",
@@ -25067,9 +25067,9 @@
         {
           "text": "wind-turbine",
           "x": 20,
-          "y": 337,
-          "width": 72.25,
-          "height": 11
+          "y": 336,
+          "width": 60,
+          "height": 13
         }
       ],
       "type": "wind-turbine",
@@ -25223,9 +25223,9 @@
         {
           "text": "aeration-basin",
           "x": 20,
-          "y": 337,
-          "width": 84.296875,
-          "height": 11
+          "y": 336,
+          "width": 70,
+          "height": 13
         }
       ],
       "type": "aeration-basin",
@@ -25379,9 +25379,9 @@
         {
           "text": "steam-turbine",
           "x": 20,
-          "y": 337,
-          "width": 78.28125,
-          "height": 11
+          "y": 336,
+          "width": 65,
+          "height": 13
         }
       ],
       "type": "steam-turbine",
@@ -25544,9 +25544,9 @@
         {
           "text": "fan",
           "x": 20,
-          "y": 337,
-          "width": 18.0625,
-          "height": 11
+          "y": 336,
+          "width": 15,
+          "height": 13
         }
       ],
       "type": "fan",
@@ -25704,9 +25704,9 @@
         {
           "text": "gas-turbine",
           "x": 20,
-          "y": 337,
-          "width": 66.234375,
-          "height": 11
+          "y": 336,
+          "width": 55,
+          "height": 13
         }
       ],
       "type": "gas-turbine",
@@ -25885,9 +25885,9 @@
         {
           "text": "heat-recovery-steam-generator",
           "x": 20,
-          "y": 337,
-          "width": 174.609375,
-          "height": 11
+          "y": 336,
+          "width": 145,
+          "height": 13
         }
       ],
       "type": "heat-recovery-steam-generator",
@@ -26066,9 +26066,9 @@
         {
           "text": "surface-condenser",
           "x": 20,
-          "y": 337,
-          "width": 102.359375,
-          "height": 11
+          "y": 336,
+          "width": 85,
+          "height": 13
         }
       ],
       "type": "surface-condenser",
@@ -26251,9 +26251,9 @@
         {
           "text": "deaerator",
           "x": 20,
-          "y": 337,
-          "width": 54.1875,
-          "height": 11
+          "y": 336,
+          "width": 45,
+          "height": 13
         }
       ],
       "type": "deaerator",
@@ -26419,9 +26419,9 @@
         {
           "text": "cooling-radiator",
           "x": 20,
-          "y": 337,
-          "width": 96.328125,
-          "height": 11
+          "y": 336,
+          "width": 80,
+          "height": 13
         }
       ],
       "type": "cooling-radiator",
@@ -26583,9 +26583,9 @@
         {
           "text": "fuel-pressure-regulator",
           "x": 20,
-          "y": 337,
-          "width": 138.484375,
-          "height": 11
+          "y": 336,
+          "width": 115,
+          "height": 13
         }
       ],
       "type": "fuel-pressure-regulator",
@@ -26759,9 +26759,9 @@
         {
           "text": "pwr-reactor-vessel",
           "x": 20,
-          "y": 337,
-          "width": 108.375,
-          "height": 11
+          "y": 336,
+          "width": 90,
+          "height": 13
         }
       ],
       "type": "pwr-reactor-vessel",
@@ -26952,9 +26952,9 @@
         {
           "text": "bwr-reactor-vessel",
           "x": 20,
-          "y": 337,
-          "width": 108.375,
-          "height": 11
+          "y": 336,
+          "width": 90,
+          "height": 13
         }
       ],
       "type": "bwr-reactor-vessel",
@@ -27143,9 +27143,9 @@
         {
           "text": "phwr-calandria",
           "x": 20,
-          "y": 337,
-          "width": 84.296875,
-          "height": 11
+          "y": 336,
+          "width": 70,
+          "height": 13
         }
       ],
       "type": "phwr-calandria",
@@ -27334,9 +27334,9 @@
         {
           "text": "gas-cooled-reactor",
           "x": 20,
-          "y": 337,
-          "width": 108.375,
-          "height": 11
+          "y": 336,
+          "width": 90,
+          "height": 13
         }
       ],
       "type": "gas-cooled-reactor",
@@ -27516,9 +27516,9 @@
         {
           "text": "sodium-reactor-vessel",
           "x": 20,
-          "y": 337,
-          "width": 126.4375,
-          "height": 11
+          "y": 336,
+          "width": 105,
+          "height": 13
         }
       ],
       "type": "sodium-reactor-vessel",
@@ -27707,9 +27707,9 @@
         {
           "text": "molten-salt-reactor",
           "x": 20,
-          "y": 337,
-          "width": 114.390625,
-          "height": 11
+          "y": 336,
+          "width": 95,
+          "height": 13
         }
       ],
       "type": "molten-salt-reactor",
@@ -27905,9 +27905,9 @@
         {
           "text": "molten-salt-reactor / solid-fuel-salt-cooled",
           "x": 20,
-          "y": 337,
-          "width": 264.90625,
-          "height": 11
+          "y": 336,
+          "width": 220,
+          "height": 13
         }
       ],
       "type": "molten-salt-reactor",
@@ -28096,9 +28096,9 @@
         {
           "text": "nuclear-steam-generator",
           "x": 20,
-          "y": 337,
-          "width": 138.484375,
-          "height": 11
+          "y": 336,
+          "width": 115,
+          "height": 13
         }
       ],
       "type": "nuclear-steam-generator",
@@ -28284,9 +28284,9 @@
         {
           "text": "nuclear-steam-generator / water-primary",
           "x": 20,
-          "y": 337,
-          "width": 234.8125,
-          "height": 11
+          "y": 336,
+          "width": 195,
+          "height": 13
         }
       ],
       "type": "nuclear-steam-generator",
@@ -28472,9 +28472,9 @@
         {
           "text": "nuclear-steam-generator / heavy-water-primary",
           "x": 20,
-          "y": 337,
-          "width": 270.9375,
-          "height": 11
+          "y": 336,
+          "width": 225,
+          "height": 13
         }
       ],
       "type": "nuclear-steam-generator",
@@ -28660,9 +28660,9 @@
         {
           "text": "nuclear-steam-generator / helium-primary",
           "x": 20,
-          "y": 337,
-          "width": 240.828125,
-          "height": 11
+          "y": 336,
+          "width": 200,
+          "height": 13
         }
       ],
       "type": "nuclear-steam-generator",
@@ -28848,9 +28848,9 @@
         {
           "text": "nuclear-steam-generator / sodium-primary",
           "x": 20,
-          "y": 337,
-          "width": 240.828125,
-          "height": 11
+          "y": 336,
+          "width": 200,
+          "height": 13
         }
       ],
       "type": "nuclear-steam-generator",
@@ -29036,9 +29036,9 @@
         {
           "text": "nuclear-steam-generator / salt-primary",
           "x": 20,
-          "y": 337,
-          "width": 228.78125,
-          "height": 11
+          "y": 336,
+          "width": 190,
+          "height": 13
         }
       ],
       "type": "nuclear-steam-generator",
@@ -29217,9 +29217,9 @@
         {
           "text": "pressurizer",
           "x": 20,
-          "y": 337,
-          "width": 66.234375,
-          "height": 11
+          "y": 336,
+          "width": 55,
+          "height": 13
         }
       ],
       "type": "pressurizer",
@@ -29384,9 +29384,9 @@
         {
           "text": "containment-structure",
           "x": 20,
-          "y": 337,
-          "width": 126.4375,
-          "height": 11
+          "y": 336,
+          "width": 105,
+          "height": 13
         }
       ],
       "type": "containment-structure",
@@ -29565,9 +29565,9 @@
         {
           "text": "used-fuel-pool",
           "x": 20,
-          "y": 337,
-          "width": 84.296875,
-          "height": 11
+          "y": 336,
+          "width": 70,
+          "height": 13
         }
       ],
       "type": "used-fuel-pool",
@@ -29731,9 +29731,9 @@
         {
           "text": "control-rod-drive",
           "x": 20,
-          "y": 337,
-          "width": 102.359375,
-          "height": 11
+          "y": 336,
+          "width": 85,
+          "height": 13
         }
       ],
       "type": "control-rod-drive",
@@ -29891,9 +29891,9 @@
         {
           "text": "neutron-monitor",
           "x": 20,
-          "y": 337,
-          "width": 90.3125,
-          "height": 11
+          "y": 336,
+          "width": 75,
+          "height": 13
         }
       ],
       "type": "neutron-monitor",
@@ -30039,9 +30039,9 @@
         {
           "text": "radiation-monitor",
           "x": 20,
-          "y": 337,
-          "width": 102.359375,
-          "height": 11
+          "y": 336,
+          "width": 85,
+          "height": 13
         }
       ],
       "type": "radiation-monitor",
@@ -30189,9 +30189,9 @@
         {
           "text": "reservoir",
           "x": 20,
-          "y": 337,
-          "width": 54.1875,
-          "height": 11
+          "y": 336,
+          "width": 45,
+          "height": 13
         }
       ],
       "type": "reservoir",
@@ -30341,9 +30341,9 @@
         {
           "text": "intake-gate",
           "x": 20,
-          "y": 337,
-          "width": 66.234375,
-          "height": 11
+          "y": 336,
+          "width": 55,
+          "height": 13
         }
       ],
       "type": "intake-gate",
@@ -30494,9 +30494,9 @@
         {
           "text": "hydro-turbine",
           "x": 20,
-          "y": 337,
-          "width": 78.28125,
-          "height": 11
+          "y": 336,
+          "width": 65,
+          "height": 13
         }
       ],
       "type": "hydro-turbine",
@@ -30661,9 +30661,9 @@
         {
           "text": "reversible-pump-turbine",
           "x": 20,
-          "y": 337,
-          "width": 138.484375,
-          "height": 11
+          "y": 336,
+          "width": 115,
+          "height": 13
         }
       ],
       "type": "reversible-pump-turbine",
@@ -30847,9 +30847,9 @@
         {
           "text": "power-inverter",
           "x": 20,
-          "y": 337,
-          "width": 84.296875,
-          "height": 11
+          "y": 336,
+          "width": 70,
+          "height": 13
         }
       ],
       "type": "power-inverter",
@@ -31014,9 +31014,9 @@
         {
           "text": "power-inverter / dc-to-ac",
           "x": 20,
-          "y": 337,
-          "width": 150.515625,
-          "height": 11
+          "y": 336,
+          "width": 125,
+          "height": 13
         }
       ],
       "type": "power-inverter",
@@ -31181,9 +31181,9 @@
         {
           "text": "power-inverter / bidirectional",
           "x": 20,
-          "y": 337,
-          "width": 180.625,
-          "height": 11
+          "y": 336,
+          "width": 150,
+          "height": 13
         }
       ],
       "type": "power-inverter",
@@ -31345,9 +31345,9 @@
         {
           "text": "heliostat",
           "x": 20,
-          "y": 337,
-          "width": 54.1875,
-          "height": 11
+          "y": 336,
+          "width": 45,
+          "height": 13
         }
       ],
       "type": "heliostat",
@@ -31500,9 +31500,9 @@
         {
           "text": "solar-receiver",
           "x": 20,
-          "y": 337,
-          "width": 84.296875,
-          "height": 11
+          "y": 336,
+          "width": 70,
+          "height": 13
         }
       ],
       "type": "solar-receiver",
@@ -31657,9 +31657,9 @@
         {
           "text": "parabolic-trough",
           "x": 20,
-          "y": 337,
-          "width": 96.328125,
-          "height": 11
+          "y": 336,
+          "width": 80,
+          "height": 13
         }
       ],
       "type": "parabolic-trough",
@@ -31837,9 +31837,9 @@
         {
           "text": "tidal-turbine",
           "x": 20,
-          "y": 337,
-          "width": 78.28125,
-          "height": 11
+          "y": 336,
+          "width": 65,
+          "height": 13
         }
       ],
       "type": "tidal-turbine",
@@ -32025,9 +32025,9 @@
         {
           "text": "wave-energy-converter",
           "x": 20,
-          "y": 337,
-          "width": 126.4375,
-          "height": 11
+          "y": 336,
+          "width": 105,
+          "height": 13
         }
       ],
       "type": "wave-energy-converter",
@@ -32183,9 +32183,9 @@
         {
           "text": "alternator",
           "x": 20,
-          "y": 337,
-          "width": 60.21875,
-          "height": 11
+          "y": 336,
+          "width": 50,
+          "height": 13
         }
       ],
       "type": "alternator",
@@ -32371,9 +32371,9 @@
         {
           "text": "alternator / generator",
           "x": 20,
-          "y": 337,
-          "width": 132.453125,
-          "height": 11
+          "y": 336,
+          "width": 110,
+          "height": 13
         }
       ],
       "type": "alternator",
@@ -32559,9 +32559,9 @@
         {
           "text": "alternator / motor-generator",
           "x": 20,
-          "y": 337,
-          "width": 168.578125,
-          "height": 11
+          "y": 336,
+          "width": 140,
+          "height": 13
         }
       ],
       "type": "alternator",
@@ -32736,9 +32736,9 @@
         {
           "text": "hv-circuit-breaker",
           "x": 20,
-          "y": 337,
-          "width": 108.375,
-          "height": 11
+          "y": 336,
+          "width": 90,
+          "height": 13
         }
       ],
       "type": "hv-circuit-breaker",
@@ -32884,9 +32884,9 @@
         {
           "text": "disconnect-switch",
           "x": 20,
-          "y": 337,
-          "width": 102.359375,
-          "height": 11
+          "y": 336,
+          "width": 85,
+          "height": 13
         }
       ],
       "type": "disconnect-switch",
@@ -33039,9 +33039,9 @@
         {
           "text": "disconnect-switch / ac-isolator",
           "x": 20,
-          "y": 337,
-          "width": 186.640625,
-          "height": 11
+          "y": 336,
+          "width": 155,
+          "height": 13
         }
       ],
       "type": "disconnect-switch",
@@ -33194,9 +33194,9 @@
         {
           "text": "disconnect-switch / dc-isolator",
           "x": 20,
-          "y": 337,
-          "width": 186.640625,
-          "height": 11
+          "y": 336,
+          "width": 155,
+          "height": 13
         }
       ],
       "type": "disconnect-switch",
@@ -33342,9 +33342,9 @@
         {
           "text": "earthing-switch",
           "x": 20,
-          "y": 337,
-          "width": 90.3125,
-          "height": 11
+          "y": 336,
+          "width": 75,
+          "height": 13
         }
       ],
       "type": "earthing-switch",
@@ -33481,9 +33481,9 @@
         {
           "text": "current-transformer",
           "x": 20,
-          "y": 337,
-          "width": 114.390625,
-          "height": 11
+          "y": 336,
+          "width": 95,
+          "height": 13
         }
       ],
       "type": "current-transformer",
@@ -33631,9 +33631,9 @@
         {
           "text": "voltage-transformer",
           "x": 20,
-          "y": 337,
-          "width": 114.390625,
-          "height": 11
+          "y": 336,
+          "width": 95,
+          "height": 13
         }
       ],
       "type": "voltage-transformer",
@@ -33779,9 +33779,9 @@
         {
           "text": "surge-arrester",
           "x": 20,
-          "y": 337,
-          "width": 84.296875,
-          "height": 11
+          "y": 336,
+          "width": 70,
+          "height": 13
         }
       ],
       "type": "surge-arrester",
@@ -33922,9 +33922,9 @@
         {
           "text": "capacitor-bank",
           "x": 20,
-          "y": 337,
-          "width": 84.296875,
-          "height": 11
+          "y": 336,
+          "width": 70,
+          "height": 13
         }
       ],
       "type": "capacitor-bank",
@@ -34083,9 +34083,9 @@
         {
           "text": "shunt-reactor",
           "x": 20,
-          "y": 337,
-          "width": 78.28125,
-          "height": 11
+          "y": 336,
+          "width": 65,
+          "height": 13
         }
       ],
       "type": "shunt-reactor",
@@ -34243,9 +34243,9 @@
         {
           "text": "protection-relay",
           "x": 20,
-          "y": 337,
-          "width": 96.328125,
-          "height": 11
+          "y": 336,
+          "width": 80,
+          "height": 13
         }
       ],
       "type": "protection-relay",
@@ -34400,9 +34400,9 @@
         {
           "text": "switchgear-panel",
           "x": 20,
-          "y": 337,
-          "width": 96.328125,
-          "height": 11
+          "y": 336,
+          "width": 80,
+          "height": 13
         }
       ],
       "type": "switchgear-panel",
@@ -34555,9 +34555,9 @@
         {
           "text": "gis-bay",
           "x": 20,
-          "y": 337,
-          "width": 42.15625,
-          "height": 11
+          "y": 336,
+          "width": 35,
+          "height": 13
         }
       ],
       "type": "gis-bay",
@@ -34717,9 +34717,9 @@
         {
           "text": "automatic-transfer-switch",
           "x": 20,
-          "y": 337,
-          "width": 150.515625,
-          "height": 11
+          "y": 336,
+          "width": 125,
+          "height": 13
         }
       ],
       "type": "automatic-transfer-switch",
@@ -34888,9 +34888,9 @@
         {
           "text": "excitation-system",
           "x": 20,
-          "y": 337,
-          "width": 102.359375,
-          "height": 11
+          "y": 336,
+          "width": 85,
+          "height": 13
         }
       ],
       "type": "excitation-system",
@@ -35049,9 +35049,9 @@
         {
           "text": "power-rectifier",
           "x": 20,
-          "y": 337,
-          "width": 90.3125,
-          "height": 11
+          "y": 336,
+          "width": 75,
+          "height": 13
         }
       ],
       "type": "power-rectifier",
@@ -35213,9 +35213,9 @@
         {
           "text": "fish-tank",
           "x": 20,
-          "y": 337,
-          "width": 54.1875,
-          "height": 11
+          "y": 336,
+          "width": 45,
+          "height": 13
         }
       ],
       "type": "fish-tank",
@@ -35380,9 +35380,9 @@
         {
           "text": "biofilter",
           "x": 20,
-          "y": 337,
-          "width": 54.1875,
-          "height": 11
+          "y": 336,
+          "width": 45,
+          "height": 13
         }
       ],
       "type": "biofilter",
@@ -35545,9 +35545,9 @@
         {
           "text": "media-grow-bed",
           "x": 20,
-          "y": 337,
-          "width": 84.296875,
-          "height": 11
+          "y": 336,
+          "width": 70,
+          "height": 13
         }
       ],
       "type": "media-grow-bed",
@@ -35726,9 +35726,9 @@
         {
           "text": "dwc-raft-bed",
           "x": 20,
-          "y": 337,
-          "width": 72.25,
-          "height": 11
+          "y": 336,
+          "width": 60,
+          "height": 13
         }
       ],
       "type": "dwc-raft-bed",
@@ -35891,9 +35891,9 @@
         {
           "text": "nft-channel",
           "x": 20,
-          "y": 337,
-          "width": 66.234375,
-          "height": 11
+          "y": 336,
+          "width": 55,
+          "height": 13
         }
       ],
       "type": "nft-channel",
@@ -36045,9 +36045,9 @@
         {
           "text": "ebb-flow-table",
           "x": 20,
-          "y": 337,
-          "width": 84.296875,
-          "height": 11
+          "y": 336,
+          "width": 70,
+          "height": 13
         }
       ],
       "type": "ebb-flow-table",
@@ -36226,9 +36226,9 @@
         {
           "text": "drip-zone",
           "x": 20,
-          "y": 337,
-          "width": 54.1875,
-          "height": 11
+          "y": 336,
+          "width": 45,
+          "height": 13
         }
       ],
       "type": "drip-zone",
@@ -36382,9 +36382,9 @@
         {
           "text": "aeroponic-chamber",
           "x": 20,
-          "y": 337,
-          "width": 102.359375,
-          "height": 11
+          "y": 336,
+          "width": 85,
+          "height": 13
         }
       ],
       "type": "aeroponic-chamber",
@@ -36534,9 +36534,9 @@
         {
           "text": "grow-light",
           "x": 20,
-          "y": 337,
-          "width": 60.21875,
-          "height": 11
+          "y": 336,
+          "width": 50,
+          "height": 13
         }
       ],
       "type": "grow-light",
@@ -36686,9 +36686,9 @@
         {
           "text": "greenhouse-vent",
           "x": 20,
-          "y": 337,
-          "width": 90.3125,
-          "height": 11
+          "y": 336,
+          "width": 75,
+          "height": 13
         }
       ],
       "type": "greenhouse-vent",
@@ -36838,9 +36838,9 @@
         {
           "text": "shade-screen",
           "x": 20,
-          "y": 337,
-          "width": 72.25,
-          "height": 11
+          "y": 336,
+          "width": 60,
+          "height": 13
         }
       ],
       "type": "shade-screen",
@@ -36992,9 +36992,9 @@
         {
           "text": "evaporative-pad",
           "x": 20,
-          "y": 337,
-          "width": 90.3125,
-          "height": 11
+          "y": 336,
+          "width": 75,
+          "height": 13
         }
       ],
       "type": "evaporative-pad",
@@ -37159,9 +37159,9 @@
         {
           "text": "dehumidifier",
           "x": 20,
-          "y": 337,
-          "width": 72.25,
-          "height": 11
+          "y": 336,
+          "width": 60,
+          "height": 13
         }
       ],
       "type": "dehumidifier",
@@ -37324,9 +37324,9 @@
         {
           "text": "water-quality-probe",
           "x": 20,
-          "y": 337,
-          "width": 114.390625,
-          "height": 11
+          "y": 336,
+          "width": 95,
+          "height": 13
         }
       ],
       "type": "water-quality-probe",
@@ -37493,9 +37493,9 @@
         {
           "text": "humidity-sensor",
           "x": 20,
-          "y": 337,
-          "width": 90.3125,
-          "height": 11
+          "y": 336,
+          "width": 75,
+          "height": 13
         }
       ],
       "type": "humidity-sensor",
@@ -37641,9 +37641,9 @@
         {
           "text": "light-sensor",
           "x": 20,
-          "y": 337,
-          "width": 72.25,
-          "height": 11
+          "y": 336,
+          "width": 60,
+          "height": 13
         }
       ],
       "type": "light-sensor",
@@ -37791,9 +37791,9 @@
         {
           "text": "air-diffuser",
           "x": 20,
-          "y": 337,
-          "width": 72.25,
-          "height": 11
+          "y": 336,
+          "width": 60,
+          "height": 13
         }
       ],
       "type": "air-diffuser",
@@ -37955,9 +37955,9 @@
         {
           "text": "pump",
           "x": 20,
-          "y": 337,
-          "width": 24.09375,
-          "height": 11
+          "y": 336,
+          "width": 20,
+          "height": 13
         }
       ],
       "type": "pump",
@@ -38121,9 +38121,9 @@
         {
           "text": "pump",
           "x": 20,
-          "y": 337,
-          "width": 24.09375,
-          "height": 11
+          "y": 336,
+          "width": 20,
+          "height": 13
         }
       ],
       "type": "pump",
@@ -38287,9 +38287,9 @@
         {
           "text": "pump",
           "x": 20,
-          "y": 337,
-          "width": 24.09375,
-          "height": 11
+          "y": 336,
+          "width": 20,
+          "height": 13
         }
       ],
       "type": "pump",
@@ -38453,9 +38453,9 @@
         {
           "text": "pump",
           "x": 20,
-          "y": 337,
-          "width": 24.09375,
-          "height": 11
+          "y": 336,
+          "width": 20,
+          "height": 13
         }
       ],
       "type": "pump",
@@ -38619,9 +38619,9 @@
         {
           "text": "pump",
           "x": 20,
-          "y": 337,
-          "width": 24.09375,
-          "height": 11
+          "y": 336,
+          "width": 20,
+          "height": 13
         }
       ],
       "type": "pump",
@@ -38787,9 +38787,9 @@
         {
           "text": "pump",
           "x": 20,
-          "y": 337,
-          "width": 24.09375,
-          "height": 11
+          "y": 336,
+          "width": 20,
+          "height": 13
         }
       ],
       "type": "pump",
@@ -38953,9 +38953,9 @@
         {
           "text": "pump",
           "x": 20,
-          "y": 337,
-          "width": 24.09375,
-          "height": 11
+          "y": 336,
+          "width": 20,
+          "height": 13
         }
       ],
       "type": "pump",
@@ -39123,9 +39123,9 @@
         {
           "text": "pump",
           "x": 20,
-          "y": 337,
-          "width": 24.09375,
-          "height": 11
+          "y": 336,
+          "width": 20,
+          "height": 13
         }
       ],
       "type": "pump",
@@ -39281,9 +39281,9 @@
         {
           "text": "tank",
           "x": 20,
-          "y": 337,
-          "width": 24.09375,
-          "height": 11
+          "y": 336,
+          "width": 20,
+          "height": 13
         }
       ],
       "type": "tank",
@@ -39424,9 +39424,9 @@
         {
           "text": "tank",
           "x": 20,
-          "y": 337,
-          "width": 24.09375,
-          "height": 11
+          "y": 336,
+          "width": 20,
+          "height": 13
         }
       ],
       "type": "tank",
@@ -39569,9 +39569,9 @@
         {
           "text": "tank",
           "x": 20,
-          "y": 337,
-          "width": 24.09375,
-          "height": 11
+          "y": 336,
+          "width": 20,
+          "height": 13
         }
       ],
       "type": "tank",
@@ -39725,9 +39725,9 @@
         {
           "text": "generator / diesel-skid",
           "x": 20,
-          "y": 337,
-          "width": 138.484375,
-          "height": 11
+          "y": 336,
+          "width": 115,
+          "height": 13
         }
       ],
       "type": "generator",
@@ -39892,9 +39892,9 @@
         {
           "text": "generator / gasoline-portable",
           "x": 20,
-          "y": 337,
-          "width": 174.609375,
-          "height": 11
+          "y": 336,
+          "width": 145,
+          "height": 13
         }
       ],
       "type": "generator",
@@ -40044,9 +40044,9 @@
         {
           "text": "plc-rack",
           "x": 20,
-          "y": 337,
-          "width": 48.171875,
-          "height": 11
+          "y": 336,
+          "width": 40,
+          "height": 13
         }
       ],
       "type": "plc-rack",
@@ -40192,9 +40192,9 @@
         {
           "text": "plc-rack",
           "x": 20,
-          "y": 337,
-          "width": 48.171875,
-          "height": 11
+          "y": 336,
+          "width": 40,
+          "height": 13
         }
       ],
       "type": "plc-rack",
@@ -40340,9 +40340,9 @@
         {
           "text": "gate-valve",
           "x": 20,
-          "y": 337,
-          "width": 60.21875,
-          "height": 11
+          "y": 336,
+          "width": 50,
+          "height": 13
         }
       ],
       "type": "gate-valve",
@@ -40488,9 +40488,9 @@
         {
           "text": "gate-valve",
           "x": 20,
-          "y": 337,
-          "width": 60.21875,
-          "height": 11
+          "y": 336,
+          "width": 50,
+          "height": 13
         }
       ],
       "type": "gate-valve",
@@ -40636,9 +40636,9 @@
         {
           "text": "gate-valve",
           "x": 20,
-          "y": 337,
-          "width": 60.21875,
-          "height": 11
+          "y": 336,
+          "width": 50,
+          "height": 13
         }
       ],
       "type": "gate-valve",
@@ -40784,9 +40784,9 @@
         {
           "text": "control-valve",
           "x": 20,
-          "y": 337,
-          "width": 78.28125,
-          "height": 11
+          "y": 336,
+          "width": 65,
+          "height": 13
         }
       ],
       "type": "control-valve",
@@ -40932,9 +40932,9 @@
         {
           "text": "control-valve",
           "x": 20,
-          "y": 337,
-          "width": 78.28125,
-          "height": 11
+          "y": 336,
+          "width": 65,
+          "height": 13
         }
       ],
       "type": "control-valve",
@@ -41080,9 +41080,9 @@
         {
           "text": "control-valve",
           "x": 20,
-          "y": 337,
-          "width": 78.28125,
-          "height": 11
+          "y": 336,
+          "width": 65,
+          "height": 13
         }
       ],
       "type": "control-valve",
@@ -41228,9 +41228,9 @@
         {
           "text": "check-valve",
           "x": 20,
-          "y": 337,
-          "width": 66.234375,
-          "height": 11
+          "y": 336,
+          "width": 55,
+          "height": 13
         }
       ],
       "type": "check-valve",
@@ -41365,9 +41365,9 @@
         {
           "text": "check-valve",
           "x": 20,
-          "y": 337,
-          "width": 66.234375,
-          "height": 11
+          "y": 336,
+          "width": 55,
+          "height": 13
         }
       ],
       "type": "check-valve",
@@ -41502,9 +41502,9 @@
         {
           "text": "relief-valve",
           "x": 20,
-          "y": 337,
-          "width": 72.25,
-          "height": 11
+          "y": 336,
+          "width": 60,
+          "height": 13
         }
       ],
       "type": "relief-valve",
@@ -41639,9 +41639,9 @@
         {
           "text": "relief-valve",
           "x": 20,
-          "y": 337,
-          "width": 72.25,
-          "height": 11
+          "y": 336,
+          "width": 60,
+          "height": 13
         }
       ],
       "type": "relief-valve",
@@ -41776,9 +41776,9 @@
         {
           "text": "butterfly-valve",
           "x": 20,
-          "y": 337,
-          "width": 90.3125,
-          "height": 11
+          "y": 336,
+          "width": 75,
+          "height": 13
         }
       ],
       "type": "butterfly-valve",
@@ -41924,9 +41924,9 @@
         {
           "text": "butterfly-valve",
           "x": 20,
-          "y": 337,
-          "width": 90.3125,
-          "height": 11
+          "y": 336,
+          "width": 75,
+          "height": 13
         }
       ],
       "type": "butterfly-valve",
@@ -42072,9 +42072,9 @@
         {
           "text": "butterfly-valve",
           "x": 20,
-          "y": 337,
-          "width": 90.3125,
-          "height": 11
+          "y": 336,
+          "width": 75,
+          "height": 13
         }
       ],
       "type": "butterfly-valve",
@@ -42220,9 +42220,9 @@
         {
           "text": "fuel-pressure-regulator",
           "x": 20,
-          "y": 337,
-          "width": 138.484375,
-          "height": 11
+          "y": 336,
+          "width": 115,
+          "height": 13
         }
       ],
       "type": "fuel-pressure-regulator",
@@ -42392,9 +42392,9 @@
         {
           "text": "fuel-pressure-regulator",
           "x": 20,
-          "y": 337,
-          "width": 138.484375,
-          "height": 11
+          "y": 336,
+          "width": 115,
+          "height": 13
         }
       ],
       "type": "fuel-pressure-regulator",
@@ -42564,9 +42564,9 @@
         {
           "text": "fuel-pressure-regulator",
           "x": 20,
-          "y": 337,
-          "width": 138.484375,
-          "height": 11
+          "y": 336,
+          "width": 115,
+          "height": 13
         }
       ],
       "type": "fuel-pressure-regulator",
@@ -42736,9 +42736,9 @@
         {
           "text": "intake-gate",
           "x": 20,
-          "y": 337,
-          "width": 66.234375,
-          "height": 11
+          "y": 336,
+          "width": 55,
+          "height": 13
         }
       ],
       "type": "intake-gate",
@@ -42885,9 +42885,9 @@
         {
           "text": "intake-gate",
           "x": 20,
-          "y": 337,
-          "width": 66.234375,
-          "height": 11
+          "y": 336,
+          "width": 55,
+          "height": 13
         }
       ],
       "type": "intake-gate",
@@ -43034,9 +43034,9 @@
         {
           "text": "intake-gate",
           "x": 20,
-          "y": 337,
-          "width": 66.234375,
-          "height": 11
+          "y": 336,
+          "width": 55,
+          "height": 13
         }
       ],
       "type": "intake-gate",
@@ -43183,9 +43183,9 @@
         {
           "text": "control-valve",
           "x": 20,
-          "y": 337,
-          "width": 78.28125,
-          "height": 11
+          "y": 336,
+          "width": 65,
+          "height": 13
         }
       ],
       "type": "control-valve",
@@ -43331,9 +43331,9 @@
         {
           "text": "control-valve",
           "x": 20,
-          "y": 337,
-          "width": 78.28125,
-          "height": 11
+          "y": 336,
+          "width": 65,
+          "height": 13
         }
       ],
       "type": "control-valve",
@@ -43479,9 +43479,9 @@
         {
           "text": "control-valve",
           "x": 20,
-          "y": 337,
-          "width": 78.28125,
-          "height": 11
+          "y": 336,
+          "width": 65,
+          "height": 13
         }
       ],
       "type": "control-valve",
@@ -43629,9 +43629,9 @@
         {
           "text": "control-valve",
           "x": 20,
-          "y": 337,
-          "width": 78.28125,
-          "height": 11
+          "y": 336,
+          "width": 65,
+          "height": 13
         }
       ],
       "type": "control-valve",
@@ -43785,9 +43785,9 @@
         {
           "text": "flare",
           "x": 20,
-          "y": 337,
-          "width": 30.109375,
-          "height": 11
+          "y": 336,
+          "width": 25,
+          "height": 13
         }
       ],
       "type": "flare",
@@ -43934,9 +43934,9 @@
         {
           "text": "flare",
           "x": 20,
-          "y": 337,
-          "width": 30.109375,
-          "height": 11
+          "y": 336,
+          "width": 25,
+          "height": 13
         }
       ],
       "type": "flare",
@@ -44079,9 +44079,9 @@
         {
           "text": "pwr-reactor-vessel",
           "x": 20,
-          "y": 337,
-          "width": 108.375,
-          "height": 11
+          "y": 336,
+          "width": 90,
+          "height": 13
         }
       ],
       "type": "pwr-reactor-vessel",
@@ -44270,9 +44270,9 @@
         {
           "text": "pwr-reactor-vessel",
           "x": 20,
-          "y": 337,
-          "width": 108.375,
-          "height": 11
+          "y": 336,
+          "width": 90,
+          "height": 13
         }
       ],
       "type": "pwr-reactor-vessel",
@@ -44465,9 +44465,9 @@
         {
           "text": "solar-panel",
           "x": 20,
-          "y": 337,
-          "width": 66.234375,
-          "height": 11
+          "y": 336,
+          "width": 55,
+          "height": 13
         }
       ],
       "type": "solar-panel",
@@ -44610,9 +44610,9 @@
         {
           "text": "separator",
           "x": 20,
-          "y": 337,
-          "width": 54.1875,
-          "height": 11
+          "y": 336,
+          "width": 45,
+          "height": 13
         }
       ],
       "type": "separator",
@@ -44762,9 +44762,9 @@
         {
           "text": "greenhouse-vent",
           "x": 20,
-          "y": 337,
-          "width": 90.3125,
-          "height": 11
+          "y": 336,
+          "width": 75,
+          "height": 13
         }
       ],
       "type": "greenhouse-vent",
@@ -44914,9 +44914,9 @@
         {
           "text": "greenhouse-vent",
           "x": 20,
-          "y": 337,
-          "width": 90.3125,
-          "height": 11
+          "y": 336,
+          "width": 75,
+          "height": 13
         }
       ],
       "type": "greenhouse-vent",
@@ -45068,9 +45068,9 @@
         {
           "text": "nft-channel",
           "x": 20,
-          "y": 337,
-          "width": 66.234375,
-          "height": 11
+          "y": 336,
+          "width": 55,
+          "height": 13
         }
       ],
       "type": "nft-channel",
@@ -45230,9 +45230,9 @@
         {
           "text": "oven",
           "x": 20,
-          "y": 337,
-          "width": 24.09375,
-          "height": 11
+          "y": 336,
+          "width": 20,
+          "height": 13
         }
       ],
       "type": "oven",
@@ -45388,9 +45388,9 @@
         {
           "text": "rack-oven",
           "x": 20,
-          "y": 337,
-          "width": 54.1875,
-          "height": 11
+          "y": 336,
+          "width": 45,
+          "height": 13
         }
       ],
       "type": "rack-oven",
@@ -45549,9 +45549,9 @@
         {
           "text": "current-transformer",
           "x": 20,
-          "y": 337,
-          "width": 114.390625,
-          "height": 11
+          "y": 336,
+          "width": 95,
+          "height": 13
         }
       ],
       "type": "current-transformer",
@@ -45697,9 +45697,9 @@
         {
           "text": "protection-relay",
           "x": 20,
-          "y": 337,
-          "width": 96.328125,
-          "height": 11
+          "y": 336,
+          "width": 80,
+          "height": 13
         }
       ],
       "type": "protection-relay",
@@ -45813,7 +45813,7 @@
       "expectedMotion": "animated"
     }
   ],
-  "browser": "156.0.8078.79",
+  "browser": "151.0.7922.34",
   "image_decode_count": 290,
   "outputs": {
     "img/README.md": "84197a21a9f214264e9d6e41f18f89fd84f9370c593ad4ec85ba3113a7e9e965",

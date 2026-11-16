@@ -11,12 +11,14 @@ import {lowContrast} from './layout/outline.mjs';
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { mkdtemp, readdir, readFile, writeFile } from 'node:fs/promises';
+import { createServer } from 'node:net';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { chromium, webkit, expect } from './npm-context.mjs';
 import { builtSite } from './built-site.mjs';
+import { configureNavigation, fetchThrough, inLanes, navigate, navigationFailure, ownContexts, partHandler } from './navigation.mjs';
 import { folderMapPath } from '../../tools/site/publication.mjs';
-import { reducedHeroProblems, repositoryHeroProblems, homepageModelProblems, learningPictureProblems, homepageLateDrawProblems, resultImageMotionProblems } from './layout/motion.mjs';
+import { reducedHeroProblems, repositoryHeroProblems, homepageModelProblems, homepageViewerGateProblems, heroRecordingProblems, learningPictureProblems, homepageLateDrawProblems, resultImageMotionProblems } from './layout/motion.mjs';
 import { outlineEntryState, scrollOutline, sameSectionOutlineProblems, readerBoundaryProblems, readerOutlineClickProblems, readerOverflowProblems } from './layout/outline.mjs';
 import { VIEWPORT, VISUAL, WALL_CLEARED, WALL_LIMIT, longestStretch, plantedScript, longCitationProblems } from './layout/walls.mjs';
 import { wideLayoutProblems } from './layout/wide.mjs';
@@ -48,6 +50,10 @@ const base = await new Promise((ok, fail) => {
 const engine = process.env.PLAYWRIGHT_BROWSER === 'webkit' ? webkit : chromium;
 const launchOptions = engine === chromium ? { channel: process.env.PLAYWRIGHT_CHANNEL === 'chromium' ? undefined : 'chrome', headless: true } : { headless: true };
 const browser = await engine.launch(launchOptions);
+// Every navigation below goes through navigate (tests/site/navigation.mjs, #686): a failed one keeps the browser's and
+// the preview server's record, and becomes a finding of its part (runPart, in inLanes) instead of ending the run.
+ownContexts(browser);
+configureNavigation({ serverEvidence: previewServerEvidence, testLag, fullEvidenceLimit: 5 });
 // A reference area page (#323): the one route with the records' charts, table and filters (a small area, so the
 // theme part's text walk stays short; the walls part measures every reference page).
 const REFS = '/references/laser-cutting';
@@ -56,9 +62,12 @@ const ROUTES = ['/', '/explore', '/catalog', '/docs/compliant', '/docs/toolkit',
 // /kit/model/viewer is the kit's project viewer: it needs a project's exports/view/view.json, so it is not a site page.
 // The most a page with a diagram may move while it loads (#132; Google calls a page good under 0.1).
 const DIAGRAM_SHIFT = 0.05;
-// How many parts of this test (inLanes, below) run at once, each in its own pages: two keep a 4-CPU CI runner busy
+// How many parts of this test (inLanes, tests/site/navigation.mjs) run at once, each in its own pages: two keep a 4-CPU CI runner busy
 // without starving the checks that watch animations and scrolling.
 const LANES = 2;
+// The planted navigation stall (navigationStallControl, below): its part's name, its timeout, and what it saw.
+const STALL_CONTROL = 'navigation stall control', STALL_MS = 1500;
+const stallControl = { problems: [], requests: [] };
 // The kit scripts web/site.js starts on every page.
 const SITE_KIT = ['/kit/documents/diagrams.js', '/kit/documents/copy.js', '/kit/documents/nav.js'];
 /** The torsion-snap and screw-boss explorers (#161): what each one's page must show, and how to drive it. */
@@ -93,19 +102,20 @@ try {
     const sources = ((await readFile(path.join(dir, rel), 'utf8')).match(/class="language-mermaid"|<pre class="mermaid"|<figure class="cad-diagram"/g) || []).length;
     if (sources) diagramPages.push(['/' + rel.replace(/\.html$/, '').split(path.sep).join('/'), sources]);
   }
-  // Each part opens its own pages and returns what it found. LANES of them run at once (inLanes, below), and their
+  // Each part opens its own pages and returns what it found. LANES of them run at once (inLanes, tests/site/navigation.mjs), and their
   // problems are listed in this order whatever finishes first.
   const parts = [
+    // First, so every later part shows that a stalled navigation no longer ends the run (stallControlProblems, below).
+    [STALL_CONTROL, navigationStallControl],
     ['README image motion', () => repositoryHeroProblems(browser, base)],
     ['long citation reflow', () => longCitationProblems(browser, base)],
     ['wide layouts', () => wideLayoutProblems(browser, base)],
     ['header', headerProblems],          // painted text can collide even when the flex boxes and page do not overflow
     ['cantilever', cantileverProblems],  // the snap-arm explorer on /docs/compliant (#137), below
     ['fold', foldProblems],              // the page tree's fold on phones, with and without nav.js (#134)
-    ['outline visibility', () => sameSectionOutlineProblems(browser, base, { serverEvidence: previewServerEvidence })],
-    // Each reader navigation timeout also keeps the preview server's record of it (#686).
-    ['reader scroll boundary', async () => [...await readerBoundaryProblems(browser, base, { serverEvidence: previewServerEvidence }),
-      ...await readerOutlineClickProblems(browser, base, { serverEvidence: previewServerEvidence }), ...await readerOverflowProblems(browser, base, { serverEvidence: previewServerEvidence })]],
+    ['outline visibility', () => sameSectionOutlineProblems(browser, base)],
+    ['reader scroll boundary', async () => [...await readerBoundaryProblems(browser, base),
+      ...await readerOutlineClickProblems(browser, base), ...await readerOverflowProblems(browser, base)]],
     ['jump', jumpProblems],              // outline jumps: released by the reader's wheel, not by a stall
     ['fourbar', fourbarProblems],        // the four-bar animator on /docs/linkages (#159), below
     ['fanCurve', fanCurveProblems],      // the fan-curve explorer on /docs/fans (#160), below
@@ -134,7 +144,7 @@ try {
         if (route === '/') await page.addInitScript(() => addEventListener('load', () => {
           window.__posterBoxes = [...document.querySelectorAll('cad-model')].map(el => { const r = el.getBoundingClientRect(); return [r.width, r.height]; });
         }, { once: true }));
-        const res = await page.goto(base + route, { waitUntil: 'networkidle' });
+        const res = await navigate(page, base + route, { waitUntil: 'networkidle' });
         if (route === '/missing-page') { if (res.status() !== 404) seen.push(`status ${res.status()}`); }
         else if (res.status() !== 200) seen.push(`status ${res.status()}`);
         if (route === '/README') await page.waitForFunction(() => {
@@ -335,7 +345,7 @@ try {
             else { await toggle.click(); if (!(await nav.locator('a[aria-current=page]').isVisible())) seen.push('toggle does not open the page tree'); }
           }
           // Keyboard users skip the header and the tree in one key press: after it, the next Tab is inside the article.
-          await page.goto(base + route);
+          await navigate(page, base + route);
           await settled(page);
           await page.keyboard.press('Tab');
           if ((await page.evaluate(() => document.activeElement?.className)) !== 'skip-link') seen.push('the first Tab stop is not "Skip to content"');
@@ -429,7 +439,7 @@ try {
         const collectRuntime = await watchRuntimeErrors(page, runtimeErrors, () => phase);
         for (const route of busiest) {
           phase = `navigate ${route}`;
-          await page.goto(base + route, { waitUntil: 'load' });
+          await navigate(page, base + route, { waitUntil: 'load' });
           await page.evaluate(() => document.fonts.ready.then(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)))));
           for (const c of await page.evaluate(covered)) problems.push(`${where} ${route}: ${c}`);
           await collectRuntime(`navigate ${route}`); // save this document's ErrorEvents before the next navigation
@@ -527,13 +537,15 @@ try {
       return problems;
     }],
     ['homepage model lifecycle', () => homepageModelProblems(browser, base)],
+    ['homepage viewer scroll gate', () => homepageViewerGateProblems(browser, base)],
+    ['hero recording swap', () => heroRecordingProblems(browser, base)],
     ['learning image motion', () => learningPictureProblems(browser, base)],
     ['late model allocation rollback', () => homepageLateDrawProblems(browser, base)],
     ['computed image reduced motion', () => resultImageMotionProblems(browser, base)],
     ['reduced motion', async () => {
       const problems = [];
       const reduced = await browser.newPage({ reducedMotion: 'reduce' });
-      await reduced.goto(base + '/');
+      await navigate(reduced, base + '/');
       await settled(reduced);
       const still = await reduced.evaluate(() => document.getAnimations().filter(a => a.animationName?.startsWith('snap-')).length);
       if (still) problems.push(`reduced motion: ${still} hero animations still running`);
@@ -570,7 +582,7 @@ try {
       const wide = await browser.newPage({ viewport: { width, height: 900 }, colorScheme });
       for (const [route, sources] of diagramPages.sort()) {
         if (width === 360 && !PHONE_PAGES.has(route)) continue;
-        await wide.goto(base + route);
+        await navigate(wide, base + route);
         await settled(wide);
         await wide.waitForFunction(n => document.querySelectorAll('.cad-diagram').length >= n &&
           [...document.querySelectorAll('.cad-diagram')].every(f => f.dataset.state === 'ready' || f.dataset.state === 'error'),
@@ -640,12 +652,12 @@ try {
             .observe({ type: 'layout-shift', buffered: true });
       });
       const withDiagrams = new Set(diagramPages.map(([r]) => r));
-      await reader.goto(base + '/docs/compliant', { waitUntil: 'load' });
+      await navigate(reader, base + '/docs/compliant', { waitUntil: 'load' });
       // The measure itself, on planted articles of known geometry, so a broken measure cannot pass every page.
       for (const [name, { got, want }] of Object.entries(await reader.evaluate(plantedScript())))
         if (Math.abs(got - want) > 1) problems.push(`walls: the planted "${name}" article measures ${got}px, not ${want}px`);
       for (const route of sitePages.sort()) {
-        await reader.goto(base + route, { waitUntil: 'load' });
+        await navigate(reader, base + route, { waitUntil: 'load' });
         await reader.waitForFunction(() => !document.querySelector('pre.mermaid, code.language-mermaid') &&
           [...document.querySelectorAll('.cad-diagram')].every(f => f.dataset.state === 'ready' || f.dataset.state === 'error'), null, { timeout: 20000 })
           .catch(() => problems.push(`walls ${route}: diagrams did not finish rendering`));
@@ -666,7 +678,7 @@ try {
       const problems = [];
       // Very wide screens: the outline moves to its own column on the right and keeps marking the section being read.
       const wider = await browser.newPage({ viewport: { width: 1600, height: 900 } });
-      await wider.goto(base + '/docs/toolkit');
+      await navigate(wider, base + '/docs/toolkit');
       await settled(wider);
       await wider.evaluate(() => { document.documentElement.style.scrollBehavior = 'auto'; scrollTo(0, document.body.scrollHeight / 2); });
       await wider.waitForTimeout(300);
@@ -677,7 +689,7 @@ try {
       // A big screen, where several last sections cannot reach the reading line: each outline link followed with the
       // site's smooth scrolling marks its own section once the scroll settles (#123 review: 21 of 59 were wrong).
       const big = await browser.newPage({ viewport: { width: 2560, height: 1440 } });
-      await big.goto(base + '/docs/explore');
+      await navigate(big, base + '/docs/explore');
       await settled(big);
       const rail = big.locator('.doc-rail a');
       const n = await rail.count();
@@ -725,7 +737,7 @@ try {
       // The same jumps through the tree's own outline, in a window tall enough that several sections cannot reach the
       // reading line (review 3: at 1366x900 only the last one cannot, and the bottom rule marks it anyway).
       const tall = await browser.newPage({ viewport: { width: 1366, height: 1600 } });
-      await tall.goto(base + '/docs/explore');
+      await navigate(tall, base + '/docs/explore');
       await settled(tall);
       const unreachable = await tall.evaluate(() => {
         const line = Math.min(innerHeight / 3, 220), max = document.documentElement.scrollHeight - innerHeight;
@@ -758,7 +770,7 @@ try {
       // number of pages. The open Docs group alone outgrew 1080 px when the vision page arrived (#148); from 1500 px the
       // tree leaves out the page's outline.
       const desk = await browser.newPage({ viewport: { width: 1920, height: 1080 } });
-      await desk.goto(base + '/docs/toolkit');
+      await navigate(desk, base + '/docs/toolkit');
       await settled(desk);
       const panel = await desk.locator('cad-nav .cad-nav-panel').evaluate(p => {
         for (const group of p.querySelectorAll('details')) group.open = false;
@@ -775,13 +787,15 @@ try {
       return problems;
     }],
   ];
-  const found = await inLanes(parts);
-  for (const list of found) problems.push(...list);
+  const { found, finished } = await inLanes(parts, { lanes: LANES, label: engine.name() });
+  problems.push(...await stallControlProblems(parts, found, finished));
+  for (const [i, list] of found.entries()) if (parts[i][0] !== STALL_CONTROL) problems.push(...list);
   assert.deepEqual(problems, []);
   console.log(`${engine.name()}: ${ROUTES.length} routes at 360 and 1366 px under the site CSP PASS`);
 } finally {
   await browser.close();
   server.kill();
+  stallControl.hold?.close();
   await site.done();
 }
 
@@ -797,7 +811,7 @@ async function headerProblems() {
   for (const colorScheme of ['light', 'dark']) {
     const page = await browser.newPage({ viewport: { width: 390, height: 850 }, colorScheme });
     try {
-      await page.goto(base + '/catalog');
+      await navigate(page, base + '/catalog');
       await page.evaluate(() => document.fonts.ready);
       const measure = () => page.evaluate(requiredControls => {
         const out = [];
@@ -929,9 +943,6 @@ async function headerProblems() {
   return problems;
 }
 
-/** Run `parts` ([name, async () => problems]) LANES at a time, in the order given, and return their problems in that
- * order. The log gives each part's time, so a slow one is easy to find. A part that throws fails the run once the
- * parts already started have finished, so no page is closed under a part still using it. */
 /** Chromium can dispatch a ResizeObserver ErrorEvent without Playwright emitting pageerror. Keep both channels.
  * The in-page queue is drained before another document replaces it and after bounded frame settling. Do not
  * suppress the event, and label collection time separately from the pageerror listener's actual action phase. */
@@ -959,7 +970,7 @@ async function runtimeErrorControl() {
   try {
     const page = await context.newPage(), errors = [];
     const collect = await watchRuntimeErrors(page, errors, () => 'planted ErrorEvent control');
-    await page.goto('about:blank');
+    await navigate(page, 'about:blank');
     await collect('empty control document');
     assert.equal(errors.length, 0);
     await page.evaluate(() => dispatchEvent(new ErrorEvent('error', { message: 'planted-window-error' })));
@@ -1011,7 +1022,7 @@ async function fontReadyProblems(covered) {
         }
       };
     });
-    await page.goto(base + '/docs/toolkit', { waitUntil: 'networkidle' });
+    await navigate(page, base + '/docs/toolkit', { waitUntil: 'networkidle' });
     const before = await page.evaluate(() => ({ reads: window.__cadFontBoundary.reads,
       copies: document.querySelectorAll('cad-copy > pre').length, releases: window.__cadFontBoundary.releases }));
     assert(before.copies > 0 && before.reads >= before.copies, 'real copy components must subscribe to held font readiness');
@@ -1061,22 +1072,78 @@ async function fontReadyProblems(covered) {
   return out;
 }
 
-async function inLanes(parts) {
-  const found = parts.map(() => []), took = parts.map(() => 0), errors = [], start = Date.now();
-  let next = 0;
-  const lane = async () => {
-    while (next < parts.length && !errors.length) {
-      const i = next++, t = Date.now();
-      console.log(`${engine.name()}: starting ${parts[i][0]}`);
-      try { found[i] = await parts[i][1](); } catch (e) { errors.push(e); }
-      took[i] = Math.round((Date.now() - t) / 1000);
-      console.log(`${engine.name()}: finished ${parts[i][0]} in ${took[i]} s; ${found[i].length} findings, ${errors.length} errors so far`);
-    }
-  };
-  await Promise.all(Array.from({ length: LANES }, lane));
-  console.log(`${engine.name()}: ${parts.length} parts, ${LANES} at a time, in ${Math.round((Date.now() - start) / 1000)} s: ${parts.map(([name], i) => `${name} ${took[i]} s`).join(', ')}`);
-  if (errors.length) throw errors[0];
-  return found;
+/** The planted stall (#686): a server that accepts the connection and never answers, reached with a short timeout
+ * passed for this control only, so it costs seconds, not 30. First a stall with a fault planted in the evidence
+ * collection (the original error must still come back, with the fault recorded), then the stall itself, left to end
+ * the part as a real one would. stallControlProblems, after all the parts, checks the finding, the receipt and that
+ * every later part still ran, and consumes the finding; anything missing fails the run. */
+async function navigationStallControl() {
+  const hold = stallControl.hold = createServer(socket => {
+    socket.unref();
+    socket.once('data', data => {
+      const line = String(data).split('\r\n')[0];
+      stallControl.requests.push({ at: Date.now(), line });
+      if (line.includes(' /fetch-control/')) socket.destroy();   // the test-side fetch's hang-up: read, then closed unanswered
+    });
+    socket.on('error', () => {});
+  });
+  hold.unref();
+  await new Promise((ok, fail) => { hold.once('error', fail); hold.listen(0, '127.0.0.1', ok); });
+  const held = stallControl.url = `http://127.0.0.1:${hold.address().port}/navigation-control/held`;
+  const context = stallControl.context = await browser.newContext({ viewport: { width: 360, height: 800 }, javaScriptEnabled: false });
+  const page = await context.newPage();
+  let caught;
+  try { await navigate(page, held + '?fault=planted', { waitUntil: 'load', timeout: STALL_MS }, { where: 'planted evidence fault', plantEvidenceFault: true, planted: true }); }
+  catch (error) { caught = error; }
+  const fault = navigationFailure(caught);
+  // A test-side fetch that fails (route.fetch: socket hang up, #686): the part must report it and go on. The page's
+  // request is aborted, so its navigation fails at once; that expected navigation failure is caught here. A page of
+  // its own: in Chromium, page.route on a page whose navigation is still held waits for that navigation.
+  const hangup = stallControl.fetchURL = `http://127.0.0.1:${hold.address().port}/fetch-control/hangup`;
+  const fetcher = await context.newPage();
+  await fetcher.route(hangup, partHandler(async route => { await fetchThrough(route); stallControl.problems.push('the planted fetch hang-up was answered'); }));
+  try { await navigate(fetcher, hangup, { waitUntil: 'load', timeout: STALL_MS }, { where: 'planted fetch hang-up', planted: true }); } catch { /* expected */ }
+  if (caught?.name !== 'TimeoutError' || !caught.message.startsWith(`page.goto: Timeout ${STALL_MS}ms exceeded`) || fault?.error !== caught)
+    stallControl.problems.push(`a fault in the evidence replaced or lost the original navigation error: ${String(caught?.message).split('\n')[0]}`);
+  else if (!/planted evidence-collection fault/.test(fault.evidence?.evidenceError ?? '') || !fault.receipt)
+    stallControl.problems.push('a fault in the evidence was not recorded in a receipt');
+  // The stall itself, not caught here: the part must end on it and report it.
+  await navigate(page, held, { waitUntil: 'load', timeout: STALL_MS }, { where: 'planted navigation stall, 360px, JavaScript disabled', viewport: { width: 360, height: 800 }, javaScriptEnabled: false, planted: true });
+  stallControl.problems.push('the planted navigation stall loaded');
+  return [];
+}
+
+async function stallControlProblems(parts, found, finished) {
+  const out = [...stallControl.problems], i = parts.findIndex(([name]) => name === STALL_CONTROL);
+  const finding = found[i]?.find(f => f.includes('page.goto: Timeout')), fetched = found[i]?.find(f => f.includes('route.fetch:'));
+  if (found[i]?.length !== 2 || !finding?.startsWith(`${STALL_CONTROL}: a navigation failed, so this part stopped there: page.goto: Timeout ${STALL_MS}ms exceeded`) || !finding.includes(stallControl.url))
+    out.push(`its finding does not keep the original message and URL: ${JSON.stringify(found[i]).slice(0, 600)}`);
+  if (!fetched?.startsWith(`${STALL_CONTROL}: a test-side fetch failed (the part went on): route.fetch: `) || !fetched.includes(stallControl.fetchURL))
+    out.push(`the failed test-side fetch is not its own finding with the original message and URL: ${JSON.stringify(found[i]).slice(0, 600)}`);
+  try {
+    const record = JSON.parse(await readFile(path.join(fetched.match(/fetch evidence: (\S+)/)[1], 'fetch-failure.json'), 'utf8'));
+    if (record.part !== STALL_CONTROL || record.url !== stallControl.fetchURL || typeof record.server?.coversWindow !== 'boolean' || !record.server.window)
+      out.push(`the fetch receipt lost the part, URL or the server's record: ${JSON.stringify(record).slice(0, 400)}`);
+  } catch (error) { out.push(`no fetch receipt: ${error.message}`); }
+  const receipt = finding?.match(/navigation evidence: (\S+)/)?.[1];
+  let evidence;
+  try { evidence = JSON.parse(await readFile(path.join(receipt, 'navigation-failure.json'), 'utf8')); }
+  catch (error) { out.push(`no receipt: ${error.message}`); }
+  if (evidence) {
+    const held = evidence.pending?.find(r => r.type === 'document' && r.url === stallControl.url);
+    if (evidence.part !== STALL_CONTROL || evidence.url !== stallControl.url || !held || held.status !== undefined || evidence.committed?.sinceBegan !== false)
+      out.push(`the receipt lost the browser's record of the pending document: ${JSON.stringify({ part: evidence.part, url: evidence.url, pending: evidence.pending, committed: evidence.committed }).slice(0, 400)}`);
+    if (typeof evidence.server?.coversWindow !== 'boolean' || !evidence.server.window || !Array.isArray(evidence.server.matchingFirst) || !(evidence.server.lag?.maxMs >= 0))
+      out.push(`the receipt lost the preview server's record: ${JSON.stringify(evidence.server).slice(0, 400)}`);
+    if (!(evidence.testProcessLag?.maxMs >= 0) || evidence.engine?.name !== engine.name() || !evidence.engine.version || evidence.evidenceError)
+      out.push(`the receipt lost the test process's lag, the engine or its own completeness: ${JSON.stringify({ lag: evidence.testProcessLag, engine: evidence.engine, evidenceError: evidence.evidenceError })}`);
+  }
+  if (!stallControl.requests.some(r => r.line === 'GET /navigation-control/held HTTP/1.1'))
+    out.push(`the held request never reached the holding server, so the stall was not the one planted: ${JSON.stringify(stallControl.requests)}`);
+  if (browser.contexts().includes(stallControl.context)) out.push('the part stopped by the stall left its browser context open');
+  const skipped = parts.filter((_, k) => k !== i && !finished[k]).map(([name]) => name);
+  if (skipped.length) out.push(`parts after the stall did not finish: ${skipped.join(', ')}`);
+  return out.map(problem => `failed to reject planted navigation stall: ${problem}`);
 }
 
 /** Wait for the page as its reader sees it, the state the checks read: loaded, the site's kit scripts and `modules` (a
@@ -1151,7 +1218,7 @@ async function fanCurveProblems() {
       page.on('pageerror', e => say(`page error: ${e.message}`));
       await page.addInitScript(() => document.addEventListener('securitypolicyviolation', e => console.error(`CSP ${e.violatedDirective} ${e.blockedURI}`)));
       if (!script) await page.route('**/kit/calculators/fan-curve.js', r => r.abort());
-      await page.goto(base + route);
+      await navigate(page, base + route);
       await settled(page, '/kit/calculators/fan-curve.js');
       const demo = page.locator('cad-fan-curve');
       await demo.scrollIntoViewIfNeeded();
@@ -1251,7 +1318,7 @@ async function fanCurveProblems() {
   }
   // Over 700 ms (the announcement delay) with no input, the polite live region stays empty on page load.
   const quiet = await browser.newPage();
-  await quiet.goto(base + route);
+  await navigate(quiet, base + route);
   await settled(quiet, '/kit/calculators/fan-curve.js');
   await quiet.waitForTimeout(800);
   if (await quiet.locator('cad-fan-curve .fc-status').textContent()) out.push('the fan-curve status line spoke on page load');
@@ -1306,7 +1373,7 @@ async function explorerProblems(x) {
       page.on('pageerror', e => say(`page error: ${e.message}`));
       await page.addInitScript(() => document.addEventListener('securitypolicyviolation', e => console.error(`CSP ${e.violatedDirective} ${e.blockedURI}`)));
       if (!script) await page.route(`**/kit/calculators/${x.script}.js`, r => r.abort());
-      await page.goto(base + route);
+      await navigate(page, base + route);
       await settled(page, `/kit/calculators/${x.script}.js`);
       const demo = page.locator(tag);
       await demo.scrollIntoViewIfNeeded();
@@ -1399,7 +1466,7 @@ async function explorerProblems(x) {
     if (!(Math.abs(height.true - height.false) < 0.5)) out.push(`${width}px ${name}: ${height.false}px tall before its script, ${height.true}px after`);
   }
   const quiet = await browser.newPage();
-  await quiet.goto(base + route);
+  await navigate(quiet, base + route);
   await settled(quiet, `/kit/calculators/${x.script}.js`);
   await quiet.waitForTimeout(800);
   if (await quiet.locator(`${tag} .${px}-status`).textContent()) out.push(`the ${name} status line spoke on page load`);
@@ -1430,7 +1497,7 @@ async function drawnDiagramProblems() {
   for (const [width, colorScheme] of [[320, 'light'], [360, 'light'], [1366, 'light'], [360, 'dark'], [1366, 'dark']]) for (const route of PAGES) {
     const where = `${width}px ${colorScheme} ${route}`;
     const { before, stillThemes, phoneProblems } = await withDiagramPage({ viewport: { width, height: 800 }, javaScriptEnabled: false, colorScheme }, async off => {
-      await navigateDiagram(off, base + route, `${where}, JavaScript disabled`);
+      await navigate(off, base + route, { waitUntil: 'load', timeout: 30000 }, { where: `${where}, JavaScript disabled`, viewport: { width, height: 800 }, javaScriptEnabled: false });
       await off.evaluate(() => document.fonts.ready);
       return { before: await boxes(off),
         phoneProblems: width <= 360 && route.startsWith('/repo/folders/') ? await folderMapPhoneProblems(off, `${where}, JavaScript disabled`) : [],
@@ -1449,7 +1516,7 @@ async function drawnDiagramProblems() {
       });
       // Measured once the kit has adopted every drawn figure and none is being drawn again, so a Mermaid download, if
       // any, has happened (not at networkidle: in WebKit on CI it never came on /docs/vision, #154).
-      await navigateDiagram(page, base + route, `${where}, JavaScript enabled`);
+      await navigate(page, base + route, { waitUntil: 'load', timeout: 30000 }, { where: `${where}, JavaScript enabled`, viewport: { width, height: 800 }, javaScriptEnabled: true });
       await settled(page);
       await page.waitForFunction(() => !document.querySelector('pre.mermaid, code.language-mermaid') &&
         [...document.querySelectorAll('.cad-diagram')].every(f => f.dataset.state === 'ready' || f.dataset.state === 'error'), null, { timeout: 20000 })
@@ -1716,68 +1783,16 @@ async function previewServerEvidence(pathname, since, limit = 2000) {
   } finally { clearTimeout(timer); server.off('message', listener); }
 }
 
-/** Keep the normal 30-second load boundary; collect evidence on failure instead of guessing which resource stalled.
- * The browser's view (pending and failed requests, main-frame commits, the DOM) is joined to the preview server's
- * own record of the document request (received? headers written? finished? on a new or reused socket?), its
- * event-loop lag and sockets, and this process's lag: the times are epoch ms from both processes on one host. */
-async function navigateDiagram(page, url, where, timeout = 30000, waitUntil = 'load') {
-  const pending = new Map(), failed = [], committed = [], began = Date.now();
-  const cleanURL = value => { const u = new URL(value); return u.protocol === 'about:' ? value.split(/[?#]/)[0] : u.origin + u.pathname; }; // no queries or fragments
-  // for URLs the browser reports: one that does not parse is noted, never thrown over the navigation error
-  const reportedURL = value => { try { return cleanURL(value); } catch (error) { return `unparsable URL (${error.message})`; } };
-  const request = r => pending.set(r, { url: cleanURL(r.url()), type: r.resourceType(), started: Date.now() });
-  const response = r => { const entry = pending.get(r.request()); if (entry) Object.assign(entry, { status: r.status(), respondedAt: Date.now() }); };
-  const finished = r => pending.delete(r);
-  const rejected = r => { failed.push({ url: cleanURL(r.url()), error: r.failure()?.errorText }); pending.delete(r); };
-  const navigated = frame => { if (frame === page.mainFrame() && committed.length < 10) committed.push({ url: reportedURL(frame.url()), at: Date.now() }); };
-  const listeners = [['request', request], ['response', response], ['requestfinished', finished], ['requestfailed', rejected], ['framenavigated', navigated]];
-  for (const [event, listener] of listeners) page.on(event, listener);
-  try { return await page.goto(url, { waitUntil, timeout }); }
-  catch (cause) {
-    const evidence = { where, url: cleanURL(url), viewport: page.viewportSize(), timeout, began,
-      pageUrl: reportedURL(page.url()), committed: [...committed],
-      pending: [...pending.values()].map(({ started, ...entry }) => ({ ...entry, startedAt: started, ageMs: Date.now() - started })), failed: [...failed] };
-    // A fault in the evidence itself is recorded as unavailable; it never replaces the navigation error.
-    try {
-      const lag = testLag.filter(l => l.at >= began);
-      evidence.testProcessLag = { maxMs: Math.max(0, ...lag.map(l => l.lateMs)), samplesOver20ms: lag.slice(-10) };
-    } catch (error) { evidence.testProcessLag = { unavailable: error.message }; }
-    // asked before the DOM snapshot, so a wedged page cannot delay the server's account of the same moment
-    try {
-      evidence.server = await previewServerEvidence(new URL(url).pathname, began - 1000);
-      // said in words, so an empty `matching` is not read as "never received" when the record does not reach back
-      if ('coversWindow' in evidence.server) evidence.server.coverage = evidence.server.coversWindow
-        ? 'the server record covers every request received since 1 s before this navigation began'
-        : 'NOT COVERED: the server dropped requests received since 1 s before this navigation began, so a missing request proves nothing';
-    }
-    catch (error) { evidence.server = { unavailable: error.message }; }
-    let timer;
-    try {
-      evidence.dom = await Promise.race([
-        page.evaluate(() => ({ readyState: document.readyState, fontSet: document.fonts.status,
-          fonts: [...document.fonts].map(f => ({ family: f.family, status: f.status })),
-          styles: [...document.querySelectorAll('link[rel=stylesheet]')].map(l => ({ path: new URL(l.href).pathname, sheet: !!l.sheet })),
-          images: [...document.images].map(i => ({ path: new URL(i.src).pathname, complete: i.complete, width: i.naturalWidth })) })),
-        new Promise((_, reject) => { timer = setTimeout(() => reject(new Error('DOM snapshot exceeded 2 seconds')), 2000); }),
-      ]);
-    } catch (error) { evidence.dom = { unavailable: error.message }; }
-    finally { clearTimeout(timer); }
-    const error = new Error(`Diagram navigation failed: ${JSON.stringify(evidence)}`, { cause });
-    error.navigation = evidence;
-    throw error;
-  } finally {
-    for (const [event, listener] of listeners) page.off(event, listener);
-  }
-}
-
-/** A real stylesheet stays pending through a short fixture timeout; the ordinary checks keep their 30 seconds. */
+/** A real stylesheet stays pending through a short fixture timeout; the ordinary checks keep their 30 seconds. The
+ * shared navigation (tests/site/navigation.mjs) must keep the browser's and the server's record of it and rethrow
+ * Playwright's own TimeoutError. */
 async function diagramNavigationControl() {
   const out = [], sentinel = await browser.newContext();
   let owned, release, held = false, caught, failed = false, failure;
   const gate = new Promise(resolve => { release = resolve; });
   try {
     const neighbor = await sentinel.newPage();
-    await navigateDiagram(neighbor, base + '/docs/style-guide', 'diagnostic neighbor, JavaScript enabled');
+    await navigate(neighbor, base + '/docs/style-guide', { waitUntil: 'load', timeout: 30000 }, { where: 'diagnostic neighbor, JavaScript enabled' });
     out.push(...await diagramCleanupControl(neighbor));
     try {
       await withDiagramPage({ viewport: { width: 360, height: 800 }, javaScriptEnabled: false, colorScheme: 'dark' }, async (page, context) => {
@@ -1787,14 +1802,14 @@ async function diagramNavigationControl() {
           await gate;
           await route.continue().catch(() => {}); // the owned context is closed after the expected navigation failure
         });
-        await navigateDiagram(page, base + '/docs/style-guide?navigation-control=held', '360px dark /docs/style-guide, JavaScript disabled', 3000);
+        await navigate(page, base + '/docs/style-guide?navigation-control=held', { waitUntil: 'load', timeout: 3000 }, { where: '360px dark /docs/style-guide, JavaScript disabled', viewport: { width: 360, height: 800 }, javaScriptEnabled: false, planted: true });
       });
     } catch (error) { caught = error; }
-    const evidence = caught?.navigation;
+    const record = navigationFailure(caught), evidence = record?.evidence;
     if (!held) out.push('diagram navigation control did not reach the actual held stylesheet');
     if (!evidence?.pending.some(r => r.url.endsWith('/web/site.css')) || evidence.viewport?.width !== 360 ||
         !evidence.where.includes('dark') || !evidence.where.includes('JavaScript disabled') ||
-        !evidence.dom?.styles?.some(s => s.path === '/web/site.css' && !s.sheet) || caught?.cause?.name !== 'TimeoutError') {
+        !evidence.dom?.styles?.some(s => s.path === '/web/site.css' && !s.sheet) || caught?.name !== 'TimeoutError' || record.error !== caught) {
       out.push('diagram navigation control lost the actual pending resource, iteration, DOM state or original error');
     }
     if (evidence?.url.includes('?')) out.push('diagram navigation diagnostics include query parameters');
@@ -1884,7 +1899,7 @@ async function refsProblems(page, width, seen) {
   // A link to one catalogued record, with a filter that hides it: the record still shows.
   const id = await page.$eval('.refs-table tbody tr[data-evidence="snippet-only"]', r => r.id);
   await page.waitForLoadState('networkidle');      // nothing of this page still loading for the next goto to abort
-  await page.goto(`${page.url().split('?')[0].split('#')[0]}?evidence=read#${id}`, { waitUntil: 'networkidle' });
+  await navigate(page, `${page.url().split('?')[0].split('#')[0]}?evidence=read#${id}`, { waitUntil: 'networkidle' });
   if (await page.$eval(`[id="${id}"]`, r => r.hidden)) seen.push(`#${id} is hidden by the URL's filter`);
 }
 
@@ -1917,7 +1932,7 @@ async function themeProblems() {
       page.on('pageerror', e => errors.push(e.message));
       for (const route of ROUTES) for (const how of ['system', 'button']) {
         const theme = how === 'system' ? system : system === 'dark' ? 'light' : 'dark', where = `${width}px ${route}, ${theme} (${how}, system ${system})`;
-        await page.goto(base + route, { waitUntil: 'load' });
+        await navigate(page, base + route, { waitUntil: 'load' });
         await settled(page);
         if (how === 'button') {
           // Sample any copy-button colour transitions, not only their endpoints. A wall-clock wait can miss
@@ -1960,7 +1975,7 @@ async function themeProblems() {
         }
         if (how === 'button') {
           // remembered on the next page (kit/ui/theme.js runs ahead of the stylesheets: tests/site/website-theme.test.mjs)
-          await page.goto(base + '/docs/toolkit', { waitUntil: 'load' });
+          await navigate(page, base + '/docs/toolkit', { waitUntil: 'load' });
           const next = await state(page);
           if (next.chosen !== theme || next.scheme !== theme) out.push(`${where}: the choice is not kept on the next page (${next.chosen}, ${next.scheme})`);
           // pressed again, the page is back on the system's theme and the choice is forgotten
@@ -2013,7 +2028,7 @@ async function cantileverProblems() {
       await page.addInitScript(() => document.addEventListener('securitypolicyviolation', e => console.error(`CSP ${e.violatedDirective} ${e.blockedURI}`)));
       await page.addInitScript(firstFrame);
       if (!script) await page.route('**/kit/calculators/cantilever.js', r => r.abort());
-      await page.goto(base + '/docs/compliant');
+      await navigate(page, base + '/docs/compliant');
       await settled(page, '/kit/calculators/cantilever.js');
       const demo = page.locator('cad-cantilever');
       await demo.scrollIntoViewIfNeeded();
@@ -2082,13 +2097,13 @@ async function cantileverProblems() {
   const late = await browser.newPage({ viewport: { width: 1366, height: 900 } });
   await late.addInitScript(firstFrame);
   await late.route('**/kit/calculators/cantilever.js', async r => { await new Promise(ok => setTimeout(ok, 2600)); await r.continue(); });
-  await late.goto(base + '/docs/compliant');
+  await navigate(late, base + '/docs/compliant');
   await settled(late, '/kit/calculators/cantilever.js');
   const lateJump = await firstFrameProblem(late);
   if (lateJump) out.push(`1366px /docs/compliant demo, its script 2.6 s late: ${lateJump}`);
   await late.close();
   const reduced = await browser.newPage({ reducedMotion: 'reduce' });
-  await reduced.goto(base + '/docs/compliant');
+  await navigate(reduced, base + '/docs/compliant');
   await settled(reduced, '/kit/calculators/cantilever.js');
   const first = await beam(reduced);
   await reduced.waitForTimeout(800);                 // past the status line's 700 ms announcement delay (below)
@@ -2158,7 +2173,7 @@ async function fourbarProblems() {
       await page.addInitScript(() => document.addEventListener('securitypolicyviolation', e => console.error(`CSP ${e.violatedDirective} ${e.blockedURI}`)));
       await page.addInitScript(firstFrame);
       if (!script) await page.route('**/kit/calculators/fourbar.js', r => r.abort());
-      await page.goto(base + route);
+      await navigate(page, base + route);
       await settled(page, '/kit/calculators/fourbar.js');
       const demo = page.locator('cad-fourbar');
       await demo.scrollIntoViewIfNeeded();
@@ -2297,13 +2312,13 @@ async function fourbarProblems() {
   const late = await browser.newPage({ viewport: { width: 1366, height: 900 } });
   await late.addInitScript(firstFrame);
   await late.route('**/kit/calculators/fourbar.js', async r => { await new Promise(ok => setTimeout(ok, 2600)); await r.continue(); });
-  await late.goto(base + route);
+  await navigate(late, base + route);
   await settled(late, '/kit/calculators/fourbar.js');
   const lateJump = await firstFrameProblem(late);
   if (lateJump) out.push(`1366px ${route} four-bar, its script 2.6 s late: ${lateJump}`);
   await late.close();
   const reduced = await browser.newPage({ reducedMotion: 'reduce' });
-  await reduced.goto(base + route);
+  await navigate(reduced, base + route);
   await settled(reduced, '/kit/calculators/fourbar.js');
   const first = await crank(reduced);
   await reduced.waitForTimeout(800);                 // past the status line's 700 ms announcement delay
@@ -2355,8 +2370,7 @@ async function foldProblems() {
     if (mode === 'slow') await page.route('**/kit/documents/nav.js', async r => { await held; await r.continue(); });
     if (mode === 'blocked') await page.route('**/kit/documents/nav.js', r => r.abort());
     if (mode === 'failing') await page.route('**/kit/documents/nav.js', r => r.fulfill({ contentType: 'text/javascript', body: 'throw new Error("nav.js fails on purpose")' }));
-    // Through the diagram navigation's evidence (#686): a timeout keeps the browser's and the preview server's record.
-    await navigateDiagram(page, base + '/docs/toolkit', `fold ${width}px ${mode}`, 30000, mode === 'slow' ? 'domcontentloaded' : 'load');
+    await navigate(page, base + '/docs/toolkit', { waitUntil: mode === 'slow' ? 'domcontentloaded' : 'load', timeout: 30000 }, { where: `fold ${width}px ${mode}`, viewport: { width, height: 800 }, javaScriptEnabled: mode !== 'none' });
     const js = mode !== 'none';
     // nav.js has run or failed (with JavaScript off, Playwright cannot wait on a promise in the page; held back, it
     // has not arrived, and the rest of the page settles first: its diagrams render while nav.js is held back).
@@ -2431,7 +2445,7 @@ async function foldProblems() {
   const runtimeErrors = [];
   let phase = 'navigation';
   const collectRuntime = await watchRuntimeErrors(turn, runtimeErrors, () => phase);
-  await turn.goto(base + '/docs/toolkit');
+  await navigate(turn, base + '/docs/toolkit');
   await settled(turn);
   const isOpen = () => turn.locator('details.cad-nav-fold').evaluate(d => d.open, null, { timeout: 2000 }).catch(() => null);
   const resizeFailure = async (message, observedOpen) => {
@@ -2479,7 +2493,7 @@ async function foldProblems() {
   // No link text around the filter pill while the tree is scrolled (#134): with a link under the filter's top edge, the
   // points just inside the pill's box at its rounded corners, and in the strips above and below it, hit the panel's cover.
   const desk = await browser.newPage({ viewport: { width: 1366, height: 800 } });
-  await desk.goto(base + '/docs/toolkit');
+  await navigate(desk, base + '/docs/toolkit');
   await settled(desk);
   const corners = await desk.locator('cad-nav .cad-nav-panel').evaluate(panel => {
     for (const g of panel.querySelectorAll('details')) g.open = true;
@@ -2510,7 +2524,7 @@ async function foldProblems() {
 async function jumpProblems() {
   const out = [];
   const page = await browser.newPage({ viewport: { width: 2560, height: 1440 } });
-  await page.goto(base + '/docs/explore');
+  await navigate(page, base + '/docs/explore');
   await settled(page);
   const settle = () => page.evaluate(() => new Promise(done => {
     let last = -1, still = 0;

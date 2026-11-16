@@ -37,3 +37,14 @@ if (document.querySelector('cad-model')) import('/kit/model/model.js').catch(() 
 if (document.querySelector('details[data-catalogue-id]')) import('/web/discovery.js').catch(() => {});
 // The Toolkit keeps all cards and SVG links usable without JavaScript; this adds search and state controls.
 if (document.querySelector('[data-scada-browser]')) import('/web/toolkit.js').catch(() => {});
+// The home hero's recording (#748): the page loads and paints its 9 KB still; once the page has loaded, the animation
+// (data-motion-src) replaces it when it has arrived. Never under reduced motion, where the picture's still is kept.
+for (const img of document.querySelectorAll('img[data-motion-src]')) {
+  const swap = () => {
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const next = new Image();
+    next.onload = () => { img.src = next.src; };
+    next.src = img.dataset.motionSrc;
+  };
+  if (document.readyState === 'complete') swap(); else addEventListener('load', swap, { once: true });
+}

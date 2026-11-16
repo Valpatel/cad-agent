@@ -34,6 +34,8 @@ flowchart TD
   use `rsync -a` with excludes for virtualenvs, caches and run folders. Pull back anything the host produced before
   you copy to it again. Use `--delete` only right after such a pull (it removes remote files that are not in your
   copy, including results newer than it); without it, files you deleted locally stay on the host.
+- **In the cad-agent repo, ask which CI checks a branch triggers** before pushing: `python3 tools/ci/preflight.py`
+  runs what this machine can and reports the rest as not run; `--slow` checks (site build, full suites) go here.
 - **Give it its own environment** (a virtualenv from the project's pinned requirements, `pip install -e` of the
   cad-agent checkout or version the project uses). Record which cad-agent commit it runs.
 
@@ -100,10 +102,9 @@ links dated evidence that says what was observed only once.
 
 - **GitHub.** Reads work without a grant on public repositories; a push or issue creation that fails with
   "Claude doesn't have GitHub access" needs the owner to give the GitHub App access to the repository. `gh` may be
-  missing or logged out; use the GitHub MCP tools. The [review skill](../cad-pr-review/SKILL.md) on `dev` covers `gh`
-  only; MCP routes ([#750](https://github.com/Valpatel/cad-agent/issues/750), PR #755) and a gate that reads a cloud
-  reviewer's verdict ([#751](https://github.com/Valpatel/cad-agent/issues/751), PR #752) are open. Until they merge,
-  leave merges to a `gh` session or the owner. Post status as comments: a description edit restarts CI
+  missing or logged out; use the GitHub MCP tools. The [review skill](../cad-pr-review/SKILL.md#commands) gives the
+  MCP route for each step, including the gate re-run and the merge; the gate reads a cloud reviewer's verdict with
+  its footer. Post status as comments: a description edit restarts CI
   ([evidence](../../inbox/agents/2026-11-15-cloud-sessions-reach-github-through-mcp.md)).
 - **Checkouts.** Leave the session's own clone and its designated branch alone; make each topic worktree beside it
   with `git worktree add --no-track` on a `feat/`, `fix/` or `docs/` branch from `origin/dev`. Ask the owner before

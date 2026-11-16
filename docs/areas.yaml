@@ -361,7 +361,7 @@ domains:
         skills: [cad-work-tracking, cad-pr-review, cad-remote-runs]
         agents: [cad-pr-reviewer, cad-resume]
         lessons: process
-        issues: [111, 112]
+        issues: [111, 112, 759]
       - slug: design-process
         title: Design process
         scope: Requirements and the dossier that holds them, integrity gates and section reviews, through to release.

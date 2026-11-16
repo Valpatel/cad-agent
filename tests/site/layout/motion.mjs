@@ -152,8 +152,17 @@ export async function homepageModelProblems(browser, base) {
       await retryGate; return route.continue();
     });
     await page.goto(base+'/',{waitUntil:'networkidle'});
-    const early = await page.evaluate(() => performance.getEntriesByType('resource').filter(r => /three\.module|\/web\/models\/.*\.(json|bin)/.test(r.name)).length);
-    if (early) out.push('project data was fetched while still at the learning hero');
+    // Since #748 the viewers lead "See it run" just under the hero, so on a tall desktop screen they are within the
+    // viewer's own 300px look-ahead and may load. They must never compete with the first paint: nothing before the
+    // load event, and nothing at all while they are still further below the first screen than that look-ahead.
+    const early = await page.evaluate(() => {
+      const nav = performance.getEntriesByType('navigation')[0];
+      const data = performance.getEntriesByType('resource').filter(r => /three\.module|\/web\/models\/.*\.(json|bin)/.test(r.name));
+      const top = document.querySelector('#built-with .project-viewers').getBoundingClientRect().top;
+      return { beforeLoad: data.filter(r => r.startTime < nav.loadEventEnd).length, far: top > innerHeight + 300, fetched: data.length };
+    });
+    if (early.beforeLoad) out.push('project data was fetched before the home page finished loading');
+    if (early.far && early.fetched) out.push('project data was fetched while the viewers were still far below the first screen');
     await page.locator('#built-with .project-viewers').evaluate(el => { document.documentElement.style.scrollBehavior='auto'; el.scrollIntoView({block:'start'}); });
     const j501 = page.locator('cad-model[src$="j501.json"]');
     const gyro = page.locator('cad-model[src$="gyropup.json"]');

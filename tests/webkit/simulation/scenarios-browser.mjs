@@ -42,6 +42,11 @@ try{
       return {canvas:r('#replay canvas').top,controls:r('.replay-controls').top,bar:r('.cad-viewer-toolbar').bottom,select:r('.replay-scenario select').right,host:r('.cad-viewer-host').right};});
     if(width<=600)assert.ok(order.canvas<order.controls&&Math.abs(order.canvas-order.bar)<2&&order.select<=order.host,`phone order: ${JSON.stringify(order)}`);
     else assert.ok(order.controls<order.canvas,`wide order: ${JSON.stringify(order)}`);
+    // The slider's last step is the recorded end, though 7.066667 s is not a whole number of its 1 ms steps.
+    const slider=page.getByRole('slider',{name:'Recording time',exact:true});await slider.focus();await slider.press('End');
+    const end=await page.evaluate(()=>({...__replay.playback.state(),value:document.querySelector('.replay-time input').value}));
+    assert.ok(end.time===end.duration&&+end.value<end.duration,`End stops at ${end.time} of ${end.duration} (slider ${end.value})`);
+    await slider.press('Home');
     // The summary is the index's own text for this scenario.
     const kerb=index.scenarios[0].summary;let text=await summaryText(page);
     for(const piece of [kerb.verdict.label,...kerb.metrics.map(m=>m.value),kerb.note])assert.ok(text.toLowerCase().includes(piece.toLowerCase()),`summary lacks ${piece}: ${text}`);

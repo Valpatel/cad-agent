@@ -2,7 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
 import {createHash} from 'node:crypto';
-import {validateRecording,samplePose,createPlayback,loadRecording,loadReceipt,RECORDING_LIMITS} from '../../../software/cadagent/webkit/simulation/replay.js';
+import {readFile} from 'node:fs/promises';
+import {validateRecording,samplePose,createPlayback,loadRecording,loadReceipt,loadMeshLibrary,loadReplayIndex,RECORDING_LIMITS} from '../../../software/cadagent/webkit/simulation/replay.js';
 
 const fixture=()=>({schema:'cad-agent.pose-recording/1',title:'Analytic rotation',convention:{length:'m',up:'z',handedness:'right',quaternion:'xyzw'},bodies:[{id:'arm',label:'Arm',geometry:[{shape:'box',size:[1,.1,.1],position:[.5,0,0],quaternion:[0,0,0,1],color:'#12abcd'}]}],frames:[{time_s:0,poses:[{position:[0,0,0],quaternion:[0,0,0,1]}]},{time_s:2,poses:[{position:[2,4,6],quaternion:[0,0,1,0]}]}]});
 const near=(a,b)=>a.forEach((x,i)=>assert.ok(Math.abs(x-b[i])<1e-10,`${a} != ${b}`));
@@ -52,5 +53,51 @@ test('loader verifies exact bytes, caps declared/streamed bodies and rejects uns
     assert.equal((await loadReceipt(base+'/receipt')).engine.version,'3.3.7');
     await assert.rejects(()=>loadReceipt(base),/Invalid simulation receipt/);
     const abort=new AbortController();abort.abort();await assert.rejects(()=>loadRecording(base,{signal:abort.signal}),/abort/i);
+  }finally{server.closeAllConnections();await new Promise(resolve=>server.close(resolve));}
+});
+
+// #798: mesh parts, scenery, a followed body and a replay index of named recordings.
+const meshFixture=()=>{const s=fixture();s.bodies[0].geometry.push({shape:'mesh',part:'link_0',position:[0,0,0],quaternion:[0,0,0,1],color:'#f5b82e',opacity:.35});
+  s.scenery=[{shape:'box',size:[2,2,.05],position:[0,0,.025],quaternion:[0,0,0,1],color:'#999a9e'}];s.view={follow:'arm',direction:[.5,-1,.4]};return s;};
+test('mesh parts, scenery and a followed body validate; references are checked against a library',()=>{
+  const recording=validateRecording(meshFixture(),{parts:new Set(['link_0'])});
+  assert.deepEqual(recording.bodies[0].geometry[1],{shape:'mesh',part:'link_0',position:[0,0,0],quaternion:[0,0,0,1],color:'#f5b82e',opacity:.35});
+  assert.equal(recording.scenery[0].size[2],.05);assert.deepEqual(recording.view,{follow:'arm',direction:[.5,-1,.4]});
+  assert.ok(Object.isFrozen(recording.scenery[0]));
+  assert.equal(validateRecording(fixture()).view,null,'existing recordings are unchanged');assert.deepEqual(validateRecording(fixture()).scenery,[]);
+  assert.throws(()=>validateRecording(meshFixture(),{parts:new Set(['other'])}),/not in the mesh library/);
+  const bad=[s=>s.bodies[0].geometry[1].part='../x',s=>s.bodies[0].geometry[1].opacity=0,s=>s.bodies[0].geometry[1].opacity=1.5,s=>s.view.follow='nobody',
+    s=>s.view.direction=[0,0,0],s=>s.scenery=Array(65).fill(s.scenery[0]),s=>s.scenery[0]={shape:'mesh',part:'link_0',position:[0,0,0],quaternion:[0,0,0,1],color:'#ffffff'},s=>s.scenery[0].size=[1,1]];
+  for(const edit of bad){const source=meshFixture();edit(source);assert.throws(()=>validateRecording(source),/Invalid pose recording/);}
+});
+test('the committed Gyropup example: index, mesh library and every recording verify and agree',async()=>{
+  const kit=new URL('../../../software/cadagent/webkit/',import.meta.url);
+  const server=createServer(async(req,res)=>{try{res.end(await readFile(new URL('.'+decodeURIComponent(new URL(req.url,'http://x').pathname),kit)));}catch{res.writeHead(404).end();}});
+  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));const base=`http://127.0.0.1:${server.address().port}/simulation/examples/gyropup-v2/`;
+  try{
+    const index=await loadReplayIndex(base+'index.json');
+    assert.deepEqual(index.scenarios.map(s=>s.id),['kerb_drop','side_kerb','push','landing']);
+    const library=await loadMeshLibrary(index.meshes.url,{expectedHash:index.meshes.expectedHash});
+    for(const [name,part] of library){assert.ok(part.positions.every(Number.isFinite),name);assert.ok(Math.max(...part.positions.map(Math.abs))<0.5,`${name} is in metres`);assert.equal(part.index.length%3,0);}
+    for(const scenario of index.scenarios){
+      const recording=await loadRecording(scenario.recordingUrl,{expectedHash:scenario.expectedHash,parts:library});
+      assert.equal(recording.bodies.length,13);assert.equal(scenario.summary.verdict.pass,true);
+      assert.match(scenario.summary.metrics[0].value,/N·m .*% of its peak-torque limit/);
+    }
+    await assert.rejects(()=>loadMeshLibrary(index.meshes.url,{expectedHash:'0'.repeat(64)}),/SHA-256 mismatch/);
+  }finally{server.closeAllConnections();await new Promise(resolve=>server.close(resolve));}
+});
+test('replay index and summaries are bounded text, never markup or bidi controls',async()=>{
+  const good={schema:'cad-agent.replay-index/1',title:'Index',meshes:{file:'robot.json',sha256:'a'.repeat(64)},scenarios:[{id:'one',label:'One',file:'one.json',sha256:'b'.repeat(64),summary:{title:'From the source',note:'Their numbers.',verdict:{pass:false,label:'fail',reasons:['fell']},metrics:[{label:'Peak',value:'1 N·m'}]}}]};
+  const bodies=new Map();let n=0;
+  const server=createServer((req,res)=>res.end(bodies.get(req.url)));
+  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));const base=`http://127.0.0.1:${server.address().port}`;
+  const serve=value=>{const url=`/i${n++}`;bodies.set(url,JSON.stringify(value));return base+url;};
+  try{
+    const index=await loadReplayIndex(serve(good));
+    assert.equal(index.scenarios[0].recordingUrl.href,base+'/one.json');assert.deepEqual(index.scenarios[0].summary.verdict,{pass:false,label:'fail',reasons:['fell']});
+    const bad=[s=>s.scenarios[0].file='../one.json',s=>s.scenarios[0].file='one.js',s=>s.scenarios.push(s.scenarios[0]),s=>s.scenarios[0].sha256='x',s=>s.meshes.file='/robot.json',
+      s=>s.scenarios[0].summary.metrics[0].value='a‮b',s=>s.scenarios[0].summary.metrics=Array(9).fill({label:'a',value:'b'}),s=>s.scenarios[0].summary.verdict.pass='yes',s=>s.scenarios=[],s=>s.schema='x'];
+    for(const edit of bad){const value=structuredClone(good);edit(value);await assert.rejects(()=>loadReplayIndex(serve(value)),/Invalid/);}
   }finally{server.closeAllConnections();await new Promise(resolve=>server.close(resolve));}
 });

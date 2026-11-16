@@ -1,12 +1,22 @@
 /** <cad-model> touch arbitration (#650, #769): a one-finger drag on the canvas turns the model vertically and sideways
  * without scrolling the page while the viewer is at most half as tall as the space that scrolls past it (the visible
- * viewport, or a shorter scrollable box around it); a drag outside the canvas still scrolls; a taller viewer leaves
- * vertical swipes to the page or the box and still turns sideways; two fingers zoom the page and leave the view alone.
- * Both homepage models, phone portrait and landscape, auto-turn off. The share check lays two viewers side by side with
- * the homepage's own site.css and home.css at 844x390, 740x360 and 932x430 (each page opened in portrait and resized,
- * so the rule is also re-decided on an orientation change), swipes vertically from a grid of start points and requires
- * that at least half of them scroll the page. Portrait, where the viewers keep vertical turning, is not in the share
- * check: touch targeting a few px around each canvas puts its measured share near 50 % on dev and here alike. The box check puts a 300 px and a 120 px viewer in a 320 px overflow-y:auto box.
+ * viewport, or a shorter ancestor box that can scroll vertically); a drag outside the canvas still scrolls; a taller
+ * viewer leaves vertical swipes to the page or the box and still turns sideways; two fingers zoom the page and leave
+ * the view alone. Both homepage models, phone portrait and landscape, auto-turn off.
+ *
+ * The share check lays two viewers side by side with the homepage's own site.css and home.css, opens each page in
+ * portrait and resizes it (so the rule is also re-decided on an orientation change), centres the first viewer and
+ * swipes vertically from a 7 x 5 grid of start points. At 844x390, 740x360, 932x430 and 1024x768 (where the viewers
+ * are 56 % of the height, so a looser threshold fails) at least half of them must scroll the page. At 390x844, where
+ * the viewers keep vertical turning, the floor is a loose 10 of 35: the home page measures 18/35 there, 28/35 at
+ * 412x915 and 15/35 at 360x640 with the first viewer centred, and 7/35, 7/35 and 14/35 at the worst offset with both
+ * viewers on screen (about 51-62 % of the screen then takes the swipe, and only the band between the cards and the side
+ * gutters scroll). The page is never trapped there, and those figures are the same as before #769.
+ *
+ * The box check puts a 300 px and a 120 px viewer in a 320 px overflow-y:auto box, the 300 px one again behind an
+ * auto-height overflow-x:auto and an auto-height overflow-y:auto wrapper (wrappers that cannot scroll do not count),
+ * and a 120 px viewer whose only wrapper is overflow-x:auto; it pins the threshold with a 422/423 px viewer at 390x844,
+ * and a pointer that went down without a lift that must not stop the next one-finger turn.
  *
  * Chromium gets real touch input through CDP Input.dispatchTouchEvent in a hasTouch/isMobile context, so the browser's
  * own touch-action and scroll arbitration decides the outcome. That is emulated touch in desktop Chromium: Safari's
@@ -43,13 +53,15 @@ const home = `<!doctype html><html lang="en"><meta charset="utf-8"><meta name="v
 <style>.filler{height:1600px}</style><div class="filler"></div><div class="wrap"><section class="section built-with"><div class="project-viewers">
 ${card('left', 'Left')}${card('right', 'Right')}</div></section></div><div class="filler"></div><script type="module" src="/kit/model/model.js"></script></html>`;
 // A scrollable box holding a viewer nearly as tall as the box and a small one, on a page that scrolls too.
+const viewer = (id, h) => `<cad-model id="${id}" src="/m/two-parts.json" label="${id}" turn="0" loading="eager" style="height:${h}px"></cad-model>`;
 const nested = `<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>cad-model in a box</title><link rel="stylesheet" href="/kit/model/model.css">
-<style>body{margin:0}.filler{height:900px}#box{height:320px;overflow-y:auto;margin:0 24px;border:1px solid}#box>div{height:260px}
-#box cad-model{aspect-ratio:auto;width:100%}</style><div class="filler"></div><div id="box"><div></div>
-<cad-model id="big" src="/m/two-parts.json" label="Big" turn="0" loading="eager" style="height:300px"></cad-model><div></div>
-<cad-model id="small" src="/m/two-parts.json" label="Small" turn="0" loading="eager" style="height:120px"></cad-model><div style="height:900px"></div></div>
-<div class="filler"></div><script type="module" src="/kit/model/model.js"></script></html>`;
+<style>body{margin:0}.filler{height:900px}.box{height:320px;overflow-y:auto;margin:0 24px 400px;border:1px solid}.pad{height:260px}
+.tail{height:900px}cad-model{aspect-ratio:auto;width:100%}</style><div class="filler"></div><div class="box" id="box"><div class="pad"></div>
+${viewer('big', 300)}<div class="pad"></div>${viewer('small', 120)}<div class="tail"></div></div>
+<div class="box" id="boxx"><div class="pad"></div><div style="overflow-x:auto">${viewer('bigx', 300)}</div><div class="tail"></div></div>
+<div class="box" id="boxy"><div class="pad"></div><div style="overflow-y:auto">${viewer('bigy', 300)}</div><div class="tail"></div></div>
+<div style="overflow-x:auto;margin:0 24px">${viewer('smallx', 120)}</div><div class="filler"></div><script type="module" src="/kit/model/model.js"></script></html>`;
 const site = await serveWebkit(new Map([
   ['/', (_, res) => res.writeHead(200, { 'Content-Type': 'text/html' }).end(page)],
   ['/home', (_, res) => res.writeHead(200, { 'Content-Type': 'text/html' }).end(home)],
@@ -257,12 +269,13 @@ async function scenario(name, viewport) {
 }
 
 const MIN_SHARE = 0.5;   // the rule's promise: a row of viewers leaves at least half of the screen's height to scroll from
+const PORTRAIT_FLOOR = 10 / 35;   // portrait viewers keep vertical turning; the home page measures 18/35 there
 /** Two viewers side by side under the homepage's real stylesheets. Each phone size gets its own page, opened in
  * portrait and resized to that size (so the rule must be re-decided), runs in parallel with the others, centres the
  * row (the worst place for it) and swipes vertically from a 7 x 5 grid of start points; at least MIN_SHARE must
- * scroll the page. */
+ * scroll the page (PORTRAIT_FLOOR in portrait). */
 async function share() {
-  const sizes = [[844, 390], [740, 360], [932, 430]];
+  const sizes = [[390, 844], [844, 390], [740, 360], [932, 430], [1024, 768]];
   const one = async ([width, height]) => {
     const name = `${width}x${height}`;
     const context = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true, deviceScaleFactor: 1 });
@@ -288,7 +301,8 @@ async function share() {
         moved = Math.abs(await scrollY(p) - y0) >= 20;
         scrolled += moved; total++;
       }
-      check(scrolled / total >= MIN_SHARE, `${name}: a vertical swipe scrolled the page from ${scrolled} of ${total} start points; want at least ${MIN_SHARE * 100}%`);
+      const floor = width < height ? PORTRAIT_FLOOR : MIN_SHARE;
+      check(scrolled / total >= floor, `${name}: a vertical swipe scrolled the page from ${scrolled} of ${total} start points; want at least ${Math.ceil(floor * total)}`);
       check(errors.length === 0, `${name}: page errors ${errors.join('; ')}`);
       return `${name} ${scrolled}/${total} (${actions.join(' / ')})`;
     } finally { await context.close(); }
@@ -296,46 +310,67 @@ async function share() {
   console.log(`vertical swipes that scroll with two viewers side by side: ${(await Promise.all(sizes.map(one))).join('; ')}`);
 }
 
-/** A viewer nearly as tall as its 320 px overflow-y:auto box leaves vertical swipes to the box; a small one in the same
- * box still turns vertically; the rule is re-decided when the box changes size. */
+/** Viewers in 320 px overflow-y:auto boxes (directly, and behind auto-height wrappers that cannot scroll), a small one
+ * behind an overflow-x:auto wrapper, the exact half-height boundary, and a pointer that went down without a lift. */
 async function nestedBox() {
   const context = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true, deviceScaleFactor: 1 });
   const p = await context.newPage(), errors = [];
   p.on('pageerror', e => errors.push(String(e)));
   await p.goto(site.url + '/nested');
-  for (const id of ['big', 'small']) await p.waitForFunction(id => document.getElementById(id)?.dataset.state === 'ready', id, { timeout: 60000 });
+  const ids = ['big', 'small', 'bigx', 'bigy', 'smallx'];
+  for (const id of ids) await p.waitForFunction(id => document.getElementById(id)?.dataset.state === 'ready', id, { timeout: 60000 });
   const cdp = await context.newCDPSession(p);
   const action = id => p.evaluate(id => document.querySelector(`#${id} canvas`).style.touchAction, id);
   // Bring the box to the middle of the page, then the viewer to the middle of the box.
-  const inBox = async id => {
-    await settle(p); await settle(p, 'box');
-    await p.evaluate(id => {
-      const box = document.getElementById('box'), r = box.getBoundingClientRect();
+  const inBox = async (id, boxId) => {
+    await settle(p); await settle(p, boxId);
+    await p.evaluate(([id, boxId]) => {
+      const box = document.getElementById(boxId), r = box.getBoundingClientRect();
       scrollTo({ top: scrollY + r.top - (innerHeight - r.height) / 2, behavior: 'instant' });
       const v = document.getElementById(id).getBoundingClientRect(), b = box.getBoundingClientRect();
       box.scrollTop += v.top - b.top - (box.clientHeight - v.height) / 2;
-    }, id);
-    await settle(p); await settle(p, 'box');
+    }, [id, boxId]);
+    await settle(p); await settle(p, boxId);
     return box(p, id);
   };
-  check(await action('big') === 'pan-y pinch-zoom', `box: a 300 px viewer in a 320 px box must leave vertical swipes to the box, got ${await action('big')}`);
-  check(await action('small') === 'pinch-zoom', `box: a 120 px viewer in a 320 px box must take vertical drags, got ${await action('small')}`);
-  {
-    const b = await inBox('big'), x = b.x + b.w / 2, y = b.y + b.h / 2, t0 = await scrollTop(p, 'box');
+  const wants = { big: 'pan-y pinch-zoom', small: 'pinch-zoom', bigx: 'pan-y pinch-zoom', bigy: 'pan-y pinch-zoom', smallx: 'pinch-zoom' };
+  for (const [id, want] of Object.entries(wants)) check(await action(id) === want, `box ${id}: touch-action ${await action(id)}, want ${want}`);
+  // A 300 px viewer, directly in the box or behind a wrapper that cannot scroll: a vertical swipe on it scrolls the box.
+  for (const [id, boxId] of [['big', 'box'], ['bigx', 'boxx'], ['bigy', 'boxy']]) {
+    const b = await inBox(id, boxId), x = b.x + b.w / 2, y = b.y + b.h / 2, t0 = await scrollTop(p, boxId);
     await touchDrag(cdp, p, [x, y + 50], [x, y - 50]);
-    check(await scrollTop(p, 'box') > t0 + 40, `box: a vertical swipe on the 300 px viewer must scroll the box: scrollTop ${t0} -> ${await scrollTop(p, 'box')}`);
+    check(await scrollTop(p, boxId) > t0 + 40, `box ${id}: a vertical swipe on the 300 px viewer must scroll #${boxId}: scrollTop ${t0} -> ${await scrollTop(p, boxId)}`);
   }
   {
-    const b = await inBox('small'), x = b.x + b.w / 2, y = b.y + b.h / 2, t0 = await scrollTop(p, 'box'), y0 = await scrollY(p), before = await shot(p, 'small');
+    const b = await inBox('small', 'box'), x = b.x + b.w / 2, y = b.y + b.h / 2, t0 = await scrollTop(p, 'box'), y0 = await scrollY(p), before = await shot(p, 'small');
     await touchDrag(cdp, p, [x, y + 40], [x, y - 40]);
     check(await scrollTop(p, 'box') === t0 && await scrollY(p) === y0, `box: a vertical drag on the 120 px viewer scrolled (box ${t0} -> ${await scrollTop(p, 'box')})`);
     check(await shot(p, 'small') !== before, 'box: a vertical drag on the 120 px viewer did not turn the model');
   }
+  // A 120 px viewer whose only wrapper is overflow-x:auto keeps vertical turning on the page; so it does after a
+  // pointer went down on it with no lift (a lift the viewer never saw), since a new gesture starts afresh.
+  for (const phantom of [false, true]) {
+    const tag = phantom ? 'after a pointer with no lift' : 'behind overflow-x:auto';
+    await centre(p, 'smallx');
+    const b = await box(p, 'smallx'), x = b.x + b.w / 2, y = b.y + b.h / 2, y0 = await scrollY(p), before = await shot(p, 'smallx');
+    if (phantom) await p.evaluate(([x, y]) => document.querySelector('#smallx canvas').dispatchEvent(new PointerEvent('pointerdown',
+      { pointerId: 99, isPrimary: false, pointerType: 'touch', clientX: x, clientY: y, bubbles: true })), [x, y]);
+    const d = phantom ? -40 : 40;   // the other way the second time: the first drag leaves the tilt at its stop
+    await touchDrag(cdp, p, [x, y + d], [x, y - d]);
+    check(await shot(p, 'smallx') !== before, `box smallx: a vertical one-finger drag ${tag} did not turn the model`);
+    check(await scrollY(p) === y0, `box smallx: a vertical one-finger drag ${tag} scrolled the page`);
+  }
+  // The threshold itself: half of the 844 px viewport is 422 px.
+  for (const [height, want] of [[422, 'pinch-zoom'], [423, 'pan-y pinch-zoom'], [120, 'pinch-zoom']]) {
+    await p.evaluate(h => { document.getElementById('smallx').style.height = `${h}px`; }, height);
+    const ok = await p.waitForFunction(want => document.querySelector('#smallx canvas').style.touchAction === want, want, { timeout: 10000 }).then(() => true, () => false);
+    check(ok, `box: a ${height} px viewer in an 844 px viewport must have touch-action ${want}, got ${await action('smallx')}`);
+  }
   // Taller box: the big viewer is now under half of it and takes vertical drags; back to 320 px, it gives them up again.
   for (const [height, want] of [[700, 'pinch-zoom'], [320, 'pan-y pinch-zoom']]) {
     await p.evaluate(h => { document.getElementById('box').style.height = `${h}px`; }, height);
-    await p.waitForFunction(want => document.querySelector('#big canvas').style.touchAction === want, want, { timeout: 10000 })
-      .catch(() => check(false, `box: after the box became ${height} px the 300 px viewer did not switch to ${want}`));
+    const ok = await p.waitForFunction(want => document.querySelector('#big canvas').style.touchAction === want, want, { timeout: 10000 }).then(() => true, () => false);
+    check(ok, `box: after the box became ${height} px the 300 px viewer did not switch to ${want}`);
   }
   check(errors.length === 0, `box: page errors ${errors.join('; ')}`);
   await context.close();

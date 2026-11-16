@@ -49,6 +49,7 @@ def test_install_links_and_generates_then_reinstalls(tmp_path):
     assert 'More.' in (home / '.agents/skills/reviewer/SKILL.md').read_text()
     # links already in place are left as they are, so an update lists only what changed (#799)
     assert again['done'] == [f"generate {home / '.agents/skills/reviewer'}"] and len(again['unchanged']) == 3
+    assert agentkit.install(home, root)['done'] == [], "nothing changed, nothing listed"
 
 
 def test_foreign_files_are_conflicts_and_left_alone(tmp_path):

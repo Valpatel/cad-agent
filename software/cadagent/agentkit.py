@@ -505,7 +505,8 @@ def prune(home: Path, root: Path, targets=TARGETS, dry_run: bool = False) -> Lis
 def install(home: Path, root: Path, targets=TARGETS, copy: bool = False, dry_run: bool = False) -> dict:
     """Install the kit. Returns {'done': [...], 'conflicts': [...], 'removed': [...], 'unchanged': [...]}. Only what
     this module made is replaced or removed; anything else at a destination is a conflict and left untouched. A link
-    that already points at the item is left as it is (``unchanged``), so an update lists only what changed. A link that
+    that already points at the item, or a generated skill that is already current, is left as it is (``unchanged``),
+    so an update lists only what changed. A link that
     cannot be made (Windows without Developer Mode) becomes a copy."""
     done, conflicts, unchanged = [], [], []
     plan = _plan(home, root, targets)              # checks the folders first, before anything is removed
@@ -515,7 +516,8 @@ def install(home: Path, root: Path, targets=TARGETS, copy: bool = False, dry_run
             conflicts.append(str(dest))
             continue
         mode = "generate" if how == "generate" else "copy" if copy else "link"
-        if mode == "link" and dest.is_symlink() and Path(os.readlink(dest)) == item.path.resolve():
+        if ((mode == "link" and dest.is_symlink() and Path(os.readlink(dest)) == item.path.resolve()) or
+                (mode == "generate" and not dest.is_symlink() and _text(dest / "SKILL.md") == codex_agent_skill(item))):
             unchanged.append(str(dest))
             continue
         if dry_run:

@@ -2,6 +2,7 @@
 import { mkdtemp, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
+import { cleanText, navigate, navigationFailure } from '../navigation.mjs';
 
 export function outlineEntryState(panel) {
   const a = panel.querySelector('.cad-nav-outline a[aria-current=location]');
@@ -32,14 +33,14 @@ export function scrollOutline(page, target) {
 }
 
 /** Real component regression: a reader moves the panel, then scrolls within the SAME article section. */
-export async function sameSectionOutlineProblems(browser, base, { serverEvidence } = {}) {
+export async function sameSectionOutlineProblems(browser, base) {
   const problems = [], evidence = await mkdtemp(path.join(tmpdir(), 'cad-agent-outline-control-'));
   const page = await browser.newPage({ viewport: { width: 1366, height: 800 } });
   const errors = [], states = [];
   page.on('pageerror', e => errors.push(e.message));
   page.on('console', m => { if (m.type() === 'error') errors.push(m.text()); });
   try {
-    await readerBoundaryGoto(page, base + '/docs/toolkit', { viewport: { width: 1366, height: 800 }, evidence, states, problems, probe: 'Outline control', serverEvidence });
+    await readerBoundaryGoto(page, base + '/docs/toolkit', { viewport: { width: 1366, height: 800 }, evidence, states, problems, probe: 'Outline control' });
     await page.waitForFunction(() => customElements.get('cad-nav'), null, { timeout: 2000 });
     // Assemble a detached fixture before connecting it, so the real component sees its complete article and children.
     await page.evaluate(() => {
@@ -132,19 +133,8 @@ export const lowContrast = (page, only = null) => page.evaluate(only => {
     return [...new Set(low)];
   }, only);
 
-// Test-only navigation evidence. Success keeps the existing navigation and reader predicates unchanged.
-const readerURL = value => {
-  if (value === 'about:blank') return value;
-  try { const u = new URL(value); return /^https?:$/.test(u.protocol) ? (u.origin + u.pathname).slice(0, 300) : u.protocol; }
-  catch { return '[unavailable URL]'; }
-};
-const readerText = value => String(value).replace(/https?:\/\/[^\s"'<>]+/g, readerURL).slice(0, 300);
-const readerCapture = async action => {
-  let timer;
-  try { return await Promise.race([Promise.resolve().then(action), new Promise((_, reject) => {
-    timer = setTimeout(() => reject(new Error('diagnostic capture exceeded 1000 ms')), 1000);
-  })]); } finally { clearTimeout(timer); }
-};
+// Test-only navigation evidence lives in ../navigation.mjs; these probes add their own receipt around it.
+const readerText = cleanText;
 
 /** For a probe's `finally`: close its page and write its receipt without throwing over the error that got there. */
 const readerClose = async (page, states) => {
@@ -155,68 +145,22 @@ const readerReceipt = async (evidence, states, problems) => {
   catch (error) { console.error('Reader receipt unavailable: ' + readerText(error.message)); }
 };
 
-/** Observe only this probe's navigation. On failure preserve partial evidence BEFORE its caller closes the page,
- * then rethrow the exact original error. These observations never turn a failed navigation into a pass. */
-export async function readerBoundaryGoto(page, target, { viewport, javaScriptEnabled = true, evidence, states, problems, probe = 'Reader boundary', serverEvidence }) {
-  const start = Date.now(), pending = new Map(), active = new WeakSet(), listeners = [];
-  const events = { responses: [], failed: [], console: [], pageerror: [], lifecycle: [], observerErrors: [] };
-  const counts = Object.fromEntries(Object.keys(events).map(k => [k, 0]));
-  let pendingCount = 0;
-  const record = (kind, row) => { counts[kind]++; if (events[kind].length < 24) events[kind].push({ atMs: Date.now() - start, ...row() }); };
-  const watch = (name, callback) => {
-    const guarded = value => { try { callback(value); } catch (error) { record('observerErrors', () => ({ message: readerText(error.message) })); } };
-    listeners.push([name, guarded]); page.on(name, guarded);
-  };
-  const requestInfo = request => ({ url: readerURL(request.url()), method: readerText(request.method()), type: readerText(request.resourceType()) });
-  const finish = request => { if (active.delete(request)) pendingCount--; pending.delete(request); };
-  watch('request', request => { if (!active.has(request)) { active.add(request); pendingCount++; } if (pending.size < 24) pending.set(request, requestInfo(request)); });
-  watch('requestfinished', finish);
-  watch('requestfailed', request => { finish(request); record('failed', () => ({ ...requestInfo(request), error: readerText(request.failure()?.errorText || 'unknown') })); });
-  watch('response', response => record('responses', () => ({ url: readerURL(response.url()), status: response.status(), navigation: response.request().isNavigationRequest() })));
-  watch('console', message => record('console', () => ({ type: readerText(message.type()), text: readerText(message.text()) })));
-  watch('pageerror', error => record('pageerror', () => ({ message: readerText(error.message) })));
-  for (const name of ['domcontentloaded', 'load', 'crash', 'close']) watch(name, () => record('lifecycle', () => ({ name })));
+/** This probe's navigation, through the suite's shared one (../navigation.mjs): on failure its evidence (the browser's
+ * and the preview server's record, the DOM and a screenshot, in this probe's evidence folder) is added to the
+ * probe's receipt BEFORE its caller closes the page, then the exact original error is rethrown. These observations
+ * never turn a failed navigation into a pass. */
+export async function readerBoundaryGoto(page, target, { viewport, javaScriptEnabled = true, evidence, states, problems, probe = 'Reader boundary' }) {
   try {
-    return await page.goto(target, { waitUntil: 'networkidle' });
+    return await navigate(page, target, { waitUntil: 'networkidle' }, { evidence, viewport, javaScriptEnabled,
+      where: `${probe} ${viewport ? `${viewport.width}x${viewport.height}` : ''}${javaScriptEnabled ? '' : ', JavaScript disabled'}` });
   } catch (error) {
-    let currentURL = '[unavailable URL]';
-    try { currentURL = readerURL(page.url()); } catch { /* a disconnected page must not replace the navigation error */ }
-    const failure = { viewport, javaScriptEnabled, target: readerURL(target), currentURL,
-      waitUntil: 'networkidle', elapsedMs: Date.now() - start, error: { name: readerText(error.name), message: readerText(error.message) },
-      pendingCount, pending: [...pending.values()], counts: { ...counts }, events, captureErrors: [] };
-    try {
-      failure.dom = await readerCapture(() => page.evaluate(() => {
-        const nav = document.querySelector('cad-nav'), panel = document.querySelector('.cad-nav-panel');
-        const css = node => node ? { display: getComputedStyle(node).display, position: getComputedStyle(node).position, overflowY: getComputedStyle(node).overflowY } : null;
-        return { readyState: document.readyState, body: !!document.body, navPresent: !!nav,
-          navReady: nav?.hasAttribute('data-ready') || false, navStyle: css(nav), panelStyle: css(panel),
-          fonts: document.fonts?.status || 'unavailable', styleCount: document.styleSheets.length,
-          styles: [...document.styleSheets].slice(0, 12).map(sheet => ({ href: sheet.href, disabled: sheet.disabled })) };
-      }));
-      failure.dom.styles = failure.dom.styles.map(sheet => ({ ...sheet, href: sheet.href ? readerURL(sheet.href) : null }));
-    } catch (captureError) { failure.captureErrors.push('DOM: ' + readerText(captureError.message)); }
-    try {
-      const png = await readerCapture(() => page.screenshot({ type: 'png', fullPage: false, timeout: 1000 }));
-      if (png.length <= 2 * 1024 * 1024) {
-        await writeFile(path.join(evidence, 'navigation-failure.png'), png); failure.screenshot = 'navigation-failure.png';
-      } else failure.captureErrors.push('screenshot exceeded 2 MiB; not retained');
-    } catch (captureError) { failure.captureErrors.push('screenshot: ' + readerText(captureError.message)); }
-    // The preview server's own record of the same path since just before this navigation (#686), when the caller can
-    // ask it: received? answered? on which socket? Bounded by the caller's query; a fault is recorded, never thrown.
-    if (serverEvidence) {
-      try { failure.server = await serverEvidence(new URL(target).pathname, start - 1000); }
-      catch (captureError) { failure.captureErrors.push('server: ' + readerText(captureError.message)); }
-    }
-    // Refresh the bounded observations after capture; the navigation's original elapsed/error stay unchanged.
-    failure.pendingCount = pendingCount; failure.pending = [...pending.values()]; failure.counts = { ...counts };
-    states.push({ navigationFailure: failure });
+    states.push({ navigationFailure: navigationFailure(error)?.evidence ??
+      { viewport, javaScriptEnabled, error: { name: readerText(error?.name), message: readerText(error?.message) }, captureErrors: ['no navigation evidence was kept'] } });
     try {
       await writeFile(path.join(evidence, 'receipt.json'), JSON.stringify({ states, problems }, null, 2) + '\n');
     } catch (captureError) { console.error('Reader boundary partial receipt unavailable: ' + readerText(captureError.message)); }
     console.log(`${probe} failure evidence: ${evidence}`);
     throw error;
-  } finally {
-    for (const [name, callback] of listeners) page.off(name, callback);
   }
 }
 
@@ -230,7 +174,7 @@ async function readerProbeFailure(error, { viewport, javaScriptEnabled = true, e
 
 /** Actual wheel input at the reader tree's upper boundary must not chain into an article scroll,
  * whose correctly preserved section tracker would otherwise pull the tree away from its search fields. */
-export async function readerBoundaryProblems(browser, base, { serverEvidence } = {}) {
+export async function readerBoundaryProblems(browser, base) {
   const problems=[],states=[],evidence=await mkdtemp(path.join(tmpdir(),'cad-agent-reader-boundary-'));
   const snapshot=page=>page.evaluate(()=>{
     const p=document.querySelector('.cad-nav-panel'),s=document.querySelector('.explore-nav-search'),r=s.getBoundingClientRect();
@@ -243,7 +187,7 @@ export async function readerBoundaryProblems(browser, base, { serverEvidence } =
   for(const viewport of [{width:1440,height:900},{width:1440,height:600},{width:1600,height:900}]){
     const page=await browser.newPage({viewport});
     try{
-      await readerBoundaryGoto(page,base+'/docs/toolkit',{viewport,evidence,states,problems,serverEvidence});await page.waitForSelector('cad-nav[data-ready]');
+      await readerBoundaryGoto(page,base+'/docs/toolkit',{viewport,evidence,states,problems});await page.waitForSelector('cad-nav[data-ready]');
       await scrollOutline(page,6000);await quiet(page);
       const initial=await snapshot(page);if(!initial.current.length)problems.push('reader boundary: no active article heading at '+JSON.stringify(viewport));
       const panel=page.locator('.cad-nav-panel');const box=await panel.boundingBox();await page.mouse.move(box.x+box.width/2,box.y+Math.min(150,box.height/2));
@@ -274,7 +218,7 @@ export async function readerBoundaryProblems(browser, base, { serverEvidence } =
   for(const javaScriptEnabled of [true,false]){
     const page=await browser.newPage({viewport:{width:390,height:844},javaScriptEnabled});
     try{
-      await readerBoundaryGoto(page,base+'/docs/toolkit',{viewport:{width:390,height:844},javaScriptEnabled,evidence,states,problems,serverEvidence});await page.locator('.cad-nav-toggle').click();
+      await readerBoundaryGoto(page,base+'/docs/toolkit',{viewport:{width:390,height:844},javaScriptEnabled,evidence,states,problems});await page.locator('.cad-nav-toggle').click();
       const mode=await page.locator('.cad-nav-panel').evaluate(p=>({position:getComputedStyle(p).position,overflow:getComputedStyle(p).overflowY,contain:getComputedStyle(p).overscrollBehaviorY}));states.push({mobile:javaScriptEnabled,mode});
       if(mode.position!=='static'||mode.overflow!=='visible'||mode.contain!=='auto')problems.push('reader boundary: mobile native page scrolling changed');
     }catch(error){await readerProbeFailure(error,{viewport:{width:390,height:844},javaScriptEnabled,evidence,states,problems});throw error;}finally{await readerClose(page,states);}
@@ -285,7 +229,7 @@ export async function readerBoundaryProblems(browser, base, { serverEvidence } =
 
 /** Keep the actual last/last/middle outline-click journey, including the engine's own click autoscroll.
  * Also align a link natively at the panel's start: its center must clear the real sticky header. */
-export async function readerOutlineClickProblems(browser, base, { serverEvidence } = {}) {
+export async function readerOutlineClickProblems(browser, base) {
   const problems=[],states=[],evidence=await mkdtemp(path.join(tmpdir(),'cad-agent-reader-click-'));
   const page=await browser.newPage({viewport:{width:1366,height:800}});
   const settle=()=>page.evaluate(()=>new Promise(done=>{
@@ -300,7 +244,7 @@ export async function readerOutlineClickProblems(browser, base, { serverEvidence
     return {target:a.hash,article:scrollY,panel:p.scrollTop,padding:getComputedStyle(p).scrollPaddingTop,controlsHeight:c.height,top:r.top,bottom:r.bottom,controlsBottom:c.bottom,hit:a.contains(document.elementFromPoint(r.x+r.width/2,r.y+r.height/2))};
   },alignment);
   try{
-    await readerBoundaryGoto(page,base+'/docs/toolkit',{viewport:{width:1366,height:800},evidence,states,problems,probe:'Reader click',serverEvidence});await page.waitForSelector('cad-nav[data-ready]');
+    await readerBoundaryGoto(page,base+'/docs/toolkit',{viewport:{width:1366,height:800},evidence,states,problems,probe:'Reader click'});await page.waitForSelector('cad-nav[data-ready]');
     await scrollOutline(page,await page.evaluate(()=>document.body.scrollHeight/2));await page.locator('.cad-nav-panel').evaluate(p=>p.scrollTop=0);
     await scrollOutline(page,await page.evaluate(()=>document.body.scrollHeight*.85));
     await page.evaluate(()=>{document.documentElement.style.scrollBehavior='';scrollTo({top:0,behavior:'instant'});});
@@ -340,7 +284,7 @@ export function readerOverflowSnapshot(expected = null) {
 }
 
 /** A fitting desktop tree must not become a wheel dead zone; containment follows actual overflow after edits. */
-export async function readerOverflowProblems(browser, base, { serverEvidence } = {}) {
+export async function readerOverflowProblems(browser, base) {
   const problems=[],states=[],evidence=await mkdtemp(path.join(tmpdir(),'cad-agent-reader-overflow-'));
   const page=await browser.newPage({viewport:{width:1920,height:1080}});
   const state=()=>page.evaluate(readerOverflowSnapshot);
@@ -354,7 +298,7 @@ export async function readerOverflowProblems(browser, base, { serverEvidence } =
     }
   };
   try{
-    await readerBoundaryGoto(page,base+'/docs/toolkit',{viewport:{width:1920,height:1080},evidence,states,problems,probe:'Reader overflow',serverEvidence});await page.waitForSelector('cad-nav[data-ready]');
+    await readerBoundaryGoto(page,base+'/docs/toolkit',{viewport:{width:1920,height:1080},evidence,states,problems,probe:'Reader overflow'});await page.waitForSelector('cad-nav[data-ready]');
     const panel=page.locator('.cad-nav-panel');await panel.evaluate(p=>{for(const group of p.querySelectorAll('details'))group.open=false;});const folded=await current({width:1920,height:1080,overflow:false,position:'sticky'});
     states.push({folded});if(!folded.fits||folded.contain!=='auto')problems.push('reader overflow: folded fitting tree traps wheel input');
     const old=await page.addStyleTag({content:'cad-nav .cad-nav-panel{overscroll-behavior-y:contain!important}'});const planted=await state();states.push({blanketContainRejected:planted.fits&&planted.contain!=='auto'});if(!(planted.fits&&planted.contain!=='auto'))problems.push('reader overflow: old blanket-contain control not rejected');await old.evaluate(el=>el.remove());

@@ -45,6 +45,7 @@ flowchart TD
 | [toolkit/](toolkit/README.md) | Catalogue/discovery contracts, SCADA Toolkit inventory and real browser flows |
 | `built-site.mjs` | Helper: the built site the `website-*` tests read, from `CAD_AGENT_SITE` or a fresh build of HEAD |
 | `site-diagrams-browser.mjs` | The Python site consumer of the diagram renderer, in a real browser |
+| `navigation.mjs` | Helper: the browser suite's one navigation function; a failed one keeps a bounded receipt of the browser's and the preview server's record and becomes a finding of its own part, with a planted stall in `website-browser.mjs` proving both (#686) |
 | `npm-context.mjs` | Test-only dependency resolution anchored at tools/site/package.json, without a root manifest or node_modules link |
 | [layout/](layout/README.md) | Shared browser geometry, reader navigation, motion and text-wall checks, including representative widescreen layouts |
 | `test_catalog_content.py` | Every outside catalogue entry has a plain `what` line and a place in the topic tree |
@@ -53,7 +54,7 @@ flowchart TD
 | `website-build.test.mjs` | `tools/site/build-site.mjs`: what the build makes, links, redirects and headers |
 | `website-diagrams.test.mjs` | `tools/site/compiler/site-diagrams.mjs`: Mermaid blocks drawn at build time |
 | `website-html.test.mjs` | `tools/site/compiler/site-html.mjs`: the sanitizer keeps our markup and drops unsafe HTML |
-| `website-preview.test.mjs` | Directory application routes preserve slash-relative modules and scenario queries under Pages-style hosting; the server's IPC record of requests, sockets and idle closes, kept by time and saying when its window is truncated (#686). |
+| `website-preview.test.mjs` | Directory application routes preserve slash-relative modules and scenario queries under Pages-style hosting; the server's IPC record of requests and sockets, kept by time and saying when its window is truncated; idle keep-alive sockets stay open, so no client reuses one the server is closing (#686). |
 | `website-references.test.mjs` | `tools/site/compiler/site-references.mjs`: the reference pages, their JSON and llms.txt lines against the committed records, `[ref:]` links, no record in the catalogue or llms-full.txt, `docs/practice/experts.md` current |
 | `website-pages.test.mjs` | `tools/site/compiler/site-pages.mjs`: outputs placed on pages, section cards, folded reference; inert reader failure-receipt/bounds controls |
 | `website-snap-demo.test.mjs` | The landing page's snap-fit animation shows a real engagement |

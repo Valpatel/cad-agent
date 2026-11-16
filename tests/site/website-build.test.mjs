@@ -662,7 +662,8 @@ test('the home page shows what runs, then what is in cad-agent, in order, every 
   assert.doesNotMatch(home.slice(home.indexOf('id="built-with"')), /turret-playground/, 'See it run does not repeat the recording');
   assert.ok(home.indexOf('id="built-with"') < home.indexOf('<cad-model ') && home.lastIndexOf('<cad-model ') < home.indexOf('class="run-minis"'), 'See it run: the two viewers, then the toolkit cards');
   assert.doesNotMatch(home.slice(home.indexOf('class="learning-art learning-band"'), home.indexOf('id="built-with"')), /fetchpriority="high"/, 'the pixel-art band does not compete with the recording');
-  assert.match(home, /href="https:\/\/gyropup\.com\/designer\/sim"/);
+  // The playground opens on the recorded model, not its default robot (#804).
+  assert.match(home, /<a href="https:\/\/gyropup\.com\/designer\/sim\?design=turret-box">Open the playground<\/a>/);
   assert.match(home, /class="more-checks"/);
   // Every local link the new sections add lands on a published page, and every #anchor on a real id.
   const added = home.slice(home.indexOf('id="built-with"'), home.indexOf('class="section help-band"'));

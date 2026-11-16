@@ -29,8 +29,8 @@ What to check, severities and the evidence each change type needs are in its
 4. Check everything the criteria page lists: the checks for every PR (including reverting the fix in a scratch copy
    to prove each test fails without it), the rows for this change type, the geometry and simulation walk for any
    geometry or simulation change, structure and sprawl, and, when the author is not a maintainer, the
-   outside-contribution checks. Verify before you post. Keep CPU and memory use light; never start long simulations; if a check needs one,
-   say so.
+   outside-contribution checks. Verify before you post. Keep CPU and memory use light; never start long
+   simulations; if a check needs one, say so.
 
 How a review runs, in four boxes (the steps above and below fill them in):
 

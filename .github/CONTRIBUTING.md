@@ -52,7 +52,8 @@ with `gh pr checks <n>`.
   - they can push as often as they like, and CI runs without approval;
   - **they cannot merge.** The repository ruleset "Only maintainers merge into dev and main" lets only the admin role
     update those branches. A maintainer reviews the PR (the verdict marker; only a maintainer's verdict counts) and
-    merges it with `gh pr merge --admin`, the ruleset's bypass. The required checks still apply to admins
+    merges it with `gh pr merge --admin`, or the GitHub MCP merge, which gets through the ruleset for the admin
+    role without a switch (observed, [cad-pr-review](../.agents/skills/cad-pr-review/SKILL.md#commands)). The required checks still apply to admins
     (enforce admins is on). Run `tools/ci_gates.py all` before every merge; `main` also requires the release gate
     and up-to-date branches.
   - Outside contributors without write access open PRs from forks (#111).

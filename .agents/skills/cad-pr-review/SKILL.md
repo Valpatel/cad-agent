@@ -94,7 +94,7 @@ Sessions without `gh` (cloud sessions) use the GitHub MCP tools. `<o>/<r>` is th
 | Inline comment | `gh api repos/<o>/<r>/pulls/<n>/comments` with `commit_id`, `path`, `line`, `side=RIGHT` | `pull_request_review_write` (`create`, `commitID` = head, no `event`: a pending review), then `add_comment_to_pending_review` (`path`, `line`, `side` RIGHT, `subjectType` LINE) |
 | Summary review with verdict | `gh pr review <n> --comment --body-file <file>` | `pull_request_review_write` (`submit_pending`, `event` COMMENT, `body` ending with the marker line); without inline comments, `create` with `event` COMMENT and `commitID` |
 | Reply to a comment | `gh api repos/<o>/<r>/pulls/<n>/comments/<id>/replies -f body="Fixed in <sha>: ..."` | `add_reply_to_pull_request_comment` (`commentId`, `pullNumber`, `body`) |
-| Resolve a thread | `gh api graphql -f query='mutation{resolveReviewThread(input:{threadId:"<id>"}){thread{isResolved}}}'` | `resolve_review_thread` (`threadId`; ids from `pull_request_read` `get_review_comments`) |
+| Resolve a thread | `gh api graphql -f query='mutation{resolveReviewThread(input:{threadId:"<id>"}){thread{isResolved}}}'` | `resolve_review_thread` (`owner`, `repo`, `threadId`; ids from `pull_request_read` `get_review_comments`) |
 | Re-run the gates | `gh workflow run gates.yml -R <o>/<r> -f pr=<n>` | `actions_run_trigger` (`run_workflow`, `workflow_id` gates.yml, `ref` dev, `inputs` {pr: "<n>"}) |
 | Timeline comment | `gh pr comment <n> --body-file <file>`, `gh issue comment` | `add_issue_comment` (never `issue_write` with a body) |
 | Merge | `gh pr merge <n> --merge --admin --match-head-commit <sha>` (cad-agent's ruleset) | `merge_pull_request` (`merge_method` merge, `expectedHeadSha` the reviewed head) |
@@ -109,10 +109,11 @@ that way (marker, blank line, `---`, footer) counts. Any other text after the ma
 | MCP route | What holds |
 |---|---|
 | Gate re-run | Dispatch `gates.yml` on `ref` `dev` with `inputs` {pr: "<n>"}; on another `ref` the job is skipped. |
-| Merge | `merge_pull_request` has no `--admin` switch, and works under the ruleset once CI and both `cad-gates/dev/...` statuses are green and every review thread is resolved. |
-| Refusals | "All comments must be resolved": a thread is open. "Required status check … is failing": a gate or CI is red. |
+| Merge | `merge_pull_request` has no `--admin` switch. Observed, not documented GitHub behaviour (2026-11-16, PRs #752, #749, #757, #760, #763, #765, #768, from the project's maintainer account): the call gets through the ruleset, and the required checks and resolved threads still apply. The ruleset lets only the admin role update `dev`, so a session on another account is refused and stops. |
+| "All comments must be resolved" | A thread is open (seen on #727). It is resolved only after the author's fix or reply is on it; never resolve an unanswered thread to get a merge through. |
+| "Required status check … is failing" | A gate or CI is red (seen on #752 before its gate was green). Fix it on the branch (a new head, which needs a new verdict), or stop; never re-post a status by hand. A required check that has not reported yet means wait. |
 
-If GitHub refuses the merge, fix the cause or stop and report; never change a ruleset or setting to get through.
+For any other refusal, stop and report; never change a ruleset or setting to get through.
 
 ## Merging without the owner
 
@@ -121,8 +122,24 @@ For cad-agent; a product repo states its own rules in its AGENTS.md. Releases (`
 A release PR needs no go-ahead of its own: each change in it met these rules when it merged into `dev`. Its
 reviewer says so instead of listing the items.
 
-Agents merge; the owner does not press merge. **An agent merges into `dev`** when all of these hold:
+Agents merge; the owner does not press merge. Each "no" below means stop, or fix and come back:
 
+```mermaid
+flowchart TD
+    A["go-ahead item?<br/>no, or recorded"] --> B["CI and gates<br/>green on the head?"]
+    B --> C["pass on the head,<br/>no later objection?"]
+    C --> D["threads answered<br/>and resolved?"]
+    D --> E["gates re-run<br/>and read again?"]
+    E --> M["merge, pinned<br/>to the head SHA"]
+    class A,B,C,D,E here
+    class M out
+```
+
+**An agent merges into `dev`** when all of these hold:
+
+- the PR is not a draft, and the merging session wrote it, or the session holding the issue's work claim has said
+  on the PR that it is ready to merge, or that claim has ended or expired. Otherwise ask on the PR and wait; never
+  mark another session's draft ready;
 - none of the items under [Needs the owner's go-ahead](#needs-the-owners-go-ahead) applies, by the reviewer's
   statement and by the merging agent's own check at merge time; if either finds one, it applies, and it is cleared
   only by the owner's go-ahead recorded as described there. Three items are not properties of the diff and can
@@ -132,6 +149,9 @@ Agents merge; the owner does not press merge. **An agent merges into `dev`** whe
 - every required check passes on the head (CI, both browser engines, every `cad-gates/dev/...` status);
 - the latest verdict is pass, on that exact head, from an independent reviewer ([Independence](#independence)),
   and no later review contains a `verdict=block` marker for that head, wherever the marker sits in its text;
+- no review or comment posted after the pass objects to the merge or asks to hold it (a changes-requested review,
+  a review without a marker, a timeline comment) unless it is answered on the PR; if it may be the owner's, ask the
+  owner;
 - every review thread is answered and resolved;
 - the branch is up to date with `dev` or merges cleanly (updating it makes a new head, which needs a new verdict);
 - immediately before merging, `python3 tools/ci_gates.py all --repo <owner>/<repo> --pr <n>`, run from an
@@ -159,6 +179,7 @@ substitute for it; they do not add to it):
 4. Always re-read the reviews (`pull_request_read`, `get_reviews`): the latest live review by a maintainer
    (`MAINTAINERS` in `tools/ci_gates.py`; not dismissed) that ends in a marker (the footer above may follow) must be
    a pass on that head, and no later review may contain a `verdict=block` marker for that head anywhere in its text.
+   Read the timeline comments too (`get_comments`): a later objection or hold request stops the merge, as above.
 5. Merge with `merge_pull_request` (`merge_method` merge, `expectedHeadSha` that head), so a push in between
    aborts it.
 
@@ -209,11 +230,15 @@ The items:
 ### After the merge
 
 1. The linked issue closed; if the merge did not close it, close it with the evidence (PR, merge commit, checks).
-2. The tracking issue ticked, and the work claim ended with `done`
-   ([cad-work-tracking](../cad-work-tracking/SKILL.md)).
-3. The worktree removed after the venv check in
+2. Each issue the merge closed read against its acceptance; one that is not finished reopened, with a comment
+   saying what is left.
+3. The tracking issue ticked, and your own work claim ended with `done`
+   ([cad-work-tracking](../cad-work-tracking/SKILL.md)). For someone else's PR, comment for the claim holder instead.
+4. Your own worktree removed after the venv check in
    [CONTRIBUTING.md](../../../.github/CONTRIBUTING.md#workflow), and the local branch deleted.
-4. For user-visible changes: after the next release, the live site checked for the change, and the result
+5. Open PRs into `dev` that are stacked on the merged branch or now conflict: say on each that `dev` moved. Their
+   sessions merge `dev` in (a new head, which needs a new verdict); never update another session's branch.
+6. For user-visible changes: after the next release, the live site checked for the change, and the result
    commented on the issue.
 
 [Folder map](README.md)

@@ -52,13 +52,14 @@ with `gh pr checks <n>`.
   - they can push as often as they like, and CI runs without approval;
   - **they cannot merge.** The repository ruleset "Only maintainers merge into dev and main" lets only the admin role
     update those branches. A maintainer reviews the PR (the verdict marker; only a maintainer's verdict counts) and
-    merges it with `gh pr merge --admin`, the ruleset's bypass. The required checks still apply to admins
+    merges it with `gh pr merge --admin`, or the GitHub MCP merge, which gets through the ruleset for the admin
+    role without a switch (observed, [cad-pr-review](../.agents/skills/cad-pr-review/SKILL.md#commands)). The required checks still apply to admins
     (enforce admins is on). Run `tools/ci_gates.py all` before every merge; `main` also requires the release gate
     and up-to-date branches.
   - Outside contributors without write access open PRs from forks (#111).
 - **How the gates run.** `gates.yml` runs on `pull_request_target`: the default branch's (`dev`'s) copy of the workflow and of [`tools/ci_gates.py`](../tools/ci_gates.py) decides, so a PR cannot pass the gates by editing them, and PRs into `main` (which come from `dev`) are judged by the same copy. The PR is only read as data, never checked out or run. Results are commit statuses named after the base, so a PR into `dev` cannot supply `main`'s checks. A fork's own workflows run with a read-only token, so they cannot post statuses. Anyone with write access can, even through a workflow of their own, so the trust boundary is the maintainer list in `tools/ci_gates.py` and the merge ruleset, not write access. Fork workflows wait for approval: a maintainer approves a run only after reading every changed workflow and script, and agents never approve one on their own (the intake skill, #120, will make that read systematic).
 - **When they run.** On every push to the PR, when the reviewer re-runs them after a verdict, and every 15 minutes for all open PRs (a review cannot trigger them). A run for one PR posts `pending` first, so a crash leaves the PR blocked rather than green. The sweep posts only statuses that change: GitHub keeps at most 1000 statuses per commit and name, and refuses new ones after that.
-- **Just before merging**, run `python3 tools/ci_gates.py all --repo Valpatel/cad-agent --pr <n>` from an up-to-date `dev` checkout. It reads the reviews live and must exit 0, so a block posted since the last run stops the merge.
+- **Just before merging**, run `python3 tools/ci_gates.py all --repo Valpatel/cad-agent --pr <n>` from an up-to-date `dev` checkout. It reads the reviews live and must exit 0, so a block posted since the last run stops the merge. A session without `gh` uses the substitute in [Merging without the owner](../.agents/skills/cad-pr-review/SKILL.md#without-gh) instead.
 - **GitHub settings the gates need** (owner): the `cad-gates/…` checks required on `dev` and `main` with GitHub Actions as their source; an Actions event policy for `.github/workflows/gates.yml` that allows all three of its events, `pull_request_target`, `schedule` and `workflow_dispatch` (GitHub disables `pull_request_target` by default in public repos from 2026-12-02, and a policy lists allowed events, so one left out stops the sweep or the re-run).
 - **Pins.** Workflow actions are pinned by commit SHA, and Dependabot proposes updates weekly.
 
@@ -100,7 +101,7 @@ follow `cad-work-tracking`: an issue per change, an early draft PR with `Closes 
 6. **Review.** Every PR gets a review from a person or from a separate review agent that did not write the change,
    posted as PR comments (the `cad-pr-reviewer` subagent, or a separate Codex session with that skill), ending with
    the verdict marker that the `review` gate reads. The author answers or fixes each comment and resolves it.
-7. **Merge** into `dev` (squash or merge commit). Then, before removing the worktree, repoint anything installed
+7. **Merge** into `dev` (squash or merge commit; agents use a merge commit, under [Merging without the owner](../.agents/skills/cad-pr-review/SKILL.md#merging-without-the-owner)). Then, before removing the worktree, repoint anything installed
    from it: `pip show -f cad-agent` (or the `direct_url.json` it lists) in each project venv tells you where
    `cadagent` comes from. Repoint those to the reviewed `dev` checkout below, verify imports and other path consumers,
    then run `git worktree remove ../worktrees/<topic>` from the canonical `repo/` checkout. Preserve dirty, untracked,

@@ -264,9 +264,9 @@ def test_codex_home(tmp_path, monkeypatch):
 
 # What each item needs that a person may lack (#282): everything is installed, and install says what can't be used yet.
 # name: (needs, needed only by some steps)
-NEEDS = {'cad-pr-review': (('gh', 'write-access'), ()), 'cad-work-tracking': (('git', 'gh', 'write-access'), ()),
+NEEDS = {'cad-pr-review': (('github', 'write-access'), ()), 'cad-work-tracking': (('git', 'gh', 'write-access'), ()),
          'cad-remote-runs': (('git', 'gh', 'ssh', 'compute-host'), ('rsync',)), 'mcmaster-parts': ((), ('playwright',)),
-         'cad-pr-reviewer': (('gh',), ()), 'cad-resume': (('git', 'gh'), ())}
+         'cad-pr-reviewer': (('github',), ()), 'cad-resume': (('git', 'gh'), ())}
 NEEDS.update({name: (('node', 'npm'), ('scada-browser',)) for name in (
     'scada-component-authoring', 'scada-system-authoring', 'scada-model-adaptation',
     'repository-documentation', 'scada-distribution-review')})

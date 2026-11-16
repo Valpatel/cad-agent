@@ -174,6 +174,7 @@ this computer without any network call, and what they cannot check from here.
 agents: you can use these, but some of their steps can't run yet:
   skill mcmaster-parts: Playwright is not installed in this Python (`"…/python" -m pip install playwright`)
 agents: these also need what cad-agent can't check from here:
+  GitHub access (`gh` logged in, or the GitHub MCP tools): cad-pr-review, cad-pr-reviewer
   write access to the repository it works in: cad-pr-review, cad-work-tracking
   a compute host you can reach over `ssh`: cad-remote-runs
 ```
@@ -181,7 +182,8 @@ agents: these also need what cad-agent can't check from here:
 | Needs | Checked how | Who needs it |
 |---|---|---|
 | `git` | on PATH | `cad-remote-runs`, `cad-work-tracking`, `cad-resume` |
-| `gh` logged in | on PATH, and gh's own stored login answers (`gh auth token`, its output discarded; nothing is sent) | `cad-pr-review`, `cad-remote-runs`, `cad-work-tracking`, `cad-pr-reviewer`, `cad-resume` |
+| `gh` logged in | on PATH, and gh's own stored login answers (`gh auth token`, its output discarded; nothing is sent) | `cad-remote-runs`, `cad-work-tracking`, `cad-resume` |
+| GitHub access (`gh` logged in, or the GitHub MCP tools) | not checkable here: the MCP tools belong to your agent's harness | `cad-pr-review`, `cad-pr-reviewer` |
 | `ssh` | on PATH | `cad-remote-runs` |
 | `rsync` | on PATH; only to copy files that are not in git | `cad-remote-runs` |
 | Playwright and Google Chrome | the module in cad-agent's Python, and Chrome itself (not Chromium) on PATH or in its usual place; only to download a new part | `mcmaster-parts` |
@@ -201,7 +203,7 @@ your own repositories, or where you have been given write access; an agent shoul
 | | Name | Use it |
 |---|---|---|
 | Skill | [`cad-work-tracking`](../../.agents/skills/cad-work-tracking/SKILL.md) | At the start of any multi-step change and every ~30 minutes: issue, branch, early draft PR, push as you go, checkpoints, resume |
-| Skill | [`cad-pr-review`](../../.agents/skills/cad-pr-review/SKILL.md) | When a PR is ready: independent review, answer and resolve every thread, merge rules |
+| Skill | [`cad-pr-review`](../../.agents/skills/cad-pr-review/SKILL.md) | When a PR is ready: independent review, answer and resolve every thread, merge rules, what an agent may merge without the owner; `gh` or GitHub MCP |
 | Skill | [`cad-remote-runs`](../../.agents/skills/cad-remote-runs/SKILL.md) | Before any long run: compute host, detached, recorded in the issue, results pulled back |
 | Skill | [`design-process`](../../.agents/skills/design-process/SKILL.md) | Building or changing a design: section by section, with requirements, gates and a reviewer sign-off ([design-process-plan.md](design-process-plan.md)) |
 | Skill | [`cad-motion-validation`](../../.agents/skills/cad-motion-validation/SKILL.md) | Rendered mechanisms: independent joint frames, actual mesh captures, pivot/ownership regression checks |
@@ -286,7 +288,9 @@ flowchart TD
    what is running (host, command, log, done marker) and the exact next step.
 6. **Heavy runs on a compute host**, detached, recorded in the issue, results pulled back and committed.
 7. **Independent review** by `cad-pr-reviewer` (or a separate Codex session); answer and resolve every thread.
-8. **Merge under the repo's rules**, then check the issues closed and tick the tracking issue.
+8. **Merge under the repo's rules**, then check the issues closed and tick the tracking issue. In cad-agent, agents
+   merge as [Merging without the owner](../../.agents/skills/cad-pr-review/SKILL.md#merging-without-the-owner)
+   says, some PRs only after the owner's recorded go-ahead; reviews check the [review criteria](../../.agents/skills/cad-pr-review/review-criteria.md).
 
 ### Goals and issues
 

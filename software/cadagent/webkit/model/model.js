@@ -18,7 +18,10 @@
  *
  * Attributes: src (required), label, azimuth and elevation (the opening view in degrees; default the model's own
  * `view`, else 35 and 18; azimuth 0 looks from the CAD -y side, 90 from +x), turn
- * (degrees per second, default 10; 0 for none), loading="eager" (start without waiting for the page to load).
+ * (degrees per second, default 10; 0 for none), loading="eager" (start without waiting for the page to load),
+ * loading="scroll" (as the default, but also wait until the reader scrolls the page, or focuses or presses inside the
+ * element: a viewer that sits just below the first screen then costs nothing to a reader who does not scroll; a page
+ * opened already scrolled counts as scrolled; the element is focusable, so the keyboard can start it too).
  * Properties: ready (a promise), frames (how many the loop has drawn), snapshot(width, height, type, quality) (a data: URL of one frame at that size;
  * tools/site-model-poster.mjs makes the poster with it), setExplode(0..1), view(azimuth, elevation).
  * three.js is imported from ./vendor/three/ next to this file, without an import map, so pages with a strict
@@ -180,7 +183,21 @@ class CadModel extends (typeof HTMLElement === 'undefined' ? class {} : HTMLElem
       return;
     }
     const whenLoaded = document.readyState === 'complete' ? Promise.resolve() : new Promise(r => addEventListener('load', r, { once: true }));
-    whenLoaded.then(() => {
+    // loading="scroll": nothing starts until the reader scrolls the page or reaches the element (focus, pointer). The
+    // element joins the tab order, so a keyboard reader can start a viewer that is already on screen without scrolling.
+    if (this.getAttribute('loading') === 'scroll') {
+      if (!this.hasAttribute('tabindex')) this.tabIndex = 0;
+      if (!this.hasAttribute('role')) this.setAttribute('role', 'group');
+      if (!this.hasAttribute('aria-label')) this.setAttribute('aria-label', `${this.getAttribute('label') || 'Model'}, 3D view`);
+    }
+    const whenReader = this.getAttribute('loading') !== 'scroll' || scrollY > 0 ? Promise.resolve() : new Promise(r => {
+      const done = () => {
+        removeEventListener('scroll', done); this.removeEventListener('focusin', done); this.removeEventListener('pointerdown', done);
+        r();
+      };
+      addEventListener('scroll', done, { passive: true }); this.addEventListener('focusin', done); this.addEventListener('pointerdown', done);
+    });
+    Promise.all([whenLoaded, whenReader]).then(() => {
       const io = new IntersectionObserver(entries => {
         if (!entries.some(e => e.isIntersecting)) return;
         io.disconnect();

@@ -198,6 +198,104 @@ export async function homepageModelProblems(browser, base) {
   return out;
 }
 
+const MODEL_DATA = /three\.module|\/web\/models\/.*\.(json|bin)/;
+const HERO_SIZES = [{width:390,height:844},{width:1280,height:720},{width:1440,height:900}];
+
+/** The home viewers (loading="scroll", #748): no three.js and no model data until the reader scrolls or reaches a
+ * viewer, at every size, though on a desktop screen they sit inside the viewer's 300px look-ahead. Then a little scroll
+ * starts them, and so does keyboard focus alone (no scroll). A planted control serves the page with the viewers made
+ * eager, and the same check must catch it at each size. */
+export async function homepageViewerGateProblems(browser, base, receipt = {}) {
+  const out = [];
+  receipt.sizes = [];
+  const fetched = page => page.evaluate(re => performance.getEntriesByType('resource').filter(r => new RegExp(re).test(r.name)).map(r => new URL(r.name).pathname), MODEL_DATA.source);
+  for (const viewport of HERO_SIZES) for (const planted of [false, true]) {
+    const label = `${viewport.width}x${viewport.height}${planted ? ' planted eager control' : ''}`;
+    const ctx = await browser.newContext({viewport, reducedMotion:'reduce'});
+    const page = await ctx.newPage();
+    try {
+      if (planted) await page.route(base + '/', partHandler(async route => {
+        const response = await fetchThrough(route);
+        await route.fulfill({ response, body: (await response.text()).replaceAll('loading="scroll"', 'loading="eager"') });
+      }));
+      await navigate(page, base + '/', {waitUntil:'networkidle'});
+      const before = await fetched(page);
+      receipt.sizes.push({ label, beforeScroll: before.length });
+      if (planted) { if (!before.length) out.push(label + ': the eager control fetched nothing, so the check cannot tell'); continue; }
+      if (before.length) out.push(`${label}: fetched before any scroll: ${before.join(', ')}`);
+      if (await page.evaluate(() => scrollY) !== 0) out.push(label + ': the page opened scrolled');
+      if (viewport.width >= 1000) {
+        // A small scroll, the viewers still below the fold but inside the look-ahead: they start.
+        await page.mouse.wheel(0, 120);
+        await page.waitForFunction(() => [...document.querySelectorAll('cad-model')].every(el => el.dataset.state !== 'poster'), null, {timeout:20000})
+          .catch(() => out.push(label + ': a small scroll did not start the viewers inside the look-ahead'));
+      }
+    } catch (error) { out.push(label + ': ' + error.message); }
+    finally { await ctx.close(); }
+  }
+  // Keyboard: focus alone (no scroll) starts a viewer.
+  const ctx = await browser.newContext({viewport:{width:1440,height:900}, reducedMotion:'reduce'});
+  const page = await ctx.newPage();
+  try {
+    await navigate(page, base + '/', {waitUntil:'networkidle'});
+    const viewer = page.locator('cad-model[src$="gyropup.json"]');
+    if (await viewer.getAttribute('tabindex') !== '0') out.push('a waiting home viewer is not in the tab order');
+    await viewer.evaluate(el => el.focus({ preventScroll: true }));
+    await page.waitForFunction(() => document.querySelector('cad-model[src$="gyropup.json"]').dataset.state !== 'poster', null, {timeout:20000})
+      .catch(() => out.push('focus did not start the home viewer'));
+    if (await page.evaluate(() => scrollY) !== 0) out.push('the focus check scrolled the page, so it did not test focus alone');
+  } catch (error) { out.push('viewer focus: ' + error.message); }
+  finally { await ctx.close(); }
+  return out;
+}
+
+/** The hero recording (#748): with motion, the still is shown first and the animation replaces it after load, in one
+ * request; under reduced motion, and with Save-Data, the animation is never requested. A planted site.js without the
+ * reduced-motion guard must be caught. */
+export async function heroRecordingProblems(browser, base, receipt = {}) {
+  const out = [];
+  const ANIMATION = '/docs/img/gyropup/turret-playground.webp', STILL = '/docs/img/gyropup/turret-playground-still.webp';
+  const open = async ({ reducedMotion, saveData = false, planted = false }) => {
+    const ctx = await browser.newContext({viewport:{width:390,height:844}, reducedMotion});
+    const page = await ctx.newPage();
+    const requests = [];
+    page.on('request', r => { if (new URL(r.url()).pathname === ANIMATION) requests.push(r.url()); });
+    if (saveData) await page.addInitScript(() => Object.defineProperty(navigator, 'connection', { value: { saveData: true } }));
+    if (planted) await page.route(base + '/web/site.js', partHandler(async route => {
+      const response = await fetchThrough(route);
+      await route.fulfill({ response, body: (await response.text()).replace("matchMedia('(prefers-reduced-motion: reduce)').matches || ", '') });
+    }));
+    await navigate(page, base + '/', {waitUntil:'networkidle'});
+    return { ctx, page, requests };
+  };
+  const current = page => page.locator('.hero-run img').evaluate(img => new URL(img.currentSrc).pathname);
+  try {
+    const { ctx, page, requests } = await open({ reducedMotion:'no-preference' });
+    try {
+      await page.waitForFunction(src => new URL(document.querySelector('.hero-run img').currentSrc).pathname === src, ANIMATION, {timeout:20000})
+        .catch(() => out.push('with motion, the animation never replaced the still'));
+      const state = await page.locator('.hero-run img').evaluate(img => ({ complete: img.complete, width: img.naturalWidth, height: img.naturalHeight }));
+      if (!state.complete || state.width !== 720 || state.height !== 336) out.push('the animation is not the recorded 720x336 picture: ' + JSON.stringify(state));
+      if (requests.length !== 1) out.push(`with motion, ${requests.length} requests for the animation, expected one`);
+      receipt.motion = { requests: requests.length, current: await current(page) };
+    } finally { await ctx.close(); }
+    for (const [label, options] of [['reduced motion', { reducedMotion:'reduce' }], ['Save-Data', { reducedMotion:'no-preference', saveData:true }]]) {
+      const { ctx, page, requests } = await open(options);
+      try {
+        if (requests.length) out.push(`${label}: the animation was requested`);
+        if (await current(page) !== STILL) out.push(`${label}: the still is not shown`);
+        receipt[label] = { requests: requests.length };
+      } finally { await ctx.close(); }
+    }
+    const control = await open({ reducedMotion:'reduce', planted:true });
+    try {
+      receipt.plantedRequests = control.requests.length;
+      if (!control.requests.length) out.push('planted control: a site.js without the reduced-motion guard requested nothing, so the check cannot tell');
+    } finally { await control.ctx.close(); }
+  } catch (error) { out.push('hero recording: ' + error.message); }
+  return out;
+}
+
 /** Probe the actual responsive image, including a planted animated still as a rejection control. */
 export async function learningPictureProblems(browser, base) {
   return readmePictureProblems(browser, base, 'learning-loop', {

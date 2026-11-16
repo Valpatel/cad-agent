@@ -18,7 +18,7 @@ import { chromium, webkit, expect } from './npm-context.mjs';
 import { builtSite } from './built-site.mjs';
 import { configureNavigation, fetchThrough, inLanes, navigate, navigationFailure, ownContexts, partHandler } from './navigation.mjs';
 import { folderMapPath } from '../../tools/site/publication.mjs';
-import { reducedHeroProblems, repositoryHeroProblems, homepageModelProblems, learningPictureProblems, homepageLateDrawProblems, resultImageMotionProblems } from './layout/motion.mjs';
+import { reducedHeroProblems, repositoryHeroProblems, homepageModelProblems, homepageViewerGateProblems, heroRecordingProblems, learningPictureProblems, homepageLateDrawProblems, resultImageMotionProblems } from './layout/motion.mjs';
 import { outlineEntryState, scrollOutline, sameSectionOutlineProblems, readerBoundaryProblems, readerOutlineClickProblems, readerOverflowProblems } from './layout/outline.mjs';
 import { VIEWPORT, VISUAL, WALL_CLEARED, WALL_LIMIT, longestStretch, plantedScript, longCitationProblems } from './layout/walls.mjs';
 import { wideLayoutProblems } from './layout/wide.mjs';
@@ -537,6 +537,8 @@ try {
       return problems;
     }],
     ['homepage model lifecycle', () => homepageModelProblems(browser, base)],
+    ['homepage viewer scroll gate', () => homepageViewerGateProblems(browser, base)],
+    ['hero recording swap', () => heroRecordingProblems(browser, base)],
     ['learning image motion', () => learningPictureProblems(browser, base)],
     ['late model allocation rollback', () => homepageLateDrawProblems(browser, base)],
     ['computed image reduced motion', () => resultImageMotionProblems(browser, base)],

@@ -7,6 +7,7 @@
  * dist/_redirects (exact paths, as moved pages use them). Listens on
  * loopback only unless --host says otherwise.
  */
+import { createHash } from 'node:crypto';
 import { createServer } from 'node:http';
 import { readFile, stat } from 'node:fs/promises';
 import path from 'node:path';
@@ -49,6 +50,62 @@ const rules = parseHeaders(await readFile(path.join(dir, '_headers'), 'utf8').ca
 const redirects = new Map((await readFile(path.join(dir, '_redirects'), 'utf8').catch(() => '')).split('\n')
   .map(l => l.trim().split(/\s+/)).filter(p => p.length >= 2 && p[0].startsWith('/')).map(([from, to, code]) => [from, [to, Number(code) || 302]]));
 
+/** The server's own record of recent requests and sockets, for a test that started it with an IPC channel (#686).
+ * A browser test that sees a page request pending for 30 s cannot tell whether this server never received it,
+ * received it and did not answer, or answered and the browser did not take the answer; this record says which.
+ * Bookkeeping only: timestamps into fixed-size rings, a sha256 of each HTML body served, and a 100 ms interval
+ * timer (unreferenced) that notes event-loop lag. Times are Date.now() epoch milliseconds, the clock the test
+ * process reads too on the same host. Answers {type: 'preview-evidence', id, path, since} on the channel. */
+const RING = 2000;
+const record = { requests: [], sockets: [], lag: [], nextRequest: 1, nextSocket: 1, open: new Set() };
+const ring = (list, item) => { list.push(item); if (list.length > RING) list.shift(); return item; };
+const slot = Symbol('preview record');
+function track(server) {
+  server.on('connection', socket => {
+    const s = ring(record.sockets, { id: record.nextSocket++, openedAt: Date.now(), remotePort: socket.remotePort, requests: 0 });
+    record.open.add(s);
+    socket[slot] = s;
+    socket.on('timeout', () => { s.idleTimeoutAt = Date.now(); });   // Node's keep-alive close of an idle socket
+    socket.on('close', hadError => { record.open.delete(s); Object.assign(s, { closedAt: Date.now(), hadError, bytesRead: socket.bytesRead }); });
+  });
+  // Before the route handler, so its first writeHead (a redirect is written synchronously) is timed too.
+  server.prependListener('request', (req, res) => {
+    const s = req.socket[slot], previous = s?.lastFinishedAt;
+    const r = req[slot] = ring(record.requests, { id: record.nextRequest++, receivedAt: Date.now(), method: req.method,
+      path: new URL(req.url, 'http://x').pathname, socket: s?.id, onSocket: s ? ++s.requests : 0,
+      idleBeforeMs: previous ? Date.now() - previous : undefined });
+    const writeHead = res.writeHead;
+    res.writeHead = function (status, ...rest) { Object.assign(r, { status, headersAt: Date.now() }); return writeHead.call(this, status, ...rest); };
+    res.on('finish', () => { r.finishedAt = Date.now(); if (s) s.lastFinishedAt = r.finishedAt; });
+    res.on('close', () => { r.closedAt = Date.now(); if (!res.writableFinished) r.aborted = true; });
+  });
+  let expected = Date.now() + 100;
+  setInterval(() => {
+    const now = Date.now(), late = now - expected;
+    if (late >= 20) ring(record.lag, { at: now, lateMs: late });
+    expected = now + 100;
+  }, 100).unref();
+  process.on('message', message => {
+    if (message?.type !== 'preview-evidence') return;
+    const since = Number(message.since) || 0, inWindow = r => r.receivedAt >= since;
+    const windowed = record.requests.filter(inWindow);
+    process.send({ id: message.id, now: Date.now(), pid: process.pid,
+      clock: 'Date.now() epoch ms in the preview server process',
+      keepAlive: { keepAliveTimeout: server.keepAliveTimeout, keepAliveTimeoutBuffer: server.keepAliveTimeoutBuffer,
+        headersTimeout: server.headersTimeout, requestTimeout: server.requestTimeout, maxRequestsPerSocket: server.maxRequestsPerSocket },
+      openSockets: record.open.size,
+      recordedFrom: record.requests[0]?.receivedAt ?? null, recordedRequests: record.requests.length,
+      matching: record.requests.filter(r => r.path === message.path && inWindow(r)).slice(-10)
+        .map(r => ({ ...r, socket: record.sockets.find(s => s.id === r.socket) ?? r.socket })),
+      window: { requests: windowed.length, unanswered: windowed.filter(r => !r.headersAt).slice(-10),
+        unfinished: windowed.filter(r => !r.finishedAt).length,
+        socketsOpened: record.sockets.filter(s => s.openedAt >= since).length,
+        socketsClosedIdle: record.sockets.filter(s => s.idleTimeoutAt >= since).length },
+      lag: { samplesOver20ms: record.lag.filter(l => l.at >= since).slice(-20),
+        maxMs: Math.max(0, ...record.lag.filter(l => l.at >= since).map(l => l.lateMs)) } });
+  });
+}
+
 const server = createServer(async (req, res) => {
   const url = new URL(req.url, 'http://x');
   let pathname;
@@ -69,10 +126,14 @@ const server = createServer(async (req, res) => {
   const status = file ? 200 : 404;
   file ??= '/404.html';
   const body = await readFile(path.join(dir, file)).catch(() => Buffer.from('Not found'));
+  const r = req[slot];
+  if (r) Object.assign(r, { file, readAt: Date.now(), bytes: body.length,
+    sha256: file.endsWith('.html') ? createHash('sha256').update(body).digest('hex') : undefined });
   res.writeHead(status, { 'content-type': TYPES[path.extname(file)] || 'application/octet-stream', ...headersFor(rules, pathname) });
   res.end(req.method === 'HEAD' ? undefined : body);
 });
 if (process.argv[1] === import.meta.filename) {
+  if (process.send) track(server);
   server.listen(port, host, () => console.log(`Serving ${path.relative(process.cwd(), dir) || dir} at http://${host}:${server.address().port}/`));
 }
 export { server };

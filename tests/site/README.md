@@ -53,7 +53,7 @@ flowchart TD
 | `website-build.test.mjs` | `tools/site/build-site.mjs`: what the build makes, links, redirects and headers |
 | `website-diagrams.test.mjs` | `tools/site/compiler/site-diagrams.mjs`: Mermaid blocks drawn at build time |
 | `website-html.test.mjs` | `tools/site/compiler/site-html.mjs`: the sanitizer keeps our markup and drops unsafe HTML |
-| `website-preview.test.mjs` | Directory application routes preserve slash-relative modules and scenario queries under Pages-style hosting. |
+| `website-preview.test.mjs` | Directory application routes preserve slash-relative modules and scenario queries under Pages-style hosting; the server's IPC record of requests, sockets and idle closes (#686). |
 | `website-references.test.mjs` | `tools/site/compiler/site-references.mjs`: the reference pages, their JSON and llms.txt lines against the committed records, `[ref:]` links, no record in the catalogue or llms-full.txt, `docs/practice/experts.md` current |
 | `website-pages.test.mjs` | `tools/site/compiler/site-pages.mjs`: outputs placed on pages, section cards, folded reference; inert reader failure-receipt/bounds controls |
 | `website-snap-demo.test.mjs` | The landing page's snap-fit animation shows a real engagement |

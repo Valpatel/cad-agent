@@ -1126,7 +1126,7 @@ async function navigationStallControl() {
   try { await navigate(fetcher, hangup, { waitUntil: 'load', timeout: STALL_MS }, { where: 'planted fetch hang-up' }); } catch { /* expected */ }
   if (caught?.name !== 'TimeoutError' || !caught.message.startsWith(`page.goto: Timeout ${STALL_MS}ms exceeded`) || fault?.error !== caught)
     stallControl.problems.push(`a fault in the evidence replaced or lost the original navigation error: ${String(caught?.message).split('\n')[0]}`);
-  else if (!/planted evidence-collection fault/.test(fault.evidence.evidenceError ?? '') || !fault.receipt)
+  else if (!/planted evidence-collection fault/.test(fault.evidence?.evidenceError ?? '') || !fault.receipt)
     stallControl.problems.push('a fault in the evidence was not recorded in a receipt');
   // The stall itself, not caught here: the part must end on it and report it.
   await navigate(page, held, { waitUntil: 'load', timeout: STALL_MS }, { where: 'planted navigation stall, 360px, JavaScript disabled', viewport: { width: 360, height: 800 }, javaScriptEnabled: false });

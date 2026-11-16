@@ -72,7 +72,7 @@ def test_version_and_each_command_help_say_what_they_are(capsys, monkeypatch):
         assert parser.description == listed[name] and parser.description, name
     with pytest.raises(SystemExit):
         main(["view", "--help"])
-    assert "Export every part in assembly position for the 3D viewer" in capsys.readouterr().out
+    assert "Export every part in assembly position for the 3D viewer" in " ".join(capsys.readouterr().out.split())
 
 
 def test_build_runs_steps_in_order_with_logs(tmp_path, capsys):

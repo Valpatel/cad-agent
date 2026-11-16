@@ -73,6 +73,24 @@ test('an IPC parent can read the server record of each request, its socket and i
   } finally {server?.kill();await rm(dir,{recursive:true,force:true});}
 });
 
+// Both ends of a busy window (#686): the first ten requests to a path, where a stalled one usually is, and the last ten.
+test('the evidence answer lists the first ten and the last ten requests to the path in its window',async()=>{
+  const dir=await mkdtemp(path.join(os.tmpdir(),'cad-agent-preview-ends-'));
+  let server;
+  try {
+    await writeFile(path.join(dir,'busy.html'),'<h1>Busy</h1>');
+    server=spawn(process.execPath,[path.resolve(import.meta.dirname,'../../tools/site/preview-site.mjs'),'--dir',dir,'--port','0'],{stdio:['pipe','pipe','inherit','ipc']});
+    const base=await new Promise((resolve,reject)=>{server.stdout.on('data',data=>{const url=String(data).match(/http:\/\/[\d.]+:\d+/);if(url)resolve(url[0]);});server.once('exit',code=>reject(new Error(`preview exited ${code}`)));});
+    const since=Date.now();
+    for(let n=1;n<=12;n++)assert.equal((await fetch(base+'/busy')).status,200);   // one after another: ids in order
+    const record=await new Promise(resolve=>{const id=Math.random();server.on('message',function on(m){if(m.id===id){server.off('message',on);resolve(m);}});server.send({type:'preview-evidence',id,path:'/busy',since});});
+    const ids=list=>list.map(r=>r.id), run=(from,to)=>Array.from({length:to-from+1},(_,i)=>from+i);
+    assert.equal(record.window.requests,12,JSON.stringify(record.window));   // a fresh server: these are requests 1 to 12
+    assert.deepEqual(ids(record.matchingFirst),run(1,10),'the first ten, in order');
+    assert.deepEqual(ids(record.matching),run(3,12),'the last ten, in order');
+  } finally {server?.kill();await rm(dir,{recursive:true,force:true});}
+});
+
 // The record is kept by time, not count (#686): a stalled request survives more traffic than the old 2,000-entry ring
 // held, and when the hard bound does drop requests inside the window, the answer says so instead of looking empty.
 test('the server record keeps the stalled request through heavy traffic and states when its window is truncated',async()=>{

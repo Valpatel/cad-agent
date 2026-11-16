@@ -657,6 +657,14 @@ test('the home page shows what runs, then what is in cad-agent, in order, every 
   assert.match(hero, /<figure class="hero-run"><a class="run-media" href="https:\/\/gyropup\.com\/designer\/sim"[^>]*><picture><source media="\(prefers-reduced-motion: reduce\)" srcset="\/docs\/img\/gyropup\/turret-playground-still\.webp"><img src="\/docs\/img\/gyropup\/turret-playground-still\.webp" width="720" height="336" alt="" fetchpriority="high" decoding="async" data-motion-src="\/docs\/img\/gyropup\/turret-playground\.webp">/, 'the hero loads the 9 KB still at its explicit size; the animation is swapped in after load, never under reduced motion');
   assert.match(await readFile(path.join(out, 'web/site.js'), 'utf8'), /data-motion-src[\s\S]*prefers-reduced-motion: reduce/, 'site.js swaps the animation in, and not under reduced motion');
   assert.match(hero, /work-in-progress prototype[^<]*not physics validation/, 'the hero caption states its limits');
+  // The robot-replay card moves (#798): a lazy still whose animation waits for the card to near the screen, and a
+  // caption that says what it is (the build refuses a moving card without these phrases).
+  const replayCard = home.slice(home.indexOf('<li class="run-mini"><a class="run-mini-media" href="/toolkit#robot-replay"'));
+  assert.match(replayCard, /^<li class="run-mini"><a class="run-mini-media" href="\/toolkit#robot-replay"[^>]*><img src="\/kit\/simulation\/examples\/gyropup-v2\/card-still\.webp" alt="" width="800" height="500" loading="lazy" decoding="async" data-motion-src="\/kit\/simulation\/examples\/gyropup-v2\/card\.webp">/);
+  const replayCaption = replayCard.slice(0, replayCard.indexOf('</li>'));
+  for (const phrase of ['recorded solver output', 'dated', 'snapshot', 'work-in-progress', 'replayed, not recomputed', 'not a validation of hardware'])
+    assert.ok(replayCaption.includes(phrase), `the moving card's caption says "${phrase}"`);
+  assert.match(await readFile(path.join(out, 'web/site.js'), 'utf8'), /img\.loading !== 'lazy'[\s\S]*IntersectionObserver/, 'a lazy card waits until it nears the screen');
   assert.ok(hero.indexOf('class="pixel-title"') < hero.indexOf('class="intro"') && hero.indexOf('class="intro"') < hero.indexOf('class="hero-actions"') && hero.indexOf('class="hero-actions"') < hero.indexOf('class="hero-run"'), 'source and focus order: headline, lede, actions, then the recording');
   assert.equal((home.match(/<cad-model src="\/web\/models\/[a-z0-9]+\.json" label="[^"]*" loading="scroll"/g) || []).length, 2, 'the home viewers wait for the reader to scroll or reach them');
   assert.doesNotMatch(home.slice(home.indexOf('id="built-with"')), /turret-playground/, 'See it run does not repeat the recording');

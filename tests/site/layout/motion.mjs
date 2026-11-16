@@ -296,6 +296,73 @@ export async function heroRecordingProblems(browser, base, receipt = {}) {
   return out;
 }
 
+/** The home page's robot-replay card (#798): neither its still nor its animation loads before the reader scrolls
+ * near it on a phone; once near, the animation replaces the still exactly once; never under reduced motion or Save-Data.
+ * Planted controls: a site.js without the nearness gate requests the animation before any scroll, and one without the
+ * reduced-motion guard requests it under reduced motion, so each check can fail. */
+export async function replayCardProblems(browser, base, receipt = {}) {
+  const out = [];
+  const ANIMATION = '/kit/simulation/examples/gyropup-v2/card.webp', STILL = '/kit/simulation/examples/gyropup-v2/card-still.webp';
+  const CARD = '.run-mini-media[href="/toolkit#robot-replay"] img';
+  const open = async ({ reducedMotion, saveData = false, plant = null }) => {
+    const ctx = await browser.newContext({viewport:{width:390,height:844}, reducedMotion});
+    const page = await ctx.newPage();
+    const requests = { [ANIMATION]: 0, [STILL]: 0 };
+    page.on('request', r => { const p = new URL(r.url()).pathname; if (p in requests) requests[p]++; });
+    if (saveData) await page.addInitScript(() => Object.defineProperty(navigator, 'connection', { value: { saveData: true } }));
+    if (plant) await page.route(base + '/web/site.js', partHandler(async route => {
+      const response = await fetchThrough(route), text = await response.text();
+      if (!text.includes(plant[0])) throw new Error(`planted control: ${plant[0]} is not in site.js`);
+      await route.fulfill({ response, body: text.replace(plant[0], plant[1]) });
+    }));
+    await navigate(page, base + '/', {waitUntil:'networkidle'});
+    const before = { ...requests };
+    return { ctx, page, requests, before };
+  };
+  const near = async page => {
+    await page.locator(CARD).scrollIntoViewIfNeeded();
+    await page.waitForFunction(sel => { const img = document.querySelector(sel); return img.complete && img.naturalWidth > 0; }, CARD, {timeout:20000});
+  };
+  const current = page => page.locator(CARD).evaluate(img => new URL(img.currentSrc).pathname);
+  try {
+    {
+      const { ctx, page, requests, before } = await open({ reducedMotion:'no-preference' });
+      try {
+        if (before[ANIMATION] || before[STILL]) out.push(`before any scroll the card loaded ${JSON.stringify(before)}`);
+        await near(page);
+        await page.waitForFunction(([sel, src]) => new URL(document.querySelector(sel).currentSrc).pathname === src, [CARD, ANIMATION], {timeout:20000})
+          .catch(() => out.push('near the card, the animation never replaced the still'));
+        if (requests[ANIMATION] !== 1) out.push(`near the card, ${requests[ANIMATION]} requests for the animation, expected one`);
+        receipt.motion = { before, after: { ...requests } };
+      } finally { await ctx.close(); }
+    }
+    for (const [label, options] of [['reduced motion', { reducedMotion:'reduce' }], ['Save-Data', { reducedMotion:'no-preference', saveData:true }]]) {
+      const { ctx, page, requests } = await open(options);
+      try {
+        await near(page);
+        await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+        if (requests[ANIMATION]) out.push(`${label}: the card's animation was requested`);
+        if (await current(page) !== STILL) out.push(`${label}: the card's still is not shown`);
+        receipt[label] = { ...requests };
+      } finally { await ctx.close(); }
+    }
+    const gate = await open({ reducedMotion:'no-preference', plant:["img.loading !== 'lazy'", 'true'] });
+    try {
+      await gate.page.waitForFunction(() => performance.getEntriesByType('resource').some(e => e.name.endsWith('/gyropup-v2/card.webp')), null, {timeout:20000}).catch(() => {});
+      receipt.plantedGate = gate.requests[ANIMATION];
+      if (!gate.requests[ANIMATION]) out.push('planted control: a site.js without the nearness gate loaded nothing before scroll, so the check cannot tell');
+    } finally { await gate.ctx.close(); }
+    const guard = await open({ reducedMotion:'reduce', plant:["matchMedia('(prefers-reduced-motion: reduce)').matches || ", ''] });
+    try {
+      await near(guard.page);
+      await guard.page.waitForFunction(() => performance.getEntriesByType('resource').some(e => e.name.endsWith('/gyropup-v2/card.webp')), null, {timeout:20000}).catch(() => {});
+      receipt.plantedGuard = guard.requests[ANIMATION];
+      if (!guard.requests[ANIMATION]) out.push('planted control: a site.js without the reduced-motion guard requested nothing, so the check cannot tell');
+    } finally { await guard.ctx.close(); }
+  } catch (error) { out.push('replay card: ' + error.message); }
+  return out;
+}
+
 /** Probe the actual responsive image, including a planted animated still as a rejection control. */
 export async function learningPictureProblems(browser, base) {
   return readmePictureProblems(browser, base, 'learning-loop', {

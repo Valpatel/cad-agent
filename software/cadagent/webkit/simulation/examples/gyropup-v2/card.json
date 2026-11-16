@@ -70,12 +70,12 @@
  },
  "sources": {
   "docs/examples/robot-replay/capture-gyropup.mjs": "f3bd0121c2fe7e3e50d08004a09137bac32015c03a19a8f258d8ba7560838f39",
-  "software/cadagent/webkit/simulation/replay.js": "00b7ae5b198b3d1fe0281769ef73dc39abc4dfd0b31a9919fb9e51bbeaf45d6d",
-  "software/cadagent/webkit/simulation/viewer.js": "f90bacc791fe09e97d39d5dda7a3dd5b8605b97205438c388d11167d99c3ac0b",
+  "software/cadagent/webkit/simulation/replay.js": "3f26ccc0548150a48b1f502bf393a357742f943853f2faabb4dc6d96034c8160",
+  "software/cadagent/webkit/simulation/viewer.js": "3946e826be08cf147debea2bf585fc67cd3a34f96acc0f586025a1bd99488f77",
   "software/cadagent/webkit/simulation/scene.js": "f510e789c9279004f56f38f6cde3de45c289d4c77c5d168e71deaa2a6740fb26",
-  "software/cadagent/webkit/simulation/scenarios.js": "149129bfda8e36e7ae220195dda825f991fd87de1ffe74db1ea8b827ef7d6c94",
-  "software/cadagent/webkit/simulation/viewer.css": "536cd0a78d91b6f806fdfa5bd490e31febc787ca6ecce9e004132921ed5e2eac",
-  "software/cadagent/webkit/simulation/examples/gyropup-v2/viewer.html": "44270c570a746f1cd6890b88bad685bdce1a961a0b8673c31f98cc4d3d8b58c4",
+  "software/cadagent/webkit/simulation/scenarios.js": "2f9a955b3bac1de6c6b5a6b2b023aaa2613c2ced94e0303553f46a571b24868f",
+  "software/cadagent/webkit/simulation/viewer.css": "9ae75b857daa21db63cd5bef46e6b76973daf641904ac4eac766451f58a9a6c2",
+  "software/cadagent/webkit/simulation/examples/gyropup-v2/viewer.html": "fed7dee4ce8ebbcf12dab94004f17c3824760f6b3e1ba4b8489588111629b6f8",
   "software/cadagent/webkit/simulation/examples/gyropup-v2/index.json": "007ea8706f7d0816e1cfb57acaa28505eafd0f506b522da161ac8c4273548180",
   "software/cadagent/webkit/simulation/examples/gyropup-v2/robot.json": "3f1cfd02367d22adf242bb9cf7887f83e12be6c5897eb34aa8092d33c82f8314",
   "software/cadagent/webkit/simulation/examples/gyropup-v2/robot.bin": "45c516c47b12bffd6235e721ee86704661d668a196fb7c52a1837b1435837951",
@@ -88,11 +88,11 @@
   "software/cadagent/webkit/ui/theme.js": "bec818983711f705b48f9df993ed4ee53a82093f1f750252103d0c1f8366b0e2",
   "software/cadagent/webkit/ui/theme.css": "370dfb29b28c760d48332316651492d0853c3e3aa9bc355e8a7edb1a4b12cf47"
  },
- "sha256": "a71c6e73d7c2cfe5669f0bc1ea6482c7600db95349614aa7c91e7aab17510437",
+ "sha256": "7e6d58793b0ad01927ec0d4cb35d4765ed5542f6c6bfa84274cf99abb74eb298",
  "still": {
   "file": "card-still.webp",
   "recorded_time_s": 3,
-  "sha256": "5738a40d291b50e5466490d8af838ef22d189b168714f3da1dfb97b5614cab5c"
+  "sha256": "0e626cb51f3b132ef297b9d6bfb5f8cf165e40b28c591eac1e476bef6e6fe22c"
  },
  "limits": "Recorded solver output from Gyropup's dated snapshot of a work-in-progress prototype, replayed, not recomputed; not a validation of hardware."
 }

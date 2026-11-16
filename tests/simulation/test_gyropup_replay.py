@@ -196,3 +196,14 @@ def test_mesh_names_cannot_leave_the_rig_folder(snapshot, tmp_path):
     git(snapshot, "commit", "-q", "-am", "a path outside rig/")
     with pytest.raises(ValueError, match="not a plain STL name"):
         converter.convert(snapshot, tmp_path)
+
+
+def test_card_capture_is_bound_to_the_viewer_that_made_it():
+    """The cards' animation and still were captured from these exact viewer, example and capture-script bytes."""
+    record = json.loads((BUNDLE / "card.json").read_bytes())
+    for path, expected in record["sources"].items():
+        assert hashlib.sha256((ROOT / path).read_bytes()).hexdigest() == expected, f"{path}: recapture the cards"
+    assert hashlib.sha256((BUNDLE / record["file"]).read_bytes()).hexdigest() == record["sha256"]
+    assert hashlib.sha256((BUNDLE / record["still"]["file"]).read_bytes()).hexdigest() == record["still"]["sha256"]
+    assert record["scenario"] in converter.SCENARIOS and record["frames"] >= 30
+    assert (BUNDLE / record["file"]).stat().st_size < 400_000

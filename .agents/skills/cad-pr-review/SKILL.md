@@ -111,7 +111,7 @@ that way (marker, blank line, `---`, footer) counts. Any other text after the ma
 | Gate re-run | Dispatch `gates.yml` on `ref` `dev` with `inputs` {pr: "<n>"}; on another `ref` the job is skipped. |
 | Merge | `merge_pull_request` has no `--admin` switch. Observed, not documented GitHub behaviour (2026-11-16, PRs #752, #749, #757, #760, #763, #765, #768, from the project's maintainer account): the call gets through the ruleset, and the required checks and resolved threads still apply. The ruleset lets only the admin role update `dev`, so a session on another account is refused and stops. |
 | "All comments must be resolved" | A thread is open (seen on #727). It is resolved only after the author's fix or reply is on it; never resolve an unanswered thread to get a merge through. |
-| "Required status check … is failing" | A gate or CI is red (seen on #752 before its gate was green). Fix it on the branch (a new head, which needs a new verdict), or stop; never re-post a status by hand. A required check that has not reported yet means wait. |
+| "Required status check … is failing" | A gate or CI is red (seen on #752 before its gate was green). For a review gate that has not read a new verdict, re-run the gates; otherwise fix it on the branch (a new head, which needs a new verdict), or stop; never re-post a status by hand. A required check that has not reported yet means wait. |
 
 For any other refusal, stop and report; never change a ruleset or setting to get through.
 
@@ -126,20 +126,24 @@ Agents merge; the owner does not press merge. Each "no" below means stop, or fix
 
 ```mermaid
 flowchart TD
-    A["go-ahead item?<br/>no, or recorded"] --> B["CI and gates<br/>green on the head?"]
+    Y["yours or released,<br/>not a draft?"] --> A["go-ahead item?<br/>no, or recorded"]
+    A --> B["CI and gates<br/>green on the head?"]
     B --> C["pass on the head,<br/>no later objection?"]
     C --> D["threads answered<br/>and resolved?"]
     D --> E["gates re-run<br/>and read again?"]
     E --> M["merge, pinned<br/>to the head SHA"]
-    class A,B,C,D,E here
+    class Y,A,B,C,D,E here
     class M out
 ```
 
 **An agent merges into `dev`** when all of these hold:
 
-- the PR is not a draft, and the merging session wrote it, or the session holding the issue's work claim has said
-  on the PR that it is ready to merge, or that claim has ended or expired. Otherwise ask on the PR and wait; never
-  mark another session's draft ready;
+- the PR is not a draft; never mark another session's draft ready;
+- the merging session wrote the PR, or no other session holds an unexpired work claim on its issue (read the latest
+  `lease=` time in the [work-claim comments](../cad-work-tracking/SKILL.md)), or the claim holder has said on the
+  PR, with its `agent=` tag, that it is ready to merge. The merging session never ends another session's claim or
+  writes that statement for it. Otherwise ask on the PR and wait. **Limit:** every session posts through one
+  account, so this is procedural; GitHub cannot show which session wrote a comment;
 - none of the items under [Needs the owner's go-ahead](#needs-the-owners-go-ahead) applies, by the reviewer's
   statement and by the merging agent's own check at merge time; if either finds one, it applies, and it is cleared
   only by the owner's go-ahead recorded as described there. Three items are not properties of the diff and can
@@ -150,8 +154,10 @@ flowchart TD
 - the latest verdict is pass, on that exact head, from an independent reviewer ([Independence](#independence)),
   and no later review contains a `verdict=block` marker for that head, wherever the marker sits in its text;
 - no review or comment posted after the pass objects to the merge or asks to hold it (a changes-requested review,
-  a review without a marker, a timeline comment) unless it is answered on the PR; if it may be the owner's, ask the
-  owner;
+  a review without a marker, a timeline comment) unless it is answered on the PR. An objection that names a defect
+  in the diff is handled as a blocking finding (a fix commit, or a reply the reviewer accepted); any other is
+  answered by a reply that addresses it. Ask the owner when the comment is from the maintainer account and no
+  session's footer or role line claims it;
 - every review thread is answered and resolved;
 - the branch is up to date with `dev` or merges cleanly (updating it makes a new head, which needs a new verdict);
 - immediately before merging, `python3 tools/ci_gates.py all --repo <owner>/<repo> --pr <n>`, run from an

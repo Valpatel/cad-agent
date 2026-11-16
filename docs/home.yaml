@@ -207,7 +207,9 @@ showcase:
     hero_caption: A work-in-progress prototype in Gyropup's browser playground, firing foam balls at targets. The
       ball flight is the playground's simplified model, not physics validation.
     alt: A foam-ball turret on a compute box fires a stream of balls at targets in a 3D yard
-    href: https://gyropup.com/designer/sim
+    # The recorded model, so the playground opens on it, not on its default robot (#804); the build checks it is the
+    # recording record's address.
+    href: https://gyropup.com/designer/sim?design=turret-box
   cards:
   - toolkit: robot-replay
     caption: A recorded MuJoCo run of an illustrative two-link arm. Scrub time and orbit; it is a replay, not a

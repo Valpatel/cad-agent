@@ -678,7 +678,7 @@ test('the home page shows what runs, then what is in cad-agent, in order, every 
     for (const layer of ['Agent kit', 'Knowledge', 'Command-line tools', 'Web widgets', 'Checks and tests', 'Simulators', 'Libraries', 'Built on'])
       assert.ok(text.includes(`- **${layer}**`), `${f}: ${layer}`);
     // The running examples, the same ones the page shows (#748): the turret recording, the two viewers, the three cards.
-    for (const example of ["[Gyropup's turret playground](https://gyropup.com/designer/sim)", '[Gyropup](', '[J501 project](', '/toolkit#robot-replay', '/toolkit#scada-simulations', '/toolkit#assembly'])
+    for (const example of ["[Gyropup's turret playground](https://gyropup.com/designer/sim?design=turret-box)", '[Gyropup](', '[J501 project](', '/toolkit#robot-replay', '/toolkit#scada-simulations', '/toolkit#assembly'])
       assert.ok(text.includes(example), `${f}: ${example}`);
     assert.match(text, /not physics validation/, `${f}: the turret's limits`);
   }

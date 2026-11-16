@@ -110,8 +110,8 @@ try {
     ['README image motion', () => repositoryHeroProblems(browser, base)],
     ['long citation reflow', () => longCitationProblems(browser, base)],
     ['wide layouts', () => wideLayoutProblems(browser, base)],
-    ['header', headerProblems],
-    ['install link', installLinkProblems],   // a link to an install block lands on its command (#804), below          // painted text can collide even when the flex boxes and page do not overflow
+    ['header', headerProblems],          // painted text can collide even when the flex boxes and page do not overflow
+    ['install link', installLinkProblems],   // a link to an install block lands on its command (#804), below
     ['cantilever', cantileverProblems],  // the snap-arm explorer on /docs/compliant (#137), below
     ['fold', foldProblems],              // the page tree's fold on phones, with and without nav.js (#134)
     ['outline visibility', () => sameSectionOutlineProblems(browser, base)],

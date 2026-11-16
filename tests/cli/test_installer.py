@@ -105,9 +105,7 @@ def test_checked_installers_pin_the_actual_snapshot_bytes():
 
 def test_the_pin_tool_writes_the_hashes_the_guide_checks():
     """tools/site/pin_installers.py is how the hashes change: it pins both blocks from Git's blobs, never by hand."""
-    spec = importlib.util.spec_from_file_location("pin_installers", ROOT / "tools" / "site" / "pin_installers.py")
-    tool = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(tool)
+    tool = _pin_tool()
     assert tool.main(["--check"]) == 0, "the guide pins HEAD's installers: run tools/site/pin_installers.py <commit>"
     head = _git(ROOT, "rev-parse", "HEAD")
     pinned = tool.pin(INSTALL_GUIDE.read_text(), head)
@@ -117,6 +115,45 @@ def test_the_pin_tool_writes_the_hashes_the_guide_checks():
         assert hashlib.sha256(_snapshot_bytes(source)).hexdigest() in block
     assert pinned.replace(head, "") == re.sub(r"(?<=/cad-agent/)[0-9a-f]{40}(?=/tools/)", "", INSTALL_GUIDE.read_text()), \
         "only the two URLs' commits change"
+
+
+def _pin_tool():
+    spec = importlib.util.spec_from_file_location("pin_installers", ROOT / "tools" / "site" / "pin_installers.py")
+    tool = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(tool)
+    return tool
+
+
+def test_the_pin_tool_refuses_a_commit_that_is_not_heads_or_not_its_ancestor(tmp_path):
+    """#799 review: the URL's commit must hold HEAD's installer (else every download fails its checksum) and be an
+    ancestor of HEAD (else it can stop resolving once its branch is gone)."""
+    tool = _pin_tool()
+    repo = tmp_path / "repo"
+    for rel in [tool.GUIDE, *[Path(p) for _, p in tool.INSTALLERS.values()]]:
+        (repo / rel).parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy(ROOT / rel, repo / rel)
+    _git(repo.parent, "init", "-q", str(repo))
+    _git(repo, "add", "-A")
+    _git(repo, "commit", "-q", "-m", "a")
+    old = _git(repo, "rev-parse", "HEAD")
+    (repo / "tools/site/assets/install.sh").write_text(SH.read_text() + "# changed\n")
+    _git(repo, "commit", "-q", "-am", "b")
+    new = _git(repo, "rev-parse", "HEAD")
+    guide = repo / tool.GUIDE
+    assert tool.main([new], root=repo) == 0 and tool.check(guide.read_text(), repo) == []
+    good = guide.read_text()
+    edited = good.replace(f"/cad-agent/{new}/tools/site/assets/install.sh", f"/cad-agent/{old}/tools/site/assets/install.sh")
+    assert edited != good
+    assert any("is not HEAD's" in line for line in tool.check(edited, repo)), "a hand-edited URL commit is caught"
+    guide.write_text(edited)
+    assert tool.main(["--check"], root=repo) == 1
+    sibling = _git(repo, "commit-tree", "HEAD^{tree}", "-p", old, "-m", "sibling")
+    with pytest.raises(SystemExit, match="not an ancestor of HEAD"):
+        tool.pin(good, sibling, repo)
+    beside = good.replace(new, sibling)
+    assert any("not an ancestor of HEAD" in line for line in tool.check(beside, repo)), "a sibling commit is caught"
+    with pytest.raises(SystemExit, match="is not HEAD's"):
+        tool.pin(good, old, repo)
 
 
 @pytest.mark.parametrize("hasher", ["sha256sum", "shasum"])

@@ -386,6 +386,85 @@ try{
       await live.clock.runFor(1000);assert.equal(await minutes(live),running.state.minutes+1);
     }finally{await live.close();}
   });
+  await check('live ticks leave unchanged viewer and sound controls, focus, hover and live regions untouched',async()=>{
+    // The viewer patches its DOM on every adapter tick (#761). The fake clock places each tick, and a
+    // MutationObserver lists what a tick writes: a write that leaves its value unchanged, or any removed
+    // node, is the #745 hazard (a press and release on different nodes) and is reported by name.
+    const live=await context.newPage();live.on('pageerror',error=>errors.push(error.message));
+    try{
+      await live.clock.install();
+      await live.goto(`${baseURL}/kit/scada/explorer/index.html?scenario=wastewater-digester`);
+      const lab=live.locator('#industry-lab'),viewer=live.locator('#lab-viewer');
+      await expect(lab).toHaveAttribute('aria-busy','false');await expect(lab).toHaveAttribute('data-running','true');
+      await live.clock.pauseAt(await live.evaluate(()=>Date.now()+1000));
+      await live.clock.runFor(1000);
+      const watch=()=>live.evaluate(()=>{
+        const name=node=>{
+          if(!node)return 'detached';
+          if(node.nodeType===3)return `text "${node.nodeValue.trim().slice(0,24)}" in ${name(node.parentNode)}`;
+          const key=[...node.attributes].find(attribute=>/^data-(scada|action)/.test(attribute.name));
+          return `<${node.localName}${key?` ${key.name}="${key.value.slice(0,24)}"`:''}>`;
+        };
+        const records=[];
+        window.__tickObserver?.disconnect();
+        window.__tickObserver=new MutationObserver(list=>records.push(...list));
+        window.__tickObserver.observe(document.querySelector('#lab-viewer'),{subtree:true,childList:true,attributes:true,characterData:true,attributeOldValue:true,characterDataOldValue:true});
+        window.__tickReport=()=>{
+          records.push(...window.__tickObserver.takeRecords());
+          const first=new Map(),removed=[],live=[];
+          for(const record of records){
+            if(record.target.parentNode?.closest?.('[role=alert],[role=status],[aria-live]')||record.target.closest?.('[role=alert],[role=status],[aria-live]'))live.push(name(record.target));
+            if(record.type==='childList'){for(const node of record.removedNodes)removed.push(`${name(node)} from ${name(record.target)}`);continue;}
+            const key=record.type==='attributes'?`${record.attributeName} on ${name(record.target)}`:name(record.target);
+            if(!first.has(key))first.set(key,{target:record.target,attribute:record.attributeName,old:record.oldValue});
+          }
+          const unchanged=[...first].filter(([,item])=>(item.attribute?item.target.getAttribute(item.attribute):item.target.nodeValue)===item.old).map(([key])=>key);
+          return {removed,unchanged,live,count:records.length};
+        };
+      });
+      const tick=async()=>{const before=await minutes(live);await live.clock.runFor(1000);assert.equal(await minutes(live),before+1,'Exactly one tick must run');};
+      const report=()=>live.evaluate(()=>window.__tickReport());
+      // 1. A plain tick: only values that really changed are written, and nothing is replaced.
+      await watch();await tick();
+      const result=await report();
+      assert.ok(result.count>0,'The tick must update changed readings');
+      assert.deepEqual(result.removed,[],'A tick must not remove or replace viewer nodes');
+      assert.deepEqual(result.unchanged,[],'A tick must not rewrite viewer text or attributes to the same value');
+      assert.deepEqual(result.live,[],'A tick must not touch an unchanged live region');
+      // 2. Click targets keep their nodes, including the text node under a pressed pointer.
+      const targets=['[data-scada-zoom="reset"]','[data-scada-equipment="digester"]','[data-scada-diagram-control]','[data-scada-view-choice="overview"]','[data-scada-inspect]'];
+      for(const selector of targets)await expect(viewer.locator(selector).first()).toBeVisible();
+      await live.evaluate(selectors=>{window.__targets=selectors.map(selector=>{
+        const element=document.querySelector(`#lab-viewer ${selector}`),walker=document.createTreeWalker(element),all=[element];
+        while(walker.nextNode())all.push(walker.currentNode);
+        return {selector,all};
+      });},targets);
+      await tick();
+      assert.deepEqual(await live.evaluate(()=>window.__targets.filter(({all})=>!all.every(node=>node.isConnected&&(node===all[0]||all[0].contains(node)))).map(({selector})=>selector)),[],'A tick must keep every node of each click target');
+      // 3. Press on the zoom readout, tick, release. Before #761 the tick replaced this text node; Chromium
+      // still delivered the click, so the identity check (not the click) is what pins the repair here.
+      const reset=viewer.locator('[data-scada-zoom="reset"]'),zoomText=await reset.textContent();assert.notEqual(zoomText,'100%');
+      const content=await reset.evaluateHandle(button=>button.firstChild),box=await reset.boundingBox();
+      await live.mouse.move(box.x+box.width/2,box.y+box.height/2);await live.mouse.down();await tick();
+      assert.equal(await content.evaluate((node,button)=>node.parentNode===button,await reset.elementHandle()),true,'A tick must not replace the pressed zoom control text');
+      await live.mouse.up();await expect(reset).toHaveText('100%');
+      // 4. Hover and keyboard focus survive ticks on an equipment button, a diagram action and the zoom readout.
+      const equipment=viewer.locator('[data-scada-equipment="digester"]'),action=viewer.locator('[data-scada-diagram-control]').first();
+      await equipment.hover();await tick();assert.equal(await equipment.evaluate(element=>element.matches(':hover')),true,'Hover must survive a tick');
+      for(const target of [equipment,action,reset]){
+        await target.focus();const handle=await target.elementHandle();await tick();
+        assert.equal(await live.evaluate(element=>document.activeElement===element,handle),true,'Keyboard focus must survive a tick');
+      }
+      // 5. The Explorer's sound controls (#753): a tick keeps their text nodes when the text is unchanged.
+      await live.locator('[data-scada-open="sound"]').click();await expect(live.locator('#industry-sound-dialog')).toBeVisible();
+      const soundNodes=['[data-action="sound-enabled"]','[data-sound-label]','[data-sound-volume-label]'];
+      const before=await live.evaluate(selectors=>{window.__sound=selectors.map(selector=>document.querySelector(selector).firstChild);return window.__sound.map(node=>node.nodeValue);},soundNodes);
+      await tick();
+      assert.deepEqual(await live.evaluate(selectors=>selectors.filter((selector,index)=>document.querySelector(selector).firstChild!==window.__sound[index]),soundNodes),[],'A tick must not replace unchanged sound control text');
+      assert.deepEqual(await live.evaluate(selectors=>selectors.map(selector=>document.querySelector(selector).firstChild.nodeValue),soundNodes),before);
+      await close(live);
+    }finally{await live.close();}
+  });
   await check('mouse zoom, drag, keyboard fit and pinned fit never scroll the canvas',async()=>{
     const viewport=page.locator('#lab-viewer [data-scada-scroll]');await viewport.scrollIntoViewIfNeeded();
     await page.locator('#lab-viewer [data-scada-zoom="fit"]').click();

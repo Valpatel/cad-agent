@@ -1506,18 +1506,12 @@ async function folderMapPhoneProblems(page, where) {
       const trace = arm === 'control' ? null : await keyboardTraceStart(view);
       await view.focus();
       await page.keyboard.press('ArrowRight');
-      let scrolled = true;
-      const polls = [];
-      if (arm === 'fix') {
-        let verdict = 'pending';
-        await expect.poll(async () => {
-          const sent = Date.now(), s = await view.evaluate(v => ({ now: performance.now(), left: v.scrollLeft }));
-          polls.push({ sent, received: Date.now(), pageMs: Math.round(s.now - trace.pageNow), left: s.left });
-          verdict = s.left > 0 ? 'scrolled' : s.now - trace.pageNow >= 1000 ? 'still' : 'pending';
-          return verdict;
-        }, { timeout: 30000 }).not.toBe('pending').catch(() => {});
-        if (verdict === 'pending') problems.push(`${where}: the page did not answer for 30 s after ArrowRight`);
-        scrolled = verdict === 'scrolled';
+      let scrolled = true, polls = [];
+      if (arm === 'fix') {   // #773's check, exactly
+        const result = await keyboardVerdict(view, trace.pageNow);
+        polls = result.polls;
+        if (result.verdict === 'pending') problems.push(`${where}: the page did not answer for 30 s after ArrowRight`);
+        scrolled = result.verdict !== 'still';
       } else {
         await expect.poll(async () => {
           const sent = Date.now(), left = await view.evaluate(v => v.scrollLeft);
@@ -1535,6 +1529,26 @@ async function folderMapPhoneProblems(page, where) {
     }
   }
   return problems;
+}
+
+/** Whether the focused view scrolled within 1000 ms of `from`, a time on the page's own clock (performance.now) read
+ * before the focus. Polled from the test process (page-context animation-frame polling misses native scrolling when
+ * application JavaScript is disabled), but the bound is the page's: a view that still reads 0 when the page itself is
+ * 1000 ms past `from` has not scrolled ('still'); one that reads more than 0 has ('scrolled'). Bounding the poll on the
+ * test process's clock instead also counted each reply's trip back: in WebKit, with the other lane's load, one evaluate
+ * took over 900 ms to answer, so the check failed although the page had scrolled within 40 ms (#719). A page that gives
+ * no answer for 30 s is 'pending', reported as its own finding rather than as a scroll it cannot show. */
+async function keyboardVerdict(view, from) {
+  let verdict = 'pending';
+  const polls = [];
+  await expect.poll(async () => {
+    const sent = Date.now(), s = await view.evaluate(v => ({ now: performance.now(), left: v.scrollLeft }));
+    from ??= s.now;   // no trace (its evaluate failed): the bound starts at the first answer
+    if (polls.length < 40) polls.push({ sent, received: Date.now(), pageMs: Math.round(s.now - from), left: s.left });
+    verdict = s.left > 0 ? 'scrolled' : s.now - from >= 1000 ? 'still' : 'pending';
+    return verdict;
+  }, { timeout: 30000, intervals: [100] }).not.toBe('pending').catch(() => {});
+  return { verdict, polls };
 }
 
 /** Failure evidence for the keyboard check above (#719); it never decides the result. Records the key, focus and scroll
@@ -1598,7 +1612,7 @@ async function keyboardFailureEvidence(page, view, where, before) {
     const siteRevision = JSON.parse(await readFile(path.join(dir, 'version.json'), 'utf8')).revision;
     const after = await at();
     const receipt = { where, url: page.url(), engine: browser.browserType().name(), browserVersion: browser.version(), siteRevision,
-      helper: 'folderMapPhoneProblems keyboard check: focus, keyboard.press ArrowRight, poll scrollLeft > 0 for 1000 ms',
+      helper: 'folderMapPhoneProblems keyboard check: focus, keyboard.press ArrowRight, scrollLeft > 0 within 1000 ms of page time (keyboardVerdict)',
       before, atFailure, testProcessLag, movedLaterMs: lateMs, movedAfterRepaintMs: afterRepaintMs, after };
     const out = await mkdtemp(path.join(tmpdir(), 'cad-agent-diagram-keyboard-'));
     await writeFile(path.join(out, 'receipt.json'), JSON.stringify(receipt, null, 2) + '\n');
@@ -2651,9 +2665,12 @@ async function stressOutline(deadline, stats) {
           const name = e => e === document ? 'document' : `${e.tagName?.toLowerCase()}${e.className && typeof e.className === 'string' ? '.' + e.className.trim().split(/\s+/).join('.') : ''}${e.hash ? e.hash : ''}`;
           for (const type of ['pointerdown', 'click']) addEventListener(type, e => log.push({ type, ms: Math.round(performance.now() - t0), target: name(e.target),
             text: e.target.textContent?.trim().slice(0, 30), scrollY: Math.round(scrollY), x: e.clientX, y: e.clientY }), { capture: true });
+          addEventListener('focusin', e => log.push({ type: 'focusin', ms: Math.round(performance.now() - t0), target: name(e.target), scrollY: Math.round(scrollY) }), { capture: true });
           addEventListener('hashchange', () => log.push({ type: 'hashchange', ms: Math.round(performance.now() - t0), hash: location.hash, scrollY: Math.round(scrollY) }));
           addEventListener('scroll', () => { if (log.length < 120) log.push({ type: 'scroll', ms: Math.round(performance.now() - t0), scrollY: Math.round(scrollY) }); }, { passive: true });
         });
+        if (process.env.CAD_AGENT_STRESS_ARM === 'nofocus')   // a mouse press that does not focus the link (so no focus scroll)
+          await tall.evaluate(() => { for (const a of document.querySelectorAll('cad-nav .cad-nav-outline a')) if (!a.__nofocus) { a.__nofocus = true; a.addEventListener('mousedown', e => e.preventDefault()); } });
         if (process.env.CAD_AGENT_STRESS_ARM === 'fix')   // reveal the link without the page's smooth scrolling, then click
           await outline.nth(i).evaluate(a => a.scrollIntoView({ block: 'nearest', behavior: 'instant' }));
         const clickedAt = Date.now();

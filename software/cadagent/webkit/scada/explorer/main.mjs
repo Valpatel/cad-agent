@@ -15,6 +15,9 @@ const technologyLabel=value=>String(value).split('-').map(word=>['nft','dwc','le
 const finite = (value, fallback=0) => Number.isFinite(value) ? value : fallback;
 const fixed = (value, digits=1) => finite(value).toFixed(digits);
 const $ = selector => document.querySelector(selector);
+// Live ticks re-render every second. Rewriting identical text replaces a control's text node,
+// so a click whose press and release straddle a tick can lose its target; WebKit CI lost a Pause this way (#745).
+const setText = (node, text) => { if (node && node.textContent !== text) node.textContent = text; };
 const lab = $('#industry-lab'), tools = $('#lab-tools');
 const base = new URL('../sim/scenarios/', import.meta.url);
 const equationProviders = [...pumpEquationProviders, resistiveHeaterProvider];
@@ -33,7 +36,7 @@ function message(text, error=false) {
 }
 function dialogMessage(id, text, error=false) {
   const node = tools.querySelector(`[data-dialog-message="${id}"]`);
-  if (node) { node.textContent = text; node.dataset.error = String(error); }
+  if (node) { setText(node, text); node.dataset.error = String(error); }
 }
 function download(name, value) {
   const url = URL.createObjectURL(new Blob([`${JSON.stringify(value, null, 2)}\n`], {type:'application/json'}));
@@ -174,8 +177,8 @@ function update() {
   if (!model) return;
   const state = model.getSnapshot(), components = Object.values(state.components);
   lab.dataset.running = String(state.running);
-  $('[data-session-state]').textContent = document.hidden ? 'Clock suspended' : state.running ? 'Model running' : 'Model paused';
-  $('[data-action="running"]').textContent = state.running ? 'Pause' : 'Run';
+  setText($('[data-session-state]'), document.hidden ? 'Clock suspended' : state.running ? 'Model running' : 'Model paused');
+  setText($('[data-action="running"]'), state.running ? 'Pause' : 'Run');
   $('[data-kpi="time"]').innerHTML = `${fixed(state.minutes)} <small>min</small>`;
   const observerTime=tools.querySelector('[data-observer-time]');if(observerTime)observerTime.textContent=`${fixed(state.minutes)} min`;
   $('[data-kpi="active"]').textContent = `${components.filter(item=>item.active && item.status !== 'offline').length} / ${components.length}`;
@@ -286,12 +289,12 @@ function updateSound(){
   if(!tools.querySelector('[data-sound-label]'))return;
   const status=sound.status;
   const needsResume=status.enabled && status.contextState!=='running' && !status.pending;
-  $('[data-sound-label]').textContent=needsResume?'Sound paused':status.enabled?'Sound on':'Sound off';
-  $('[data-action="sound-enabled"]').textContent=status.pending?'Enabling…':needsResume?'Resume sound':status.enabled?'Mute sound':'Enable sound';
+  setText($('[data-sound-label]'),needsResume?'Sound paused':status.enabled?'Sound on':'Sound off');
+  setText($('[data-action="sound-enabled"]'),status.pending?'Enabling…':needsResume?'Resume sound':status.enabled?'Mute sound':'Enable sound');
   $('[data-action="sound-enabled"]').setAttribute('aria-pressed',String(status.enabled));
   $('[data-action="sound-enabled"]').disabled=!status.supported;
   $('[data-action="sound-ack"]').disabled=status.unacknowledgedCount===0;
-  $('[data-sound-volume-label]').textContent=`${Math.round(status.volume*100)}%`;
+  setText($('[data-sound-volume-label]'),`${Math.round(status.volume*100)}%`);
   if(document.activeElement!==$('[data-sound-volume]'))$('[data-sound-volume]').value=Math.round(status.volume*100);
   $('[data-sound-ambience]').value=status.ambience?'on':'off';
   const note=status.error || (!status.supported?'Web Audio is unavailable in this browser.':needsResume?'The browser paused audio. Select Resume sound to continue. Visual alarms remain available.':status.enabled?`${status.audible?'Sound active.':'Sound enabled; output currently silent.'} ${status.unacknowledgedCount} unacknowledged alarm${status.unacknowledgedCount===1?'':'s'}.`:'Sound is off. Visual alarms remain available.');

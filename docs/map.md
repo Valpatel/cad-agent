@@ -1119,7 +1119,7 @@ Guides explain how to use the toolkit. Folder maps lead into its code, tests and
 </details>
 
 <details>
-<summary>software — 1185 folders</summary>
+<summary>software — 1186 folders</summary>
 
 <details>
 <summary><code>software/README.md</code> — 1 folders</summary>
@@ -8814,6 +8814,19 @@ Guides explain how to use the toolkit. Folder maps lead into its code, tests and
 | Folder |
 |---|
 | `software/cadagent/webkit/simulation/examples` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/simulation/examples/gyropup-v2/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-simulation/d-examples/d-gyropup-v2/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/simulation/examples/gyropup-v2/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/simulation/examples/gyropup-v2` |
 
 </details>
 

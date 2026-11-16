@@ -133,8 +133,8 @@ test('capabilities open owned working examples, with real previews and explicit 
   assert.throws(()=>toolkitCapabilities(model,{catalog:[{id:'demo-fourbar-animator',url:'https://external.invalid/demo'}]}),/must be locally published/);
   assert.deepEqual(cards.map(card=>card.id),['scada-elements','scada-simulations','models','robot-replay','files','assembly','mechanisms','calculators']);
   const replay=cards.find(card=>card.id==='robot-replay');
-  assert.match(replay.description,/Gyropup, a work-in-progress wheel-legged robot, from recorded MuJoCo runs/);
-  assert.match(replay.description,/Replayed, not recomputed/);
+  assert.match(replay.description,/Gyropup, a work-in-progress wheel-legged robot, in recorded MuJoCo runs from its dated snapshot/);
+  for (const phrase of ["Recorded solver output", "replayed, not recomputed", "not a validation of hardware"]) assert.ok(replay.description.includes(phrase), phrase);
   assert.equal(replay.href,'/kit/simulation/examples/gyropup-v2/viewer.html');
   assert.equal(replay.image,'/kit/simulation/examples/gyropup-v2/card-still.webp');
   assert.equal(replay.motion,'/kit/simulation/examples/gyropup-v2/card.webp');

@@ -143,7 +143,7 @@ export function toolkitCapabilities(m, {catalog = [], has} = {}) {
       image:'/web/models/gyropup.webp', alt:'Gyropup wheel-legged robot, captured from the owned 3D CAD model',
       href:'/toolkit/models', action:'Open 3D model', docs:'/docs/web-parts', fit:'contain'},
     {id:'robot-replay', title:'Robot simulation replay', kind:'Recorded dynamics',
-      description:'Replay Gyropup, a work-in-progress wheel-legged robot, from recorded MuJoCo runs: drive off a kerb, ride a plank, take a push, land a drop. Each scenario shows the snapshot\'s own pass verdict and peak motor torque. Replayed, not recomputed; a small two-link arm stays as the editable example.',
+      description:'Gyropup, a work-in-progress wheel-legged robot, in recorded MuJoCo runs from its dated snapshot: drive off a kerb, ride a plank, take a push, land a drop, each with the snapshot\'s own pass verdict and peak motor torque. Recorded solver output, replayed, not recomputed, and not a validation of hardware. A small two-link arm stays as the editable example.',
       image:'/kit/simulation/examples/gyropup-v2/card-still.webp', motion:'/kit/simulation/examples/gyropup-v2/card.webp',
       alt:'Gyropup, a wheel-legged robot, driving off a kerb in the recorded-simulation viewer',
       href:'/kit/simulation/examples/gyropup-v2/viewer.html', action:'Play robot recording', docs:'/'+folderMapPath('docs/examples/robot-replay/README.md').replace(/\.md$/,'')},

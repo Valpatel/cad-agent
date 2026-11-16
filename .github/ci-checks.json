@@ -39,6 +39,17 @@
    "mirrors": [{"workflow": "ci.yml", "job": "core", "run": "python -m pytest -q"}]
   },
   {
+   "id": "pytest-robot-replay",
+   "title": "The robot-replay example's producers and converter, kept in docs/examples (part of CI's pytest run)",
+   "paths": ["docs/examples/robot-replay/**", "software/cadagent/webkit/simulation/examples/**"],
+   "command": "python -m pytest -q tests/simulation/test_gyropup_replay.py tests/simulation/test_robot_recording.py",
+   "env": {"PYTHONPATH": "{root}/software"},
+   "needs": {"python": {"version": "3.12", "modules": ["pytest", "yaml", "numpy", "packaging"]}},
+   "cost": "fast",
+   "subset": true,
+   "mirrors": [{"workflow": "ci.yml", "job": "core", "run": "python -m pytest -q"}]
+  },
+  {
    "id": "pytest-core",
    "title": "The whole pytest suite with the required dependencies (CI core; one interpreter here, not the 3.10 floor-version rerun)",
    "paths": ["**"],

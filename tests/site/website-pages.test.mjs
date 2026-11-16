@@ -291,7 +291,7 @@ test('reader capture errors and oversized screenshot do not replace the navigati
   const receipt = JSON.parse(await readFile(path.join(context.evidence, 'receipt.json'), 'utf8'));
   assert.match(receipt.states.at(-1).navigationFailure.captureErrors.join(' '), /DOM: execution context destroyed.*exceeded 2 MiB/);
   assert.equal(receipt.states.at(-1).navigationFailure.screenshot, undefined);
-  assert.deepEqual(await readdir(context.evidence), ['receipt.json']); noProbeListeners(page);
+  assert.deepEqual((await readdir(context.evidence)).sort(), ['navigation-failure.json', 'receipt.json']); noProbeListeners(page);
 });
 
 test('a stalled diagnostic DOM read is bounded while the original navigation error remains authoritative', { timeout: 5000 }, async t => {
@@ -326,6 +326,70 @@ test('a disconnected page and unavailable receipt directory never mask the origi
   await assert.rejects(readerBoundaryGoto(page, 'http://localhost/docs/toolkit', context), error => error === original);
   assert.equal(context.states.at(-1).navigationFailure.currentURL, '[unavailable URL]');
   assert.equal(errors.length, 1); assert.match(errors[0], /partial receipt unavailable/); noProbeListeners(page);
+});
+
+// #686: the suite's one navigation function and the part boundary that turns its failure into a finding.
+import { navigate, navigationFailure, ownContexts, runPart } from './navigation.mjs';
+
+test('shared navigation passes the call site\'s exact arguments and does nothing else on success', async t => {
+  const page = new ReaderProbePage(), response = {}, args = [];
+  page.goto = async (...given) => { args.push(given); return response; };
+  t.mock.method(console, 'log', () => assert.fail('a passing navigation printed evidence'));
+  assert.equal(await navigate(page, 'http://localhost/a'), response);
+  assert.equal(await navigate(page, 'http://localhost/b', { waitUntil: 'load', timeout: 30000 }), response);
+  assert.deepEqual(args, [['http://localhost/a'], ['http://localhost/b', { waitUntil: 'load', timeout: 30000 }]]);
+  assert.equal(page.domCalls, undefined); assert.equal(page.imageOptions, undefined); noProbeListeners(page);
+});
+
+test('a fault in the navigation evidence is recorded and the original error is rethrown unchanged', async t => {
+  const context = await probeContext(t), page = new ReaderProbePage(), original = new Error('page.goto: Timeout 30000ms exceeded.');
+  page.navigate = () => { throw original; };
+  const lines = []; t.mock.method(console, 'log', text => lines.push(text));
+  await assert.rejects(navigate(page, 'http://localhost/docs/toolkit', undefined, { evidence: context.evidence, plantEvidenceFault: true }), error => error === original);
+  const kept = navigationFailure(original);
+  assert.equal(kept.error, original); assert.match(kept.evidence.evidenceError, /planted evidence-collection fault/);
+  assert.equal(kept.evidence.error.message, original.message);
+  assert.equal(JSON.parse(await readFile(path.join(context.evidence, 'navigation-failure.json'), 'utf8')).evidenceError, kept.evidence.evidenceError);
+  assert.equal(lines.filter(line => line.startsWith('Navigation failure evidence: ')).length, 1); noProbeListeners(page);
+});
+
+test('evidence code that throws outright still leaves the original error, known as a failed navigation', async t => {
+  const page = new ReaderProbePage(), original = new Error('page.goto: Timeout 30000ms exceeded.');
+  page.navigate = () => { throw original; };
+  const lines = []; t.mock.method(console, 'log', text => lines.push(text));
+  const broken = { get where() { throw new Error('evidence code broken on purpose'); } };
+  const findings = await runPart('broken evidence', () => navigate(page, 'http://localhost/docs/toolkit', undefined, broken));
+  assert.equal(navigationFailure(original).error, original); assert.match(navigationFailure(original).evidenceError, /broken on purpose/);
+  assert.match(findings[0], /^broken evidence: a navigation failed, so this part stopped there: page\.goto: Timeout 30000ms exceeded\./);
+  assert.match(findings[0], /no receipt \(evidence collection failed: Error: evidence code broken on purpose\)/);
+  assert.match(lines.join('\n'), /Navigation failure evidence unavailable: Error: evidence code broken on purpose/); noProbeListeners(page);
+});
+
+test('a part stopped by a failed navigation reports it, closes only its own contexts, and other errors still throw', async t => {
+  const open = new Set(), browser = { contexts: () => [...open], newContext: async () => {
+    const context = { browser: () => browser, close: async () => { open.delete(context); } };
+    open.add(context); return context;
+  } };
+  ownContexts(browser);
+  const other = await browser.newContext();   // another lane's, opened outside the part
+  const original = new Error('page.goto: Timeout 30000ms exceeded.\nCall log:\n  - navigating to "http://localhost/docs/toolkit", waiting until "load"');
+  const page = new ReaderProbePage(); page.navigate = () => { throw original; };
+  const lines = []; t.mock.method(console, 'log', text => lines.push(text));
+  const findings = await runPart('fold', async () => {
+    await browser.newContext();
+    // raised through a caller's wrapper, as withDiagramPage does when its cleanup fails too
+    try { await navigate(page, 'http://localhost/docs/toolkit'); }
+    catch (error) { throw new AggregateError([error, new Error('close failed')], 'Diagram iteration failed', { cause: error }); }
+  });
+  t.after(() => rm(navigationFailure(original).receipt, { recursive: true, force: true }));
+  assert.equal(findings.length, 1);
+  assert.ok(findings[0].startsWith('fold: a navigation failed, so this part stopped there: page.goto: Timeout 30000ms exceeded.'));
+  assert.match(findings[0], /navigating to "http:\/\/localhost\/docs\/toolkit"/); assert.match(findings[0], /raised as AggregateError: Diagram iteration failed/);
+  assert.match(findings[0], /navigation evidence: \S*cad-agent-navigation-/); assert.match(findings[0], /closed 1 of 1 browser context/);
+  assert.deepEqual(browser.contexts(), [other], 'only the part\'s own context is closed');
+  assert.equal(navigationFailure(original).evidence.part, 'fold');
+  const unrelated = new Error('an assertion in the part');
+  await assert.rejects(runPart('theme', async () => { throw unrelated; }), error => error === unrelated);
 });
 
 // #663: the prior filtered sample was internally consistent before the resized layout arrived.

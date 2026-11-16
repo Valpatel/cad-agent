@@ -45,6 +45,7 @@ flowchart TD
 | [toolkit/](toolkit/README.md) | Catalogue/discovery contracts, SCADA Toolkit inventory and real browser flows |
 | `built-site.mjs` | Helper: the built site the `website-*` tests read, from `CAD_AGENT_SITE` or a fresh build of HEAD |
 | `site-diagrams-browser.mjs` | The Python site consumer of the diagram renderer, in a real browser |
+| `navigation.mjs` | Helper: the browser suite's one navigation function; a failed one keeps a bounded receipt of the browser's and the preview server's record and becomes a finding of its own part, with a planted stall in `website-browser.mjs` proving both (#686) |
 | `npm-context.mjs` | Test-only dependency resolution anchored at tools/site/package.json, without a root manifest or node_modules link |
 | [layout/](layout/README.md) | Shared browser geometry, reader navigation, motion and text-wall checks, including representative widescreen layouts |
 | `test_catalog_content.py` | Every outside catalogue entry has a plain `what` line and a place in the topic tree |

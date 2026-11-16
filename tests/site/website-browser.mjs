@@ -1497,8 +1497,9 @@ async function folderMapPhoneProblems(page, where) {
       await view.evaluate(v => { v.scrollLeft = 0; });
       // Reveal the target before focusing it, so native vertical focus scrolling does not overlap this key test.
       await view.scrollIntoViewIfNeeded();
-      await view.focus();
+      // The trace starts before the focus, so the focus and the key stay next to each other as the check always had them.
       const trace = await keyboardTraceStart(view);
+      await view.focus();
       await page.keyboard.press('ArrowRight');
       // Poll from the test process: page-context animation-frame polling misses native scrolling when
       // application JavaScript is disabled. The same actual keyboard delta and time bound still apply.
@@ -1508,43 +1509,59 @@ async function folderMapPhoneProblems(page, where) {
         problems.push(`${where}: the focused diagram does not scroll with ArrowRight`);
         await keyboardFailureEvidence(page, view, where, trace);
       }
-      await view.evaluate(v => { v.scrollLeft = 0; v.blur(); });
+      await view.evaluate(v => { window.__cadKeyboardTrace?.stop(); delete window.__cadKeyboardTrace; v.scrollLeft = 0; v.blur(); });
     }
   }
   return problems;
 }
 
 /** Failure evidence for the keyboard check above (#719); it never decides the result. Records the key, focus and scroll
- * events the page sees from here on, with the scroller's position at each. With page JavaScript disabled the listeners
- * may not run, so an empty list there shows nothing. */
+ * events the page sees from here on (scrolls of any element or of the document), with the view's and the window's
+ * position at each, until the check removes the listeners. With page JavaScript disabled the listeners may not run, so
+ * an empty list there shows nothing. */
 function keyboardTraceStart(view) {
   return view.evaluate(v => {
     const name = e => !e ? null : e === v ? 'the diagram view' : e === document ? 'document' : e === window ? 'window'
       : `${e.tagName?.toLowerCase()}${e.id ? '#' + e.id : ''}${typeof e.className === 'string' && e.className ? '.' + e.className.trim().split(/\s+/).join('.') : ''}`;
-    const t0 = performance.now(), events = [];
-    const log = e => { if (events.length < 60) events.push({ type: e.type, key: e.key, ms: Math.round(performance.now() - t0),
-      target: name(e.target), prevented: e.defaultPrevented, active: name(document.activeElement), scrollLeft: v.scrollLeft }); };
-    for (const type of ['keydown', 'keyup']) window.addEventListener(type, log);   // bubbling: after the page's own handlers
-    for (const type of ['focusin', 'focusout']) window.addEventListener(type, log, true);
-    v.addEventListener('scroll', log);
-    window.__cadKeyboardTrace = { events, name };
-    return { active: name(document.activeElement), scrollLeft: v.scrollLeft };
+    const t0 = performance.now(), events = [], controller = new AbortController(), signal = controller.signal;
+    const log = e => { if (events.length < 60) events.push({ type: e.type, key: e.key, ms: Math.round(performance.now() - t0), trusted: e.isTrusted,
+      target: name(e.target), prevented: e.defaultPrevented, active: name(document.activeElement), scrollLeft: v.scrollLeft, window: [scrollX, scrollY] }); };
+    for (const type of ['keydown', 'keyup']) window.addEventListener(type, log, { signal });   // bubbling: after the page's own handlers
+    for (const type of ['focusin', 'focusout']) window.addEventListener(type, log, { capture: true, signal });
+    document.addEventListener('scroll', log, { capture: true, signal });   // scroll does not bubble; capture sees every scroller's
+    window.__cadKeyboardTrace = { events, name, stop: () => controller.abort() };
+    return { at: new Date().toISOString(), active: name(document.activeElement), scrollLeft: v.scrollLeft, window: [scrollX, scrollY],
+      tabindex: v.getAttribute('tabindex'), visualViewportScale: visualViewport?.scale ?? null, devicePixelRatio };
   }).catch(error => ({ error: error.message }));
 }
 
 async function keyboardFailureEvidence(page, view, where, before) {
+  // At most this many failures in a run get the full evidence (3 s of waiting and a receipt each); the rest get the
+  // snapshot at the failure only, so a regression that fails every check still ends inside the job's time limit.
+  // Constants and counters live here and on globalThis, not in module variables: the parts run inside this module's
+  // top-level await, before a declaration below them is initialised.
+  const KEYBOARD_EVIDENCE_LIMIT = 5;
   try {
     const at = () => view.evaluate(v => {
       const cs = getComputedStyle(v), trace = window.__cadKeyboardTrace;
-      return { scrollLeft: v.scrollLeft, scrollWidth: v.scrollWidth, clientWidth: v.clientWidth, active: trace?.name(document.activeElement),
+      return { at: new Date().toISOString(), scrollLeft: v.scrollLeft, scrollWidth: v.scrollWidth, clientWidth: v.clientWidth, active: trace?.name(document.activeElement),
         viewFocused: document.activeElement === v, focusVisible: v.matches(':focus-visible'), documentFocused: document.hasFocus(),
         overflowX: cs.overflowX, scrollBehavior: cs.scrollBehavior, rootScrollBehavior: getComputedStyle(document.documentElement).scrollBehavior,
-        scrollSnapType: cs.scrollSnapType, window: [scrollX, scrollY], box: v.getBoundingClientRect().toJSON(), events: trace?.events ?? null };
+        scrollSnapType: cs.scrollSnapType, window: [scrollX, scrollY], box: v.getBoundingClientRect().toJSON(), events: trace?.events ? [...trace.events] : null };
     });
     const atFailure = await at();
+    // Event-loop lag of this test process over the last 5 s, to place the failure against the other lane's load.
+    const testProcessLag = testLag.filter(l => l.at >= Date.now() - 5000);
+    const kept = globalThis.__cadKeyboardEvidenceKept = (globalThis.__cadKeyboardEvidenceKept ?? 0) + 1;
+    if (kept > KEYBOARD_EVIDENCE_LIMIT) {
+      console.log(`Diagram keyboard failure evidence (${where}): full evidence skipped after ${KEYBOARD_EVIDENCE_LIMIT} failures; at the failure ${JSON.stringify({ before, atFailure, testProcessLag })}`);
+      return;
+    }
     // Only evidence; the check above has already failed. Does the drawing still move, late (a slow or stalled scroll
-    // animation), or only once something makes the page paint again (an animation waiting for a rendering update), or
-    // never (no scroll was started)? The repaint is a change to the view's outline, put back straight after.
+    // animation), or only once something makes the page paint again, or never (no scroll was started)? The repaint is a
+    // change to the view's outline, put back after. Its limit: movedAfterRepaintMs set means "did not move for 2 s, then
+    // moved within 1 s of the outline change"; it cannot tell a repaint that released the scroll from one that came at
+    // the moment the scroll would have come anyway.
     const moved = timeout => {
       const from = Date.now();
       return expect.poll(() => view.evaluate(v => v.scrollLeft), { timeout }).toBeGreaterThan(0).then(() => Date.now() - from, () => null);
@@ -1552,20 +1569,19 @@ async function keyboardFailureEvidence(page, view, where, before) {
     const lateMs = await moved(2000);
     let afterRepaintMs = null;
     if (lateMs === null) {
-      await view.evaluate(v => { v.dataset.keyboardProbeOutline = v.style.outlineOffset; v.style.outlineOffset = '5px'; });
-      afterRepaintMs = await moved(1000);
-      await view.evaluate(v => { v.style.outlineOffset = v.dataset.keyboardProbeOutline; delete v.dataset.keyboardProbeOutline; });
+      const old = await view.evaluate(v => { const old = v.style.outlineOffset; v.style.outlineOffset = '5px'; return old; });
+      try { afterRepaintMs = await moved(1000); }
+      finally { await view.evaluate((v, old) => { v.style.outlineOffset = old; }, old); }
     }
-    // Read here, not cached in a module variable: the parts run inside this module's top-level await, before a
-    // declaration below them is initialised.
     const siteRevision = JSON.parse(await readFile(path.join(dir, 'version.json'), 'utf8')).revision;
+    const after = await at();
     const receipt = { where, url: page.url(), engine: browser.browserType().name(), browserVersion: browser.version(), siteRevision,
       helper: 'folderMapPhoneProblems keyboard check: focus, keyboard.press ArrowRight, poll scrollLeft > 0 for 1000 ms',
-      before, atFailure, movedLaterMs: lateMs, movedAfterRepaintMs: afterRepaintMs, after: await at() };
+      before, atFailure, testProcessLag, movedLaterMs: lateMs, movedAfterRepaintMs: afterRepaintMs, after };
     const out = await mkdtemp(path.join(tmpdir(), 'cad-agent-diagram-keyboard-'));
     await writeFile(path.join(out, 'receipt.json'), JSON.stringify(receipt, null, 2) + '\n');
     console.log(`Diagram keyboard failure evidence (${where}): ${out} ${JSON.stringify({ before, atFailure: { ...atFailure, events: undefined },
-      events: atFailure.events, movedLaterMs: lateMs, movedAfterRepaintMs: afterRepaintMs })}`);
+      testProcessLag, movedLaterMs: lateMs, movedAfterRepaintMs: afterRepaintMs, events: after.events })}`);
   } catch (error) { console.log(`Diagram keyboard failure evidence (${where}) could not be kept: ${error.message}`); }
 }
 

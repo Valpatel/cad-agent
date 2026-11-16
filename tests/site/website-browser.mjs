@@ -2760,7 +2760,26 @@ async function stallLab(parts) {
         if (i % 200 === 0) console.log(`LAB progress: ${i} iterations, ${navigations} navigations, ${Math.round((Date.now() - began) / 60000)} min, ${stalls.length} stalls`);
       }
     };
-    await Promise.all(Array.from({ length: LANES }, (_, k) => lane(k + 1)));
+    // loaded: the suite's two longest parts run round after round beside the loop, as they do in a normal run
+    const heavy = parts.filter(([name]) => name === 'routes and copy buttons' || name === 'diagram widths');
+    const background = async () => {
+      let round = 0;
+      while (LAB === 'loaded' && Date.now() < deadline) {
+        round++;
+        try {
+          const result = await inLanes(heavy, { lanes: 1, label: `lab load ${round}` });
+          for (const [i, list] of result.found.entries()) for (const finding of list) {
+            const receipt = finding.match(/navigation evidence: (\S*cad-agent-navigation-\S+)/)?.[1];
+            if (!receipt) { console.log(`LAB FINDING (load ${heavy[i][0]}): ${finding.slice(0, 600)}`); continue; }
+            let evidence = null;
+            try { evidence = JSON.parse(await readFile(path.join(receipt, 'navigation-failure.json'), 'utf8')); } catch (error) { console.log(`LAB: receipt unreadable: ${error.message}`); }
+            await report(`load part ${heavy[i][0]}, round ${round}: ${finding.split('\n')[0].slice(0, 200)}`, evidence);
+          }
+        } catch (error) { errors.push(String(error?.message).split('\n')[0]); console.log(`LAB ERROR load round ${round}: ${String(error?.stack || error).slice(0, 1500)}`); }
+      }
+      tally.loadRounds = round;
+    };
+    await Promise.all([...Array.from({ length: LANES }, (_, k) => lane(k + 1)), background()]);
     tally.total = { iterations: iteration, navigations };
   }
   console.log(`LAB SUMMARY (${LAB}, ${engine.name()} ${browser.version()}, ${Math.round((Date.now() - began) / 60000)} min): ` +

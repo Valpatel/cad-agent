@@ -9,6 +9,7 @@
  * the doc page's article, else the page's <main>. A stretch runs from the content's top to the first picture,
  * between pictures (overlapping ones merge), and from the last picture to the content's end.
  */
+import { navigate } from '../navigation.mjs';
 
 export const VIEWPORT = { width: 1366, height: 800 };
 export const WALL_LIMIT = 1.5 * VIEWPORT.height;      // 1200 px: about one and a half screens of reading, no picture
@@ -99,7 +100,7 @@ export async function longCitationProblems(browser, base) {
   for (const colorScheme of ['light', 'dark']) {
     const page = await browser.newPage({ viewport: { width: 320, height: 800 }, colorScheme });
     try {
-      await page.goto(base + '/research/process-profiles', { waitUntil: 'networkidle' });
+      await navigate(page, base + '/research/process-profiles', { waitUntil: 'networkidle' });
       await page.evaluate(() => document.fonts.ready);
       const link = page.locator('.ref-key').filter({ hasText: id });
       if (await link.count() !== 1 || await link.textContent() !== id) {

@@ -536,11 +536,33 @@ def test_browser_engines(tmp_path, monkeypatch):
     inst = _assess(check, m, engine="chromium")
     assert inst.status == "runnable" and "PLAYWRIGHT_CHANNEL" not in inst.env
     assert inst.env["CHROMIUM_EXECUTABLE"] == str(pf.CHROME_CHANNEL)       # model-explode reads only this
+    m.env["CHROMIUM_EXECUTABLE"] = "/opt/mine/chrome"                       # the caller's choice is never replaced
+    preset = _assess(check, m, engine="chromium")
+    assert preset.env["CHROMIUM_EXECUTABLE"] == "/opt/mine/chrome" and preset.differs == ["browser"]
+    assert any("/opt/mine/chrome" in n for n in preset.notes)
     assert any("not CI's Playwright Chromium r1194" in n and "chromium-1243" in n for n in inst.notes)
     m = _machine(tmp_path / "exact", browsers=["chromium-1194", "chromium_headless_shell-1194", "webkit-2215"],
                  monkeypatch=monkeypatch)
     assert _assess(check, m, engine="chromium").env == {"PLAYWRIGHT_BROWSER": "chromium", "PLAYWRIGHT_CHANNEL": "chromium"}
+    assert _assess(check, m, engine="chromium").differs == []
     assert _assess(check, m, engine="webkit").env == {"PLAYWRIGHT_BROWSER": "webkit"}
+
+
+def test_a_preset_chromium_executable_is_kept_named_and_flagged(tmp_path, monkeypatch):
+    """#766 re-review: a caller's CHROMIUM_EXECUTABLE replaces CI's build in both branches, so it is named and flagged,
+    and the local-Chrome fallback never overwrites it."""
+    check = {"id": "s", "command": "c", "engines": ["chromium"]}
+    for name, kw in [("exact", {"browsers": ["chromium-1194", "chromium_headless_shell-1194"]}),
+                     ("chrome", {"chrome": True, "browsers": ["chromium-1243"]}),
+                     ("none", {})]:
+        m = _machine(tmp_path / name, monkeypatch=monkeypatch, **kw)
+        m.env["CHROMIUM_EXECUTABLE"] = "/opt/my/chromium"
+        inst = _assess(check, m, engine="chromium")
+        assert inst.status == "runnable", name
+        assert inst.env.get("CHROMIUM_EXECUTABLE", "/opt/my/chromium") == "/opt/my/chromium", name
+        assert inst.differs == ["browser"], name
+        assert any("CHROMIUM_EXECUTABLE=/opt/my/chromium" in n and "r1194" in n for n in inst.notes), name
+        assert not any(str(pf.CHROME_CHANNEL) in n for n in inst.notes), name
 
 
 def test_node_deps_os_slow_and_order(tmp_path):
@@ -629,13 +651,85 @@ def test_a_ci_only_step_is_reported_never_run_and_left_out_of_the_verdict(tmp_pa
     assert pf.main(args + ["--paths", "a/x", "--only", "repair"]) == 0               # named: still not run
     out = capsys.readouterr().out
     assert re.search(r"repair +ci only: after a failure", out) and "Verdict: nothing selected" in out
+    assert "1 check(s) selected, 1 of them CI only (never run here, not in the verdict)" in out
     assert not planted.exists(), "a ci_only command must never run here"
+
+
+def step_conditions(flows: dict[str, dict]) -> dict[tuple, list[str]]:
+    """``(workflow, job, cwd, command)`` -> the ``if:`` of every step that runs it."""
+    out: dict[tuple, list[str]] = {}
+    for name, doc in flows.items():
+        for job_id, job in (doc.get("jobs") or {}).items():
+            default_cwd = ((job.get("defaults") or {}).get("run") or {}).get("working-directory", ".")
+            for step in job.get("steps") or []:
+                if "run" in step:
+                    for seg in segments(step["run"]):
+                        key = (name, job_id, step.get("working-directory", default_cwd), seg)
+                        out.setdefault(key, []).append(str(step.get("if", "")))
+    return out
+
+
+def ci_only_problems(flows: dict[str, dict], mapping: dict) -> list[str]:
+    """A ``ci_only`` entry stands for a repair step CI runs after a failure: each step it mirrors must say so in its
+    ``if:`` (``failure()``), or an ordinary check could be marked ci_only and silently never run here."""
+    conditions, out = step_conditions(flows), []
+    for c in mapping["checks"]:
+        if "ci_only" not in c:
+            continue
+        if not str(c["ci_only"]).strip():
+            out.append(f"{c['id']}: ci_only gives no reason")
+        for m in c["mirrors"]:
+            key = (m["workflow"], m["job"], m.get("cwd", c.get("cwd", ".")), " ".join(m["run"].split()))
+            ifs = conditions.get(key, [])
+            if not ifs or not all("failure()" in i for i in ifs):
+                out.append(f"{c['id']}: {' / '.join(key)} runs without `failure()` in its `if:` ({ifs}); a ci_only "
+                           "entry may mirror only a step CI runs after a failure")
+    return out
+
+
+def test_ci_only_entries_mirror_only_steps_that_run_after_a_failure(mapping):
+    assert any("ci_only" in c for c in mapping["checks"]), "the guard has nothing to read"
+    assert not ci_only_problems(pr_workflows(), mapping)
+
+
+def test_an_ordinary_step_marked_ci_only_fails(mapping):
+    marked = json.loads(json.dumps(mapping))
+    fea = next(c for c in marked["checks"] if c["id"] == "fea")
+    fea["ci_only"] = "pretend this is a repair step"
+    problems = ci_only_problems(pr_workflows(), marked)
+    assert len(problems) == 1 and problems[0].startswith("fea: webkit.yml / browser / tools/site / npm run test:fea")
+
+
+@pytest.mark.parametrize("reason", ["", "   ", "\t\n"])
+def test_a_blank_ci_only_reason_is_refused(mapping, tmp_path, capsys, reason):
+    marked = json.loads(json.dumps(mapping))
+    next(c for c in marked["checks"] if c["id"] == "scada-recapture")["ci_only"] = reason
+    assert any("scada-recapture: ci_only gives no reason" == p for p in ci_only_problems(pr_workflows(), marked))
+    assert any("ci_only must give the reason" in p for p in pf.mapping_problems(marked))
+    args = _repo(tmp_path, [_check("repair", "true", ci_only=reason)])
+    assert pf.main(args + ["--paths", "a/x"]) == 2
+    assert "ci_only must give the reason" in capsys.readouterr().err
+
+
+def test_editing_a_workflow_selects_what_it_runs(mapping):
+    """#766 re-review: an edit to webkit.yml selected no webkit or scada entry. A workflow file selects every entry
+    that mirrors one of its steps; a ci.yml edit selects none of webkit.yml's."""
+    def ids(path):
+        return {i.check["id"] for i in pf.select(mapping, [path])}
+    webkit = {c["id"] for c in mapping["checks"] if any(m["workflow"] == "webkit.yml" for m in c["mirrors"])}
+    ci = {c["id"] for c in mapping["checks"] if any(m["workflow"] == "ci.yml" for m in c["mirrors"])}
+    ci.discard("pytest-domain")                     # per_match: a workflow path gives it no domain
+    assert {"fea", "scada-unit", "model-touch", "scada-recapture"} <= webkit <= ids(".github/workflows/webkit.yml")
+    assert ci <= ids(".github/workflows/ci.yml") and "fea" not in ids(".github/workflows/ci.yml")
+    assert "mermaid-provenance" in ids(".github/workflows/ci.yml")
 
 
 def test_the_merged_webkit_steps_select_their_entries(mapping):
     """#749's model-explode suite and #763's recapture step, from the files they touch."""
     ids = {i.id for i in pf.select(mapping, ["tests/webkit/webkit-model-explode-browser.mjs"])}
-    assert {"model-explode[chromium]", "model-explode[webkit]"} <= ids
+    assert {"model-explode[chromium]", "model-explode[webkit]"} <= ids and "model-touch[chromium]" not in ids
+    ids = {i.id for i in pf.select(mapping, ["tests/webkit/webkit-model-touch-browser.mjs"])}
+    assert {"model-touch[chromium]", "model-touch[webkit]"} <= ids and "model-explode[chromium]" not in ids
     ids = {i.check["id"] for i in pf.select(mapping, ["tools/webkit/scada/recapture.py"])}
     assert "scada-recapture" in ids and "model-explode" not in ids
     recapture = next(c for c in mapping["checks"] if c["id"] == "scada-recapture")

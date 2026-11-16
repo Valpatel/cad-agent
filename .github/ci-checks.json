@@ -252,6 +252,18 @@
    "mirrors": [{"workflow": "webkit.yml", "job": "browser", "run": "npm run test:model-explode"}]
   },
   {
+   "id": "model-touch",
+   "title": "<cad-model> touch arbitration on the homepage models in a browser (Chromium: real touch drags; WebKit: the computed contract and a tap only)",
+   "paths": ["software/cadagent/webkit/**", "tests/webkit/webkit-model-touch-browser.mjs", "tools/site/assets/models/**", "tools/site/package.json", "tools/site/package-lock.json", "tests/webkit/webkit-server.mjs", "tests/site/npm-context.mjs"],
+   "exclude": ["software/cadagent/webkit/scada/**"],
+   "command": "npm run test:model-touch",
+   "cwd": "tools/site",
+   "engines": ["chromium", "webkit"],
+   "needs": {"node_deps": ["tools/site"]},
+   "cost": "fast",
+   "mirrors": [{"workflow": "webkit.yml", "job": "browser", "run": "npm run test:model-touch"}]
+  },
+  {
    "id": "part-table",
    "title": "Part table in a browser",
    "paths": ["software/cadagent/webkit/**", "tests/webkit/webkit-part-table-browser.mjs", "tools/site/package.json", "tools/site/package-lock.json", "tests/webkit/webkit-server.mjs", "tests/site/npm-context.mjs"],

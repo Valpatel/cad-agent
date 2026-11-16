@@ -50,6 +50,8 @@ Limits, stated plainly:
   install instead.
 * It runs the checkout's own check commands (npm scripts, tests), exactly as CI does, so it executes the branch's code.
   Run it only on branches you would run the tests of.
+* An edited workflow file selects every check whose mirror names it (an edit to ``webkit.yml`` selects all of its
+  browser and SCADA checks), since CI reruns them all; a ``per_match`` check gets no value from it.
 * Path globs choose what to run. A change whose effect reaches a check through a path the mapping does not name is
   missed here and caught by CI.
 * The site build reads HEAD (committed files); other checks read the working tree.
@@ -139,8 +141,11 @@ def matches(path: str, globs: list[str]) -> bool:
 
 
 def matched_paths(check: dict, paths: list[str]) -> list[str]:
-    """The changed paths that select ``check``: in its ``paths`` and not in its ``exclude``."""
-    return [p for p in paths if matches(p, check.get("paths", [])) and not matches(p, check.get("exclude", []))]
+    """The changed paths that select ``check``: in its ``paths`` and not in its ``exclude``, or a workflow file one of
+    its mirrors names (editing ``.github/workflows/webkit.yml`` selects everything that workflow runs)."""
+    flows = {f".github/workflows/{m.get('workflow')}" for m in check.get("mirrors", []) if isinstance(m, dict)}
+    return [p for p in paths if p in flows
+            or (matches(p, check.get("paths", [])) and not matches(p, check.get("exclude", [])))]
 
 
 @dataclass
@@ -247,6 +252,8 @@ def mapping_problems(mapping) -> list[str]:
         if typed:                                          # the checks below assume the right types
             problems += typed
             continue
+        if "ci_only" in check and not check["ci_only"].strip():
+            problems.append(f"{where}: ci_only must give the reason the step exists only in CI, not a blank")
         if check.get("cost", "fast") not in ("fast", "slow"):
             problems.append(f"{where}: cost must be fast or slow")
         if "timeout" in check and check["timeout"] <= 0:
@@ -455,18 +462,25 @@ class Machine:
                           + (f" (found {', '.join(have)})" if have else "")
                           + "; CI runs it in its pinned Playwright container. Not installed for you."), []
         rev = revs.get("chromium-headless-shell") or revs.get("chromium")
+        # Most Chromium suites launch CHROMIUM_EXECUTABLE when it is set, whatever the channel says: a caller's value
+        # replaces CI's build, so it is named and flagged (a note sets the `browser` differs flag)
+        preset = self.env.get("CHROMIUM_EXECUTABLE")
+        preset_note = (f"runs on CHROMIUM_EXECUTABLE={preset} (set in your environment), not CI's Playwright "
+                       f"Chromium r{rev}: evidence only")
         if rev and self.installed(f"chromium_headless_shell-{rev}") and self.installed(f"chromium-{rev}"):
-            return {"PLAYWRIGHT_BROWSER": "chromium", "PLAYWRIGHT_CHANNEL": "chromium"}, "", []
+            env = {"PLAYWRIGHT_BROWSER": "chromium", "PLAYWRIGHT_CHANNEL": "chromium"}
+            return env, "", [preset_note] if preset else []
         have = self.present_builds("chromium")
-        if CHROME_CHANNEL.exists():
+        if CHROME_CHANNEL.exists() or preset:
             # Suites pick Chrome by the `chrome` channel or by CHROMIUM_EXECUTABLE (webkit-model-explode-browser.mjs
             # reads only the latter); name it for both, unless the caller already chose an executable.
-            env = {"PLAYWRIGHT_BROWSER": "chromium"}
-            if not self.env.get("CHROMIUM_EXECUTABLE"):
-                env["CHROMIUM_EXECUTABLE"] = str(CHROME_CHANNEL)
-            return (env, "",
-                    [f"runs on the local Chrome ({CHROME_CHANNEL}, Playwright's `chrome` channel), not CI's Playwright "
-                     f"Chromium r{rev}" + (f" (installed here: {', '.join(have)})" if have else "") + ": evidence only"])
+            if preset:
+                return {"PLAYWRIGHT_BROWSER": "chromium", "CHROMIUM_EXECUTABLE": preset}, "", [
+                    preset_note + (f" (installed here: {', '.join(have)})" if have else "")]
+            return ({"PLAYWRIGHT_BROWSER": "chromium", "CHROMIUM_EXECUTABLE": str(CHROME_CHANNEL)}, "",
+                    [f"runs on the local Chrome ({CHROME_CHANNEL}, as CHROMIUM_EXECUTABLE and Playwright's `chrome` "
+                     f"channel), not CI's Playwright Chromium r{rev}"
+                     + (f" (installed here: {', '.join(have)})" if have else "") + ": evidence only"])
         return None, (f"Playwright Chromium r{rev} is not installed" + (f" (found {', '.join(have)})" if have else "")
                       + f" and no Chrome at {CHROME_CHANNEL}"), []
 
@@ -712,7 +726,9 @@ def to_json(inst: Instance, ctx: dict) -> dict:
 
 def text_report(instances: list[Instance], paths: list[str], ctx: dict, listing: bool, logs: str | None = None,
                 interrupted: Interrupted | None = None) -> str:
+    ci_only_n = sum(i.check.get("ci_only") is not None for i in instances)
     out = [f"{len(paths)} changed path(s); {len(instances)} check(s) selected"
+           + (f", {ci_only_n} of them CI only (never run here, not in the verdict)" if ci_only_n else "")
            + (" (listing only, nothing run)" if listing else "")]
     if not instances:
         out.append("No CI check in .github/ci-checks.json watches these paths.")

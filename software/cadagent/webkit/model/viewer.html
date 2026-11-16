@@ -20,7 +20,10 @@
 </div>
 <script type="module">
   import { createViewer } from './viewer.js';
+  import { mountAppNav } from '../ui/appnav.js';
   const q = new URLSearchParams(location.search);
+  // The host site's top bar, from <root>/site/nav.json when the site has one (as `cad-agent site` writes it); &nav=0 leaves it out.
+  if (q.get('nav') !== '0') mountAppNav({ root: '../../../' });
   const manifestUrl = q.get('manifest') ?? '../../../exports/view/view.json';
   if (q.has('back')) {
     const value = q.get('back');

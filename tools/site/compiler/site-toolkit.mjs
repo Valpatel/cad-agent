@@ -151,7 +151,7 @@ export function toolkitCapabilities(m, {catalog = [], has} = {}) {
       image:'/web/toolkit/file-review.webp', alt:'The original-file viewer displaying the example fixture STL',
       href:'/kit/files/file-viewer.html?file=/kit/host/example.stl', action:'Open file example', docs:'/docs/file-viewer'},
     {id:'assembly', title:'Assembly & build guides', kind:'Step-by-step instructions',
-      description:'Inspect a synthetic rail assembly and step through its declared insertion sequence.',
+      description:'Inspect a synthetic rail assembly and step through its declared insertion sequence. It is a test fixture, not a project, so its guide names source commit 1111111111.',
       image:'/web/toolkit/assembly.webp', alt:'The build-guide viewer displaying the synthetic rail assembly and its instruction controls',
       href:'/kit/model/viewer.html?guide=/web/toolkit/assembly/guide.json', action:'Follow the build', docs:'/docs/practice/assembly-guide'},
     {id:'mechanisms', title:'Mechanism motion', kind:'Interactive kinematics',

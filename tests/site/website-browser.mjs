@@ -110,7 +110,8 @@ try {
     ['README image motion', () => repositoryHeroProblems(browser, base)],
     ['long citation reflow', () => longCitationProblems(browser, base)],
     ['wide layouts', () => wideLayoutProblems(browser, base)],
-    ['header', headerProblems],          // painted text can collide even when the flex boxes and page do not overflow
+    ['header', headerProblems],
+    ['install link', installLinkProblems],   // a link to an install block lands on its command (#804), below          // painted text can collide even when the flex boxes and page do not overflow
     ['cantilever', cantileverProblems],  // the snap-arm explorer on /docs/compliant (#137), below
     ['fold', foldProblems],              // the page tree's fold on phones, with and without nav.js (#134)
     ['outline visibility', () => sameSectionOutlineProblems(browser, base)],
@@ -156,6 +157,7 @@ try {
         if (!route.startsWith('/kit/')) {
           const visible = await page.locator('.site-header nav a[href="/explore"]').isVisible();
           if (!visible) seen.push('no Explore link in the header');
+          if (!await page.locator('.site-header nav a[href="/docs/agent-workflow"]').isVisible()) seen.push('no For agents link in the header (#804)');
         }
         if (route === '/') {
           const names = await page.evaluate(() => document.getAnimations().map(a => a.animationName).filter(n => n?.startsWith('snap-')));
@@ -799,13 +801,56 @@ try {
   await site.done();
 }
 
+/** A link to /docs/agent-workflow#install-unix or #install-windows (the home page's install card links them) shows
+ * the command on arrival, at phone and desktop widths, and so does changing the address's # part on the page (#804).
+ * Planted control: the same page without a # part keeps both blocks closed, so an open block here comes from the
+ * address, not from a block left open in the page. Also the 404 page's feedback link names the missing address. */
+async function installLinkProblems() {
+  const problems = [];
+  const block = (page, id) => page.evaluate(id => {
+    const d = document.getElementById(id), code = d?.querySelector('pre');
+    const r = code?.getBoundingClientRect();
+    return { open: !!d?.open, shown: !!r && r.height > 0 && r.top >= 0 && r.top < innerHeight - 60 };
+  }, id);
+  const say = b => `the block is ${b.open ? 'open' : 'closed'} and its command ${b.shown ? 'shows' : 'is not on the screen'}`;
+  for (const [width, height] of [[390, 844], [1366, 800]]) {
+    for (const id of ['install-unix', 'install-windows']) {   // arrival: a fresh page for each link
+      const page = await browser.newPage({ viewport: { width, height } });
+      try {
+        await navigate(page, `${base}/docs/agent-workflow#${id}`);
+        const b = await block(page, id);
+        if (!b.open || !b.shown) problems.push(`${width}px #${id}: on arrival ${say(b)}`);
+      } finally { await page.close(); }
+    }
+    const page = await browser.newPage({ viewport: { width, height } });
+    try {
+      await navigate(page, base + '/docs/agent-workflow');
+      const control = [await block(page, 'install-unix'), await block(page, 'install-windows')];
+      if (control.some(b => b.open)) problems.push(`${width}px: an install block is open without a link to it, so this check tests nothing`);
+      await page.evaluate(() => { location.hash = 'install-windows'; });
+      await page.waitForFunction(() => document.getElementById('install-windows').open, null, { timeout: 3000 }).catch(() => {});
+      await page.evaluate(() => new Promise(requestAnimationFrame));
+      const changed = await block(page, 'install-windows');
+      if (!changed.open || !changed.shown) problems.push(`${width}px: after the # part changed to install-windows ${say(changed)}`);
+    } finally { await page.close(); }
+  }
+  const missing = await browser.newPage({ viewport: { width: 800, height: 600 } });
+  try {
+    await navigate(missing, base + '/no-such-page?x=1');
+    const href = await missing.locator('.site-footer a[data-feedback-here]').getAttribute('href');
+    const named = href && new URL(href).searchParams.get('page');
+    if (named !== base + '/no-such-page?x=1') problems.push(`404 page: the feedback link names ${named}, not the missing address`);
+  } finally { await missing.close(); }
+  return problems;
+}
+
 /** Measure the text and images as well as each control's box. Flex shrinking used to leave the wordmark's text
  * outside its box, overlapping Catalogue while the document reported zero overflow (#104). Check both sides of
  * old and current responsive boundaries, not only the conventional 360 px phone used by the route checks. */
 async function headerProblems() {
   const problems = [];
   const evidence = await mkdtemp(path.join(tmpdir(), 'cad-agent-header-'));
-  const requiredControls = ['.wordmark', 'nav a[href="/explore"]', 'nav a[href="/toolkit"]', 'nav .pill-link', '.theme-toggle'];
+  const requiredControls = ['.wordmark', 'nav a[href="/explore"]', 'nav a[href="/toolkit"]', 'nav a[href="/docs/agent-workflow"]', 'nav .pill-link', '.theme-toggle'];
   const widths = [320, 340, 359, 360, 361, 379, 380, 381, 390, 409, 410, 411, 429, 430, 431,
     459, 479, 480, 481, 600, 759, 760, 761, 800, 850, 900, 999, 1000, 1001, 1049, 1050, 1051, 1366];
   for (const colorScheme of ['light', 'dark']) {

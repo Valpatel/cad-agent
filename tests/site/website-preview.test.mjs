@@ -46,6 +46,7 @@ test('an IPC parent can read the server record of each request, its socket and i
     for(let n=1;n<=2;n++){socket.write('GET /recorded?q=private HTTP/1.1\r\nHost: x\r\n\r\n');while(text.split('Recorded').length<=n)await new Promise(r=>setTimeout(r,10));}
     const record=await ask('/recorded',since);
     assert.equal(record.matching.length,2);
+    assert.deepEqual(record.matchingFirst.map(r=>r.id),record.matching.map(r=>r.id),'with two requests the first ten are the last ten');
     const [first,second]=record.matching;
     for(const r of record.matching){
       assert.equal(r.status,200);assert.equal(r.path,'/recorded');assert.equal(r.file,'/recorded.html');

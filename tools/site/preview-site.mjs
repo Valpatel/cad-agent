@@ -128,6 +128,10 @@ function track(server) {
       coversWindow: record.droppedThrough < since,
       record: { from: record.requests[0]?.receivedAt ?? null, requests: record.requests.length, keepMs: KEEP_MS,
         maxRecords: MAX_RECORDS, droppedThrough: record.droppedThrough || null, droppedByBound: record.droppedByBound },
+      // The first ten and the last ten in the window: a stalled request is usually the window's first, and a busy
+      // window (the other lane navigating to the same page) would push it out of the last ten (#686).
+      matchingFirst: record.requests.filter(r => r.path === message.path && inWindow(r)).slice(0, 10)
+        .map(r => ({ ...r, socket: socketView(record.sockets.find(s => s.id === r.socket)) ?? r.socket })),
       matching: record.requests.filter(r => r.path === message.path && inWindow(r)).slice(-10)
         .map(r => ({ ...r, socket: socketView(record.sockets.find(s => s.id === r.socket)) ?? r.socket })),
       window: { requests: windowed.length, unanswered: windowed.filter(r => !r.headersAt).slice(-10),

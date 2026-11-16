@@ -40,6 +40,8 @@ if (document.querySelector('[data-scada-browser]')) import('/web/toolkit.js').ca
 // The home hero's recording (#748): the page loads and paints its 9 KB still; once the page has loaded, the animation
 // (data-motion-src) replaces it when it has arrived. Never under reduced motion, where the picture's still is kept, and
 // never with Save-Data on, where <cad-model> on the same page also asks first.
+// A lazy picture (a card further down, #798) also waits until it comes near the screen, so a reader who never
+// scrolls to it never downloads its animation.
 for (const img of document.querySelectorAll('img[data-motion-src]')) {
   const swap = () => {
     if (matchMedia('(prefers-reduced-motion: reduce)').matches || navigator.connection?.saveData) return;
@@ -47,5 +49,11 @@ for (const img of document.querySelectorAll('img[data-motion-src]')) {
     next.onload = () => { img.src = next.src; };
     next.src = img.dataset.motionSrc;
   };
-  if (document.readyState === 'complete') swap(); else addEventListener('load', swap, { once: true });
+  const near = () => new Promise(resolve => {
+    if (img.loading !== 'lazy' || !('IntersectionObserver' in window)) return resolve();
+    const seen = new IntersectionObserver(entries => { if (entries.some(e => e.isIntersecting)) { seen.disconnect(); resolve(); } }, { rootMargin: '150px 0px' });
+    seen.observe(img);
+  });
+  const loaded = document.readyState === 'complete' ? Promise.resolve() : new Promise(resolve => addEventListener('load', resolve, { once: true }));
+  loaded.then(near).then(swap);
 }

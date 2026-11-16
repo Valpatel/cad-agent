@@ -784,6 +784,11 @@ sources:
     estimate: 0.4
     sources: 1
   summary: NEMA17 on a commercial swivel plate.
+  archive:
+    sha256: ea1838206d048954b9aab020009f33d7b8aa98a104a06f0eda0bd3cdd359f2a7
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   assessment:
     cad:
       seen: U
@@ -819,6 +824,11 @@ sources:
     estimate: 0.4
     sources: 1
   summary: Printed head with embedded rods; 3 kg load claimed.
+  archive:
+    sha256: fb02b02ca63f8f45b37e634b7c00d07a0b876cf61caced4eaff3ccaadab76155
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   assessment:
     cad:
       seen: U
@@ -854,6 +864,11 @@ sources:
     estimate: 0.4
     sources: 1
   summary: 360 degree pan, geared tilt, PETG.
+  archive:
+    sha256: 391f4f2acd5af21d834ce8b25d609b4edca2a3932049dabdc26e795afe73ee18
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   assessment:
     cad:
       seen: U

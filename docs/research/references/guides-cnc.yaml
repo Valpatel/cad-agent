@@ -45,6 +45,11 @@ sources:
     status: unconfirmed
     evidence: No second source checked.
   summary: 'Cost-reduction advice including inside corner radius guidance and tolerance restraint. Note: Snippet only'
+  archive:
+    sha256: 63e6163e3082fe2dca4307c5e6442812ca16419325c1ac634d8d783431e15e1c
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: 22fc4ac42db0c97a
 - id: xometry-what-every-designer-needs-to-know-about-cnc-part
@@ -87,6 +92,11 @@ sources:
     evidence: No second source checked.
   summary: 'Tolerance primer; advises tight or geometric tolerances only on critical areas. Note: Title and tolerance advice
     from snippets only'
+  archive:
+    sha256: c254fa79e52c7f74904f9fea114c798ad4d361a92e58e05e64bf1584caffa8de
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: 0808e657a4ce3c14
 - id: xometry-threaded-holes-xometry
@@ -130,6 +140,11 @@ sources:
     status: unconfirmed
     evidence: No second source checked.
   summary: 'Defines deep threaded hole and advises adding a boss for extra thread thickness. Note: Snippet only'
+  archive:
+    sha256: f82b8bf86bb8f33d1e4aaf0b9c077edea7a5947045a51f59b8c92c0840a74513
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: 8d3dfe6233dcfafd
 - id: xometry-iso-2768-xometry
@@ -174,6 +189,11 @@ sources:
     sources: 1
   summary: 'Xometry page on ISO 2768 general tolerances; appeared in results, content not shown in snippet. Note: Only title
     seen; content unconfirmed'
+  archive:
+    sha256: 52b94b3b66ef0cdd7b481c03f315b7e47f2710c0442492f389e3fb2eb792271b
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: 724377acbf285d17
 - id: xometry-delrin-acetal-cnc-machining
@@ -215,6 +235,11 @@ sources:
     status: unconfirmed
     evidence: No second source checked.
   summary: 'Acetal machining notes: min wall, stock sizes, visible tool marks hidden by bead blasting. Note: Snippet only'
+  archive:
+    sha256: c2189f1e1d9256ed18e56c5cd7251711f412c45016531ad2744f9265ee95bc52
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: 11df7ee172c89ae4
 - id: protolabs-6-ways-to-optimize-part-design-for-cnc-machining
@@ -256,6 +281,11 @@ sources:
     evidence: No second source checked.
   summary: 'Protolabs tips on pocket depth with relief radii, tool access and wall stiffness. Note: Figures vary between regional
     pages'
+  archive:
+    sha256: e698b602e56d50c0d50a20baa664df86ce4133f528e9a545ca635d5ee739d578
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: 3bdc85653df9a528
 - id: protolabs-guidelines-for-threaded-holes-in-cnc-machining
@@ -302,6 +332,11 @@ sources:
     evidence: '2026-11-04: the page''s tables run that range. No second source checked.'
   summary: 'Protolabs'' CNC thread tables: UNC and UNF from #2-56 to 1/2-13 and metric coarse and fine from M2 to M12, each
     with its thread depth.'
+  archive:
+    sha256: dbca9318eb091d318e8246f9cc70f2f04c1d5f92af7daa94e43bba37a782c6c5
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
 - id: protolabs-cnc-hole-design-through-blind-tapped-and-more
   aliases:
@@ -347,6 +382,11 @@ sources:
   verified: '2026-11-11: read complete 2026-08-20 article and FAQ; visually inspected live six-row feature-selection table
     and both part photos. HTML SHA256 639cef92ba4b07ab4c626831cc0f19ec0430c3d5d6c2a4b48fea4a77760282c7. Photos provide no
     dimensions; linked guides not claimed read. The imported two-sided-machining suggestion is not in this article; removed.'
+  archive:
+    sha256: ccbc64f2104406092ad3b9866e45b30a55e6e1cfaf1e760cf2220b1f8b0f6d09
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
 - id: protolabs-how-to-reduce-cnc-machining-costs-protolabs-design
   kind: guide
   category: manufacturing-guides
@@ -381,6 +421,11 @@ sources:
     estimate: 0.4
     sources: 1
   summary: 'Cost-reduction tip appearing in corner radius and design results. Note: Specific numbers not visible in snippet'
+  archive:
+    sha256: 7da0db487239798189f8d225782cc7d76201b9662965c0956d8250e38c1a32b4
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: 60953217aa5682cb
 - id: hubs-reducing-cnc-machining-costs-13-design-tips
@@ -422,6 +467,11 @@ sources:
     status: unconfirmed
     evidence: No second source checked.
   summary: 'Cost tips: limit hole depth, thread length, tolerances; relief at blind hole bottoms. Note: Snippet only'
+  archive:
+    sha256: d1b2e215d3b9c90227c15f090c7335e8a045e238a35231c361dfbfa6478001f5
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: cadab2df06e9b849
 - id: hubs-selecting-the-right-cnc-material-25-materials-compared
@@ -460,6 +510,11 @@ sources:
     sources: 1
   summary: 'Compares stock machining metals: 1018, 4140, 304, 316, 6061; guidance by corrosion, strength, weight. Note: Details
     from search summary'
+  archive:
+    sha256: 27d3b09738cf99f1c6f64bc19efecd3a3315c801634856d3b3ba00f9b2b1c53d
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: 5b5e051adb1c97e4
 - id: hubs-what-is-delrin-hubs
@@ -502,6 +557,11 @@ sources:
     evidence: No second source checked.
   summary: 'Delrin is stable and machinable but can deform with heat; radii and selective tolerances cut cost. Note: Snippet
     only'
+  archive:
+    sha256: 90002dfa07e278db3578f7d6c2886033b576e86c2ed2096ab9e4e9f94f0e7784
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: 5e455d36e35991d7
 - id: hubs-surface-finishes-for-cnc-machining-hubs
@@ -539,6 +599,11 @@ sources:
     estimate: 0.4
     sources: 1
   summary: 'Covers bead blasting, anodizing Type II/III, powder coating and process order. Note: No numeric rules seen'
+  archive:
+    sha256: b428051d26764f3bb38739036ac19c47f7efc50361161d643f30e2851acdf389
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: 16284d0d0397fff7
 - id: hubs-protolabs-network-manufacturing-standards
@@ -580,6 +645,11 @@ sources:
     status: unconfirmed
     evidence: No second source checked.
   summary: 'Network default finish and edge-break standards for machined parts. Note: Snippet only'
+  archive:
+    sha256: 35ce2b437b51178af8c7c84b880dfeb4fb4149e980fe1152af94ee9bb0452dc8
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: 693cc4508141d464
 - id: fictiv-cnc-design-guide-fictiv-ebook
@@ -617,6 +687,11 @@ sources:
     estimate: 0.4
     sources: 1
   summary: 'Gated ebook on sizes and shapes to avoid and drilling, milling, turning quality. Note: Gated; body not seen'
+  archive:
+    sha256: ed18fc88f9e4569e4277cf180a0d849f4766c5a1b00e512d465001a559280320
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: f61954a9b1a2b7e4
 - id: fictiv-the-complete-guide-to-designing-tight-tolerance-parts
@@ -655,6 +730,11 @@ sources:
     sources: 1
   summary: 'Gated ebook on tight-tolerance design and drawings; GD&T and stack-up topics seen elsewhere. Note: Gated; body
     not seen'
+  archive:
+    sha256: bd1bc6857285f4a8f42f07a5d0140dad122d4c3122d2354d7636ac387c17b49b
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: c222dbe9dd63aba7
 - id: sendcutsend-sheet-cnc-machining-design-guidelines
@@ -712,6 +792,11 @@ sources:
     Linked CNC 6061 FAQ cross-check: 343443 bytes, SHA-256 c81bdd503b57c693e86566ba5f22d706da102df1ee57917f642a131cf78f8201;
     its material-quality section incorrectly links 5052 certificates, not accepted as 6061 qualification. Artwork, quoting
     UI, certificates, tool access and physical production not validated.'
+  archive:
+    sha256: 458257135536780d928546b8f08b3b7a2a58157f9bf047fb6888f9dd15557fe7
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
 - id: sendcutsend-cnc-undercuts-why-they-are-expensive
   kind: guide
   category: manufacturing-guides
@@ -746,6 +831,11 @@ sources:
     estimate: 0.4
     sources: 1
   summary: 'Undercuts can drive up cost or make parts unmachinable; design alternatives. Note: Snippet only'
+  archive:
+    sha256: 587203991e60d207c4c7635ec88a853d82348558c56e7069c7ff21e63088a29d
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: 4e4dce35c7f9d3e2
 - id: sendcutsend-more-axes-more-money-3-axis-vs-3-2-vs-5-axis
@@ -782,6 +872,11 @@ sources:
     estimate: 0.4
     sources: 1
   summary: 'Compares cost and time of 3, 3+2 and 5-axis machining. Note: Snippet only'
+  archive:
+    sha256: 48bc5713b01680b622db5a7b34835d70814deb84fac7008a30afe87a9ee78af7
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: 4a25a1dca80f12f5
 - id: quickparts-optimising-cnc-machining-design-for-precision-and
@@ -822,6 +917,11 @@ sources:
     status: unconfirmed
     evidence: No second source checked.
   summary: 'Quickparts design guidance including internal radius to pocket depth ratio. Note: Snippet via search summary'
+  archive:
+    sha256: f921c576ae54c9062cf1095c9f2c598fc111be1070823737e6e69cfc7c97e878
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: eabf04f0dd564061
 - id: misumi-best-practice-tips-for-correct-tolerancing-meviy
@@ -859,6 +959,11 @@ sources:
     sources: 1
   summary: 'News coverage of Misumi meviy tolerancing guide: how tolerance affects fit, cost, lead time. Note: Secondary news
     coverage; guide text not seen'
+  archive:
+    sha256: 918e4a55ca51ff595144186fa3d1a0f2825f18d91291888c9bfd5635786d5a1a
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: acc65d122bf1c192
 - id: misumi-groove-design-for-cnc-turning-meviy
@@ -933,6 +1038,11 @@ sources:
     sources: 1
   summary: '13 design considerations; e.g. specify edge breaks instead of modeled chamfers. Note: No tolerance-cost numbers
     in snippet'
+  archive:
+    sha256: 9e73e43decebe336d7f764072ab42f14b25182e41fe8d521665f88633d7c6a23
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: 4874222d542c0157
 - id: modus-advanced-cnc-machining-design-guidelines-why-your-cad
@@ -969,6 +1079,11 @@ sources:
     estimate: 0.4
     sources: 1
   summary: 'Title shows cost-driver focus; content not shown in snippet. Note: Title only'
+  archive:
+    sha256: 41d0ab1ffe7ae095cf8ac17c02f8f9b0dd21060920f968fe8a2db0f35115a70a
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: 232ac0b7a9f514f5
 - id: autodesk-design-for-subtractive-manufacture-fusion-cert-prep
@@ -1005,6 +1120,11 @@ sources:
     estimate: 0.4
     sources: 1
   summary: 'Course unit: parts reachable from top, no overhangs; Accessibility Analysis flags undercuts. Note: Snippet only'
+  archive:
+    sha256: 54f0e3f1c360060367027bc20d7e2b12f4a0d62880a381de0cdb5f641bb6f703
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: ce460811a82e0924
 - id: dassault-systemes-solidworks-deep-pockets-and-slots
@@ -1045,6 +1165,11 @@ sources:
     status: unconfirmed
     evidence: No second source checked.
   summary: 'DFM rule for milled pockets and slots tied to end mill length-to-diameter. Note: Snippet only'
+  archive:
+    sha256: 2a78347305728d510fef594ca518440b7c7bb6cb863c295f8ecbcc3309527346
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: 88dffe6469e46cdd
 - id: wevolver-iso-2768-general-tolerances-tables-classes-status
@@ -1089,6 +1214,11 @@ sources:
     status: unconfirmed
     evidence: No second source checked.
   summary: 'Covers ISO 2768 classes f, m, c, v and geometric classes H, K, L. Note: Medium value differs by source'
+  archive:
+    sha256: be6a1891d307614ddf5321fb2f57ed6a381ee7e67346fbbf82df8dd21c804e6a
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: 9b992d272c56434a
 - id: makerverse-guide-to-cnc-machining-tolerances-makerverse
@@ -1126,6 +1256,11 @@ sources:
     estimate: 0.4
     sources: 1
   summary: 'Tolerance guide; tighter tolerances cost more regardless. Note: Snippet only'
+  archive:
+    sha256: dc9a837aee784da264683277d6a8465e6a4db52024bfdf984a42a92363fc1cb8
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: b6ae955281fabbce
 - id: omw-corp-understanding-and-specifying-anodizing
@@ -1174,6 +1309,11 @@ sources:
     PDF pp.2,3,10 for coating-vs-buildup diagram, dimensional fractions/masking and corner/callout diagram. Copyright2014;
     PDF creation2016 does not establish a new edition. SHA2566171af22375e7f1ce338f20389ff7f4ce565941164792eee454a1c06daed5436.
     No finisher process qualification or current standard revision verification.'
+  archive:
+    sha256: 6171af22375e7f1ce338f20389ff7f4ce565941164792eee454a1c06daed5436
+    kind: pdf
+    fetched: '2026-11-14'
+    redistribute: false
   aliases:
   - omw-anodizing
 - id: nasa-prc-5006-anodize-process-requirements
@@ -1210,6 +1350,11 @@ sources:
     estimate: 0.4
     sources: 1
   summary: 'NASA anodize process spec; fragmentary snippet on Type III design guidance. Note: Snippet fragmentary'
+  archive:
+    sha256: f91abb04951c5a0fd0d2624f5a6bc2787504de489efd0c366297a0e44cb6ddb4
+    kind: pdf
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: 568cd1739d68a611
 - id: wevolver-what-is-swiss-machining-swiss-type-cnc-lathes
@@ -1250,6 +1395,11 @@ sources:
     status: unconfirmed
     evidence: No second source checked.
   summary: 'Swiss lathe overview: L/D advantages and routine tolerances. Note: Vendor figures disagree'
+  archive:
+    sha256: 7c6da4cc80cf95f3320f06e52d19f282f1b7258938a73e5e89919c179fdc338d
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: 7166866c4f0824c1
 - id: cutting-tool-engineering-cuckoo-for-swiss-machining
@@ -1287,6 +1437,11 @@ sources:
     sources: 1
   summary: 'Trade magazine article on Swiss machining; conventional lathe L/D limits about 3:1 without guide bushing. Note:
     Snippet only'
+  archive:
+    sha256: fa625402ef1059c57ed4cd4fc435f3aa99418560794ee52065b54bcdf2678ebf
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: 48c2f3e761cb9968
 - id: boen-rapid-cnc-machining-aluminum-6061-vs-7075-guide
@@ -1323,6 +1478,11 @@ sources:
     estimate: 0.4
     sources: 1
   summary: '6061 vs 7075: 6061 default; 7075 stronger, costlier, wears tools faster. Note: Vendor blog; unverified figures'
+  archive:
+    sha256: abd79ffda37f3f5c80c429966b4ea209762e67a1276d8804393b6d66eb808215
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: 8ffbdbd6255299c3
 - id: fictiv-5-axis-cnc-machining-fictiv
@@ -1359,6 +1519,11 @@ sources:
     estimate: 0.4
     sources: 1
   summary: 'Covers 3+2 and simultaneous 5-axis configurations. Note: Snippet only'
+  archive:
+    sha256: 860c7b1902072399ee30c009610983ae9cf1f2d2d5cd3eabdd0673e03426aae2
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: 858b8b8ab7b019bc
 - id: clarwe-designing-cnc-milled-parts-fillets-wall-thickness
@@ -1396,6 +1561,11 @@ sources:
     sources: 1
   summary: 'Fillets, wall thickness and tool access explained; fallback if nothing better. Note: Shop blog; snippet title
     only'
+  archive:
+    sha256: 45af945337d7b313b892460fcf1f6ccdb4352c1848ba59a841c47d47c774d3ea
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: fa7c89848fa34340
 - id: machining-doctor-iso-286-limits-and-fits-h7-g6-machining

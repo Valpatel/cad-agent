@@ -16,7 +16,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { chromium, webkit, expect } from './npm-context.mjs';
 import { builtSite } from './built-site.mjs';
-import { configureNavigation, navigate, navigationFailure, ownContexts, runPart } from './navigation.mjs';
+import { configureNavigation, fetchThrough, navigate, navigationFailure, ownContexts, partHandler, runPart } from './navigation.mjs';
 import { folderMapPath } from '../../tools/site/publication.mjs';
 import { reducedHeroProblems, repositoryHeroProblems, homepageModelProblems, learningPictureProblems, homepageLateDrawProblems, resultImageMotionProblems } from './layout/motion.mjs';
 import { outlineEntryState, scrollOutline, sameSectionOutlineProblems, readerBoundaryProblems, readerOutlineClickProblems, readerOverflowProblems } from './layout/outline.mjs';
@@ -1101,7 +1101,11 @@ async function inLanes(parts) {
 async function navigationStallControl() {
   const hold = stallControl.hold = createServer(socket => {
     socket.unref();
-    socket.once('data', data => stallControl.requests.push({ at: Date.now(), line: String(data).split('\r\n')[0] }));
+    socket.once('data', data => {
+      const line = String(data).split('\r\n')[0];
+      stallControl.requests.push({ at: Date.now(), line });
+      if (line.includes(' /fetch-control/')) socket.destroy();   // the test-side fetch's hang-up: read, then closed unanswered
+    });
     socket.on('error', () => {});
   });
   hold.unref();
@@ -1113,6 +1117,13 @@ async function navigationStallControl() {
   try { await navigate(page, held + '?fault=planted', { waitUntil: 'load', timeout: STALL_MS }, { where: 'planted evidence fault', plantEvidenceFault: true }); }
   catch (error) { caught = error; }
   const fault = navigationFailure(caught);
+  // A test-side fetch that fails (route.fetch: socket hang up, #686): the part must report it and go on. The page's
+  // request is aborted, so its navigation fails at once; that expected navigation failure is caught here. A page of
+  // its own: in Chromium, page.route on a page whose navigation is still held waits for that navigation.
+  const hangup = stallControl.fetchURL = `http://127.0.0.1:${hold.address().port}/fetch-control/hangup`;
+  const fetcher = await context.newPage();
+  await fetcher.route(hangup, partHandler(async route => { await fetchThrough(route); stallControl.problems.push('the planted fetch hang-up was answered'); }));
+  try { await navigate(fetcher, hangup, { waitUntil: 'load', timeout: STALL_MS }, { where: 'planted fetch hang-up' }); } catch { /* expected */ }
   if (caught?.name !== 'TimeoutError' || !caught.message.startsWith(`page.goto: Timeout ${STALL_MS}ms exceeded`) || fault?.error !== caught)
     stallControl.problems.push(`a fault in the evidence replaced or lost the original navigation error: ${String(caught?.message).split('\n')[0]}`);
   else if (!/planted evidence-collection fault/.test(fault.evidence.evidenceError ?? '') || !fault.receipt)
@@ -1124,9 +1135,17 @@ async function navigationStallControl() {
 }
 
 async function stallControlProblems(parts, found, finished) {
-  const out = [...stallControl.problems], i = parts.findIndex(([name]) => name === STALL_CONTROL), [finding] = found[i] ?? [];
-  if (found[i]?.length !== 1 || !finding.startsWith(`${STALL_CONTROL}: `) || !finding.includes(`page.goto: Timeout ${STALL_MS}ms exceeded`) || !finding.includes(stallControl.url))
-    out.push(`its finding does not keep the original message and URL: ${JSON.stringify(found[i]).slice(0, 400)}`);
+  const out = [...stallControl.problems], i = parts.findIndex(([name]) => name === STALL_CONTROL);
+  const finding = found[i]?.find(f => f.includes('page.goto: Timeout')), fetched = found[i]?.find(f => f.includes('route.fetch:'));
+  if (found[i]?.length !== 2 || !finding?.startsWith(`${STALL_CONTROL}: a navigation failed, so this part stopped there: page.goto: Timeout ${STALL_MS}ms exceeded`) || !finding.includes(stallControl.url))
+    out.push(`its finding does not keep the original message and URL: ${JSON.stringify(found[i]).slice(0, 600)}`);
+  if (!fetched?.startsWith(`${STALL_CONTROL}: a test-side fetch failed (the part went on): route.fetch: `) || !fetched.includes(stallControl.fetchURL))
+    out.push(`the failed test-side fetch is not its own finding with the original message and URL: ${JSON.stringify(found[i]).slice(0, 600)}`);
+  try {
+    const record = JSON.parse(await readFile(path.join(fetched.match(/fetch evidence: (\S+)/)[1], 'fetch-failure.json'), 'utf8'));
+    if (record.part !== STALL_CONTROL || record.url !== stallControl.fetchURL || typeof record.server?.coversWindow !== 'boolean' || !record.server.window)
+      out.push(`the fetch receipt lost the part, URL or the server's record: ${JSON.stringify(record).slice(0, 400)}`);
+  } catch (error) { out.push(`no fetch receipt: ${error.message}`); }
   const receipt = finding?.match(/navigation evidence: (\S+)/)?.[1];
   let evidence;
   try { evidence = JSON.parse(await readFile(path.join(receipt, 'navigation-failure.json'), 'utf8')); }

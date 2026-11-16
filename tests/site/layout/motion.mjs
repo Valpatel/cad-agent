@@ -2,7 +2,7 @@
 import { mkdtemp, writeFile, readFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { navigate } from '../navigation.mjs';
+import { fetchThrough, navigate, partHandler } from '../navigation.mjs';
 
 export function heroStillState() {
   const alpha = el => {
@@ -57,12 +57,12 @@ export async function reducedHeroProblems(browser, base) {
   };
   try {
     problems.push(...heroStillProblems(await read(source)).map(p => `reduced-motion hero: ${p}`));
-    await page.route(source + '?hidden-control', async route => {
-      const response = await route.fetch();
+    await page.route(source + '?hidden-control', partHandler(async route => {
+      const response = await fetchThrough(route);
       const body = (await response.text()).replace('</svg>',
         '<style>@media(prefers-reduced-motion:reduce){.draw{opacity:0!important}}</style></svg>');
       await route.fulfill({ response, body });
-    });
+    }));
     const bad = await read(source + '?hidden-control');
     if (!bad.reduced || bad.animations !== 0) problems.push('hidden-drawing control did not retain reduced motion and zero animations');
     if (!heroStillProblems(bad).includes('SVG drawing is hidden or empty'))
@@ -114,13 +114,13 @@ async function readmePictureProblems(browser, base, basename, options = {}) {
     if (await changes(image, 'reduced')) problems.push('README image still animates with reduced motion');
     // A cached screenshot or an animation-disabled screenshot API must not pass this check.
     const source = base + stillPath + '?broken-motion-control';
-    await page.route(source, async route => {
-      const response = await route.fetch();
+    await page.route(source, partHandler(async route => {
+      const response = await fetchThrough(route);
       const body = (await response.text()).replace('</svg>',
         '<style>:root{animation:broken-motion 8s linear infinite!important}' +
         '@keyframes broken-motion{from{opacity:.1}to{opacity:1}}</style></svg>');
       await route.fulfill({ response, body });
-    });
+    }));
     await image.evaluate((img, source) => { img.closest('picture').querySelector('source').srcset = source; }, source);
     await page.waitForFunction(({ selector, source }) => document.querySelector(selector)?.currentSrc === source,
       { selector, source });

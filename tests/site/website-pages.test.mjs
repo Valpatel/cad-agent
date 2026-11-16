@@ -329,7 +329,7 @@ test('a disconnected page and unavailable receipt directory never mask the origi
 });
 
 // #686: the suite's one navigation function and the part boundary that turns its failure into a finding.
-import { navigate, navigationFailure, ownContexts, runPart } from './navigation.mjs';
+import { fetchThrough, navigate, navigationFailure, ownContexts, partHandler, runPart } from './navigation.mjs';
 
 test('shared navigation passes the call site\'s exact arguments and does nothing else on success', async t => {
   const page = new ReaderProbePage(), response = {}, args = [];
@@ -390,6 +390,29 @@ test('a part stopped by a failed navigation reports it, closes only its own cont
   assert.equal(navigationFailure(original).evidence.part, 'fold');
   const unrelated = new Error('an assertion in the part');
   await assert.rejects(runPart('theme', async () => { throw unrelated; }), error => error === unrelated);
+});
+
+test('a test-side fetch that fails in a route handler is its part\'s finding, its route aborted, and never retried', async t => {
+  const original = new Error('route.fetch: socket hang up\n  - → GET http://localhost/docs/img/still.svg?broken-motion-control');
+  let fetches = 0, aborted = null, handler;
+  const route = { fetch: async () => { fetches++; throw original; }, abort: async code => { aborted = code; },
+    request: () => ({ url: () => 'http://localhost/docs/img/still.svg?broken-motion-control', method: () => 'GET' }) };
+  const lines = []; t.mock.method(console, 'log', text => lines.push(text));
+  const findings = await runPart('README image motion', async () => {
+    handler = partHandler(async r => { await fetchThrough(r); });
+    await handler(route);   // as Playwright calls it: nothing the part awaits sees the rejection
+    return ['an earlier finding'];
+  });
+  t.after(() => rm(navigationFailure(original).receipt, { recursive: true, force: true }));
+  assert.equal(fetches, 1); assert.equal(aborted, 'failed');
+  assert.equal(findings[0], 'an earlier finding');
+  assert.ok(findings[1].startsWith('README image motion: a test-side fetch failed (the part went on): route.fetch: socket hang up'));
+  assert.match(findings[1], /fetch evidence: \S*cad-agent-navigation-/);
+  const receipt = JSON.parse(await readFile(path.join(navigationFailure(original).receipt, 'fetch-failure.json'), 'utf8'));
+  assert.equal(receipt.part, 'README image motion'); assert.equal(receipt.url, 'http://localhost/docs/img/still.svg');
+  assert.equal(lines.filter(line => line.startsWith('Fetch failure evidence: ')).length, 1);
+  const other = new Error('a handler bug');
+  await assert.rejects(partHandler(async () => { throw other; })(route), error => error === other);
 });
 
 // #663: the prior filtered sample was internally consistent before the resized layout arrived.

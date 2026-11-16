@@ -7,6 +7,10 @@
  * /tmp/cad-agent-navigation-* (the CI job uploads /tmp/cad-agent-*), prints one evidence line and rethrows the
  * original error unchanged. A fault in the evidence is recorded in it, never thrown over the navigation's error.
  *
+ * `fetchThrough(route)` does the same for a test-side `route.fetch` (the preview server's record of the path and its
+ * sockets), aborts the route and adds the failure to its part's findings; `partHandler` wraps a route handler so
+ * such a failure belongs to the part that registered it instead of crashing the run as an unhandled rejection.
+ *
  * `runPart(name, action)` runs one part of the suite. A part that ends on a failed navigation reports one finding,
  * which keeps the original message, and its own browser contexts are closed; any other error propagates as before.
  * Nothing here retries a navigation, changes its timeout or turns a failure into a pass: the finding fails the run.
@@ -207,23 +211,85 @@ export function ownContexts(browser) {
   };
 }
 
-/** Run one part: its findings; or, when it ended on a failed navigation, one finding that keeps the original message
- * (and the error it was raised as, if a caller wrapped it), after closing the contexts the part left open. Cleanup
- * is bounded and its faults are added to the finding; they never replace it. Any other error propagates. */
+/** A route handler (page.route, context.route) that runs as part of the part that registered it, so a test-side fetch
+ * that fails inside it (fetchThrough) is reported by that part instead of crashing the run as an unhandled
+ * rejection. The failed fetch has already been recorded and its route aborted; any other error propagates as before. */
+export function partHandler(handler) {
+  const scope = parts.getStore();
+  return async (...args) => {
+    try { return await (scope ? parts.run(scope, () => handler(...args)) : handler(...args)); }
+    catch (error) { if (!navigationFailure(error)) throw error; }
+  };
+}
+
+/** `route.fetch(options)` from the test process to the preview server. On failure: the server's record of the path
+ * and its sockets, and this process's lag, in a receipt under /tmp/cad-agent-navigation-*; one evidence line; the
+ * failure added to the current part's findings; the route aborted, so the page sees a failed request instead of
+ * one that never ends; then the original error rethrown unchanged. No second attempt is made. */
+export async function fetchThrough(route, options) {
+  const began = Date.now();
+  try { return await (options === undefined ? route.fetch() : route.fetch(options)); }
+  catch (error) {
+    const kept = { error, evidence: null, receipt: null, kind: 'fetch' };
+    if (error && typeof error === 'object') failures.set(error, kept);
+    parts.getStore()?.failures.push(error);
+    try {
+      let url = '[unavailable URL]', method;
+      try { url = route.request().url(); method = route.request().method(); } catch { /* recorded as unavailable */ }
+      const evidence = kept.evidence = { kind: 'test-side fetch (route.fetch)', part: parts.getStore()?.name ?? null, url: cleanURL(url),
+        method, began, elapsedMs: Date.now() - began, error: { name: cleanText(error?.name), message: cleanText(error?.message) }, captureErrors: [] };
+      evidence.testProcessLag = sources.testLag ? { maxMs: Math.max(0, ...sources.testLag.filter(l => l.at >= began - 1000).map(l => l.lateMs)) } : { unavailable: 'no test-process lag record configured' };
+      try {
+        evidence.server = sources.serverEvidence ? await bounded(() => sources.serverEvidence(new URL(url).pathname, began - 1000), 2500, 'server record')
+          : { unavailable: 'no preview server record configured' };
+      } catch (fault) { evidence.server = { unavailable: cleanText(fault.message) }; }
+      try {
+        const folder = await mkdtemp(path.join(tmpdir(), 'cad-agent-navigation-'));
+        await writeFile(path.join(folder, 'fetch-failure.json'), JSON.stringify(evidence, null, 2) + '\n');
+        evidence.receipt = kept.receipt = folder;
+      } catch (fault) { evidence.captureErrors.push('receipt: ' + cleanText(fault.message)); }
+      const s = evidence.server ?? {};
+      console.log('Fetch failure evidence: ' + JSON.stringify({ part: evidence.part, url: evidence.url, method, elapsedMs: evidence.elapsedMs,
+        error: evidence.error.message.split('\n')[0], testLagMaxMs: evidence.testProcessLag.maxMs ?? null,
+        server: s.unavailable ? { unavailable: s.unavailable } : { coversWindow: s.coversWindow, openSockets: s.openSockets,
+          matching: s.matching?.slice(-3).map(r => ({ id: r.id, receivedMs: r.receivedAt - began, status: r.status ?? null, finished: !!r.finishedAt, aborted: !!r.aborted, socket: r.socket?.id ?? r.socket })),
+          unanswered: s.window?.unanswered?.length, unfinished: s.window?.unfinished, socketsClosedIdle: s.window?.socketsClosedIdle,
+          socketsWithoutRequest: s.window?.socketsWithoutRequest?.length, lagMaxMs: s.lag?.maxMs },
+        receipt: evidence.receipt }));
+    } catch (fault) { kept.evidenceError = cleanText(fault?.stack || fault); }
+    try { await route.abort('failed'); } catch { /* the page or route may already be gone */ }
+    throw error;
+  }
+}
+
+/** The finding for a failed navigation or test-side fetch: the original message first, then where its evidence is. */
+function failureFinding(name, error, failure, stopped) {
+  const original = failure.error, what = failure.kind === 'fetch' ? 'a test-side fetch failed' : 'a navigation failed';
+  return `${name}: ${what}${stopped ? ', so this part stopped there' : ' (the part went on)'}: ${String(original.message).trim()}` +
+    (error !== original ? `\n  raised as ${error.name}: ${String(error.message).split('\n')[0].slice(0, 300)}` : '') +
+    `\n  ${failure.kind === 'fetch' ? 'fetch' : 'navigation'} evidence: ${failure.receipt ?? `no receipt (${failure.evidenceError ? `evidence collection failed: ${failure.evidenceError.split('\n')[0]}` : 'see the evidence line above'})`}`;
+}
+
+/** Run one part: its findings, plus one for each test-side fetch that failed in it (fetchThrough). A part that ends on
+ * a failed navigation, or that throws after one of its fetches failed, reports that as its finding, keeping the
+ * original message (and the error it was raised as, if a caller wrapped it), after closing the contexts the part left
+ * open. Cleanup is bounded and its faults are added to the finding; they never replace it. Any other error
+ * propagates. */
 export async function runPart(name, action) {
-  const scope = { name, contexts: new Set() };
-  try { return await parts.run(scope, action); }
+  const scope = { name, contexts: new Set(), failures: [] };
+  const fetched = () => scope.failures.map(error => failureFinding(name, error, navigationFailure(error), false));
+  try { return [...await parts.run(scope, action), ...fetched()]; }
   catch (error) {
     const failure = navigationFailure(error);
-    if (!failure) throw error;
+    if (!failure && !scope.failures.length) throw error;
     const left = [...scope.contexts].filter(context => { try { return context.browser()?.contexts().includes(context) ?? true; } catch { return true; } });
     const closed = await Promise.allSettled(left.map(context => bounded(() => context.close(), 10000, 'closing a context')));
     const cleanup = closed.filter(result => result.status === 'rejected').map(result => cleanText(result.reason?.message));
-    const original = failure.error;
-    return [`${name}: a navigation failed, so this part stopped there: ${String(original.message).trim()}` +
-      (error !== original ? `\n  raised as ${error.name}: ${String(error.message).split('\n')[0].slice(0, 300)}` : '') +
-      `\n  navigation evidence: ${failure.receipt ?? `no receipt (${failure.evidenceError ? `evidence collection failed: ${failure.evidenceError.split('\n')[0]}` : 'see the evidence line above'})`}` +
-      (left.length ? `\n  closed ${left.length - cleanup.length} of ${left.length} browser context(s) the part left open` : '') +
-      (cleanup.length ? `; cleanup failed: ${cleanup.join('; ')}` : '')];
+    const findings = scope.failures.filter(fetchError => fetchError !== failure?.error).map(fetchError => failureFinding(name, fetchError, navigationFailure(fetchError), false));
+    findings.push(failure ? failureFinding(name, error, failure, true)
+      : `${name}: after a test-side fetch failed, this part stopped on: ${String(error?.stack || error).slice(0, 2000)}`);
+    findings[findings.length - 1] += (left.length ? `\n  closed ${left.length - cleanup.length} of ${left.length} browser context(s) the part left open` : '') +
+      (cleanup.length ? `; cleanup failed: ${cleanup.join('; ')}` : '');
+    return findings;
   }
 }

@@ -1069,6 +1069,11 @@ sources:
     estimate: 0.4
     sources: 1
   summary: Ball thrust bearing with drawing.
+  archive:
+    sha256: 28865b19a733bfa65b0897dec9007f93e11edad0d53cb25a0aeaba41fa3e5c00
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   assessment:
     cad:
       seen: U
@@ -1192,6 +1197,11 @@ sources:
     estimate: 0.4
     sources: 1
   summary: Printed ball linear bearing iterations.
+  archive:
+    sha256: e961dc5580a9ddc917e43774796257b019f1e01800ac793978bfa866f9657a80
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   assessment:
     cad:
       seen: U
@@ -1480,6 +1490,11 @@ sources:
     estimate: 0.4
     sources: 1
   summary: Friction, backlash and stiffness against preload. Numbers not read.
+  archive:
+    sha256: 83b2cb8dc011accc28759a4d8a0b367f1568865759190784d8c5394813fe3b4d
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: 7795a1ef790001e2
 - id: hybrid-polymer-ball-bearing-with-printed-races
@@ -1512,6 +1527,11 @@ sources:
     estimate: 0.4
     sources: 1
   summary: Vibration and rolling resistance; concludes a limited-life bearing.
+  archive:
+    sha256: e9481249f8a726997970021441392650a6ce05167d79567d4d8ecf3fc328729c
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: 765a33963fd43e13
 - id: pla-slewing-ring-with-wire-raceways
@@ -1608,6 +1628,11 @@ sources:
     estimate: 0.4
     sources: 1
   summary: Printed torque, backlash and wear test. Results not read.
+  archive:
+    sha256: 95397c262524d8ed21384458d0d57eb0d99f0d034e7b7a453435d66548a89000
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: 27e80fab8f1c87be
 - id: testing-a-printed-cycloidal-gearbox-hackaday
@@ -1640,6 +1665,11 @@ sources:
     estimate: 0.4
     sources: 1
   summary: 92% efficiency claimed by the author.
+  archive:
+    sha256: 3c003cb87701d4152318548022b05ef02d3cf43c434a371f61e7877934e26559
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: 51f52e5b8543283e
 - id: sovol-printing-gears-that-work
@@ -1672,6 +1702,11 @@ sources:
     estimate: 0.4
     sources: 1
   summary: XY expansion; calibrate before setting backlash.
+  archive:
+    sha256: 6108cb0086838b5ecc70b76679f012393cf18c1b9b744233b2f1ccf815246e1b
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: bfe8cedb0133c5c4
 - id: fully-3d-printed-gear-drive-esk8-forum
@@ -1704,6 +1739,11 @@ sources:
     estimate: 0.4
     sources: 1
   summary: Tight backlash fails; runout varies backlash.
+  archive:
+    sha256: 924c7b4b61ac872b4cb46907a08096cee585a0645cd15a30fd2d037e32f52e4b
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: e03b390fec634287
 - id: cycloidal-drive-testing-forum
@@ -1736,5 +1776,10 @@ sources:
     estimate: 0.4
     sources: 1
   summary: Delrin pins crushed after about an hour.
+  archive:
+    sha256: 7c501cc8e4cfd627ccecbde9bf6d1e889037852546b50b6c74f5e19432f9abbe
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: e9a56808972782d3

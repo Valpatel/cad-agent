@@ -273,6 +273,7 @@ const hopsByPage = new WeakMap();    // a page -> its last 8 route hops for navi
 const hopOf = new WeakMap();         // a Playwright Request -> its hop
 const wrappedRoutes = new WeakSet(); // routes whose methods are already recorded
 const ROUTE_METHODS = ['fetch', 'fulfill', 'continue', 'abort', 'fallback'];
+const firstLine = error => cleanText(String(error?.message ?? error).split('\n')[0]);   // Playwright's call log follows
 const describePattern = url => typeof url === 'string' ? cleanText(url) : url instanceof RegExp ? cleanText(String(url)).slice(0, 120) : typeof url === 'function' ? '[a URL predicate]' : cleanText(String(url));
 
 /** Record the route hops of every context `browser` opens from now on, and of the pages those contexts open. */
@@ -314,7 +315,7 @@ function hopHandler(handler, pattern) {
   return function (route, ...rest) {
     const row = startHop(route, pattern);
     if (!row) return handler.call(this, route, ...rest);
-    const end = (outcome, error) => { try { Object.assign(row, { endedAt: Date.now(), outcome }, error && { error: cleanText(error?.message ?? error) }); } catch { /* never over the handler */ } };
+    const end = (outcome, error) => { try { Object.assign(row, { endedAt: Date.now(), outcome }, error && { error: firstLine(error) }); } catch { /* never over the handler */ } };
     let result;
     try { result = handler.call(this, route, ...rest); }
     catch (error) { end('threw', error); throw error; }
@@ -357,7 +358,7 @@ function recordRouteCalls(route, hop) {
       const settle = (outcome, extra) => { try { if (call) Object.assign(call, { settledAt: Date.now(), outcome }, extra); } catch { /* never over the call */ } };
       let result;
       try { result = original.apply(route, args); }
-      catch (error) { settle('threw', { error: cleanText(error?.message ?? error) }); throw error; }
+      catch (error) { settle('threw', { error: firstLine(error) }); throw error; }
       return Promise.resolve(result).then(value => {
         if (method !== 'fetch') settle('resolved');
         else {
@@ -366,7 +367,7 @@ function recordRouteCalls(route, hop) {
           try { if (call) Object.defineProperty(call, 'response', { value, enumerable: false }); } catch { /* no body size then */ }
         }
         return value;
-      }, error => { settle('threw', { error: cleanText(error?.message ?? error) }); throw error; });
+      }, error => { settle('threw', { error: firstLine(error) }); throw error; });
     };
   }
 }

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Regenerate the build-plates figure (docs/img/plates/gyropup-plates.svg) from a Gyropup checkout.
 
-    python3 tools/plates_figure.py --gyropup <checkout of Valpatel/gyropup>
+    python3 tools/figures/plates_figure.py --gyropup <checkout of Valpatel/gyropup>
 
 Gyropup (https://gyropup.com, MIT) is a wheel-legged robot designed with cad-agent. Use a clean checkout of its
 `origin/main` (a worktree or a clone), never a working tree someone is editing. The figure is the picture
@@ -24,7 +24,7 @@ import sys
 import tempfile
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "software"))
 
 OUT = ROOT / "docs" / "img" / "plates"
@@ -61,7 +61,7 @@ def main() -> int:
         (OUT / "gyropup-plates.svg").write_text((root / "exports" / "gyropup-plates.svg").read_text())
     source = {
         "project": "Valpatel/gyropup", "license": "MIT", "revision": rev,
-        "regenerate": "python3 tools/plates_figure.py --gyropup <checkout>",
+        "regenerate": "python3 tools/figures/plates_figure.py --gyropup <checkout>",
         "inputs": ["exports/<part>.stl", "exports/geometry-checks.json", "exports/print-plan.json (qty, material)"],
         "bed_mm": rec["bed_mm"], "gap_mm": rec["gap_mm"], "margin_mm": rec["margin_mm"], "rotate": rec["rotate"],
         "keep_out_mm": rec["keep_out_mm"], "packing": rec["packing"],

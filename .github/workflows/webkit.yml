@@ -105,7 +105,17 @@ jobs:
           PLAYWRIGHT_CHANNEL: chromium
           PLAYWRIGHT_BROWSER: ${{ matrix.engine }}
           TEST_SOURCE_REVISION: ${{ github.sha }}
+      - run: npm run test:model-explode
+        working-directory: tools/site
+        env:
+          PLAYWRIGHT_CHANNEL: chromium
+          PLAYWRIGHT_BROWSER: ${{ matrix.engine }}
       - run: npm run test:part-table
+        working-directory: tools/site
+        env:
+          PLAYWRIGHT_CHANNEL: chromium
+          PLAYWRIGHT_BROWSER: ${{ matrix.engine }}
+      - run: npm run test:model-touch
         working-directory: tools/site
         env:
           PLAYWRIGHT_CHANNEL: chromium
@@ -174,6 +184,7 @@ jobs:
           npm run check:metadata
           npm run check:default-baseline
       - name: Check SCADA gallery and scenario provenance
+        id: scada_provenance
         if: matrix.engine == 'chromium'
         working-directory: tools/webkit/scada
         env:
@@ -188,6 +199,24 @@ jobs:
           npm run topologies:check
           npm run docs:scenarios:check
           npm run thumbnails:scenarios:check
+      # Only after that step failed: regenerate what is stale on the same pinned shell and offer it as an artifact,
+      # so an author without that shell can commit a real capture (tools/webkit/scada/README.md). The job still fails;
+      # nothing is committed, and the script stages only files its generators own (never the frozen baseline).
+      - name: Recapture stale SCADA provenance on the pinned shell
+        id: scada_recapture
+        if: failure() && steps.scada_provenance.outcome == 'failure'
+        env:
+          PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/scada-python-browsers
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: python tools/webkit/scada/recapture.py --out "$RUNNER_TEMP/scada-recapture"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: failure() && steps.scada_recapture.outcome == 'success'
+        with:
+          name: scada-recapture-${{ github.event.pull_request.head.sha || github.sha }}
+          path: ${{ runner.temp }}/scada-recapture/
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 14
       - name: Exercise shared SCADA simulation controls
         run: node tests/webkit/scada/explorer/browser.mjs
         env:

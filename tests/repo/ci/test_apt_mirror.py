@@ -12,7 +12,7 @@ import re
 import shlex
 import time
 
-SPEC = importlib.util.spec_from_file_location("ci_apt_mirror", Path(__file__).resolve().parents[2] / "tools/ci/apt_mirror.py")
+SPEC = importlib.util.spec_from_file_location("ci_apt_mirror", Path(__file__).resolve().parents[3] / "tools/ci/apt_mirror.py")
 mirror = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(mirror)
 SOURCE = """Types: deb
@@ -336,7 +336,7 @@ class TransportTests(unittest.TestCase):
                                            for i, server in enumerate(servers)))
                 source = root / "source.list"
                 source.write_text(f"deb [signed-by=/usr/share/keyrings/ubuntu-archive-keyring.gpg] mirror+file:{mirrors} control main\n")
-                workflow = (Path(__file__).resolve().parents[2] / ".github/workflows/ci.yml").read_text()
+                workflow = (Path(__file__).resolve().parents[3] / ".github/workflows/ci.yml").read_text()
                 options = shlex.split(re.search(r"apt_options=\(([^)]*)\)", workflow)[1])
                 # All state/cache/source paths are temporary; this only downloads loopback index metadata.
                 command = ["apt-get", "-o", f"Dir::Etc::sourcelist={source}", "-o", "Dir::Etc::sourceparts=-",

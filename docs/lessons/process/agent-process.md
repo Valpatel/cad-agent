@@ -249,5 +249,5 @@ existing failure conditions. Unknown layouts fail closed.
 
 This correction is specific to the hosted Ubuntu mirror-list layout. It does not
 establish runner network health or promise that Canonical endpoints cannot fail.
-The regression harness is `tests/repo/test_ci_apt_mirror.py`; full and browser CI
+The regression harness is `tests/repo/ci/test_apt_mirror.py`; full and browser CI
 remain mandatory independently of its local fixture checks.

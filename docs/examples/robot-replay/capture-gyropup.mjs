@@ -27,6 +27,8 @@ const generator='docs/examples/robot-replay/capture-gyropup.mjs',bundle='softwar
 const ANIMATION='card.webp',STILL='card-still.webp',RECORD='card.json';
 const SCENARIO='kerb_drop',START=1.6,END=4.4,FPS=15,STILL_AT=3.0,SIZE={width:640,height:400},QUALITY=58;
 const VIEWPORT={width:1000,height:1000};
+const CLOSER=0.86,LOWER=0.03;   // after Fit: camera this much nearer its target, both this many metres lower, so the robot
+                               // fills the card and its wheels stay in frame after the 50 mm drop
 const hash=bytes=>createHash('sha256').update(bytes).digest('hex');
 const sourcePaths=[generator,...['replay.js','viewer.js','scene.js','scenarios.js','viewer.css',`examples/gyropup-v2/viewer.html`,`examples/gyropup-v2/index.json`,`examples/gyropup-v2/robot.json`,`examples/gyropup-v2/robot.bin`,`examples/gyropup-v2/${SCENARIO}.json`].map(p=>'software/cadagent/webkit/simulation/'+p),
   ...['model/stage.js','model/model.js','host/viewer-host.js','host/viewer-host.css','host/stage-controls.js','ui/theme.js','ui/theme.css'].map(p=>'software/cadagent/webkit/'+p)];
@@ -58,7 +60,7 @@ try{
   },{size:SIZE});
   const seek=t=>page.evaluate(async t=>{__replay.playback.pause();__replay.playback.seek(t);const frame=__replay.stage.renderer.info.render.frame;
     await new Promise(resolve=>{const wait=()=>__replay.stage.renderer.info.render.frame>frame+1?resolve():requestAnimationFrame(wait);wait();});},t);
-  await seek(START);await page.evaluate(()=>__replay.fit());await seek(START);
+  await seek(START);await page.evaluate(k=>{__replay.fit();const {camera,controls}=__replay.stage;camera.position.lerp(controls.target,1-k.closer);camera.position.y-=k.lower;controls.target.y-=k.lower;controls.update?.();},{closer:CLOSER,lower:LOWER});await seek(START);
   const viewport=page.locator('.cad-viewer-viewport'),times=[];
   for(let i=0;START+i/FPS<=END+1e-9;i++)times.push(+(START+i/FPS).toFixed(6));
   const frames=[];
@@ -79,7 +81,7 @@ ims[spec['still']].save(spec['stillOut'], quality=80, method=6)
   const record={schema:'cad-agent.browser-capture/1',
     description:'The Gyropup replay viewer seeking through recorded times of one scenario; light theme, paused between frames',
     file:ANIMATION,scenario:SCENARIO,recorded_times_s:{start:START,end:END,step:+(1/FPS).toFixed(6)},frames:times.length,durations_ms:durations,
-    width:SIZE.width,height:SIZE.height,viewport:VIEWPORT,browser:{engine:'chromium',version:browser.version()},
+    width:SIZE.width,height:SIZE.height,viewport:VIEWPORT,camera_after_fit:{closer:CLOSER,lower_m:LOWER},browser:{engine:'chromium',version:browser.version()},
     generator:{path:generator,sha256:hash(await readFile(path.join(root,generator)))},
     sources:Object.fromEntries(await Promise.all(sourcePaths.map(async p=>[p,hash(await readFile(path.join(root,p)))]))),
     sha256:hash(anim),still:{file:STILL,recorded_time_s:STILL_AT,sha256:hash(still)},

@@ -36,6 +36,12 @@ try{
     assert.equal(await page.evaluate(()=>__replay.playback.state().playing),false,'reduced motion: the recording does not start by itself');
     const geometry=await page.evaluate(()=>({page:document.documentElement.scrollWidth<=document.documentElement.clientWidth+1,canvas:document.querySelector('#replay canvas').getBoundingClientRect().height}));
     assert.ok(geometry.page&&geometry.canvas>200,JSON.stringify(geometry));
+    // On a phone the 3D view comes first, straight under the title bar, and the controls (scenario select included)
+    // follow it inside the host's width; on a wide screen the controls stay above the view.
+    const order=await page.evaluate(()=>{const r=s=>document.querySelector(s).getBoundingClientRect();
+      return {canvas:r('#replay canvas').top,controls:r('.replay-controls').top,bar:r('.cad-viewer-toolbar').bottom,select:r('.replay-scenario select').right,host:r('.cad-viewer-host').right};});
+    if(width<=600)assert.ok(order.canvas<order.controls&&Math.abs(order.canvas-order.bar)<2&&order.select<=order.host,`phone order: ${JSON.stringify(order)}`);
+    else assert.ok(order.controls<order.canvas,`wide order: ${JSON.stringify(order)}`);
     // The summary is the index's own text for this scenario.
     const kerb=index.scenarios[0].summary;let text=await summaryText(page);
     for(const piece of [kerb.verdict.label,...kerb.metrics.map(m=>m.value),kerb.note])assert.ok(text.toLowerCase().includes(piece.toLowerCase()),`summary lacks ${piece}: ${text}`);

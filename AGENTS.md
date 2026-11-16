@@ -69,7 +69,8 @@ Other agent sessions use and change this repo at the same time, so:
   code in `software/cadagent/<domain>/`, tests in `tests/<domain>/`, never a new top-level folder.
 - **Keep cad-agent generic** (housings, robots, boards, any 3D model). Product-specific code stays in the product repo.
 - **Design to the rule cards.** Before drawing a feature, run `cad-agent rules <feature>` or `cad-agent choose
-  joining` and design to the card ([skills/design-process](.agents/skills/design-process/SKILL.md)); never copy rules into
+  joining --load <N> --material <name>` and design to the card
+  ([skills/design-process](.agents/skills/design-process/SKILL.md)); never copy rules into
   Markdown, since they live in `docs/research/process-profiles.yaml`.
 - **State limits honestly** in code and reports: what a check or simulation assumes, and that CAD and simulation do
   not prove physical fit or strength.

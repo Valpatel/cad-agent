@@ -390,7 +390,11 @@ print(json.dumps({{'type':'result','subtype':'success'}}))
 # Every `cad-agent ...` the agent guide (docs/agent-prompt.txt, which llms.txt carries) and llms.txt's own template print
 # runs as printed (#799). A placeholder is replaced by the values below; a command that changes the install, or needs the
 # cad extra and a build, is named here with the test that runs it instead. A new command in the guide fails until it is
-# placed in one of the two.
+# placed in one of the two. Two limits: it reads the template's literal text, so a command that reaches llms.txt
+# through `${...}` is not extracted (the `## Commands` list prints each bare `cad-agent <name>`, some of which, such as
+# `cad-agent choose`, exit 2 without arguments; the `<command> --help` case runs every name, with --help, not as printed);
+# and the starter README's commands (`cad-agent init my-box && cd my-box`, `cad-agent all`) are not extracted here:
+# tests/cli/test_init.py runs them.
 PLACEHOLDERS = {"<feature>": ["wall"], "<command>": None}         # None: every subcommand
 RUN_ELSEWHERE = {
     "cad-agent update": "changes the install: tests/cli/test_update.py and test_installer.py run it",

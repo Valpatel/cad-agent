@@ -125,22 +125,46 @@ try {
       await page.goto(`${site.url}/index.html?turn`);
       await page.waitForFunction(() => document.querySelector('cad-model')?.dataset.state === 'ready', null, { timeout: 20000 });
       await freeze(page);
-      // The turntable keeps asking for frames; once the real loop's frame has been replaced, one is queued here.
-      await page.evaluate(() => { window.__clock.frame(window.__clock.now()); });
+      // The turntable keeps asking for frames, so a frame requested from the browser before the freeze is still pending
+      // and will run at the browser's own (unfrozen, earlier) timestamp. Wait until it has run and queued its successor
+      // here: from then on every frame is one this case stamps. (Driving frames before that hand-off let the browser's
+      // late frame land after the 5 s early one and take one clamped step: the WebKit CI failure on #770.)
+      await page.waitForFunction(() => window.__clock.pending() === 1, null, { timeout: 20000, polling: 50 });
       const shot = () => page.evaluate(() => document.querySelector('cad-model').snapshot(64, 64));
-      const frame = ms => page.evaluate(ms => window.__clock.frame(window.__clock.now() + ms), ms);
-      const step = ms => page.evaluate(ms => window.__clock.frame(window.__clock.advance(ms)), ms);
+      const stamps = [];
+      // Run the one queued frame at `ts` (relative to the clock, or advancing it); exactly one must have been queued.
+      const run = async (ms, advance) => {
+        const r = await page.evaluate(([ms, advance]) => {
+          const c = window.__clock, queued = c.pending(), ts = advance ? c.advance(ms) : c.now() + ms;
+          c.frame(ts);
+          return { queued, ts };
+        }, [ms, advance]);
+        stamps.push(r.ts);
+        assert.equal(r.queued, 1, `${name}: expected one frame queued before the frame at ${r.ts} (stamps ${stamps.join(', ')})`);
+      };
+      const frame = ms => run(ms, false), step = ms => run(ms, true);
+      // Evidence for a failure: mean absolute difference (0-255) between two 64 x 64 snapshots.
+      const diff = (a, b) => page.evaluate(async ([a, b]) => {
+        const px = async url => { const i = new Image(); i.src = url; await i.decode(); const c = document.createElement('canvas'); c.width = c.height = 64;
+          const g = c.getContext('2d'); g.drawImage(i, 0, 0); return g.getImageData(0, 0, 64, 64).data; };
+        const [x, y] = await Promise.all([px(a), px(b)]);
+        let sum = 0; for (let i = 0; i < x.length; i++) sum += Math.abs(x[i] - y[i]);
+        return +(sum / x.length).toFixed(2);
+      }, [a, b]);
+      const same = async (a, b, what) => {
+        if (a !== b) assert.fail(`${name}: ${what} (mean pixel difference ${await diff(a, b)}, want 0; frame stamps ${stamps.join(', ')}; ${engine.name()})`);
+      };
       await step(16); await step(16);
       let held = await shot();
       await frame(-5000);                   // stamped 5 s before the last frame
-      assert.ok(await shot() === held, `${name}: a frame stamped 5 s early turned the view`);
+      await same(held, await shot(), 'a frame stamped 5 s early turned the view');
       await step(16);
       const moved = await shot();
-      assert.ok(moved !== held, `${name}: the turntable resumes after the early frame`);
+      assert.ok(moved !== held, `${name}: the turntable resumes after the early frame (frame stamps ${stamps.join(', ')}; ${engine.name()})`);
       await step(60000);                    // a 60 s jump forward (clamped to one short step) ...
       held = await shot();
-      await page.evaluate(() => window.__clock.frame(window.__clock.advance(-60000)));   // ... and back again
-      assert.ok(await shot() === held, `${name}: a frame stamped 60 s back turned the view`);
+      await step(-60000);                   // ... and back again
+      await same(held, await shot(), 'a frame stamped 60 s back turned the view');
 
       // Explode with its first frame 3 s behind the click: closed pose, then exactly the open pose.
       const model = page.locator('cad-model'), button = model.getByRole('button', { name: 'Pause' });

@@ -241,7 +241,10 @@ def test_served_project_pages_get_the_top_bar(tmp_path):
         with urllib.request.urlopen(url) as r:
             assert r.read().decode().count('class="appnav"') == 1, "the site has its bar built in, not twice"
         with urllib.request.urlopen(base + "site/nav.json") as r:
-            assert json.loads(r.read())["nav"][1]["href"] == "preview/sim.html"
+            served = json.loads(r.read())
+            assert served["nav"][1]["href"] == "preview/sim.html"
+            assert served["live"] is True, "the serving bar offers live reload"
+        assert "live" not in json.loads((root / "site" / "nav.json").read_text()), "a static copy does not poll for changes"
         assert "mountAppNav" not in (root / "preview" / "sim.html").read_text(), "files on disk are left alone"
         head = urllib.request.Request(base + "preview/sim.html", method="HEAD")
         with urllib.request.urlopen(head) as r, urllib.request.urlopen(base + "preview/sim.html") as g:

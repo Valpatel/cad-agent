@@ -665,7 +665,8 @@ def serve_site(root: Path, raw_site: Optional[Dict[str, Any]], default_title: st
             if not nav:
                 return False
             if self.path.split("?")[0] == f"/{SITE_DIR}/nav.json":
-                body = (json.dumps({"title": cfg.title, "nav": nav}, indent=1) + "\n").encode()
+                # "live": this server answers LIVE_URL, so the bar turns live reload on (webkit/ui/appnav.js)
+                body = (json.dumps({"title": cfg.title, "nav": nav, "live": True}, indent=1) + "\n").encode()
                 ctype = "application/json"
             else:
                 target = Path(self.translate_path(self.path))

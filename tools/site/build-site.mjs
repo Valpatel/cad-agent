@@ -879,8 +879,8 @@ await writeFile(path.join(out, '404.html'), frame({ title: 'Not found', missing:
 // <root>/site/ (webkit/ui/appnav.js), the layout `cad-agent site` writes in a project. The kit is at /kit/ here, so
 // that is /site/: the site's own destinations, and its home for the link (#804: the demo pages had no way back).
 await mkdir(path.join(out, 'site'), { recursive: true });
-await writeFile(path.join(out, 'site', 'nav.json'), JSON.stringify({ title: 'cad-agent', nav: [{ id: 'home', title: 'Home', href: '' },
-  ...NAV.map(([h, t]) => ({ id: h.slice(1), title: t, href: h.slice(1) }))] }, null, 1) + '\n');
+// The bar's name links <root>/site/ (redirected home below), so its tabs are the header's three destinations.
+await writeFile(path.join(out, 'site', 'nav.json'), JSON.stringify({ title: 'cad-agent', nav: NAV.map(([h, t]) => ({ id: h.slice(1), title: t, href: h.slice(1) })) }, null, 1) + '\n');
 await writeFile(path.join(out, '_redirects'), (await readFile(path.join(out, '_redirects'), 'utf8')) + '/site / 302\n/site/ / 302\n');
 await writeFile(path.join(out, 'version.json'), JSON.stringify({ revision, built: catalog.built, pages: pages.length, folder_maps: folderMapPages.length, items: catalog.items.length }, null, 2) + '\n');
 // What a shared link and an agent's first fetch need (#804, tools/site/compiler/site-checks.mjs): every page's card

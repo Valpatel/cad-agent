@@ -32,6 +32,9 @@
 /* Between 1000 and 1279px the hero's left column is too narrow for three actions on one row; the header carries GitHub. */
 @media(min-width:1000px) and (max-width:1279px){.learning-hero .button.quiet{display:none}}
 @media(max-width:700px){.learning-hero{padding:16px 0 26px;gap:16px}.learning-hero .pixel-title{margin:12px 0 14px}.pixel-title .pixel-title-wide{display:none}.pixel-title .pixel-title-narrow{display:block}.learning-hero .intro{font-size:16px}.hero-run{padding:8px 8px 12px}.hero-run-title{font-size:17px}}
+/* Phones (#804): the whole recording shows on the first screen at 390x664, a phone's visible height under its browser
+   bars. A tighter lede and action rows do it; the wording and the order stay (tests/site/website-browser.mjs). After the 700px rule, which it refines. */
+@media(max-width:480px){.learning-hero .intro{font-size:15px;line-height:1.5}.learning-hero .actions{row-gap:10px;column-gap:12px}.learning-hero .actions .button{padding-top:13px;padding-bottom:13px}}
 /* The pixel-art workshop stays as brand: a slim cropped band between the hero and the examples, its robots in frame.
    The crop keeps one aspect ratio, so the same part of the scene shows at every width. */
 .learning-band{margin:0 0 6px}

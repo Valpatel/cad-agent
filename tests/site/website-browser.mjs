@@ -112,6 +112,8 @@ try {
     ['wide layouts', () => wideLayoutProblems(browser, base)],
     ['header', headerProblems],          // painted text can collide even when the flex boxes and page do not overflow
     ['install link', installLinkProblems],   // a link to an install block lands on its command (#804), below
+    ['phone first screen', phoneFirstScreenProblems],   // the whole hero recording above a phone's fold (#804), below
+    ['demo way back', demoWayBackProblems],  // the kit's demo pages carry the site's top bar (#804), below
     ['cantilever', cantileverProblems],  // the snap-arm explorer on /docs/compliant (#137), below
     ['fold', foldProblems],              // the page tree's fold on phones, with and without nav.js (#134)
     ['outline visibility', () => sameSectionOutlineProblems(browser, base)],
@@ -841,6 +843,91 @@ async function installLinkProblems() {
     const named = href && new URL(href).searchParams.get('page');
     if (named !== base + '/no-such-page?x=1') problems.push(`404 page: the feedback link names ${named}, not the missing address`);
   } finally { await missing.close(); }
+  return problems;
+}
+
+/** At a phone's visible height under its browser bars (390x664), the hero's whole recording is on the first screen,
+ * and the hero reads in its one order: headline, lede, actions, recording, in the source and on the screen (#804).
+ * Planted control: the same page with 60 px more lede pushes the picture past the fold, and the check says so. */
+async function phoneFirstScreenProblems() {
+  const problems = [];
+  const measure = async planted => {
+    const page = await browser.newPage({ viewport: { width: 390, height: 664 }, isMobile: true, hasTouch: true });
+    try {
+      await navigate(page, base + '/');
+      if (planted) await page.addStyleTag({ content: '.learning-hero .intro{padding-bottom:60px}' });
+      return await page.evaluate(async () => {
+        await document.fonts.ready;
+        const parts = ['.learning-hero .pixel-title', '.learning-hero .intro', '.learning-hero .hero-actions', '.hero-run .run-media img'].map(s => document.querySelector(s));
+        const tops = parts.map(e => e.getBoundingClientRect().top);
+        const sourceOrder = parts.every((e, i) => !i || parts[i - 1].compareDocumentPosition(e) & Node.DOCUMENT_POSITION_FOLLOWING);
+        const img = parts[3].getBoundingClientRect();
+        return { tops: tops.map(Math.round), sourceOrder, screenOrder: tops.every((t, i) => !i || t > tops[i - 1]), img: [Math.round(img.top), Math.round(img.bottom)], fold: innerHeight, wide: document.documentElement.scrollWidth > innerWidth };
+      });
+    } finally { await page.close(); }
+  };
+  const seen = await measure(false), control = await measure(true);
+  if (!seen.sourceOrder || !seen.screenOrder) problems.push(`390x664: the hero is not headline, lede, actions, recording in both the source and on the screen (tops ${seen.tops.join(', ')})`);
+  if (seen.img[0] < 0 || seen.img[1] > seen.fold) problems.push(`390x664: the recording runs ${seen.img[0]}-${seen.img[1]} px, past the ${seen.fold} px first screen`);
+  if (seen.wide) problems.push('390x664: the page scrolls sideways');
+  if (control.img[1] <= control.fold) problems.push(`planted control: 60 px more lede left the recording at ${control.img[1]} px, inside the fold, so this check tests nothing`);
+  return problems;
+}
+
+/** The toolkit's demo pages (the build-guide and original-file viewers) show the site's top bar, so a reader can get
+ * back into the site (#804). The kit stays generic: a viewer reads its host's <root>/site/nav.json (ui/appnav.js),
+ * which this site's build writes. Checked at phone and desktop widths: the bar's links are the header's destinations
+ * and its name leads home, nothing of the viewer starts under it, and it polls nothing (live reload is for
+ * `cad-agent site --serve`). Planted controls: &nav=0 leaves the bar out, and a host without nav.json gets no bar and
+ * no error, as a project without a site would. */
+async function demoWayBackProblems() {
+  const problems = [];
+  const DEMOS = { 'build guide': ['/kit/model/viewer.html?guide=/web/toolkit/assembly/guide.json', '#hud'], 'file viewer': ['/kit/files/file-viewer.html?file=/kit/host/example.stl', '#file-viewer'] };
+  const WANT = ['/', '/explore', '/toolkit', '/docs/agent-workflow'];
+  const open = async (route, width, { noNavFile = false } = {}) => {
+    const page = await browser.newPage({ viewport: { width, height: 800 } });
+    const bad = [];
+    page.on('response', r => { if (r.status() >= 400) bad.push(`${r.status()} ${new URL(r.url()).pathname}`); });
+    page.on('request', r => { if (new URL(r.url()).pathname.startsWith('/_cadagent/')) bad.push('polled ' + new URL(r.url()).pathname); });
+    let answered = null;
+    if (noNavFile) {
+      let done; answered = new Promise(resolve => { done = resolve; });
+      await page.route(base + '/site/nav.json', partHandler(async route => { await route.fulfill({ status: 404, body: '' }); done(); }));
+    }
+    await navigate(page, base + route);
+    return { page, bad, answered };
+  };
+  for (const [name, [route, viewer]] of Object.entries(DEMOS)) {
+    for (const width of [390, 1366]) {
+      const { page, bad } = await open(route, width);
+      try {
+        await page.locator('nav.appnav').waitFor({ state: 'visible', timeout: 10000 }).catch(() => {});
+        const bar = await page.evaluate(viewer => {
+          const nav = document.querySelector('nav.appnav');
+          if (!nav) return null;
+          const r = nav.getBoundingClientRect(), v = document.querySelector(viewer)?.getBoundingClientRect();
+          return { bottom: r.bottom, viewerTop: v ? v.top : null, links: [...nav.querySelectorAll('a')].map(a => new URL(a.href).pathname) };
+        }, viewer);
+        if (!bar) { problems.push(`${name} ${width}px: no top bar back into the site`); continue; }
+        const resolved = await Promise.all(bar.links.map(async p => { const r = await page.request.get(base + p); return new URL(r.url()).pathname; }));
+        if (JSON.stringify(resolved) !== JSON.stringify(WANT)) problems.push(`${name} ${width}px: the bar leads to ${resolved.join(', ')}, not ${WANT.join(', ')}`);
+        if (bar.viewerTop === null || bar.viewerTop < bar.bottom - 1) problems.push(`${name} ${width}px: the viewer starts at ${bar.viewerTop} px, under the ${bar.bottom} px bar`);
+        if (bad.length) problems.push(`${name} ${width}px: ${[...new Set(bad)].join('; ')}`);
+      } finally { await page.close(); }
+    }
+    for (const [label, route2, options] of [['&nav=0', route + '&nav=0', {}], ['a host without site/nav.json', route, { noNavFile: true }]]) {
+      const { page, bad, answered } = await open(route2, 1366, options);
+      try {
+        // The viewer is up (with &nav=0 nothing asks for the bar), or the bar's one request was answered and its
+        // handling, a task later, is done.
+        await page.waitForFunction(() => document.body.dataset.ready === '1' || window.__fileViewer?.root.dataset.state === 'ready', null, { timeout: 30000 }).catch(() => {});
+        if (answered) { await answered; await page.evaluate(() => new Promise(done => setTimeout(done, 0))); }
+        if (await page.locator('nav.appnav').count()) problems.push(`${name} with ${label}: a top bar shows`);
+        const unexpected = bad.filter(b => !(options.noNavFile && b === '404 /site/nav.json'));
+        if (unexpected.length) problems.push(`${name} with ${label}: ${unexpected.join('; ')}`);
+      } finally { await page.close(); }
+    }
+  }
   return problems;
 }
 

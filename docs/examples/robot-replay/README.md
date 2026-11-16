@@ -25,23 +25,19 @@ flowchart TD
 | [gyropup.py](gyropup.py) | Converter from Gyropup's recorded snapshot (joint frames, summary, rig meshes) to recordings, meshes and a receipt. |
 | [capture-gyropup.mjs](capture-gyropup.mjs) | The toolkit and home cards' animation and still: the Gyropup viewer seeked through recorded times. |
 
-Install the existing robot extra (`python -m pip install -e '.[robot]'`). The committed receipt uses MuJoCo 3.3.7;
-install that version to reproduce its bytes. From the repository root:
-
-```bash
-python docs/examples/robot-replay/produce.py
-python docs/examples/robot-replay/produce.py --check
-```
-
-To refresh the owned thumbnail after reviewing the viewer, install `tools/site`'s locked development dependencies
-and the existing Pillow extra, then run `node docs/examples/robot-replay/capture.mjs`. The capture uses Chromium,
-the dark theme and recorded time 3.2 s; its receipt records source hashes and browser version.
-
-The [owned recording](../../../software/cadagent/webkit/simulation/examples/two-link-arm/README.md) includes the generated
-MJCF, frame data and receipt. Serve `software/cadagent/webkit` over HTTP and open `simulation/viewer.html`, or copy the full
-toolkit with `cad-agent webkit kit` and serve that folder. Browser playback needs neither Python nor MuJoCo.
-
 ## Gyropup's recorded scenarios
+
+Four scenarios, chosen for what a visitor can see happen: driving off a 50 mm kerb (the card), one wheel up a plank
+while the body stays level, push recovery and an 80 mm drop. The viewer shows each scenario's pass verdict, its
+highest motor torque as a fraction of that motor's peak-torque limit (and of its rated torque) and the largest lean,
+copied from the snapshot's summary: the snapshot's own numbers, not a cad-agent verification.
+
+Limits: Gyropup's README calls this snapshot a historical demo, generated 2026-10-25 to 26 and not a validation of
+the latest CAD or of physical hardware. The browser interpolates between recorded frames without enforcing contacts
+or joint constraints. The rig's bought parts are the project's own envelopes (boxes and cylinders), not vendor CAD.
+
+<details>
+<summary>Regenerate Gyropup's scenarios: converter and method</summary>
 
 From the repository root, with a clean Gyropup checkout (read only; nothing is written there):
 
@@ -60,14 +56,28 @@ wheels and the turret turn about their recorded joint angles with the rig's own 
 cad-agent, not MuJoCo, because it converts recorded poses and does not re-simulate. The receipt records the Gyropup
 revision, every source file's SHA-256, the converter's own hash and every artifact's hash.
 
-Four scenarios, chosen for what a visitor can see happen: driving off a 50 mm kerb (the card), one wheel up a plank
-while the body stays level, push recovery and an 80 mm drop. The viewer shows each scenario's pass verdict, its
-highest motor torque as a fraction of that motor's peak-torque limit (and of its rated torque) and the largest lean,
-copied from the snapshot's summary: the snapshot's own numbers, not a cad-agent verification.
+</details>
 
-Limits: Gyropup's README calls this snapshot a historical demo, generated 2026-10-25 to 26 and not a validation of
-the latest CAD or of physical hardware. The browser interpolates between recorded frames without enforcing contacts
-or joint constraints. The rig's bought parts are the project's own envelopes (boxes and cylinders), not vendor CAD.
+<details>
+<summary>Two-link arm: regenerate the recording and its thumbnail</summary>
+
+Install the existing robot extra (`python -m pip install -e '.[robot]'`). The committed receipt uses MuJoCo 3.3.7;
+install that version to reproduce its bytes. From the repository root:
+
+```bash
+python docs/examples/robot-replay/produce.py
+python docs/examples/robot-replay/produce.py --check
+```
+
+To refresh the owned thumbnail after reviewing the viewer, install `tools/site`'s locked development dependencies
+and the existing Pillow extra, then run `node docs/examples/robot-replay/capture.mjs`. The capture uses Chromium,
+the dark theme and recorded time 3.2 s; its receipt records source hashes and browser version.
+
+The [owned recording](../../../software/cadagent/webkit/simulation/examples/two-link-arm/README.md) includes the generated
+MJCF, frame data and receipt. Serve `software/cadagent/webkit` over HTTP and open `simulation/viewer.html`, or copy the full
+toolkit with `cad-agent webkit kit` and serve that folder. Browser playback needs neither Python nor MuJoCo.
+
+</details>
 
 <details>
 <summary>Two-link arm: sampling, controls and model limits</summary>

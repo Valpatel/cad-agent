@@ -734,6 +734,13 @@ try {
       const outline = tall.locator('cad-nav .cad-nav-outline a');
       for (const i of unreachable) {
         await tall.evaluate(() => scrollTo({ top: 0, behavior: 'instant' }));
+        // Reveal the link first with the page's smooth scrolling off, then put it back. Otherwise Playwright's own reveal
+        // before the press is a smooth scroll in WebKit (0 to 662 px here), its stability check passes while that scroll
+        // is still starting, and the release lands on the panel, so the link is never followed (#775). The jump the
+        // click starts is still the page's smooth scroll, which is what this checks.
+        await tall.evaluate(() => { document.documentElement.style.scrollBehavior = 'auto'; });
+        await outline.nth(i).scrollIntoViewIfNeeded();
+        await tall.evaluate(() => { document.documentElement.style.scrollBehavior = ''; });
         await outline.nth(i).click();
         await tall.evaluate(() => new Promise(done => {
           let last = -1, still = 0;

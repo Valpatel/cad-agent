@@ -20,9 +20,9 @@ separate from the download; a failed download or mismatch stops before installat
   installer=$(mktemp)
   trap 'rm -f "$installer"' EXIT HUP INT TERM
   curl -fsSL --proto '=https' --tlsv1.2 \
-    https://raw.githubusercontent.com/Valpatel/cad-agent/99ff290e7bbbd5a56fefff4b7d577dc881c2648e/tools/site/assets/install.sh \
+    https://raw.githubusercontent.com/Valpatel/cad-agent/f1529bd1f2388f7530cd46dc49051b2e67524378/tools/site/assets/install.sh \
     -o "$installer"
-  expected=8f3133f0a68a34ec7450e14718c97343b7a0d91c51cf23cb78c2d62a44f8e6ae
+  expected=52321a6a0b1d051dbf367fff4adcc4654e8704d94a4b099212dec87e143dda8f
   if command -v sha256sum >/dev/null 2>&1; then
     actual=$(sha256sum "$installer")
   else
@@ -43,8 +43,8 @@ separate from the download; a failed download or mismatch stops before installat
 $installer = Join-Path ([IO.Path]::GetTempPath()) ("cad-agent-" + [guid]::NewGuid() + ".ps1")
 try {
   Invoke-WebRequest -UseBasicParsing -ErrorAction Stop -OutFile $installer -Uri `
-    'https://raw.githubusercontent.com/Valpatel/cad-agent/99ff290e7bbbd5a56fefff4b7d577dc881c2648e/tools/site/assets/install.ps1'
-  $expected = '0cef9824daa1c3023b8b8004dc99d57f8ddea5b1e2a85cf827938b13d55fb101'
+    'https://raw.githubusercontent.com/Valpatel/cad-agent/f1529bd1f2388f7530cd46dc49051b2e67524378/tools/site/assets/install.ps1'
+  $expected = '506a391db666b00f300ab7f5d046f8a152f65b5e908d524d383b4cb653baf499'
   if ((Get-FileHash -Algorithm SHA256 -LiteralPath $installer -ErrorAction Stop).Hash.ToLowerInvariant() -ne $expected) {
     throw 'Installer checksum mismatch'
   }
@@ -74,13 +74,15 @@ The scripts are [`tools/site/assets/install.sh`](../../tools/site/assets/install
    Python 3.12 of its own that uv manages, and runs the checkout's code, so the skills and the code stay in step;
 4. run `cad-agent agents install` (below), which says which skills this computer can't use yet.
 
-The first install downloads about 1.7 GB of Python packages (CadQuery, VTK and their libraries) into uv's cache,
-`~/.cache/uv`, and the checkout takes about 200 MB; later updates download only what changed. If `~/.local/bin` is not
+The first install downloads Python packages (CadQuery, VTK and their libraries) into uv's cache, `~/.cache/uv`: about
+1.7 GB on Linux x86-64, with a checkout of about 200 MB (v0.46.0, measured 2026-11-16); other platforms and releases
+differ, and the installers say "about 2 GB". Later updates download only what changed. If `~/.local/bin` is not
 on your PATH, the installer says how to use `cad-agent` in that terminal and the full path of the `uv` that adds it for
 new ones.
 
 Options: set `CAD_AGENT_EXTRAS=fea,sim` (see [Extras](#extras)), `CAD_AGENT_REF` to a release tag,
-`CAD_AGENT_DIR` to another folder or `CAD_AGENT_UNINSTALL=1` before running the block. On macOS/Linux export
+`CAD_AGENT_DIR` to another folder or `CAD_AGENT_UNINSTALL=1` before running the block (`1`, `true` or `yes`
+uninstall; empty, `0`, `false` or `no` install; any other value stops before changing anything). On macOS/Linux export
 these environment variables (`export CAD_AGENT_UNINSTALL=1`, then the block); in PowerShell use
 `$env:CAD_AGENT_EXTRAS`, `$env:CAD_AGENT_REF`, `$env:CAD_AGENT_DIR` or `$env:CAD_AGENT_UNINSTALL`. They turn usage
 reporting off for everything they start; cad-agent itself sends nothing.

@@ -5,7 +5,10 @@
  * performance.now and requestAnimationFrame with a frozen clock and a manual frame queue, so each frame runs at a
  * timestamp the test chooses. Each case activates Explode by pointer or Enter, with ordinary or reduced motion, runs
  * the first frame 0.5 ms before the event, and checks the pose (world-space mesh landmarks), completion, reverse,
- * a mid-flight reversal, the off-screen frame stop and that no uncaught error reaches the page.
+ * a mid-flight reversal, the off-screen frame stop and that no uncaught error reaches the page. A skewed-clock case
+ * (#769) runs a turning viewer's frames with timestamps 5 s early and 60 s ahead then back, and the Explode tween with
+ * its first frame 3 s early: the view must never step backwards (a frame stamped before the last one draws the same
+ * picture) and the tween must start at the closed pose and finish exactly open.
  * Limits: the clock shim replaces the browser's own frame timing, so this proves the tween's arithmetic and control
  * wiring, not any engine's real frame scheduling; it runs in Chromium or WebKit (PLAYWRIGHT_BROWSER), not on devices.
  */
@@ -20,8 +23,21 @@ const routes = new Map([
   ['/favicon.ico', (_, res) => res.writeHead(204).end()],
   ['/m/two-parts.json', (_, res) => res.end(json)],
   ['/m/two-parts.bin', (_, res) => res.end(bin)],
-  ['/index.html', (_, res) => { res.setHeader('Content-Type', 'text/html'); res.end(`<!doctype html><meta name="viewport" content="width=device-width"><link rel="stylesheet" href="/kit/model/model.css"><style>body{margin:0}cad-model{display:block;width:100%;height:60vh;min-height:230px}#spacer{height:300vh}</style><script type="module" src="/kit/model/model.js"></script><cad-model src="/m/two-parts.json" loading="eager" turn="0" label="Fixture"></cad-model><div id="spacer"></div>`); }],
+  ['/index.html', (req, res) => { res.setHeader('Content-Type', 'text/html'); res.end(`<!doctype html><meta name="viewport" content="width=device-width"><link rel="stylesheet" href="/kit/model/model.css"><style>body{margin:0}cad-model{display:block;width:100%;height:60vh;min-height:230px}#spacer{height:300vh}</style><script type="module" src="/kit/model/model.js"></script><cad-model src="/m/two-parts.json" loading="eager" turn="${req.url.includes('turn') ? 30 : 0}" label="Fixture"></cad-model><div id="spacer"></div>`); }],
 ]);
+/** Replace performance.now and requestAnimationFrame with a frozen clock and a manual frame queue (window.__clock). */
+const freeze = page => page.evaluate(() => {
+  let clock = Math.ceil(performance.now()) + 1000, id = 0; const queue = new Map(), caught = [];
+  Object.defineProperty(performance, 'now', { configurable: true, value: () => clock });
+  window.requestAnimationFrame = cb => { queue.set(++id, cb); return id; };
+  window.cancelAnimationFrame = i => { queue.delete(i); };
+  window.__clock = {
+    now: () => clock, advance: ms => { clock += ms; return clock; }, pending: () => queue.size,
+    // Run queued frames at timestamp ts; an exception escapes to the page as the real one would.
+    frame(ts) { const cbs = [...queue.values()]; queue.clear(); for (const cb of cbs) try { cb(ts); } catch (e) { caught.push(e.message); setTimeout(() => { throw e; }); } return caught.length; },
+    caught,
+  };
+});
 
 const engine = process.env.PLAYWRIGHT_BROWSER === 'webkit' ? webkit : chromium;
 const site = await serveWebkit(routes);
@@ -40,18 +56,7 @@ try {
       await page.goto(`${site.url}/index.html`);
       await page.waitForFunction(() => document.querySelector('cad-model')?.dataset.state === 'ready', null, { timeout: 20000 });
       await page.waitForTimeout(300);       // let the loop's own start-up frames finish before freezing the clock
-      await page.evaluate(() => {
-        let clock = Math.ceil(performance.now()) + 1000, id = 0; const queue = new Map(), caught = [];
-        Object.defineProperty(performance, 'now', { configurable: true, value: () => clock });
-        window.requestAnimationFrame = cb => { queue.set(++id, cb); return id; };
-        window.cancelAnimationFrame = i => { queue.delete(i); };
-        window.__clock = {
-          now: () => clock, advance: ms => { clock += ms; return clock; }, pending: () => queue.size,
-          // Run queued frames at timestamp ts; an exception escapes to the page as the real one would.
-          frame(ts) { const cbs = [...queue.values()]; queue.clear(); for (const cb of cbs) try { cb(ts); } catch (e) { caught.push(e.message); setTimeout(() => { throw e; }); } return caught.length; },
-          caught,
-        };
-      });
+      await freeze(page);
       const model = page.locator('cad-model'), button = model.getByRole('button', { name: 'Explode', exact: true });
       const activate = async () => { if (input === 'pointer') await button.click(); else { await button.focus(); await page.keyboard.press('Enter'); } };
       // Run the first frame EARLY ms before the event's start, then frames until the tween stops asking for more.
@@ -111,5 +116,48 @@ try {
       console.log(`ok ${name}`); passed++;
     } finally { await context.close(); }
   }
+  // Skewed clock (#769): frame timestamps that jump backwards must not turn the view backwards or reverse the tween.
+  {
+    const name = 'skewed clock', errors = [];
+    const context = await browser.newContext({ viewport: { width: 900, height: 700 } });
+    const page = await context.newPage(); page.on('pageerror', e => errors.push(e.message));
+    try {
+      await page.goto(`${site.url}/index.html?turn`);
+      await page.waitForFunction(() => document.querySelector('cad-model')?.dataset.state === 'ready', null, { timeout: 20000 });
+      await freeze(page);
+      // The turntable keeps asking for frames; once the real loop's frame has been replaced, one is queued here.
+      await page.evaluate(() => { window.__clock.frame(window.__clock.now()); });
+      const shot = () => page.evaluate(() => document.querySelector('cad-model').snapshot(64, 64));
+      const frame = ms => page.evaluate(ms => window.__clock.frame(window.__clock.now() + ms), ms);
+      const step = ms => page.evaluate(ms => window.__clock.frame(window.__clock.advance(ms)), ms);
+      await step(16); await step(16);
+      let held = await shot();
+      await frame(-5000);                   // stamped 5 s before the last frame
+      assert.ok(await shot() === held, `${name}: a frame stamped 5 s early turned the view`);
+      await step(16);
+      const moved = await shot();
+      assert.ok(moved !== held, `${name}: the turntable resumes after the early frame`);
+      await step(60000);                    // a 60 s jump forward (clamped to one short step) ...
+      held = await shot();
+      await page.evaluate(() => window.__clock.frame(window.__clock.advance(-60000)));   // ... and back again
+      assert.ok(await shot() === held, `${name}: a frame stamped 60 s back turned the view`);
+
+      // Explode with its first frame 3 s behind the click: closed pose, then exactly the open pose.
+      const model = page.locator('cad-model'), button = model.getByRole('button', { name: 'Pause' });
+      await button.click();                 // stop the turntable so only the tween asks for frames
+      const assembled = await landmarks(page), start = await page.evaluate(() => window.__clock.now());
+      await model.getByRole('button', { name: 'Explode', exact: true }).click();
+      await page.evaluate(ts => window.__clock.frame(ts), start - 3000);
+      assert.ok(gap(await landmarks(page), assembled) < 1e-6, `${name}: a first frame 3 s early keeps the closed pose`);
+      for (let t = start + 150; await page.evaluate(() => window.__clock.pending()) && t <= start + 2000; t += 150)
+        await page.evaluate(ts => { window.__clock.advance(150); window.__clock.frame(ts); }, t);
+      const open = await landmarks(page);
+      await page.evaluate(() => document.querySelector('cad-model').setExplode(1));
+      assert.ok(gap(open, await landmarks(page)) < 1e-9, `${name}: the tween finishes exactly at the open pose`);
+      assert.deepEqual(await page.evaluate(() => window.__clock.caught), [], `${name}: no frame threw`);
+      assert.deepEqual(errors, [], `${name}: no uncaught page error`);
+      console.log(`ok ${name}`); passed++;
+    } finally { await context.close(); }
+  }
 } finally { await browser.close(); await site.close(); }
-console.log(`model explode first frame: ${passed}/4 cases passed in ${engine.name()}`);
+console.log(`model explode first frame: ${passed}/5 cases passed in ${engine.name()}`);

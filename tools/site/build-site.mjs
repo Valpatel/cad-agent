@@ -880,6 +880,7 @@ await mkdir(path.join(out, 'site'), { recursive: true });
 await writeFile(path.join(out, 'site', 'nav.json'), JSON.stringify({ title: 'cad-agent', nav: [{ id: 'home', title: 'Home', href: '' },
   ...NAV.map(([h, t]) => ({ id: h.slice(1), title: t, href: h.slice(1) }))] }, null, 1) + '\n');
 await writeFile(path.join(out, '_redirects'), (await readFile(path.join(out, '_redirects'), 'utf8')) + '/site / 302\n/site/ / 302\n');
+await writeFile(path.join(out, 'version.json'), JSON.stringify({ revision, built: catalog.built, pages: pages.length, folder_maps: folderMapPages.length, items: catalog.items.length }, null, 2) + '\n');
 // What a shared link and an agent's first fetch need (#804, tools/site/compiler/site-checks.mjs): every page's card
 // tags are its own, the card picture is the size its tags say, and every address on this site in llms.txt is served.
 {
@@ -896,7 +897,6 @@ await writeFile(path.join(out, '_redirects'), (await readFile(path.join(out, '_r
       found.push(`${f}: ${p}`);
   if (found.length) throw new Error(`the built site:\n  ${found.slice(0, 40).join('\n  ')}${found.length > 40 ? `\n  … and ${found.length - 40} more` : ''}`);
 }
-await writeFile(path.join(out, 'version.json'), JSON.stringify({ revision, built: catalog.built, pages: pages.length, folder_maps: folderMapPages.length, items: catalog.items.length }, null, 2) + '\n');
 // For agents and the tests: which pages still have nothing to look at.
 const noVisual = [...visuals].filter(([, n]) => !n).map(([f]) => f).sort();
 await writeFile(path.join(out, 'visuals.json'), JSON.stringify({ pages: Object.fromEntries([...visuals].sort()), without: noVisual }, null, 2) + '\n');

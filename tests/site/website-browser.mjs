@@ -1501,18 +1501,36 @@ async function folderMapPhoneProblems(page, where) {
       const trace = await keyboardTraceStart(view);
       await view.focus();
       await page.keyboard.press('ArrowRight');
-      // Poll from the test process: page-context animation-frame polling misses native scrolling when
-      // application JavaScript is disabled. The same actual keyboard delta and time bound still apply.
-      let scrolled = true;
-      await expect.poll(() => view.evaluate(v => v.scrollLeft), { timeout: 1000 }).toBeGreaterThan(0).catch(() => { scrolled = false; });
-      if (!scrolled) {
+      const { verdict, polls } = await keyboardVerdict(view, trace.pageNow);
+      if (verdict === 'pending') problems.push(`${where}: the page did not answer for 30 s after ArrowRight`);
+      else if (verdict === 'still') {
         problems.push(`${where}: the focused diagram does not scroll with ArrowRight`);
-        await keyboardFailureEvidence(page, view, where, trace);
+        await keyboardFailureEvidence(page, view, where, { ...trace, polls });
       }
       await view.evaluate(v => { window.__cadKeyboardTrace?.stop(); delete window.__cadKeyboardTrace; v.scrollLeft = 0; v.blur(); });
     }
   }
   return problems;
+}
+
+/** Whether the focused view scrolled within 1000 ms of `from`, a time on the page's own clock (performance.now) read
+ * before the focus. Polled from the test process (page-context animation-frame polling misses native scrolling when
+ * application JavaScript is disabled), but the bound is the page's: a view that still reads 0 when the page itself is
+ * 1000 ms past `from` has not scrolled ('still'); one that reads more than 0 has ('scrolled'). Bounding the poll on the
+ * test process's clock instead also counted each reply's trip back: in WebKit, with the other lane's load, one evaluate
+ * took over 900 ms to answer, so the check failed although the page had scrolled within 40 ms (#719). A page that gives
+ * no answer for 30 s is 'pending', reported as its own finding rather than as a scroll it cannot show. */
+async function keyboardVerdict(view, from) {
+  let verdict = 'pending';
+  const polls = [];
+  await expect.poll(async () => {
+    const sent = Date.now(), s = await view.evaluate(v => ({ now: performance.now(), left: v.scrollLeft }));
+    from ??= s.now;   // no trace (its evaluate failed): the bound starts at the first answer
+    if (polls.length < 40) polls.push({ sent, received: Date.now(), pageMs: Math.round(s.now - from), left: s.left });
+    verdict = s.left > 0 ? 'scrolled' : s.now - from >= 1000 ? 'still' : 'pending';
+    return verdict;
+  }, { timeout: 30000, intervals: [100] }).not.toBe('pending').catch(() => {});
+  return { verdict, polls };
 }
 
 /** Failure evidence for the keyboard check above (#719); it never decides the result. Records the key, focus and scroll
@@ -1530,7 +1548,7 @@ function keyboardTraceStart(view) {
     for (const type of ['focusin', 'focusout']) window.addEventListener(type, log, { capture: true, signal });
     document.addEventListener('scroll', log, { capture: true, signal });   // scroll does not bubble; capture sees every scroller's
     window.__cadKeyboardTrace = { events, name, stop: () => controller.abort() };
-    return { at: new Date().toISOString(), active: name(document.activeElement), scrollLeft: v.scrollLeft, window: [scrollX, scrollY],
+    return { pageNow: performance.now(), at: new Date().toISOString(), active: name(document.activeElement), scrollLeft: v.scrollLeft, window: [scrollX, scrollY],
       tabindex: v.getAttribute('tabindex'), visualViewportScale: visualViewport?.scale ?? null, devicePixelRatio };
   }).catch(error => ({ error: error.message }));
 }
@@ -1576,7 +1594,7 @@ async function keyboardFailureEvidence(page, view, where, before) {
     const siteRevision = JSON.parse(await readFile(path.join(dir, 'version.json'), 'utf8')).revision;
     const after = await at();
     const receipt = { where, url: page.url(), engine: browser.browserType().name(), browserVersion: browser.version(), siteRevision,
-      helper: 'folderMapPhoneProblems keyboard check: focus, keyboard.press ArrowRight, poll scrollLeft > 0 for 1000 ms',
+      helper: 'folderMapPhoneProblems keyboard check: focus, keyboard.press ArrowRight, scrollLeft > 0 within 1000 ms of page time (keyboardVerdict)',
       before, atFailure, testProcessLag, movedLaterMs: lateMs, movedAfterRepaintMs: afterRepaintMs, after };
     const out = await mkdtemp(path.join(tmpdir(), 'cad-agent-diagram-keyboard-'));
     await writeFile(path.join(out, 'receipt.json'), JSON.stringify(receipt, null, 2) + '\n');

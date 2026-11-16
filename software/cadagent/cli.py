@@ -1434,15 +1434,25 @@ def dispatch(args: argparse.Namespace) -> int:
 
 PROJECT_HELP = "CAD project root containing cad-agent.yaml with a cad: section (default: cwd)"
 
+class _Version(argparse.Action):
+    """``--version``: one line, never wrapped to the terminal (argparse's own action wraps a long path)."""
+
+    def __init__(self, option_strings, dest=argparse.SUPPRESS, default=argparse.SUPPRESS, help=None):
+        super().__init__(option_strings, dest=dest, default=default, nargs=0, help=help)
+
+    def __call__(self, parser, namespace, values, option_string=None):
+        import cadagent
+        print(f"cad-agent {cadagent.__version__} ({Path(cadagent.__file__).resolve().parent})")
+        parser.exit()
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="cad-agent",
         description="CAD design verification: build, check, report, package (docs/toolkit.md)",
     )
     parser.add_argument("--project", default=None, help=PROJECT_HELP)
-    import cadagent
-    parser.add_argument("--version", action="version", help="print the version and where this cad-agent runs from",
-                        version=f"cad-agent {cadagent.__version__} ({Path(cadagent.__file__).resolve().parent})")
+    parser.add_argument("--version", action=_Version, help="print the version and where this cad-agent runs from")
     # also accepted after the subcommand; SUPPRESS keeps it from resetting the parent's value
     common = argparse.ArgumentParser(add_help=False)
     common.add_argument("--project", default=argparse.SUPPRESS, help=PROJECT_HELP)

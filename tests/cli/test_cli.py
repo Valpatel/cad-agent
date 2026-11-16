@@ -56,10 +56,11 @@ def test_parser_exposes_every_subcommand():
     assert (args.port, args.host) == (8123, "0.0.0.0")
     assert parser.parse_args(["report", "--open"]).open is True
 
-def test_version_and_each_command_help_say_what_they_are(capsys):
-    """`cad-agent --version` prints the version and where it runs from; `<command> --help` opens with the line the
-    command list shows (#799: view, site and serve had none)."""
+def test_version_and_each_command_help_say_what_they_are(capsys, monkeypatch):
+    """`cad-agent --version` prints the version and where it runs from, on one line however narrow the terminal;
+    `<command> --help` opens with the line the command list shows (#799: view, site and serve had none)."""
     import cadagent
+    monkeypatch.setenv("COLUMNS", "40")
     with pytest.raises(SystemExit) as stop:
         main(["--version"])
     assert stop.value.code == 0

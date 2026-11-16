@@ -151,7 +151,9 @@ export async function homepageModelProblems(browser, base) {
       if (attempts === 1) { await firstGate; return route.fulfill({status:503,body:'deliberate loader failure'}); }
       await retryGate; return route.continue();
     });
-    await page.goto(base+'/',{waitUntil:'networkidle'});
+    // The load event, not network idle: the viewers may now start loading on their own, and the held first j501.bin
+    // request would keep the network busy until this check releases it.
+    await page.goto(base+'/',{waitUntil:'load'});
     // Since #748 the viewers lead "See it run" just under the hero, so on a tall desktop screen they are within the
     // viewer's own 300px look-ahead and may load. They must never compete with the first paint: nothing before the
     // load event, and nothing at all while they are still further below the first screen than that look-ahead.

@@ -3,7 +3,8 @@
 #
 # Download the pinned installer, verify its SHA-256, then run it:
 #   https://cad-agent.valpatel.com/docs/agent-workflow#install
-# Options after download: sh install.sh --extras fea,sim --ref v0.26.0
+# Options after download: sh install.sh --extras fea,sim --ref v0.26.0 (or CAD_AGENT_EXTRAS, CAD_AGENT_REF set first);
+# --uninstall, or CAD_AGENT_UNINSTALL=1, removes the command and the skill links.
 #
 # What it does, and nothing else:
 #   1. needs git; installs uv (astral.sh, the version pinned below) into ~/.local/bin if it is missing, without
@@ -17,9 +18,9 @@
 #      can't use yet.
 # Running it again updates, with `cad-agent update`, which does the same steps. No sudo. cad-agent collects no
 # telemetry, and this script turns usage reporting off for what it starts. Nothing is written outside ~/cad-agent,
-# uv's own folders (~/.local/bin, ~/.local/share/uv, ~/.cache/uv), the skill folders (~/.claude/skills,
-# ~/.agents/skills) and the subagent folder (~/.claude/agents); outside them, it only removes the kit's own old links
-# from the Codex skills folder above.
+# uv's own folders (~/.local/bin, ~/.local/share/uv, ~/.cache/uv, and ~/.config/uv for uv's install receipt), the skill
+# folders (~/.claude/skills, ~/.agents/skills) and the subagent folder (~/.claude/agents); outside them, it only removes
+# the kit's own old links from the Codex skills folder above. The first install downloads about 1.7 GB of packages.
 #
 # Everything is inside main(), called on the last line, so a download cut short runs nothing.
 
@@ -34,7 +35,8 @@ usage() {
     say "install or update cad-agent: clone ~/cad-agent, install the command with uv, link the agent skills"
     say "  sh install.sh [--ref <tag or branch>] [--extras <a,b>] [--dir <path>] [--uninstall]"
     say "  --extras: fea (strength), sim (airflow, topology, renders), robot (URDF, MuJoCo), explore (search),"
-    say "            site; cad is always included. The same as CAD_AGENT_REF, CAD_AGENT_EXTRAS, CAD_AGENT_DIR."
+    say "            site; cad is always included. The same as CAD_AGENT_REF, CAD_AGENT_EXTRAS, CAD_AGENT_DIR and"
+    say "            CAD_AGENT_UNINSTALL=1."
     say "  Run it again to update: the same steps as \`cad-agent update\`."
 }
 
@@ -59,7 +61,7 @@ main() {
     dir="${CAD_AGENT_DIR:-$HOME/cad-agent}"
     ref="${CAD_AGENT_REF:-}"
     extras="${CAD_AGENT_EXTRAS:-}"
-    uninstall=""
+    case "${CAD_AGENT_UNINSTALL:-}" in ""|0) uninstall="" ;; *) uninstall=1 ;; esac
     while [ $# -gt 0 ]; do
         case "$1" in
             --ref) [ $# -ge 2 ] || die "--ref needs a tag or branch"; ref="$2"; shift 2 ;;
@@ -91,6 +93,7 @@ main() {
         if command -v cad-agent >/dev/null 2>&1; then cad-agent agents uninstall || true; fi
         if command -v uv >/dev/null 2>&1; then uv tool uninstall cad-agent || true; fi
         say "removed the cad-agent command and its skill links; the checkout stays in $dir (delete it if you want)"
+        say "uv stays in $bin, with its cache and Pythons: see https://docs.astral.sh/uv/getting-started/installation/#uninstallation"
         return 0
     fi
 
@@ -129,14 +132,16 @@ main() {
             say "cloning $repo into $dir"
             git clone --quiet --depth 1 --branch "${ref:-main}" "$repo" "$dir"
         fi
-        say "installing the cad-agent command (uv tool install --editable, Python 3.12)"
+        say "installing the cad-agent command (uv tool install --editable, Python 3.12; the first time, about 1.7 GB)"
         uv tool install --quiet --force --editable --python 3.12 "${dir}[cad${extras:+,$extras}]"
         cad-agent agents install || say "some skills were left alone (see above); the rest are installed"
     fi
 
     say "done: cad-agent $(git -C "$dir" describe --tags --always 2>/dev/null || true) in $dir"
-    [ -n "$on_path" ] ||
-        say "$bin is not on your PATH yet: run \`uv tool update-shell\` and open a new terminal (or call $bin/cad-agent)"
+    if [ -z "$on_path" ]; then
+        say "$bin is not on your PATH yet. In this terminal: export PATH=\"$bin:\$PATH\" (or call $bin/cad-agent);"
+        say "  for new terminals: \"$(command -v uv)\" tool update-shell, then open a new terminal"
+    fi
     say "next: paste this into your AI agent, followed by what you want made:"
     printf '\n  Install cad-agent from https://cad-agent.valpatel.com/llms.txt, then use it for:\n\n'
 }

@@ -20,7 +20,7 @@
 # collects no telemetry, and this script turns usage reporting off for what it starts. Nothing is written outside
 # ~\cad-agent, uv's own folders (~\.local\bin, %APPDATA%\uv, %LOCALAPPDATA%\uv), the skill folders
 # (~\.claude\skills, ~\.agents\skills) and the subagent folder (~\.claude\agents); outside them, it only removes
-# the kit's own old entries from the Codex skills folder above.
+# the kit's own old entries from the Codex skills folder above. The first install downloads about 1.7 GB of packages.
 #
 # Everything is inside Install-CadAgent, called on the last line, so a download cut short runs nothing.
 
@@ -58,10 +58,11 @@ function Install-CadAgent {
     $onPath = ($env:Path -split ';') -contains $bin
     $env:Path = "$bin;$env:Path"
 
-    if ($env:CAD_AGENT_UNINSTALL) {
+    if ($env:CAD_AGENT_UNINSTALL -and $env:CAD_AGENT_UNINSTALL -ne '0') {
         if (Get-Command cad-agent -ErrorAction SilentlyContinue) { & cad-agent agents uninstall }
         if (Get-Command uv -ErrorAction SilentlyContinue) { & uv tool uninstall cad-agent }
         Say "removed the cad-agent command and its skills; the checkout stays in $dir (delete it if you want)"
+        Say "uv stays in $bin, with its cache and Pythons: see https://docs.astral.sh/uv/getting-started/installation/#uninstallation"
         return
     }
 
@@ -132,14 +133,17 @@ function Install-CadAgent {
             $branch = if ($ref) { $ref } else { 'main' }
             Invoke-Native git clone --quiet --depth 1 --branch $branch $repo $dir
         }
-        Say 'installing the cad-agent command (uv tool install --editable, Python 3.12)'
+        Say 'installing the cad-agent command (uv tool install --editable, Python 3.12; the first time, about 1.7 GB)'
         Invoke-Native uv tool install --quiet --force --editable --python 3.12 $spec
         & cad-agent agents install
         if ($LASTEXITCODE -gt 1) { throw "cad-agent: cad-agent agents install failed (exit $LASTEXITCODE)" }
     }
 
     Say "done: cad-agent $(& git -C $dir describe --tags --always) in $dir"
-    if (-not $onPath) { Say "$bin is not on your PATH yet: run ``uv tool update-shell`` and open a new terminal (or call $bin\cad-agent.exe)" }
+    if (-not $onPath) {
+        Say "$bin is not on your PATH yet. In this PowerShell: `$env:Path = `"$bin;`$env:Path`" (or call $bin\cad-agent.exe);"
+        Say "  for new terminals: & `"$((Get-Command uv).Source)`" tool update-shell, then open a new terminal"
+    }
     Say 'next: paste this into your AI agent, followed by what you want made:'
     Write-Host ''
     Write-Host '  Install cad-agent from https://cad-agent.valpatel.com/llms.txt, then use it for:'

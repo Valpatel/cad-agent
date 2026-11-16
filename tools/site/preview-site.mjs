@@ -103,10 +103,11 @@ function track(server) {
     if (record.requests.length > MAX_RECORDS) prune();
     const writeHead = res.writeHead;
     res.writeHead = function (status, ...rest) { Object.assign(r, { status, headersAt: Date.now() }); return writeHead.call(this, status, ...rest); };
-    // 'finish' means Node has handed the whole response to the socket, not that the kernel or the client took it.
-    // unsentBytes: what Node still held in the socket's buffer then (large bodies to a slow reader, or a client that
-    // stopped reading); socketBytesWritten: what the socket had passed to the kernel. A socket already destroyed
-    // at 'finish' never delivered the rest: that response is marked aborted.
+    // 'finish' means Node is done with the response, not that the client read it. A client that resets while part of
+    // the body is still buffered in Node still gets 'finish', on a socket already destroyed: that response is marked
+    // aborted (socketDestroyed; unsentBytes is what Node still held, socketBytesWritten counts buffered bytes too).
+    // A client that resets without reading a body the kernel's buffers took whole (256 KB on loopback) cannot be
+    // seen here: it is recorded as finished.
     res.on('finish', () => {
       Object.assign(r, { finishedAt: Date.now(), socketBytesWritten: req.socket.bytesWritten, unsentBytes: req.socket.writableLength,
         socketDestroyed: req.socket.destroyed });
@@ -184,8 +185,10 @@ const server = createServer(async (req, res) => {
 // after keepAliveTimeout (5 s) plus keepAliveTimeoutBuffer (1 s); a client that reuses its pooled socket at that
 // moment writes into a closing socket and gets "socket hang up" or ECONNRESET: measured against this server with
 // Playwright's request context (the agent route.fetch uses), 13 of 1,000 reuses 5,994 to 6,006 ms after the last
-// response failed so. 0 turns the idle timeout off, so the server never starts that close. Keep-alive stays on
-// (unlike "Connection: close"), so browsers and clients reuse connections as they do against Pages.
+// response failed so. 0 turns the idle timeout off, so the server never starts that close on a socket that has served
+// a request. A socket that connects and sends nothing (or only part of a request) is still closed after
+// headersTimeout (60 s; a partial request gets a 408), as before. Keep-alive stays on (unlike "Connection: close"),
+// so browsers and clients reuse connections as they do against Pages.
 server.keepAliveTimeout = 0;
 if (process.argv[1] === import.meta.filename) {
   if (process.send) track(server);

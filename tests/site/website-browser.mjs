@@ -16,7 +16,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { chromium, webkit, expect } from './npm-context.mjs';
 import { builtSite } from './built-site.mjs';
-import { configureNavigation, fetchThrough, navigate, navigationFailure, ownContexts, partHandler, runPart } from './navigation.mjs';
+import { configureNavigation, fetchThrough, inLanes, navigate, navigationFailure, ownContexts, partHandler } from './navigation.mjs';
 import { folderMapPath } from '../../tools/site/publication.mjs';
 import { reducedHeroProblems, repositoryHeroProblems, homepageModelProblems, learningPictureProblems, homepageLateDrawProblems, resultImageMotionProblems } from './layout/motion.mjs';
 import { outlineEntryState, scrollOutline, sameSectionOutlineProblems, readerBoundaryProblems, readerOutlineClickProblems, readerOverflowProblems } from './layout/outline.mjs';
@@ -53,7 +53,7 @@ const browser = await engine.launch(launchOptions);
 // Every navigation below goes through navigate (tests/site/navigation.mjs, #686): a failed one keeps the browser's and
 // the preview server's record, and becomes a finding of its part (runPart, in inLanes) instead of ending the run.
 ownContexts(browser);
-configureNavigation({ serverEvidence: previewServerEvidence, testLag });
+configureNavigation({ serverEvidence: previewServerEvidence, testLag, fullEvidenceLimit: 5 });
 // A reference area page (#323): the one route with the records' charts, table and filters (a small area, so the
 // theme part's text walk stays short; the walls part measures every reference page).
 const REFS = '/references/laser-cutting';
@@ -62,7 +62,7 @@ const ROUTES = ['/', '/explore', '/catalog', '/docs/compliant', '/docs/toolkit',
 // /kit/model/viewer is the kit's project viewer: it needs a project's exports/view/view.json, so it is not a site page.
 // The most a page with a diagram may move while it loads (#132; Google calls a page good under 0.1).
 const DIAGRAM_SHIFT = 0.05;
-// How many parts of this test (inLanes, below) run at once, each in its own pages: two keep a 4-CPU CI runner busy
+// How many parts of this test (inLanes, tests/site/navigation.mjs) run at once, each in its own pages: two keep a 4-CPU CI runner busy
 // without starving the checks that watch animations and scrolling.
 const LANES = 2;
 // The planted navigation stall (navigationStallControl, below): its part's name, its timeout, and what it saw.
@@ -102,7 +102,7 @@ try {
     const sources = ((await readFile(path.join(dir, rel), 'utf8')).match(/class="language-mermaid"|<pre class="mermaid"|<figure class="cad-diagram"/g) || []).length;
     if (sources) diagramPages.push(['/' + rel.replace(/\.html$/, '').split(path.sep).join('/'), sources]);
   }
-  // Each part opens its own pages and returns what it found. LANES of them run at once (inLanes, below), and their
+  // Each part opens its own pages and returns what it found. LANES of them run at once (inLanes, tests/site/navigation.mjs), and their
   // problems are listed in this order whatever finishes first.
   const parts = [
     // First, so every later part shows that a stalled navigation no longer ends the run (stallControlProblems, below).
@@ -785,7 +785,7 @@ try {
       return problems;
     }],
   ];
-  const { found, finished } = await inLanes(parts);
+  const { found, finished } = await inLanes(parts, { lanes: LANES, label: engine.name() });
   problems.push(...await stallControlProblems(parts, found, finished));
   for (const [i, list] of found.entries()) if (parts[i][0] !== STALL_CONTROL) problems.push(...list);
   assert.deepEqual(problems, []);
@@ -1070,29 +1070,6 @@ async function fontReadyProblems(covered) {
   return out;
 }
 
-/** Run `parts` ([name, async () => problems]) LANES at a time, in the order given, and return their problems in that
- * order, with which parts finished. The log gives each part's time, so a slow one is easy to find. A part that ends on
- * a failed navigation reports it as its finding and the run goes on (runPart, tests/site/navigation.mjs); a part that
- * throws anything else fails the run once the parts already started have finished, so no page is closed under a
- * part still using it. */
-async function inLanes(parts) {
-  const found = parts.map(() => []), took = parts.map(() => 0), finished = parts.map(() => false), errors = [], start = Date.now();
-  let next = 0;
-  const lane = async () => {
-    while (next < parts.length && !errors.length) {
-      const i = next++, t = Date.now();
-      console.log(`${engine.name()}: starting ${parts[i][0]}`);
-      try { found[i] = await runPart(parts[i][0], parts[i][1]); finished[i] = true; } catch (e) { errors.push(e); }
-      took[i] = Math.round((Date.now() - t) / 1000);
-      console.log(`${engine.name()}: finished ${parts[i][0]} in ${took[i]} s; ${found[i].length} findings, ${errors.length} errors so far`);
-    }
-  };
-  await Promise.all(Array.from({ length: LANES }, lane));
-  console.log(`${engine.name()}: ${parts.length} parts, ${LANES} at a time, in ${Math.round((Date.now() - start) / 1000)} s: ${parts.map(([name], i) => `${name} ${took[i]} s`).join(', ')}`);
-  if (errors.length) throw errors[0];
-  return { found, finished };
-}
-
 /** The planted stall (#686): a server that accepts the connection and never answers, reached with a short timeout
  * passed for this control only, so it costs seconds, not 30. First a stall with a fault planted in the evidence
  * collection (the original error must still come back, with the fault recorded), then the stall itself, left to end
@@ -1114,7 +1091,7 @@ async function navigationStallControl() {
   const context = stallControl.context = await browser.newContext({ viewport: { width: 360, height: 800 }, javaScriptEnabled: false });
   const page = await context.newPage();
   let caught;
-  try { await navigate(page, held + '?fault=planted', { waitUntil: 'load', timeout: STALL_MS }, { where: 'planted evidence fault', plantEvidenceFault: true }); }
+  try { await navigate(page, held + '?fault=planted', { waitUntil: 'load', timeout: STALL_MS }, { where: 'planted evidence fault', plantEvidenceFault: true, planted: true }); }
   catch (error) { caught = error; }
   const fault = navigationFailure(caught);
   // A test-side fetch that fails (route.fetch: socket hang up, #686): the part must report it and go on. The page's
@@ -1123,13 +1100,13 @@ async function navigationStallControl() {
   const hangup = stallControl.fetchURL = `http://127.0.0.1:${hold.address().port}/fetch-control/hangup`;
   const fetcher = await context.newPage();
   await fetcher.route(hangup, partHandler(async route => { await fetchThrough(route); stallControl.problems.push('the planted fetch hang-up was answered'); }));
-  try { await navigate(fetcher, hangup, { waitUntil: 'load', timeout: STALL_MS }, { where: 'planted fetch hang-up' }); } catch { /* expected */ }
+  try { await navigate(fetcher, hangup, { waitUntil: 'load', timeout: STALL_MS }, { where: 'planted fetch hang-up', planted: true }); } catch { /* expected */ }
   if (caught?.name !== 'TimeoutError' || !caught.message.startsWith(`page.goto: Timeout ${STALL_MS}ms exceeded`) || fault?.error !== caught)
     stallControl.problems.push(`a fault in the evidence replaced or lost the original navigation error: ${String(caught?.message).split('\n')[0]}`);
   else if (!/planted evidence-collection fault/.test(fault.evidence?.evidenceError ?? '') || !fault.receipt)
     stallControl.problems.push('a fault in the evidence was not recorded in a receipt');
   // The stall itself, not caught here: the part must end on it and report it.
-  await navigate(page, held, { waitUntil: 'load', timeout: STALL_MS }, { where: 'planted navigation stall, 360px, JavaScript disabled', viewport: { width: 360, height: 800 }, javaScriptEnabled: false });
+  await navigate(page, held, { waitUntil: 'load', timeout: STALL_MS }, { where: 'planted navigation stall, 360px, JavaScript disabled', viewport: { width: 360, height: 800 }, javaScriptEnabled: false, planted: true });
   stallControl.problems.push('the planted navigation stall loaded');
   return [];
 }
@@ -1823,7 +1800,7 @@ async function diagramNavigationControl() {
           await gate;
           await route.continue().catch(() => {}); // the owned context is closed after the expected navigation failure
         });
-        await navigate(page, base + '/docs/style-guide?navigation-control=held', { waitUntil: 'load', timeout: 3000 }, { where: '360px dark /docs/style-guide, JavaScript disabled', viewport: { width: 360, height: 800 }, javaScriptEnabled: false });
+        await navigate(page, base + '/docs/style-guide?navigation-control=held', { waitUntil: 'load', timeout: 3000 }, { where: '360px dark /docs/style-guide, JavaScript disabled', viewport: { width: 360, height: 800 }, javaScriptEnabled: false, planted: true });
       });
     } catch (error) { caught = error; }
     const record = navigationFailure(caught), evidence = record?.evidence;

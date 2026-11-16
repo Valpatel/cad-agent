@@ -157,3 +157,35 @@ test('a record bound below one is held at one',{timeout:30000},async()=>{
     assert.equal(record.record.maxRecords,1);assert.equal(record.matching.length,1);
   } finally {server?.kill();await rm(dir,{recursive:true,force:true});}
 });
+
+// What 'aborted' can and cannot say (#686 review of #782): a client that resets while the body is still buffered in Node
+// gets 'finish' on a destroyed socket and is recorded aborted; one that resets without reading a body the kernel's
+// buffers took whole is still recorded as finished, because Node cannot see it.
+test('a client that resets unread is aborted while the body is still in Node, and finished once the kernel took it',{timeout:60000},async()=>{
+  const dir=await mkdtemp(path.join(os.tmpdir(),'cad-agent-preview-abort-'));
+  let server;
+  try {
+    await writeFile(path.join(dir,'huge.html'),Buffer.alloc(64*1024*1024,'x'));   // more than loopback buffers hold
+    await writeFile(path.join(dir,'small.html'),Buffer.alloc(256*1024,'x'));      // less
+    server=spawn(process.execPath,[path.resolve(import.meta.dirname,'../../tools/site/preview-site.mjs'),'--dir',dir,'--port','0'],{stdio:['pipe','pipe','inherit','ipc']});
+    const base=await new Promise((resolve,reject)=>{server.stdout.on('data',data=>{const url=String(data).match(/http:\/\/[\d.]+:\d+/);if(url)resolve(url[0]);});server.once('exit',code=>reject(new Error(`preview exited ${code}`)));});
+    const ask=(pathname,since)=>new Promise(resolve=>{const id=Math.random();server.on('message',function on(m){if(m.id===id){server.off('message',on);resolve(m);}});server.send({type:'preview-evidence',id,path:pathname,since});});
+    const since=Date.now(), port=new URL(base).port;
+    const unread=async(pathname,ready)=>{
+      const socket=net.connect(port,'127.0.0.1');socket.pause();socket.on('error',()=>{});
+      socket.write(`GET ${pathname} HTTP/1.1\r\nHost: x\r\n\r\n`);
+      for(const until=Date.now()+10000;!ready((await ask(pathname,since)).matching[0]);await new Promise(r=>setTimeout(r,20)))
+        assert(Date.now()<until,`${pathname} never reached the state to reset in`);
+      socket.resetAndDestroy();
+      let r;
+      for(const until=Date.now()+10000;!(r=(await ask(pathname,since)).matching[0])?.closedAt;await new Promise(r=>setTimeout(r,20)))
+        assert(Date.now()<until,`the server never recorded the reset of ${pathname}`);
+      return r;
+    };
+    const huge=await unread('/huge',r=>r?.headersAt);
+    assert.equal(huge.aborted,true,JSON.stringify(huge));
+    if(huge.finishedAt)assert.equal(huge.socketDestroyed,true,`'finish' on the reset socket: ${JSON.stringify(huge)}`);
+    const small=await unread('/small',r=>r?.finishedAt);
+    assert(small.finishedAt&&small.aborted===undefined,`the stated limit: an unread body the kernel took is recorded finished ${JSON.stringify(small)}`);
+  } finally {server?.kill();await rm(dir,{recursive:true,force:true});}
+});

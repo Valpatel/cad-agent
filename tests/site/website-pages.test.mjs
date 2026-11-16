@@ -329,7 +329,7 @@ test('a disconnected page and unavailable receipt directory never mask the origi
 });
 
 // #686: the suite's one navigation function and the part boundary that turns its failure into a finding.
-import { fetchThrough, navigate, navigationFailure, ownContexts, partHandler, runPart } from './navigation.mjs';
+import { configureNavigation, fetchThrough, inLanes, navigate, navigationFailure, ownContexts, partHandler, runPart } from './navigation.mjs';
 
 test('shared navigation passes the call site\'s exact arguments and does nothing else on success', async t => {
   const page = new ReaderProbePage(), response = {}, args = [];
@@ -413,6 +413,41 @@ test('a test-side fetch that fails in a route handler is its part\'s finding, it
   assert.equal(lines.filter(line => line.startsWith('Fetch failure evidence: ')).length, 1);
   const other = new Error('a handler bug');
   await assert.rejects(partHandler(async () => { throw other; })(route), error => error === other);
+  // Made outside any part, nothing records the failure: the handler must not swallow it.
+  const unowned = new Error('route.fetch: socket hang up');
+  const lost = { ...route, fetch: async () => { throw unowned; } };
+  await assert.rejects(partHandler(async r => { await fetchThrough(r); })(lost), error => error === unowned);
+  t.after(() => rm(navigationFailure(unowned)?.receipt ?? path.join(tmpdir(), 'none'), { recursive: true, force: true }));
+});
+
+test('a stall in one part is still printed when another part throws an ordinary error', async t => {
+  const lines = []; t.mock.method(console, 'log', text => lines.push(String(text)));
+  const page = new ReaderProbePage(), stalled = new Error('page.goto: Timeout 30000ms exceeded.\nCall log:\n  - navigating to "http://localhost/docs/toolkit", waiting until "load"');
+  page.navigate = () => { throw stalled; };
+  const ordinary = new Error('an assertion in another part');
+  await assert.rejects(inLanes([
+    ['fold', () => navigate(page, 'http://localhost/docs/toolkit')],
+    ['theme', async () => { await new Promise(r => setTimeout(r, 50)); throw ordinary; }],
+  ], { lanes: 2, label: 'test' }), error => error === ordinary);
+  t.after(() => rm(navigationFailure(stalled).receipt, { recursive: true, force: true }));
+  const log = lines.join('\n');
+  assert.match(log, /Navigation failure evidence: .*"error":"page\.goto: Timeout 30000ms exceeded\."/);
+  assert.match(log, /a part threw, so the run stops; 1 finding\(s\)[^]*- fold: a navigation failed, so this part stopped there: page\.goto: Timeout 30000ms exceeded\./);
+});
+
+test('after the run\'s first failures, a failed navigation keeps only its evidence line', async t => {
+  t.after(() => configureNavigation());
+  configureNavigation({ fullEvidenceLimit: 1 });
+  t.mock.method(console, 'log', () => {});
+  const failing = () => { const page = new ReaderProbePage(), error = new Error('page.goto: Timeout 30000ms exceeded.'); page.navigate = () => { throw error; }; return [page, error]; };
+  const [first, firstError] = failing(), [second, secondError] = failing(), [planted, plantedError] = failing();
+  for (const [page, error, diag] of [[first, firstError, {}], [second, secondError, {}], [planted, plantedError, { planted: true }]])
+    await assert.rejects(navigate(page, 'http://localhost/docs/toolkit', undefined, diag), e => e === error);
+  t.after(() => Promise.all([firstError, plantedError].map(e => rm(navigationFailure(e).receipt, { recursive: true, force: true }))));
+  assert.ok(navigationFailure(firstError).receipt); assert.equal(first.imageOptions?.type, 'png');
+  assert.equal(navigationFailure(secondError).receipt, null); assert.equal(second.domCalls, undefined); assert.equal(second.imageOptions, undefined);
+  assert.match(navigationFailure(secondError).evidence.fullEvidence, /^skipped: the first 1 failures/);
+  assert.ok(navigationFailure(plantedError).receipt, 'a planted control always keeps its evidence');
 });
 
 // #663: the prior filtered sample was internally consistent before the resized layout arrived.

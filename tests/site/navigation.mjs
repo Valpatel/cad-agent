@@ -22,10 +22,17 @@ import path from 'node:path';
 
 const parts = new AsyncLocalStorage();
 const failures = new WeakMap();   // the original error -> { error, evidence, receipt }
-let sources = {};                 // { serverEvidence(pathname, since), testLag: [{ at, lateMs }] }
+let sources = {};                 // { serverEvidence(pathname, since), testLag: [{ at, lateMs }], fullEvidenceLimit }
+let fullEvidenceKept = 0;
 
-/** The preview server's record and this process's lag, which only the suite's entry point can reach. */
-export function configureNavigation({ serverEvidence, testLag } = {}) { sources = { serverEvidence, testLag }; }
+/** The preview server's record and this process's lag, which only the suite's entry point can reach, and how many
+ * failures in a run keep full evidence (DOM, screenshot and receipt): after that, only the evidence line, with the
+ * browser's and the server's record. A part that goes on after each failed navigation (wide layouts catches each of
+ * its 40) cannot then keep 40 screenshots. Planted controls and probes that bring their own folder do not count. */
+export function configureNavigation({ serverEvidence, testLag, fullEvidenceLimit = Infinity } = {}) {
+  sources = { serverEvidence, testLag, fullEvidenceLimit };
+  fullEvidenceKept = 0;
+}
 
 /** URLs as the receipts keep them: origin and path, no credentials, query or fragment. */
 export const cleanURL = value => {
@@ -60,8 +67,9 @@ function domSnapshot() {
 
 /** `page.goto(url, options)`, and on failure the evidence of both sides before the original error is rethrown.
  * `diag`: `where` (which iteration, for people), `viewport` and `javaScriptEnabled` (as the caller set them),
- * `evidence` (a folder for the receipt instead of a new /tmp/cad-agent-navigation-*), and `plantEvidenceFault`
- * (the planted control's fault inside the evidence collection). */
+ * `evidence` (a folder for the receipt instead of a new /tmp/cad-agent-navigation-*), `planted` (a planted control:
+ * always full evidence, not counted against fullEvidenceLimit) and `plantEvidenceFault` (the planted control's fault
+ * inside the evidence collection). */
 export async function navigate(page, url, options, diag = {}) {
   const began = Date.now(), pending = new Map(), active = new WeakSet(), listeners = [];
   const events = { responses: [], failed: [], console: [], pageerror: [], lifecycle: [], committed: [], observerErrors: [] };
@@ -115,6 +123,8 @@ async function keepEvidence(error, kept, { page, url, options, diag, began, pend
   if (diag.viewport !== undefined) evidence.viewport = diag.viewport;
   if (diag.javaScriptEnabled !== undefined) evidence.javaScriptEnabled = diag.javaScriptEnabled;
   let folder = diag.evidence;
+  const full = diag.planted || diag.evidence !== undefined || ++fullEvidenceKept <= (sources.fullEvidenceLimit ?? Infinity);
+  if (!full) evidence.fullEvidence = `skipped: the first ${sources.fullEvidenceLimit} failures in this run kept theirs`;
   try {
     if (diag.plantEvidenceFault) throw new Error('planted evidence-collection fault');
     evidence.currentURL = '[unavailable URL]';
@@ -132,24 +142,30 @@ async function keepEvidence(error, kept, { page, url, options, diag, began, pend
       evidence.testProcessLag = lag ? { maxMs: Math.max(0, ...lag.map(l => l.lateMs)), samplesOver20ms: lag.slice(-10) }
         : { unavailable: 'no test-process lag record configured' };
     } catch (fault) { evidence.testProcessLag = { unavailable: cleanText(fault.message) }; }
-    try { folder ??= await mkdtemp(path.join(tmpdir(), 'cad-agent-navigation-')); }
-    catch (fault) { evidence.captureErrors.push('receipt folder: ' + cleanText(fault.message)); }
+    if (full) {
+      try { folder ??= await mkdtemp(path.join(tmpdir(), 'cad-agent-navigation-')); }
+      catch (fault) { evidence.captureErrors.push('receipt folder: ' + cleanText(fault.message)); }
+    }
     // The DOM, a screenshot and the server's record at once, each bounded, so the whole costs about two seconds.
     const server = sources.serverEvidence
       ? bounded(() => sources.serverEvidence(new URL(url).pathname, began - 1000), 2500, 'server record')
       : Promise.resolve({ unavailable: 'no preview server record configured' });
+    const skipped = Promise.reject(new Error('not taken: full evidence skipped'));
+    skipped.catch(() => {});
     const [dom, png, record] = await Promise.allSettled([
-      bounded(() => page.evaluate(domSnapshot), 1000, 'diagnostic capture'),
-      bounded(() => page.screenshot({ type: 'png', fullPage: false, timeout: 1000 }), 1000, 'diagnostic capture'),
+      full ? bounded(() => page.evaluate(domSnapshot), 1000, 'diagnostic capture') : skipped,
+      full ? bounded(() => page.screenshot({ type: 'png', fullPage: false, timeout: 1000 }), 1000, 'diagnostic capture') : skipped,
       server]);
-    if (dom.status === 'fulfilled') {
+    if (!full) { /* the DOM and screenshot were not taken */ }
+    else if (dom.status === 'fulfilled') {
       evidence.dom = dom.value;
       try { evidence.dom.styles = evidence.dom.styles?.map(({ href, ...sheet }) => ({ ...sheet, href: href ? cleanURL(href) : null, path: href ? new URL(href).pathname : null })); }
       catch (fault) { evidence.captureErrors.push('DOM styles: ' + cleanText(fault.message)); }
       try { evidence.dom.images = evidence.dom.images?.map(({ href, ...image }) => ({ ...image, href: cleanURL(href) })); }
       catch (fault) { evidence.captureErrors.push('DOM images: ' + cleanText(fault.message)); }
     } else evidence.captureErrors.push('DOM: ' + cleanText(dom.reason?.message));
-    if (png.status === 'rejected') evidence.captureErrors.push('screenshot: ' + cleanText(png.reason?.message));
+    if (!full) { /* no screenshot */ }
+    else if (png.status === 'rejected') evidence.captureErrors.push('screenshot: ' + cleanText(png.reason?.message));
     else if (png.value.length > 2 * 1024 * 1024) evidence.captureErrors.push('screenshot exceeded 2 MiB; not retained');
     else if (folder) {
       try { await writeFile(path.join(folder, 'navigation-failure.png'), png.value); evidence.screenshot = 'navigation-failure.png'; }
@@ -163,7 +179,8 @@ async function keepEvidence(error, kept, { page, url, options, diag, began, pend
   } catch (fault) { evidence.evidenceError = cleanText(fault?.stack || fault); }
   // The browser's record as it stands after the captures (a late response still counts); elapsedMs stays the failure's.
   evidence.pendingCount = pendingCount(); evidence.pending = pendingNow(); evidence.counts = { ...counts }; evidence.events = events;
-  try {
+  if (!full) evidence.receipt = null;
+  else try {
     folder ??= await mkdtemp(path.join(tmpdir(), 'cad-agent-navigation-'));
     evidence.receipt = folder;
     await writeFile(path.join(folder, 'navigation-failure.json'), JSON.stringify(evidence, null, 2) + '\n');
@@ -177,7 +194,7 @@ async function keepEvidence(error, kept, { page, url, options, diag, began, pend
 function evidenceLine(e) {
   const s = e.server ?? {}, at = r => ({ id: r.id, receivedMs: r.receivedAt - e.began, status: r.status ?? null,
     headersMs: r.headersAt ? r.headersAt - r.receivedAt : null, finishedMs: r.finishedAt ? r.finishedAt - r.receivedAt : null, socket: r.socket?.id ?? r.socket });
-  return { part: e.part, where: e.where, url: e.url, waitUntil: e.waitUntil, elapsedMs: e.elapsedMs, engine: e.engine,
+  return { part: e.part, where: e.where, url: e.url, error: e.error.message.split('\n')[0], waitUntil: e.waitUntil, elapsedMs: e.elapsedMs, engine: e.engine,
     currentURL: e.currentURL, committed: e.committed, pendingCount: e.pendingCount,
     pendingDocuments: e.pending.filter(r => r.type === 'document').map(r => ({ url: r.url, ageMs: r.ageMs, status: r.status ?? null })),
     failed: e.events.failed.length, testLagMaxMs: e.testProcessLag?.maxMs ?? null,
@@ -185,7 +202,7 @@ function evidenceLine(e) {
       matchingFirst: s.matchingFirst?.map(at), matchingLast: s.matching?.slice(-3).map(at), requests: s.window?.requests,
       unanswered: s.window?.unanswered?.length, unfinished: s.window?.unfinished,
       socketsWithoutRequest: s.window?.socketsWithoutRequest?.length, lagMaxMs: s.lag?.maxMs },
-    evidenceError: e.evidenceError, captureErrors: e.captureErrors.length ? e.captureErrors : undefined, receipt: e.receipt };
+    evidenceError: e.evidenceError, captureErrors: e.captureErrors.length ? e.captureErrors : undefined, fullEvidence: e.fullEvidence, receipt: e.receipt };
 }
 
 /** The failed navigation behind `error`, or behind its cause or the errors it aggregates: { error, evidence, receipt }. */
@@ -201,7 +218,9 @@ export function navigationFailure(error, seen = new Set()) {
 }
 
 /** Count each browser context a part opens (browser.newPage opens one too) as that part's, so a part stopped by a
- * failed navigation can have exactly its own closed, never the other lane's. */
+ * failed navigation can have exactly its own closed, never the other lane's. A context opened from a Playwright event
+ * listener (page.on) or from a route handler not wrapped with partHandler runs outside any part: it belongs to no
+ * part and stays open until the browser closes. Wrap such handlers with partHandler. */
 export function ownContexts(browser) {
   const newContext = browser.newContext.bind(browser);
   browser.newContext = async (...args) => {
@@ -218,7 +237,7 @@ export function partHandler(handler) {
   const scope = parts.getStore();
   return async (...args) => {
     try { return await (scope ? parts.run(scope, () => handler(...args)) : handler(...args)); }
-    catch (error) { if (!navigationFailure(error)) throw error; }
+    catch (error) { if (!scope?.failures.includes(error)) throw error; }   // only what its part has recorded
   };
 }
 
@@ -267,7 +286,7 @@ function failureFinding(name, error, failure, stopped) {
   const original = failure.error, what = failure.kind === 'fetch' ? 'a test-side fetch failed' : 'a navigation failed';
   return `${name}: ${what}${stopped ? ', so this part stopped there' : ' (the part went on)'}: ${String(original.message).trim()}` +
     (error !== original ? `\n  raised as ${error.name}: ${String(error.message).split('\n')[0].slice(0, 300)}` : '') +
-    `\n  ${failure.kind === 'fetch' ? 'fetch' : 'navigation'} evidence: ${failure.receipt ?? `no receipt (${failure.evidenceError ? `evidence collection failed: ${failure.evidenceError.split('\n')[0]}` : 'see the evidence line above'})`}`;
+    `\n  ${failure.kind === 'fetch' ? 'fetch' : 'navigation'} evidence: ${failure.receipt ?? `no receipt (${failure.evidenceError ? `evidence collection failed: ${failure.evidenceError.split('\n')[0]}` : failure.evidence?.fullEvidence ? `full evidence ${failure.evidence.fullEvidence}; see the evidence line above` : 'see the evidence line above'})`}`;
 }
 
 /** Run one part: its findings, plus one for each test-side fetch that failed in it (fetchThrough). A part that ends on
@@ -292,4 +311,33 @@ export async function runPart(name, action) {
       (cleanup.length ? `; cleanup failed: ${cleanup.join('; ')}` : '');
     return findings;
   }
+}
+
+/** Run `parts` ([name, async () => findings]) `lanes` at a time, in the order given, and return their findings in that
+ * order, with which parts finished. The log gives each part's time, so a slow one is easy to find. A part that ends on
+ * a failed navigation or fetch reports it as its finding and the run goes on (runPart); a part that throws anything
+ * else fails the run once the parts already started have finished, so no page is closed under a part still using
+ * it. Before that error is thrown, the findings gathered so far are printed: a stall in one part must not vanish
+ * behind another part's error. */
+export async function inLanes(parts, { lanes = 2, label = 'browser' } = {}) {
+  const found = parts.map(() => []), took = parts.map(() => 0), finished = parts.map(() => false), errors = [], start = Date.now();
+  let next = 0;
+  const lane = async () => {
+    while (next < parts.length && !errors.length) {
+      const i = next++, t = Date.now();
+      console.log(`${label}: starting ${parts[i][0]}`);
+      try { found[i] = await runPart(parts[i][0], parts[i][1]); finished[i] = true; } catch (e) { errors.push(e); }
+      took[i] = Math.round((Date.now() - t) / 1000);
+      console.log(`${label}: finished ${parts[i][0]} in ${took[i]} s; ${found[i].length} findings, ${errors.length} errors so far`);
+    }
+  };
+  await Promise.all(Array.from({ length: lanes }, lane));
+  console.log(`${label}: ${parts.length} parts, ${lanes} at a time, in ${Math.round((Date.now() - start) / 1000)} s: ${parts.map(([name], i) => `${name} ${took[i]} s`).join(', ')}`);
+  if (errors.length) {
+    const so = found.flat();
+    console.log(`${label}: a part threw, so the run stops; ${so.length} finding(s) from the parts that finished first:` +
+      (so.length ? '\n' + so.map(f => '- ' + f).join('\n') : ' none'));
+    throw errors[0];
+  }
+  return { found, finished };
 }

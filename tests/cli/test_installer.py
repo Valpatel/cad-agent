@@ -483,6 +483,47 @@ def test_the_uninstall_variable_the_guide_names_uninstalls(world):
     assert "uv stays in" in gone.stdout and (home / "cad-agent" / ".git").is_dir(), "it says what it leaves"
 
 
+@pytest.mark.parametrize("value, uninstalls", [("1", True), ("true", True), ("YES", True), ("True", True),
+                                                ("", False), ("0", False), ("false", False), ("No", False)])
+def test_the_uninstall_variable_takes_yes_or_no_words(world, value, uninstalls):
+    """#799 review: 1, true or yes uninstall; empty, 0, false or no install, in any letter case."""
+    remote, home, env = world
+    assert _install(env).returncode == 0
+    run = _install({**env, "CAD_AGENT_UNINSTALL": value})
+    assert run.returncode == 0, run.stdout + run.stderr
+    assert ("removed the cad-agent command" in run.stdout) is uninstalls
+    assert (home / ".local" / "bin" / "cad-agent").exists() is not uninstalls
+
+
+@pytest.mark.parametrize("value", ["2", "off", "00", " ", "y", "1; echo pwn", "$(touch pwned)"])
+def test_any_other_uninstall_value_stops_before_changing_anything(world, value):
+    """#799 review: a value that is neither a yes nor a no word stops with a message and changes nothing."""
+    _, home, env = world
+    run = _install({**env, "CAD_AGENT_UNINSTALL": value})
+    assert run.returncode != 0 and "CAD_AGENT_UNINSTALL is 1, true or yes" in run.stderr, run.stdout + run.stderr
+    assert "nothing was changed" in run.stderr
+    assert sorted(p.name for p in home.iterdir()) == [], "no clone, no uv, no links"
+
+
+@pytest.mark.skipif(not shutil.which("pwsh"), reason="PowerShell (pwsh) is not installed")
+@pytest.mark.parametrize("value, says", [("maybe", "CAD_AGENT_UNINSTALL is 1, true or yes"), ("00", "CAD_AGENT_UNINSTALL is 1"),
+                                         ("TRUE", "removed the cad-agent command"), ("no", "git is needed")])
+def test_install_ps1_parses_the_uninstall_value(tmp_path, value, says):
+    """install.ps1 reads CAD_AGENT_UNINSTALL the same way (#799 review). PATH is an empty folder, so the install route
+    stops at its git check and the uninstall route finds no cad-agent or uv: nothing is installed or removed."""
+    home, empty = tmp_path / "home", tmp_path / "empty"
+    home.mkdir()
+    empty.mkdir()
+    env = {k: v for k, v in os.environ.items() if not k.startswith("CAD_AGENT_")}
+    env.update(PATH=str(empty), HOME=str(home), USERPROFILE=str(home), CAD_AGENT_UNINSTALL=value)
+    run = subprocess.run([shutil.which("pwsh"), "-NoProfile", "-NonInteractive", "-File", str(PS1)], env=env,
+                         capture_output=True, text=True, timeout=120)
+    out = run.stdout + run.stderr
+    assert says in out, out
+    assert (run.returncode == 0) is (value == "TRUE"), out
+    assert [p.name for p in home.iterdir()] in ([], [".local"]), "nothing installed in the home folder"
+
+
 def test_the_path_hint_names_commands_that_work_in_that_shell(world, tmp_path):
     """~/.local/bin is not on PATH: the hint's `export PATH=...` finds cad-agent in this shell, and it names uv by its
     full path, because the uv it just installed is in that same folder (#799)."""

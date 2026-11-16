@@ -4,7 +4,8 @@
 # Download the pinned installer, verify its SHA-256, then run it:
 #   https://cad-agent.valpatel.com/docs/agent-workflow#install
 # Options after download: sh install.sh --extras fea,sim --ref v0.26.0 (or CAD_AGENT_EXTRAS, CAD_AGENT_REF set first);
-# --uninstall, or CAD_AGENT_UNINSTALL=1, removes the command and the skill links.
+# --uninstall, or CAD_AGENT_UNINSTALL=1 (or true, yes), removes the command and the skill links; empty, 0, false or no
+# installs, and any other value stops before changing anything.
 #
 # What it does, and nothing else:
 #   1. needs git; installs uv (astral.sh, the version pinned below) into ~/.local/bin if it is missing, without
@@ -20,7 +21,7 @@
 # telemetry, and this script turns usage reporting off for what it starts. Nothing is written outside ~/cad-agent,
 # uv's own folders (~/.local/bin, ~/.local/share/uv, ~/.cache/uv, and ~/.config/uv for uv's install receipt), the skill
 # folders (~/.claude/skills, ~/.agents/skills) and the subagent folder (~/.claude/agents); outside them, it only removes
-# the kit's own old links from the Codex skills folder above. The first install downloads about 1.7 GB of packages.
+# the kit's own old links from the Codex skills folder above. The first install downloads about 2 GB of packages.
 #
 # Everything is inside main(), called on the last line, so a download cut short runs nothing.
 
@@ -36,7 +37,7 @@ usage() {
     say "  sh install.sh [--ref <tag or branch>] [--extras <a,b>] [--dir <path>] [--uninstall]"
     say "  --extras: fea (strength), sim (airflow, topology, renders), robot (URDF, MuJoCo), explore (search),"
     say "            site; cad is always included. The same as CAD_AGENT_REF, CAD_AGENT_EXTRAS, CAD_AGENT_DIR and"
-    say "            CAD_AGENT_UNINSTALL=1."
+    say "            CAD_AGENT_UNINSTALL=1 (true, yes; 0, false, no or empty install)."
     say "  Run it again to update: the same steps as \`cad-agent update\`."
 }
 
@@ -61,7 +62,11 @@ main() {
     dir="${CAD_AGENT_DIR:-$HOME/cad-agent}"
     ref="${CAD_AGENT_REF:-}"
     extras="${CAD_AGENT_EXTRAS:-}"
-    case "${CAD_AGENT_UNINSTALL:-}" in ""|0) uninstall="" ;; *) uninstall=1 ;; esac
+    case "${CAD_AGENT_UNINSTALL:-}" in        # any letter case
+        ""|0|[Ff][Aa][Ll][Ss][Ee]|[Nn][Oo]) uninstall="" ;;
+        1|[Tt][Rr][Uu][Ee]|[Yy][Ee][Ss]) uninstall=1 ;;
+        *) die "CAD_AGENT_UNINSTALL is 1, true or yes to uninstall, or empty, 0, false or no to install; nothing was changed" ;;
+    esac
     while [ $# -gt 0 ]; do
         case "$1" in
             --ref) [ $# -ge 2 ] || die "--ref needs a tag or branch"; ref="$2"; shift 2 ;;
@@ -132,7 +137,7 @@ main() {
             say "cloning $repo into $dir"
             git clone --quiet --depth 1 --branch "${ref:-main}" "$repo" "$dir"
         fi
-        say "installing the cad-agent command (uv tool install --editable, Python 3.12; the first time, about 1.7 GB)"
+        say "installing the cad-agent command (uv tool install --editable, Python 3.12; the first time, about 2 GB)"
         uv tool install --quiet --force --editable --python 3.12 "${dir}[cad${extras:+,$extras}]"
         cad-agent agents install || say "some skills were left alone (see above); the rest are installed"
     fi

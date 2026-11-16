@@ -164,10 +164,11 @@ class CadModel extends (typeof HTMLElement === 'undefined' ? class {} : HTMLElem
   #meter;
   #message;
   #cleanup = null;
+  #arbitrate = null;                   // re-decides touch arbitration (#769) once the 3D view is built
   ready = new Promise(r => { this.#resolve = r; });
 
   connectedCallback() {
-    if (this.#started) return;
+    if (this.#started) { this.#arbitrate?.(); return; }
     this.dataset.state ||= 'poster';
     const go = () => this.#start();
     if (this.getAttribute('loading') === 'eager') return go();
@@ -392,27 +393,35 @@ class CadModel extends (typeof HTMLElement === 'undefined' ? class {} : HTMLElem
     };
     // Touch (#650, #769): one finger turns the model both ways without scrolling the page; two fingers still zoom the page.
     // Taking vertical drags could trap scrolling, so the viewer takes them only while it is at most half as tall as the
-    // space that scrolls past it: the visible viewport, or the nearest scrollable ancestor's box when that is shorter.
-    // Height alone decides, since what lies beside a viewer may be another viewer rather than page: a row of viewers then
-    // leaves at least half of that space's height free for vertical swipes wherever it sits. A taller viewer leaves
-    // vertical swipes to the page (or the box) and still turns under sideways drags. It is decided again when the
-    // viewer, the viewport or that box changes size, never per frame.
-    let port = null;                     // the scrollable ancestor being watched, if any
-    const scroller = () => {
+    // space that scrolls past it: the visible viewport, or the shortest ancestor box that can scroll vertically (a
+    // scrolling overflow-y and content taller than the box) when that is shorter. Height alone decides, since what lies
+    // beside a viewer may be another viewer rather than page: a row of viewers then leaves at least half of that space's
+    // height free for vertical swipes wherever it sits. A taller viewer leaves vertical swipes to the page (or the box)
+    // and still turns under sideways drags. It is decided again, never per frame, when the viewer, the viewport or one of
+    // those boxes changes size and when the viewer is connected again; not when an ancestor's overflow changes or its
+    // content starts to overflow without a resize.
+    let ports = [];                      // the ancestors that can scroll vertically, watched for size changes
+    const scrollers = () => {
+      const found = [];
       for (let el = this.assignedSlot ?? this.parentElement ?? this.getRootNode().host; el && el !== document.body && el !== document.documentElement;
         el = el.assignedSlot ?? el.parentElement ?? el.getRootNode().host)
-        if (/^(auto|scroll|overlay)$/.test(getComputedStyle(el).overflowY)) return el;
-      return null;
+        if (/^(auto|scroll|overlay)$/.test(getComputedStyle(el).overflowY) && el.scrollHeight > el.clientHeight) found.push(el);
+      return found;
     };
     const portObserver = new ResizeObserver(() => arbitrate());
     disposers.push(() => portObserver.disconnect());
     const arbitrate = () => {
       if (disposed) return;
-      const found = scroller();
-      if (found !== port) { portObserver.disconnect(); if (found) portObserver.observe(found); port = found; }
-      const vv = window.visualViewport, h = Math.min(vv?.height ?? innerHeight, port ? port.clientHeight : Infinity);
+      const found = scrollers();
+      if (found.length !== ports.length || found.some((el, i) => el !== ports[i])) {
+        portObserver.disconnect();
+        for (const el of found) portObserver.observe(el);
+        ports = found;
+      }
+      const vv = window.visualViewport, h = Math.min(vv?.height ?? innerHeight, ...ports.map(el => el.clientHeight));
       canvas.style.touchAction = this.clientHeight <= h / 2 ? 'pinch-zoom' : 'pan-y pinch-zoom';
     };
+    this.#arbitrate = arbitrate;
     for (const target of [window, window.visualViewport].filter(Boolean)) {
       target.addEventListener('resize', arbitrate);
       disposers.push(() => target.removeEventListener('resize', arbitrate));
@@ -426,7 +435,7 @@ class CadModel extends (typeof HTMLElement === 'undefined' ? class {} : HTMLElem
       if (down.size > 1) { if (drag) { drag = null; spin = 0; lastInput = performance.now(); } return; }
       drag = { id: e.pointerId, x: e.clientX, y: e.clientY, moved: 0, t: performance.now() };
       spin = 0; lastInput = performance.now();
-      canvas.setPointerCapture?.(e.pointerId);
+      try { canvas.setPointerCapture?.(e.pointerId); } catch { /* a pointer the browser no longer tracks */ }
     });
     canvas.addEventListener('pointermove', e => {
       if (drag && e.pointerId === drag.id) {

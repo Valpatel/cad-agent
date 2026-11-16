@@ -9,7 +9,9 @@
  * For the main frame's document requests the receipt says which of Playwright's events (request, response,
  * requestfinished, requestfailed) each got and when, which routes the page and its context had, and, for a request a
  * route handler took, when the handler ran and ended and how each fetch, fulfill or continue it made settled
- * (`watchRoutes`). Most of the suite's navigations pass through no route handler at all: the receipt says so.
+ * (`watchRoutes`). Most of the suite's navigations pass through no route handler at all, and the receipt says so;
+ * some do, such as the homepage viewer gate's planted control (layout/motion.mjs), whose handler fetches the
+ * document through fetchThrough and fulfils it.
  *
  * `fetchThrough(route)` does the same for a test-side `route.fetch` (the preview server's record of the path and its
  * sockets), aborts the route and adds the failure to its part's findings; `partHandler` wraps a route handler so
@@ -266,8 +268,11 @@ export function ownContexts(browser) {
  * on the success path the cost is one isNavigationRequest() per routed request. The record is bounded: weak maps
  * keyed by Playwright's own objects, at most 8 hops per page, 4 handlers and 8 calls per hop. Recording never throws
  * into a handler and never changes what a handler or a route method returns or throws.
- * Limits: a route registered with `times` stays listed after Playwright drops it, and Playwright itself continues a
- * request no pattern matches, inside its driver, a hop the test process cannot see. */
+ * Pages a watched context opens by other means (a popup, window.open) are watched from the context's 'page' event.
+ * Limits: a route registered with `times` stays listed after Playwright drops it; Playwright itself continues a
+ * request no pattern matches, inside its driver, a hop the test process cannot see; and a page or context opened
+ * before watchRoutes, or not through browser.newContext (a persistent context), is not watched: its receipt says its
+ * routes are not known rather than that it has none. */
 const routeTables = new WeakMap();   // a page or context -> [{ url, pattern, handler, wrapped }]
 const hopsByPage = new WeakMap();    // a page -> its last 8 route hops for navigation requests
 const hopOf = new WeakMap();         // a Playwright Request -> its hop
@@ -283,6 +288,8 @@ export function watchRoutes(browser) {
     const context = await newContext(...args);
     try {
       watchTarget(context);
+      // a popup or window.open page: the 'page' event comes before the test's own listeners see it
+      context.on('page', page => { try { watchTarget(page); } catch { /* unwatched: its receipt says not known */ } });
       const newPage = context.newPage.bind(context);
       context.newPage = async (...pageArgs) => { const page = await newPage(...pageArgs); try { watchTarget(page); } catch { /* unwatched */ } return page; };
     } catch { /* this context's routes stay unwatched; its receipts say so */ }
@@ -300,15 +307,18 @@ export function watchTarget(target) {
     return route(url, entry.wrapped, ...rest);
   };
   target.unroute = (url, handler) => {
-    const gone = table.filter(e => e.url === url && (handler === undefined || e.handler === handler));
+    // the same URL test as Playwright's unroute (urlMatchesEqual): regular expressions by source and flags
+    const gone = table.filter(e => sameRouteURL(e.url, url) && (!handler || e.handler === handler));
     for (const e of gone) table.splice(table.indexOf(e), 1);
-    if (handler === undefined || !gone.length) return handler === undefined ? unroute(url) : unroute(url, handler);
+    if (!handler || !gone.length) return handler ? unroute(url, handler) : unroute(url);
     return Promise.all(gone.map(e => unroute(url, e.wrapped))).then(() => {});
   };
   target.unrouteAll = (...args) => { table.length = 0; return unrouteAll(...args); };
   routeTables.set(target, table);
   return target;
 }
+
+const sameRouteURL = (a, b) => a instanceof RegExp && b instanceof RegExp ? a.source === b.source && a.flags === b.flags : a === b;
 
 /** `handler`, recording when it ran and ended for a navigation request; any other request goes straight to it. */
 function hopHandler(handler, pattern) {
@@ -399,15 +409,16 @@ function routingOf(page) {
   try { context = page.context(); } catch { /* none to read */ }
   const list = target => (target && routeTables.has(target) ? routeTables.get(target).slice(0, 16).map(e => e.pattern) : null);
   const onPage = list(page), onContext = list(context);
-  if (onPage === null && onContext === null)
-    return { watched: false, note: 'routes are not watched for this page (watchRoutes), so whether its requests passed through a route handler is not known' };
-  return { watched: true, page: onPage ?? [], context: onContext ?? [] };
+  if (onPage !== null && onContext !== null) return { watched: true, page: onPage, context: onContext };
+  // one side unknown is not "none": a route there would be missing from the record
+  return { watched: false, page: onPage ?? 'not known', context: onContext ?? 'not known',
+    note: `routes are not watched for this ${onPage === null ? 'page' : 'context'} (watchRoutes), so whether its requests passed through a route handler is not known` };
 }
 
 /** The main frame's document requests: Playwright's events for each, and the route hop it took (or why it took none). */
 function documentRecord(page, began, documents) {
   const ms = t => (t ? t - began : null), routing = routingOf(page), hops = routeHopsOf(page, began), shown = new Set();
-  const routed = routing.watched && routing.page.length + routing.context.length > 0;
+  const count = list => (Array.isArray(list) ? list.length : 0), routed = count(routing.page) + count(routing.context) > 0;
   const rows = [...documents].map(([request, d]) => {
     const hop = hopOf.get(request);
     if (hop) shown.add(hop);
@@ -417,7 +428,7 @@ function documentRecord(page, began, documents) {
     return { url: cleanURL(d.url), requestAtMs: ms(d.requestAt), responseAtMs: ms(d.respondedAt), status: d.status ?? null,
       finishedAtMs: ms(d.finishedAt), failedAtMs: ms(d.failedAt), ...(d.failure && { failure: cleanText(d.failure) }),
       events: { request: true, response: !!d.respondedAt, requestfinished: !!d.finishedAt, requestfailed: !!d.failedAt }, timing,
-      route: hop ? hopRow(hop, began) : !routing.watched ? 'not known: routes are not watched for this page'
+      route: hop ? hopRow(hop, began) : !routing.watched ? 'not known: routes are not watched for this page or its context'
         : routed ? 'no handler of the test process ran for it, though the page or its context has routes: Playwright continues a request no pattern matches inside its driver, a hop the test process cannot see'
         : 'no route on the page or its context: it did not pass through a route handler' };
   });

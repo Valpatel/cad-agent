@@ -766,7 +766,8 @@ try {
       return problems;
     }],
   ];
-  const found = await inLanes(parts);
+  // DIAGNOSTIC branch only (#719, #686): CAD_AGENT_STRESS repeats the failing checks instead of running the suite.
+  const found = process.env.CAD_AGENT_STRESS ? (await stressRun(Object.fromEntries(parts), diagramPages), []) : await inLanes(parts);
   for (const list of found) problems.push(...list);
   assert.deepEqual(problems, []);
   console.log(`${engine.name()}: ${ROUTES.length} routes at 360 and 1366 px under the site CSP PASS`);
@@ -1494,6 +1495,7 @@ async function folderMapPhoneProblems(page, where) {
     // range is checked above; this does not synthesize scrolling in place of the keyboard interaction.
     if (measured.wide && measured.focusable && measured.scrollable && !checkedKeyboard) {
       checkedKeyboard = true;
+      globalThis.__stressKeyboardChecks = (globalThis.__stressKeyboardChecks || 0) + 1;   // DIAGNOSTIC branch only
       await view.evaluate(v => { v.scrollLeft = 0; });
       // Reveal the target before focusing it, so native vertical focus scrolling does not overlap this key test.
       await view.scrollIntoViewIfNeeded();
@@ -1640,7 +1642,7 @@ async function previewServerEvidence(pathname, since, limit = 2000) {
  * The browser's view (pending and failed requests, main-frame commits, the DOM) is joined to the preview server's
  * own record of the document request (received? headers written? finished? on a new or reused socket?), its
  * event-loop lag and sockets, and this process's lag: the times are epoch ms from both processes on one host. */
-async function navigateDiagram(page, url, where, timeout = 30000) {
+async function navigateDiagram(page, url, where, timeout = 30000, waitUntil = 'load') {
   const pending = new Map(), failed = [], committed = [], began = Date.now();
   const cleanURL = value => { const u = new URL(value); return u.protocol === 'about:' ? value.split(/[?#]/)[0] : u.origin + u.pathname; }; // no queries or fragments
   // for URLs the browser reports: one that does not parse is noted, never thrown over the navigation error
@@ -1652,7 +1654,7 @@ async function navigateDiagram(page, url, where, timeout = 30000) {
   const navigated = frame => { if (frame === page.mainFrame() && committed.length < 10) committed.push({ url: reportedURL(frame.url()), at: Date.now() }); };
   const listeners = [['request', request], ['response', response], ['requestfinished', finished], ['requestfailed', rejected], ['framenavigated', navigated]];
   for (const [event, listener] of listeners) page.on(event, listener);
-  try { return await page.goto(url, { waitUntil: 'load', timeout }); }
+  try { return await page.goto(url, { waitUntil, timeout }); }
   catch (cause) {
     const evidence = { where, url: cleanURL(url), viewport: page.viewportSize(), timeout, began,
       pageUrl: reportedURL(page.url()), committed: [...committed],
@@ -2275,7 +2277,8 @@ async function foldProblems() {
     if (mode === 'slow') await page.route('**/kit/documents/nav.js', async r => { await held; await r.continue(); });
     if (mode === 'blocked') await page.route('**/kit/documents/nav.js', r => r.abort());
     if (mode === 'failing') await page.route('**/kit/documents/nav.js', r => r.fulfill({ contentType: 'text/javascript', body: 'throw new Error("nav.js fails on purpose")' }));
-    await page.goto(base + '/docs/toolkit', { waitUntil: mode === 'slow' ? 'domcontentloaded' : 'load' });
+    // DIAGNOSTIC branch only (#686): the same navigation, with the preview server's record on a timeout.
+    await navigateDiagram(page, base + '/docs/toolkit', `fold ${width}px ${mode}`, 30000, mode === 'slow' ? 'domcontentloaded' : 'load');
     const js = mode !== 'none';
     // nav.js has run or failed (with JavaScript off, Playwright cannot wait on a promise in the page; held back, it
     // has not arrived, and the rest of the page settles first: its diagrams render while nav.js is held back).
@@ -2513,4 +2516,132 @@ async function jumpProblems() {
   }
   await page.close();
   return out;
+}
+
+// ---- DIAGNOSTIC branch only (#719, #686): never merged. ------------------------------------------------------------
+// CAD_AGENT_STRESS=keyboard|nav|outline repeats one failing check until CAD_AGENT_STRESS_MINUTES have passed, keeps
+// going after a failure, and writes counts to /tmp/cad-agent-stress-*/summary.json. CAD_AGENT_STRESS_LOAD=routes runs the
+// "routes and copy buttons" part alongside, over and over, as the second lane does in the normal suite.
+async function stressRun(partsByName, diagramPages) {
+  const mode = process.env.CAD_AGENT_STRESS, load = process.env.CAD_AGENT_STRESS_LOAD || 'none';
+  const minutes = Number(process.env.CAD_AGENT_STRESS_MINUTES || 20), began = Date.now(), deadline = began + minutes * 60000;
+  const stats = { mode, load, minutes, engine: engine.name(), browserVersion: browser.version(), checks: 0, rounds: 0, failures: [], otherProblems: [], errors: [],
+    loadRuns: 0, loadFindings: 0, loadErrors: [] };
+  const loadLane = async () => {
+    if (load !== 'routes') return;
+    while (Date.now() < deadline) {
+      try { stats.loadFindings += (await partsByName['routes and copy buttons']()).length; stats.loadRuns++; }
+      catch (error) { stats.loadErrors.push(String(error.message).slice(0, 2000)); }
+    }
+  };
+  const work = { keyboard: () => stressKeyboard(deadline, diagramPages.filter(([r]) => r.startsWith('/repo/folders/')).sort(), stats),
+    nav: () => stressNavigation(deadline, partsByName, stats), outline: () => stressOutline(deadline, stats) }[mode];
+  if (!work) throw new Error(`CAD_AGENT_STRESS=${mode}: expected keyboard, nav or outline`);
+  await Promise.all([work(), loadLane()]);
+  if (mode === 'keyboard') stats.checks = globalThis.__stressKeyboardChecks || 0;
+  stats.seconds = Math.round((Date.now() - began) / 1000);
+  const out = await mkdtemp(path.join(tmpdir(), `cad-agent-stress-${mode}-${load}-`));
+  await writeFile(path.join(out, 'summary.json'), JSON.stringify(stats, null, 2) + '\n');
+  console.log(`STRESS SUMMARY ${out}: ${JSON.stringify({ ...stats, failures: stats.failures.length, otherProblems: stats.otherProblems.length,
+    errors: stats.errors.length, loadErrors: stats.loadErrors.length })}`);
+  for (const f of stats.failures) console.log('STRESS FAILURE ' + (typeof f === 'string' ? f : JSON.stringify(f)).slice(0, 4000));
+}
+
+/** The 360 px light pass of "diagram widths" over the folder maps, round after round, on one page as the part does. */
+async function stressKeyboard(deadline, details, stats) {
+  const wide = await browser.newPage({ viewport: { width: 360, height: 900 }, colorScheme: 'light' });
+  try {
+    while (Date.now() < deadline) {
+      stats.rounds++;
+      for (const [route, sources] of details) {
+        if (Date.now() >= deadline) break;
+        try {
+          await wide.goto(base + route);
+          await settled(wide);
+          await wide.waitForFunction(n => document.querySelectorAll('.cad-diagram').length >= n &&
+            [...document.querySelectorAll('.cad-diagram')].every(f => f.dataset.state === 'ready' || f.dataset.state === 'error'),
+            sources, { timeout: 20000 }).catch(() => stats.otherProblems.push(`${route}: diagrams did not finish rendering`));
+          for (const p of await folderMapPhoneProblems(wide, `stress round ${stats.rounds} 360px light ${route}`))
+            (p.includes('does not scroll with ArrowRight') ? stats.failures : stats.otherProblems).push(p);
+        } catch (error) { stats.errors.push(`${route}: ${String(error.message).slice(0, 1000)}`); }
+      }
+    }
+  } finally { await wide.close(); }
+}
+
+/** The fold and reader-boundary parts, each in its own lane, as they run in the suite; every navigation timeout keeps
+ * the browser's and the preview server's account of it (the fold's through navigateDiagram, the reader's added here). */
+async function stressNavigation(deadline, partsByName, stats) {
+  const lane = async name => {
+    while (Date.now() < deadline) {
+      const started = Date.now();
+      try { const found = await partsByName[name](); stats.rounds++; stats.otherProblems.push(...found.map(f => `${name}: ${f}`)); }
+      catch (error) {
+        const failure = { part: name, message: String(error.message).slice(0, 6000), at: Date.now(), sincePartStartMs: Date.now() - started };
+        const target = /navigating to "([^"]+)"/.exec(error.message)?.[1] ?? /"url":"([^"]+)"/.exec(error.message)?.[1];
+        if (target && !error.navigation) {
+          failure.server = await previewServerEvidence(new URL(target).pathname, started - 1000).catch(e => ({ unavailable: e.message }));
+          const lag = testLag.filter(l => l.at >= started);
+          failure.testProcessLag = { maxMs: Math.max(0, ...lag.map(l => l.lateMs)), samplesOver20ms: lag.slice(-10) };
+        }
+        stats.failures.push(failure);
+      }
+      stats.checks++;
+    }
+  };
+  await Promise.all([lane('fold'), lane('reader scroll boundary')]);
+}
+
+/** The 1366x1600 /docs/explore outline jumps of "wide screens", with the scroll recorded over time on a failure. */
+async function stressOutline(deadline, stats) {
+  while (Date.now() < deadline) {
+    stats.rounds++;
+    const tall = await browser.newPage({ viewport: { width: 1366, height: 1600 } });
+    try {
+      await tall.goto(base + '/docs/explore');
+      await settled(tall);
+      const unreachable = await tall.evaluate(() => {
+        const line = Math.min(innerHeight / 3, 220), max = document.documentElement.scrollHeight - innerHeight;
+        return [...document.querySelectorAll('cad-nav .cad-nav-outline a')].map((a, i) => [i, document.getElementById(decodeURIComponent(a.hash.slice(1)))])
+          .filter(([, h]) => h && h.getBoundingClientRect().top + scrollY - line > max).map(([i]) => i);
+      });
+      const outline = tall.locator('cad-nav .cad-nav-outline a');
+      for (const i of unreachable) {
+        stats.checks++;
+        await tall.evaluate(() => scrollTo({ top: 0, behavior: 'instant' }));
+        const clickedAt = Date.now();
+        await outline.nth(i).click();
+        // The suite's own settle: still for 15 animation frames, or 10 s. Recorded: each change of scrollY, and the frames.
+        const settle = await tall.evaluate(() => new Promise(done => {
+          const t0 = performance.now(), changes = [];
+          let last = -1, still = 0, frames = 0, over = false;
+          const finish = why => { if (!over) { over = true; done({ why, frames, ms: Math.round(performance.now() - t0), changes: changes.slice(0, 80) }); } };
+          const tick = () => { if (over) return; frames++;
+            if (scrollY === last) { if (++still > 15) return finish('still'); } else { still = 0; last = scrollY; changes.push([Math.round(performance.now() - t0), Math.round(scrollY)]); }
+            requestAnimationFrame(tick); };
+          tick(); setTimeout(() => finish('10 s cap'), 10000);
+        }));
+        if ((await outline.nth(i).getAttribute('aria-current')) === 'location') continue;
+        const state = () => tall.evaluate(i => {
+          const a = document.querySelectorAll('cad-nav .cad-nav-outline a')[i], h = document.getElementById(decodeURIComponent(a.hash.slice(1)));
+          return { scrollY: Math.round(scrollY), max: document.documentElement.scrollHeight - innerHeight, hash: location.hash, link: a.textContent,
+            targetTop: h ? Math.round(h.getBoundingClientRect().top + scrollY) : null, line: Math.min(innerHeight / 3, 220),
+            marked: [...document.querySelectorAll('cad-nav .cad-nav-outline a[aria-current=location]')].map(x => x.textContent),
+            rootScrollBehavior: getComputedStyle(document.documentElement).scrollBehavior, trace: window.__outlineTrace ?? null };
+        }, i);
+        const atFailure = await state();
+        // Only evidence: does the page keep scrolling after the settle, and does the mark follow?
+        const later = await tall.evaluate(() => new Promise(done => {
+          const t0 = performance.now(), changes = []; let last = scrollY;
+          const id = setInterval(() => { if (scrollY !== last) { last = scrollY; changes.push([Math.round(performance.now() - t0), Math.round(scrollY)]); } }, 25);
+          setTimeout(() => { clearInterval(id); done(changes.slice(0, 80)); }, 3000);
+        }));
+        const failure = { where: `stress round ${stats.rounds} 1366x1600 /docs/explore outline ${i}`, clickedAt, settle, atFailure, laterChanges: later, after3s: await state() };
+        stats.failures.push(failure);
+        const out = await mkdtemp(path.join(tmpdir(), 'cad-agent-outline-stress-'));
+        await writeFile(path.join(out, 'receipt.json'), JSON.stringify(failure, null, 2) + '\n');
+      }
+    } catch (error) { stats.errors.push(String(error.message).slice(0, 2000)); }
+    finally { await tall.close(); }
+  }
 }

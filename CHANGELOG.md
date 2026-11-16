@@ -9,6 +9,23 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
 
 ## Unreleased
 
+## v0.46.0 (2026-11-16)
+
+**New**
+- `<cad-model loading="scroll">`: the viewer keeps its look-ahead but starts nothing (no three.js, no model data) until the reader scrolls the page, or focuses or presses inside the element; the element joins the tab order so a keyboard reader can start it without scrolling. Other viewers load as before (#748).
+
+**Changed**
+- Home page: the first screen now shows a real running example. The headline, a shorter lede and the actions sit beside (on phones, above) Gyropup's turret playground recording, with its limits in one line (a work-in-progress prototype, not physics validation) and a link to the live playground. The page loads its 9 KB still first and swaps in the 324 KB animation after the page has loaded; under reduced motion, with Save-Data, or without script, the still stays (#748).
+- Home page: the pixel-art workshop is a slim cropped band between the hero and "See it run", which now leads with the two interactive 3D viewers. They use `loading="scroll"`, so a visitor who does not scroll downloads no 3D model at any screen size (#748).
+- `llms.txt` lists the home page's running examples under "See it run", and `index.md` follows the new hero order (#748).
+- `ScadaViewer.render()` now emits the same scale-note text that the mounted camera shows (`… · drag or pinch to explore` below 80% zoom); the visible text after mount is unchanged (#761).
+- Agent kit, `cad-pr-review`: "After the merge" now deletes the merged head branch on origin once its tip equals the merged head, and in a cloud session, whose git proxy has refused the delete (observed 2026-11-16), names the branch to the owner instead of retrying; the worktree, its venv and temp folder and the local branch go only after the worktree is clean and its head is on `origin/dev`. The merge conditions use "released" for a PR free to merge, link the work-claim section, rely on the role line rather than the shared footer, date the two refusals, and note that a failed job may be re-run once, by the author side, only for a failure the diff did not cause and only after the whole workflow run has finished (#772).
+- Agent kit, `cad-remote-runs`: a cloud session commits CI's SCADA recapture artifact unchanged (on `dev` since #763) and fetches it through the MCP artifact download; the folder-map width limit is stated as measured (#762).
+- CONTRIBUTING: agents use absolute paths for worktree commands; do not edit a PR description after opening (it re-runs CI and the gates); a new pull-request check step, or a suite naming a new repo file, updates `.github/ci-checks.json`; the merged branch is deleted after the worktree (#772).
+
+**Fixed**
+- SCADA viewer: a live simulation tick no longer replaces the camera's zoom readout (a click target) or the scale note, and no longer strips and re-applies the diagram's camera style and `data-camera-*` attributes. A tick now writes only values that changed, so a press and release that straddle a tick stay on the same nodes, and keyboard focus and hover survive (#761).
+
 ## v0.45.0 (2026-11-16)
 
 **New**

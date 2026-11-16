@@ -1,4 +1,5 @@
-/** A page of named recordings from a replay index: `<div id="replay" data-replay-index="index.json">`.
+/** A page of named recordings from a replay index: `<div id="replay" data-replay-index="index.json">`. It plays and
+ * loops once ready (not under reduced motion; Pause stops it).
  * `?scenario=<id>` opens that scenario. The index's hashes verify the meshes and each recording before display. */
 import {createReplayViewer} from './viewer.js';
 import {loadReplayIndex} from './replay.js';
@@ -13,7 +14,7 @@ async function start(){
     const wanted=new URLSearchParams(location.search).get('scenario');
     placeholder.remove();
     viewer=createReplayViewer(container,{title:index.title,scenarios:index.scenarios,meshesUrl:index.meshes?.url,meshesHash:index.meshes?.expectedHash,
-      initialScenario:index.scenarios.some(s=>s.id===wanted)?wanted:undefined,signal:lifetime.signal});
+      initialScenario:index.scenarios.some(s=>s.id===wanted)?wanted:undefined,autoplay:true,loop:true,signal:lifetime.signal});
     window.__replay=viewer;
     const ready=()=>{status.textContent=`${index.scenarios.length} recorded scenarios · shapes and every recording verified by SHA-256 before display`;document.body.dataset.ready='1';};
     viewer.host.subscribe(event=>{if(event.type==='status'&&event.state==='ready')ready();});

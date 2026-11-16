@@ -103,10 +103,11 @@ export function samplePose(recording,time) {
   return a.poses.map((p,i)=>({position:p.position.map((n,k)=>n+(b.poses[i].position[k]-n)*alpha),quaternion:interpolateQuaternion(p.quaternion,b.poses[i].quaternion,alpha)}));
 }
 
-/** A caller-owned clock: advance(dt seconds) from the stage; no hidden animation frame. */
-export function createPlayback(recording,onChange=()=>{}) {
+/** A caller-owned clock: advance(dt seconds) from the stage; no hidden animation frame. With `loop`, playing past the
+ * end continues from the start instead of stopping. */
+export function createPlayback(recording,onChange=()=>{},{loop=false}={}) {
   let time=0,speed=1,playing=false,disposed=false;
-  const state=()=>({time,speed,playing,duration:recording.duration,disposed});
+  const state=()=>({time,speed,playing,loop,duration:recording.duration,disposed});
   const notify=()=>{if(!disposed)onChange(state(),samplePose(recording,time));};
   const alive=()=>{if(disposed)throw new Error('Replay has been disposed');};
   const api={
@@ -115,7 +116,7 @@ export function createPlayback(recording,onChange=()=>{}) {
     pause(){alive();playing=false;notify();},
     seek(value){alive();if(!finite(value,Number.MAX_VALUE))throw new TypeError('Seek time must be finite');time=Math.max(0,Math.min(recording.duration,value));notify();},
     setSpeed(value){alive();if(!finite(value)||value<.1||value>4)throw new TypeError('Replay speed must be between 0.1 and 4');speed=value;notify();},
-    advance(dt){alive();if(!finite(dt)||dt<0||dt>1)throw new TypeError('Frame interval must be between 0 and 1 seconds');if(!playing)return;time=Math.min(recording.duration,time+dt*speed);if(time===recording.duration)playing=false;notify();},
+    advance(dt){alive();if(!finite(dt)||dt<0||dt>1)throw new TypeError('Frame interval must be between 0 and 1 seconds');if(!playing)return;const next=time+dt*speed;if(loop&&next>=recording.duration)time=next%recording.duration;else{time=Math.min(recording.duration,next);if(time===recording.duration)playing=false;}notify();},
     dispose(){if(disposed)return;playing=false;disposed=true;onChange=()=>{};},
   };
   notify();return api;

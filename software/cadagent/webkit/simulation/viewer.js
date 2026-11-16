@@ -9,8 +9,9 @@ const el=(tag,text)=>{const node=document.createElement(tag);if(text!==undefined
 
 /** Mount into a connected, sized container. Supply one recording (data or a same-origin URL), or `scenarios`:
  * [{id, label, recording | recordingUrl, expectedHash, summary}] chosen in the viewer, with an optional mesh library
- * (`meshes`, already loaded, or `meshesUrl` + `meshesHash`). A summary is shown as its source's own text. */
-export function createReplayViewer(container,{recording,recordingUrl,expectedHash,scenarios,meshes,meshesUrl,meshesHash,initialScenario,title='Recorded simulation replay',signal}={}) {
+ * (`meshes`, already loaded, or `meshesUrl` + `meshesHash`). A summary is shown as its source's own text.
+ * `autoplay` starts playback once the view is ready, except under prefers-reduced-motion; `loop` repeats it. */
+export function createReplayViewer(container,{recording,recordingUrl,expectedHash,scenarios,meshes,meshesUrl,meshesHash,initialScenario,autoplay=false,loop=false,title='Recorded simulation replay',signal}={}) {
   const choices=(scenarios??[{id:'recording',label:title,recording,recordingUrl,expectedHash,summary:null}]).map(s=>({...s}));
   if(!choices.length||new Set(choices.map(s=>s.id)).size!==choices.length)throw new TypeError('Replay scenarios need unique IDs');
   let controller,scene,stage,chooser,active=choices.find(s=>s.id===initialScenario)??choices[0],select;
@@ -27,7 +28,7 @@ export function createReplayViewer(container,{recording,recordingUrl,expectedHas
     let data=await load(active);
     signal.throwIfAborted();
     const root=viewport.closest('.cad-viewer-host'),controls=el('div'),summary=el('div'),summarised=choices.some(c=>c.summary);controls.className='replay-controls';summary.className='replay-summary';
-    root.classList.add('cad-replay-host');root.classList.toggle('cad-replay-summarised',summarised);root.insertBefore(controls,viewport.parentElement);if(summarised)root.insertBefore(summary,viewport.parentElement);
+    root.classList.add('cad-replay-host');root.classList.toggle('cad-replay-summarised',summarised);root.insertBefore(controls,viewport.parentElement);if(summarised)root.insertBefore(summary,viewport.parentElement.nextSibling);
     const events=new AbortController(),system=matchMedia('(prefers-color-scheme: dark)');
     let unbind,offFrame,ownedScene,ownedStage,ownedClock,disposed=false,switching=0;
     const dispose=()=>{
@@ -83,7 +84,7 @@ export function createReplayViewer(container,{recording,recordingUrl,expectedHas
           else custom?.remove();
           speed.value=String(state.speed);
           onState({state:'ready',playback:state});
-        });controller=ownedClock;describe();ownedScene.fit();
+        },{loop});controller=ownedClock;describe();ownedScene.fit();
       };
       build();
       const listen=(node,type,fn)=>node.addEventListener(type,fn,{signal:events.signal});
@@ -96,11 +97,11 @@ export function createReplayViewer(container,{recording,recordingUrl,expectedHas
       // Switching keeps the stage, its camera gestures and the playback speed; the latest choice wins a race.
       const choose=async id=>{
         const choice=choices.find(s=>s.id===id);if(!choice)throw new TypeError(`Unknown scenario ${id}`);
-        const request=++switching,keepSpeed=ownedClock.state().speed;ownedClock.pause();
+        const request=++switching,{speed:keepSpeed,playing:wasPlaying}=ownedClock.state();ownedClock.pause();
         if(select){select.value=id;select.disabled=true;}
         try{
           const next=await load(choice);if(disposed||request!==switching)return false;
-          ownedClock.dispose();ownedScene.dispose();active=choice;data=next;build();ownedClock.setSpeed(keepSpeed);
+          ownedClock.dispose();ownedScene.dispose();active=choice;data=next;build();ownedClock.setSpeed(keepSpeed);if(wasPlaying)ownedClock.play();
           return true;
         }catch(error){if(select)select.value=active.id;onState({state:'error',message:error.message});throw error;}
         finally{if(select&&request===switching)select.disabled=false;}
@@ -109,6 +110,7 @@ export function createReplayViewer(container,{recording,recordingUrl,expectedHas
       const selection=root.querySelector('.cad-viewer-selection');selection.textContent='Drag to orbit · two fingers to pan/zoom · Home to fit';selection.removeAttribute('aria-live');
       unbind=bindStageControls(viewport,ownedStage,()=>ownedScene.fit());
       offFrame=ownedStage.onFrame((_,dt)=>ownedClock.advance(dt));ownedStage.start();
+      if(autoplay&&!matchMedia('(prefers-reduced-motion: reduce)').matches)ownedClock.play();
       const documentId=crypto.randomUUID();
       return {fit:()=>ownedScene.fit(),choose,
         getViewState:()=>({version:1,kind:'recorded-simulation',documentId,scenario:active.id,camera:captureCamera(ownedStage),time:ownedClock.state().time,speed:ownedClock.state().speed}),

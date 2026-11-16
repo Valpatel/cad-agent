@@ -33,6 +33,7 @@ try{
     const select=page.getByLabel('Scenario',{exact:true});
     assert.deepEqual(await select.locator('option').allTextContents(),index.scenarios.map(s=>s.label));
     assert.equal(await select.inputValue(),'kerb_drop');
+    assert.equal(await page.evaluate(()=>__replay.playback.state().playing),false,'reduced motion: the recording does not start by itself');
     const geometry=await page.evaluate(()=>({page:document.documentElement.scrollWidth<=document.documentElement.clientWidth+1,canvas:document.querySelector('#replay canvas').getBoundingClientRect().height}));
     assert.ok(geometry.page&&geometry.canvas>200,JSON.stringify(geometry));
     // The summary is the index's own text for this scenario.
@@ -69,6 +70,30 @@ try{
     cases.push({width,theme,switches:4,oracle:'every body matches its recorded frame; the left scenario does not'});
     const cleanup=await page.evaluate(()=>{__replay.dispose();return document.querySelectorAll('#replay canvas').length;});
     assert.equal(cleanup,0);await context.close();
+  }
+  // With motion allowed the featured recording plays once ready and loops; Pause holds it. Planted control: the same
+  // page under reduced motion with the guard removed from viewer.js must autoplay, or the reduced-motion check is blind.
+  {
+    const context=await browser.newContext({viewport:{width:1100,height:900},reducedMotion:'no-preference'}),page=await context.newPage();
+    page.on('pageerror',e=>errors.push(e.message));
+    await page.goto(page_);await page.waitForFunction(()=>document.body.dataset.ready==='1',null,{timeout:120000});
+    assert.equal(await page.evaluate(()=>__replay.playback.state().playing),true,'the featured recording starts playing');
+    await page.waitForFunction(()=>__replay.playback.state().time>0.1);
+    const duration=await page.evaluate(()=>{const {duration}=__replay.playback.state();__replay.playback.seek(duration-0.02);return duration;});
+    await page.waitForFunction(d=>{const s=__replay.playback.state();return s.playing&&s.time<d-0.02;},duration);
+    assert.equal(await page.evaluate(()=>__replay.playback.state().loop),true);
+    await page.getByRole('button',{name:'Pause recording',exact:true}).click();
+    const held=await page.evaluate(()=>__replay.playback.state());assert.equal(held.playing,false);
+    await page.evaluate(()=>new Promise(resolve=>{let n=0;const tick=()=>++n>3?resolve():requestAnimationFrame(tick);tick();}));
+    assert.equal(await page.evaluate(()=>__replay.playback.state().time),held.time,'Pause holds the recording');
+    await context.close();
+    const planted=await browser.newContext({viewport:{width:1100,height:900},reducedMotion:'reduce'}),control=await planted.newPage();
+    await control.route('**/simulation/viewer.js',async route=>{const response=await route.fetch();const body=(await response.text()).replace("&&!matchMedia('(prefers-reduced-motion: reduce)').matches",'');
+      assert.ok(body.includes('if(autoplay)'),'planted control: the reduced-motion guard was not found to remove');await route.fulfill({response,body});});
+    await control.goto(page_);await control.waitForFunction(()=>document.body.dataset.ready==='1',null,{timeout:120000});
+    assert.equal(await control.evaluate(()=>__replay.playback.state().playing),true,'planted control: without its guard the viewer must autoplay under reduced motion');
+    await planted.close();
+    cases.push({name:'autoplay and loop with motion; none under reduced motion (planted control autoplays without the guard); Pause holds'});
   }
   // A recording whose bytes differ from the index's SHA-256 is refused when chosen; Retry viewer starts again cleanly.
   const context=await browser.newContext({viewport:{width:1100,height:900},reducedMotion:'reduce'}),page=await context.newPage();

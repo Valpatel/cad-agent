@@ -75,7 +75,7 @@
  "sources": {
   "docs/examples/robot-replay/capture-gyropup.mjs": "bdc87ea3c6bf747d2ef2c6b32ef6ab841acb8469e7f270e060454b144895956b",
   "software/cadagent/webkit/simulation/replay.js": "3f26ccc0548150a48b1f502bf393a357742f943853f2faabb4dc6d96034c8160",
-  "software/cadagent/webkit/simulation/viewer.js": "3946e826be08cf147debea2bf585fc67cd3a34f96acc0f586025a1bd99488f77",
+  "software/cadagent/webkit/simulation/viewer.js": "8eac55e571d14d0697e8c390f94eb44da16cdb63f9259ea5ef3320cb8ad4c5c5",
   "software/cadagent/webkit/simulation/scene.js": "f510e789c9279004f56f38f6cde3de45c289d4c77c5d168e71deaa2a6740fb26",
   "software/cadagent/webkit/simulation/scenarios.js": "2f9a955b3bac1de6c6b5a6b2b023aaa2613c2ced94e0303553f46a571b24868f",
   "software/cadagent/webkit/simulation/viewer.css": "f91a4c694953293d839f2589090aa71291f2bf0164e224625ded86641cc60fc6",

@@ -90,7 +90,8 @@ export function createReplayViewer(container,{recording,recordingUrl,expectedHas
       const listen=(node,type,fn)=>node.addEventListener(type,fn,{signal:events.signal});
       listen(play,'click',()=>ownedClock.state().playing?ownedClock.pause():ownedClock.play());
       listen(restart,'click',()=>{ownedClock.pause();ownedClock.seek(0);});
-      listen(time,'input',()=>{const requested=+time.value;ownedClock.pause();ownedClock.seek(requested);});
+      // A range snaps to its step, so a duration such as 7.066667 s tops out at 7.066: the last step means the end.
+      listen(time,'input',()=>{const end=ownedClock.state().duration,requested=+time.value>end-.001?end:+time.value;ownedClock.pause();ownedClock.seek(requested);});
       listen(speed,'change',()=>ownedClock.setSpeed(+speed.value));
       listen(document,'visibilitychange',()=>{if(document.hidden)ownedClock.pause();});
       listen(document,'cad-themechange',palette);system.addEventListener('change',palette);palette();

@@ -13,7 +13,7 @@
   "sources": {
     "docs/examples/robot-replay/capture.mjs": "b5eec835aeefbcb08ea2078b772bc70b1bae219bdf990be5753f01ecf15137c6",
     "software/cadagent/webkit/simulation/replay.js": "3f26ccc0548150a48b1f502bf393a357742f943853f2faabb4dc6d96034c8160",
-    "software/cadagent/webkit/simulation/viewer.js": "3946e826be08cf147debea2bf585fc67cd3a34f96acc0f586025a1bd99488f77",
+    "software/cadagent/webkit/simulation/viewer.js": "8eac55e571d14d0697e8c390f94eb44da16cdb63f9259ea5ef3320cb8ad4c5c5",
     "software/cadagent/webkit/simulation/scene.js": "f510e789c9279004f56f38f6cde3de45c289d4c77c5d168e71deaa2a6740fb26",
     "software/cadagent/webkit/simulation/page.js": "2b1433207eefc314849739792a68377241ed374b92f9594de11229f0241a4745",
     "software/cadagent/webkit/simulation/viewer.html": "b25bd1f23a0723cb1cc69f9a9d1deec7ea16b8e03900b143c31b81d6cfe74f55",

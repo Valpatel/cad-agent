@@ -535,6 +535,7 @@ def test_browser_engines(tmp_path, monkeypatch):
     m = _machine(tmp_path / "chrome", chrome=True, browsers=["chromium-1243"], monkeypatch=monkeypatch)
     inst = _assess(check, m, engine="chromium")
     assert inst.status == "runnable" and "PLAYWRIGHT_CHANNEL" not in inst.env
+    assert inst.env["CHROMIUM_EXECUTABLE"] == str(pf.CHROME_CHANNEL)       # model-explode reads only this
     assert any("not CI's Playwright Chromium r1194" in n and "chromium-1243" in n for n in inst.notes)
     m = _machine(tmp_path / "exact", browsers=["chromium-1194", "chromium_headless_shell-1194", "webkit-2215"],
                  monkeypatch=monkeypatch)
@@ -615,6 +616,30 @@ def test_json_report_never_counts_not_run_as_passed(tmp_path, capsys):
     assert report["paths"] == ["a/x"] and "evidence" in report["limits"]
     assert pf.main(args + ["--paths", "a/x", "--json", "--only", "ok"]) == 0
     assert json.loads(capsys.readouterr().out)["verdict"] == "passed"
+
+
+def test_a_ci_only_step_is_reported_never_run_and_left_out_of_the_verdict(tmp_path, capsys):
+    """The SCADA recapture (#763) runs in CI only after the provenance step failed and rewrites generated files."""
+    planted = tmp_path / "ran"
+    args = _repo(tmp_path, [_check("ok", "true"), _check("repair", f"touch {planted}", ci_only="after a failure")])
+    assert pf.main(args + ["--paths", "a/x", "--json"]) == 0
+    report = json.loads(capsys.readouterr().out)
+    assert {c["id"]: c["status"] for c in report["checks"]} == {"ok": "passed", "repair": "ci only"}
+    assert report["verdict"] == "passed" and report["ci_only"] == [{"id": "repair", "reason": "after a failure"}]
+    assert pf.main(args + ["--paths", "a/x", "--only", "repair"]) == 0               # named: still not run
+    out = capsys.readouterr().out
+    assert re.search(r"repair +ci only: after a failure", out) and "Verdict: nothing selected" in out
+    assert not planted.exists(), "a ci_only command must never run here"
+
+
+def test_the_merged_webkit_steps_select_their_entries(mapping):
+    """#749's model-explode suite and #763's recapture step, from the files they touch."""
+    ids = {i.id for i in pf.select(mapping, ["tests/webkit/webkit-model-explode-browser.mjs"])}
+    assert {"model-explode[chromium]", "model-explode[webkit]"} <= ids
+    ids = {i.check["id"] for i in pf.select(mapping, ["tools/webkit/scada/recapture.py"])}
+    assert "scada-recapture" in ids and "model-explode" not in ids
+    recapture = next(c for c in mapping["checks"] if c["id"] == "scada-recapture")
+    assert recapture["ci_only"]
 
 
 def test_a_selected_check_that_did_not_run_is_listed_at_the_end(tmp_path, capsys):

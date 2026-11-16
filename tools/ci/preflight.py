@@ -19,6 +19,9 @@ Each selected check is reported as one of:
 * ``not run: <reason>``: this machine lacks what it needs (a Playwright engine of the right revision, the Python minor
   CI pins when the check is sensitive to it, installed Node dependencies, Windows). Never counted as passed.
 * ``skipped: slow``: the repo marks it slow; ``--slow`` runs it.
+* ``ci only: <reason>``: a step that exists only for CI (an entry's ``ci_only``), such as the SCADA recapture that runs
+  only after the provenance step failed and uploads what it regenerates. Listed with its reason, never run here (not
+  even with ``--only``) and left out of the verdict: the checks it follows are what decide.
 
 Exit status, and the JSON report's ``verdict``:
 
@@ -147,7 +150,7 @@ class Instance:
     engine: str | None = None
     subs: dict = field(default_factory=dict)
     because: list = field(default_factory=list)
-    status: str = "selected"           # selected | passed | failed | not run | skipped
+    status: str = "selected"           # selected | passed | failed | not run | skipped | ci only
     reason: str = ""
     notes: list = field(default_factory=list)
     env: dict = field(default_factory=dict)
@@ -187,7 +190,7 @@ STR, LIST, DICT, INT, BOOL = str, list, dict, int, bool
 # Each field an entry may carry, and its type; `needs` and `needs.python` are checked the same way
 FIELDS = {"id": STR, "title": STR, "paths": LIST, "exclude": LIST, "command": STR, "cwd": STR, "env": DICT,
           "provides_env": DICT, "needs": DICT, "engines": LIST, "cost": STR, "cost_note": STR, "timeout": INT,
-          "subset": BOOL, "per_match": STR, "per_match_requires": LIST, "mirrors": LIST}
+          "subset": BOOL, "per_match": STR, "per_match_requires": LIST, "mirrors": LIST, "ci_only": STR}
 NEEDS = {"python": DICT, "node_deps": LIST, "commands": LIST, "after": LIST, "os": STR, "browser": STR,
          "node_heap_mb": INT, "node_heap_why": STR}
 PYTHON_NEED = {"version": STR, "exact": BOOL, "modules": LIST, "dists": LIST, "browser": STR, "why": STR}
@@ -456,7 +459,12 @@ class Machine:
             return {"PLAYWRIGHT_BROWSER": "chromium", "PLAYWRIGHT_CHANNEL": "chromium"}, "", []
         have = self.present_builds("chromium")
         if CHROME_CHANNEL.exists():
-            return ({"PLAYWRIGHT_BROWSER": "chromium"}, "",
+            # Suites pick Chrome by the `chrome` channel or by CHROMIUM_EXECUTABLE (webkit-model-explode-browser.mjs
+            # reads only the latter); name it for both, unless the caller already chose an executable.
+            env = {"PLAYWRIGHT_BROWSER": "chromium"}
+            if not self.env.get("CHROMIUM_EXECUTABLE"):
+                env["CHROMIUM_EXECUTABLE"] = str(CHROME_CHANNEL)
+            return (env, "",
                     [f"runs on the local Chrome ({CHROME_CHANNEL}, Playwright's `chrome` channel), not CI's Playwright "
                      f"Chromium r{rev}" + (f" (installed here: {', '.join(have)})" if have else "") + ": evidence only"])
         return None, (f"Playwright Chromium r{rev} is not installed" + (f" (found {', '.join(have)})" if have else "")
@@ -508,6 +516,9 @@ def assess(inst: Instance, machine: Machine, slow: bool, done: dict[str, Instanc
     """Decide whether ``inst`` can run here, filling ``status``/``reason``, ``env``, ``python`` and ``notes``."""
     check, need, ctx = inst.check, inst.check.get("needs", {}), ctx or {}
     if inst.status == "not run":                       # decided at selection (a named per_match check)
+        return
+    if check.get("ci_only"):
+        inst.status, inst.reason = "ci only", check["ci_only"]
         return
     if check.get("cost") == "slow" and not slow and not inst.named:
         inst.status, inst.reason = "skipped", "slow" + (f" ({check['cost_note']})" if check.get("cost_note") else "") \
@@ -742,6 +753,9 @@ def text_report(instances: list[Instance], paths: list[str], ctx: dict, listing:
                    f"result): " + ", ".join(f"{i.id} ({'/'.join(i.differs)})" for i in differing))
     skipped = [i for i in instances if i.status == "skipped"]
     cannot = [i for i in instances if i.status == "not run"]
+    ci_only = [i for i in instances if i.status == "ci only"]
+    if ci_only:
+        out.append("CI only, never run here and not part of the verdict: " + ", ".join(i.id for i in ci_only))
     if skipped or cannot:
         out.append(f"Not run, so not passed (CI runs them): {len(skipped)} skipped as slow (--slow runs them), "
                    f"{len(cannot)} cannot run here:")
@@ -755,11 +769,12 @@ def text_report(instances: list[Instance], paths: list[str], ctx: dict, listing:
 def verdict(instances: list[Instance], listing: bool = False, interrupted: Interrupted | None = None) -> str:
     """``listed``, ``nothing selected``, ``failed`` (a check that ran failed), ``incomplete`` (nothing failed, but a
     selected check did not run here) or ``passed`` (every selected check ran and passed). Never ``passed`` when
-    nothing ran."""
+    nothing ran. ``ci only`` checks are left out: a selection of only those is ``nothing selected``."""
     if listing:
         return "listed"
     if interrupted:
         return f"interrupted ({interrupted})"
+    instances = [i for i in instances if i.status != "ci only"]
     if not instances:
         return "nothing selected"
     if any(i.status == "failed" for i in instances):
@@ -887,6 +902,7 @@ def _main(argv: list[str] | None) -> int:
                                          if i.status == "not run"],
                           "not_run": [{"id": i.id, "status": i.status, "reason": i.reason} for i in instances
                                       if i.status in ("not run", "skipped")],
+                          "ci_only": [{"id": i.id, "reason": i.reason} for i in instances if i.status == "ci only"],
                           "checks": [to_json(i, ctx) for i in instances],
                           "limits": "Mirrors CI, does not replace it: not run or skipped is not passed, and a pass on "
                                     "another browser, Python or Node than CI's is evidence, not CI's result."},

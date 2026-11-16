@@ -1,5 +1,5 @@
 {
- "about": "What CI runs for which changed paths, mirrored from .github/workflows/*.yml for tools/ci/preflight.py (#759). Each check: id, title, paths (repo globs; ** spans folders) and exclude, the command and its cwd (placeholders {root}, {base} = merge base, {tmp} = run folder, per_match groups), env, needs (python version/exact/modules/dists/browser, node_deps, browser, os, commands, after), engines (CI's browser matrix), cost (fast | slow, with cost_note), timeout (seconds), needs.node_heap_mb, subset (runs part of a CI step), and mirrors: the workflow, job and exact CI command it stands for (in the entry's cwd unless the mirror names one). ci_node_major is the Node major CI's setup-node pins. per_match groups must be plain character classes; values are shell-quoted. tests/repo/ci/test_ci_checks.py fails when a pull-request workflow runs a check command that no entry mirrors, or an entry mirrors one that no longer exists.",
+ "about": "What CI runs for which changed paths, mirrored from .github/workflows/*.yml for tools/ci/preflight.py (#759). Each check: id, title, paths (repo globs; ** spans folders) and exclude, the command and its cwd (placeholders {root}, {base} = merge base, {tmp} = run folder, per_match groups), env, needs (python version/exact/modules/dists/browser, node_deps, browser, os, commands, after), engines (CI's browser matrix), cost (fast | slow, with cost_note), ci_only (the reason a step exists only in CI; reported, never run, not in the verdict), timeout (seconds), needs.node_heap_mb, subset (runs part of a CI step), and mirrors: the workflow, job and exact CI command it stands for (in the entry's cwd unless the mirror names one). ci_node_major is the Node major CI's setup-node pins. per_match groups must be plain character classes; values are shell-quoted. tests/repo/ci/test_ci_checks.py fails when a pull-request workflow runs a check command that no entry mirrors, or an entry mirrors one that no longer exists.",
  "ci_node_major": "22",
  "checks": [
   {
@@ -240,6 +240,18 @@
    "mirrors": [{"workflow": "webkit.yml", "job": "browser", "run": "npm run test:stage"}]
   },
   {
+   "id": "model-explode",
+   "title": "<cad-model> Explode tween on its first animation frame in a browser",
+   "paths": ["software/cadagent/webkit/**", "tests/webkit/webkit-model-explode-browser.mjs", "tests/fixtures/model/**", "tools/site/package.json", "tools/site/package-lock.json", "tests/webkit/webkit-server.mjs", "tests/site/npm-context.mjs"],
+   "exclude": ["software/cadagent/webkit/scada/**"],
+   "command": "npm run test:model-explode",
+   "cwd": "tools/site",
+   "engines": ["chromium", "webkit"],
+   "needs": {"node_deps": ["tools/site"]},
+   "cost": "fast",
+   "mirrors": [{"workflow": "webkit.yml", "job": "browser", "run": "npm run test:model-explode"}]
+  },
+  {
    "id": "part-table",
    "title": "Part table in a browser",
    "paths": ["software/cadagent/webkit/**", "tests/webkit/webkit-part-table-browser.mjs", "tools/site/package.json", "tools/site/package-lock.json", "tests/webkit/webkit-server.mjs", "tests/site/npm-context.mjs"],
@@ -378,6 +390,16 @@
    "needs": {"node_deps": ["tools/webkit/scada"], "python": {"version": "3.12", "exact": true, "modules": ["PIL", "playwright"], "why": "the capture fingerprint hashes ast.dump output, which differs between Python minors"}},
    "cost": "fast",
    "mirrors": [{"workflow": "webkit.yml", "job": "scada", "run": "npm run thumbnails:scenarios:check"}]
+  },
+  {
+   "id": "scada-recapture",
+   "title": "Recapture stale SCADA provenance on CI's pinned shell, for an artifact (Chromium job, only after the provenance step failed)",
+   "paths": ["software/cadagent/webkit/scada/**", "tools/webkit/scada/**", "tests/webkit/scada/**", "software/cadagent/webkit/ui/**", "software/cadagent/webkit/vendor/fonts/**", "tests/fixtures/scada/**"],
+   "command": "python tools/webkit/scada/recapture.py --out \"{tmp}/scada-recapture\"",
+   "ci_only": "CI runs it only after the SCADA provenance step failed, to regenerate the stale outputs on its pinned capture shell and upload them; it is not a check and rewrites the checkout's generated files. The scada-* provenance checks above are what decide; locally, run the failing check's generator (tools/webkit/scada/README.md) or take CI's scada-recapture artifact",
+   "needs": {"python": {"version": "3.12", "modules": ["playwright"]}},
+   "cost": "fast",
+   "mirrors": [{"workflow": "webkit.yml", "job": "scada", "run": "python tools/webkit/scada/recapture.py --out \"$RUNNER_TEMP/scada-recapture\""}]
   },
   {
    "id": "scada-explorer-browser",

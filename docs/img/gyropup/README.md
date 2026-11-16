@@ -27,6 +27,8 @@ flowchart TD
 | [LICENSE.txt](LICENSE.txt) | Attribution and reuse terms for the imported pictures. |
 | [SOURCE.json](SOURCE.json) | Source identities and generation notes for these recorded images. |
 | [leg-render.webp](leg-render.webp) | Recorded picture; source identity and interpretation stay with its guide or source record. |
+| [turret-playground.webp](turret-playground.webp) | Recorded browser playground: Gyropup's turret on the Orin AGX box firing foam balls, from `tools/site/figures/gyropup-turret.mjs`; a work-in-progress prototype, not physics validation |
+| [turret-playground-still.webp](turret-playground-still.webp) | The same recording's finished frame, for reduced motion |
 | [wheel-link-fea.webp](wheel-link-fea.webp) | Recorded output: Von Mises stress in Gyropup's wheel link, highest beside the axle bore, with a colour bar from 0 to 15 MPa |
 
 </details>

@@ -12,6 +12,9 @@ Choose a task, then follow its method, sources and checks. [The topic tree](area
 | Choose a guide collection | [Mechanical design](mechanical/README.md), [design and review practice](practice/README.md), [worked examples](examples/README.md) |
 | Operate a process simulation | [SCADA guide](practice/scada/README.md), [equipment library](../software/cadagent/webkit/scada/ui/README.md), [example systems](../software/cadagent/webkit/scada/sim/scenarios/README.md) |
 | Embed viewers or build instructions | [Browser toolkit](../software/cadagent/webkit/README.md), [contained hosts](../software/cadagent/webkit/host/README.md), [assembly guides](../software/cadagent/webkit/assembly/README.md), [recorded robot playback](../software/cadagent/webkit/simulation/README.md) |
+| Make reports, BOMs and exploded views | [Review packets](practice/review-packet.md), [part tables](practice/web-parts.md), [assembly guides](practice/assembly-guide.md), [BOMs in a design comparison](explore.md) |
+| Run a simulation | [FEA, CFD and robot code](../software/cadagent/simulation/README.md), [simulation tools surveyed](research/simulation-tools.md), [robot replay example](examples/robot-replay/README.md) |
+| Teach or measure agents | [Agent skills](../.agents/skills/README.md), [standard evaluation](practice/standard-evaluation.md), [from frontier to local](vision.md#from-frontier-to-local) |
 | Find a source owner | [Repository map](map.md), [software domains](../software/cadagent/README.md), [agent kit](../.agents/README.md) |
 | Design and check a part | [Toolkit and project format](toolkit.md), [design dossier](practice/dossier.md), [integrity gates](practice/gates.md) |
 | Choose a joint or mechanism | [Inserts](mechanical/inserts.md), [printed joints](mechanical/printed-joints.md), [snap fits](mechanical/compliant.md), [bearings](mechanical/bearings.md), [linkages](mechanical/linkages.md) |

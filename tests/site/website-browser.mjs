@@ -24,7 +24,23 @@ import { wideLayoutProblems } from './layout/wide.mjs';
 const root = path.resolve(import.meta.dirname, '../..');
 const site = await builtSite('cad-agent-website-browser-', { stdio: 'inherit' });   // CAD_AGENT_SITE, or a fresh build of HEAD
 const dir = site.dir;
-const server = spawn(process.execPath, ['tools/site/preview-site.mjs', '--dir', dir, '--port', '0'], { cwd: root });
+// The IPC channel lets a failed diagram navigation ask the server for its own record of that request (#686); the
+// server's errors go to this log.
+const server = spawn(process.execPath, ['tools/site/preview-site.mjs', '--dir', dir, '--port', '0'], { cwd: root, stdio: ['pipe', 'pipe', 'inherit', 'ipc'] });
+server.channel?.unref();   // a pending evidence query holds its own timer; the channel alone never keeps this test alive
+let evidenceQueries = 0;
+// This process's event-loop lag (#686): a starved test process times out a navigation its browser and server
+// finished. Samples late by 20 ms or more, in a fixed ring; the interval never keeps the test alive. Declared here,
+// before the parts run under this module's top-level await.
+const testLag = [];
+{
+  let expected = Date.now() + 100;
+  setInterval(() => {
+    const now = Date.now(), late = now - expected;
+    if (late >= 20) { testLag.push({ at: now, lateMs: late }); if (testLag.length > 2000) testLag.shift(); }
+    expected = now + 100;
+  }, 100).unref();
+}
 const base = await new Promise((ok, fail) => {
   server.stdout.on('data', d => { const m = String(d).match(/http:\/\/[\d.]+:\d+/); if (m) ok(m[0]); });
   server.on('exit', c => fail(new Error(`preview server exited ${c}`)));
@@ -136,7 +152,7 @@ try {
           const early = await page.evaluate(() => performance.getEntriesByType('resource').filter(r => /three\.module|\/web\/models\/.*\.(json|bin)/.test(r.name)).map(r => r.name));
           if (early.length) seen.push(`model payload fetched at hero before a project was approached: ${early.join(', ')}`);
           const models = page.locator('cad-model');
-          if (await models.count() !== 2) seen.push('Built with cad-agent needs both real project viewers');
+          if (await models.count() !== 2) seen.push('See it run needs both real project viewers');
           let ready = 'ready';
           for (let i = 0; i < await models.count(); i++) {
             await models.nth(i).evaluate(el => { document.documentElement.style.scrollBehavior = 'auto'; el.scrollIntoView({block:'center'}); });
@@ -1542,19 +1558,59 @@ async function withDiagramPage(options, action, open = options => browser.newCon
   }
 }
 
-/** Keep the normal 30-second load boundary; collect evidence on failure instead of guessing which resource stalled. */
+/** Ask the preview server for its record of `pathname` since `since` (tools/site/preview-site.mjs). Bounded by
+ * `limit`: a server that cannot answer in time is itself the evidence, and never turns a failure into a hang. */
+async function previewServerEvidence(pathname, since, limit = 2000) {
+  if (!server.connected) return { unavailable: 'the preview server has no IPC channel (exited or disconnected)' };
+  const id = ++evidenceQueries, asked = Date.now();
+  let timer, listener;
+  try {
+    return await new Promise(resolve => {
+      listener = message => { if (message?.id === id) resolve({ ...message, id: undefined, answeredInMs: Date.now() - asked }); };
+      server.on('message', listener);
+      timer = setTimeout(() => resolve({ unavailable: `the preview server did not answer in ${limit} ms` }), limit);
+      server.send({ type: 'preview-evidence', id, path: pathname, since }, error => {
+        if (error) resolve({ unavailable: `could not ask the preview server: ${error.message}` });
+      });
+    });
+  } finally { clearTimeout(timer); server.off('message', listener); }
+}
+
+/** Keep the normal 30-second load boundary; collect evidence on failure instead of guessing which resource stalled.
+ * The browser's view (pending and failed requests, main-frame commits, the DOM) is joined to the preview server's
+ * own record of the document request (received? headers written? finished? on a new or reused socket?), its
+ * event-loop lag and sockets, and this process's lag: the times are epoch ms from both processes on one host. */
 async function navigateDiagram(page, url, where, timeout = 30000) {
-  const pending = new Map(), failed = [];
-  const cleanURL = value => { const u = new URL(value); return u.origin + u.pathname; }; // no queries or fragments
+  const pending = new Map(), failed = [], committed = [], began = Date.now();
+  const cleanURL = value => { const u = new URL(value); return u.protocol === 'about:' ? value.split(/[?#]/)[0] : u.origin + u.pathname; }; // no queries or fragments
+  // for URLs the browser reports: one that does not parse is noted, never thrown over the navigation error
+  const reportedURL = value => { try { return cleanURL(value); } catch (error) { return `unparsable URL (${error.message})`; } };
   const request = r => pending.set(r, { url: cleanURL(r.url()), type: r.resourceType(), started: Date.now() });
-  const response = r => { const entry = pending.get(r.request()); if (entry) entry.status = r.status(); };
+  const response = r => { const entry = pending.get(r.request()); if (entry) Object.assign(entry, { status: r.status(), respondedAt: Date.now() }); };
   const finished = r => pending.delete(r);
   const rejected = r => { failed.push({ url: cleanURL(r.url()), error: r.failure()?.errorText }); pending.delete(r); };
-  for (const [event, listener] of [['request', request], ['response', response], ['requestfinished', finished], ['requestfailed', rejected]]) page.on(event, listener);
+  const navigated = frame => { if (frame === page.mainFrame() && committed.length < 10) committed.push({ url: reportedURL(frame.url()), at: Date.now() }); };
+  const listeners = [['request', request], ['response', response], ['requestfinished', finished], ['requestfailed', rejected], ['framenavigated', navigated]];
+  for (const [event, listener] of listeners) page.on(event, listener);
   try { return await page.goto(url, { waitUntil: 'load', timeout }); }
   catch (cause) {
-    const evidence = { where, url: cleanURL(url), viewport: page.viewportSize(), timeout,
-      pending: [...pending.values()].map(({ started, ...entry }) => ({ ...entry, ageMs: Date.now() - started })), failed: [...failed] };
+    const evidence = { where, url: cleanURL(url), viewport: page.viewportSize(), timeout, began,
+      pageUrl: reportedURL(page.url()), committed: [...committed],
+      pending: [...pending.values()].map(({ started, ...entry }) => ({ ...entry, startedAt: started, ageMs: Date.now() - started })), failed: [...failed] };
+    // A fault in the evidence itself is recorded as unavailable; it never replaces the navigation error.
+    try {
+      const lag = testLag.filter(l => l.at >= began);
+      evidence.testProcessLag = { maxMs: Math.max(0, ...lag.map(l => l.lateMs)), samplesOver20ms: lag.slice(-10) };
+    } catch (error) { evidence.testProcessLag = { unavailable: error.message }; }
+    // asked before the DOM snapshot, so a wedged page cannot delay the server's account of the same moment
+    try {
+      evidence.server = await previewServerEvidence(new URL(url).pathname, began - 1000);
+      // said in words, so an empty `matching` is not read as "never received" when the record does not reach back
+      if ('coversWindow' in evidence.server) evidence.server.coverage = evidence.server.coversWindow
+        ? 'the server record covers every request received since 1 s before this navigation began'
+        : 'NOT COVERED: the server dropped requests received since 1 s before this navigation began, so a missing request proves nothing';
+    }
+    catch (error) { evidence.server = { unavailable: error.message }; }
     let timer;
     try {
       evidence.dom = await Promise.race([
@@ -1570,7 +1626,7 @@ async function navigateDiagram(page, url, where, timeout = 30000) {
     error.navigation = evidence;
     throw error;
   } finally {
-    for (const [event, listener] of [['request', request], ['response', response], ['requestfinished', finished], ['requestfailed', rejected]]) page.off(event, listener);
+    for (const [event, listener] of listeners) page.off(event, listener);
   }
 }
 
@@ -1602,6 +1658,14 @@ async function diagramNavigationControl() {
       out.push('diagram navigation control lost the actual pending resource, iteration, DOM state or original error');
     }
     if (evidence?.url.includes('?')) out.push('diagram navigation diagnostics include query parameters');
+    // The server's side of the same failure: it received and answered the document in full while the browser held
+    // its stylesheet, so the record tells a browser-side stall from a server-side one (#686). (The stylesheet's own
+    // absence is not asserted: the other lane's pages request the same path meanwhile.)
+    const doc = evidence?.server?.matching?.at(-1);
+    if (!doc || doc.status !== 200 || !doc.finishedAt || !/^[0-9a-f]{64}$/.test(doc.sha256 ?? '') || !(doc.receivedAt >= evidence.began) ||
+        !evidence.server.keepAlive || evidence.server.coversWindow !== true || !evidence.server.coverage || !(evidence.server.openSockets >= 0) || !(evidence.testProcessLag?.maxMs >= 0)) {
+      out.push(`diagram navigation control lost the preview server's record of the document: ${JSON.stringify(evidence?.server ?? null).slice(0, 400)}`);
+    }
     if (browser.contexts().includes(owned)) out.push('diagram navigation failure retained its owned context');
     if (await neighbor.evaluate(() => document.readyState) !== 'complete') out.push('diagram cleanup disrupted another context');
   } catch (error) { failed = true; failure = error; throw error; }

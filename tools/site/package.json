@@ -9,6 +9,7 @@
     "test:simulation-replay": "node ../../tests/webkit/simulation/browser.mjs",
     "test:fea": "node ../../tests/webkit/webkit-fea-browser.mjs",
     "test:stage": "node ../../tests/webkit/webkit-stage-browser.mjs",
+    "test:model-explode": "node ../../tests/webkit/webkit-model-explode-browser.mjs",
     "test:part-table": "node ../../tests/webkit/webkit-part-table-browser.mjs",
     "test:file-viewer": "node ../../tests/webkit/files/browser.mjs && npm run test:viewer-host",
     "test:diagrams": "node ../../tests/webkit/webkit-diagrams-browser.mjs && node ../../tests/site/site-diagrams-browser.mjs",

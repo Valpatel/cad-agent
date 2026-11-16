@@ -10,6 +10,7 @@ from __future__ import annotations
 import json
 import os
 import subprocess
+import sys
 import time
 import types
 from pathlib import Path
@@ -175,6 +176,25 @@ requirements = [
 ]
 python = "3.12"
 """
+
+
+@pytest.mark.parametrize("reader", ["tomllib", "python-3.10"])
+def test_the_receipt_reads_the_same_without_tomllib(monkeypatch, reader):
+    """Python 3.10 has no tomllib (#799, CI's core 3.10): the receipt's requirements read the same either way, for the
+    forms uv writes: several lines, one line, and a Windows path as a TOML literal string."""
+    one_line = '[tool]\nrequirements = [{ name = "cad-agent", editable = \'C:\\Users\\u\\cad-agent\', extras = ["cad"] }]\n'
+    expected = [
+        [{"name": "cad-agent", "editable": "/k/cad-agent", "extras": ["cad", "fea"]},
+         {"name": "playwright", "specifier": "==1.62.0"},
+         {"name": "requests", "extras": ["socks"], "specifier": ">=2"},
+         {"name": "idna", "marker": "python_full_version >= '3.8'", "specifier": ">=3"}],
+        [{"name": "cad-agent", "editable": "C:\\Users\\u\\cad-agent", "extras": ["cad"]}],
+    ]
+    if reader == "python-3.10":
+        monkeypatch.setitem(sys.modules, "tomllib", None)            # `import tomllib` raises ImportError
+    else:
+        pytest.importorskip("tomllib")
+    assert [agentkit._receipt_requirements(t) for t in (RECEIPT, one_line)] == expected
 
 
 def test_a_uv_tool_install_keeps_its_with_packages_and_is_told_uvs_way_to_add_one(tmp_path, monkeypatch):

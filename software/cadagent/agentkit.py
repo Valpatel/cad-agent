@@ -656,36 +656,58 @@ def pull(root: Path, ref: Optional[str] = None) -> dict:
             "at": ref or "main", "dependencies_changed": any(f in DEPENDENCY_FILES for f in changed)}
 
 
+_RECEIPT_STRING = r'"(?:[^"\\]|\\.)*"|\'[^\']*\''          # TOML basic or literal string
+_RECEIPT_VALUE = re.compile(r'([A-Za-z0-9_-]+)\s*=\s*(' + _RECEIPT_STRING + r'|\[[^\]]*\])')
+
+
+def _receipt_string(value: str) -> str:
+    return json.loads(value) if value.startswith('"') else value[1:-1]
+
+
+def _receipt_requirements(text: str) -> List[dict]:
+    """The ``[tool] requirements`` inline tables of uv's ``uv-receipt.toml``. tomllib where Python has it (3.11+);
+    on 3.10 a reader for the form uv writes: one ``{ key = "string" | ["strings"] }`` table per requirement (#799)."""
+    try:
+        import tomllib
+        reqs = tomllib.loads(text).get("tool", {}).get("requirements", [])
+        return [r for r in reqs if isinstance(r, dict)] if isinstance(reqs, list) else []
+    except ImportError:
+        pass
+    except ValueError:
+        return []
+    block = re.search(r"^requirements\s*=\s*\[(.*?)^\]", text, re.S | re.M) or \
+        re.search(r"^requirements\s*=\s*\[(.*?\})\s*\]\s*$", text, re.S | re.M)
+    out = []
+    for table in re.findall(r"\{([^{}]*)\}", block.group(1) if block else ""):
+        req: dict = {}
+        for key, value in _RECEIPT_VALUE.findall(table):
+            try:
+                req[key] = (_receipt_string(value) if value[0] in "\"'" else
+                            [_receipt_string(v) for v in re.findall(_RECEIPT_STRING, value)])
+            except ValueError:
+                continue
+        out.append(req)
+    return out
+
+
 def _receipt_extras() -> Optional[List[str]]:
     """The extras uv recorded when it installed this cad-agent (``uv-receipt.toml`` in the tool environment), or None
     for an install uv did not make."""
     text = _text(Path(sys.prefix) / "uv-receipt.toml")
     if not text:
         return None
-    try:
-        import tomllib
-        reqs = tomllib.loads(text).get("tool", {}).get("requirements", [])
-        for req in reqs if isinstance(reqs, list) else []:
-            if isinstance(req, dict) and req.get("name") == "cad-agent":
-                return sorted(str(e) for e in req.get("extras", []))
-    except (ImportError, ValueError):
-        m = re.search(r'name\s*=\s*"cad-agent"[^}]*?extras\s*=\s*\[([^\]]*)\]', text)
-        if m:
-            return sorted(re.findall(r'"([^"]+)"', m.group(1)))
+    for req in _receipt_requirements(text):
+        if req.get("name") == "cad-agent":
+            return sorted(str(e) for e in req.get("extras") or [])
     return None
 
 
 def _receipt_with() -> List[str]:
     """The packages uv recorded beside cad-agent (``uv tool install --with``), as requirement strings, so a reinstall
     keeps them: uv rebuilds the environment from exactly the requirements it is given."""
-    try:
-        import tomllib
-        reqs = tomllib.loads(_text(Path(sys.prefix) / "uv-receipt.toml") or "").get("tool", {}).get("requirements", [])
-    except (ImportError, ValueError):
-        return []
     out = []
-    for req in reqs if isinstance(reqs, list) else []:
-        if not isinstance(req, dict) or not isinstance(req.get("name"), str) or req["name"] == "cad-agent":
+    for req in _receipt_requirements(_text(Path(sys.prefix) / "uv-receipt.toml")):
+        if not isinstance(req.get("name"), str) or req["name"] == "cad-agent":
             continue
         extras = req.get("extras") or []
         text = req["name"] + (f"[{','.join(map(str, extras))}]" if extras else "") + str(req.get("specifier") or "")

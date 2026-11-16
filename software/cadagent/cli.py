@@ -1021,6 +1021,7 @@ def cmd_agents(args: argparse.Namespace) -> int:
     for dest in result["conflicts"]:
         _err(f"agents: {dest} exists and was not installed by cad-agent; left untouched (move it away and rerun)")
     _say(f"agents: {len(result['done'])} {'planned' if args.dry_run else 'installed'} from {root}"
+         + (f", {len(result['unchanged'])} already in place" if result["unchanged"] else "")
          + (f", {len(result['conflicts'])} conflicts" if result["conflicts"] else ""))
     for line in agentkit.notice(agentkit.readiness(root)):
         _say(line)
@@ -1082,7 +1083,7 @@ def cmd_update(args: argparse.Namespace) -> int:
     if why:
         cmd = agentkit.reinstall_command(root, extras)
         agentkit.reinstall_pending(root, extras)
-        if os.name == "nt" and cmd[0] == "uv":       # this process holds cad-agent.exe: the installer finishes it
+        if os.name == "nt" and cmd[1:3] == ["tool", "install"]:  # uv: this process holds cad-agent.exe, install.ps1 finishes
             _update_notes(root, moved["old"], args.project)
             _say(f"update: {why}; finish with: " + " ".join(cmd) + ", then cad-agent update --reinstalled and "
                  "cad-agent agents install (install.ps1 does this)")
@@ -1433,12 +1434,25 @@ def dispatch(args: argparse.Namespace) -> int:
 
 PROJECT_HELP = "CAD project root containing cad-agent.yaml with a cad: section (default: cwd)"
 
+class _Version(argparse.Action):
+    """``--version``: one line, never wrapped to the terminal (argparse's own action wraps a long path)."""
+
+    def __init__(self, option_strings, dest=argparse.SUPPRESS, default=argparse.SUPPRESS, help=None):
+        super().__init__(option_strings, dest=dest, default=default, nargs=0, help=help)
+
+    def __call__(self, parser, namespace, values, option_string=None):
+        import cadagent
+        print(f"cad-agent {cadagent.__version__} ({Path(cadagent.__file__).resolve().parent})")
+        parser.exit()
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="cad-agent",
         description="CAD design verification: build, check, report, package (docs/toolkit.md)",
     )
     parser.add_argument("--project", default=None, help=PROJECT_HELP)
+    parser.add_argument("--version", action=_Version, help="print the version and where this cad-agent runs from")
     # also accepted after the subcommand; SUPPRESS keeps it from resetting the parent's value
     common = argparse.ArgumentParser(add_help=False)
     common.add_argument("--project", default=argparse.SUPPRESS, help=PROJECT_HELP)
@@ -1678,6 +1692,9 @@ def build_parser() -> argparse.ArgumentParser:
                         help="Check a filled-in reviewer record against the current build and write it to "
                              "dossier/reviews/ (the actor is CAD_AGENT_ACTOR)")
     rs_grp.add_argument("--check", metavar="RECORD", help="Like --submit, but write nothing")
+    for action in sub._choices_actions:              # `cad-agent <command> --help` opens with what the list says
+        if sub.choices[action.dest].description is None:
+            sub.choices[action.dest].description = action.help
     return parser
 
 def main(argv: Optional[Sequence[str]] = None) -> int:

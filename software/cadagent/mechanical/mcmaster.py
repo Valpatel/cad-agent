@@ -32,7 +32,8 @@ What it gives you
     frame, and the whole specification table (``specs.raw`` label -> value strings, ``specs.parsed`` numbers in mm, g,
     N, MPa or deg C where the unit is unambiguous).
 
-Install: ``pip install playwright`` into the environment that runs this, and Google Chrome (then no
+Install: Playwright into the environment that runs this (the hint names the command: uv's ``--with`` for the
+installer's uv tool install, else pip), and Google Chrome (then no
 ``playwright install`` is needed). The CAD steps need CadQuery (the ``cad`` extra); the page parsing and the
 catalogue helpers need neither.
 """
@@ -56,8 +57,8 @@ from cadagent.geometry import export_step
 BASE_URL = "https://www.mcmaster.com"
 USER_AGENT = ("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) "
               "Chrome/141.0.0.0 Safari/537.36")
-PLAYWRIGHT_HINT = ("McMaster downloads need Playwright: pip install playwright (into the environment that runs "
-                   "cad-agent). With Google Chrome installed, `playwright install` is not needed.")
+PLAYWRIGHT_HINT = ("McMaster downloads need Playwright in the environment that runs cad-agent: {command}. With Google "
+                   "Chrome installed, `playwright install` is not needed.")
 CHROME_HINT = ("McMaster downloads drive the system Google Chrome (Playwright channel 'chrome'), which could not be "
                "started: install Google Chrome, or run `playwright install chrome`.")
 SOURCE_NOTE = "McMaster-Carr CAD, for design use; not redistributed."
@@ -364,7 +365,8 @@ def _playwright():
     try:
         from playwright.sync_api import sync_playwright  # noqa: F401
     except ImportError as exc:
-        raise MissingDependency(f"{PLAYWRIGHT_HINT} ({exc})") from exc
+        from cadagent.agentkit import add_packages_command
+        raise MissingDependency(f"{PLAYWRIGHT_HINT.format(command=add_packages_command('playwright'))} ({exc})") from exc
     return sync_playwright
 
 

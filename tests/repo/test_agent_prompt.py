@@ -385,3 +385,58 @@ print(json.dumps({{'type':'result','subtype':'success'}}))
         assert not list((work / 'home').rglob('private-auth-fixture.json'))
     if case == 'nonempty-work':
         assert (work / 'leave-me.txt').read_text() == 'existing evidence stays exact'
+
+
+# Every `cad-agent ...` the agent guide (docs/agent-prompt.txt, which llms.txt carries) and llms.txt's own template print
+# runs as printed (#799). A placeholder is replaced by the values below; a command that changes the install, or needs the
+# cad extra and a build, is named here with the test that runs it instead. A new command in the guide fails until it is
+# placed in one of the two. Two limits: it reads the template's literal text, so a command that reaches llms.txt
+# through `${...}` is not extracted (the `## Commands` list prints each bare `cad-agent <name>`, some of which, such as
+# `cad-agent choose`, exit 2 without arguments; the `<command> --help` case runs every name, with --help, not as printed);
+# and the starter README's commands (`cad-agent init my-box && cd my-box`, `cad-agent all`) are not extracted here:
+# tests/cli/test_init.py runs them.
+PLACEHOLDERS = {"<feature>": ["wall"], "<command>": None}         # None: every subcommand
+RUN_ELSEWHERE = {
+    "cad-agent update": "changes the install: tests/cli/test_update.py and test_installer.py run it",
+    "cad-agent all": "builds the starter with CadQuery: tests/cli/test_init.py runs it on what `init` copies",
+}
+
+
+def documented_commands():
+    template = (ROOT / "tools" / "site" / "build-site.mjs").read_text()
+    llms = template.split("const llms = `", 1)[1].split("\n`;", 1)[0]
+    found = re.findall(r"`(cad-agent(?: [^`]*)?)`", GUIDE) + re.findall(r"\\`(cad-agent(?: [^`$\\]*)?)\\`", llms)
+    return list(dict.fromkeys(" ".join(c.split()) for c in found))
+
+
+def test_every_documented_command_exits_0_as_printed(tmp_path, monkeypatch, capsys):
+    from cadagent.cli import build_parser, main
+    commands = documented_commands()
+    assert {"cad-agent --version", "cad-agent init my-part", "cad-agent update"} <= set(commands), commands
+    assert any(c.startswith("cad-agent choose joining") for c in commands)
+    names = sorted(build_parser()._subparsers._group_actions[0].choices)
+    monkeypatch.chdir(tmp_path)
+    ran = []
+    for command in commands:
+        if command in RUN_ELSEWHERE:
+            continue
+        argvs = [command.split()[1:]]
+        for name, values in PLACEHOLDERS.items():
+            if name in command:
+                argvs = [[a.replace(name, v) for a in argv] for argv in argvs for v in (values or names)]
+        for argv in argvs:
+            assert not any("<" in a for a in argv), f"{command}: give its placeholder a value in PLACEHOLDERS"
+            try:
+                code = main(argv)
+            except SystemExit as stop:                       # --help and --version exit through argparse
+                code = stop.code
+            out = capsys.readouterr()
+            assert code in (0, None), f"`cad-agent {' '.join(argv)}` exited {code}: {out.err[-400:]}"
+            ran.append(argv)
+    assert (tmp_path / "my-part" / "cad-agent.yaml").is_file(), "init made the project the next step builds"
+    assert ["--version"] in ran and len(ran) > len(names)
+    choice = [a for a in ran if a[:2] == ["choose", "joining"]]
+    assert choice, "the joining decision is run"
+    main(choice[0] + ["--json"])
+    decided = json.loads(capsys.readouterr().out)
+    assert decided.get("decided") and decided.get("choice"), f"the printed form decides: {decided}"

@@ -59,8 +59,16 @@ test('an IPC parent can read the server record of each request, its socket and i
     assert.equal(record.keepAlive.keepAliveTimeout,5000);assert(record.lag.maxMs>=0);
     assert.deepEqual((await ask('/never-requested',since)).matching,[]);
     await closed;   // Node closes the idle keep-alive socket (keepAliveTimeout plus its buffer, about 6 s)
-    const after=await ask('/recorded',since);
-    assert.equal(after.openSockets,0);assert.equal(after.window.socketsClosedIdle,1);
+    // The client sees the close before the server's own 'close' event has run (on a loaded runner that can be some
+    // time later), so wait for the server's record to say the socket closed: bounded, and failing with what it saw.
+    let after;
+    for(const until=Date.now()+10000;;await new Promise(r=>setTimeout(r,20))){
+      after=await ask('/recorded',since);
+      if(after.matching[1]?.socket?.closedAt||Date.now()>until)break;
+    }
+    const seen=JSON.stringify({openSockets:after.openSockets,socketsClosedIdle:after.window.socketsClosedIdle,socket:after.matching[1]?.socket});
+    assert(after.matching[1]?.socket?.closedAt,`the server recorded the idle socket's close within 10 s of the client seeing it: ${seen}`);
+    assert.equal(after.openSockets,0,seen);assert.equal(after.window.socketsClosedIdle,1,seen);
     assert(after.matching[1].socket.idleTimeoutAt>=after.matching[1].finishedAt);
   } finally {server?.kill();await rm(dir,{recursive:true,force:true});}
 });

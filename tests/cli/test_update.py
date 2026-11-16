@@ -323,6 +323,27 @@ def test_the_reinstall_finds_uv_in_the_installers_folder_off_path(tmp_path, monk
     assert agentkit.reinstall_command(tmp_path / "k", ["cad"])[:3] == [str(bin_dir / "uv"), "tool", "install"]
 
 
+@pytest.mark.parametrize("word, pasted", [
+    ("idna>=3", "'idna>=3'"),                                   # a redirect if left bare
+    ("x<1", "'x<1'"), ("a|b", "'a|b'"), ("^x", "'^x'"), ("%PATH%", "'%PATH%'"),
+    ("x$(touch /tmp/x)", "'x$(touch /tmp/x)'"),                 # PowerShell expands this inside double quotes
+    ("it's", "'it''s'"), ("C:\\Users\\a\\cad-agent[cad]", "'C:\\Users\\a\\cad-agent[cad]'"),
+    ("a,b", "'a,b'"), ("@x", "'@x'"), ("x y", "'x y'"),
+    ("--with", "--with"), ("--python", "--python"), ("3.12", "3.12"), ("C:\\Users\\a\\req.txt", "C:\\Users\\a\\req.txt"),
+])
+def test_the_windows_hint_is_safe_to_paste_into_powershell(word, pasted):
+    """#799 review: the PowerShell line single-quotes every word that is not plainly safe (quotes doubled), so nothing
+    in it is a redirect, a pipe or an expansion. Checked on the text; not run on Windows here."""
+    assert agentkit._shell_line(["uv", word], windows=True) == f"uv {pasted}"
+
+
+def test_a_windows_uv_path_with_a_space_is_called_with_the_call_operator():
+    line = agentkit._shell_line(["C:\\Users\\First Last\\.local\\bin\\uv.exe", "tool", "install", "--with", "idna>=3"],
+                                windows=True)
+    assert line == "& 'C:\\Users\\First Last\\.local\\bin\\uv.exe' tool install --with 'idna>=3'"
+    assert agentkit._shell_line(["uv", "--with", "idna>=3"], windows=False) == "uv --with 'idna>=3'"
+
+
 def test_the_cli_reports_a_refusal_and_prints_the_reinstall_command(kit, monkeypatch, capsys):
     _, clone, _ = kit
     monkeypatch.setattr(agentkit, "kit_root", lambda: clone)

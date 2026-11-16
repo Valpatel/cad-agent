@@ -103,12 +103,18 @@ def add_packages_command(*packages: str, requirements: Optional[Path] = None) ->
     return _shell_line([sys.executable, "-m", "pip", "install", *(["-r"] if requirements is not None else []), *adds])
 
 
-def _shell_line(cmd: List[str]) -> str:
-    """``cmd`` as one line to paste into this platform's shell."""
-    if os.name == "nt":
-        return " ".join(f'"{a}"' if re.search(r"[\s\[\]&;()]", a) else a for a in cmd)
-    import shlex
-    return shlex.join(cmd)
+def _shell_line(cmd: List[str], windows: Optional[bool] = None) -> str:
+    """``cmd`` as one line to paste into this platform's shell: POSIX sh (``shlex``), or PowerShell on Windows, where
+    every word that is not plainly safe is single-quoted (``'`` doubled inside, so ``$``, ``>``, ``|``, ``%`` and the
+    rest stay literal) and a quoted program is called with ``&``, as install.ps1 prints it. The PowerShell form is
+    checked on the produced text, not run on Windows here."""
+    if not (os.name == "nt" if windows is None else windows):
+        import shlex
+        return shlex.join(cmd)
+    quote = lambda a: a if re.fullmatch(r"[A-Za-z0-9_./:\\=+-]+", a) and not a.startswith("-") or \
+        re.fullmatch(r"--?[A-Za-z0-9][A-Za-z0-9-]*", a) else "'" + a.replace("'", "''") + "'"
+    words = [quote(a) for a in cmd]
+    return ("& " if words and words[0].startswith("'") else "") + " ".join(words)
 
 
 def _playwright() -> Optional[str]:

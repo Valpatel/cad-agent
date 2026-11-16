@@ -521,7 +521,8 @@ def test_install_ps1_parses_the_uninstall_value(tmp_path, value, says):
     out = run.stdout + run.stderr
     assert says in out, out
     assert (run.returncode == 0) is (value == "TRUE"), out
-    assert [p.name for p in home.iterdir()] in ([], [".local"]), "nothing installed in the home folder"
+    for made in ("cad-agent", ".local/bin", ".claude", ".agents"):           # pwsh itself may add AppData (Windows CI)
+        assert not (home / made).exists(), f"{made}: nothing installed in the home folder"
 
 
 def test_the_path_hint_names_commands_that_work_in_that_shell(world, tmp_path):

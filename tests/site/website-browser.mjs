@@ -1583,17 +1583,19 @@ async function previewServerEvidence(pathname, since, limit = 2000) {
 async function navigateDiagram(page, url, where, timeout = 30000) {
   const pending = new Map(), failed = [], committed = [], began = Date.now();
   const cleanURL = value => { const u = new URL(value); return u.protocol === 'about:' ? value.split(/[?#]/)[0] : u.origin + u.pathname; }; // no queries or fragments
+  // for URLs the browser reports: one that does not parse is noted, never thrown over the navigation error
+  const reportedURL = value => { try { return cleanURL(value); } catch (error) { return `unparsable URL (${error.message})`; } };
   const request = r => pending.set(r, { url: cleanURL(r.url()), type: r.resourceType(), started: Date.now() });
   const response = r => { const entry = pending.get(r.request()); if (entry) Object.assign(entry, { status: r.status(), respondedAt: Date.now() }); };
   const finished = r => pending.delete(r);
   const rejected = r => { failed.push({ url: cleanURL(r.url()), error: r.failure()?.errorText }); pending.delete(r); };
-  const navigated = frame => { if (frame === page.mainFrame() && committed.length < 10) committed.push({ url: cleanURL(frame.url()), at: Date.now() }); };
+  const navigated = frame => { if (frame === page.mainFrame() && committed.length < 10) committed.push({ url: reportedURL(frame.url()), at: Date.now() }); };
   const listeners = [['request', request], ['response', response], ['requestfinished', finished], ['requestfailed', rejected], ['framenavigated', navigated]];
   for (const [event, listener] of listeners) page.on(event, listener);
   try { return await page.goto(url, { waitUntil: 'load', timeout }); }
   catch (cause) {
     const evidence = { where, url: cleanURL(url), viewport: page.viewportSize(), timeout, began,
-      pageUrl: cleanURL(page.url()), committed: [...committed],
+      pageUrl: reportedURL(page.url()), committed: [...committed],
       pending: [...pending.values()].map(({ started, ...entry }) => ({ ...entry, startedAt: started, ageMs: Date.now() - started })), failed: [...failed] };
     // A fault in the evidence itself is recorded as unavailable; it never replaces the navigation error.
     try {
@@ -1601,7 +1603,13 @@ async function navigateDiagram(page, url, where, timeout = 30000) {
       evidence.testProcessLag = { maxMs: Math.max(0, ...lag.map(l => l.lateMs)), samplesOver20ms: lag.slice(-10) };
     } catch (error) { evidence.testProcessLag = { unavailable: error.message }; }
     // asked before the DOM snapshot, so a wedged page cannot delay the server's account of the same moment
-    try { evidence.server = await previewServerEvidence(new URL(url).pathname, began - 1000); }
+    try {
+      evidence.server = await previewServerEvidence(new URL(url).pathname, began - 1000);
+      // said in words, so an empty `matching` is not read as "never received" when the record does not reach back
+      if ('coversWindow' in evidence.server) evidence.server.coverage = evidence.server.coversWindow
+        ? 'the server record covers every request received since 1 s before this navigation began'
+        : 'NOT COVERED: the server dropped requests received since 1 s before this navigation began, so a missing request proves nothing';
+    }
     catch (error) { evidence.server = { unavailable: error.message }; }
     let timer;
     try {
@@ -1655,7 +1663,7 @@ async function diagramNavigationControl() {
     // absence is not asserted: the other lane's pages request the same path meanwhile.)
     const doc = evidence?.server?.matching?.at(-1);
     if (!doc || doc.status !== 200 || !doc.finishedAt || !/^[0-9a-f]{64}$/.test(doc.sha256 ?? '') || !(doc.receivedAt >= evidence.began) ||
-        !evidence.server.keepAlive || !(evidence.server.openSockets >= 0) || !(evidence.testProcessLag?.maxMs >= 0)) {
+        !evidence.server.keepAlive || evidence.server.coversWindow !== true || !evidence.server.coverage || !(evidence.server.openSockets >= 0) || !(evidence.testProcessLag?.maxMs >= 0)) {
       out.push(`diagram navigation control lost the preview server's record of the document: ${JSON.stringify(evidence?.server ?? null).slice(0, 400)}`);
     }
     if (browser.contexts().includes(owned)) out.push('diagram navigation failure retained its owned context');

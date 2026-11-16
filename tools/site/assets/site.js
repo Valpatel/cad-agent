@@ -37,11 +37,8 @@ if (document.querySelector('cad-model')) import('/kit/model/model.js').catch(() 
 if (document.querySelector('details[data-catalogue-id]')) import('/web/discovery.js').catch(() => {});
 // The Toolkit keeps all cards and SVG links usable without JavaScript; this adds search and state controls.
 if (document.querySelector('[data-scada-browser]')) import('/web/toolkit.js').catch(() => {});
-// The home hero's recording (#748): the page loads and paints its 9 KB still; once the page has loaded, the animation
-// (data-motion-src) replaces it when it has arrived. Never under reduced motion, where the picture's still is kept, and
-// never with Save-Data on, where <cad-model> on the same page also asks first.
-// A lazy picture (a card further down, #798) also waits until it comes near the screen, so a reader who never
-// scrolls to it never downloads its animation.
+// Recordings (#748, #798): the page paints the still; after load (and, for a lazy card, once it nears the screen)
+// data-motion-src swaps the animation in. Never under reduced motion or Save-Data (<cad-model> also asks first there).
 for (const img of document.querySelectorAll('img[data-motion-src]')) {
   const swap = () => {
     if (matchMedia('(prefers-reduced-motion: reduce)').matches || navigator.connection?.saveData) return;
@@ -49,11 +46,10 @@ for (const img of document.querySelectorAll('img[data-motion-src]')) {
     next.onload = () => { img.src = next.src; };
     next.src = img.dataset.motionSrc;
   };
-  const near = () => new Promise(resolve => {
-    if (img.loading !== 'lazy' || !('IntersectionObserver' in window)) return resolve();
-    const seen = new IntersectionObserver(entries => { if (entries.some(e => e.isIntersecting)) { seen.disconnect(); resolve(); } }, { rootMargin: '150px 0px' });
+  const near = () => new Promise(go => {
+    if (img.loading !== 'lazy' || !window.IntersectionObserver) return go();
+    const seen = new IntersectionObserver(e => { if (e.some(x => x.isIntersecting)) { seen.disconnect(); go(); } }, { rootMargin: '150px 0px' });
     seen.observe(img);
   });
-  const loaded = document.readyState === 'complete' ? Promise.resolve() : new Promise(resolve => addEventListener('load', resolve, { once: true }));
-  loaded.then(near).then(swap);
+  (document.readyState === 'complete' ? Promise.resolve() : new Promise(go => addEventListener('load', go, { once: true }))).then(near).then(swap);
 }

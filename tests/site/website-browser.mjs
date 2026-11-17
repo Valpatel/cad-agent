@@ -806,23 +806,29 @@ try {
 
 /** A link to /docs/agent-workflow#install-unix or #install-windows (the home page's install card links them) shows
  * the command on arrival, at phone and desktop widths, and so does changing the address's # part on the page (#804).
- * Planted control: the same page without a # part keeps both blocks closed, so an open block here comes from the
- * address, not from a block left open in the page. Also the 404 page's feedback link names the missing address. */
+ * The block's summary lands below the sticky header, which takes two rows (89-97 px) on phones (site.css
+ * scroll-padding-top). Planted controls: the same page without a # part keeps both blocks closed, so an open block
+ * here comes from the address, not from a block left open in the page; and at 480 px the desktop's 90 px scroll
+ * padding puts the summary under the 97 px header, which the check reports. Also the 404 page's feedback link names
+ * the missing address. */
 async function installLinkProblems() {
   const problems = [];
   const block = (page, id) => page.evaluate(id => {
     const d = document.getElementById(id), code = d?.querySelector('pre');
-    const r = code?.getBoundingClientRect();
-    return { open: !!d?.open, shown: !!r && r.height > 0 && r.top >= 0 && r.top < innerHeight - 60 };
+    const r = code?.getBoundingClientRect(), s = d?.querySelector('summary')?.getBoundingClientRect();
+    const header = document.querySelector('.site-header').getBoundingClientRect().bottom;
+    return { open: !!d?.open, shown: !!r && r.height > 0 && r.top >= 0 && r.top < innerHeight - 60, clear: !!s && s.top >= header - 0.5,
+      under: s ? `summary at ${Math.round(s.top)} px, header to ${Math.round(header)} px` : 'no summary' };
   }, id);
   const say = b => `the block is ${b.open ? 'open' : 'closed'} and its command ${b.shown ? 'shows' : 'is not on the screen'}`;
-  for (const [width, height] of [[390, 844], [1366, 800]]) {
+  for (const [width, height] of [[390, 844], [480, 800], [1366, 800]]) {
     for (const id of ['install-unix', 'install-windows']) {   // arrival: a fresh page for each link
       const page = await browser.newPage({ viewport: { width, height } });
       try {
         await navigate(page, `${base}/docs/agent-workflow#${id}`);
         const b = await block(page, id);
         if (!b.open || !b.shown) problems.push(`${width}px #${id}: on arrival ${say(b)}`);
+        if (!b.clear) problems.push(`${width}px #${id}: on arrival the header covers the block (${b.under})`);
       } finally { await page.close(); }
     }
     const page = await browser.newPage({ viewport: { width, height } });
@@ -835,6 +841,18 @@ async function installLinkProblems() {
       await page.evaluate(() => new Promise(requestAnimationFrame));
       const changed = await block(page, 'install-windows');
       if (!changed.open || !changed.shown) problems.push(`${width}px: after the # part changed to install-windows ${say(changed)}`);
+      if (!changed.clear) problems.push(`${width}px: after the # part changed the header covers the block (${changed.under})`);
+    } finally { await page.close(); }
+  }
+  {   // planted: the one-row header's padding under the two-row header
+    const page = await browser.newPage({ viewport: { width: 480, height: 800 } });
+    try {
+      await navigate(page, base + '/docs/agent-workflow');
+      await page.addStyleTag({ content: ':root{scroll-padding-top:90px!important}' });
+      await page.evaluate(() => { location.hash = 'install-unix'; });
+      await page.waitForFunction(() => document.getElementById('install-unix').open, null, { timeout: 3000 }).catch(() => {});
+      await page.evaluate(() => new Promise(requestAnimationFrame));
+      if ((await block(page, 'install-unix')).clear) problems.push('planted control: a 90 px scroll padding under the 97 px header was not caught, so the header check tests nothing');
     } finally { await page.close(); }
   }
   const missing = await browser.newPage({ viewport: { width: 800, height: 600 } });
@@ -847,13 +865,13 @@ async function installLinkProblems() {
   return problems;
 }
 
-/** At a phone's visible height under its browser bars (390x664), the hero's whole recording is on the first screen,
+/** At a phone's visible height under its browser bars (390x664 and 360x640), the hero's whole recording is on the first screen,
  * and the hero reads in its one order: headline, lede, actions, recording, in the source and on the screen (#804).
  * Planted control: the same page with 60 px more lede pushes the picture past the fold, and the check says so. */
 async function phoneFirstScreenProblems() {
   const problems = [];
-  const measure = async planted => {
-    const page = await browser.newPage({ viewport: { width: 390, height: 664 }, isMobile: true, hasTouch: true });
+  const measure = async (planted, [width, height] = [390, 664]) => {
+    const page = await browser.newPage({ viewport: { width, height }, isMobile: true, hasTouch: true });
     try {
       await navigate(page, base + '/');
       if (planted) await page.addStyleTag({ content: '.learning-hero .intro{padding-bottom:60px}' });
@@ -867,10 +885,13 @@ async function phoneFirstScreenProblems() {
       });
     } finally { await page.close(); }
   };
-  const seen = await measure(false), control = await measure(true);
-  if (!seen.sourceOrder || !seen.screenOrder) problems.push(`390x664: the hero is not headline, lede, actions, recording in both the source and on the screen (tops ${seen.tops.join(', ')})`);
-  if (seen.img[0] < 0 || seen.img[1] > seen.fold) problems.push(`390x664: the recording runs ${seen.img[0]}-${seen.img[1]} px, past the ${seen.fold} px first screen`);
-  if (seen.wide) problems.push('390x664: the page scrolls sideways');
+  for (const size of [[390, 664], [360, 640]]) {   // 320x568 is not asked to fit: the actions alone fill that screen
+    const seen = await measure(false, size), at = size.join('x');
+    if (!seen.sourceOrder || !seen.screenOrder) problems.push(`${at}: the hero is not headline, lede, actions, recording in both the source and on the screen (tops ${seen.tops.join(', ')})`);
+    if (seen.img[0] < 0 || seen.img[1] > seen.fold) problems.push(`${at}: the recording runs ${seen.img[0]}-${seen.img[1]} px, past the ${seen.fold} px first screen`);
+    if (seen.wide) problems.push(`${at}: the page scrolls sideways`);
+  }
+  const control = await measure(true);
   if (control.img[1] <= control.fold) problems.push(`planted control: 60 px more lede left the recording at ${control.img[1]} px, inside the fold, so this check tests nothing`);
   return problems;
 }

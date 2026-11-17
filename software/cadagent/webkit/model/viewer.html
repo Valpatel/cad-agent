@@ -21,6 +21,9 @@
 <script type="module">
   import { createViewer } from './viewer.js';
   const q = new URLSearchParams(location.search);
+  // &nav=1: show the host site's top bar from <root>/site/nav.json (ui/appnav.js). Without it nothing is requested;
+  // `cad-agent site --serve` adds its own bar to the page as it sends it.
+  if (q.get('nav') === '1') import('../ui/appnav.js').then(m => m.mountAppNav({ root: '../../../' })).catch(() => {});
   const manifestUrl = q.get('manifest') ?? '../../../exports/view/view.json';
   if (q.has('back')) {
     const value = q.get('back');

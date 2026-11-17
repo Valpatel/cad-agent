@@ -112,6 +112,9 @@ try {
     ['long citation reflow', () => longCitationProblems(browser, base)],
     ['wide layouts', () => wideLayoutProblems(browser, base)],
     ['header', headerProblems],          // painted text can collide even when the flex boxes and page do not overflow
+    ['install link', installLinkProblems],   // a link to an install block lands on its command (#804), below
+    ['phone first screen', phoneFirstScreenProblems],   // the whole hero recording above a phone's fold (#804), below
+    ['demo way back', demoWayBackProblems],  // the kit's demo pages carry the site's top bar (#804), below
     ['cantilever', cantileverProblems],  // the snap-arm explorer on /docs/compliant (#137), below
     ['fold', foldProblems],              // the page tree's fold on phones, with and without nav.js (#134)
     ['outline visibility', () => sameSectionOutlineProblems(browser, base)],
@@ -157,6 +160,7 @@ try {
         if (!route.startsWith('/kit/')) {
           const visible = await page.locator('.site-header nav a[href="/explore"]').isVisible();
           if (!visible) seen.push('no Explore link in the header');
+          if (!await page.locator('.site-header nav a[href="/docs/agent-workflow"]').isVisible()) seen.push('no For agents link in the header (#804)');
         }
         if (route === '/') {
           const names = await page.evaluate(() => document.getAnimations().map(a => a.animationName).filter(n => n?.startsWith('snap-')));
@@ -801,13 +805,187 @@ try {
   await site.done();
 }
 
+/** A link to /docs/agent-workflow#install-unix or #install-windows (the home page's install card links them) shows
+ * the command on arrival, at phone and desktop widths, and so does changing the address's # part on the page (#804).
+ * The block's summary lands below the sticky header, which takes two rows (89-97 px) on phones (site.css
+ * scroll-padding-top). Planted controls: the same page without a # part keeps both blocks closed, so an open block
+ * here comes from the address, not from a block left open in the page; and at 480 px the desktop's 90 px scroll
+ * padding puts the summary under the 97 px header, which the check reports. Also the 404 page's feedback link names
+ * the missing address. */
+async function installLinkProblems() {
+  const problems = [];
+  const block = (page, id) => page.evaluate(id => {
+    const d = document.getElementById(id), code = d?.querySelector('pre');
+    const r = code?.getBoundingClientRect(), s = d?.querySelector('summary')?.getBoundingClientRect();
+    const header = document.querySelector('.site-header').getBoundingClientRect().bottom;
+    return { open: !!d?.open, shown: !!r && r.height > 0 && r.top >= 0 && r.top < innerHeight - 60, clear: !!s && s.top >= header - 0.5,
+      under: s ? `summary at ${Math.round(s.top)} px, header to ${Math.round(header)} px` : 'no summary' };
+  }, id);
+  const say = b => `the block is ${b.open ? 'open' : 'closed'} and its command ${b.shown ? 'shows' : 'is not on the screen'}`;
+  for (const [width, height] of [[390, 844], [480, 800], [1366, 800]]) {
+    for (const id of ['install-unix', 'install-windows']) {   // arrival: a fresh page for each link
+      const page = await browser.newPage({ viewport: { width, height } });
+      try {
+        await navigate(page, `${base}/docs/agent-workflow#${id}`);
+        const b = await block(page, id);
+        if (!b.open || !b.shown) problems.push(`${width}px #${id}: on arrival ${say(b)}`);
+        if (!b.clear) problems.push(`${width}px #${id}: on arrival the header covers the block (${b.under})`);
+      } finally { await page.close(); }
+    }
+    const page = await browser.newPage({ viewport: { width, height } });
+    try {
+      await navigate(page, base + '/docs/agent-workflow');
+      const control = [await block(page, 'install-unix'), await block(page, 'install-windows')];
+      if (control.some(b => b.open)) problems.push(`${width}px: an install block is open without a link to it, so this check tests nothing`);
+      await page.evaluate(() => { location.hash = 'install-windows'; });
+      await page.waitForFunction(() => document.getElementById('install-windows').open, null, { timeout: 3000 }).catch(() => {});
+      await page.evaluate(() => new Promise(requestAnimationFrame));
+      const changed = await block(page, 'install-windows');
+      if (!changed.open || !changed.shown) problems.push(`${width}px: after the # part changed to install-windows ${say(changed)}`);
+      if (!changed.clear) problems.push(`${width}px: after the # part changed the header covers the block (${changed.under})`);
+    } finally { await page.close(); }
+  }
+  {   // planted: the one-row header's padding under the two-row header
+    const page = await browser.newPage({ viewport: { width: 480, height: 800 } });
+    try {
+      await navigate(page, base + '/docs/agent-workflow');
+      await page.addStyleTag({ content: ':root{scroll-padding-top:90px!important}' });
+      await page.evaluate(() => { location.hash = 'install-unix'; });
+      await page.waitForFunction(() => document.getElementById('install-unix').open, null, { timeout: 3000 }).catch(() => {});
+      await page.evaluate(() => new Promise(requestAnimationFrame));
+      if ((await block(page, 'install-unix')).clear) problems.push('planted control: a 90 px scroll padding under the 97 px header was not caught, so the header check tests nothing');
+    } finally { await page.close(); }
+  }
+  const missing = await browser.newPage({ viewport: { width: 800, height: 600 } });
+  try {
+    await navigate(missing, base + '/no-such-page?x=1');
+    const href = await missing.locator('.site-footer a[data-feedback-here]').getAttribute('href');
+    const named = href && new URL(href).searchParams.get('page');
+    if (named !== base + '/no-such-page?x=1') problems.push(`404 page: the feedback link names ${named}, not the missing address`);
+  } finally { await missing.close(); }
+  return problems;
+}
+
+/** At a phone's visible height under its browser bars (390x664 and 360x640), the hero's whole recording is on the first screen,
+ * and the hero reads in its one order: headline, lede, actions, recording, in the source and on the screen (#804).
+ * Planted control: the same page with 60 px more lede pushes the picture past the fold, and the check says so. */
+async function phoneFirstScreenProblems() {
+  const problems = [];
+  const measure = async (planted, [width, height] = [390, 664]) => {
+    const page = await browser.newPage({ viewport: { width, height }, isMobile: true, hasTouch: true });
+    try {
+      await navigate(page, base + '/');
+      if (planted) await page.addStyleTag({ content: '.learning-hero .intro{padding-bottom:60px}' });
+      return await page.evaluate(async () => {
+        await document.fonts.ready;
+        const parts = ['.learning-hero .pixel-title', '.learning-hero .intro', '.learning-hero .hero-actions', '.hero-run .run-media img'].map(s => document.querySelector(s));
+        const tops = parts.map(e => e.getBoundingClientRect().top);
+        const sourceOrder = parts.every((e, i) => !i || parts[i - 1].compareDocumentPosition(e) & Node.DOCUMENT_POSITION_FOLLOWING);
+        const img = parts[3].getBoundingClientRect();
+        return { tops: tops.map(Math.round), sourceOrder, screenOrder: tops.every((t, i) => !i || t > tops[i - 1]), img: [Math.round(img.top), Math.round(img.bottom)], fold: innerHeight, wide: document.documentElement.scrollWidth > innerWidth };
+      });
+    } finally { await page.close(); }
+  };
+  for (const size of [[390, 664], [360, 640]]) {   // 320x568 is not asked to fit: the actions alone fill that screen
+    const seen = await measure(false, size), at = size.join('x');
+    if (!seen.sourceOrder || !seen.screenOrder) problems.push(`${at}: the hero is not headline, lede, actions, recording in both the source and on the screen (tops ${seen.tops.join(', ')})`);
+    if (seen.img[0] < 0 || seen.img[1] > seen.fold) problems.push(`${at}: the recording runs ${seen.img[0]}-${seen.img[1]} px, past the ${seen.fold} px first screen`);
+    if (seen.wide) problems.push(`${at}: the page scrolls sideways`);
+  }
+  const control = await measure(true);
+  if (control.img[1] <= control.fold) problems.push(`planted control: 60 px more lede left the recording at ${control.img[1]} px, inside the fold, so this check tests nothing`);
+  return problems;
+}
+
+/** The toolkit's demo pages (the build-guide and original-file viewers) show the site's top bar, so a reader can get
+ * back into the site (#804). The kit stays generic: a viewer reads its host's <root>/site/nav.json (ui/appnav.js) only
+ * when its address carries nav=1, and this site's Toolkit cards link it so. Checked at phone and desktop widths: the
+ * bar's links are the header's destinations and its name leads home, nothing of the viewer starts under it, and it
+ * polls nothing (live reload is for `cad-agent site --serve`). Planted controls: the same page without nav=1 asks for
+ * no nav.json and logs no console error, as a project that copies the kit would see; and a host without nav.json
+ * gets no bar. */
+async function demoWayBackProblems() {
+  const problems = [];
+  const DEMOS = { 'build guide': ['/kit/model/viewer.html?guide=/web/toolkit/assembly/guide.json', '#hud'], 'file viewer': ['/kit/files/file-viewer.html?file=/kit/host/example.stl', '#file-viewer'] };
+  const WANT = ['/', '/explore', '/toolkit', '/docs/agent-workflow'];
+  const open = async (route, width, { noNavFile = false } = {}) => {
+    const page = await browser.newPage({ viewport: { width, height: 800 } });
+    const bad = [], navRequests = [];
+    page.on('response', r => { if (r.status() >= 400) bad.push(`${r.status()} ${new URL(r.url()).pathname}`); });
+    page.on('console', m => { if (m.type() === 'error') bad.push('console: ' + m.text()); });
+    page.on('request', r => {
+      const p = new URL(r.url()).pathname;
+      if (p.startsWith('/_cadagent/')) bad.push('polled ' + p);
+      if (p === '/site/nav.json') navRequests.push(p);
+    });
+    let answered = null;
+    if (noNavFile) {
+      let done; answered = new Promise(resolve => { done = resolve; });
+      await page.route(base + '/site/nav.json', partHandler(async route => { await route.fulfill({ status: 404, body: '' }); done(); }));
+    }
+    await navigate(page, base + route);
+    return { page, bad, navRequests, answered };
+  };
+  const ready = page => page.waitForFunction(() => document.body.dataset.ready === '1' || window.__fileViewer?.root.dataset.state === 'ready', null, { timeout: 30000 }).catch(() => {});
+  // The Toolkit cards link the demos with the opt-in.
+  {
+    const page = await browser.newPage({ viewport: { width: 1366, height: 800 } });
+    try {
+      await navigate(page, base + '/toolkit');
+      const hrefs = await page.evaluate(() => [...document.querySelectorAll('a[href^="/kit/model/viewer.html"], a[href^="/kit/files/file-viewer.html"]')].map(a => a.getAttribute('href')));
+      for (const [name, [route]] of Object.entries(DEMOS))
+        if (!hrefs.includes(route + '&nav=1')) problems.push(`/toolkit: no link to the ${name} with nav=1 (${hrefs.join(', ') || 'none'})`);
+    } finally { await page.close(); }
+  }
+  for (const [name, [demo, viewer]] of Object.entries(DEMOS)) {
+    const route = demo + '&nav=1';
+    for (const width of [390, 1366]) {
+      const { page, bad } = await open(route, width);
+      try {
+        await page.locator('nav.appnav').waitFor({ state: 'visible', timeout: 10000 }).catch(() => {});
+        const bar = await page.evaluate(viewer => {
+          const nav = document.querySelector('nav.appnav');
+          if (!nav) return null;
+          const r = nav.getBoundingClientRect(), v = document.querySelector(viewer)?.getBoundingClientRect();
+          return { bottom: r.bottom, viewerTop: v ? v.top : null, links: [...nav.querySelectorAll('a')].map(a => new URL(a.href).pathname) };
+        }, viewer);
+        if (!bar) { problems.push(`${name} ${width}px: no top bar back into the site`); continue; }
+        const resolved = await Promise.all(bar.links.map(async p => { const r = await page.request.get(base + p); return new URL(r.url()).pathname; }));
+        if (JSON.stringify(resolved) !== JSON.stringify(WANT)) problems.push(`${name} ${width}px: the bar leads to ${resolved.join(', ')}, not ${WANT.join(', ')}`);
+        if (bar.viewerTop === null || bar.viewerTop < bar.bottom - 1) problems.push(`${name} ${width}px: the viewer starts at ${bar.viewerTop} px, under the ${bar.bottom} px bar`);
+        if (bad.length) problems.push(`${name} ${width}px: ${[...new Set(bad)].join('; ')}`);
+      } finally { await page.close(); }
+    }
+    // Without the opt-in: a project that copies the kit; nothing asks for nav.json and nothing is logged.
+    {
+      const { page, bad, navRequests } = await open(demo, 1366);
+      try {
+        await ready(page);
+        if (await page.locator('nav.appnav').count()) problems.push(`${name} without nav=1: a top bar shows`);
+        if (navRequests.length) problems.push(`${name} without nav=1: ${navRequests.length} request(s) for site/nav.json`);
+        if (bad.length) problems.push(`${name} without nav=1: ${[...new Set(bad)].join('; ')}`);
+      } finally { await page.close(); }
+    }
+    // A host without nav.json, opted in: no bar (its one 404 is the host's).
+    {
+      const { page, answered } = await open(route, 1366, { noNavFile: true });
+      try {
+        await ready(page);
+        await answered; await page.evaluate(() => new Promise(done => setTimeout(done, 0)));
+        if (await page.locator('nav.appnav').count()) problems.push(`${name} with nav=1 on a host without site/nav.json: a top bar shows`);
+      } finally { await page.close(); }
+    }
+  }
+  return problems;
+}
+
 /** Measure the text and images as well as each control's box. Flex shrinking used to leave the wordmark's text
  * outside its box, overlapping Catalogue while the document reported zero overflow (#104). Check both sides of
  * old and current responsive boundaries, not only the conventional 360 px phone used by the route checks. */
 async function headerProblems() {
   const problems = [];
   const evidence = await mkdtemp(path.join(tmpdir(), 'cad-agent-header-'));
-  const requiredControls = ['.wordmark', 'nav a[href="/explore"]', 'nav a[href="/toolkit"]', 'nav .pill-link', '.theme-toggle'];
+  const requiredControls = ['.wordmark', 'nav a[href="/explore"]', 'nav a[href="/toolkit"]', 'nav a[href="/docs/agent-workflow"]', 'nav .pill-link', '.theme-toggle'];
   const widths = [320, 340, 359, 360, 361, 379, 380, 381, 390, 409, 410, 411, 429, 430, 431,
     459, 479, 480, 481, 600, 759, 760, 761, 800, 850, 900, 999, 1000, 1001, 1049, 1050, 1051, 1366];
   for (const colorScheme of ['light', 'dark']) {

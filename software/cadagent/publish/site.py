@@ -543,7 +543,8 @@ def inject_nav(page: bytes, request_path: str, nav: List[Dict[str, str]]) -> byt
     """Add the app-wide top bar to an HTML page the local server sends (bytes in, bytes out, so any encoding
     survives). Skipped when the page has a bar in its markup or opts out with <meta name="cadagent-nav" content="off">;
     a bar a page mounts from its own script replaces the injected one in the browser (webkit/ui/appnav.js)."""
-    if not nav or b"appnav" in page or _OPT_OUT.search(page):
+    # a bar in the markup, not the word: the kit's viewers mention appnav.js (an opt-in import) and still get the bar
+    if not nav or re.search(rb'class=["\']appnav\b', page) or _OPT_OUT.search(page):
         return page
     path = unquote(request_path.split("?")[0].split("#")[0])
     current = ""
@@ -665,7 +666,8 @@ def serve_site(root: Path, raw_site: Optional[Dict[str, Any]], default_title: st
             if not nav:
                 return False
             if self.path.split("?")[0] == f"/{SITE_DIR}/nav.json":
-                body = (json.dumps({"title": cfg.title, "nav": nav}, indent=1) + "\n").encode()
+                # "live": this server answers LIVE_URL, so the bar turns live reload on (webkit/ui/appnav.js)
+                body = (json.dumps({"title": cfg.title, "nav": nav, "live": True}, indent=1) + "\n").encode()
                 ctype = "application/json"
             else:
                 target = Path(self.translate_path(self.path))

@@ -225,7 +225,8 @@ border:1px solid var(--line-2);box-shadow:inset 0 1px 0 var(--hi),0 12px 24px rg
 /* documents */
 .doc{max-width:900px;padding:24px 0 40px}
 /* doc pages (kit <cad-nav>, kit/documents/nav.css): one column on phones, with a "Pages and contents" toggle; from 1100px the
-   page tree and this page's outline on the left; from 1500px also "On this page" on the right, the page wider */
+   page tree and this page's outline on the left; from 1400px also "On this page" on the right, the page wider (#807: a
+   1440px laptop reaches the outline without scrolling the tree; at 1400px the article column is still about 750px) */
 .skip-link{position:absolute;left:12px;top:-60px;z-index:20;padding:10px 16px;border-radius:calc(10px*var(--round));background:var(--ink);color:var(--cream);font-weight:700}
 .skip-link:focus{top:12px}
 #main\:content:focus{outline:none}
@@ -238,7 +239,7 @@ cad-nav,.doc-rail{--cad-nav-font:13px/1.5 var(--font);--cad-nav-fg:var(--ink);--
 @media(min-width:1100px){.doc-layout{display:grid;grid-template-columns:260px minmax(0,1fr);gap:52px;align-items:start}cad-nav{margin-top:28px;align-self:stretch}}
 /* Wide displays give collections and engineering surfaces the available space.
    Reading measure belongs to prose, rather than limiting the whole application. */
-@media(min-width:1500px){.wrap{width:calc(100% - clamp(96px,6vw,192px))}
+@media(min-width:1400px){.wrap{width:calc(100% - clamp(96px,6vw,192px))}
   .doc-layout{grid-template-columns:260px minmax(0,1fr) 240px;gap:clamp(28px,2vw,48px)}
   .doc-main{max-width:none}
   .doc-main .prose :where(p,ul,ol,blockquote):not(:has(img,picture,svg,canvas,video,table)){max-width:80ch}

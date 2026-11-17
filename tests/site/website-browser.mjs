@@ -19,7 +19,7 @@ import { builtSite } from './built-site.mjs';
 import { configureNavigation, fetchThrough, inLanes, navigate, navigationFailure, ownContexts, partHandler, watchRoutes } from './navigation.mjs';
 import { folderMapPath } from '../../tools/site/publication.mjs';
 import { reducedHeroProblems, repositoryHeroProblems, homepageModelProblems, homepageViewerGateProblems, heroRecordingProblems, replayCardProblems, learningPictureProblems, homepageLateDrawProblems, resultImageMotionProblems } from './layout/motion.mjs';
-import { outlineEntryState, scrollOutline, sameSectionOutlineProblems, readerBoundaryProblems, readerOutlineClickProblems, readerOverflowProblems } from './layout/outline.mjs';
+import { outlineEntryState, scrollOutline, sameSectionOutlineProblems, readerBoundaryProblems, readerOutlineClickProblems, readerOverflowProblems, treeEdgeProblems } from './layout/outline.mjs';
 import { VIEWPORT, VISUAL, WALL_CLEARED, WALL_LIMIT, longestStretch, plantedScript, longCitationProblems } from './layout/walls.mjs';
 import { wideLayoutProblems } from './layout/wide.mjs';
 
@@ -118,6 +118,7 @@ try {
     ['cantilever', cantileverProblems],  // the snap-arm explorer on /docs/compliant (#137), below
     ['fold', foldProblems],              // the page tree's fold on phones, with and without nav.js (#134)
     ['outline visibility', () => sameSectionOutlineProblems(browser, base)],
+    ['tree edge', () => treeEdgeProblems(browser, base)],   // no half row above the tree's search; the rail from 1400 px (#807)
     ['reader scroll boundary', async () => [...await readerBoundaryProblems(browser, base),
       ...await readerOutlineClickProblems(browser, base), ...await readerOverflowProblems(browser, base)]],
     ['jump', jumpProblems],              // outline jumps: released by the reader's wheel, not by a stall

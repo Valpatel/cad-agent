@@ -184,7 +184,7 @@ export async function readerBoundaryProblems(browser, base) {
     let prior='',same=0;const until=setTimeout(()=>resolve(false),2000);
     const tick=()=>{const p=document.querySelector('.cad-nav-panel'),now=scrollY+':'+p.scrollTop;if(now===prior)same++;else same=0;prior=now;if(same>=12){clearTimeout(until);resolve(true);}else requestAnimationFrame(tick);};requestAnimationFrame(tick);
   }));
-  for(const viewport of [{width:1440,height:900},{width:1440,height:600},{width:1600,height:900}]){
+  for(const viewport of [{width:1366,height:900},{width:1440,height:900},{width:1440,height:600},{width:1600,height:900}]){
     const page=await browser.newPage({viewport});
     try{
       await readerBoundaryGoto(page,base+'/docs/toolkit',{viewport,evidence,states,problems});await page.waitForSelector('cad-nav[data-ready]');
@@ -201,7 +201,9 @@ export async function readerBoundaryProblems(browser, base) {
       const labelExposed=await page.locator('label[for=explore-reader-search]').evaluate(el=>{const r=el.getBoundingClientRect();return el.contains(document.elementFromPoint(r.x+r.width/2,r.y+r.height/2));});
       if(!exposed||!labelExposed)problems.push('reader boundary: global search is covered');
       await search.click();await search.fill('counterbores');if(await search.inputValue()!=='counterbores')problems.push('reader boundary: search input inaccessible');
-      if(viewport.width===1440&&viewport.height===900){
+      // The planted controls where the outline is in the tree, so the section tracker can move the panel (from 1400 px
+      // the outline has its own column, #807).
+      if(viewport.width===1366&&viewport.height===900){
         const cover=await page.addStyleTag({content:'cad-nav [data-nav-controls]{position:static!important}cad-nav .cad-nav-panel::before{display:block!important}'});
         const covered=await page.locator('label[for=explore-reader-search]').evaluate(el=>{const r=el.getBoundingClientRect();return !el.contains(document.elementFromPoint(r.x+r.width/2,r.y+r.height/2));});
         states.push({legacyCoverRejected:covered});if(!covered)problems.push('reader boundary: old opaque cover control was not rejected');await cover.evaluate(el=>el.remove());
@@ -310,8 +312,49 @@ export async function readerOverflowProblems(browser, base) {
     const wheel=await state();states.push({wheel});if(wheel.article<100)problems.push('reader overflow: actual wheel over fitting tree does not scroll article');
     await panel.evaluate(p=>{for(const group of p.querySelectorAll('details'))group.open=true;});const expanded=await current({width:1920,height:1080,overflow:true,position:'sticky'});states.push({expanded});if(expanded.fits||expanded.contain!=='contain')problems.push('reader overflow: expanded tree does not contain its wheel');
     await page.getByRole('searchbox',{name:'Filter topic pages'}).fill('zzzz-no-such-page');const filtered=await current({width:1920,height:1080,overflow:false,position:'sticky'});states.push({filtered});if(!filtered.fits||filtered.contain!=='auto')problems.push('reader overflow: filtering leaves stale containment');
-    await page.setViewportSize({width:1440,height:600});const short=await current({width:1440,height:600,overflow:true,position:'sticky'});states.push({short});if(short.fits||short.contain!=='contain')problems.push('reader overflow: short left-outline layout does not regain containment');
+    // 1366 px: the widest the outline sits in the left tree (from 1400 px it has its own column, #807).
+    await page.setViewportSize({width:1366,height:600});const short=await current({width:1366,height:600,overflow:true,position:'sticky'});states.push({short});if(short.fits||short.contain!=='contain')problems.push('reader overflow: short left-outline layout does not regain containment');
     await page.setViewportSize({width:390,height:844});const mobile=await current({width:390,height:844,overflow:false,position:'static'});states.push({mobile});if(mobile.position!=='static'||mobile.contain!=='auto')problems.push('reader overflow: mobile retains containment');
   }finally{await readerClose(page,states);await readerReceipt(evidence,states,problems);console.log('Reader overflow evidence: '+evidence);}
+  return problems;
+}
+
+/** No half-cut tree row above the sticky search (#807), and the "On this page" rail from 1400 px. At 1280, 1440 and
+ * 1600 px on /docs/linkages the panel is scrolled so a tree row straddles its top edge; no part of any row may show
+ * between the panel's top and the controls' top, and the strip just inside the panel's top hits the controls. The rail
+ * shows at 1440 and 1600 (the tree's own outline then hides) and not at 1280. Planted control: the controls stuck at
+ * top:0 again, as before #807, show the straddling row and are reported. */
+export async function treeEdgeProblems(browser, base) {
+  const problems = [];
+  const measure = page => page.evaluate(() => {
+    const panel = document.querySelector('cad-nav .cad-nav-panel'), controls = panel.querySelector(':scope > [data-nav-controls]');
+    const rows = [...panel.querySelectorAll('.explore-tree a, .explore-tree summary')].filter(r => r.getClientRects().length);
+    const top = () => panel.getBoundingClientRect().top;
+    const row = rows[Math.floor(rows.length / 2)], r = row.getBoundingClientRect();
+    panel.scrollTop += r.top - top() + r.height / 2;               // the row's middle at the panel's top edge
+    const p = panel.getBoundingClientRect(), c = controls.getBoundingClientRect();
+    const showing = rows.map(e => [e, e.getBoundingClientRect()]).filter(([, q]) => Math.min(q.bottom, c.top) - Math.max(q.top, p.top) > 0.5)
+      .map(([e, q]) => `"${e.textContent.trim().slice(0, 30)}" ${Math.round(q.top)}-${Math.round(q.bottom)} px`);
+    const hits = [0.25, 0.5, 0.75].map(f => controls.contains(document.elementFromPoint(p.left + p.width * f, p.top + 1)));
+    const rail = document.querySelector('.doc-rail'), tree = panel.querySelector('.explore-mobile-outline');
+    return { showing, hits: hits.every(Boolean), panelTop: p.top, controlsTop: c.top,
+      rail: !!rail && rail.getClientRects().length > 0, treeOutline: !!tree && tree.getClientRects().length > 0 };
+  });
+  for (const width of [1280, 1440, 1600]) {
+    const page = await browser.newPage({ viewport: { width, height: 900 } });
+    try {
+      await navigate(page, base + '/docs/linkages');
+      await page.waitForSelector('cad-nav[data-ready]');
+      const m = await measure(page);
+      if (m.showing.length || !m.hits) problems.push(`${width}px /docs/linkages: tree rows show above the sticky search (panel ${Math.round(m.panelTop)} px, search ${Math.round(m.controlsTop)} px): ${m.showing.join('; ') || 'the panel\'s top strip does not hit the search'}`);
+      if (m.rail !== width >= 1400) problems.push(`${width}px /docs/linkages: the "On this page" column ${m.rail ? 'shows' : 'is missing'}`);
+      if (m.treeOutline === m.rail) problems.push(`${width}px /docs/linkages: the outline shows ${m.rail ? 'twice' : 'nowhere'}`);
+      if (width === 1440) {
+        await page.addStyleTag({ content: 'cad-nav .cad-nav-panel>[data-nav-controls]{top:0!important;margin-top:0!important;padding:4px 0!important}' });
+        const planted = await measure(page);
+        if (!planted.showing.length && planted.hits) problems.push('planted control: controls stuck at top:0 showed no row above the search, so the tree-edge check tests nothing');
+      }
+    } finally { await page.close(); }
+  }
   return problems;
 }

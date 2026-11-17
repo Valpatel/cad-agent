@@ -27,7 +27,8 @@
   background:var(--cad-nav-bg,#fff);color:inherit}
 /* Optional controls block owns its whole sticky background; the legacy one-filter cover must not mask it. */
 :where(cad-nav .cad-nav-panel:has(> [data-nav-controls]))::before{display:none}
-:where(cad-nav [data-nav-controls]){position:sticky;top:0;z-index:2;background:var(--cad-nav-page,#fffdf5);padding:4px 0}
+/* It sticks at -4px, over the panel's 4px top padding, so no link shows above it (#807: a half row above the search). */
+:where(cad-nav [data-nav-controls]){position:sticky;top:-4px;z-index:2;background:var(--cad-nav-page,#fffdf5);margin-top:-4px;padding:8px 0 4px}
 :where(cad-nav [data-nav-controls] .cad-nav-filter){position:static;margin-bottom:0}
 :where(cad-nav .cad-nav-filter:focus-visible){outline:2px solid var(--cad-nav-accent,#bd3a12);outline-offset:1px}
 :where(cad-nav .cad-nav-empty:not(:empty)){margin:0 0 12px;padding:8px 12px;border-radius:10px;background:var(--cad-nav-current,#f0f5e7)}

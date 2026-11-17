@@ -67,7 +67,129 @@ function floorGrid(accent, color) {
  * uncovered area, so the model is not hidden behind the panels. `fitView` places the camera so all the points (THREE
  * Vector3s, or a Box3) fit in that uncovered area, looking along `direction` at `target` (default: their centre).
  * `onFrame(cb)` registers cb(t, dt) called every animation frame before rendering.
+ *
+ * The stage draws on demand: each frame it compares what the renderer would read (sceneSignature) with what it read
+ * at the last draw, and draws only on a difference, so an idle stage costs no GPU or rasteriser time. Code that moves,
+ * shows, hides, recolours or replaces three.js objects, materials, textures, lights, the camera or the renderer's
+ * size needs to do nothing more. `invalidate()` requests a draw for anything the signature cannot see (for example
+ * a texture whose pixels change without `needsUpdate`, or a shader that reads time from outside its uniforms).
+ * `draws` counts the frame loop's draws.
  */
+/**
+ * Test and debugging hook shared by every stage on the page: `live` holds each stage's `{draws, invalidate}`, and
+ * `alwaysDraw = true` restores drawing on every frame (to compare pictures, or to rule out a missed draw).
+ */
+export const stageDiagnostics = { live: new Set(), alwaysDraw: false };
+
+// Everything three.js reads when it draws, flattened to numbers: renderer size and output settings, the camera, and
+// for each visible object its world matrix, flags, geometry versions, material values and textures. Strings,
+// functions and userData are skipped; three.js only re-reads changed shader text after `needsUpdate`, which bumps
+// `material.version`, so the version stands for them.
+const SKIPPED = new Set(['userData', 'uuid', 'name', 'type', '_listeners']);
+const strings = new Map();
+const intern = (text) => { let id = strings.get(text); if (id === undefined) strings.set(text, (id = strings.size + 1)); return id; };
+const viewport = new THREE.Vector4(), clearColor = new THREE.Color();
+function pushValue(out, value, depth) {
+  if (typeof value === 'number') out.push(value);
+  else if (typeof value === 'boolean') out.push(value ? 1 : 0);
+  else if (value === null || value === undefined) out.push(NaN);
+  else if (typeof value === 'string') out.push(intern(value));
+  else if (typeof value !== 'object' || depth > 3) return;
+  else if (value.isTexture) {
+    out.push(value.id, value.version, value.offset.x, value.offset.y, value.repeat.x, value.repeat.y, value.rotation, value.center.x, value.center.y, value.flipY ? 1 : 0);
+  } else if (value.isColor) out.push(value.r, value.g, value.b);
+  else if (value.isVector2) out.push(value.x, value.y);
+  else if (value.isVector3 || value.isEuler) out.push(value.x, value.y, value.z);
+  else if (value.isVector4 || value.isQuaternion) out.push(value.x, value.y, value.z, value.w);
+  else if (value.isMatrix3 || value.isMatrix4) for (const n of value.elements) out.push(n);
+  else if (value.isPlane) out.push(value.normal.x, value.normal.y, value.normal.z, value.constant);
+  else if (Array.isArray(value) || ArrayBuffer.isView(value)) {
+    out.push(value.length);
+    for (let i = 0; i < value.length; i++) pushValue(out, value[i], depth + 1);
+  } else if (depth === 0 && value.constructor === Object) {    // plain records: defines, extensions
+    for (const key in value) pushValue(out, value[key], depth + 1);
+  }
+}
+function pushMaterial(out, material, seen) {
+  out.push(material.id, material.version);
+  if (seen.has(material)) return;
+  seen.add(material);
+  for (const key in material) {
+    if (SKIPPED.has(key)) continue;
+    const value = material[key];
+    if (key === 'uniforms') { for (const name in value) pushValue(out, value[name]?.value, 1); } else pushValue(out, value, 0);
+  }
+}
+function pushGeometry(out, geometry) {
+  out.push(geometry.id, geometry.index ? geometry.index.version : -1, geometry.drawRange.start, geometry.drawRange.count, geometry.groups.length);
+  for (const name in geometry.attributes) {
+    const attribute = geometry.attributes[name];
+    out.push(attribute.isInterleavedBufferAttribute ? attribute.data.version : attribute.version, attribute.count);
+  }
+}
+function pushObject(out, object, seen) {
+  out.push(object.id, object.visible ? 1 : 0);
+  if (!object.visible) return;
+  for (const n of object.matrixWorld.elements) out.push(n);
+  out.push(object.renderOrder, object.layers.mask, object.castShadow ? 1 : 0, object.receiveShadow ? 1 : 0, object.frustumCulled ? 1 : 0);
+  if (object.isLight) {
+    out.push(object.intensity, object.distance ?? 0, object.decay ?? 0, object.angle ?? 0, object.penumbra ?? 0);
+    pushValue(out, object.color, 1);
+    if (object.groundColor) pushValue(out, object.groundColor, 1);
+    if (object.target) pushValue(out, object.target.matrixWorld, 1);
+    const shadow = object.shadow;
+    if (shadow) {
+      out.push(shadow.bias, shadow.normalBias, shadow.radius, shadow.mapSize.x, shadow.mapSize.y);
+      pushValue(out, shadow.camera.projectionMatrix, 1);
+    }
+  }
+  if (object.geometry) pushGeometry(out, object.geometry);
+  if (Array.isArray(object.material)) for (const material of object.material) pushMaterial(out, material, seen);
+  else if (object.material) pushMaterial(out, object.material, seen);
+  if (object.morphTargetInfluences) pushValue(out, object.morphTargetInfluences, 1);
+  if (object.isInstancedMesh) out.push(object.count, object.instanceMatrix.version, object.instanceColor ? object.instanceColor.version : -1);
+  if (object.isSkinnedMesh) for (const bone of object.skeleton.bones) pushValue(out, bone.matrixWorld, 1);
+  out.push(object.children.length);
+  for (const child of object.children) pushObject(out, child, seen);
+}
+/** Fill `out` with the numbers that decide the next picture (see above). */
+export function sceneSignature(renderer, scene, camera, out = []) {
+  out.length = 0;
+  if (scene.matrixWorldAutoUpdate) scene.updateMatrixWorld();
+  if (camera.parent === null && camera.matrixWorldAutoUpdate) camera.updateMatrixWorld();
+  const canvas = renderer.domElement;
+  renderer.getViewport(viewport);
+  renderer.getClearColor(clearColor);
+  out.push(canvas.width, canvas.height, renderer.getPixelRatio(), viewport.x, viewport.y, viewport.z, viewport.w,
+    clearColor.r, clearColor.g, clearColor.b, renderer.getClearAlpha(), renderer.toneMapping, renderer.toneMappingExposure,
+    intern(renderer.outputColorSpace), renderer.localClippingEnabled ? 1 : 0, renderer.shadowMap.enabled ? 1 : 0,
+    renderer.shadowMap.type, renderer.sortObjects ? 1 : 0, camera.layers.mask);
+  pushValue(out, renderer.clippingPlanes, 1);
+  pushValue(out, camera.matrixWorld, 1);
+  pushValue(out, camera.projectionMatrix, 1);
+  pushValue(out, scene.background, 1);
+  pushValue(out, scene.environment, 1);
+  out.push(scene.backgroundBlurriness ?? 0, scene.backgroundIntensity ?? 1, scene.overrideMaterial ? scene.overrideMaterial.id : -1);
+  if (scene.fog) { pushValue(out, scene.fog.color, 1); out.push(scene.fog.near ?? 0, scene.fog.far ?? 0, scene.fog.density ?? 0); }
+  const seen = new Set();
+  if (scene.overrideMaterial) pushMaterial(out, scene.overrideMaterial, seen);
+  pushObject(out, scene, seen);
+  return out;
+}
+/**
+ * Equal within a relative 1e-9: far below a pixel at any canvas size, and enough to let a damping tail end instead of
+ * redrawing for float rounding. Compared against the last *drawn* signature, so slow drift still adds up to a draw.
+ */
+export function sameSignature(a, b) {
+  if (!b || a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) {
+    const x = a[i], y = b[i];
+    if (x === y || (x !== x && y !== y)) continue;
+    if (!(Math.abs(x - y) <= 1e-9 * Math.max(1, Math.abs(x), Math.abs(y)))) return false;
+  }
+  return true;
+}
+
 export function createStage(container, opts = {}) {
   const h = opts.height ?? 1;
   const accent = opts.accent ?? 0x00f0ff;
@@ -243,6 +365,23 @@ export function createStage(container, opts = {}) {
   const callbacks = [];
   const clock = new THREE.Clock();
   let running = false, frameId = 0;
+  // Draw on demand (#822). Every frame still advances the clock, the light dimmer, the onFrame callbacks and the
+  // controls, but the picture is drawn only when what the renderer would read has changed since the last draw
+  // (sceneSignature), when invalidate() asked for it, or while stageDiagnostics.alwaysDraw is set. A stage that is
+  // off screen or hidden draws nothing and draws once when it comes back.
+  let needsDraw = true, onScreen = null, drawn = null, pending = [];
+  const diagnostics = { draws: 0, invalidate: () => { needsDraw = true; } };
+  const invalidate = () => { needsDraw = true; };
+  const visibility = typeof IntersectionObserver === 'function'
+    ? new IntersectionObserver((entries) => {
+      const next = entries[entries.length - 1].isIntersecting;
+      if (next && !onScreen) needsDraw = true;          // coming back on screen draws once
+      onScreen = next;
+    })
+    : null;
+  if (visibility) visibility.observe(renderer.domElement); else onScreen = true;
+  renderer.domElement.addEventListener('webglcontextrestored', invalidate, { signal: gestures.signal });
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) needsDraw = true; }, { signal: gestures.signal });
   function tick() {
     if (!running) return;
     const dt = Math.min(clock.getDelta(), 0.05), t = clock.elapsedTime;
@@ -254,12 +393,25 @@ export function createStage(container, opts = {}) {
       }
     }
     controls.update();
-    renderer.render(scene, camera);
+    if (onScreen && !document.hidden) {
+      pending = sceneSignature(renderer, scene, camera, pending);
+      if (needsDraw || stageDiagnostics.alwaysDraw || !sameSignature(pending, drawn)) {
+        needsDraw = false;
+        renderer.render(scene, camera);
+        diagnostics.draws++;
+        [drawn, pending] = [pending, drawn ?? []];
+      }
+    }
     frameId = requestAnimationFrame(tick);
   }
+  stageDiagnostics.live.add(diagnostics);
 
   return {
     renderer, scene, camera, controls, root, frame, setInsets, fitView, setPalette,
+    /** Ask for a draw on the next frame. Only needed for a change the stage cannot see (see sceneSignature). */
+    invalidate,
+    /** Draws made by this stage's frame loop (a test hook; see stageDiagnostics). */
+    get draws() { return diagnostics.draws; },
     setSceneLight(v, immediate = false) { light.level = Math.max(0, Math.min(1, v)); if (immediate) { light.current = light.level; applyLight(); } },
     onFrame(cb) {
       callbacks.push(cb);
@@ -274,6 +426,8 @@ export function createStage(container, opts = {}) {
       callbacks.length = 0;
       cancelAnimationFrame(frameId);
       observer.disconnect();
+      visibility?.disconnect();
+      stageDiagnostics.live.delete(diagnostics);
       gestures.abort();
       controls.dispose();
       for(const object of [ground,grid,pad]){object.geometry.dispose();object.material.map?.dispose();object.material.dispose();}

@@ -24,7 +24,7 @@
      },
      {
       "label": "Largest lean",
-      "value": "8.3°"
+      "value": "8.32°"
      }
     ],
     "note": "Gyropup's recorded numbers, not a cad-agent verification."
@@ -48,7 +48,7 @@
      },
      {
       "label": "Largest lean",
-      "value": "8.4°"
+      "value": "8.45°"
      }
     ],
     "note": "Gyropup's recorded numbers, not a cad-agent verification."
@@ -58,7 +58,7 @@
    "id": "push",
    "label": "Push recovery, front and back",
    "file": "push.json",
-   "sha256": "0b9cee3f22311528eaba9b3228b9e7413bd9dbd2d449ae99e4d7a15917ee4749",
+   "sha256": "aa68c7446638772d8a269ea1f13c33dcfc33a86c67a2b6baa69730a046843719",
    "summary": {
     "title": "From the snapshot's own summary",
     "verdict": {
@@ -72,7 +72,7 @@
      },
      {
       "label": "Largest lean",
-      "value": "7.3°"
+      "value": "7.35°"
      },
      {
       "label": "Events",
@@ -100,7 +100,7 @@
      },
      {
       "label": "Largest lean",
-      "value": "0.0°"
+      "value": "0.04°"
      }
     ],
     "note": "Gyropup's recorded numbers, not a cad-agent verification."

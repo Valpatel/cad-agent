@@ -73,6 +73,12 @@ try{
     await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
     await page.keyboard.press('End');await page.waitForFunction(()=>__replay.playback.state().time===10);
     await page.keyboard.press('Home');await page.waitForFunction(()=>__replay.playback.state().time===0);
+    // 10 s is a whole number of the slider's 1 ms steps, so End above would pass without the viewer's end rule. Planted
+    // step (#809), as on the Gyropup page: with 3 ms steps the slider tops out at 9.999 s, and End must still reach 10 s.
+    await page.evaluate(()=>{document.querySelector('.replay-time input').step='0.003';});await page.keyboard.press('End');
+    await page.waitForFunction(()=>__replay.playback.state().time===10);
+    const top=await page.evaluate(()=>+document.querySelector('.replay-time input').value);assert.ok(top<10,`the planted 3 ms step leaves the slider at ${top}, not short of 10 s`);
+    await page.evaluate(()=>{document.querySelector('.replay-time input').step='.001';});await page.keyboard.press('Home');await page.waitForFunction(()=>__replay.playback.state().time===0);
     const initial=await page.evaluate(()=>__replay.getViewState().camera);await page.locator('.cad-viewer-viewport').focus();await page.keyboard.press('ArrowRight');
     const turned=await page.evaluate(()=>__replay.getViewState().camera);assert.notDeepEqual(turned,initial);
     await page.getByRole('button',{name:'Zoom to fit',exact:true}).click();const fitted=await page.evaluate(()=>__replay.getViewState().camera);

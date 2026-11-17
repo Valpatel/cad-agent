@@ -30,7 +30,12 @@ flowchart TD
 Four scenarios, chosen for what a visitor can see happen: driving off a 50 mm kerb (the card), one wheel up a plank
 while the body stays level, push recovery and an 80 mm drop. The viewer shows each scenario's pass verdict, its
 highest motor torque as a fraction of that motor's peak-torque limit (its control range) and the largest lean,
-copied from the snapshot's summary: the snapshot's own numbers, not a cad-agent verification.
+copied from the snapshot's summary: the snapshot's own numbers, not a cad-agent verification. The lean is Gyropup's
+`max_theta_deg`: the largest angle from vertical of the line from the wheel axle to the centre of mass, measured at
+every solver step from the start, shown to the two decimals the summary records (the landing's 0.04°: a straight drop
+barely tips that line); a run whose summary has none shows none. The camera follows the robot in every run that
+travels more than 0.1 m from its start, so it keeps the size of a phone's view; the landing stays put and is framed
+whole. The receipt records both rules.
 
 Limits: Gyropup's README calls this snapshot a historical demo, generated 2026-10-25 to 26 and not a validation of
 the latest CAD or of physical hardware. The browser interpolates between recorded frames without enforcing contacts

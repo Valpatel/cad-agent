@@ -127,8 +127,21 @@ export function toolkitFullText(pages, origin) {
 export const BUILD_GUIDE_PHRASES = ['example sequence', 'work-in-progress', 'not a verified build procedure', 'CAD step order does not prove'];
 export const buildGuideCaptionMissing = caption => BUILD_GUIDE_PHRASES.filter(p => !String(caption || '').toLowerCase().includes(p.toLowerCase()));
 
-/** Capability cards are a presentation index of existing, locally owned examples. */
-export function toolkitCapabilities(m, {catalog = [], has} = {}) {
+/** One recorded figure for the robot-replay cards (#809), generated from the replay index the viewer shows and the
+ * card's capture record (which run the card plays), never typed: that run's verdict and its highest motor torque as a
+ * share of that motor's peak-torque limit, said to be the snapshot's own record. Throws when either is missing. */
+export function replayCardFigure(index, card) {
+  const run = index?.scenarios?.find(s => s.id === card?.scenario);
+  if (!run) throw new Error(`Toolkit: the replay card plays ${card?.scenario}, which the replay index does not list`);
+  const verdict = run.summary?.verdict?.label, torque = run.summary?.metrics?.find(m => m.label === 'Peak motor torque')?.value;
+  const share = /: (\d{1,3})% of its peak-torque limit$/.exec(torque || '')?.[1];
+  if (!['pass', 'fail'].includes(verdict) || !share) throw new Error(`Toolkit: the replay index records no verdict or peak-torque share for ${run.id}`);
+  return `For the run shown, the snapshot records a ${verdict}, with its highest motor torque at ${share}% of that motor's peak-torque limit.`;
+}
+
+/** Capability cards are a presentation index of existing, locally owned examples. `replayFigure`
+ * (replayCardFigure) ends the robot-replay card's description. */
+export function toolkitCapabilities(m, {catalog = [], has, replayFigure} = {}) {
   const scenario = m.simulations.find(s=>s.id==='wastewater-digester') || m.simulations[0];
   const demo = (id, fallback) => {
     const url = new URL(catalog.find(c=>c.id===id)?.url || fallback, 'https://cad-agent.valpatel.com');
@@ -149,7 +162,7 @@ export function toolkitCapabilities(m, {catalog = [], has} = {}) {
       image:'/web/models/gyropup.webp', alt:'Gyropup wheel-legged robot, captured from the owned 3D CAD model',
       href:'/toolkit/models', action:'Open 3D model', docs:'/docs/web-parts', fit:'contain'},
     {id:'robot-replay', title:'Robot simulation replay', kind:'Recorded dynamics',
-      description:'Gyropup, a work-in-progress wheel-legged robot, in recorded MuJoCo runs from its dated snapshot: drive off a kerb, ride a plank, take a push, land a drop, each with the snapshot\'s own pass verdict and peak motor torque. Recorded solver output, replayed, not recomputed, and not a validation of hardware. A small two-link arm stays as the editable example.',
+      description:'Gyropup, a work-in-progress wheel-legged robot, in recorded MuJoCo runs from its dated snapshot: drive off a kerb, ride a plank, take a push, land a drop, each with the snapshot\'s own pass verdict and peak motor torque. Recorded solver output, replayed, not recomputed, and not a validation of hardware. A small two-link arm stays as the editable example.'+(replayFigure ? ' '+replayFigure : ''),
       image:'/kit/simulation/examples/gyropup-v2/card-still.webp', motion:'/kit/simulation/examples/gyropup-v2/card.webp',
       alt:'Gyropup, a wheel-legged robot, driving off a kerb in the recorded-simulation viewer',
       href:'/kit/simulation/examples/gyropup-v2/viewer.html?nav=1', action:'Play robot recording', docs:'/'+folderMapPath('docs/examples/robot-replay/README.md').replace(/\.md$/,'')},
@@ -187,8 +200,8 @@ export function toolkitCapabilities(m, {catalog = [], has} = {}) {
 const capabilityCard = c => `<article class="toolkit-card toolkit-capability" id="${esc(c.id)}" data-toolkit-capability="${esc(c.id)}"><a class="toolkit-image-link" href="${esc(c.href)}" tabindex="-1"><img src="${esc(c.image)}" alt="${esc(c.alt)}" width="800" height="500" loading="lazy"${c.motion?` data-motion-src="${esc(c.motion)}"`:''}${c.fit==='contain'?' class="toolkit-contain"':''}></a><div class="toolkit-card-body"><p class="toolkit-card-kicker">${esc(c.kind)}</p><h2>${esc(c.title)}</h2><p>${esc(c.description)}</p><div class="toolkit-card-actions"><a class="button" data-toolkit-launch href="${esc(c.href)}">${esc(c.action)}</a><a href="${esc(c.docs)}">${c.id==='scada-simulations'?'All simulations':'Guide'}</a></div></div></article>`;
 
 /** Generated routes remain in the existing site frame, with Markdown twins and a machine-readable index. */
-export function toolkitPages(m, {catalog = [], has} = {}) {
-  const capabilities = toolkitCapabilities(m,{catalog,has});
+export function toolkitPages(m, {catalog = [], has, replayFigure} = {}) {
+  const capabilities = toolkitCapabilities(m,{catalog,has,replayFigure});
   const feature = m.simulations.find(s=>s.id==='wastewater-digester') || m.simulations[0];
   const body = content => `<div class="toolkit-shell">${content}</div>`;
   const pages = [

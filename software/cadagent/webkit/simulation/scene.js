@@ -40,11 +40,13 @@ export function createPoseScene(stage,recording,{meshes}={}) {
   const fixed=new THREE.Group();fixed.name='recorded-scenery';root.add(fixed);
   for(const g of recording.scenery??[])fixed.add(primitive(g));
   // Fit the complete recorded motion, including geometry; moving links stay in view after Fit.
+  // Fit frames the points the bodies reach, not the corners of one box around them all: a box's far corners lie well
+  // outside an oblique view's silhouette, so fitting them leaves the robot small (#809).
   const bounds=new THREE.Box3(),point=new THREE.Vector3(),rotation=new THREE.Quaternion(),position=new THREE.Vector3();
-  const bodyBounds=groups.map(()=>new THREE.Box3()),padding=groups.map(()=>0),radii=localCorners.map(corners=>Math.max(...corners.map(p=>p.length())));
+  const frameBounds=recording.frames.map(()=>groups.map(()=>new THREE.Box3())),padding=groups.map(()=>0),radii=localCorners.map(corners=>Math.max(...corners.map(p=>p.length())));
   for(const [frameIndex,frame] of recording.frames.entries())frame.poses.forEach((pose,i)=>{
     rotation.fromArray(pose.quaternion);position.fromArray(pose.position);
-    for(const corner of localCorners[i]){point.copy(corner).applyQuaternion(rotation).add(position);const {x,y,z}=point;bodyBounds[i].expandByPoint(point.set(x,z,-y));}
+    for(const corner of localCorners[i]){point.copy(corner).applyQuaternion(rotation).add(position);const {x,y,z}=point;frameBounds[frameIndex][i].expandByPoint(point.set(x,z,-y));}
     if(frameIndex){
       const previous=recording.frames[frameIndex-1].poses[i].quaternion;
       const dot=Math.min(1,Math.abs(previous.reduce((sum,n,k)=>sum+n*pose.quaternion[k],0))),theta=2*Math.acos(dot);
@@ -54,7 +56,14 @@ export function createPoseScene(stage,recording,{meshes}={}) {
       padding[i]=Math.max(padding[i],radii[i]*(theta*theta/8+1e-10)); // unit-normalization/near-coincident roundoff margin
     }
   });
-  bodyBounds.forEach((box,i)=>bounds.union(box.expandByScalar(padding[i])));
+  // Each body's box in each frame, grown by that body's interpolation margin: the view frustum is convex, so holding
+  // every corner holds every pose between two recorded frames too.
+  const corners=box=>[0,1,2,3,4,5,6,7].map(i=>new THREE.Vector3(i&1?box.max.x:box.min.x,i&2?box.max.y:box.min.y,i&4?box.max.z:box.min.z));
+  const reached=[],seen=new Set();
+  for(const boxes of frameBounds)boxes.forEach((box,i)=>{
+    box.expandByScalar(padding[i]);bounds.union(box);
+    for(const p of corners(box)){const key=`${p.x.toFixed(4)},${p.y.toFixed(4)},${p.z.toFixed(4)}`;if(!seen.has(key)){seen.add(key);reached.push(p);}}
+  });
   root.updateMatrixWorld(true);
   const size=bounds.getSize(new THREE.Vector3());
   // A followed body (a robot driving metres): Fit frames every body where it is now, and playback carries the camera
@@ -63,7 +72,7 @@ export function createPoseScene(stage,recording,{meshes}={}) {
   const direction=view?.direction?toStage({x:view.direction[0],y:view.direction[1],z:view.direction[2]}).normalize():new THREE.Vector3(1,.7,1.8);
   const tracked=new THREE.Vector3(),moved=new THREE.Vector3();let trackedSet=false;
   const reach=follow<0?null:Math.max(...localCorners.flatMap(corners=>corners.map(p=>p.length())));
-  const current=()=>{const box=new THREE.Box3();root.updateMatrixWorld(true);for(const group of groups)for(const mesh of group.children){if(!mesh.geometry.boundingBox)mesh.geometry.computeBoundingBox();box.union(mesh.geometry.boundingBox.clone().applyMatrix4(mesh.matrixWorld));}return box;};
+  const current=()=>{const points=[];root.updateMatrixWorld(true);for(const group of groups)for(const mesh of group.children){if(!mesh.geometry.boundingBox)mesh.geometry.computeBoundingBox();for(const p of corners(mesh.geometry.boundingBox))points.push(p.applyMatrix4(mesh.matrixWorld));}return points;};
   return {root,groups,bounds,height:Math.max(.01,size.x,size.y,size.z),follow:follow<0?null:recording.bodies[follow].id,reach,
     apply(poses){
       if(disposed)throw new Error('Pose scene is disposed');
@@ -74,7 +83,7 @@ export function createPoseScene(stage,recording,{meshes}={}) {
         tracked.copy(at);trackedSet=true;
       }
     },
-    fit(){if(disposed)throw new Error('Pose scene is disposed');stage.fitView(follow>=0?current():bounds,{margin:1.12,direction});},
+    fit(){if(disposed)throw new Error('Pose scene is disposed');stage.fitView(follow>=0?current():reached,{margin:1.12,direction});},
     dispose(){if(disposed)return;disposed=true;root.removeFromParent();const seen=new Set();root.traverse(object=>{if(object.geometry&&!seen.has(object.geometry)){seen.add(object.geometry);object.geometry.dispose();}object.material?.dispose();});},
   };
 }

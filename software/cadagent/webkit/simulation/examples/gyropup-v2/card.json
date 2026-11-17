@@ -61,7 +61,7 @@
   "height": 1000
  },
  "camera_after_fit": {
-  "closer": 0.86,
+  "closer": 1,
   "lower_m": 0.03
  },
  "browser": {
@@ -70,17 +70,17 @@
  },
  "generator": {
   "path": "docs/examples/robot-replay/capture-gyropup.mjs",
-  "sha256": "bdc87ea3c6bf747d2ef2c6b32ef6ab841acb8469e7f270e060454b144895956b"
+  "sha256": "6e7cd295988d14715f48545b2dfa4dcd704d99b352c859654dc26afc37cb27f6"
  },
  "sources": {
-  "docs/examples/robot-replay/capture-gyropup.mjs": "bdc87ea3c6bf747d2ef2c6b32ef6ab841acb8469e7f270e060454b144895956b",
+  "docs/examples/robot-replay/capture-gyropup.mjs": "6e7cd295988d14715f48545b2dfa4dcd704d99b352c859654dc26afc37cb27f6",
   "software/cadagent/webkit/simulation/replay.js": "3f26ccc0548150a48b1f502bf393a357742f943853f2faabb4dc6d96034c8160",
-  "software/cadagent/webkit/simulation/viewer.js": "9686f2e4d163cf3553c1e74a124cacda1ed60de69650407e444d9610dbe6b86e",
-  "software/cadagent/webkit/simulation/scene.js": "f510e789c9279004f56f38f6cde3de45c289d4c77c5d168e71deaa2a6740fb26",
+  "software/cadagent/webkit/simulation/viewer.js": "aa5ca57551f35d869a7d92f3eacf1181b3eb915e66bf19c6366691cb3b9f4983",
+  "software/cadagent/webkit/simulation/scene.js": "c653e9a70076ea4297c703ffc623139fa871f065a30c37da44d58e788e7fd71a",
   "software/cadagent/webkit/simulation/scenarios.js": "815ba5c467a5b868f54461a35c56d824b788a72947f8ff4176e8d4090d1d9741",
   "software/cadagent/webkit/simulation/viewer.css": "dab0c6bf8894a1d56dc6d48f932cc39b23460cef0adb8d81f382b0ea218582e7",
   "software/cadagent/webkit/simulation/examples/gyropup-v2/viewer.html": "69d0ad1edee4dba65e761b8fc0f4d74eff277460f2f91f2e713f8b6fd7f7caf8",
-  "software/cadagent/webkit/simulation/examples/gyropup-v2/index.json": "fc7c8b91483e5f6be55403fc1e6b6d8933bb6baae45a7c80247642f851952d5e",
+  "software/cadagent/webkit/simulation/examples/gyropup-v2/index.json": "14fa6f478954ff49cdb13dcee200c2bdb13e06b12b2528784bc55500cd906d2b",
   "software/cadagent/webkit/simulation/examples/gyropup-v2/robot.json": "3f1cfd02367d22adf242bb9cf7887f83e12be6c5897eb34aa8092d33c82f8314",
   "software/cadagent/webkit/simulation/examples/gyropup-v2/robot.bin": "45c516c47b12bffd6235e721ee86704661d668a196fb7c52a1837b1435837951",
   "software/cadagent/webkit/simulation/examples/gyropup-v2/kerb_drop.json": "d4120f00df7f89d020442891eb482d07810e69403244839b5221533423596ec1",
@@ -92,11 +92,11 @@
   "software/cadagent/webkit/ui/theme.js": "bec818983711f705b48f9df993ed4ee53a82093f1f750252103d0c1f8366b0e2",
   "software/cadagent/webkit/ui/theme.css": "370dfb29b28c760d48332316651492d0853c3e3aa9bc355e8a7edb1a4b12cf47"
  },
- "sha256": "ca6da792c68c48375de8867b2117c33dfb0fddbcdcc81b02317e08e87bb98d40",
+ "sha256": "00d5eeaf52bb32eef4660da5b0164e5154252145771f01ed0c3aed5a0d344049",
  "still": {
   "file": "card-still.webp",
   "recorded_time_s": 3,
-  "sha256": "eaeaf1087d903bf6e8e378e251e75e79fdbcb8b737a27b4255503976558f10e7"
+  "sha256": "6ae1bf576eb1c476ef1f82a5813d5f8362e9233013c9f1d326e7f666beaf4a2c"
  },
  "limits": "Recorded solver output from Gyropup's dated snapshot of a work-in-progress prototype, replayed, not recomputed; not a validation of hardware."
 }

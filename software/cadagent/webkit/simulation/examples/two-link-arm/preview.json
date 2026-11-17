@@ -13,8 +13,8 @@
   "sources": {
     "docs/examples/robot-replay/capture.mjs": "b5eec835aeefbcb08ea2078b772bc70b1bae219bdf990be5753f01ecf15137c6",
     "software/cadagent/webkit/simulation/replay.js": "3f26ccc0548150a48b1f502bf393a357742f943853f2faabb4dc6d96034c8160",
-    "software/cadagent/webkit/simulation/viewer.js": "9686f2e4d163cf3553c1e74a124cacda1ed60de69650407e444d9610dbe6b86e",
-    "software/cadagent/webkit/simulation/scene.js": "f510e789c9279004f56f38f6cde3de45c289d4c77c5d168e71deaa2a6740fb26",
+    "software/cadagent/webkit/simulation/viewer.js": "aa5ca57551f35d869a7d92f3eacf1181b3eb915e66bf19c6366691cb3b9f4983",
+    "software/cadagent/webkit/simulation/scene.js": "c653e9a70076ea4297c703ffc623139fa871f065a30c37da44d58e788e7fd71a",
     "software/cadagent/webkit/simulation/page.js": "2b1433207eefc314849739792a68377241ed374b92f9594de11229f0241a4745",
     "software/cadagent/webkit/simulation/viewer.html": "b25bd1f23a0723cb1cc69f9a9d1deec7ea16b8e03900b143c31b81d6cfe74f55",
     "software/cadagent/webkit/simulation/viewer.css": "dab0c6bf8894a1d56dc6d48f932cc39b23460cef0adb8d81f382b0ea218582e7",
@@ -29,6 +29,6 @@
   },
   "artifact": {
     "path": "preview.webp",
-    "sha256": "ef4ee578cc66a7f4e810c0daafea2d35f509ba01e53ed3a574b647481200b00a"
+    "sha256": "3ca3ae9fcc72758e0832b4750a05779ed11b8f3d407c4ebd8692e8e07e1f5beb"
   }
 }

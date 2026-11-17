@@ -50,7 +50,9 @@ Optional fields extend the format without changing existing recordings. A geomet
 draws a part of a mesh library: a packed `cad-agent-model/1` model (`cadagent.publish.view.pack_view`) whose parts
 are in their body's own frame, in millimetres, loaded and verified by `loadMeshLibrary`. Any primitive may carry
 `opacity`. `scenery` lists fixed world primitives such as a kerb. `view.follow` names a body the camera carries along
-the floor (for a run that drives metres) and `view.direction` the opening look direction in the source frame.
+the floor (for a run that leaves its spot) and `view.direction` the opening look direction in the source frame. Fit
+frames the points the bodies reach (each body's box in each recorded frame, grown for interpolation), not the corners
+of one box around the whole run, so an oblique view keeps the subject large.
 
 A `cad-agent.replay-index/1` document (`loadReplayIndex`) names several recordings beside it, each with its SHA-256
 and an optional `summary`: a title, a verdict (`pass`, label, reasons), up to eight labelled values and a note,

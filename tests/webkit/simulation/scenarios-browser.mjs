@@ -25,6 +25,24 @@ const seekAndRead=(page,t)=>page.evaluate(async t=>{
   return {matrices:__replay.scene.groups.map(g=>g.matrixWorld.toArray()),target:__replay.stage.controls.target.toArray(),camera:__replay.stage.camera.position.toArray()};
 },t);
 const summaryText=page=>page.locator('.replay-summary').innerText();
+// The robot's on-screen size across its run: every rendered vertex (one in five) projected through the camera at 13
+// recorded times. Returns the smallest share of the 3D view's height it spans and whether it ever leaves the view.
+// `whole` first frames the run's whole box, as the viewer did before #809 (the planted control).
+const robotFill=(page,{whole=false}={})=>page.evaluate(whole=>{
+  const {playback,scene,stage}=__replay,duration=playback.state().duration,v=stage.camera.position.clone();
+  if(whole)stage.fitView(scene.bounds,{margin:1.12,direction:stage.camera.position.clone().sub(stage.controls.target)});
+  let height=Infinity,inside=true;
+  for(let k=0;k<=12;k++){
+    playback.seek(duration*k/12);stage.controls.update();stage.camera.updateMatrixWorld();
+    let y0=Infinity,y1=-Infinity;
+    for(const group of scene.groups)group.traverse(o=>{if(!o.isMesh)return;const p=o.geometry.attributes.position;
+      for(let i=0;i<p.count;i+=5){v.fromBufferAttribute(p,i).applyMatrix4(o.matrixWorld).project(stage.camera);y0=Math.min(y0,v.y);y1=Math.max(y1,v.y);inside&&=Math.abs(v.x)<=1&&Math.abs(v.y)<=1;}});
+    height=Math.min(height,(y1-y0)/2);
+  }
+  return {height:Math.round(height*1000)/1000,inside};
+},whole);
+// The robot fills the view: at least this share of its height, all run long, and never cut off (#809).
+const FILL=0.65;
 // On a phone the 3D view comes first, straight under the title bar, and the controls (scenario select included) follow it
 // inside the host's width; on a wide screen the controls stay above the view. Returns the problem, or null.
 const orderProblem=async(page,width)=>{
@@ -86,14 +104,31 @@ try{
     text=await summaryText(page);
     assert.ok(text.includes(index.scenarios[2].summary.metrics[0].value)&&text.includes('push at 2.0 s'),text);
     assert.ok(!text.includes(kerb.metrics[0].value),'the summary still shows the previous scenario');
-    // A run that stays near its start is framed whole: seeking does not move the camera.
-    const still=read.camera;read=await seekAndRead(page,5);assert.deepEqual(read.camera,still);
+    // The push run leaves its spot (0.65 m), so the camera follows its base as it does the kerb's.
+    const pushed=read.target;read=await seekAndRead(page,4.95);
+    const pushMoved=read.target[0]-pushed[0],pushBase=frameAt('push',4.95).poses[0].position[0]-frameAt('push',2.97).poses[0].position[0];
+    assert.ok(Math.abs(pushMoved-pushBase)<1e-6&&Math.abs(pushBase)>0.01,`camera followed ${pushMoved} m, base moved ${pushBase} m`);
     for(const id of ['side_kerb','landing','push']){
       await select.selectOption(id);await page.waitForFunction(id=>__replay.scenario===id&&!document.querySelector('[aria-label="Scenario"]').disabled,id);
-      await seekAndRead(page,{side_kerb:5,landing:0.2,push:2.5}[id]);
+      read=await seekAndRead(page,{side_kerb:5,landing:0.2,push:2.5}[id]);
+      // A run that stays near its start is framed whole: seeking does not move the camera.
+      if(id==='landing'){const still=read.camera;read=await seekAndRead(page,3);assert.deepEqual(read.camera,still);await seekAndRead(page,0.2);}
       await page.locator('.cad-viewer-viewport').screenshot({path:`${out}/${engine.name()}-${width}-${theme}-${id}.png`});
     }
-    cases.push({width,theme,switches:4,oracle:'every body matches its recorded frame; the left scenario does not'});
+    // Framing (#809): each scenario's robot fills the view at this width, and at 1440 px on the wide pass. Planted
+    // control: the pushed run framed whole, as before #809, must be reported, or the bound proves nothing.
+    const fills={};
+    for(const size of width<=600?[width]:[width,1440]){
+      if(size!==width)await page.setViewportSize({width:size,height:900});
+      for(const id of index.scenarios.map(s=>s.id)){
+        await select.selectOption(id);await page.waitForFunction(id=>__replay.scenario===id&&!document.querySelector('[aria-label="Scenario"]').disabled,id);
+        await page.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r))));await page.evaluate(()=>__replay.fit());
+        const fill=await robotFill(page);fills[`${size}-${id}`]=fill;
+        assert.ok(fill.inside&&fill.height>=FILL,`${id} at ${size} px: the robot spans ${fill.height} of the view's height (needs ${FILL}), inside ${fill.inside}`);
+        if(id==='push'){const planted=await robotFill(page,{whole:true});assert.ok(!(planted.inside&&planted.height>=FILL),`planted control: the push run framed whole passed the fill check (${JSON.stringify(planted)})`);fills[`${size}-push-framed-whole`]=planted;}
+      }
+    }
+    cases.push({width,theme,switches:4,oracle:'every body matches its recorded frame; the left scenario does not',fills});
     const cleanup=await page.evaluate(()=>{__replay.dispose();return document.querySelectorAll('#replay canvas').length;});
     assert.equal(cleanup,0);await context.close();
   }
@@ -108,10 +143,21 @@ try{
     const duration=await page.evaluate(()=>{const {duration}=__replay.playback.state();__replay.playback.seek(duration-0.02);return duration;});
     await page.waitForFunction(d=>{const s=__replay.playback.state();return s.playing&&s.time<d-0.02;},duration);
     assert.equal(await page.evaluate(()=>__replay.playback.state().loop),true);
+    // While playing, the button keeps its text node: one replaced between a press and its release makes WebKit drop the
+    // click, which is how Pause failed to hold in CI (#809). Planted control below: the per-frame rewrite is reported.
+    const sameNode=target=>target.evaluate(()=>new Promise(resolve=>{const button=document.querySelector('.replay-controls button[aria-pressed]'),first=button.firstChild;
+      let n=0;const tick=()=>++n>5?resolve(__replay.playback.state().playing&&button.firstChild===first):requestAnimationFrame(tick);tick();}));
+    assert.equal(await sameNode(page),true,'the Pause button keeps its text node while the recording plays');
     await page.getByRole('button',{name:'Pause recording',exact:true}).click();
     const held=await page.evaluate(()=>__replay.playback.state());assert.equal(held.playing,false);
     await page.evaluate(()=>new Promise(resolve=>{let n=0;const tick=()=>++n>3?resolve():requestAnimationFrame(tick);tick();}));
     assert.equal(await page.evaluate(()=>__replay.playback.state().time),held.time,'Pause holds the recording');
+    // A press held across several frames, as a person's is, pauses too.
+    await page.getByRole('button',{name:'Play recording',exact:true}).click();await page.waitForFunction(t=>__replay.playback.state().time>t+0.1,held.time);
+    await page.getByRole('button',{name:'Pause recording',exact:true}).click({delay:150});
+    const slow=await page.evaluate(()=>__replay.playback.state());assert.equal(slow.playing,false,'a 150 ms press on Pause pauses');
+    await page.evaluate(()=>new Promise(resolve=>{let n=0;const tick=()=>++n>3?resolve():requestAnimationFrame(tick);tick();}));
+    assert.equal(await page.evaluate(()=>__replay.playback.state().time),slow.time,'Pause holds after a slow press');
     await context.close();
     const planted=await browser.newContext({viewport:{width:1100,height:900},reducedMotion:'reduce'}),control=await planted.newPage();
     await control.route('**/simulation/viewer.js',async route=>{const response=await route.fetch();const body=(await response.text()).replace("&&!matchMedia('(prefers-reduced-motion: reduce)').matches",'');
@@ -119,7 +165,13 @@ try{
     await control.goto(page_);await control.waitForFunction(()=>document.body.dataset.ready==='1',null,{timeout:120000});
     assert.equal(await control.evaluate(()=>__replay.playback.state().playing),true,'planted control: without its guard the viewer must autoplay under reduced motion');
     await planted.close();
-    cases.push({name:'autoplay and loop with motion; none under reduced motion (planted control autoplays without the guard); Pause holds'});
+    const rewrite=await browser.newContext({viewport:{width:1100,height:900},reducedMotion:'no-preference'}),rewritten=await rewrite.newPage();
+    await rewritten.route('**/simulation/viewer.js',async route=>{const response=await route.fetch(),guard="if(play.dataset.playing!==String(state.playing)){";const text=await response.text();
+      assert.ok(text.includes(guard),'planted control: the button guard was not found to remove');await route.fulfill({response,body:text.replace(guard,'{')});});
+    await rewritten.goto(page_);await rewritten.waitForFunction(()=>document.body.dataset.ready==='1',null,{timeout:120000});
+    assert.equal(await sameNode(rewritten),false,'planted control: a button rewritten every frame passed the text-node check');
+    await rewrite.close();
+    cases.push({name:'autoplay and loop with motion; none under reduced motion (planted control autoplays without the guard); Pause holds, also after a 150 ms press; the button keeps its text node (planted control: rewritten every frame)'});
   }
   // A recording whose bytes differ from the index's SHA-256 is refused when chosen; Retry viewer starts again cleanly.
   const context=await browser.newContext({viewport:{width:1100,height:900},reducedMotion:'reduce'}),page=await context.newPage();

@@ -53,6 +53,16 @@ MOTOR_NAMES = {"motor_f_l": "front-left leg motor", "motor_r_l": "rear-left leg 
 # Where the frame interval comes from: the solver timestep in the generated MJCF and the sampling rule of the run loop.
 TIMESTEP_SOURCE, SAMPLING_SOURCE = "software/simulation/robot_v2.py", "software/simulation/scenarios.py"
 SAMPLING_RULE = "frame_every = max(1, int(round(1 / (FPS * dt))))"
+# The camera follows the base once it travels this far across the floor from where it started (m). Framing a whole run
+# that travels further leaves the robot a fraction of a phone's view (#809): the push run travels 0.65 m.
+FOLLOW_TRAVEL_M = 0.1
+# How the summary's numbers are shown. Recorded in the receipt, so a reader knows what each figure is and is not.
+FIGURES = ("Peak motor torque: the summary's peak_torque_nm of the motor with the largest of_peak (its peak over the run "
+           "as a fraction of that motor's peak-torque limit, its control range), to 0.1 N·m and a whole percent. Largest "
+           "lean: the summary's max_theta_deg to two decimals, the precision scenarios.py records it to (so a small lean "
+           "such as the landing's 0.04° does not read as zero): the largest angle from vertical of the line from the wheel axle to the centre of mass, measured at "
+           "every solver step from the start of the run (controller_v2.py's theta). A run whose summary has no such value "
+           "shows no lean.")
 LIMITS = ("Replay of recorded solver output from a dated snapshot of a work-in-progress prototype. The browser "
           "interpolates the recorded poses; nothing is recomputed. Pass verdicts and torques are the snapshot's own "
           "numbers, not a cad-agent verification. The snapshot predates Gyropup's current CAD; CAD and simulation do "
@@ -202,6 +212,22 @@ def scenery(props):
     return out
 
 
+def travel(qpos) -> float:
+    """How far the base gets across the floor from its first recorded position (m), in any frame."""
+    x0, y0 = qpos[0][0], qpos[0][1]
+    return max(math.hypot(q[0] - x0, q[1] - y0) for q in qpos)
+
+
+def lean_text(entry):
+    """The recorded largest lean as the summary wrote it, or None when the run records none (see FIGURES)."""
+    value = entry.get("max_theta_deg")
+    if value is None:
+        return None
+    if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value) or value < 0:
+        raise ValueError(f"max_theta_deg {value!r}: not a recorded angle")
+    return f"{value:.2f}°"
+
+
 def summary_block(entry, events):
     """The snapshot's own verdict and numbers, as plain labelled text for the viewer."""
     motors = entry["motors"]
@@ -212,8 +238,10 @@ def summary_block(entry, events):
     # test, so a figure against the continuous rating beside its PASS would read as a verdict the snapshot never made.
     metrics = [{"label": "Peak motor torque",
                 "value": f"{worst['peak_torque_nm']:.1f} N·m, {MOTOR_NAMES[name]}: {round(100 * worst['of_peak'])}% of its "
-                         f"peak-torque limit"},
-               {"label": "Largest lean", "value": f"{entry['max_theta_deg']:.1f}°"}]
+                         f"peak-torque limit"}]
+    lean = lean_text(entry)
+    if lean is not None:
+        metrics.append({"label": "Largest lean", "value": lean})
     if events:
         metrics.append({"label": "Events", "value": ", ".join(f"{e['type']} at {e['t']:.1f} s" for e in events)})
     verdict = {"pass": bool(entry["pass"]), "label": "pass" if entry["pass"] else "fail"}
@@ -310,8 +338,9 @@ def convert(checkout: Path, out: Path) -> dict:
             "convention": {"length": "m", "up": "z", "handedness": "right", "quaternion": "xyzw"},
             "bodies": [{"id": body, "label": label, "geometry": geometry[body]} for body, label, _ in bodies],
             "scenery": scenery(run.get("props", [])),
-            # A run that drives metres is followed; one that stays near its start is framed whole, so a push shows.
-            "view": {**({"follow": "base"} if max(abs(q[0]) for q in frames["qpos"]) > 1.0 else {}), "direction": [0.55, -1.0, 0.42]},
+            # A run whose base leaves its spot is followed, so the robot keeps the size of the view; one that stays put
+            # (the landing) is framed whole, drop included.
+            "view": {**({"follow": "base"} if travel(frames["qpos"]) > FOLLOW_TRAVEL_M else {}), "direction": [0.55, -1.0, 0.42]},
             "frames": [{"time_s": round(i * interval, 6), "poses": [pose_json(p) for p in poses(manifest, q, layout)]}
                        for i, q in enumerate(frames["qpos"])],
         }
@@ -337,6 +366,9 @@ def convert(checkout: Path, out: Path) -> dict:
                    "is taken after its step, 1 ms later than its stamp), through the rig's own forward kinematics: the free "
                    "joint poses the base; the five-bar links and the turret turn about their recorded joint angles as "
                    "Gyropup's software/site/designer/robot_v2.js poses them. No physics is run."),
+        "figures": FIGURES,
+        "view": f"The camera follows the base in a run that travels more than {FOLLOW_TRAVEL_M} m from its start; "
+                "other runs are framed whole.",
         "generator": {"path": GENERATOR, "sha256": sha((ROOT / GENERATOR).read_bytes())},
         "sources": dict(sorted(sources.items())),
         "artifacts": {name: sha((out / name).read_bytes()) for name in ARTIFACTS},

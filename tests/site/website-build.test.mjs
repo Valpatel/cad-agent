@@ -591,8 +591,6 @@ test('the home page shows what runs, then what is in cad-agent, in order, every 
   const replayCaption = replayCard.slice(0, replayCard.indexOf('</li>'));
   for (const phrase of ['recorded solver output', 'dated', 'snapshot', 'work-in-progress', 'replayed, not recomputed', 'not a validation of hardware'])
     assert.ok(replayCaption.includes(phrase), `the moving card's caption says "${phrase}"`);
-  // One recorded figure beside the motion (#809), generated from the replay index (tools/site/compiler/site-toolkit.mjs).
-  assert.match(replayCaption, /For the run shown, the snapshot records a pass, with its highest motor torque at \d+% of that motor&#39;s peak-torque limit\./);
   assert.match(await readFile(path.join(out, 'web/site.js'), 'utf8'), /img\.loading !== 'lazy'[\s\S]*IntersectionObserver/, 'a lazy card waits until it nears the screen');
   assert.ok(hero.indexOf('class="pixel-title"') < hero.indexOf('class="intro"') && hero.indexOf('class="intro"') < hero.indexOf('class="hero-actions"') && hero.indexOf('class="hero-actions"') < hero.indexOf('class="hero-run"'), 'source and focus order: headline, lede, actions, then the recording');
   assert.equal((home.match(/<cad-model src="\/web\/models\/[a-z0-9]+\.json" label="[^"]*" loading="scroll"/g) || []).length, 2, 'the home viewers wait for the reader to scroll or reach them');

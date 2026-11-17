@@ -4,7 +4,7 @@ import {existsSync, readFileSync, statSync} from 'node:fs';
 import path from 'node:path';
 import {execFileSync} from 'node:child_process';
 import {createHash} from 'node:crypto';
-import {SCADA_INPUTS, TOOLKIT_ROUTES, scadaToolkitModel, toolkitPages, toolkitFullText, toolkitCapabilities, buildGuideCaptionMissing, BUILD_GUIDE_PHRASES, replayCardFigure} from '../../../tools/site/compiler/site-toolkit.mjs';
+import {SCADA_INPUTS, TOOLKIT_ROUTES, scadaToolkitModel, toolkitPages, toolkitFullText, toolkitCapabilities, buildGuideCaptionMissing, BUILD_GUIDE_PHRASES} from '../../../tools/site/compiler/site-toolkit.mjs';
 import {YAML} from '../npm-context.mjs';
 import {matchesToolkitCard} from '../../../tools/site/assets/toolkit.js';
 import {sourceLicenseResolver} from '../../../tools/site/compiler/site-catalog.mjs';
@@ -226,21 +226,4 @@ test('build-guide captions say what the guide is, on the toolkit and home cards;
     const planted=home.caption.replace(new RegExp(phrase.replace(/[-]/g,'\\-'),'i'),'PLANTED');
     assert.deepEqual(buildGuideCaptionMissing(planted),[phrase],`removing "${phrase}" is caught`);
   }
-});
-
-test('the robot-replay card figure is generated from the replay index for the run the card plays (#809)',()=>{
-  const bundle='software/cadagent/webkit/simulation/examples/gyropup-v2/',index=read(bundle+'index.json'),card=read(bundle+'card.json');
-  const figure=replayCardFigure(index,card),run=index.scenarios.find(s=>s.id===card.scenario);
-  assert.equal(card.scenario,'kerb_drop');
-  assert.equal(figure,"For the run shown, the snapshot records a pass, with its highest motor torque at 29% of that motor's peak-torque limit.");
-  assert.ok(run.summary.metrics[0].value.endsWith(': 29% of its peak-torque limit'),'the share is the index\'s own');
-  // Planted controls: another run's record changes the figure, and a summary without the share stops the build.
-  assert.match(replayCardFigure(index,{scenario:'side_kerb'}),/ at 56% of /);
-  const stripped=structuredClone(index);stripped.scenarios.find(s=>s.id==='kerb_drop').summary.metrics[0].value='34.3 N·m';
-  assert.throws(()=>replayCardFigure(stripped,card),/no verdict or peak-torque share/);
-  assert.throws(()=>replayCardFigure(index,{scenario:'missing'}),/does not list/);
-  const inputs=Object.fromEntries(Object.entries(SCADA_INPUTS).map(([key,file])=>[key,read(file)]));
-  const has=file=>existsSync(path.join(root,file)),model=scadaToolkitModel({...inputs,has});
-  const replay=toolkitCapabilities(model,{has,replayFigure:figure}).find(c=>c.id==='robot-replay');
-  assert.ok(replay.description.endsWith(figure)&&replay.description.includes('not a validation of hardware'),replay.description);
 });

@@ -1,7 +1,7 @@
 # Recorded simulation playback
 
 Replay captured rigid-body poses through the shared 3D stage. The browser interpolates a completed solver run;
-it does not recompute dynamics. The original two-link arm demonstrates the pipeline, not a qualified robot design.
+it does not recompute dynamics. The original two-link arm is the small editable example; Gyropup's recorded scenarios show a real robot.
 
 ```mermaid
 flowchart TD
@@ -16,6 +16,7 @@ flowchart TD
 | [viewer.js](viewer.js) | Reusable shared-host adapter, visible playback controls, theme and cleanup. |
 | [scene.js](scene.js) | Local primitives and recorded world transforms on the metre-based shared stage. |
 | [viewer.html](viewer.html) | Standalone original arm example with inspectable evidence. |
+| [scenarios.js](scenarios.js) | Page script for a replay index: named recordings, a mesh library and a scenario select. |
 | [viewer.css](viewer.css) | Contained replay and responsive page layout. |
 | [page.js](page.js) | Example receipt verification and page lifecycle. |
 | [examples/](examples/README.md) | Portable recordings, generated models and solver receipts. |
@@ -25,6 +26,9 @@ The `cad-agent.pose-recording/1` format uses metres, a right-handed Z-up world a
 `bodies` defines unique IDs and local display primitives; every frame supplies complete poses in that body order.
 Frames start at zero and have strictly increasing `time_s`. Box sizes are full XYZ dimensions; cylinders use
 radius and full length along local Z; spheres use radius. Each primitive has its own local position and quaternion.
+
+<details>
+<summary>Playback API, mounting and the optional format extensions</summary>
 
 `validateRecording(value)` returns detached immutable data. `samplePose(recording, seconds)` clamps to the captured
 window, linearly interpolates position and takes the shortest quaternion path. `createPlayback(recording, callback)`
@@ -41,6 +45,20 @@ The scene root maps source `(x, y, z)` to stage `(x, z, -y)` in metres, includin
 standalone page uses its artifact hash for the recording load. A different application can supply already parsed
 data through `{recording}`. The full wheel and `cad-agent webkit` copy include this owner and its portable example;
 frozen assembly readers keep their existing smaller runtime profile.
+
+Optional fields extend the format without changing existing recordings. A geometry entry `{shape: "mesh", part}`
+draws a part of a mesh library: a packed `cad-agent-model/1` model (`cadagent.publish.view.pack_view`) whose parts
+are in their body's own frame, in millimetres, loaded and verified by `loadMeshLibrary`. Any primitive may carry
+`opacity`. `scenery` lists fixed world primitives such as a kerb. `view.follow` names a body the camera carries along
+the floor (for a run that drives metres) and `view.direction` the opening look direction in the source frame.
+
+A `cad-agent.replay-index/1` document (`loadReplayIndex`) names several recordings beside it, each with its SHA-256
+and an optional `summary`: a title, a verdict (`pass`, label, reasons), up to eight labelled values and a note,
+shown as the source's own text. Pass `{scenarios, meshesUrl, meshesHash}` to `createReplayViewer` for a scenario
+select; `viewer.selectScenario(id)` switches and resolves once the verified recording is on the stage. The
+[Gyropup example](examples/gyropup-v2/README.md) uses all of this.
+
+</details>
 
 Limits are 16 MiB of downloaded JSON, 32 bodies, 30,001 frames, 200,000 total poses and one hour of captured time.
 The decoder rejects malformed units, identifiers, timestamps, dimensions and nonfinite or nonunit poses.

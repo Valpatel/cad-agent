@@ -26,6 +26,22 @@ try{
     const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));
     await page.goto(base+'/kit/simulation/viewer.html');await page.waitForFunction(()=>document.body.dataset.ready==='1');
     await page.waitForFunction(()=>document.fonts.status==='loaded');
+    // Identity (moved here from the toolkit launch check, which now opens the featured Gyropup example, #798): the
+    // two-link page plays its own MuJoCo recording, bound by hash to its producer and configuration.
+    const identity=await page.evaluate(async()=>{
+      const base=new URL('./examples/two-link-arm/',location.href);
+      const bytes=await (await fetch(new URL('recording.json',base))).arrayBuffer(),recording=JSON.parse(new TextDecoder().decode(bytes));
+      const receipt=await (await fetch(new URL('receipt.json',base))).json();
+      const hash=[...new Uint8Array(await crypto.subtle.digest('SHA-256',bytes))].map(n=>n.toString(16).padStart(2,'0')).join('');
+      return {schema:recording.schema,title:recording.title,frames:recording.frames.length,bodyIds:recording.bodies.map(body=>body.id),
+        loadedIds:__replay.scene.groups.map(group=>group.name),duration:__replay.playback.state().duration,
+        engine:receipt.engine,verified:hash===receipt.artifacts['recording.json'],sources:receipt.sources,
+        status:document.querySelector('#receipt-status').textContent};
+    });
+    assert.ok(identity.schema==='cad-agent.pose-recording/1'&&identity.title==='Two-link arm · recorded simulation'&&identity.frames===501&&identity.duration===10
+      &&JSON.stringify(identity.bodyIds)===JSON.stringify(['base','upper','forearm'])&&JSON.stringify(identity.loadedIds)===JSON.stringify(identity.bodyIds),`wrong default recording or rendered body identity: ${JSON.stringify(identity)}`);
+    assert.ok(identity.engine?.name==='MuJoCo'&&identity.engine?.version==='3.3.7'&&identity.verified&&/hash verified/.test(identity.status)
+      &&['docs/examples/robot-replay/produce.py','docs/examples/robot-replay/config.json'].every(name=>/^[0-9a-f]{64}$/.test(identity.sources?.[name])),`recording is not bound to its actual solver/source receipt: ${JSON.stringify(identity)}`);
     const geom=await page.evaluate(()=>{
       const root=document.querySelector('.cad-replay-host'),canvas=root.querySelector('canvas'),viewport=canvas.parentElement;
       const rect=canvas.getBoundingClientRect();return {root:{width:root.clientWidth,scrollWidth:root.scrollWidth},viewport:{width:viewport.clientWidth,height:viewport.clientHeight,scrollWidth:viewport.scrollWidth,scrollHeight:viewport.scrollHeight},canvas:{width:rect.width,height:rect.height},page:{width:document.documentElement.clientWidth,scrollWidth:document.documentElement.scrollWidth},state:__replay.playback.state(),background:__replay.stage.scene.background.getHexString(),theme:getComputedStyle(root).getPropertyValue('--viewer-bg').trim()};

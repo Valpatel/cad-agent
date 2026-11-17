@@ -610,8 +610,13 @@ const runCards = home.showcase.cards.map((c, i) => {
   const card = toolkitCards.get(c.toolkit);
   if (!card) throw new Error(`docs/home.yaml showcase.cards[${i}]: ${c.toolkit} is not a /toolkit example`);
   if (!c.caption) throw new Error(`docs/home.yaml showcase.cards[${i}] has no caption`);
+  // A card that moves (#798) says what the motion is: recorded solver output of a dated work-in-progress snapshot,
+  // replayed and not recomputed, and not a validation of hardware. Its still loads lazily; web/site.js swaps the
+  // animation in only once the card comes near the screen, never under reduced motion or Save-Data.
+  if (card.motion) for (const phrase of ['recorded solver output', 'dated', 'snapshot', 'work-in-progress', 'replayed, not recomputed', 'not a validation of hardware'])
+    if (!c.caption.includes(phrase)) throw new Error(`docs/home.yaml showcase.cards[${i}]: an animated card's caption says "${phrase}"`);
   homeMd.run.push(`- [${card.title}](${ORIGIN}/toolkit#${card.id}): ${c.caption}`);
-  return `<li class="run-mini"><a class="run-mini-media" href="/toolkit#${esc(card.id)}" tabindex="-1" aria-hidden="true"><img src="${esc(card.image)}" alt="" width="800" height="500" loading="lazy" decoding="async"></a><div><h3><a href="/toolkit#${esc(card.id)}">${esc(card.title)}</a></h3><p>${esc(c.caption)}</p></div></li>`;
+  return `<li class="run-mini"><a class="run-mini-media" href="/toolkit#${esc(card.id)}" tabindex="-1" aria-hidden="true"><img src="${esc(card.image)}" alt="" width="800" height="500" loading="lazy" decoding="async"${card.motion ? ` data-motion-src="${esc(card.motion)}"` : ''}></a><div><h3><a href="/toolkit#${esc(card.id)}">${esc(card.title)}</a></h3><p>${esc(c.caption)}</p></div></li>`;
 }).join('');
 // More checks: results that stay one click away as text (their animated figures live on the linked pages).
 const moreChecks = home.more_checks.map((m, i) => {

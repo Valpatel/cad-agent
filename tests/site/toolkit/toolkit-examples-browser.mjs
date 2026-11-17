@@ -65,20 +65,21 @@ export async function toolkitExampleChecks({open,fail}) {
         if(await explode.getAttribute('aria-pressed')!=='false')fail(where,'Explode could not return to the assembly');
       } else if(id==='robot-replay') {
         await page.waitForFunction(()=>document.body.dataset.ready==='1'&&window.__replay?.stage.renderer.info.render.triangles>0);
+        // The featured example is Gyropup's recorded snapshot (#798); the reduced-motion page waits for Play.
         const identity=await page.evaluate(async()=>{
-          const base=new URL('./examples/two-link-arm/',location.href);
-          const bytes=await (await fetch(new URL('recording.json',base))).arrayBuffer(),recording=JSON.parse(new TextDecoder().decode(bytes));
-          const receipt=await (await fetch(new URL('receipt.json',base))).json();
+          const base=new URL('./',location.href),index=await (await fetch(new URL('index.json',base))).json();
+          const receipt=await (await fetch(new URL('receipt.json',base))).json(),active=index.scenarios.find(s=>s.id===window.__replay.scenario);
+          const bytes=await (await fetch(new URL(active.file,base))).arrayBuffer(),recording=JSON.parse(new TextDecoder().decode(bytes));
           const hash=[...new Uint8Array(await crypto.subtle.digest('SHA-256',bytes))].map(n=>n.toString(16).padStart(2,'0')).join('');
-          return {schema:recording.schema,title:recording.title,frames:recording.frames.length,bodyIds:recording.bodies.map(body=>body.id),
-            loadedIds:window.__replay.scene.groups.map(group=>group.name),duration:window.__replay.playback.state().duration,
-            engine:receipt.engine,verified:hash===receipt.artifacts['recording.json'],sources:receipt.sources,
-            status:document.querySelector('#receipt-status').textContent};
+          return {schema:recording.schema,scenario:active.id,scenarios:index.scenarios.length,bodyIds:recording.bodies.map(body=>body.id),
+            loadedIds:window.__replay.scene.groups.map(group=>group.name),playing:window.__replay.playback.state().playing,
+            verified:hash===active.sha256&&hash===receipt.artifacts[active.file],project:receipt.project,revision:receipt.revision,
+            summary:document.querySelector('.replay-summary')?.textContent,status:document.querySelector('#receipt-status').textContent};
         });
-        if(identity.schema!=='cad-agent.pose-recording/1'||identity.title!=='Two-link arm · recorded simulation'||identity.frames!==501||identity.duration!==10
-          ||JSON.stringify(identity.bodyIds)!==JSON.stringify(['base','upper','forearm'])||JSON.stringify(identity.loadedIds)!==JSON.stringify(identity.bodyIds))fail(where,`wrong default recording or rendered body identity: ${JSON.stringify(identity)}`);
-        if(identity.engine?.name!=='MuJoCo'||identity.engine?.version!=='3.3.7'||!identity.verified||!/hash verified/.test(identity.status)
-          ||!['docs/examples/robot-replay/produce.py','docs/examples/robot-replay/config.json'].every(name=>/^[0-9a-f]{64}$/.test(identity.sources?.[name])))fail(where,'recording is not bound to its actual solver/source receipt');
+        if(identity.schema!=='cad-agent.pose-recording/1'||identity.scenario!=='kerb_drop'||identity.scenarios<3||identity.bodyIds.length!==13
+          ||JSON.stringify(identity.loadedIds)!==JSON.stringify(identity.bodyIds)||identity.playing)fail(where,`wrong default recording or rendered body identity: ${JSON.stringify(identity)}`);
+        if(identity.project!=='Valpatel/gyropup'||!/^[0-9a-f]{40}$/.test(identity.revision||'')||!identity.verified||!/verified by SHA-256/.test(identity.status)
+          ||!/snapshot's own summary/.test(identity.summary||'')||!/peak-torque limit/.test(identity.summary||''))fail(where,'recording is not bound to its Gyropup source receipt and summary');
         await page.getByRole('button',{name:'Play recording',exact:true}).click();
         await page.waitForFunction(()=>window.__replay.playback.state().time>.1);
         await page.getByRole('button',{name:'Pause recording',exact:true}).click();
@@ -93,14 +94,14 @@ export async function toolkitExampleChecks({open,fail}) {
         await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
         if(!await slider.evaluate(input=>input===document.activeElement))fail(where,'recording time could not receive keyboard focus');
         await slider.press('Home');await page.waitForFunction(()=>window.__replay.playback.state().time===0);
-        const before=await page.evaluate(()=>({matrix:window.__replay.scene.groups.find(group=>group.name==='forearm').matrixWorld.toArray(),frame:window.__replay.stage.renderer.info.render.frame}));
+        const before=await page.evaluate(()=>({matrix:window.__replay.scene.groups.find(group=>group.name==='base').matrixWorld.toArray(),frame:window.__replay.stage.renderer.info.render.frame}));
         await page.waitForFunction(frame=>window.__replay.stage.renderer.info.render.frame>frame+1,before.frame);
         const canvas=page.locator('#replay canvas'),image=await canvas.screenshot();
         await slider.scrollIntoViewIfNeeded();await slider.focus();await slider.press('End');
-        await page.waitForFunction(()=>window.__replay.playback.state().time===10);
-        const after=await page.evaluate(()=>({matrix:window.__replay.scene.groups.find(group=>group.name==='forearm').matrixWorld.toArray(),frame:window.__replay.stage.renderer.info.render.frame}));
+        await page.waitForFunction(()=>window.__replay.playback.state().time===window.__replay.playback.state().duration);
+        const after=await page.evaluate(()=>({matrix:window.__replay.scene.groups.find(group=>group.name==='base').matrixWorld.toArray(),frame:window.__replay.stage.renderer.info.render.frame}));
         await page.waitForFunction(frame=>window.__replay.stage.renderer.info.render.frame>frame+1,after.frame);
-        if(JSON.stringify(after.matrix)===JSON.stringify(before.matrix)||image.equals(await canvas.screenshot()))fail(where,'scrubbing changed time without changing the actual rendered arm');
+        if(JSON.stringify(after.matrix)===JSON.stringify(before.matrix)||image.equals(await canvas.screenshot()))fail(where,'scrubbing changed time without changing the actual rendered robot');
         // Fonts can reflow the phone controls after mount; Fit is defined for the current viewport.
         await page.evaluate(()=>document.fonts.ready);
         await page.getByRole('button',{name:'Zoom to fit',exact:true}).click();

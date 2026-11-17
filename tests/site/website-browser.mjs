@@ -18,7 +18,7 @@ import { chromium, webkit, expect } from './npm-context.mjs';
 import { builtSite } from './built-site.mjs';
 import { configureNavigation, fetchThrough, inLanes, navigate, navigationFailure, ownContexts, partHandler, watchRoutes } from './navigation.mjs';
 import { folderMapPath } from '../../tools/site/publication.mjs';
-import { reducedHeroProblems, repositoryHeroProblems, homepageModelProblems, homepageViewerGateProblems, heroRecordingProblems, learningPictureProblems, homepageLateDrawProblems, resultImageMotionProblems } from './layout/motion.mjs';
+import { reducedHeroProblems, repositoryHeroProblems, homepageModelProblems, homepageViewerGateProblems, heroRecordingProblems, replayCardProblems, learningPictureProblems, homepageLateDrawProblems, resultImageMotionProblems } from './layout/motion.mjs';
 import { outlineEntryState, scrollOutline, sameSectionOutlineProblems, readerBoundaryProblems, readerOutlineClickProblems, readerOverflowProblems } from './layout/outline.mjs';
 import { VIEWPORT, VISUAL, WALL_CLEARED, WALL_LIMIT, longestStretch, plantedScript, longCitationProblems } from './layout/walls.mjs';
 import { wideLayoutProblems } from './layout/wide.mjs';
@@ -544,6 +544,7 @@ try {
     ['homepage model lifecycle', () => homepageModelProblems(browser, base)],
     ['homepage viewer scroll gate', () => homepageViewerGateProblems(browser, base)],
     ['hero recording swap', () => heroRecordingProblems(browser, base)],
+    ['replay card swap', () => replayCardProblems(browser, base)],
     ['learning image motion', () => learningPictureProblems(browser, base)],
     ['late model allocation rollback', () => homepageLateDrawProblems(browser, base)],
     ['computed image reduced motion', () => resultImageMotionProblems(browser, base)],
@@ -905,7 +906,9 @@ async function phoneFirstScreenProblems() {
  * gets no bar. */
 async function demoWayBackProblems() {
   const problems = [];
-  const DEMOS = { 'build guide': ['/kit/model/viewer.html?guide=/web/toolkit/assembly/guide.json', '#hud'], 'file viewer': ['/kit/files/file-viewer.html?file=/kit/host/example.stl', '#file-viewer'] };
+  const DEMOS = { 'build guide': ['/kit/model/viewer.html?guide=/web/toolkit/assembly/guide.json', '#hud'], 'file viewer': ['/kit/files/file-viewer.html?file=/kit/host/example.stl', '#file-viewer'],
+    'robot replay': ['/kit/simulation/examples/gyropup-v2/viewer.html', '#replay'] };   // #798
+  const optIn = demo => demo + (demo.includes('?') ? '&' : '?') + 'nav=1';
   const WANT = ['/', '/explore', '/toolkit', '/docs/agent-workflow'];
   const open = async (route, width, { noNavFile = false } = {}) => {
     const page = await browser.newPage({ viewport: { width, height: 800 } });
@@ -931,13 +934,13 @@ async function demoWayBackProblems() {
     const page = await browser.newPage({ viewport: { width: 1366, height: 800 } });
     try {
       await navigate(page, base + '/toolkit');
-      const hrefs = await page.evaluate(() => [...document.querySelectorAll('a[href^="/kit/model/viewer.html"], a[href^="/kit/files/file-viewer.html"]')].map(a => a.getAttribute('href')));
+      const hrefs = await page.evaluate(() => [...document.querySelectorAll('a[href^="/kit/model/viewer.html"], a[href^="/kit/files/file-viewer.html"], a[href^="/kit/simulation/"]')].map(a => a.getAttribute('href')));
       for (const [name, [route]] of Object.entries(DEMOS))
-        if (!hrefs.includes(route + '&nav=1')) problems.push(`/toolkit: no link to the ${name} with nav=1 (${hrefs.join(', ') || 'none'})`);
+        if (!hrefs.includes(optIn(route))) problems.push(`/toolkit: no link to the ${name} with nav=1 (${hrefs.join(', ') || 'none'})`);
     } finally { await page.close(); }
   }
   for (const [name, [demo, viewer]] of Object.entries(DEMOS)) {
-    const route = demo + '&nav=1';
+    const route = optIn(demo);
     for (const width of [390, 1366]) {
       const { page, bad } = await open(route, width);
       try {

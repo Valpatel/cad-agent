@@ -19,7 +19,7 @@ export function socialMeta({ title, description, url, origin, siteName = 'cad-ag
   const image = `${origin}/${CARD.file}`;
   return [
     ['property', 'og:type', 'website'], ['property', 'og:site_name', siteName], ['property', 'og:title', title],
-    ['property', 'og:description', description], ['property', 'og:url', origin + url], ['property', 'og:image', image],
+    ['property', 'og:description', description], ...(url == null ? [] : [['property', 'og:url', origin + url]]), ['property', 'og:image', image],
     ['property', 'og:image:width', String(CARD.width)], ['property', 'og:image:height', String(CARD.height)],
     ['property', 'og:image:alt', CARD.alt], ['name', 'twitter:card', 'summary_large_image'],
   ].map(([k, n, v]) => `<meta ${k}="${n}" content="${esc(v)}">`).join('');
@@ -39,6 +39,11 @@ export function socialProblems(html, { origin }) {
   const canonical = html.match(/<link rel="canonical" href="([^"]*)">/)?.[1];
   const want = { 'og:title': title && unesc(title), 'og:description': description && unesc(description), 'og:url': canonical && unesc(canonical),
     'og:image': `${origin}/${CARD.file}`, 'twitter:card': 'summary_large_image' };
+  // A page without an address of its own (the 404 page) names none: a shared link to it is not the home page.
+  if (!canonical) {
+    delete want['og:url'];
+    if (html.includes('<meta property="og:url" ')) problems.push('og:url on a page without a canonical address');
+  }
   for (const [name, expected] of Object.entries(want)) {
     const key = name.startsWith('twitter:') ? 'name' : 'property';
     const count = html.split(`<meta ${key}="${name}" `).length - 1;

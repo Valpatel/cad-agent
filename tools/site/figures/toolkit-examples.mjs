@@ -73,8 +73,7 @@ try {
     page.on('pageerror', error => errors.push(error.message));
     page.on('response', response => { if (response.status() >= 400) errors.push(`${response.status()} ${new URL(response.url()).pathname}`); });
     await page.route('**/*', route => new URL(route.request().url()).origin === origin ? route.continue() : route.abort());
-    // &nav=0: the previews show the viewer alone, without a host site's top bar (ui/appnav.js).
-    const route = kind === 'assembly' ? '/kit/model/viewer.html?guide=/web/toolkit/assembly/guide.json&nav=0' : '/kit/files/file-viewer.html?file=/kit/host/example.stl&nav=0';
+    const route = kind === 'assembly' ? '/kit/model/viewer.html?guide=/web/toolkit/assembly/guide.json' : '/kit/files/file-viewer.html?file=/kit/host/example.stl';
     await page.goto(origin + route);
     await page.waitForFunction(kind => kind === 'assembly' ? document.body.dataset.ready === '1' : window.__fileViewer?.root.dataset.state === 'ready', kind);
     if (kind === 'assembly') await page.getByRole('combobox', { name: 'Instruction display', exact: true }).selectOption('solid');

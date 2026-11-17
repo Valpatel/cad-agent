@@ -208,7 +208,7 @@ function frame({ title, fullTitle, body, md, description = LEDE, current = '', p
   // compression or CSP. Keep the guard outside the authored elements; verify actual hosted bytes after release.
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${esc(pageTitle)}</title>
-<meta name="description" content="${esc(description)}">${current ? `<link rel="canonical" href="${esc(ORIGIN + current)}">` : ''}${socialMeta({ title: pageTitle, description, url: url ?? '/', origin: ORIGIN })}
+<meta name="description" content="${esc(description)}">${current ? `<link rel="canonical" href="${esc(ORIGIN + current)}">` : ''}${socialMeta({ title: pageTitle, description, url: missing ? null : url ?? '/', origin: ORIGIN })}
 <script src="/kit/ui/theme.js"></script><link rel="icon" href="/web/icon.svg"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><link rel="preload" href="/kit/vendor/fonts/inter.woff2" as="font" type="font/woff2" crossorigin><link rel="preload" href="/kit/vendor/fonts/jetbrains-mono.woff2" as="font" type="font/woff2" crossorigin><link rel="stylesheet" href="/web/site.css"><link rel="stylesheet" href="/kit/documents/diagrams.css">${css.map(c => `<link rel="stylesheet" href="${c}">`).join('')}${kitDemos(body)}
 ${md ? `<link rel="alternate" type="text/markdown" href="${esc(md)}" title="Markdown for agents">` : ''}
 <link rel="alternate" type="text/plain" href="/llms.txt" title="llms.txt"></head>

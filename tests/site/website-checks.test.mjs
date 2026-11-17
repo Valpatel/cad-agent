@@ -20,7 +20,9 @@ const page = ({ title = 'Linkages · cad-agent', description = 'Four-bar & slide
 
 test("a page's card tags are its own title, description and address", () => {
   assert.deepEqual(socialProblems(page(), { origin: ORIGIN }), []);
-  assert.deepEqual(socialProblems(page({ canonical: false, url: '/' }), { origin: ORIGIN }), [], 'a page without a canonical link (404) still has a card');
+  assert.deepEqual(socialProblems(page({ canonical: false, url: null }), { origin: ORIGIN }), [], 'a page without a canonical link (404) still has a card');
+  assert.doesNotMatch(socialMeta({ title: 'Not found', description: 'd', url: null, origin: ORIGIN }), /og:url/, 'and names no address');
+  assert.deepEqual(socialProblems(page({ canonical: false, url: '/' }), { origin: ORIGIN }), ['og:url on a page without a canonical address'], 'planted: the 404 page claiming the home address');
   assert.deepEqual(socialProblems(page({ description: '' }), { origin: ORIGIN }), [], "a page whose own description is empty passes it on (a draft's notices page)");
   assert.match(socialMeta({ title: 'a "b" & c', description: 'd', url: '/', origin: ORIGIN }), /og:title" content="a &quot;b&quot; &amp; c"/);
 });

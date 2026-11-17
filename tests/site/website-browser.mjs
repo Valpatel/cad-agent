@@ -876,29 +876,47 @@ async function phoneFirstScreenProblems() {
 }
 
 /** The toolkit's demo pages (the build-guide and original-file viewers) show the site's top bar, so a reader can get
- * back into the site (#804). The kit stays generic: a viewer reads its host's <root>/site/nav.json (ui/appnav.js),
- * which this site's build writes. Checked at phone and desktop widths: the bar's links are the header's destinations
- * and its name leads home, nothing of the viewer starts under it, and it polls nothing (live reload is for
- * `cad-agent site --serve`). Planted controls: &nav=0 leaves the bar out, and a host without nav.json gets no bar and
- * no error, as a project without a site would. */
+ * back into the site (#804). The kit stays generic: a viewer reads its host's <root>/site/nav.json (ui/appnav.js) only
+ * when its address carries nav=1, and this site's Toolkit cards link it so. Checked at phone and desktop widths: the
+ * bar's links are the header's destinations and its name leads home, nothing of the viewer starts under it, and it
+ * polls nothing (live reload is for `cad-agent site --serve`). Planted controls: the same page without nav=1 asks for
+ * no nav.json and logs no console error, as a project that copies the kit would see; and a host without nav.json
+ * gets no bar. */
 async function demoWayBackProblems() {
   const problems = [];
   const DEMOS = { 'build guide': ['/kit/model/viewer.html?guide=/web/toolkit/assembly/guide.json', '#hud'], 'file viewer': ['/kit/files/file-viewer.html?file=/kit/host/example.stl', '#file-viewer'] };
   const WANT = ['/', '/explore', '/toolkit', '/docs/agent-workflow'];
   const open = async (route, width, { noNavFile = false } = {}) => {
     const page = await browser.newPage({ viewport: { width, height: 800 } });
-    const bad = [];
+    const bad = [], navRequests = [];
     page.on('response', r => { if (r.status() >= 400) bad.push(`${r.status()} ${new URL(r.url()).pathname}`); });
-    page.on('request', r => { if (new URL(r.url()).pathname.startsWith('/_cadagent/')) bad.push('polled ' + new URL(r.url()).pathname); });
+    page.on('console', m => { if (m.type() === 'error') bad.push('console: ' + m.text()); });
+    page.on('request', r => {
+      const p = new URL(r.url()).pathname;
+      if (p.startsWith('/_cadagent/')) bad.push('polled ' + p);
+      if (p === '/site/nav.json') navRequests.push(p);
+    });
     let answered = null;
     if (noNavFile) {
       let done; answered = new Promise(resolve => { done = resolve; });
       await page.route(base + '/site/nav.json', partHandler(async route => { await route.fulfill({ status: 404, body: '' }); done(); }));
     }
     await navigate(page, base + route);
-    return { page, bad, answered };
+    return { page, bad, navRequests, answered };
   };
-  for (const [name, [route, viewer]] of Object.entries(DEMOS)) {
+  const ready = page => page.waitForFunction(() => document.body.dataset.ready === '1' || window.__fileViewer?.root.dataset.state === 'ready', null, { timeout: 30000 }).catch(() => {});
+  // The Toolkit cards link the demos with the opt-in.
+  {
+    const page = await browser.newPage({ viewport: { width: 1366, height: 800 } });
+    try {
+      await navigate(page, base + '/toolkit');
+      const hrefs = await page.evaluate(() => [...document.querySelectorAll('a[href^="/kit/model/viewer.html"], a[href^="/kit/files/file-viewer.html"]')].map(a => a.getAttribute('href')));
+      for (const [name, [route]] of Object.entries(DEMOS))
+        if (!hrefs.includes(route + '&nav=1')) problems.push(`/toolkit: no link to the ${name} with nav=1 (${hrefs.join(', ') || 'none'})`);
+    } finally { await page.close(); }
+  }
+  for (const [name, [demo, viewer]] of Object.entries(DEMOS)) {
+    const route = demo + '&nav=1';
     for (const width of [390, 1366]) {
       const { page, bad } = await open(route, width);
       try {
@@ -916,16 +934,23 @@ async function demoWayBackProblems() {
         if (bad.length) problems.push(`${name} ${width}px: ${[...new Set(bad)].join('; ')}`);
       } finally { await page.close(); }
     }
-    for (const [label, route2, options] of [['&nav=0', route + '&nav=0', {}], ['a host without site/nav.json', route, { noNavFile: true }]]) {
-      const { page, bad, answered } = await open(route2, 1366, options);
+    // Without the opt-in: a project that copies the kit; nothing asks for nav.json and nothing is logged.
+    {
+      const { page, bad, navRequests } = await open(demo, 1366);
       try {
-        // The viewer is up (with &nav=0 nothing asks for the bar), or the bar's one request was answered and its
-        // handling, a task later, is done.
-        await page.waitForFunction(() => document.body.dataset.ready === '1' || window.__fileViewer?.root.dataset.state === 'ready', null, { timeout: 30000 }).catch(() => {});
-        if (answered) { await answered; await page.evaluate(() => new Promise(done => setTimeout(done, 0))); }
-        if (await page.locator('nav.appnav').count()) problems.push(`${name} with ${label}: a top bar shows`);
-        const unexpected = bad.filter(b => !(options.noNavFile && b === '404 /site/nav.json'));
-        if (unexpected.length) problems.push(`${name} with ${label}: ${unexpected.join('; ')}`);
+        await ready(page);
+        if (await page.locator('nav.appnav').count()) problems.push(`${name} without nav=1: a top bar shows`);
+        if (navRequests.length) problems.push(`${name} without nav=1: ${navRequests.length} request(s) for site/nav.json`);
+        if (bad.length) problems.push(`${name} without nav=1: ${[...new Set(bad)].join('; ')}`);
+      } finally { await page.close(); }
+    }
+    // A host without nav.json, opted in: no bar (its one 404 is the host's).
+    {
+      const { page, answered } = await open(route, 1366, { noNavFile: true });
+      try {
+        await ready(page);
+        await answered; await page.evaluate(() => new Promise(done => setTimeout(done, 0)));
+        if (await page.locator('nav.appnav').count()) problems.push(`${name} with nav=1 on a host without site/nav.json: a top bar shows`);
       } finally { await page.close(); }
     }
   }

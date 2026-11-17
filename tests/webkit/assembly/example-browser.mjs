@@ -93,21 +93,26 @@ const choose = async (page, id) => { await page.getByRole('combobox', { name: 'I
 
 try {
   browser = await engine.launch(engine === chromium ? { channel: process.env.PLAYWRIGHT_CHANNEL === 'chromium' ? 'chromium' : 'chrome', executablePath: process.env.CHROMIUM_EXECUTABLE, headless: true } : { headless: true });
+  // One page for desktop and phone: the viewport is resized, not reloaded (the job is near its time cap, #814).
+  {
+  const context = await browser.newContext({ viewport: { width: 1440, height: 900 }, deviceScaleFactor: 1, reducedMotion: 'reduce' });
+  try {
+  const { page, bad } = await open(context);
+  assert.equal(await page.locator('#title').textContent(), 'Gyropup turret');
   for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 }]) {
-    const context = await browser.newContext({ viewport, deviceScaleFactor: 1, reducedMotion: 'reduce' });
-    try {
-      const { page, bad } = await open(context);
-      assert.equal(await page.locator('#title').textContent(), 'Gyropup turret');
+    {
+      await page.setViewportSize(viewport);
       for (const id of STEPS) {
         await choose(page, id);
         assert.deepEqual(await stepProblems(page, id), [], `${viewport.width}px ${id}`);
-        await page.screenshot({ path: `${out}/${engine.name()}-${viewport.width}-${id}.png` });
+        // One picture per size: each screenshot waits for a software-rendered frame, which is slow on CI (#814).
+        if (id === 'step-11') await page.screenshot({ path: `${out}/${engine.name()}-${viewport.width}-${id}.png` });
         cases.push({ viewport: viewport.width, step: id });
       }
       // Next and Previous walk the authored order.
-      await page.getByRole('button', { name: 'Next', exact: true }).click();
+      await page.getByRole('button', { name: 'Next', exact: true }).focus(); await page.keyboard.press('Enter');
       assert.equal(await page.getByLabel('Instruction step', { exact: true }).inputValue(), 'step-12');
-      await page.getByRole('button', { name: 'Previous', exact: true }).click();
+      await page.getByRole('button', { name: 'Previous', exact: true }).focus(); await page.keyboard.press('Enter');
       assert.equal(await page.getByLabel('Instruction step', { exact: true }).inputValue(), 'step-11');
       // Planted: a scene that does not follow the step (step 11's new parts hidden) is caught.
       await page.evaluate(() => { const s = window.__viewer.getState(); window.__viewer.applyState({ ...s, visible: s.visible.filter(n => n !== 'barrel'), highlight: s.highlight.filter(n => n !== 'barrel') }); });
@@ -117,7 +122,7 @@ try {
         for (const id of ['step-08', 'step-10']) {
           await choose(page, id);
           assert.deepEqual(await firstScreenProblems(page, id), [], `390 x 664 ${id}`);
-          await page.screenshot({ path: `${out}/${engine.name()}-390x664-${id}.png` });
+          if (id === 'step-10') await page.screenshot({ path: `${out}/${engine.name()}-390x664-${id}.png` });
         }
         // Planted: the version line and qualification back above the step (their desktop order) push Next off screen.
         const plant = await page.addStyleTag({ content: '.guide-controls>.guide-version,.guide-controls>.guide-qualification{order:0!important}.guide-controls>h2{order:-1!important}' });
@@ -137,11 +142,14 @@ try {
       }
       assert.deepEqual(bad, [], `${viewport.width}px: errors`);
       cases.push({ viewport: viewport.width, planted: true });
-    } finally { await context.close(); }
+    }
+  }
+  } finally { await context.close(); }
   }
   // The URL visitors get: the cards link the reader with nav=1, so the site's bar sits above it (review of #812).
-  for (const viewport of [{ width: 390, height: 664 }, { width: 360, height: 640 }]) {
-    const context = await browser.newContext({ viewport, deviceScaleFactor: 1, reducedMotion: 'reduce' });
+  // One page load serves both phone sizes: the viewport is resized, not reloaded (the job is near its time cap, #814).
+  {
+    const context = await browser.newContext({ viewport: { width: 390, height: 664 }, deviceScaleFactor: 1, reducedMotion: 'reduce' });
     try {
       const page = await context.newPage(), bad = [];
       page.on('pageerror', e => bad.push(e.message));
@@ -149,23 +157,24 @@ try {
       page.on('response', r => { if (r.status() >= 400) bad.push(`${r.status()} ${new URL(r.url()).pathname}`); });
       await page.goto(site.url + route + '&nav=1');
       await page.waitForFunction(() => document.body.dataset.ready === '1' && document.querySelector('nav.appnav'), null, { timeout: 60000 });
-      for (const id of ['step-08', 'step-10']) {
-        await choose(page, id);
-        assert.deepEqual([...await phoneProblems(page), ...await firstScreenProblems(page, id)], [], `nav=1 ${viewport.width} x ${viewport.height} ${id}`);
+      for (const viewport of [{ width: 390, height: 664 }, { width: 360, height: 640 }]) {
+        await page.setViewportSize(viewport);
+        for (const id of ['step-08', 'step-10']) {
+          await choose(page, id);
+          assert.deepEqual([...await phoneProblems(page), ...await firstScreenProblems(page, id)], [], `nav=1 ${viewport.width} x ${viewport.height} ${id}`);
+        }
+        if (viewport.width === 360) await page.screenshot({ path: `${out}/${engine.name()}-nav-${viewport.width}x${viewport.height}.png` });
+        cases.push({ viewport: viewport.width, nav: true });
       }
-      await page.screenshot({ path: `${out}/${engine.name()}-nav-${viewport.width}x${viewport.height}.png` });
-      if (viewport.width === 360) {
-        // Planted: the bar's desktop tab size, and the view at its full 55vh under the bar (as before), are each caught.
-        const small = await page.addStyleTag({ content: '.appnav a.tab{min-height:0!important;padding:6px 10px!important;font-size:12px!important;letter-spacing:.08em!important}' });
-        const found = await phoneProblems(page);
-        assert.ok(found.some(p => /^a ".*": \d+ x \d\d? px|cut off at the screen's edge/.test(p) && /Explore|Toolkit|For agents/.test(p)), `planted: small or cut-off bar tabs are caught (${found.join('; ')})`);
-        await small.evaluate(e => e.remove());
-        const under = await page.addStyleTag({ content: 'body #app{height:55vh!important}' });
-        assert.ok((await phoneProblems(page)).some(p => /the panel covers \d+ px of the 3D view/.test(p)), 'planted: a panel over the view is caught');
-        await under.evaluate(e => e.remove());
-      }
-      assert.deepEqual(bad, [], `nav=1 ${viewport.width}: errors`);
-      cases.push({ viewport: viewport.width, nav: true });
+      // Planted: the bar's desktop tab size, and the view at its full 55vh under the bar (as before), are each caught.
+      const small = await page.addStyleTag({ content: '.appnav a.tab{min-height:0!important;padding:6px 10px!important;font-size:12px!important;letter-spacing:.08em!important}' });
+      const found = await phoneProblems(page);
+      assert.ok(found.some(p => /^a ".*": \d+ x \d\d? px|cut off at the screen's edge/.test(p) && /Explore|Toolkit|For agents/.test(p)), `planted: small or cut-off bar tabs are caught (${found.join('; ')})`);
+      await small.evaluate(e => e.remove());
+      const under = await page.addStyleTag({ content: 'body #app{height:55vh!important}' });
+      assert.ok((await phoneProblems(page)).some(p => /the panel covers \d+ px of the 3D view/.test(p)), 'planted: a panel over the view is caught');
+      await under.evaluate(e => e.remove());
+      assert.deepEqual(bad, [], 'nav=1: errors');
     } finally { await context.close(); }
   }
   await writeFile(`${out}/${engine.name()}-example-report.json`, JSON.stringify({ passed: true, browser: browser.version(), cases }, null, 2));

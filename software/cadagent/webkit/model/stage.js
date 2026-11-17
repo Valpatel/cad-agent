@@ -370,7 +370,7 @@ export function createStage(container, opts = {}) {
   // (sceneSignature), when invalidate() asked for it, or while stageDiagnostics.alwaysDraw is set. A stage that is
   // off screen or hidden draws nothing and draws once when it comes back.
   let needsDraw = true, onScreen = null, drawn = null, pending = [];
-  const diagnostics = { draws: 0, invalidate: () => { needsDraw = true; } };
+  const diagnostics = { draws: 0, frames: 0, invalidate: () => { needsDraw = true; } };
   const invalidate = () => { needsDraw = true; };
   const visibility = typeof IntersectionObserver === 'function'
     ? new IntersectionObserver((entries) => {
@@ -393,6 +393,7 @@ export function createStage(container, opts = {}) {
       }
     }
     controls.update();
+    diagnostics.frames++;
     if (onScreen && !document.hidden) {
       pending = sceneSignature(renderer, scene, camera, pending);
       if (needsDraw || stageDiagnostics.alwaysDraw || !sameSignature(pending, drawn)) {
@@ -412,6 +413,8 @@ export function createStage(container, opts = {}) {
     invalidate,
     /** Draws made by this stage's frame loop (a test hook; see stageDiagnostics). */
     get draws() { return diagnostics.draws; },
+    /** Frames the loop has run (callbacks, controls and the draw decision), drawn or not: wait on this, not on draws. */
+    get frames() { return diagnostics.frames; },
     setSceneLight(v, immediate = false) { light.level = Math.max(0, Math.min(1, v)); if (immediate) { light.current = light.level; applyLight(); } },
     onFrame(cb) {
       callbacks.push(cb);

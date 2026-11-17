@@ -101,8 +101,8 @@ export async function toolkitExampleChecks({open,fail}) {
         await page.waitForFunction(()=>window.__replay.playback.state().time>.1);
         await page.getByRole('button',{name:'Pause recording',exact:true}).click();
         await page.waitForFunction(()=>!window.__replay.playback.state().playing);
-        const paused=await page.evaluate(()=>({time:window.__replay.playback.state().time,frame:window.__replay.stage.renderer.info.render.frame}));
-        await page.waitForFunction(frame=>window.__replay.stage.renderer.info.render.frame>frame+1,paused.frame);
+        const paused=await page.evaluate(()=>({time:window.__replay.playback.state().time,frame:window.__replay.stage.frames}));
+        await page.waitForFunction(frame=>window.__replay.stage.frames>frame+1,paused.frame);
         if(await page.evaluate(()=>window.__replay.playback.state().time)!==paused.time)fail(where,'paused recording advanced while the stage rendered');
         await page.getByRole('combobox',{name:'Playback speed',exact:true}).selectOption('2');
         if(await page.evaluate(()=>window.__replay.playback.state().speed)!==2)fail(where,'speed control did not update the playback clock');
@@ -111,13 +111,13 @@ export async function toolkitExampleChecks({open,fail}) {
         await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
         if(!await slider.evaluate(input=>input===document.activeElement))fail(where,'recording time could not receive keyboard focus');
         await slider.press('Home');await page.waitForFunction(()=>window.__replay.playback.state().time===0);
-        const before=await page.evaluate(()=>({matrix:window.__replay.scene.groups.find(group=>group.name==='base').matrixWorld.toArray(),frame:window.__replay.stage.renderer.info.render.frame}));
-        await page.waitForFunction(frame=>window.__replay.stage.renderer.info.render.frame>frame+1,before.frame);
+        const before=await page.evaluate(()=>({matrix:window.__replay.scene.groups.find(group=>group.name==='base').matrixWorld.toArray(),frame:window.__replay.stage.frames}));
+        await page.waitForFunction(frame=>window.__replay.stage.frames>frame+1,before.frame);
         const canvas=page.locator('#replay canvas'),image=await canvas.screenshot();
         await slider.scrollIntoViewIfNeeded();await slider.focus();await slider.press('End');
         await page.waitForFunction(()=>window.__replay.playback.state().time===window.__replay.playback.state().duration);
-        const after=await page.evaluate(()=>({matrix:window.__replay.scene.groups.find(group=>group.name==='base').matrixWorld.toArray(),frame:window.__replay.stage.renderer.info.render.frame}));
-        await page.waitForFunction(frame=>window.__replay.stage.renderer.info.render.frame>frame+1,after.frame);
+        const after=await page.evaluate(()=>({matrix:window.__replay.scene.groups.find(group=>group.name==='base').matrixWorld.toArray(),frame:window.__replay.stage.frames}));
+        await page.waitForFunction(frame=>window.__replay.stage.frames>frame+1,after.frame);
         if(JSON.stringify(after.matrix)===JSON.stringify(before.matrix)||image.equals(await canvas.screenshot()))fail(where,'scrubbing changed time without changing the actual rendered robot');
         // Fonts can reflow the phone controls after mount; Fit is defined for the current viewport.
         await page.evaluate(()=>document.fonts.ready);

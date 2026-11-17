@@ -20,8 +20,8 @@ const expectedMatrix=({position:[px,py,pz],quaternion:q})=>{const n=Math.hypot(.
 const mismatch=(actual,pose)=>Math.max(...expectedMatrix(pose).map((n,k)=>Math.abs(actual[k]-n)));
 const frameAt=(id,t)=>recordings[id].frames.find(f=>Math.abs(f.time_s-t)<1e-9);
 const seekAndRead=(page,t)=>page.evaluate(async t=>{
-  __replay.playback.seek(t);const frame=__replay.stage.renderer.info.render.frame;
-  await new Promise(resolve=>{const wait=()=>__replay.stage.renderer.info.render.frame>frame+1?resolve():requestAnimationFrame(wait);wait();});
+  __replay.playback.seek(t);const frame=__replay.stage.frames;
+  await new Promise(resolve=>{const wait=()=>__replay.stage.frames>frame+1?resolve():requestAnimationFrame(wait);wait();});
   return {matrices:__replay.scene.groups.map(g=>g.matrixWorld.toArray()),target:__replay.stage.controls.target.toArray(),camera:__replay.stage.camera.position.toArray()};
 },t);
 const summaryText=page=>page.locator('.replay-summary').innerText();

@@ -60,7 +60,7 @@
         },
         "ui/appnav.js": {
           "requires": [],
-          "sha256": "1268bbee0797416dc1b2bab0130d0f0523014001654589dccbec6dcd72bd3c51"
+          "sha256": "0687ba81eeade0e207703f06793aa5f0f3600ee05d1b52f956f390dcacdabfaf"
         },
         "ui/hud.css": {
           "requires": [

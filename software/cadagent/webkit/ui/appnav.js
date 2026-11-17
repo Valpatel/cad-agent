@@ -1,9 +1,9 @@
 // The app-wide top bar for a project's own pages: reads site/nav.json (written by `cad-agent site`) and renders the
 // same tabs as the project site, so every page of the app shares one navigation.
 //   mountAppNav({ root: '../', current: 'simulate' })   // root: path from this page to the project root
-// Without `current`, the tab whose address is this page's is marked. The web kit's standalone viewers
-// (model/viewer.html, files/file-viewer.html) mount it only when their address carries `nav=1`, so a host without
-// site/nav.json gets no request and no console line from them; a host that has one links its viewers with nav=1.
+// The web kit's standalone viewers (model/viewer.html, files/file-viewer.html) mount it only when their address
+// carries `nav=1`, so a host without site/nav.json gets no request and no console line from them; a host that has one
+// links its viewers with nav=1. (A host that opts in without the file gets one 404 for it, and no bar.)
 // `cad-agent site --serve` adds `mountAppNav({ root: '/', current, injected: true })` to every project page it sends
 // whose markup has no bar (the kit's viewers included), and its nav.json says `"live": true`, which turns on live
 // reload (below); a static copy of the site does not. An injected
@@ -51,11 +51,8 @@ export async function mountAppNav({ root = '../', current = '', injected = false
     if (/^[a-z][a-z0-9+.-]*:/i.test(h)) return /^(https?:|mailto:)/i.test(h) ? h : null;
     return h.startsWith('//') ? null : root + h;
   };
-  // the current tab: the one named, or else the one whose address is this page's
-  const here = (h) => { try { return new URL(h, location.href).pathname === location.pathname; } catch { return false; } };
-  const on = (n) => (current ? (n.id ?? n.href) === current : !/^[a-z][a-z0-9+.-]*:/i.test(String(n.href ?? '')) && here(href(n.href)));
   nav.innerHTML = `<a class="brand" href="${esc(root)}site/"><i></i>${esc(cfg.title)}</a>`
-    + cfg.nav.filter((n) => href(n?.href) !== null).map((n) => `<a class="tab${on(n) ? ' on' : ''}" `
+    + cfg.nav.filter((n) => href(n?.href) !== null).map((n) => `<a class="tab${(n.id ?? n.href) === current ? ' on' : ''}" `
       + `href="${esc(href(n.href))}">${esc(n.title)}</a>`).join('');
   const body = document.body;
   const hadClass = body.classList.contains('has-appnav');

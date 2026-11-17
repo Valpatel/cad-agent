@@ -25,7 +25,7 @@ import { ON, fold, pagePlacer } from './compiler/site-pages.mjs';    // docs/pag
 import { SECTIONS, createPublication, validateRedirects, folderMapSources } from './publication.mjs';
 import { loadReferences, referenceModel, referenceSite, linkTags, mdTags, healthOf } from './compiler/site-references.mjs';   // /references (#323)
 import { CARD, socialMeta, socialProblems, llmsProblems, servedFiles } from './compiler/site-checks.mjs';   // card tags and llms.txt links (#804)
-import {SCADA_INPUTS, TOOLKIT_ROUTES, scadaToolkitModel, toolkitPages, toolkitFullText, toolkitCapabilities, buildGuideCaptionMissing} from './compiler/site-toolkit.mjs';
+import {SCADA_INPUTS, TOOLKIT_ROUTES, scadaToolkitModel, toolkitPages, toolkitFullText, toolkitCapabilities, buildGuideCaptionMissing, replayCardFigure} from './compiler/site-toolkit.mjs';
 
 // --root DIR builds another checkout of this repo (the tests use a scratch worktree); the build tools still run from here.
 const rootArg = process.argv.indexOf('--root');
@@ -391,7 +391,10 @@ const { catalog, files: catalogFiles, body: catalogBody, counts } = await buildC
   generatedRoutes: TOOLKIT_ROUTES,
 });
 for (const [f, text] of catalogFiles) { await mkdir(path.dirname(path.join(out, f)), { recursive: true }); await writeFile(path.join(out, f), text); }
-const toolkit = toolkitPages(scada, {catalog:catalog.items,has:file=>tracked.includes(file)});
+// The robot-replay cards carry one recorded figure, read from the replay index for the run the card plays (#809).
+const REPLAY = 'software/cadagent/webkit/simulation/examples/gyropup-v2/';
+const replayFigure = replayCardFigure(JSON.parse(await readBuf(REPLAY + 'index.json')), JSON.parse(await readBuf(REPLAY + 'card.json')));
+const toolkit = toolkitPages(scada, {catalog:catalog.items,has:file=>tracked.includes(file),replayFigure});
 for (const [file,text] of toolkit.files) {await mkdir(path.dirname(path.join(out,file)),{recursive:true});await writeFile(path.join(out,file),text);}
 for (const p of toolkit.pages) {
   const filename=p.url.slice(1);
@@ -513,7 +516,7 @@ for (const [i, r] of home.reel.entries()) {
 reel.splice(3, 0, `<li class="reel-tile reel-snap"><a class="reel-media" href="/docs/compliant" tabindex="-1" aria-hidden="true">${SNAP.svg}</a>
 <p class="reel-tool"><code>cad-agent snapfit</code></p><h3><a href="/docs/compliant">One part, no screws</a></h3><p>A cantilever snap fit animated from its own geometry: contact and root strain computed against the material and the print's layer direction.</p><p class="reel-credit">Drawn by this site's build from the snap-fit geometry</p></li>`);
 // A /toolkit link names one of that page's examples, which carry these ids (tools/site/compiler/site-toolkit.mjs).
-const toolkitCards = new Map(toolkitCapabilities(scada, { catalog: catalog.items, has: f => tracked.includes(f) }).map(c => [c.id, c]));
+const toolkitCards = new Map(toolkitCapabilities(scada, { catalog: catalog.items, has: f => tracked.includes(f), replayFigure }).map(c => [c.id, c]));
 const stackHref = (h, at) => {
   const m = h.match(/^\/toolkit(?:#([\w-]+))?$/);
   // A generated site route (/references, /catalog) must already be in the output; an outside link must be plain https.
@@ -617,8 +620,9 @@ const runCards = home.showcase.cards.map((c, i) => {
     if (!c.caption.includes(phrase)) throw new Error(`docs/home.yaml showcase.cards[${i}]: an animated card's caption says "${phrase}"`);
   if (c.toolkit === 'assembly') for (const phrase of buildGuideCaptionMissing(c.caption))
     throw new Error(`docs/home.yaml showcase.cards[${i}]: the build-guide card's caption says "${phrase}"`);
-  homeMd.run.push(`- [${card.title}](${ORIGIN}/toolkit#${card.id}): ${c.caption}`);
-  return `<li class="run-mini"><a class="run-mini-media" href="/toolkit#${esc(card.id)}" tabindex="-1" aria-hidden="true"><img src="${esc(card.image)}" alt="" width="800" height="500" loading="lazy" decoding="async"${card.motion ? ` data-motion-src="${esc(card.motion)}"` : ''}></a><div><h3><a href="/toolkit#${esc(card.id)}">${esc(card.title)}</a></h3><p>${esc(c.caption)}</p></div></li>`;
+  const caption = c.toolkit === 'robot-replay' ? `${c.caption} ${replayFigure}` : c.caption;
+  homeMd.run.push(`- [${card.title}](${ORIGIN}/toolkit#${card.id}): ${caption}`);
+  return `<li class="run-mini"><a class="run-mini-media" href="/toolkit#${esc(card.id)}" tabindex="-1" aria-hidden="true"><img src="${esc(card.image)}" alt="" width="800" height="500" loading="lazy" decoding="async"${card.motion ? ` data-motion-src="${esc(card.motion)}"` : ''}></a><div><h3><a href="/toolkit#${esc(card.id)}">${esc(card.title)}</a></h3><p>${esc(caption)}</p></div></li>`;
 }).join('');
 // More checks: results that stay one click away as text (their animated figures live on the linked pages).
 const moreChecks = home.more_checks.map((m, i) => {

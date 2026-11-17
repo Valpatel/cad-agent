@@ -15,6 +15,10 @@ test('ordinary manifests keep optional mesh hashes; guide frame and every instan
   const legacy = structuredClone(manifest); delete legacy.units; delete legacy.up; delete legacy.parts[0].sha256;
   assert.equal(validateView(legacy), legacy); assert.throws(() => validateGuide(guide, legacy));
 });
+test('a guide may state what it is in source.qualification (#811)', () => {
+  const { guide, manifest } = fixture(); guide.source = { qualification: 'An example sequence, not a verified build procedure.' };
+  assert.equal(validateGuide(guide, manifest), guide);
+});
 const bad = [
   g => g.extra = true, g => g.snapshot.status = 'approved', g => g.snapshot.source_commit = 'main',
   g => g.subassemblies.push(g.subassemblies[0]), g => g.steps.push(g.steps[0]),
@@ -25,6 +29,7 @@ const bad = [
   g => g.model.file = 'https://other.invalid/view.json', g => g.model.file = '/current/view.json',
   g => g.model.file = 'view.json#old', g => g.model.sha256 = 'bad', g => g.steps[0].poster = { file: 'poster.png', sha256: 'bad' },
   g => g.steps[0].opacity = 0.2, g => g.steps[0].partModes = { base: 'transparent' },
+  g => g.source = { qualification: '' }, g => g.source = { qualification: 5 }, g => g.source = { qualification: 'x'.repeat(2001) },
 ];
 for (const [i, mutate] of bad.entries()) test(`invalid guide ${i} fails closed`, () => {
   const { guide, manifest } = fixture(); mutate(guide); assert.throws(() => validateGuide(guide, manifest));
@@ -125,4 +130,37 @@ test('per-instance appearances are optional, visible-only and cleared by a new i
   for (const partModes of [null, [], { unknown: 'solid' }, { base: 'ghost' }, { base: false }]) assert.throws(() => validateState({ ...state, partModes }, ['base', 'screw#1', 'screw#2']));
   assert.throws(() => validateState({ ...stepState(guide, 'base'), partModes: { 'screw#1': 'transparent' } }, ['base', 'screw#1', 'screw#2']));
   assert.deepEqual(stepState(guide, 'screws').partModes, {});
+});
+
+test('a guide may bind a packed cad-agent-model/1; every packed field is checked (#811)', async () => {
+  const folder = new URL('../../../software/cadagent/webkit/assembly/examples/gyropup-turret/', import.meta.url);
+  const guide = JSON.parse(await readFile(new URL('guide.json', folder))), modelBytes = await readFile(new URL('model.json', folder));
+  const model = JSON.parse(modelBytes);
+  assert.equal(await sha256(modelBytes), guide.model.sha256);
+  assert.equal(validateGuide(guide, model), guide);
+  assert.equal(await sha256(await readFile(new URL(model.bin, folder))), model.sha256);
+  const planted = [m => m.units = 'm', m => m.sha256 = 'bad', m => m.bin = 'model.bin?v=2', m => m.bin = '/abs/model.bin', m => m.bin = 'https://x.invalid/m.bin',
+    m => m.quant = 0, m => m.encoding = 'brotli', m => m.box_mm = [0, 0, 0, -1, 0, 0], m => m.parts[0].index_bits = 8,
+    m => m.parts[0].offset = -1, m => m.parts.push(structuredClone(m.parts[0])), m => m.parts[0].color = 'red',
+    m => m.parts[0].bounds_mm[3] = -1e10];
+  for (const [i, mutate] of planted.entries()) {
+    const bad = structuredClone(model); mutate(bad);
+    assert.throws(() => validateGuide(guide, bad), undefined, `planted packed fault ${i} is refused`);
+  }
+  // A step naming a part the packed model lacks is refused like any other unknown instance.
+  const missing = structuredClone(model); missing.parts = missing.parts.filter(p => p.name !== 'barrel');
+  assert.throws(() => validateGuide(guide, missing), /unknown, duplicate or missing/);
+});
+
+test('loadGuide refuses an assembly plan beside a packed model, which carries no per-part mesh hashes (#811)', async () => {
+  const folder = new URL('../../../software/cadagent/webkit/assembly/examples/gyropup-turret/', import.meta.url);
+  const guide = JSON.parse(await readFile(new URL('guide.json', folder))), model = await readFile(new URL('model.json', folder));
+  const files = { 'guide.json': JSON.stringify(guide), 'model.json': model };
+  const fetcher = async url => new Response(files[String(url).split('/').pop()] ?? new Uint8Array());
+  const loaded = await loadGuide('https://host/turret/guide.json', { fetcher });
+  assert.equal(loaded.manifest.schema, 'cad-agent-model/1');
+  // Planted: the same guide with a plan bound beside its packed model is refused before the plan is read.
+  const planned = structuredClone(guide); planned.assembly_plan = { file: 'plan.json', sha256: '0'.repeat(64) };
+  files['guide.json'] = JSON.stringify(planned);
+  await assert.rejects(loadGuide('https://host/turret/guide.json', { fetcher }), /per-part mesh hashes/);
 });

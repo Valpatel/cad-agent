@@ -1,16 +1,24 @@
 {
   "schema": "cad-agent.toolkit-examples/1",
-  "scope": "Actual viewer previews and byte-identical synthetic assembly fixture; no physical or project qualification.",
-  "sourceHead": "f0009b93abd759fefb6d1f51b9151c90e228e73d",
-  "fixtureRevision": "1111111111111111111111111111111111111111",
+  "scope": "Actual viewer previews of the featured build guide and the original-file example, and the byte-identical synthetic assembly fixture kept at its published URL; no physical or project qualification.",
+  "sourceHead": "cc7cdd113b0ec17c774fcb557b6ade328a94ae2a",
   "generator": {
     "path": "tools/site/figures/toolkit-examples.mjs",
-    "sha256": "9c97fbd6794f14d5e25eb246369ac80ad113768607b4a60f9f38db09d61c0081"
+    "sha256": "1aed01617853f40b47d3684d5aab41b871a913724985ee657076e620f2014463"
   },
   "browser": {
     "engine": "chromium",
     "version": "153.0.8010.12",
     "selection": "executable:chrome"
+  },
+  "featured": {
+    "path": "software/cadagent/webkit/assembly/examples/gyropup-turret",
+    "route": "/kit/assembly/examples/gyropup-turret/guide.json",
+    "revision": "41c5c266569d6141ecda28711188343b54ab43d8",
+    "steps": 12,
+    "parts": 55,
+    "guide": "0adebf6c791a551a1a3ed1cf63dfc325e56f839a35379c1299a5f2e6e90680ca",
+    "view": "0bb171c10c3bd48578a1ca4fa1757817dc0375a9031d396d036533d5bd02f937"
   },
   "copies": {
     "guide.json": {
@@ -57,9 +65,10 @@
   "captures": {
     "assembly": {
       "file": "assembly.webp",
-      "route": "/kit/model/viewer.html?guide=/web/toolkit/assembly/guide.json",
-      "sha256": "23f1d401bed57a459a67a6a722e7dc3098a2763aaafc97026394f90aad64452c",
-      "bytes": 57406,
+      "route": "/kit/model/viewer.html?guide=/kit/assembly/examples/gyropup-turret/guide.json",
+      "sha256": "ded5a9319bbef73db8dc23a671d7b6aa5c03cfe08b8870d76ec572ec141888eb",
+      "bytes": 53418,
+      "webpQuality": 0.8,
       "viewport": {
         "width": 960,
         "height": 640
@@ -68,34 +77,88 @@
       "colorScheme": "dark",
       "reducedMotion": "reduce",
       "scene": {
-        "triangles": 186,
+        "triangles": 169658,
         "camera": [
-          0.0686949572158483,
-          0.04356781479353427,
-          0.09827125917413707
+          0.29358762523586246,
+          0.4255876252358625,
+          0.45597937539310407
         ],
         "target": [
-          0.011999999999999995,
-          0.019000000000000003,
+          0.02000000000000001,
+          0.15200000000000002,
           0
         ],
         "parts": [
-          "base",
-          "rail",
-          "plate",
-          "fastener",
-          "lid"
+          "pan_base",
+          "pan_servo",
+          "pan_pinion",
+          "dt_receptacle",
+          "base_board_carrier",
+          "base_board",
+          "base_board_inserts",
+          "base_board_screws",
+          "base_carrier_inserts",
+          "base_carrier_screws",
+          "index_magnet",
+          "pan_bearing",
+          "pan_bearing_inner",
+          "pan_clamp",
+          "pan_ring",
+          "hall_switch",
+          "pan_spacer",
+          "circlip_50",
+          "ring_driver",
+          "slip_ring",
+          "slip_ring_rotor",
+          "ring_coupling",
+          "ring_carrier",
+          "tilt_yoke",
+          "ring_leads_rotor",
+          "board_bay",
+          "turret_board",
+          "tilt_servo",
+          "tilt_bearing",
+          "tilt_bearing_inner",
+          "cradle",
+          "cradle_plate_l",
+          "cradle_plate_r",
+          "stop_lug",
+          "horn_boss",
+          "pivot_spacer",
+          "shoulder_screw",
+          "laser_mount",
+          "laser",
+          "cartridge_body",
+          "feed_motor",
+          "dial",
+          "flywheel_motor_l",
+          "flywheel_motor_r",
+          "flywheel",
+          "flywheel_m",
+          "flywheel_tyre",
+          "flywheel_tyre_m",
+          "cartridge_board",
+          "esc_l",
+          "esc_r",
+          "barrel",
+          "hopper",
+          "hopper_lid",
+          "ct_thumbscrew"
         ],
-        "instruction": "plate",
-        "display": "solid"
+        "instruction": "step-11",
+        "display": "ghost"
       },
       "runtimeInputs": {
-        "software/cadagent/webkit/assembly/guide.js": "dff223e998bb65ab301e10e729b21c2c596276771a87a0cca4a318079f7d1de5",
+        "software/cadagent/webkit/assembly/examples/gyropup-turret/guide.json": "0adebf6c791a551a1a3ed1cf63dfc325e56f839a35379c1299a5f2e6e90680ca",
+        "software/cadagent/webkit/assembly/examples/gyropup-turret/model.bin": "58c31a0d74bf760779b34b6fda334a4b7472d213241611843c421ec8b694575e",
+        "software/cadagent/webkit/assembly/examples/gyropup-turret/model.json": "0bb171c10c3bd48578a1ca4fa1757817dc0375a9031d396d036533d5bd02f937",
+        "software/cadagent/webkit/assembly/guide.js": "4028c17a333b31504888e6123e9e2f12782760ec167f88e8b0f50c80936da394",
         "software/cadagent/webkit/assembly/playback.js": "dd575ce02567129d9aa28376d3455f7e352118609cb30ae7dfe89066d17048d7",
         "software/cadagent/webkit/files/file-geometry.js": "1f503af4149f96624ecaba68043ea44eaaa68503988646c5139edb482ab922fd",
+        "software/cadagent/webkit/model/model.js": "42a17fd2a2384807233683f01b988e7e98ab52c438726f5eebc3baa7e6e41aec",
         "software/cadagent/webkit/model/stage.js": "f62b95e16a99e06686d32454397948fd50a67a973736ffc76a03b82f5e54b486",
-        "software/cadagent/webkit/model/viewer.html": "d9063a3da9fa44ff1ae93b48d6b1590426ae474275d74e2aef37759471edbccb",
-        "software/cadagent/webkit/model/viewer.js": "41100a263ff0204482258d5da85a27ba0da09eecfa848b8751791b06edd01241",
+        "software/cadagent/webkit/model/viewer.html": "c6ac7505f61a3da42266031eb6ebe6494b7108edca6f7e92256b7c5759ba7a8b",
+        "software/cadagent/webkit/model/viewer.js": "7d16b34671951c0ffa69f202783419afaf5c0b0fada49ace55fe1c7062a7041b",
         "software/cadagent/webkit/ui/hud.css": "0a1fbf7e9e796c7bf5d7cb9062b34374da937975e851ad2cce6b8cdb1827325a",
         "software/cadagent/webkit/ui/panel.js": "94c7a99a7d2d0fbf6305b77d0211487453994b5d5426aacc3f1d01d3020a7d9b",
         "software/cadagent/webkit/ui/theme.css": "370dfb29b28c760d48332316651492d0853c3e3aa9bc355e8a7edb1a4b12cf47",
@@ -105,15 +168,7 @@
         "software/cadagent/webkit/vendor/fonts/jetbrains-mono.woff2": "83c005d49d8a6a50474c73a5a36ac0468076e9c4a29da7bdb14995d80560a5be",
         "software/cadagent/webkit/vendor/three/addons/controls/OrbitControls.js": "a861339c938d6ce76a8bd37d0b66679ba296be3de930811e864a041768bac9fe",
         "software/cadagent/webkit/vendor/three/addons/loaders/STLLoader.js": "896d006a48b8f125385a485ccae154dadee801a953f0b45ceffe7ddd8a29ca93",
-        "software/cadagent/webkit/vendor/three/three.module.min.js": "3e690ac7d180b0aadf0891bea39eec643e29e2d3e75c99b18689518665f69ba6",
-        "tools/site/assets/toolkit/assembly/base.stl": "d200e907a9e7e414f9e7d764189a033b32f2eebf5fbaecd811f17d26b90cd1bd",
-        "tools/site/assets/toolkit/assembly/fastener.stl": "054f51f7691b78d320ce7c66501fbdba2b748f2963b16dd7350e23b157270886",
-        "tools/site/assets/toolkit/assembly/guide.json": "e5b2f93ce6826bfe600dac6f34959a7c476adc45b0de349dcbb1c2e8faf9c30f",
-        "tools/site/assets/toolkit/assembly/lid.stl": "fe32664fd39263bc01c1f2b6b45e2e3daa0bd741d48ea050b119ef7ee109150e",
-        "tools/site/assets/toolkit/assembly/plan.json": "67126dfab8ca7648a2d9a81388d1edcc43dee0be2a11a62b7a45016bc84c2e2d",
-        "tools/site/assets/toolkit/assembly/plate.stl": "bcfcbb2e396da36084ad961112a89836ce6c52e5a68e022b8503b4018f2877a8",
-        "tools/site/assets/toolkit/assembly/rail.stl": "774aecf78f7fd69f2f0bbf3b2506d223d32304db555e8fd760ba272e29fb0bc0",
-        "tools/site/assets/toolkit/assembly/view.json": "bee31d8cbd34e12c9fdfa18af8cfa801f1736311a474e192b9bd8dd6861edcd1"
+        "software/cadagent/webkit/vendor/three/three.module.min.js": "3e690ac7d180b0aadf0891bea39eec643e29e2d3e75c99b18689518665f69ba6"
       }
     },
     "file-review": {
@@ -121,6 +176,7 @@
       "route": "/kit/files/file-viewer.html?file=/kit/host/example.stl",
       "sha256": "e5d2e720afcdce8d5da2e7fd9e34f9e5e29fecad7d86ff1527a6162597b14e78",
       "bytes": 45700,
+      "webpQuality": 0.9,
       "viewport": {
         "width": 960,
         "height": 640

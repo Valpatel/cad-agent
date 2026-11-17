@@ -50,6 +50,17 @@
    "mirrors": [{"workflow": "ci.yml", "job": "core", "run": "python -m pytest -q"}]
   },
   {
+   "id": "pytest-build-guide",
+   "title": "The featured build guide's converter and committed bytes, kept in docs/examples (part of CI's pytest run)",
+   "paths": ["docs/examples/build-guide/**", "software/cadagent/webkit/assembly/examples/**", "tests/webkit/assembly/test_*.py"],
+   "command": "python -m pytest -q tests/webkit/assembly/test_gyropup_turret_guide.py",
+   "env": {"PYTHONPATH": "{root}/software"},
+   "needs": {"python": {"version": "3.12", "modules": ["pytest", "yaml", "numpy", "packaging"]}},
+   "cost": "fast",
+   "subset": true,
+   "mirrors": [{"workflow": "ci.yml", "job": "core", "run": "python -m pytest -q"}]
+  },
+  {
    "id": "pytest-core",
    "title": "The whole pytest suite with the required dependencies (CI core; one interpreter here, not the 3.10 floor-version rerun)",
    "paths": ["**"],
@@ -188,7 +199,7 @@
    "command": "node --test tests/site/website-*.test.mjs tests/site/toolkit/website-*.test.mjs",
    "needs": {"node_deps": ["tools/site"], "after": ["site-build"]},
    "cost": "slow",
-   "cost_note": "website-build.test.mjs makes about eight more full site builds; over 30 minutes on a loaded 4-CPU machine",
+   "cost_note": "website-build, website-drafts, website-diagrams and website-checks make about eight more full site builds between them, in parallel files; about 9 minutes on a 4-CPU machine, 4.5 in CI (#814)",
    "timeout": 5400,
    "mirrors": [{"workflow": "webkit.yml", "job": "browser", "run": "node --test tests/site/website-*.test.mjs tests/site/toolkit/website-*.test.mjs"}]
   },
@@ -216,8 +227,8 @@
   },
   {
    "id": "assembly-guide",
-   "title": "Assembly guide in a browser",
-   "paths": ["software/cadagent/webkit/**", "tests/webkit/assembly/**", "tools/site/package.json", "tools/site/package-lock.json", "tests/webkit/webkit-server.mjs", "tests/site/npm-context.mjs", "tests/fixtures/assembly-plan/**"],
+   "title": "Assembly guide in a browser, and the featured Gyropup turret guide in the shipped reader",
+   "paths": ["software/cadagent/webkit/**", "tests/webkit/assembly/**", "docs/examples/build-guide/**", "tools/site/package.json", "tools/site/package-lock.json", "tests/webkit/webkit-server.mjs", "tests/site/npm-context.mjs", "tests/fixtures/assembly-plan/**"],
    "exclude": ["software/cadagent/webkit/scada/**"],
    "command": "npm run test:assembly-guide",
    "cwd": "tools/site",

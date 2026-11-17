@@ -52,8 +52,9 @@ flowchart TD
 | `test_research_figures.py` | The research charts are drawn from the tables on their pages |
 | `website-browser.mjs` | The site's pages in a real browser, served as Cloudflare Pages serves them (a reference area page's filters included) |
 | `website-build.test.mjs` | `tools/site/build-site.mjs`: what the build makes, links, redirects and headers |
-| `website-checks.test.mjs` | `tools/site/compiler/site-checks.mjs`: link-card tags, `llms.txt` addresses read as a plain link finder reads them, the card's record, the home layer cake's section links (#804) |
-| `website-diagrams.test.mjs` | `tools/site/compiler/site-diagrams.mjs`: Mermaid blocks drawn at build time |
+| `website-checks.test.mjs` | `tools/site/compiler/site-checks.mjs`: link-card tags, `llms.txt` addresses read as a plain link finder reads them, the card's record, the home layer cake's section links (#804); a build of a commit whose layer cake names a missing section fails, and its draft warns |
+| `website-diagrams.test.mjs` | `tools/site/compiler/site-diagrams.mjs`: Mermaid blocks drawn at build time; two whole builds with empty caches draw the same bytes, and `--client-diagrams` leaves the blocks to the reader |
+| `website-drafts.test.mjs` | Builds of scratch worktrees with planted edits: a dirty checkout publishes HEAD, a `--worktree` draft shows its changes, image sizes and the diagram palette in a draft, and moved sources that go missing fail. A file of its own so that it runs beside `website-build.test.mjs` (#814) |
 | `website-html.test.mjs` | `tools/site/compiler/site-html.mjs`: the sanitizer keeps our markup and drops unsafe HTML |
 | `website-preview.test.mjs` | Directory application routes preserve slash-relative modules and scenario queries under Pages-style hosting; the server's IPC record of requests and sockets, kept by time and saying when its window is truncated; idle keep-alive sockets stay open, so no client reuses one the server is closing (#686). |
 | `website-references.test.mjs` | `tools/site/compiler/site-references.mjs`: the reference pages, their JSON and llms.txt lines against the committed records, `[ref:]` links, no record in the catalogue or llms-full.txt, `docs/practice/experts.md` current |

@@ -25,7 +25,7 @@ import { ON, fold, pagePlacer } from './compiler/site-pages.mjs';    // docs/pag
 import { SECTIONS, createPublication, validateRedirects, folderMapSources } from './publication.mjs';
 import { loadReferences, referenceModel, referenceSite, linkTags, mdTags, healthOf } from './compiler/site-references.mjs';   // /references (#323)
 import { CARD, socialMeta, socialProblems, llmsProblems, servedFiles } from './compiler/site-checks.mjs';   // card tags and llms.txt links (#804)
-import {SCADA_INPUTS, TOOLKIT_ROUTES, scadaToolkitModel, toolkitPages, toolkitFullText, toolkitCapabilities} from './compiler/site-toolkit.mjs';
+import {SCADA_INPUTS, TOOLKIT_ROUTES, scadaToolkitModel, toolkitPages, toolkitFullText, toolkitCapabilities, buildGuideCaptionMissing} from './compiler/site-toolkit.mjs';
 
 // --root DIR builds another checkout of this repo (the tests use a scratch worktree); the build tools still run from here.
 const rootArg = process.argv.indexOf('--root');
@@ -615,6 +615,8 @@ const runCards = home.showcase.cards.map((c, i) => {
   // animation in only once the card comes near the screen, never under reduced motion or Save-Data.
   if (card.motion) for (const phrase of ['recorded solver output', 'dated', 'snapshot', 'work-in-progress', 'replayed, not recomputed', 'not a validation of hardware'])
     if (!c.caption.includes(phrase)) throw new Error(`docs/home.yaml showcase.cards[${i}]: an animated card's caption says "${phrase}"`);
+  if (c.toolkit === 'assembly') for (const phrase of buildGuideCaptionMissing(c.caption))
+    throw new Error(`docs/home.yaml showcase.cards[${i}]: the build-guide card's caption says "${phrase}"`);
   homeMd.run.push(`- [${card.title}](${ORIGIN}/toolkit#${card.id}): ${c.caption}`);
   return `<li class="run-mini"><a class="run-mini-media" href="/toolkit#${esc(card.id)}" tabindex="-1" aria-hidden="true"><img src="${esc(card.image)}" alt="" width="800" height="500" loading="lazy" decoding="async"${card.motion ? ` data-motion-src="${esc(card.motion)}"` : ''}></a><div><h3><a href="/toolkit#${esc(card.id)}">${esc(card.title)}</a></h3><p>${esc(c.caption)}</p></div></li>`;
 }).join('');

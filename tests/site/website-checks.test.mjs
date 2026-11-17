@@ -1,10 +1,12 @@
 /** The checks the site build runs over its own output (#804, tools/site/compiler/site-checks.mjs), each with a planted
  * control: a page's link-card tags, and the addresses llms.txt names as a plain link finder reads them. Also the link
  * card's record (tools/site/figures/social-card.mjs --check), and that the home page's layer cake names the sections
- * its labels promise. */
+ * its labels promise, and that a build fails on a block naming a section its page lacks (a draft warns instead). */
 import assert from 'node:assert/strict';
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawn } from 'node:child_process';
 import { readFileSync } from 'node:fs';
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import os from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
 import { YAML } from './npm-context.mjs';
@@ -73,4 +75,31 @@ test('the layer cake opens the section a block names where its page has one', ()
   for (const label of ['Commands', 'Build and export', 'Check', 'Design rules', 'Reports and reviews', 'Print', 'Explore designs'])
     assert.equal(blocks[label], 'docs/toolkit.md#commands', label);
   assert.notEqual(blocks['Eval jobs'], blocks['Candidate eval tasks'], 'two blocks, two sections');
+});
+
+// A whole build of a scratch worktree with the planted section, as a draft and as a commit.
+const tmp = await mkdtemp(path.join(os.tmpdir(), 'cad-agent-website-checks-'));
+test.after(() => rm(tmp, { recursive: true, force: true }));
+
+test('a layer-cake block naming a section its page lacks fails the build, and a draft warns and links the page (#804)', async () => {
+  const wt = path.join(tmp, 'wt-section');
+  execFileSync('git', ['worktree', 'add', '--detach', '--quiet', wt, 'HEAD'], { cwd: root });
+  try {
+    const yaml = await readFile(path.join(wt, 'docs/home.yaml'), 'utf8');
+    assert.ok(yaml.includes('href: docs/toolkit.md#commands'), 'the planted section replaces a real one');
+    await writeFile(path.join(wt, 'docs/home.yaml'), yaml.replace('href: docs/toolkit.md#commands', 'href: docs/toolkit.md#no-such-section'));
+    const draft = await new Promise(done => {
+      const p = spawn(process.execPath, ['tools/site/build-site.mjs', '--root', wt, '--worktree', '--out', path.join(tmp, 'draft-section')], { cwd: root });
+      let err = ''; p.stderr.on('data', d => { err += d; }); p.on('close', code => done({ code, err }));
+    });
+    assert.equal(draft.code, 0, `the draft builds: ${draft.err.slice(-400)}`);
+    assert.match(draft.err, /draft: docs\/home\.yaml stack\[\d+\]\.blocks\[\d+\]: docs\/toolkit\.md has no section #no-such-section; linking the page/);
+    const home = await readFile(path.join(tmp, 'draft-section', 'index.html'), 'utf8');
+    assert.doesNotMatch(home, /#no-such-section/, 'the draft links the page, not the missing section');
+    execFileSync('git', ['-c', 'user.name=planted', '-c', 'user.email=planted@example.invalid', 'commit', '--quiet', '--no-verify', '-am', 'planted: a missing section'], { cwd: wt });
+    assert.throws(() => execFileSync(process.execPath, ['tools/site/build-site.mjs', '--root', wt, '--out', path.join(tmp, 'site-section')], { cwd: root, stdio: 'pipe' }),
+      e => /docs\/home\.yaml stack\[\d+\]\.blocks\[\d+\]: docs\/toolkit\.md has no section #no-such-section/.test(String(e.stderr)), 'a build of the commit fails on it');
+  } finally {
+    execFileSync('git', ['worktree', 'remove', '--force', wt], { cwd: root });
+  }
 });

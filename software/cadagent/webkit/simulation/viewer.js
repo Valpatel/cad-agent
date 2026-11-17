@@ -78,11 +78,17 @@ export function createReplayViewer(container,{recording,recordingUrl,expectedHas
         ownedClock=createPlayback(data,(state,poses)=>{
           ownedScene.apply(poses);time.value=String(state.time);time.setAttribute('aria-valuetext',`${state.time.toFixed(2)} of ${state.duration.toFixed(2)} seconds`);
           readout.textContent=`${state.time.toFixed(2)} / ${state.duration.toFixed(2)} s`;
-          play.textContent=state.playing?'Pause':'Play';play.setAttribute('aria-label',state.playing?'Pause recording':'Play recording');play.setAttribute('aria-pressed',String(state.playing));
+          // Written only when it changes: this runs every frame while playing, and replacing the button's text node
+          // between a press and its release makes WebKit drop the click (its target is the pressed node), so Pause
+          // could be ignored (#809).
+          if(play.dataset.playing!==String(state.playing)){
+            play.dataset.playing=String(state.playing);play.textContent=state.playing?'Pause':'Play';
+            play.setAttribute('aria-label',state.playing?'Pause recording':'Play recording');play.setAttribute('aria-pressed',String(state.playing));
+          }
           let custom=speed.querySelector('[data-custom-speed]');
-          if(![.25,.5,1,2].includes(state.speed)){if(!custom){custom=el('option');custom.dataset.customSpeed='true';speed.append(custom);}custom.value=String(state.speed);custom.textContent=`${state.speed}×`;}
+          if(![.25,.5,1,2].includes(state.speed)){if(!custom){custom=el('option');custom.dataset.customSpeed='true';speed.append(custom);}if(custom.value!==String(state.speed)){custom.value=String(state.speed);custom.textContent=`${state.speed}×`;}}
           else custom?.remove();
-          speed.value=String(state.speed);
+          if(speed.value!==String(state.speed))speed.value=String(state.speed);
           onState({state:'ready',playback:state});
         },{loop});controller=ownedClock;describe();ownedScene.fit();
       };

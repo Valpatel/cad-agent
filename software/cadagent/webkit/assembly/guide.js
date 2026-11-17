@@ -56,8 +56,39 @@ function binding(value, where) {
   assetURL(value.file, 'https://guide.invalid/bundle/guide.json');
   if (!hashPattern.test(value.sha256)) fail(`${where}: invalid SHA-256`);
 }
+export const PACKED_SCHEMA = 'cad-agent-model/1';
+const bounds = (b, name) => {
+  if (!Array.isArray(b) || b.length !== 6 || !b.every(Number.isFinite) || b.some(n => Math.abs(n) > 1e9) || [0, 1, 2].some(i => b[i] > b[i + 3])) fail(`Invalid bounds for ${name}`);
+};
+const count = (n, where) => { if (!Number.isSafeInteger(n) || n < 0) fail(`${where}: invalid count`); };
+/** A model packed by `cadagent.publish.view.pack_view` (`cad-agent-model/1`): one hash-bound binary for every part.
+ * The binary's SHA-256 binds every mesh, so parts carry no file or hash of their own. */
+export function validatePackedView(model) {
+  if (!record(model) || model.schema !== PACKED_SCHEMA) fail('Not a packed model');
+  if (model.units !== 'mm' || model.up !== 'z') fail('Packed model must be mm, z-up');
+  viewAssetURL(model.bin, 'https://guide.invalid/model.json', { guide: true });
+  if (!hashPattern.test(model.sha256)) fail('Packed model: invalid binary SHA-256');
+  if (model.encoding !== undefined && model.encoding !== 'gzip') fail('Packed model: unknown encoding');
+  if (!Number.isInteger(model.quant) || model.quant < 1 || model.quant > 65535) fail('Packed model: invalid quantisation');
+  bounds(model.box_mm, 'the packed model');
+  if (!Array.isArray(model.parts) || !model.parts.length || model.parts.length > 2000) fail('Model manifest needs 1..2000 parts');
+  const names = new Set();
+  for (const p of model.parts) {
+    if (!record(p)) fail('Invalid model part');
+    text(p.name, 'Part name', 200);
+    if (names.has(p.name)) fail(`Duplicate model part ${p.name}`);
+    names.add(p.name); bounds(p.bounds_mm, p.name);
+    for (const k of ['vertices', 'triangles', 'offset']) count(p[k], `${p.name} ${k}`);
+    if (![16, 32].includes(p.index_bits)) fail(`${p.name}: invalid index width`);
+    if (p.color !== undefined && !(typeof p.color === 'string' && /^#[0-9a-f]{6}$/i.test(p.color))) fail(`Invalid color for ${p.name}`);
+    if (p.visible !== undefined && typeof p.visible !== 'boolean') fail(`Invalid visibility for ${p.name}`);
+    if (p.explode !== undefined && p.explode !== null) vec(p.explode, 'Explode direction', true);
+  }
+  return model;
+}
 /** Validate legacy manifests too; guide-bound manifests additionally require explicit frame and mesh hashes. */
 export function validateView(manifest, { guide = false } = {}) {
+  if (record(manifest) && manifest.schema === PACKED_SCHEMA) return validatePackedView(manifest);
   if (!record(manifest) || !Array.isArray(manifest.parts) || !manifest.parts.length || manifest.parts.length > 2000)
     fail('Model manifest needs 1..2000 parts');
   if ((guide || manifest.units !== undefined) && manifest.units !== 'mm') fail('Model units must be mm');
@@ -173,10 +204,12 @@ export async function loadGuide(url, options = {}) {
   const manifest = parseJSON(await readAsset(manifestUrl, { ...options, redirect: 'error', expectedHash: guide.model.sha256, maxBytes: 2 * 1024 * 1024 }));
   validateGuide(guide, manifest);
   // Validate every referenced URL before the renderer starts fetching mesh data.
-  for (const part of manifest.parts) assetURL(part.file, manifestUrl, options.assetRoot);
+  if (manifest.schema === PACKED_SCHEMA) assetURL(manifest.bin, manifestUrl, options.assetRoot);
+  else for (const part of manifest.parts) assetURL(part.file, manifestUrl, options.assetRoot);
   for (const step of guide.steps) if (step.poster) assetURL(step.poster.file, guideURL, options.assetRoot);
   let plan;
   if (guide.assembly_plan !== undefined) {
+    if (manifest.schema === PACKED_SCHEMA) fail('An assembly plan needs per-part mesh hashes, which a packed model does not carry');
     binding(guide.assembly_plan, 'Assembly plan');
     plan = normalizePlan(parseJSON(await readAsset(assetURL(guide.assembly_plan.file, guideURL, options.assetRoot),
       { ...options, redirect: 'error', expectedHash: guide.assembly_plan.sha256, maxBytes: 2 * 1024 * 1024 })),
@@ -206,7 +239,7 @@ function validatePlanGuide(guide, plan) {
     fail('Guide must project the exact source and serial plan operations without authored offsets');
 }
 export function createGuideController(viewer, guide, { plan } = {}) {
-  validateGuide(guide, { units: 'mm', up: 'z', parts: viewer.parts.map(({ mesh, center, ...part }) => part) });
+  validateGuide(guide, viewer.manifest ?? { units: 'mm', up: 'z', parts: viewer.parts.map(({ mesh, center, ...part }) => part) });
   if (guide.assembly_plan) {
     if (!plan) fail('Bound assembly plan is required');
     plan = normalizePlan(plan, { meshHashes: Object.fromEntries(viewer.parts.map(p => [p.name, p.sha256])) });

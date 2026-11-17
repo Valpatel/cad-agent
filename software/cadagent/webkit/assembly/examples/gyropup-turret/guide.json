@@ -7,8 +7,8 @@
   "source_commit": "41c5c266569d6141ecda28711188343b54ab43d8"
  },
  "model": {
-  "file": "view.json",
-  "sha256": "0f1ab8ff7f12b2c58e001c398338ae0efd422cd2cee9a867463c6a5fed6a8f9e"
+  "file": "model.json",
+  "sha256": "0bb171c10c3bd48578a1ca4fa1757817dc0375a9031d396d036533d5bd02f937"
  },
  "source": {
   "project": "Valpatel/gyropup",
@@ -102,7 +102,7 @@
   {
    "id": "step-01",
    "title": "The pan base and its inserts",
-   "text": "Heat-set inserts first, with the base on its foot: 5 x M3 in the clamp ears, 3 x M3 in the carrier bosses (from below), 4 x M3 in the external carrier anchors, 4 x M4 in the DT pad. The bumper tabs' 5 short M3 wait for the robot (no bumper on the bench, D42).",
+   "text": "Heat-set inserts first, with the base on its foot: 5 x M3 in the clamp ears, 3 x M3 in the carrier bosses (from below), 4 x M3 in the external carrier anchors, 4 x M4 in the DT pad. The bumper tabs' 5 short M3 wait for the robot (no bumper on the bench).",
    "subassembly": "base",
    "parts": [
     "pan_base"
@@ -172,7 +172,7 @@
   {
    "id": "step-03",
    "title": "The removable base-board module and the index magnet",
-   "text": "On the bench, fit four M3 inserts in the carrier and screw the drilled PCB onto its standoffs with four M3 x 6. Fit four M3 inserts in the base anchors from +x. Connect the harness, then slide the entire module in from +x and secure it with four M3 x 8 from outside. Remove the robot bumper before service; PCB screws are accessed only on the bench. Harness disconnection access and slack remain unverified: docs/base-board-service.md. Glue the index magnet in its housing pocket.",
+   "text": "On the bench, fit four M3 inserts in the carrier and screw the drilled PCB onto its standoffs with four M3 x 6. Fit four M3 inserts in the base anchors from +x. Connect the harness, then slide the entire module in from +x and secure it with four M3 x 8 from outside. Remove the robot bumper before service; PCB screws are accessed only on the bench. Harness disconnection access and slack remain unverified: Gyropup's docs/base-board-service.md. Glue the index magnet in its housing pocket.",
    "subassembly": "base",
    "parts": [
     "pan_base",
@@ -513,7 +513,7 @@
   {
    "id": "step-08",
    "title": "The tilt servo and the cradle on its aluminium cheeks",
-   "text": "The rail frame, its two aluminium plates and the stop lug go together on the bench (D48): 8 x M3 inserts into the rail frame's two rebates, put in from the side; the aluminium stop lug onto the -y plate's outer face, 2 x M3 x 6 flat heads from the plate's inner face into its tapped holes, a drop of CA gel under it; each plate into its rail's rebate, 4 x M3 x 8 button heads. Then the STS3215 into its pocket on the +y arm, 4 x M2 x 10 from the arm's inner face, and the MR126 into the -y arm's seat. The cradle between the arms: the horn boss between the +y plate and the servo's horn, 4 x M3 x 14 flat heads from the plate's inner face into the horn (snug: 1.8 mm of thread); on the -y side the pivot spacer, its land against the bearing, and the ISO 7379 shoulder screw through the arm, the bearing and the spacer into the plate's tapped hole (snug, about 0.15 N m, a drop of CA gel on the thread). Check the +12 and -25 deg stops by hand before anything else: the lug meets the yoke's two sectors, and the barrel cannot be pushed past either.",
+   "text": "The rail frame, its two aluminium plates and the stop lug go together on the bench: 8 x M3 inserts into the rail frame's two rebates, put in from the side; the aluminium stop lug onto the -y plate's outer face, 2 x M3 x 6 flat heads from the plate's inner face into its tapped holes, a drop of CA gel under it; each plate into its rail's rebate, 4 x M3 x 8 button heads. Then the STS3215 into its pocket on the +y arm, 4 x M2 x 10 from the arm's inner face, and the MR126 into the -y arm's seat. The cradle between the arms: the horn boss between the +y plate and the servo's horn, 4 x M3 x 14 flat heads from the plate's inner face into the horn (snug: 1.8 mm of thread); on the -y side the pivot spacer, its land against the bearing, and the ISO 7379 shoulder screw through the arm, the bearing and the spacer into the plate's tapped hole (snug, about 0.15 N m, a drop of CA gel on the thread). Check the +12 and -25 deg stops by hand before anything else: the lug meets the yoke's two sectors, and the barrel cannot be pushed past either.",
    "subassembly": "tilt",
    "parts": [
     "pan_base",
@@ -705,7 +705,7 @@
   {
    "id": "step-10",
    "title": "The cartridge: feed servo, dial, flywheel motors and the cartridge board",
-   "text": "On the bench, not on the turret. The feed servo (its bus ID set to 3 beforehand) up against the dial floor's underside, its horn through the floor and its length to the rear: 4 x M2 x 6 flat heads from above, flush. The dial onto the horn: 4 x M3 x 8 down through the holes in its cone (the hopper off); set the servo's zero so a pocket is centred over the exit hole and write the count down. Each X2216 with its hub: the prop adapter from its box on the bell (3 x M2), the hub's flat face on the adapter's flange, its bore reamed to 5.00 on the pilot, the washer and an M5 nylon-insert nut (snug plus a quarter turn); turn it by hand with a dial indicator on the rim: under 0.15 mm, or re-seat; then the Ø34 tyre stretched on. Each motor goes up through the opening under its shell to the plate, its leads out through the slot: 4 x M3 x 6 in the radial slots (never longer: the motor has 2.8 mm of thread). The two AM32 ESCs on the cage plate on foam tape, each motor's leads to its ESC; the cartridge board on its four posts over them (4 x M3 x 6), the brake FETs' drains to the phase leads, and the pigtail to the two CT plugs (docs/turret-wiring.md).",
+   "text": "On the bench, not on the turret. The feed servo (its bus ID set to 3 beforehand) up against the dial floor's underside, its horn through the floor and its length to the rear: 4 x M2 x 6 flat heads from above, flush. The dial onto the horn: 4 x M3 x 8 down through the holes in its cone (the hopper off); set the servo's zero so a pocket is centred over the exit hole and write the count down. Each X2216 with its hub: the prop adapter from its box on the bell (3 x M2), the hub's flat face on the adapter's flange, its bore reamed to 5.00 on the pilot, the washer and an M5 nylon-insert nut (snug plus a quarter turn); turn it by hand with a dial indicator on the rim: under 0.15 mm, or re-seat; then the Ø34 tyre stretched on. Each motor goes up through the opening under its shell to the plate, its leads out through the slot: 4 x M3 x 6 in the radial slots (never longer: the motor has 2.8 mm of thread). The two AM32 ESCs on the cage plate on foam tape, each motor's leads to its ESC; the cartridge board on its four posts over them (4 x M3 x 6), the brake FETs' drains to the phase leads, and the pigtail to the two CT plugs (Gyropup's docs/turret-wiring.md).",
    "subassembly": "cartridge",
    "parts": [
     "pan_base",
@@ -850,7 +850,7 @@
   {
    "id": "step-11",
    "title": "The barrel, the hopper and the lid",
-   "text": "The barrel into its socket (a nylon-tip M3 set screw through the socket's insert), the gates' emitters and receivers in its bosses; the hopper on the housing (3 x M3 x 8: the front one through the hole in the cage plate); the lid. The fill flap and its spring wait for the dock (v1).",
+   "text": "The barrel into its socket (a nylon-tip M3 set screw through the socket's insert), the gates' emitters and receivers in its bosses; the hopper on the housing (3 x M3 x 8: the front one through the hole in the cage plate); the lid. The fill flap and its spring wait for the dock.",
    "subassembly": "cartridge",
    "parts": [
     "pan_base",
@@ -944,7 +944,7 @@
   {
    "id": "step-12",
    "title": "The cartridge on the cradle, the mount",
-   "text": "The cartridge down onto the cradle's two dowels, the knurled thumbscrew up into its insert (its O-ring keeps it in the rail); the two CT plugs (2 x 3 power, 2 x 5 signal). Then the turret on its stand: 2 x Ø5 dowels, 4 x M5 x 16, and the DT12 plug (the stand's two dock inserts went in from below with a flat tip, the top face on a flat plate and the seat checked flat after; the dock adapter's M3s are no longer than its base + 5 mm). The TPU bumper ring (5 x M3 x 20 and oversized washers on the base's tabs) is for the robot (v1).",
+   "text": "The cartridge down onto the cradle's two dowels, the knurled thumbscrew up into its insert (its O-ring keeps it in the rail); the two CT plugs (2 x 3 power, 2 x 5 signal). Then the turret on its stand: 2 x Ø5 dowels, 4 x M5 x 16, and the DT12 plug (the stand's two dock inserts went in from below with a flat tip, the top face on a flat plate and the seat checked flat after; the dock adapter's M3s are no longer than its base + 5 mm). The TPU bumper ring (5 x M3 x 20 and oversized washers on the base's tabs) is for the robot.",
    "subassembly": "cartridge",
    "parts": [
     "pan_base",

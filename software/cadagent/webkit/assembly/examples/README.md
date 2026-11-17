@@ -12,7 +12,7 @@ flowchart TD
 
 | Folder | Example |
 | --- | --- |
-| [gyropup-turret/](gyropup-turret/README.md) | Gyropup's turret, twelve authored steps over 55 parts, from its MIT-licensed repository; the toolkit's featured build guide. |
+| [gyropup-turret/](gyropup-turret/README.md) | Gyropup's turret, twelve authored steps over 55 parts in one 306 KB packed model, from its MIT-licensed repository; the toolkit's featured build guide. |
 
 The reader's own tests use the synthetic [rail bench fixture](https://github.com/Valpatel/cad-agent/tree/main/tests/fixtures/assembly-plan).
 

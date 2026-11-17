@@ -59,6 +59,20 @@ const phoneProblems = page => page.evaluate(() => {
   return problems;
 });
 
+/** A short phone (390 x 664): with the panel unscrolled, Previous and Next and the first two lines of the step's text
+ * are on screen below the 3D view, however long the step's text is (steps 8 and 10 are the longest). */
+const firstScreenProblems = (page, id) => page.evaluate(id => {
+  const problems = [], panel = document.querySelector('#panel'), app = document.querySelector('#app').getBoundingClientRect();
+  if (panel.scrollTop !== 0) problems.push(`${id}: the panel is scrolled`);
+  for (const name of ['Previous', 'Next']) {
+    const b = [...panel.querySelectorAll('button')].find(e => e.textContent.trim() === name)?.getBoundingClientRect();
+    if (!b || b.top < app.bottom - 1 || b.bottom > innerHeight) problems.push(`${id}: ${name} is not on the first screen (${b?.top}-${b?.bottom} of ${innerHeight})`);
+  }
+  const text = panel.querySelector('.guide-text'), r = text.getBoundingClientRect(), line = parseFloat(getComputedStyle(text).lineHeight) || 24;
+  if (r.top < app.bottom - 1 || r.top + 2 * line > innerHeight) problems.push(`${id}: the step's first lines are not on the first screen (text at ${Math.round(r.top)} of ${innerHeight})`);
+  return problems;
+}, id);
+
 async function open(context) {
   const page = await context.newPage(), bad = [];
   page.on('pageerror', e => bad.push(e.message));
@@ -92,6 +106,17 @@ try {
       await page.evaluate(() => { const s = window.__viewer.getState(); window.__viewer.applyState({ ...s, visible: s.visible.filter(n => n !== 'barrel'), highlight: s.highlight.filter(n => n !== 'barrel') }); });
       assert.ok((await stepProblems(page, 'step-11')).some(p => /barrel/.test(p)), 'planted: a hidden new part is caught');
       if (viewport.width === 390) {
+        await page.setViewportSize({ width: 390, height: 664 });
+        for (const id of ['step-08', 'step-10']) {
+          await choose(page, id);
+          assert.deepEqual(await firstScreenProblems(page, id), [], `390 x 664 ${id}`);
+          await page.screenshot({ path: `${out}/${engine.name()}-390x664-${id}.png` });
+        }
+        // Planted: the version line and qualification back above the step (their desktop order) push Next off screen.
+        const plant = await page.addStyleTag({ content: '.guide-controls>.guide-version,.guide-controls>.guide-qualification{order:0!important}.guide-controls>h2{order:-1!important}' });
+        assert.ok((await firstScreenProblems(page, 'step-10')).some(p => /Next is not on the first screen/.test(p)), 'planted: buttons pushed off a short phone are caught');
+        await plant.evaluate(e => e.remove());
+        await page.setViewportSize(viewport);
         await choose(page, 'step-08');
         assert.deepEqual(await phoneProblems(page), [], 'phone layout');
         // Planted controls: a 30 px button, an unlabelled part checkbox and the panel moved above the view are caught.

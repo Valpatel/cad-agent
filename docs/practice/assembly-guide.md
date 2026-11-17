@@ -54,6 +54,9 @@ unchanged assembled mesh. They are illustrative offsets, not certified insertion
 not a joint or rigid-body declaration. Exact mesh names identify repeated instances; catalogue/BOM keys are
 separate and may be retained in optional `source` metadata. Intentionally unmodelled hardware must be disclosed
 by the product's instruction/BOM records, not invented as geometry or silently counted as a modelled instance.
+The model binding may name a packed `cad-agent-model/1` (written by `cadagent.publish.view.pack_view`) instead of
+an STL manifest: its binary's SHA-256 binds every mesh, and the reader and release packaging accept it; an assembly
+plan still needs a manifest with per-part STL hashes.
 Optional `source.qualification` is plain text (up to 2,000 characters) saying what the guide is and is not, for
 example "an example sequence, not a verified build procedure"; the reader shows it under the version line. The
 toolkit's [featured guide](../examples/build-guide/README.md), Gyropup's turret, uses it.

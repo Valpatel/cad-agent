@@ -8,6 +8,7 @@ Each check is shown to fail on a planted fault.
 import hashlib
 import importlib.util
 import json
+import re
 import shutil
 import struct
 import subprocess
@@ -52,28 +53,62 @@ def test_committed_example_matches_its_receipt():
     assert guide["snapshot"]["status"] == "wip" and guide["snapshot"]["source_commit"] == receipt["revision"]
     for phrase in ("Example sequence", "work-in-progress", "not a verified build procedure", "CAD step order does not prove"):
         assert phrase in guide["source"]["qualification"]
-    # Every folder stays within the repository's growth limit of 20 files (README.md not counted).
-    for folder in [BUNDLE, *[p for p in BUNDLE.iterdir() if p.is_dir()]]:
-        assert len([p for p in folder.iterdir() if p.is_file() and p.name != "README.md"]) <= 20, folder
+    # The instruction text carries no design-log code, and undoing the recorded edits restores Gyropup's text exactly.
+    assert receipt["text_rules"] and sum(len(e["edits"]) for e in receipt["text_edits"].values()) == 6
+    for step in guide["steps"]:
+        assert not re.search(r"\b(?:D\d+|v\d+)\b", step["text"]), step["id"]
+        record = receipt["text_edits"][step["id"]]
+        original = converter.restore_text(step["text"], record["edits"])
+        assert hashlib.sha256(original.encode()).hexdigest() == record["original_sha256"]
+    assert len(receipt["meshes"]) == receipt["parts"] == 55
 
 
-def test_committed_example_check_catches_a_planted_byte(tmp_path):
+def test_committed_example_check_catches_planted_faults(tmp_path):
     copy = tmp_path / "bundle"
     shutil.copytree(BUNDLE, copy)
-    mesh = copy / "base/pan_base.stl"
-    data = bytearray(mesh.read_bytes())
+    data = bytearray((copy / "model.bin").read_bytes())
     data[100] ^= 1
-    mesh.write_bytes(bytes(data))
-    (copy / "base/stray.stl").write_bytes(b"x")
+    (copy / "model.bin").write_bytes(bytes(data))
+    (copy / "stray.stl").write_bytes(b"x")
+    guide = json.loads((copy / "guide.json").read_bytes())
+    guide["steps"][7]["text"] = guide["steps"][7]["text"].replace("on the bench", "in the box", 1)
+    (copy / "guide.json").write_text(json.dumps(guide))
     problems = converter.check(copy)
-    assert "base/pan_base.stl: does not match its receipt" in problems
-    assert "view.json: base/pan_base.stl does not match its hash" in problems
-    assert "base/stray.stl: not in the receipt" in problems
+    assert "model.bin: does not match its receipt" in problems
+    assert "model.json: model.bin does not match its hash" in problems
+    assert "stray.stl: not in the receipt" in problems
+    assert "guide.json: step-08 text does not restore to Gyropup's recorded original" in problems
+
+
+def test_text_rules_drop_codes_and_restore_the_original():
+    text = "Fit it on the bench (D48): 4 x M3 (no bumper on the bench, D42); see docs/wiring.md. Later (v1)."
+    cleaned, edits = converter.clean_text(text)
+    assert cleaned == "Fit it on the bench: 4 x M3 (no bumper on the bench); see Gyropup's docs/wiring.md. Later."
+    assert [e["rule"] for e in edits] == ["code-only-parenthesis", "code-only-parenthesis", "code-ending-parenthesis",
+                                          "repository-path"]
+    assert converter.restore_text(cleaned, edits) == text
+    # Ordinary parentheses, part numbers and measurements are left alone.
+    keep = "4 x M3 x 16 (heads sunk); the DT04-12PA (TE drawing); a D-shaped hole; 12 V (Class 2)."
+    assert converter.clean_text(keep) == (keep, [])
+    # A code no rule covers stops the conversion rather than reach a visitor.
+    with pytest.raises(ValueError, match="no rule covers"):
+        converter.clean_text("as decided in D42 last week")
+    # Planted: with the rules removed, the committed recipe's codes are caught.
+    rules = converter.TEXT_RULES
+    try:
+        converter.TEXT_RULES = ()
+        with pytest.raises(ValueError, match="no rule covers"):
+            converter.clean_text("go together on the bench (D48): 8 x M3")
+    finally:
+        converter.TEXT_RULES = rules
+    # A tampered edit list does not restore.
+    with pytest.raises(ValueError, match="does not match"):
+        converter.restore_text(cleaned, [{**edits[-1], "at": edits[-1]["at"] + 3}])
 
 
 def test_neutral_pose_keeps_parts_of_different_groups_together():
-    view = json.loads((BUNDLE / "view.json").read_bytes())
-    bounds = {p["name"]: p["bounds_mm"] for p in view["parts"]}
+    model = json.loads((BUNDLE / "model.json").read_bytes())
+    bounds = {p["name"]: p["bounds_mm"] for p in model["parts"]}
     assert misaligned(bounds) == []
     # The mounting face is z = 0: the pan base stands on it.
     assert abs(bounds["pan_base"][2]) < 0.01
@@ -136,8 +171,8 @@ def test_converter_translates_each_group_and_leaves_out_unused_parts(tmp_path, s
     out = tmp_path / "out"
     out.mkdir()
     receipt = converter.convert(tmp_path / "repo", out)
-    view = json.loads((out / "view.json").read_bytes())
-    lows = {p["name"]: [round(v, 3) for v in p["bounds_mm"][:3]] for p in view["parts"]}
+    model = json.loads((out / "model.json").read_bytes())
+    lows = {p["name"]: [round(v, 3) for v in p["bounds_mm"][:3]] for p in model["parts"]}
     assert lows["base_part"] == [0.0, 0.0, 0.0]                  # box frame, less the pan pivot
     assert lows["pan_part"] == [0.0, 0.0, 0.0]                   # already relative to the pan pivot
     assert lows["tilt_part"] == [0.0, 0.0, 140.0]                # plus the tilt pivot
@@ -149,12 +184,13 @@ def test_converter_translates_each_group_and_leaves_out_unused_parts(tmp_path, s
     assert guide["steps"][1]["offsets_mm"] == {"pan_part": [0.0, -5.0, 0.0]}        # a vector is kept
     assert guide["steps"][1]["parts"] == ["base_part", "pan_part"] and guide["steps"][1]["requires"] == ["step-01"]
     assert [s["subassembly"] for s in guide["steps"]] == ["one", "one", "one", "two", "two"]
-    assert sorted(receipt["artifacts"]) == sorted(["LICENSE.txt", "guide.json", "view.json", "one/README.md", "two/README.md",
-        "one/base_part.stl", "one/pan_part.stl", "one/tilt_part.stl", "two/wheel_part.stl", "two/pinion_part.stl"])
-    # Triangles and normals unchanged: header, count and the first normal are the source's; only vertices move.
-    source = (tmp_path / "repo/hardware/exports/sim/turret_box/tilt_part.stl").read_bytes()
-    mesh = (out / "one/tilt_part.stl").read_bytes()
-    assert mesh[:96] == source[:96] and len(mesh) == len(source) and mesh != source
+    assert sorted(receipt["artifacts"]) == ["LICENSE.txt", "guide.json", "model.bin", "model.json"]
+    assert guide["model"]["file"] == "model.json" and model["schema"] == "cad-agent-model/1"
+    # The packed meshes decode to the translated vertices (16-bit steps across the box: within 0.01 mm here).
+    from cadagent.publish.view import unpack_model
+    vertices, _ = unpack_model(model, (out / "model.bin").read_bytes())[[p["name"] for p in model["parts"]].index("tilt_part")]
+    assert abs(vertices[:, 2].min() - 140.0) < 0.01
+    assert set(receipt["meshes"]) == {"base_part", "pan_part", "tilt_part", "wheel_part", "pinion_part"}
 
 
 def test_converter_refuses_unknown_or_repeated_parts(tmp_path, small):

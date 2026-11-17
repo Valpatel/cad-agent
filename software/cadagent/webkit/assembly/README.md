@@ -24,6 +24,8 @@ its snapshot names an ID, revision, `released` or `wip` status and exact source 
 instance identities, not catalogue keys. Steps list complete visible membership and highlighted new instances,
 authored `offsets_mm`, plain instruction `text`, an optional hash-bound poster and CAD camera direction. A step
 may require earlier step IDs. Subassemblies are named visibility sets, not geometric rigid-body declarations.
+The bound model may instead be a packed `cad-agent-model/1` from `cadagent.publish.view.pack_view`: one
+hash-bound binary carries every mesh (an assembly plan still needs per-part STL hashes).
 An optional plain-text `source.qualification` states what the guide is and is not; the reader shows it under the
 version line.
 

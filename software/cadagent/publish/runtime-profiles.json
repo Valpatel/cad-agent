@@ -14,7 +14,7 @@
             "assembly/playback.js",
             "model/viewer.js"
           ],
-          "sha256": "37f195fa9c5a6dc945f6acf2be129aef841e0c5ffaad2525a2d42b86b5b0a1e6"
+          "sha256": "4028c17a333b31504888e6123e9e2f12782760ec167f88e8b0f50c80936da394"
         },
         "assembly/playback.js": {
           "requires": [],
@@ -23,6 +23,14 @@
         "files/file-geometry.js": {
           "requires": [],
           "sha256": "1f503af4149f96624ecaba68043ea44eaaa68503988646c5139edb482ab922fd"
+        },
+        "model/model.js": {
+          "requires": [
+            "assembly/playback.js",
+            "assembly/guide.js",
+            "vendor/three/three.module.min.js"
+          ],
+          "sha256": "42a17fd2a2384807233683f01b988e7e98ab52c438726f5eebc3baa7e6e41aec"
         },
         "model/stage.js": {
           "requires": [
@@ -40,7 +48,7 @@
             "vendor/three/three.module.min.js",
             "ui/appnav.js"
           ],
-          "sha256": "054c3cc1f82cbdcf90ece1a07edbdc514949b1159458f00362b85a3f05e44ecb"
+          "sha256": "dbf71fb963c56334f5eb214676eb89dd58089d3005910205a87376de9c053a3a"
         },
         "model/viewer.js": {
           "requires": [
@@ -50,9 +58,10 @@
             "model/stage.js",
             "ui/panel.js",
             "assembly/guide.js",
-            "files/file-geometry.js"
+            "files/file-geometry.js",
+            "model/model.js"
           ],
-          "sha256": "2c1f78e0ff16266ae3c6e8171433d505143637a8c339e4dd33b67c843cc04132"
+          "sha256": "7d16b34671951c0ffa69f202783419afaf5c0b0fada49ace55fe1c7062a7041b"
         },
         "package.json": {
           "requires": [],

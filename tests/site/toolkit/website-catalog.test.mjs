@@ -309,7 +309,7 @@ test('Toolkit working-example cards resolve to published local pages and complet
   const featured='kit/assembly/examples/gyropup-turret';
   const guide=await json(`${featured}/guide.json`),view=await json(`${featured}/${guide.model.file}`);
   assert.ok(!existsSync(path.join(out,'web/toolkit/assembly')),'the synthetic fixture is not published for visitors');
-  for(const binding of [guide.model,...view.parts]) {
+  for(const binding of [guide.model,{file:view.bin,sha256:view.sha256}]) {
     const bytes=await readFile(path.join(out,featured,binding.file));
     assert.equal(createHash('sha256').update(bytes).digest('hex'),binding.sha256,binding.file);
   }

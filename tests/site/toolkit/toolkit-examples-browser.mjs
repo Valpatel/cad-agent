@@ -1,4 +1,21 @@
 /** Real capability cards and their existing viewer/calculator consumers; reuse the suite's error recorder. */
+/** The featured build guide (#811) on step 11: Gyropup's turret under a real source revision, every part its packed
+ * model binds, the barrel drawn back along its way in, earlier parts ghosted and the step's new parts solid. */
+const featuredGuideProblems=page=>page.evaluate(async()=>{
+  const problems=[],g=window.__guide.guide,v=window.__viewer,state=v.getState();
+  const model=await (await fetch(new URL(g.model.file,window.__guide.guideUrl))).json();
+  if(!/^gyropup-turret-/.test(g.snapshot.id)||!/^[0-9a-f]{40}$/.test(g.snapshot.source_commit)||g.snapshot.source_commit==='1'.repeat(40))problems.push('the reader shows something that is not the featured Gyropup turret guide');
+  if(JSON.stringify(v.parts.map(p=>p.name).sort())!==JSON.stringify(model.parts.map(p=>p.name).sort()))problems.push('the reader did not load every part the model binds');
+  if(!(state.offsets_mm.barrel||[0,0,0]).some(n=>n!==0))problems.push('step 11 does not draw the barrel back along its way in');
+  const step=g.steps.find(s=>s.id==='step-11'),ghost=p=>p.mesh.material.transparent&&p.mesh.material.opacity<1;
+  for(const p of v.parts.filter(p=>p.mesh.visible)){
+    const isNew=step.highlight.includes(p.name);
+    if(isNew&&ghost(p))problems.push(`new part ${p.name} is ghosted`);
+    if(!isNew&&!ghost(p)){problems.push(`earlier part ${p.name} is not ghosted`);break;}
+  }
+  return problems;
+});
+
 export async function toolkitExampleChecks({open,fail}) {
   const ids=['scada-elements','scada-simulations','models','robot-replay','files','assembly','mechanisms','calculators'];
   for(const width of [320,1366,1920,3440]) for(const color of ['light','dark']) for(const js of [true,false]) {
@@ -122,14 +139,19 @@ export async function toolkitExampleChecks({open,fail}) {
         if(!await page.getByRole('combobox',{name:'STL units',exact:true}).isVisible())fail(where,'STL units control is missing');
       } else if(id==='assembly') {
         await page.waitForFunction(()=>document.body.dataset.ready==='1'&&window.__viewer?.stage.renderer.info.render.triangles>0);
-        // The featured guide (#811): Gyropup's turret, every mesh its model binds, under its real source revision.
-        const before=await page.evaluate(async()=>{const view=await (await fetch(new URL(window.__guide.guide.model.file,window.__guide.guideUrl))).json();
-          return {parts:window.__viewer.parts.map(p=>p.name).sort(),bound:view.parts.map(p=>p.name).sort(),barrel:window.__viewer.parts.find(p=>p.name==='barrel').mesh.position.toArray(),revision:window.__guide.guide.snapshot.source_commit};});
-        if(JSON.stringify(before.parts)!==JSON.stringify(before.bound)||before.parts.length<5||!/^[0-9a-f]{40}$/.test(before.revision)||before.revision==='1'.repeat(40))fail(where,'featured guide identity or mesh closure changed');
         await page.getByRole('combobox',{name:'Instruction step',exact:true}).selectOption('step-11');
         await page.waitForFunction(()=>window.__guide.controller.current==='step-11');
-        const after=await page.evaluate(()=>window.__viewer.parts.find(p=>p.name==='barrel').mesh.position.toArray());
-        if(JSON.stringify(after)===JSON.stringify(before.barrel))fail(where,'instruction changed without drawing the barrel back along its way in');
+        for(const problem of await featuredGuideProblems(page))fail(where,problem);
+        // Planted controls, once: a wrong guide identity and a scene without ghosting must each be reported.
+        if(width===1366&&color==='light') {
+          const planted=async(label,plant,undo,pattern)=>{await page.evaluate(plant);const found=await featuredGuideProblems(page);await page.evaluate(undo);
+            if(!found.some(p=>pattern.test(p)))fail(where,`planted ${label} was not caught (${found.join('; ')||'no problems'})`);};
+          await planted('wrong guide id',()=>{window.__planted=window.__guide.guide.snapshot.id;window.__guide.guide.snapshot.id='serial-bench';},
+            ()=>{window.__guide.guide.snapshot.id=window.__planted;},/not the featured Gyropup turret guide/);
+          await planted('missing ghosting',()=>window.__viewer.applyState({...window.__viewer.getState(),mode:'solid'}),
+            ()=>window.__viewer.applyState({...window.__viewer.getState(),mode:'ghost'}),/not ghosted/);
+          if((await featuredGuideProblems(page)).length)fail(where,'the planted faults were not undone');
+        }
         await page.getByRole('button',{name:'Assembled',exact:true}).click();
         if(await page.evaluate(()=>window.__guide.controller.current!==null||Object.values(window.__viewer.getState().offsets_mm).some(v=>v.some(n=>n!==0))))fail(where,'Assembled did not reset the authored motion');
       } else if(id==='mechanisms') {

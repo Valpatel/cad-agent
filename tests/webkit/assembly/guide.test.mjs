@@ -131,3 +131,23 @@ test('per-instance appearances are optional, visible-only and cleared by a new i
   assert.throws(() => validateState({ ...stepState(guide, 'base'), partModes: { 'screw#1': 'transparent' } }, ['base', 'screw#1', 'screw#2']));
   assert.deepEqual(stepState(guide, 'screws').partModes, {});
 });
+
+test('a guide may bind a packed cad-agent-model/1; every packed field is checked (#811)', async () => {
+  const folder = new URL('../../../software/cadagent/webkit/assembly/examples/gyropup-turret/', import.meta.url);
+  const guide = JSON.parse(await readFile(new URL('guide.json', folder))), modelBytes = await readFile(new URL('model.json', folder));
+  const model = JSON.parse(modelBytes);
+  assert.equal(await sha256(modelBytes), guide.model.sha256);
+  assert.equal(validateGuide(guide, model), guide);
+  assert.equal(await sha256(await readFile(new URL(model.bin, folder))), model.sha256);
+  const planted = [m => m.units = 'm', m => m.sha256 = 'bad', m => m.bin = 'model.bin?v=2', m => m.bin = '/abs/model.bin', m => m.bin = 'https://x.invalid/m.bin',
+    m => m.quant = 0, m => m.encoding = 'brotli', m => m.box_mm = [0, 0, 0, -1, 0, 0], m => m.parts[0].index_bits = 8,
+    m => m.parts[0].offset = -1, m => m.parts.push(structuredClone(m.parts[0])), m => m.parts[0].color = 'red',
+    m => m.parts[0].bounds_mm[3] = -1e10];
+  for (const [i, mutate] of planted.entries()) {
+    const bad = structuredClone(model); mutate(bad);
+    assert.throws(() => validateGuide(guide, bad), undefined, `planted packed fault ${i} is refused`);
+  }
+  // A step naming a part the packed model lacks is refused like any other unknown instance.
+  const missing = structuredClone(model); missing.parts = missing.parts.filter(p => p.name !== 'barrel');
+  assert.throws(() => validateGuide(guide, missing), /unknown, duplicate or missing/);
+});

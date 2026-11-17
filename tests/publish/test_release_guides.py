@@ -366,3 +366,22 @@ def test_source_qualification_is_plain_text_as_the_reader_shows_it(tmp_path, val
     else:
         with pytest.raises(CadConfigError, match="qualification"):
             collect(tmp_path, path)
+
+
+def test_packed_model_guide_binds_its_one_binary(tmp_path):
+    """#811: a guide may bind a pack_view model (cad-agent-model/1); its binary's hash binds every mesh."""
+    example = Path(__file__).resolve().parents[2] / "software/cadagent/webkit/assembly/examples/gyropup-turret"
+    root = tmp_path / "project"
+    shutil.copytree(example, root / "guide")
+    bundle, = collect(root, root / "guide/guide.json")
+    assert set(bundle.files) == {"guide/guide.json", "guide/model.json", "guide/model.bin"}
+    # Planted: a changed binary, and a plan beside a packed model, are refused.
+    (root / "guide/model.bin").write_bytes(b"\x1f\x8b planted")
+    with pytest.raises(CadConfigError, match="hash mismatch"):
+        collect(root, root / "guide/guide.json")
+    shutil.copy(example / "model.bin", root / "guide/model.bin")
+    guide = json.loads((root / "guide/guide.json").read_text())
+    guide["assembly_plan"] = {"file": "plan.json", "sha256": "0" * 64}
+    (root / "guide/guide.json").write_text(json.dumps(guide))
+    with pytest.raises(CadConfigError, match="per-part mesh hashes"):
+        collect(root, root / "guide/guide.json")

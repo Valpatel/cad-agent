@@ -152,10 +152,18 @@ def collect_guides(root: Path, paths: List[str]) -> List[GuideBundle]:
             raise CadConfigError("assembly guide model must declare mm/z-up and contain 1..2000 parts")
         if view.get("skipped"):
             raise CadConfigError("assembly guide model must not silently skip geometry")
+        # A packed model (pack_view's cad-agent-model/1) binds every mesh through one hashed binary.
+        packed = view.get("schema") == "cad-agent-model/1"
+        if packed:
+            if not isinstance(view.get("sha256"), str) or not _HASH.fullmatch(view["sha256"]):
+                raise CadConfigError("packed assembly guide model needs its binary's sha256")
+            if "assembly_plan" in guide:
+                raise CadConfigError("an assembly plan needs per-part mesh hashes, which a packed model does not carry")
+            capture(model_path.parent, view.get("bin"), view["sha256"])
         names = set()
         for part in parts:
             if (not isinstance(part, dict) or not _text(part.get("name"), 200)
-                    or part["name"] in names or not isinstance(part.get("sha256"), str)):
+                    or part["name"] in names or (not packed and not isinstance(part.get("sha256"), str))):
                 raise CadConfigError("assembly guide model needs unique named instances with sha256")
             bounds = part.get("bounds_mm")
             color = part.get("color")
@@ -168,7 +176,8 @@ def collect_guides(root: Path, paths: List[str]) -> List[GuideBundle]:
                     or (part.get("explode") is not None and not _vector(part["explode"], True))):
                 raise CadConfigError("assembly guide model has invalid bounds or presentation fields")
             names.add(part["name"])
-            capture(model_path.parent, part.get("file"), part["sha256"])
+            if not packed:
+                capture(model_path.parent, part.get("file"), part["sha256"])
         if "assembly_plan" in guide:
             from cadagent.review.dossier.plan import normalize_plan
             plan_binding = guide["assembly_plan"]

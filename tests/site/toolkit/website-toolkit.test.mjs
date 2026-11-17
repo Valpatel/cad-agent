@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {existsSync, readFileSync} from 'node:fs';
+import {existsSync, readFileSync, statSync} from 'node:fs';
 import path from 'node:path';
 import {execFileSync} from 'node:child_process';
 import {createHash} from 'node:crypto';
@@ -166,7 +166,9 @@ test('the build-guide card features the real Gyropup turret guide, closed over i
   const example='software/cadagent/webkit/assembly/examples/gyropup-turret/';
   const guide=read(example+'guide.json'), view=read(example+guide.model.file), receipt=read(example+'receipt.json');
   const sha=file=>createHash('sha256').update(readFileSync(path.join(root,example,file))).digest('hex');
-  for(const binding of [guide.model,...view.parts]) assert.equal(sha(binding.file),binding.sha256,binding.file);
+  assert.equal(view.schema,'cad-agent-model/1','one packed model binds every mesh');
+  for(const binding of [guide.model,{file:view.bin,sha256:view.sha256}]) assert.equal(sha(binding.file),binding.sha256,binding.file);
+  assert.ok(statSync(path.join(root,example,view.bin)).size<512*1024,'the packed turret stays small');
   assert.equal(receipt.license,'MIT'); assert.equal(receipt.project,'Valpatel/gyropup');
   assert.equal(guide.snapshot.source_commit,receipt.revision); assert.match(receipt.revision,/^[0-9a-f]{40}$/);
   assert.notEqual(guide.snapshot.source_commit,'1'.repeat(40),'the synthetic fixture is no longer what visitors see');

@@ -7,9 +7,178 @@
  "committed": "2026-11-11T15:25:14-08:00",
  "generator": {
   "path": "docs/examples/build-guide/gyropup_turret.py",
-  "sha256": "89e99a88291637982b17648f33a710c38936bf012baac05340988f68a7b1e472"
+  "sha256": "8e4d074be7769f2c2f7f9d4a1bc95e9fb842773000a6b1980d1f87c8da076280"
  },
- "method": "Gyropup's literal STEPS (titles, parts, insertion offsets, camera directions and instruction text) copied in order; each scene mesh translated from its group's frame into the neutral pose (zero pan and tilt, mounting face at z = 0), triangles and normals unchanged. No CAD is imported, rebuilt or simplified, and no vendor source CAD is read or shipped: the scene's bought parts are Gyropup's own envelope meshes.",
+ "method": "Gyropup's literal STEPS (titles, parts, insertion offsets, camera directions and instruction text) copied in order; each scene mesh translated from its group's frame into the neutral pose (zero pan and tilt, mounting face at z = 0), triangles unchanged, then packed by cad-agent's pack_view into one cad-agent-model/1 model (welded, quantised to 16-bit steps across the turret's box). No CAD is imported, rebuilt or simplified, and no vendor source CAD is read or shipped: the scene's bought parts are Gyropup's own envelope meshes. Instruction text: the text_rules below, every edit listed under text_edits with its position; undoing them restores the original, whose SHA-256 is recorded.",
+ "text_rules": [
+  {
+   "rule": "code-only-parenthesis",
+   "pattern": " ?\\((?:D\\d+|v\\d+)\\)",
+   "replacement": "",
+   "why": "A parenthesis holding only a design-log code or version tag, such as ' (D48)' or ' (v1)', is dropped."
+  },
+  {
+   "rule": "code-ending-parenthesis",
+   "pattern": ", ?(?:D\\d+|v\\d+)(?=\\))",
+   "replacement": "",
+   "why": "A code that ends a parenthesised list, such as ', D42' in '(no bumper on the bench, D42)', is dropped."
+  },
+  {
+   "rule": "repository-path",
+   "pattern": "(?<![\\w/'])(?=docs/[\\w./-]+\\.md)",
+   "replacement": "Gyropup's ",
+   "why": "A path into Gyropup's repository, such as 'docs/turret-wiring.md', is named as Gyropup's."
+  }
+ ],
+ "text_edits": {
+  "step-01": {
+   "original_sha256": "e5a4c1d2abdf704d08b077578f645438f3aef3c821482c92b67c4334f2d56857",
+   "edits": [
+    {
+     "rule": "code-ending-parenthesis",
+     "at": 252,
+     "old": ", D42",
+     "new": ""
+    }
+   ]
+  },
+  "step-02": {
+   "original_sha256": "c416515ca89847769cf0e7066788f60c4c34678c9aa98f7d1d1fa009a472fe21",
+   "edits": []
+  },
+  "step-03": {
+   "original_sha256": "94f0004c67b74c1c1c6d8e42818f34d827e407bd64f6bae1da2a60048ea09191",
+   "edits": [
+    {
+     "rule": "repository-path",
+     "at": 408,
+     "old": "",
+     "new": "Gyropup's "
+    }
+   ]
+  },
+  "step-04": {
+   "original_sha256": "7fd2a996a11f35ed0c35c995974ef1facf9e0cfaca791ce07feced7480cc9e9b",
+   "edits": []
+  },
+  "step-05": {
+   "original_sha256": "301d58e084d4d79e6a2ee9ac7de2a3ff9f73a453b4204eb3eaceb59efb77fca2",
+   "edits": []
+  },
+  "step-06": {
+   "original_sha256": "cd7a33157e6759622cec28a82176384255b7a9bcc154156d4142a09d178e1793",
+   "edits": []
+  },
+  "step-07": {
+   "original_sha256": "3f9772438cf81d9a4f830ba6d07a8c315141936aec8b5a86d801cfcf0f220eb8",
+   "edits": []
+  },
+  "step-08": {
+   "original_sha256": "61cb023a0b2b9e90f515c8d891d93fb0197d5d4e877f42d4b0a8b1fb265266fa",
+   "edits": [
+    {
+     "rule": "code-only-parenthesis",
+     "at": 82,
+     "old": " (D48)",
+     "new": ""
+    }
+   ]
+  },
+  "step-09": {
+   "original_sha256": "21bd14077cbdaae4769cfa46e905dc6daa6d9ec33e5d0e077b1a129a943fe411",
+   "edits": []
+  },
+  "step-10": {
+   "original_sha256": "fa8d9a8769c3bab064bd2a0d56d99ed305784e2d836f4de564e0582644453ac1",
+   "edits": [
+    {
+     "rule": "repository-path",
+     "at": 1131,
+     "old": "",
+     "new": "Gyropup's "
+    }
+   ]
+  },
+  "step-11": {
+   "original_sha256": "5fe5417cde37a1981ec93f9816ba0ad2f3a4281063e2ee0c26b8c45ad7f646ef",
+   "edits": [
+    {
+     "rule": "code-only-parenthesis",
+     "at": 277,
+     "old": " (v1)",
+     "new": ""
+    }
+   ]
+  },
+  "step-12": {
+   "original_sha256": "8f5a0ff45b105d735a051fd694ee98af621b9f5e6f823c732a2710b0d1166e03",
+   "edits": [
+    {
+     "rule": "code-only-parenthesis",
+     "at": 527,
+     "old": " (v1)",
+     "new": ""
+    }
+   ]
+  }
+ },
+ "meshes": {
+  "pan_base": "e915af5bf2d9103b28cf6eb07257bf927f3121d0fef3ef5c27e92c05b9f2d371",
+  "pan_servo": "c34f8149d4a676ce437b4531208aa2f7b5d0703f9e7d1cfe748086c3a8516a74",
+  "pan_pinion": "545744e3e2838459145f0a16806a30c1cb542b0c7e0f16dc405fe6a8189fd377",
+  "dt_receptacle": "ca61fb3f0cc6713213e2bfeb417142d4e72ec5a016b66d044729439e89da3305",
+  "base_board_carrier": "0138180326512697cc43d619b509c72e9e19628b8ff78bae174937575e08ccd9",
+  "base_board": "4b8fff6ca2a8e3dee495cc8bdb76b78b7728c404ae5d416e12a5bc45ad757987",
+  "base_board_inserts": "d05f7f54b6b153d6de1f88106c1cf75ba9284d7f88b3e545aaa891d3dc8c9aac",
+  "base_board_screws": "ebb265c0e4dbc84bb7f93d9657f882c6725b17ab05f10db2ce58ae7c725afe86",
+  "base_carrier_inserts": "8ac0095e0394366789e0fb6de63245edcb9013951f7282c3f256ff978525aacd",
+  "base_carrier_screws": "e39554877420f1e2102b705fded617cf92bc9ef519d85ef2a45dab8f4acd3066",
+  "index_magnet": "0bb6dcaa0c9768c55889059d994794c308063020ed8875c974679845b2405217",
+  "pan_bearing": "fb374e7898e00d2b500c810c9cb99bee4e2f80669d2416c67b5decf134dcd9d7",
+  "pan_bearing_inner": "5781f47a620e882dbca51662ef8be79923b37b425e2ede04054e0b11b76e08db",
+  "pan_clamp": "8e73e488b07f5350eeb62862b4ff56a6279dfb6204e9927486a5605b3baf565a",
+  "pan_ring": "b8f3a1da167be501326ad764f364411fa1f1af345b05f163ac8aeb5d84185ec1",
+  "hall_switch": "7080d0d027e32403a036b13a2aceafb31fd228a7bf2240c1e736a771d931d95a",
+  "pan_spacer": "767862d0b1c5457447451b487f87893f70fd6d92b5c08a690c28ca95db81c3f0",
+  "circlip_50": "9b86035e26d244e1cce1a3ed2d8dee00ef9a19f38f207ea13f24f40bd94da27e",
+  "ring_driver": "7fecea689680baaef9812fb0dbc98438600f5f4096dc5e3d455c7c82b4c52e3e",
+  "slip_ring": "11bf7be79475414346602c682deed2629d946d95d0d4b129306b79cb4034da1e",
+  "slip_ring_rotor": "9278231204a19898ee2b61958537ea1a32613560a7666a81cd836fc424d04037",
+  "ring_coupling": "1c56b19b40c8264e3251d1130c6d832b1100623dc5fbf31b3948972075eb52f5",
+  "ring_carrier": "5d7393bdcfc733ea1b182c40778523ebb9e29a7885a7f0f7dcbbad2cef56c83d",
+  "tilt_yoke": "b2604c2bd46b0dfd7dbe09adc4648082b82802d8d9fd5c7cee3f2722440bea9b",
+  "ring_leads_rotor": "69cb66d827479d8ed4992f5af4c2362901415c6ceeda31789dc7e717fe4a9147",
+  "board_bay": "667e34b614bad21f56378680f3ab7e60350056394fc1002fb330d4be2e901282",
+  "turret_board": "7f940e6d05216891baed76704919b23da7bdbbd5c323dcbd732e80932eece323",
+  "tilt_servo": "12a10874ac27721475d08ba9bc6463fd07f74d7bc506a84a2c0d35a0e45adca8",
+  "tilt_bearing": "9bb667ae3e0ddff782cfb196e31dc97614ac69709d1d3120882d58c4f14330a0",
+  "tilt_bearing_inner": "ec7d45a95d5961ef635009645982b33756a6e776e361e8b9c57cff95239cf159",
+  "cradle": "7fd34219aeea2bc0879e13069074e5d19359eb68dbfb9207aaf2f5e50b641789",
+  "cradle_plate_l": "f4e91c69d68c42f6c54f3d49ae01ef6126026345a7f6e85145b7ea4e0e85ec70",
+  "cradle_plate_r": "e8297bee654c00b7099bce62df53dcc888105972054f1f09c3ad70f863e67f32",
+  "stop_lug": "834af9b9e14db6ad5ffe37d6de987f5e3247ea745cef1828f4fe193111c6afef",
+  "horn_boss": "6dbad9b7400d2bbf56b4a7b022ff89d2f1df13cb2a2a275605b184f4f93a5902",
+  "pivot_spacer": "917880de64aa1c565494c5c707b8210646dc6c4efc1069af7c0110e7498c8332",
+  "shoulder_screw": "c88b92fd1e77042e2fb043d828fefefa7b7550232569e73b603317012f25245c",
+  "laser_mount": "0d31bdff43b5afad3ed9ee862953cce85563f11678499a36c67899015464b50b",
+  "laser": "7163fe1ceaf8e98ad377c992fc6f2cd8eb7dabdccdc4e3bb628e8ac8c7494cee",
+  "cartridge_body": "cdf4b0cbaf59f40d7b1c6153879fddc7c4a622d98829a9ed412436e0746a4a5e",
+  "feed_motor": "4b935314d22fad9cb08df1d88f35723c078c210fe32680491fc9eb80e5a81e2b",
+  "dial": "f247fe42e9fad751a3c66183e4e2fbbd9f657cd43e02d24c6cd4ebdcd29fed35",
+  "flywheel_motor_l": "b4c49bdf392a50917cd1a6b6fb4bd4e20735653791cdd0b01ebbffae3494ee59",
+  "flywheel_motor_r": "566ad3a7104612da94263b364757374e9aacc824d7b38902679537ed54e97c61",
+  "flywheel": "fd17b8319c89440e348f55551a82c5c713780d7e1ea017161c2a3d293504be52",
+  "flywheel_m": "0840aa84ae1049816e731af880cf3367512ba6609e82a0eee27a91322b4be4b1",
+  "flywheel_tyre": "bd6886b48bc2f373236087004d1e16fe5dcbe8bfc26691e1c05bf0141300367e",
+  "flywheel_tyre_m": "7bfa59673201256321a7b4e3ecb9239fe823f946c7880affae5eeb09403e74e2",
+  "cartridge_board": "6fe2bde95c3c82635e12c06171d9633d13e284bb7501a61831992820c33a7122",
+  "esc_l": "681bb5a2a59734d4e371706aadc17ee90f8d3f066df716dfff4722f97aa91f38",
+  "esc_r": "ca0e37fee8378729c3f85a45afc07ac678758743c2cdf25a7c70296b6291ff17",
+  "barrel": "f54e430e8a2b3a9cc8ecd8de1d8db76509799230542bf79ffa489cec52b9899e",
+  "hopper": "89ed2d919d32ad1045eef3adf4b7f234799ad8e39061440d48268c0fb315a659",
+  "hopper_lid": "1a01c8cbc59b548a00e7b060111c54e145b2205c25566c05b7704f385deb0816",
+  "ct_thumbscrew": "36e8045a11d9fad832e3b66d605693e413f2fdbddeb9457e3d3c9c53d3911c37"
+ },
  "steps": 12,
  "parts": 55,
  "excluded": {
@@ -87,66 +256,8 @@
  },
  "artifacts": {
   "LICENSE.txt": "08fcd91542828bfa19db31bc44d0479d3bf7867dadb383b7b19439a2b5597567",
-  "base/README.md": "6b71fb33e177ad28fbfb5af5d04bbfa6af59ae2b87ce96fd32706d5b9d42e21b",
-  "base/base_board.stl": "4b8fff6ca2a8e3dee495cc8bdb76b78b7728c404ae5d416e12a5bc45ad757987",
-  "base/base_board_carrier.stl": "0138180326512697cc43d619b509c72e9e19628b8ff78bae174937575e08ccd9",
-  "base/base_board_inserts.stl": "d05f7f54b6b153d6de1f88106c1cf75ba9284d7f88b3e545aaa891d3dc8c9aac",
-  "base/base_board_screws.stl": "ebb265c0e4dbc84bb7f93d9657f882c6725b17ab05f10db2ce58ae7c725afe86",
-  "base/base_carrier_inserts.stl": "8ac0095e0394366789e0fb6de63245edcb9013951f7282c3f256ff978525aacd",
-  "base/base_carrier_screws.stl": "e39554877420f1e2102b705fded617cf92bc9ef519d85ef2a45dab8f4acd3066",
-  "base/dt_receptacle.stl": "ca61fb3f0cc6713213e2bfeb417142d4e72ec5a016b66d044729439e89da3305",
-  "base/index_magnet.stl": "0bb6dcaa0c9768c55889059d994794c308063020ed8875c974679845b2405217",
-  "base/pan_base.stl": "e915af5bf2d9103b28cf6eb07257bf927f3121d0fef3ef5c27e92c05b9f2d371",
-  "base/pan_pinion.stl": "545744e3e2838459145f0a16806a30c1cb542b0c7e0f16dc405fe6a8189fd377",
-  "base/pan_servo.stl": "c34f8149d4a676ce437b4531208aa2f7b5d0703f9e7d1cfe748086c3a8516a74",
-  "cartridge/README.md": "a5cb502368fb26c2394ea61f12fdd42c5883e4b26f386f313445dd9d60753a29",
-  "cartridge/barrel.stl": "f54e430e8a2b3a9cc8ecd8de1d8db76509799230542bf79ffa489cec52b9899e",
-  "cartridge/cartridge_board.stl": "6fe2bde95c3c82635e12c06171d9633d13e284bb7501a61831992820c33a7122",
-  "cartridge/cartridge_body.stl": "cdf4b0cbaf59f40d7b1c6153879fddc7c4a622d98829a9ed412436e0746a4a5e",
-  "cartridge/ct_thumbscrew.stl": "36e8045a11d9fad832e3b66d605693e413f2fdbddeb9457e3d3c9c53d3911c37",
-  "cartridge/dial.stl": "f247fe42e9fad751a3c66183e4e2fbbd9f657cd43e02d24c6cd4ebdcd29fed35",
-  "cartridge/esc_l.stl": "681bb5a2a59734d4e371706aadc17ee90f8d3f066df716dfff4722f97aa91f38",
-  "cartridge/esc_r.stl": "ca0e37fee8378729c3f85a45afc07ac678758743c2cdf25a7c70296b6291ff17",
-  "cartridge/feed_motor.stl": "4b935314d22fad9cb08df1d88f35723c078c210fe32680491fc9eb80e5a81e2b",
-  "cartridge/flywheel.stl": "fd17b8319c89440e348f55551a82c5c713780d7e1ea017161c2a3d293504be52",
-  "cartridge/flywheel_m.stl": "0840aa84ae1049816e731af880cf3367512ba6609e82a0eee27a91322b4be4b1",
-  "cartridge/flywheel_motor_l.stl": "b4c49bdf392a50917cd1a6b6fb4bd4e20735653791cdd0b01ebbffae3494ee59",
-  "cartridge/flywheel_motor_r.stl": "566ad3a7104612da94263b364757374e9aacc824d7b38902679537ed54e97c61",
-  "cartridge/flywheel_tyre.stl": "bd6886b48bc2f373236087004d1e16fe5dcbe8bfc26691e1c05bf0141300367e",
-  "cartridge/flywheel_tyre_m.stl": "7bfa59673201256321a7b4e3ecb9239fe823f946c7880affae5eeb09403e74e2",
-  "cartridge/hopper.stl": "89ed2d919d32ad1045eef3adf4b7f234799ad8e39061440d48268c0fb315a659",
-  "cartridge/hopper_lid.stl": "1a01c8cbc59b548a00e7b060111c54e145b2205c25566c05b7704f385deb0816",
-  "guide.json": "94db3b52b7e0b385b46582962d2b68f4dbace65f32381e4842b498f9e6ceb0aa",
-  "tilt/README.md": "c23cbd18e1645f3619c4f12df3e660688b82c17966c2d94c520820f42931043e",
-  "tilt/board_bay.stl": "667e34b614bad21f56378680f3ab7e60350056394fc1002fb330d4be2e901282",
-  "tilt/cradle.stl": "7fd34219aeea2bc0879e13069074e5d19359eb68dbfb9207aaf2f5e50b641789",
-  "tilt/cradle_plate_l.stl": "f4e91c69d68c42f6c54f3d49ae01ef6126026345a7f6e85145b7ea4e0e85ec70",
-  "tilt/cradle_plate_r.stl": "e8297bee654c00b7099bce62df53dcc888105972054f1f09c3ad70f863e67f32",
-  "tilt/horn_boss.stl": "6dbad9b7400d2bbf56b4a7b022ff89d2f1df13cb2a2a275605b184f4f93a5902",
-  "tilt/laser.stl": "7163fe1ceaf8e98ad377c992fc6f2cd8eb7dabdccdc4e3bb628e8ac8c7494cee",
-  "tilt/laser_mount.stl": "0d31bdff43b5afad3ed9ee862953cce85563f11678499a36c67899015464b50b",
-  "tilt/pivot_spacer.stl": "917880de64aa1c565494c5c707b8210646dc6c4efc1069af7c0110e7498c8332",
-  "tilt/ring_leads_rotor.stl": "69cb66d827479d8ed4992f5af4c2362901415c6ceeda31789dc7e717fe4a9147",
-  "tilt/shoulder_screw.stl": "c88b92fd1e77042e2fb043d828fefefa7b7550232569e73b603317012f25245c",
-  "tilt/stop_lug.stl": "834af9b9e14db6ad5ffe37d6de987f5e3247ea745cef1828f4fe193111c6afef",
-  "tilt/tilt_bearing.stl": "9bb667ae3e0ddff782cfb196e31dc97614ac69709d1d3120882d58c4f14330a0",
-  "tilt/tilt_bearing_inner.stl": "ec7d45a95d5961ef635009645982b33756a6e776e361e8b9c57cff95239cf159",
-  "tilt/tilt_servo.stl": "12a10874ac27721475d08ba9bc6463fd07f74d7bc506a84a2c0d35a0e45adca8",
-  "tilt/tilt_yoke.stl": "b2604c2bd46b0dfd7dbe09adc4648082b82802d8d9fd5c7cee3f2722440bea9b",
-  "tilt/turret_board.stl": "7f940e6d05216891baed76704919b23da7bdbbd5c323dcbd732e80932eece323",
-  "turntable/README.md": "9f7cda537e3303e3827c2d84dd2c93cc576dd898d783f5baee059c7de1420dfb",
-  "turntable/circlip_50.stl": "9b86035e26d244e1cce1a3ed2d8dee00ef9a19f38f207ea13f24f40bd94da27e",
-  "turntable/hall_switch.stl": "7080d0d027e32403a036b13a2aceafb31fd228a7bf2240c1e736a771d931d95a",
-  "turntable/pan_bearing.stl": "fb374e7898e00d2b500c810c9cb99bee4e2f80669d2416c67b5decf134dcd9d7",
-  "turntable/pan_bearing_inner.stl": "5781f47a620e882dbca51662ef8be79923b37b425e2ede04054e0b11b76e08db",
-  "turntable/pan_clamp.stl": "8e73e488b07f5350eeb62862b4ff56a6279dfb6204e9927486a5605b3baf565a",
-  "turntable/pan_ring.stl": "b8f3a1da167be501326ad764f364411fa1f1af345b05f163ac8aeb5d84185ec1",
-  "turntable/pan_spacer.stl": "767862d0b1c5457447451b487f87893f70fd6d92b5c08a690c28ca95db81c3f0",
-  "turntable/ring_carrier.stl": "5d7393bdcfc733ea1b182c40778523ebb9e29a7885a7f0f7dcbbad2cef56c83d",
-  "turntable/ring_coupling.stl": "1c56b19b40c8264e3251d1130c6d832b1100623dc5fbf31b3948972075eb52f5",
-  "turntable/ring_driver.stl": "7fecea689680baaef9812fb0dbc98438600f5f4096dc5e3d455c7c82b4c52e3e",
-  "turntable/slip_ring.stl": "11bf7be79475414346602c682deed2629d946d95d0d4b129306b79cb4034da1e",
-  "turntable/slip_ring_rotor.stl": "9278231204a19898ee2b61958537ea1a32613560a7666a81cd836fc424d04037",
-  "view.json": "0f1ab8ff7f12b2c58e001c398338ae0efd422cd2cee9a867463c6a5fed6a8f9e"
+  "guide.json": "6d6495d9d2953eafba619c27d76814cd7da73b345313423db29a1b56230a2130",
+  "model.bin": "58c31a0d74bf760779b34b6fda334a4b7472d213241611843c421ec8b694575e",
+  "model.json": "0bb171c10c3bd48578a1ca4fa1757817dc0375a9031d396d036533d5bd02f937"
  }
 }

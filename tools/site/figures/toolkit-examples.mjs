@@ -32,7 +32,9 @@ assert.equal(guide.snapshot.status, 'wip', 'The featured guide is a work-in-prog
 assert.equal(guide.snapshot.source_commit, receipt.revision, 'Guide and receipt name the same source revision');
 assert.match(guide.source?.qualification || '', /not a verified build procedure/, 'The guide states what it is not');
 const view = JSON.parse(await bytesAt(`${example}/${guide.model.file}`));
-for (const binding of [guide.model, ...view.parts]) assert.equal(hash(await bytesAt(`${example}/${binding.file}`)), binding.sha256, `Stale binding: ${binding.file}`);
+// A packed model (cad-agent-model/1) binds every mesh through its one binary; an STL manifest binds each file.
+const meshBindings = view.schema === 'cad-agent-model/1' ? [{ file: view.bin, sha256: view.sha256 }] : view.parts;
+for (const binding of [guide.model, ...meshBindings]) assert.equal(hash(await bytesAt(`${example}/${binding.file}`)), binding.sha256, `Stale binding: ${binding.file}`);
 for (const [name, expected] of Object.entries(receipt.artifacts)) assert.equal(hash(await bytesAt(`${example}/${name}`)), expected, `Stale example: ${name}`);
 // What the preview shows: the guide and its model, not the converter's receipt (which also hashes the converter).
 const featured = { path: example, route: exampleRoute, revision: receipt.revision, steps: guide.steps.length, parts: view.parts.length,

@@ -11,10 +11,15 @@ Python literal with `ast.literal_eval`; the file is never imported or executed),
 is written from the same `STEPS`.
 
 Each step keeps Gyropup's title, instruction text, the parts it adds, how far each new part is drawn back along the
-way it goes in (its insertion offset) and the camera direction of Gyropup's own step picture. The meshes keep their
-triangles and normals; each is only translated from its moving group's frame into the turret's neutral pose (zero pan
-and tilt, the turret's mounting face at z = 0). Scene parts that no authored step adds are left out and listed in the
-receipt.
+way it goes in (its insertion offset) and the camera direction of Gyropup's own step picture. Each mesh is only
+translated from its moving group's frame into the turret's neutral pose (zero pan and tilt, the turret's mounting face
+at z = 0), then all are packed into one `cad-agent-model/1` model with cad-agent's `pack_view` (welded and quantised to
+16-bit steps across the turret's box, about 0.004 mm; display geometry, not dimensions). Scene parts that no authored
+step adds are left out and listed in the receipt.
+
+The instruction text is Gyropup's, with three explicit rules applied (TEXT_RULES): its design-log codes (D42, D48) and
+version tags (v1) are dropped and its repository paths are named as Gyropup's. Every edit is recorded in the receipt
+with its position, so the original text can be restored exactly and checked against its recorded SHA-256.
 
 This is presentation of an authored sequence. It does not check that the parts can go together in that order, that
 they fit, or that a tool can reach a fastener; Gyropup is a work-in-progress prototype.
@@ -26,6 +31,7 @@ import ast
 import hashlib
 import json
 import math
+import re
 import shutil
 import struct
 import subprocess
@@ -42,12 +48,24 @@ SCENE = SCENE_DIR + "/manifest.json"
 LICENSE = "LICENSE"
 # The turret's moving groups in the scene (the J501 box and its adapter are a different assembly).
 GROUPS = ("base", "pinion", "pan", "tilt", "dial", "wheel_l", "wheel_r", "flap")
-# Folders for the meshes, one per stage of the build, so no folder holds more than 20 files. The authored recipe has
-# twelve steps; these stages group them for reading and do not change their order.
+# Stages of the build, shown as the guide's subassemblies. The authored recipe has twelve steps; these stages group
+# them for reading and do not change their order.
 STAGES = (("base", "Base", "the pan base, its servo and pinion, the DT12 socket and the base-board module", 1, 3),
           ("turntable", "Turntable", "the pan bearing and clamp, the turntable and the slip ring", 4, 6),
           ("tilt", "Tilt", "the tilt yoke and board bay, the tilt servo and cradle, and the laser", 7, 9),
           ("cartridge", "Cartridge", "the launcher cartridge, the barrel and hopper, and its thumbscrew", 10, 12))
+MODEL = "model"            # pack_view writes model.json and model.bin
+# Gyropup's codes mean nothing to a visitor: D<n> numbers a decision in its design log, v<n> a later prototype version.
+# Each rule: (name, pattern, replacement, why). Applied in order; every match is recorded so the original is restorable.
+CODE = r"(?:D\d+|v\d+)"
+TEXT_RULES = (
+    ("code-only-parenthesis", r" ?\(" + CODE + r"\)", "",
+     "A parenthesis holding only a design-log code or version tag, such as ' (D48)' or ' (v1)', is dropped."),
+    ("code-ending-parenthesis", r", ?" + CODE + r"(?=\))", "",
+     "A code that ends a parenthesised list, such as ', D42' in '(no bumper on the bench, D42)', is dropped."),
+    ("repository-path", r"(?<![\w/'])(?=docs/[\w./-]+\.md)", "Gyropup's ",
+     "A path into Gyropup's repository, such as 'docs/turret-wiring.md', is named as Gyropup's."),
+)
 QUALIFICATION = ("Example sequence from a work-in-progress prototype, not a verified build procedure. A CAD step order "
                  "does not prove the parts can physically be assembled in that order, or that they fit.")
 
@@ -58,6 +76,33 @@ def sha(payload: bytes) -> str:
 
 def encoded(value) -> bytes:
     return (json.dumps(value, ensure_ascii=False, allow_nan=False, indent=1) + "\n").encode()
+
+
+def clean_text(text: str):
+    """(text with TEXT_RULES applied, edits) where each edit is {rule, at, old, new} on the text as it then stood."""
+    edits = []
+    for name, pattern, replacement, _ in TEXT_RULES:
+        out, last = [], 0
+        for match in re.finditer(pattern, text):
+            out.append(text[last:match.start()])
+            edits.append({"rule": name, "at": sum(map(len, out)), "old": match.group(0), "new": replacement})
+            out.append(replacement)
+            last = match.end()
+        text = "".join(out) + text[last:]
+    left = re.findall(r"\b" + CODE + r"\b", text)
+    if left:
+        raise ValueError(f"design-log codes no rule covers: {left}; add an explicit rule")
+    return text, edits
+
+
+def restore_text(text: str, edits) -> str:
+    """The original text from the cleaned one and its recorded edits (undone last first)."""
+    for edit in reversed(edits):
+        at = edit["at"]
+        if text[at:at + len(edit["new"])] != edit["new"]:
+            raise ValueError(f"edit at {at} does not match the text")
+        text = text[:at] + edit["old"] + text[at + len(edit["new"]):]
+    return text
 
 
 def git(checkout: Path, *args, text=True):
@@ -118,32 +163,6 @@ def translate_stl(data: bytes, offset, name: str):
     return bytes(out), [round(v, 4) + 0.0 for v in lo + hi]
 
 
-def stage_readme(stage, parts) -> bytes:
-    folder, title, what, first, last = stage
-    rows = "\n".join(f"| [{p['file'].split('/')[1]}]({p['file'].split('/')[1]}) | {p['title']} | {p['step']} |" for p in parts)
-    return f"""# {title} meshes
-
-The meshes of steps {first} to {last} of the Gyropup turret guide: {what}. Generated by the
-[converter](https://github.com/Valpatel/cad-agent/tree/main/docs/examples/build-guide); edit Gyropup's source, not these files.
-
-```mermaid
-flowchart TD
-  S[Gyropup turret scene] --> C[Converter]
-  C --> M[{title} meshes]
-  M --> G[guide.json + view.json]
-```
-
-Each mesh is Gyropup's own, translated into the turret's neutral pose; triangles and normals are unchanged. Their hashes
-are in [view.json](../view.json) and [receipt.json](../receipt.json).
-
-| File | Part | Step |
-| --- | --- | --- |
-{rows}
-
-[Turret guide](../README.md)
-""".encode()
-
-
 def convert(checkout: Path, out: Path) -> dict:
     """Write every artifact into `out` from a clean checkout's HEAD; returns the receipt written."""
     checkout = Path(checkout).resolve()
@@ -174,8 +193,8 @@ def convert(checkout: Path, out: Path) -> dict:
         raise ValueError(f"steps add parts the scene does not have: {unknown}")
     excluded = sorted(e["name"] for e in entries if e["part"] not in set(added))
 
-    files, parts, steps, shown = {}, [], [], []
-    for number, (title, adds, lifts, camera, text) in enumerate(rows, 1):
+    meshes, parts, steps, shown, text_edits = {}, [], [], [], {}
+    for number, (title, adds, lifts, camera, authored) in enumerate(rows, 1):
         stage = next(s for s in STAGES if s[3] <= number <= s[4])
         if set(lifts) - set(adds):
             raise ValueError(f"step {number}: offsets for parts it does not add")
@@ -186,26 +205,41 @@ def convert(checkout: Path, out: Path) -> dict:
                 if sha(data) != entry["sha256"]:
                     raise ValueError(f"{entry['file']}: does not match the scene's recorded SHA-256")
                 mesh, bounds = translate_stl(data, neutral_translation(entry["group"], scene["pivots"]), entry["file"])
-                rel = f"{stage[0]}/{entry['file']}"
-                files[rel] = mesh
-                parts.append({"name": entry["name"], "file": rel, "sha256": sha(mesh), "bounds_mm": bounds,
-                              "color": entry["color"], "title": entry["title"], "step": number})
+                meshes[entry["name"]] = mesh
+                parts.append({"name": entry["name"], "file": f"{entry['name']}.stl", "sha256": sha(mesh),
+                              "bounds_mm": bounds, "color": entry["color"], "step": number})
                 highlight.append(entry["name"])
                 lift = lifts.get(logical, 0)
                 offsets[entry["name"]] = [0.0, 0.0, float(lift)] if isinstance(lift, (int, float)) else [float(v) for v in lift]
         shown += highlight
-        steps.append({"id": f"step-{number:02d}", "title": title, "text": text, "subassembly": stage[0],
+        step_id = f"step-{number:02d}"
+        text, edits = clean_text(authored)
+        assert restore_text(text, edits) == authored
+        text_edits[step_id] = {"original_sha256": sha(authored.encode()), "edits": edits}
+        steps.append({"id": step_id, "title": title, "text": text, "subassembly": stage[0],
                       "parts": list(shown), "highlight": highlight, "offsets_mm": offsets,
                       "camera": {"direction": [float(v) for v in camera]},
                       **({"requires": [f"step-{number - 1:02d}"]} if number > 1 else {})})
 
-    view = {"title": "Gyropup turret", "units": "mm", "up": "z",
-            "parts": [{k: p[k] for k in ("name", "file", "sha256", "bounds_mm", "color")} for p in parts]}
-    files["view.json"] = encoded(view)
+    # One packed model: the translated meshes go through cad-agent's own pack_view, in a scratch folder.
+    sys.path.insert(0, str(ROOT / "software"))
+    from cadagent.publish.view import pack_view
+    files = {}
+    with tempfile.TemporaryDirectory(prefix="cad-agent-turret-meshes-") as tmp:
+        scratch = Path(tmp)
+        for part in parts:
+            (scratch / part["file"]).write_bytes(meshes[part["name"]])
+        (scratch / "view.json").write_bytes(encoded({"title": "Gyropup turret", "units": "mm", "up": "z",
+            "parts": [{k: p[k] for k in ("name", "file", "sha256", "bounds_mm", "color")} for p in parts]}))
+        pack_view(scratch / "view.json", scratch / MODEL, title="Gyropup turret",
+                  source={"project": "Valpatel/gyropup", "revision": revision, "license": "MIT",
+                          "converter": GENERATOR})
+        for suffix in (".json", ".bin"):
+            files[MODEL + suffix] = (scratch / (MODEL + suffix)).read_bytes()
     guide = {"schema": "cad-agent.assembly-guide/1",
              "snapshot": {"id": f"gyropup-turret-{revision[:12]}", "revision": f"Gyropup turret {revision[:7]}",
                           "status": "wip", "source_commit": revision},
-             "model": {"file": "view.json", "sha256": sha(files["view.json"])},
+             "model": {"file": MODEL + ".json", "sha256": sha(files[MODEL + ".json"])},
              "source": {"project": "Valpatel/gyropup", "repository": "https://github.com/Valpatel/gyropup",
                         "license": "MIT", "recipe": RECIPE, "qualification": QUALIFICATION},
              "subassemblies": [{"id": s[0], "title": f"{s[1]}: {s[2]}",
@@ -213,11 +247,8 @@ def convert(checkout: Path, out: Path) -> dict:
              "steps": steps}
     files["guide.json"] = encoded(guide)
     files["LICENSE.txt"] = license_text
-    for stage in STAGES:
-        files[f"{stage[0]}/README.md"] = stage_readme(stage, [p for p in parts if stage[3] <= p["step"] <= stage[4]])
 
     for rel, data in files.items():
-        (out / rel).parent.mkdir(parents=True, exist_ok=True)
         (out / rel).write_bytes(data)
     receipt = {
         "schema": "cad-agent.build-guide-receipt/1",
@@ -226,9 +257,14 @@ def convert(checkout: Path, out: Path) -> dict:
         "generator": {"path": GENERATOR, "sha256": sha((ROOT / GENERATOR).read_bytes())},
         "method": ("Gyropup's literal STEPS (titles, parts, insertion offsets, camera directions and instruction text) "
                    "copied in order; each scene mesh translated from its group's frame into the neutral pose (zero pan "
-                   "and tilt, mounting face at z = 0), triangles and normals unchanged. No CAD is imported, rebuilt or "
-                   "simplified, and no vendor source CAD is read or shipped: the scene's bought parts are Gyropup's "
-                   "own envelope meshes."),
+                   "and tilt, mounting face at z = 0), triangles unchanged, then packed by cad-agent's pack_view into "
+                   "one cad-agent-model/1 model (welded, quantised to 16-bit steps across the turret's box). No CAD is "
+                   "imported, rebuilt or simplified, and no vendor source CAD is read or shipped: the scene's bought "
+                   "parts are Gyropup's own envelope meshes. Instruction text: the text_rules below, every edit listed "
+                   "under text_edits with its position; undoing them restores the original, whose SHA-256 is recorded."),
+        "text_rules": [{"rule": n, "pattern": pat, "replacement": rep, "why": why} for n, pat, rep, why in TEXT_RULES],
+        "text_edits": text_edits,
+        "meshes": {p["name"]: p["sha256"] for p in parts},
         "steps": len(steps), "parts": len(parts),
         "excluded": {"parts": excluded, "reason": "In the turret scene, but no authored step adds it."},
         "limits": QUALIFICATION,
@@ -253,12 +289,20 @@ def check(out: Path, checkout: Path | None = None) -> list[str]:
     listed = set(receipt["artifacts"]) | {"receipt.json", "README.md"}
     stray = sorted(str(p.relative_to(out)) for p in out.rglob("*") if p.is_file() and str(p.relative_to(out)) not in listed)
     problems += [f"{rel}: not in the receipt" for rel in stray]
-    guide, view = json.loads((out / "guide.json").read_bytes()), json.loads((out / "view.json").read_bytes())
-    if guide["model"]["sha256"] != sha((out / "view.json").read_bytes()):
-        problems.append("guide.json: its model hash is not view.json's")
-    for part in view["parts"]:
-        if not (out / part["file"]).is_file() or sha((out / part["file"]).read_bytes()) != part["sha256"]:
-            problems.append(f"view.json: {part['file']} does not match its hash")
+    guide = json.loads((out / "guide.json").read_bytes())
+    model = json.loads((out / guide["model"]["file"]).read_bytes())
+    if guide["model"]["sha256"] != sha((out / guide["model"]["file"]).read_bytes()):
+        problems.append("guide.json: its model hash is not the model's")
+    if not (out / model["bin"]).is_file() or sha((out / model["bin"]).read_bytes()) != model["sha256"]:
+        problems.append(f"{guide['model']['file']}: {model['bin']} does not match its hash")
+    for step in guide["steps"]:
+        record = receipt["text_edits"].get(step["id"])
+        try:
+            original = restore_text(step["text"], record["edits"]) if record else None
+        except ValueError:
+            original = None
+        if original is None or sha(original.encode()) != record["original_sha256"]:
+            problems.append(f"guide.json: {step['id']} text does not restore to Gyropup's recorded original")
     if checkout is not None:
         with tempfile.TemporaryDirectory(prefix="cad-agent-build-guide-") as tmp:
             fresh = convert(checkout, Path(tmp))
@@ -283,7 +327,7 @@ def main(argv=None) -> int:
         return 1 if problems else 0
     if not args.gyropup:
         parser.error("--gyropup is required to convert")
-    for stage in STAGES:                               # a stage's stale meshes must not survive a reconversion
+    for stage in STAGES:                               # meshes from before the packed model must not survive
         shutil.rmtree(args.out / stage[0], ignore_errors=True)
     args.out.mkdir(parents=True, exist_ok=True)
     receipt = convert(args.gyropup, args.out)

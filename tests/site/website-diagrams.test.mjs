@@ -2,12 +2,15 @@
 // tests use. Needs Playwright's Chromium (`npm --prefix tools/site exec --no -- playwright install chromium`) or Google Chrome.
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { execFile, execFileSync } from 'node:child_process';
 import { mkdtemp, readFile, readdir, rm } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
+import { promisify } from 'node:util';
 import { drawDiagrams, launchChromium, forDrawing, PALETTES, themePalette, unescapeHtml } from '../../tools/site/compiler/site-diagrams.mjs';
 
 const root = path.resolve(import.meta.dirname, '../..');
+const execFileAsync = promisify(execFile);
 const tmp = await mkdtemp(path.join(os.tmpdir(), 'cad-agent-site-diagrams-'));
 test.after(() => rm(tmp, { recursive: true, force: true }));
 const kit = f => readFile(path.join(root, 'software/cadagent/webkit', f));
@@ -174,4 +177,31 @@ test('the style guide palette is drawn in each theme: tokens for fills and text,
 
 test('HTML text comes back as the browser reads it', () => {
   assert.equal(unescapeHtml('A --&gt; B &amp; &quot;C&quot; &#39;d&#39; &#x2192; &lt;br/&gt;'), 'A --> B & "C" \'d\' → <br/>');
+});
+
+// Whole builds of HEAD (tools/site/build-site.mjs), each into its own folder: the drawings do not depend on the cache or
+// on what was drawn before, and with --client-diagrams the blocks stay for the reader's browser.
+test('two builds with empty diagram caches draw every page byte for byte the same', async () => {
+  const pages = async dir => new Map(await Promise.all((await readdir(dir, { recursive: true, withFileTypes: true }))
+    .filter(e => e.isFile() && e.name.endsWith('.html')).map(async e => [path.relative(dir, path.join(e.parentPath, e.name)), await readFile(path.join(e.parentPath, e.name))])));
+  const [a, b] = ['det-a', 'det-b'].map(n => path.join(tmp, n));
+  // Two builds at once, each in its own browser with its own empty cache: as independent as one after the other.
+  for (const { stdout } of await Promise.all([a, b].map(d => execFileAsync(process.execPath, ['tools/site/build-site.mjs', '--out', d],
+    { cwd: root, env: { ...process.env, CAD_AGENT_DIAGRAM_CACHE: `${d}-cache` }, maxBuffer: 64 << 20 }))))
+    assert.match(stdout, /0 from the cache, \d+ drawn in /, stdout);
+  const [pa, pb] = [await pages(a), await pages(b)];
+  assert.deepEqual([...pa.keys()].sort(), [...pb.keys()].sort());
+  const differ = [...pa].filter(([f, buf]) => !buf.equals(pb.get(f))).map(([f]) => f);
+  assert.deepEqual(differ, []);
+  assert.ok([...pa.values()].some(buf => buf.includes('<figure class="cad-diagram"')));
+});
+
+test('with --client-diagrams (as on a machine with no browser) the blocks stay for the reader\'s browser, and the build passes', async () => {
+  const draft = path.join(tmp, 'client-diagrams');
+  const log = execFileSync(process.execPath, ['tools/site/build-site.mjs', '--client-diagrams', '--out', draft], { cwd: root }).toString();
+  assert.match(log, /left to the reader's browser/);
+  const page = await readFile(path.join(draft, 'docs/style-guide.html'), 'utf8');
+  assert.equal((page.match(/<pre><code class="language-mermaid">/g) || []).length, 3);
+  assert.doesNotMatch(page, /<figure class="cad-diagram"/);
+  assert.match(page, /<script type="module" src="\/web\/site\.js"><\/script>/, 'site.js still starts kit/documents/diagrams.js');
 });

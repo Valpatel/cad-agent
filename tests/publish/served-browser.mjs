@@ -32,7 +32,7 @@ server.serve_forever()`, project, JSON.stringify(nav)], { cwd: repo, stdio: ['ig
 const base = await new Promise((ok, fail) => {
   server.stdout.on('data', d => { const m = String(d).match(/http:\/\/[^\s/]+/); if (m) ok(m[0]); });
   server.on('exit', c => fail(new Error(`serve_site exited ${c}`)));
-  setTimeout(() => fail(new Error('serve_site printed no address in 60 s')), 60000);
+  setTimeout(() => fail(new Error('serve_site printed no address in 60 s')), 60000).unref();   // never holds the run open
 });
 const engine = process.env.PLAYWRIGHT_BROWSER === 'webkit' ? webkit : chromium;
 const browser = await engine.launch(engine === chromium ? { channel: process.env.PLAYWRIGHT_CHANNEL === 'chromium' ? undefined : 'chrome', headless: true } : { headless: true });
@@ -43,7 +43,10 @@ const open = async (route, width, colorScheme = 'light') => {
   const page = await browser.newPage({ viewport: { width, height: 800 }, colorScheme });
   const errors = [];
   page.on('pageerror', e => errors.push(e.message));
-  page.on('console', m => { if (m.type() === 'error') errors.push(m.text()); });
+  // A failed load is reported by its address (the browser's own favicon.ico request is not the page's), not by its
+  // console line, which names no address.
+  page.on('console', m => { if (m.type() === 'error' && !m.text().startsWith('Failed to load resource')) errors.push(m.text()); });
+  page.on('response', r => { const p = new URL(r.url()).pathname; if (r.status() >= 400 && p !== '/favicon.ico') errors.push(`${r.status()} ${p}`); });
   await page.goto(base + route);
   return { page, errors };
 };

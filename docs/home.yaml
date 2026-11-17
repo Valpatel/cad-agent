@@ -218,7 +218,9 @@ showcase:
     caption: A wastewater digester and other connected processes. Operate equipment and inject faults; the models
       are illustrative and editable.
   - toolkit: assembly
-    caption: Step through a synthetic rail assembly's declared insertion order, part by part.
+    caption: Gyropup's turret in its own authored assembly order, part by part. An example sequence from a
+      work-in-progress prototype, not a verified build procedure; a CAD step order does not prove the parts can
+      physically go together.
 # From frontier to local: the arc, each step with what holds today and what is next.
 arc:
 - title: Use it on real projects

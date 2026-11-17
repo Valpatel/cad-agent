@@ -6,7 +6,7 @@ import { normalizePlan, planState, createPlanPoseAdapter } from '../assembly/pla
 import { STLLoader } from 'three/addons/loaders/STLLoader.js';
 import { createStage } from './stage.js';
 import { section, slider, toggle, readouts } from '../ui/panel.js';
-import { viewAssetURL, readAsset, parseJSON, validateView, validateState } from '../assembly/guide.js';
+import { viewAssetURL, readAsset, parseJSON, validateView, validateState, PACKED_SCHEMA } from '../assembly/guide.js';
 import { validateSTL, normalizeMesh, MAX_TRIANGLES } from '../files/file-geometry.js';
 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -44,21 +44,44 @@ export async function createViewer({ app, panel, title, manifestUrl, manifest: s
   model.scale.setScalar(0.001);
   const loader = new STLLoader();
   const clip = new THREE.Plane(new THREE.Vector3(-1, 0, 0), 1e9);
-  let totalBytes = 0, totalTriangles = 0;
-  for (const p of manifest.parts) {
+  let totalBytes = 0, totalTriangles = 0, packed = null;
+  // A packed model (`cad-agent-model/1`, pack_view's format): one hash-bound binary decoded into every part's mesh.
+  if (manifest.schema === PACKED_SCHEMA) {
+    onProgress('Downloading the packed model…');
+    const bytes = await readAsset(viewAssetURL(manifest.bin, base, { guide: guideBound, assetRoot }), { signal: lifetime.signal, expectedHash: manifest.sha256, redirect: guideBound || assetRoot ? 'error' : 'follow' });
+    const { inflate, decodeModel, creasedNormals } = await import('./model.js');
+    const raw = await inflate(bytes);
+    if (raw.byteLength > 128 * 1024 * 1024) throw new Error('Assembly exceeds the preview byte limit');
+    packed = { meshes: decodeModel(manifest, raw), creasedNormals };
+    lifetime.signal.throwIfAborted();
+  }
+  for (const [i, p] of manifest.parts.entries()) {
     onProgress(`Loading model part ${parts.length + 1} of ${manifest.parts.length}…`);
-    const bytes = await readAsset(viewAssetURL(p.file, base, { guide: guideBound, assetRoot }), { signal: lifetime.signal, expectedHash: p.sha256, redirect: guideBound || assetRoot ? 'error' : 'follow' });
-    totalBytes += bytes.byteLength;
-    if (totalBytes > 128 * 1024 * 1024) throw new Error('Assembly exceeds the preview byte limit');
-    validateSTL(bytes);
-    const geo = loader.parse(bytes);
-    try {
-      normalizeMesh({ positions: geo.attributes.position?.array, indices: geo.index?.array });
-      totalTriangles += geo.index ? geo.index.count / 3 : geo.attributes.position.count / 3;
+    let geo;
+    if (packed) {
+      const { positions, index } = packed.meshes[i];
+      normalizeMesh({ positions, indices: index });
+      totalTriangles += index.length / 3;
       if (totalTriangles > MAX_TRIANGLES) throw new Error('Assembly exceeds the preview triangle limit');
-      geo.computeVertexNormals();
-      lifetime.signal.throwIfAborted();
-    } catch (error) { geo.dispose(); throw error; }
+      // Welded vertices: crease-aware normals keep box edges sharp and cylinders round.
+      const flat = packed.creasedNormals(positions, index);
+      geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.BufferAttribute(flat.positions, 3));
+      geo.setAttribute('normal', new THREE.BufferAttribute(flat.normals, 3));
+    } else {
+      const bytes = await readAsset(viewAssetURL(p.file, base, { guide: guideBound, assetRoot }), { signal: lifetime.signal, expectedHash: p.sha256, redirect: guideBound || assetRoot ? 'error' : 'follow' });
+      totalBytes += bytes.byteLength;
+      if (totalBytes > 128 * 1024 * 1024) throw new Error('Assembly exceeds the preview byte limit');
+      validateSTL(bytes);
+      geo = loader.parse(bytes);
+      try {
+        normalizeMesh({ positions: geo.attributes.position?.array, indices: geo.index?.array });
+        totalTriangles += geo.index ? geo.index.count / 3 : geo.attributes.position.count / 3;
+        if (totalTriangles > MAX_TRIANGLES) throw new Error('Assembly exceeds the preview triangle limit');
+        geo.computeVertexNormals();
+        lifetime.signal.throwIfAborted();
+      } catch (error) { geo.dispose(); throw error; }
+    }
     const mat = new THREE.MeshPhysicalMaterial({ color: p.color, roughness: 0.55, clearcoat: 0.2, clippingPlanes: [clip], clipShadows: true,
                                                  side: THREE.DoubleSide });
     const mesh = new THREE.Mesh(geo, mat);
@@ -170,7 +193,7 @@ export async function createViewer({ app, panel, title, manifestUrl, manifest: s
       all.indeterminate = on > 0 && on < members.length;
     };
     if (categories.length > 1) {
-      const head = document.createElement('div');
+      const head = document.createElement('label');
       head.className = 'hud-toggle';
       head.innerHTML = `<input type="checkbox"><span><b>All ${esc((category || 'other parts').toLowerCase())}</b></span>`;
       all = head.querySelector('input');
@@ -185,10 +208,11 @@ export async function createViewer({ app, panel, title, manifestUrl, manifest: s
       list.appendChild(head);
     }
     for (const p of members) {
-      const row = document.createElement('div');
+      // A label, so the whole row toggles the part; both inputs carry the part's name for assistive technology.
+      const row = document.createElement('label'), shown = p.name.replaceAll('_', ' ');
       row.className = 'hud-toggle';
-      row.innerHTML = `<input type="checkbox" ${p.mesh.visible ? 'checked' : ''}><input type="color" value="${esc(p.color)}" `
-        + `style="width:18px;height:18px;border:0;padding:0;background:none"><span>${esc(p.id ? p.id + ' · ' : '')}${esc(p.name.replaceAll('_', ' '))}</span>`;
+      row.innerHTML = `<input type="checkbox" aria-label="Show ${esc(shown)}" ${p.mesh.visible ? 'checked' : ''}><input type="color" aria-label="Colour of ${esc(shown)}" value="${esc(p.color)}" `
+        + `style="width:18px;height:18px;border:0;padding:0;background:none"><span>${esc(p.id ? p.id + ' · ' : '')}${esc(shown)}</span>`;
       const [vis, col] = row.querySelectorAll('input');
       vis.onchange = () => { state.visible = vis.checked ? [...new Set([...state.visible, p.name])] : state.visible.filter(n => n !== p.name); visibilityChanged(); syncAll(); };
       col.oninput = () => { userColors.set(p.name, new THREE.Color(col.value)); p.mesh.material.color.set(col.value); };
@@ -344,6 +368,6 @@ export async function createViewer({ app, panel, title, manifestUrl, manifest: s
   });
   lifetime.signal.throwIfAborted(); clearTimeout(timer);
   onProgress('Model ready');
-  return { stage, parts, setExplode, setSection, setSectionPlane, getSectionState: () => ({ ...sectionState }), applyState, getState: () => structuredClone(state), frameParts, setSelection, setPartMode, reset, dispose };
+  return { stage, parts, manifest: structuredClone(manifest), setExplode, setSection, setSectionPlane, getSectionState: () => ({ ...sectionState }), applyState, getState: () => structuredClone(state), frameParts, setSelection, setPartMode, reset, dispose };
   } catch (error) { dispose(); throw error; }
 }

@@ -870,8 +870,9 @@ async function installLinkProblems() {
 
 /** Back to an install address on a phone (#807): the reader arrived on /docs/agent-workflow#install-…, scrolled on,
  * followed a link away and pressed Back. The page comes back where they left it (within 3 px), not where the arrival
- * scroll put the block. Planted control: web/site.js with its Back/reload case removed and served 600 ms late, so the
- * browser restores the reader's place first and the old arrival scroll then moves it, must be caught. */
+ * scroll put the block (Chromium restored it first or last; WebKit landed on the # part). Planted control: web/site.js
+ * without its kept place and served 600 ms late, so the browser restores first and the arrival scroll then moves it,
+ * must be caught. */
 async function installBackProblems() {
   const problems = [];
   const trip = async (id, delta, planted = false) => {
@@ -882,7 +883,8 @@ async function installBackProblems() {
       await page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
       const left = await page.evaluate(() => scrollY);
       if (planted) await page.route(base + '/web/site.js', partHandler(async route => {
-        const response = await route.fetch(), body = (await response.text()).replace('back_forward|reload', 'planted-never');
+        const response = await route.fetch(), text = await response.text(), body = text.replace('history.state?.cadReaderY', 'undefined');
+        if (body === text) throw new Error('planted control: web/site.js no longer reads history.state?.cadReaderY');
         await new Promise(r => setTimeout(r, 600));
         await route.fulfill({ response, body });
       }));

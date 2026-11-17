@@ -3,7 +3,7 @@
 Recorded solver poses replay in an inspectable 3D viewer; the browser does not recompute dynamics. Two examples:
 
 - **Gyropup**, a work-in-progress wheel-legged robot, in four recorded MuJoCo runs from its repository's dated
-  snapshot: [open the viewer](../../../software/cadagent/webkit/simulation/examples/gyropup-v2/README.md). Its
+  snapshot: [open the viewer](../../../software/cadagent/webkit/simulation/examples/gyropup-v2/viewer.html) ([its files](../../../software/cadagent/webkit/simulation/examples/gyropup-v2/README.md)). Its
   converter, [gyropup.py](gyropup.py), turns the snapshot into the viewer's format; it runs no physics.
 - **An original two-link arm**, the small editable example: change the illustrative masses, dimensions, damping and
   controller settings in [config.json](config.json), regenerate with MuJoCo, and compare.
@@ -29,7 +29,7 @@ flowchart TD
 
 Four scenarios, chosen for what a visitor can see happen: driving off a 50 mm kerb (the card), one wheel up a plank
 while the body stays level, push recovery and an 80 mm drop. The viewer shows each scenario's pass verdict, its
-highest motor torque as a fraction of that motor's peak-torque limit (and of its rated torque) and the largest lean,
+highest motor torque as a fraction of that motor's peak-torque limit (its control range) and the largest lean,
 copied from the snapshot's summary: the snapshot's own numbers, not a cad-agent verification.
 
 Limits: Gyropup's README calls this snapshot a historical demo, generated 2026-10-25 to 26 and not a validation of
@@ -49,11 +49,18 @@ node docs/examples/robot-replay/capture-gyropup.mjs                       # then
 ```
 
 The converter reads `hardware/exports/sim/v2/` at the checkout's revision: each chosen scenario's recorded MuJoCo
-joint positions (30 frames per second), `summary.json` and the browser rig (`rig/manifest.json` and its STL meshes),
+joint positions, `summary.json` and the browser rig (`rig/manifest.json` and its STL meshes),
 the same files gyropup.com's simulator replays. Each frame's free joint poses the body; the five-bar leg links, the
 wheels and the turret turn about their recorded joint angles with the rig's own dimensions, as Gyropup's
 `robot_v2.js` poses them. The meshes are merged per body and colour and packed with `pack_view`. It needs numpy and
-cad-agent, not MuJoCo, because it converts recorded poses and does not re-simulate. The receipt records the Gyropup
+cad-agent, not MuJoCo, because it converts recorded poses and does not re-simulate.
+
+Timing: the snapshot declares 30 frames per second, but Gyropup's run loop (`software/simulation/scenarios.py`) keeps
+one frame every `round(1 / (30 × timestep))` = 33 solver steps of 1 ms (`robot_v2.py`'s MJCF timestep). The converter
+reads both lines from the checkout (and refuses if either differs), stamps the frames at that true 33 ms interval and
+checks the frame count against each run's length, so durations (7.0, 11.0, 9.0 and 5.0 s, less the last partial
+interval) and events such as "push at 2.0 s" read in solver time. Each frame is taken just after its step, 1 ms later
+than its stamp. The receipt records the Gyropup
 revision, every source file's SHA-256, the converter's own hash and every artifact's hash.
 
 </details>

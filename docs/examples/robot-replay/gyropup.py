@@ -11,7 +11,9 @@ robot's rigid bodies through the rig's own forward kinematics (the five-bar legs
 Gyropup's `software/site/designer/robot_v2.js` poses them). The meshes are packed with cad-agent's `pack_view`.
 
 This converts recorded solver output; it does not simulate. MuJoCo is not needed and not run. The poses are those the
-snapshot recorded at 30 frames per second; the browser interpolates between them. Pass verdicts and motor torques are
+snapshot recorded every 33 solver steps of 1 ms (Gyropup's scenarios.py samples round(1 / (30 fps x 0.001 s))
+steps; its nominal "30 fps" is 30.3 per second), stamped here at that true 33 ms interval so durations and event times
+read in solver time; the browser interpolates between them. Pass verdicts and motor torques are
 the snapshot's own numbers, copied from its summary, not a cad-agent verification. Gyropup's README calls the snapshot
 a historical demo of a work-in-progress prototype, not a validation of the latest CAD or of physical hardware.
 """
@@ -43,6 +45,14 @@ SNAPSHOT = "hardware/exports/sim/v2"
 SCENARIOS = ("kerb_drop", "side_kerb", "push", "landing")
 LEG_JOINTS = ("motor_f", "knee_f", "motor_r", "knee_r", "wheel")
 ARTIFACTS = ("robot.json", "robot.bin", "index.json", "LICENSE.txt", *(f"{name}.json" for name in SCENARIOS))
+# Gyropup's actuator keys (software/simulation/robot_v2.py at 41c5c26: the frame is x forward, y left; leg motor
+# "motor_<f|r>_<l|r>" sits at x = +D/2 (front) or -D/2 (rear) on the left or the mirrored right; "wheel_<l|r>" is a
+# wheel's hub motor). An unknown key stops the conversion rather than show a guessed name.
+MOTOR_NAMES = {"motor_f_l": "front-left leg motor", "motor_r_l": "rear-left leg motor", "motor_f_r": "front-right leg motor",
+               "motor_r_r": "rear-right leg motor", "wheel_l": "left wheel motor", "wheel_r": "right wheel motor"}
+# Where the frame interval comes from: the solver timestep in the generated MJCF and the sampling rule of the run loop.
+TIMESTEP_SOURCE, SAMPLING_SOURCE = "software/simulation/robot_v2.py", "software/simulation/scenarios.py"
+SAMPLING_RULE = "frame_every = max(1, int(round(1 / (FPS * dt))))"
 LIMITS = ("Replay of recorded solver output from a dated snapshot of a work-in-progress prototype. The browser "
           "interpolates the recorded poses; nothing is recomputed. Pass verdicts and torques are the snapshot's own "
           "numbers, not a cad-agent verification. The snapshot predates Gyropup's current CAD; CAD and simulation do "
@@ -196,9 +206,13 @@ def summary_block(entry, events):
     """The snapshot's own verdict and numbers, as plain labelled text for the viewer."""
     motors = entry["motors"]
     name, worst = max(motors.items(), key=lambda kv: kv[1]["of_peak"])
+    if name not in MOTOR_NAMES:
+        raise ValueError(f"motor {name}: not a known Gyropup actuator key")
+    # Against the motor's peak-torque limit (its control range) only: the snapshot's pass criteria include no torque
+    # test, so a figure against the continuous rating beside its PASS would read as a verdict the snapshot never made.
     metrics = [{"label": "Peak motor torque",
-                "value": f"{worst['peak_torque_nm']:.1f} N·m ({name.replace('_', ' ')}): {round(100 * worst['of_peak'])}% of its "
-                         f"peak-torque limit, {round(100 * worst['of_rated'])}% of rated"},
+                "value": f"{worst['peak_torque_nm']:.1f} N·m, {MOTOR_NAMES[name]}: {round(100 * worst['of_peak'])}% of its "
+                         f"peak-torque limit"},
                {"label": "Largest lean", "value": f"{entry['max_theta_deg']:.1f}°"}]
     if events:
         metrics.append({"label": "Events", "value": ", ".join(f"{e['type']} at {e['t']:.1f} s" for e in events)})
@@ -218,7 +232,8 @@ def git(checkout: Path, *args) -> str:
 def convert(checkout: Path, out: Path) -> dict:
     """Write every artifact into `out` (which must exist) from a clean checkout; returns the receipt written."""
     checkout = Path(checkout).resolve()
-    if git(checkout, "status", "--porcelain", "--", SNAPSHOT, "hardware/exports/sim/README.md", "LICENSE"):
+    if git(checkout, "status", "--porcelain", "--", SNAPSHOT, "hardware/exports/sim/README.md", "LICENSE",
+           TIMESTEP_SOURCE, SAMPLING_SOURCE):
         raise ValueError(f"{SNAPSHOT} has uncommitted changes in the Gyropup checkout")
     revision, committed = git(checkout, "rev-parse", "HEAD"), git(checkout, "show", "-s", "--format=%cI", "HEAD")
     snap = checkout / SNAPSHOT
@@ -240,6 +255,12 @@ def convert(checkout: Path, out: Path) -> dict:
     licence = read("LICENSE")
     if b"MIT License" not in licence:
         raise ValueError("expected Gyropup's MIT licence")
+
+    # The true frame interval: the run loop keeps one frame every round(1 / (fps x timestep)) solver steps.
+    timestep = re.search(r'<option timestep="([0-9.]+)"', read(TIMESTEP_SOURCE).decode())
+    if not timestep or SAMPLING_RULE not in read(SAMPLING_SOURCE).decode():
+        raise ValueError(f"cannot confirm the frame interval from {TIMESTEP_SOURCE} and {SAMPLING_SOURCE}")
+    dt = float(timestep.group(1))
 
     bodies = body_layout(manifest)
     with tempfile.TemporaryDirectory() as tmp:
@@ -280,7 +301,10 @@ def convert(checkout: Path, out: Path) -> dict:
         frames, layout = run["frames"], run["qpos_layout"]
         if run["scenario"] != scenario or entry["title"] != run["title"] or entry["pass"] != run["pass"]:
             raise ValueError(f"{scenario}: the run and the summary disagree")
-        fps = frames["fps"]
+        every = max(1, round(1 / (frames["fps"] * dt)))
+        interval = every * dt
+        if "seconds" in run and len(frames["qpos"]) != math.ceil(round(run["seconds"] / dt) / every):
+            raise ValueError(f"{scenario}: {len(frames['qpos'])} frames do not fit {run['seconds']} s at one per {every} steps")
         recording = {
             "schema": "cad-agent.pose-recording/1", "title": f"Gyropup v2: {run['title']}",
             "convention": {"length": "m", "up": "z", "handedness": "right", "quaternion": "xyzw"},
@@ -288,7 +312,7 @@ def convert(checkout: Path, out: Path) -> dict:
             "scenery": scenery(run.get("props", [])),
             # A run that drives metres is followed; one that stays near its start is framed whole, so a push shows.
             "view": {**({"follow": "base"} if max(abs(q[0]) for q in frames["qpos"]) > 1.0 else {}), "direction": [0.55, -1.0, 0.42]},
-            "frames": [{"time_s": round(i / fps, 6), "poses": [pose_json(p) for p in poses(manifest, q, layout)]}
+            "frames": [{"time_s": round(i * interval, 6), "poses": [pose_json(p) for p in poses(manifest, q, layout)]}
                        for i, q in enumerate(frames["qpos"])],
         }
         data = compact(recording)
@@ -308,7 +332,9 @@ def convert(checkout: Path, out: Path) -> dict:
                      "physical_test": summary.get("physical_test"), "estimates": summary.get("estimates", []),
                      "statement": " ".join(notice.split()),
                      "dated": dated},
-        "method": ("Recorded MuJoCo joint frames (qpos, 30 per second) through the rig's own forward kinematics: the free "
+        "method": ("Recorded MuJoCo joint frames (qpos, one every 33 solver steps of 1 ms: the snapshot's nominal 30 fps "
+                   "under scenarios.py's sampling rule), stamped at that 33 ms interval so times are solver time (each frame "
+                   "is taken after its step, 1 ms later than its stamp), through the rig's own forward kinematics: the free "
                    "joint poses the base; the five-bar links and the turret turn about their recorded joint angles as "
                    "Gyropup's software/site/designer/robot_v2.js poses them. No physics is run."),
         "generator": {"path": GENERATOR, "sha256": sha((ROOT / GENERATOR).read_bytes())},

@@ -25,6 +25,14 @@ const seekAndRead=(page,t)=>page.evaluate(async t=>{
   return {matrices:__replay.scene.groups.map(g=>g.matrixWorld.toArray()),target:__replay.stage.controls.target.toArray(),camera:__replay.stage.camera.position.toArray()};
 },t);
 const summaryText=page=>page.locator('.replay-summary').innerText();
+// On a phone the 3D view comes first, straight under the title bar, and the controls (scenario select included) follow it
+// inside the host's width; on a wide screen the controls stay above the view. Returns the problem, or null.
+const orderProblem=async(page,width)=>{
+  const o=await page.evaluate(()=>{const r=s=>document.querySelector(s).getBoundingClientRect();
+    return {canvas:r('#replay canvas').top,controls:r('.replay-controls').top,bar:r('.cad-viewer-toolbar').bottom,select:r('.replay-scenario select').right,host:r('.cad-viewer-host').right};});
+  if(width<=600)return o.canvas<o.controls&&Math.abs(o.canvas-o.bar)<2&&o.select<=o.host+0.5?null:`phone order: ${JSON.stringify(o)}`;
+  return o.controls<o.canvas?null:`wide order: ${JSON.stringify(o)}`;
+};
 try{
   for(const [width,theme] of [[390,'light'],[1100,'dark']]){
     const context=await browser.newContext({viewport:{width,height:900},colorScheme:theme,reducedMotion:'reduce'});
@@ -36,26 +44,33 @@ try{
     assert.equal(await page.evaluate(()=>__replay.playback.state().playing),false,'reduced motion: the recording does not start by itself');
     const geometry=await page.evaluate(()=>({page:document.documentElement.scrollWidth<=document.documentElement.clientWidth+1,canvas:document.querySelector('#replay canvas').getBoundingClientRect().height}));
     assert.ok(geometry.page&&geometry.canvas>200,JSON.stringify(geometry));
-    // On a phone the 3D view comes first, straight under the title bar, and the controls (scenario select included)
-    // follow it inside the host's width; on a wide screen the controls stay above the view.
-    const order=await page.evaluate(()=>{const r=s=>document.querySelector(s).getBoundingClientRect();
-      return {canvas:r('#replay canvas').top,controls:r('.replay-controls').top,bar:r('.cad-viewer-toolbar').bottom,select:r('.replay-scenario select').right,host:r('.cad-viewer-host').right};});
-    if(width<=600)assert.ok(order.canvas<order.controls&&Math.abs(order.canvas-order.bar)<2&&order.select<=order.host,`phone order: ${JSON.stringify(order)}`);
-    else assert.ok(order.controls<order.canvas,`wide order: ${JSON.stringify(order)}`);
-    // The slider's last step is the recorded end, though 7.066667 s is not a whole number of its 1 ms steps.
+    // The phone layout (see orderProblem).
+    let problem=await orderProblem(page,width);assert.equal(problem,null);
+    // Planted controls: the pre-#798 phone layout (the host's own order, controls above the view) and a select wider
+    // than the host must each be reported, or the check above proves nothing.
+    if(width<=600)for(const [name,css] of [['the old order','.cad-replay-host>*{order:0!important}.cad-replay-host,.cad-replay-host.cad-replay-summarised{grid-template-rows:auto auto minmax(300px,1fr) auto auto!important}'],
+      ['an overflowing select','.replay-scenario select{flex:none!important;min-width:520px!important;max-width:none!important}']]){
+      const planted=await page.addStyleTag({content:css});await page.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r))));
+      problem=await orderProblem(page,width);await planted.evaluate(el=>el.remove());
+      assert.ok(problem,`planted control: ${name} passed the phone-order check`);
+    }
+    // The slider's last step is the recorded end even when the duration is not a whole number of steps. The run's
+    // 6.996 s is a whole number of 1 ms steps, so the check gives the slider a 7 ms step, where End stops at 6.993 s.
     const slider=page.getByRole('slider',{name:'Recording time',exact:true});await slider.focus();await slider.press('End');
+    assert.equal(await page.evaluate(()=>__replay.playback.state().time),await page.evaluate(()=>__replay.playback.state().duration));
+    await slider.press('Home');await page.evaluate(()=>{document.querySelector('.replay-time input').step='0.007';});await slider.press('End');
     const end=await page.evaluate(()=>({...__replay.playback.state(),value:document.querySelector('.replay-time input').value}));
     assert.ok(end.time===end.duration&&+end.value<end.duration,`End stops at ${end.time} of ${end.duration} (slider ${end.value})`);
-    await slider.press('Home');
+    await page.evaluate(()=>{document.querySelector('.replay-time input').step='.001';});await slider.press('Home');
     // The summary is the index's own text for this scenario.
     const kerb=index.scenarios[0].summary;let text=await summaryText(page);
     for(const piece of [kerb.verdict.label,...kerb.metrics.map(m=>m.value),kerb.note])assert.ok(text.toLowerCase().includes(piece.toLowerCase()),`summary lacks ${piece}: ${text}`);
-    // Poses: every body at t = 3 s is the recorded kerb_drop frame.
-    let read=await seekAndRead(page,3);
-    read.matrices.forEach((m,i)=>assert.ok(mismatch(m,frameAt('kerb_drop',3).poses[i])<1e-6,`kerb_drop body ${i}`));
-    // The followed camera travels with the robot's base across the floor (about 2.5 m from 3 s to 6 s).
-    const before=read.target;read=await seekAndRead(page,6);
-    const travelled=read.target[0]-before[0],base=frameAt('kerb_drop',6).poses[0].position[0]-frameAt('kerb_drop',3).poses[0].position[0];
+    // Poses: every body at t = 2.97 s (recorded frame 90; frames are 33 ms apart) is the recorded kerb_drop frame.
+    let read=await seekAndRead(page,2.97);
+    read.matrices.forEach((m,i)=>assert.ok(mismatch(m,frameAt('kerb_drop',2.97).poses[i])<1e-6,`kerb_drop body ${i}`));
+    // The followed camera travels with the robot's base across the floor (about 2.5 m from 2.97 s to 5.94 s, recorded frames 90 and 180).
+    const before=read.target;read=await seekAndRead(page,5.94);
+    const travelled=read.target[0]-before[0],base=frameAt('kerb_drop',5.94).poses[0].position[0]-frameAt('kerb_drop',2.97).poses[0].position[0];
     assert.ok(Math.abs(travelled-base)<1e-6&&base>2,`camera followed ${travelled} m, base moved ${base} m`);
     await page.locator('.cad-viewer-viewport').screenshot({path:`${out}/${engine.name()}-${width}-${theme}-kerb_drop.png`});
     // Switch through the visible select; the speed survives the switch.
@@ -63,11 +78,11 @@ try{
     await select.selectOption('push');
     await page.waitForFunction(()=>__replay.scenario==='push'&&!document.querySelector('[aria-label="Scenario"]').disabled);
     assert.equal(await page.evaluate(()=>__replay.playback.state().speed),2);
-    read=await seekAndRead(page,3);
-    const push=frameAt('push',3),kerbFrame=frameAt('kerb_drop',3);
+    read=await seekAndRead(page,2.97);
+    const push=frameAt('push',2.97),kerbFrame=frameAt('kerb_drop',2.97);
     read.matrices.forEach((m,i)=>assert.ok(mismatch(m,push.poses[i])<1e-6,`push body ${i}`));
     // Planted control: the same oracle, given the scenario that was left, must fail, or the check above proves nothing.
-    assert.ok(mismatch(read.matrices[0],kerbFrame.poses[0])>0.1,'planted control: kerb_drop and push poses at 3 s are indistinguishable');
+    assert.ok(mismatch(read.matrices[0],kerbFrame.poses[0])>0.1,'planted control: kerb_drop and push poses at 2.97 s are indistinguishable');
     text=await summaryText(page);
     assert.ok(text.includes(index.scenarios[2].summary.metrics[0].value)&&text.includes('push at 2.0 s'),text);
     assert.ok(!text.includes(kerb.metrics[0].value),'the summary still shows the previous scenario');

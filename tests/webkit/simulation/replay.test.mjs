@@ -34,6 +34,15 @@ test('clock pauses, changes speed, stops at capture end, restarts and disposes',
   play.play();assert.equal(play.state().time,0);assert.throws(()=>play.seek(NaN));assert.throws(()=>play.setSpeed(0));
   play.dispose();const count=states.length;play.dispose();assert.equal(states.length,count);assert.equal(play.state().disposed,true);assert.throws(()=>play.play(),/disposed/);
 });
+test('a looping clock wraps past the end and keeps playing; without loop it stops',()=>{
+  const looping=createPlayback(validateRecording(fixture()),()=>{},{loop:true});
+  looping.seek(1.9);looping.play();looping.advance(.3);
+  const state=looping.state();assert.equal(state.playing,true);assert.ok(Math.abs(state.time-.2)<1e-9,`wrapped to ${state.time}`);
+  looping.advance(1);assert.ok(Math.abs(looping.state().time-1.2)<1e-9);
+  // Control: the same step without loop clamps to the end and stops, so the wrap above is the loop's doing.
+  const once=createPlayback(validateRecording(fixture()));once.seek(1.9);once.play();once.advance(.3);
+  assert.deepEqual([once.state().time,once.state().playing],[2,false]);
+});
 test('loader verifies exact bytes, caps declared/streamed bodies and rejects unsafe URLs',async()=>{
   const bytes=JSON.stringify(fixture()),hash=createHash('sha256').update(bytes).digest('hex');
   const server=createServer((req,res)=>{
@@ -82,7 +91,7 @@ test('the committed Gyropup example: index, mesh library and every recording ver
     for(const scenario of index.scenarios){
       const recording=await loadRecording(scenario.recordingUrl,{expectedHash:scenario.expectedHash,parts:library});
       assert.equal(recording.bodies.length,13);assert.equal(scenario.summary.verdict.pass,true);
-      assert.match(scenario.summary.metrics[0].value,/N·m .*% of its peak-torque limit/);
+      assert.match(scenario.summary.metrics[0].value,/N·m, .*: \d+% of its peak-torque limit$/);
     }
     await assert.rejects(()=>loadMeshLibrary(index.meshes.url,{expectedHash:'0'.repeat(64)}),/SHA-256 mismatch/);
   }finally{server.closeAllConnections();await new Promise(resolve=>server.close(resolve));}

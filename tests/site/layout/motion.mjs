@@ -296,8 +296,9 @@ export async function heroRecordingProblems(browser, base, receipt = {}) {
   return out;
 }
 
-/** The home page's robot-replay card (#798): neither its still nor its animation loads before the reader scrolls
- * near it on a phone; once near, the animation replaces the still exactly once; never under reduced motion or Save-Data.
+/** The home page's robot-replay card (#798), on a phone: the animation is never requested before the card nears the
+ * screen; the small still is a single loading="lazy" image whose timing is left to the browser (it may be fetched
+ * before any scroll); once near, the animation replaces the still exactly once; never under reduced motion or Save-Data.
  * Planted controls: a site.js without the nearness gate requests the animation before any scroll, and one without the
  * reduced-motion guard requests it under reduced motion, so each check can fail. */
 export async function replayCardProblems(browser, base, receipt = {}) {

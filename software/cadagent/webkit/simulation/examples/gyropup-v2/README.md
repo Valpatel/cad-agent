@@ -19,7 +19,7 @@ flowchart TD
 | --- | --- |
 | [viewer.html](viewer.html) | The example page: a scenario select, the snapshot's own verdict and peak motor torque, and playback. |
 | [index.json](index.json) | The scenarios, each recording's SHA-256 and the snapshot's summary for it, and the mesh library's hash. |
-| [kerb_drop.json](kerb_drop.json), [side_kerb.json](side_kerb.json), [push.json](push.json), [landing.json](landing.json) | Recorded body poses (30 per second), fixed scenery such as the kerb, and the camera's followed body. |
+| [kerb_drop.json](kerb_drop.json), [side_kerb.json](side_kerb.json), [push.json](push.json), [landing.json](landing.json) | Recorded body poses (one every 33 ms of solver time), fixed scenery such as the kerb, and the camera's followed body. |
 | [robot.json](robot.json), [robot.bin](robot.bin) | Gyropup's rig meshes, each in its own body's frame, packed by `pack_view`. |
 | [receipt.json](receipt.json) | Gyropup revision, every source file's SHA-256, the converter's hash, the method and the limits. |
 | [LICENSE.txt](LICENSE.txt) | Gyropup's MIT licence, which these meshes and recordings carry. |

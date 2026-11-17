@@ -1,7 +1,7 @@
 {
   "schema": "cad-agent.toolkit-examples/1",
   "scope": "Actual viewer previews of the featured build guide and the original-file example, and the byte-identical synthetic assembly fixture kept at its published URL; no physical or project qualification.",
-  "sourceHead": "702d87ece837587927fe15cac6b6ae7c63358e69",
+  "sourceHead": "0652b5cbe8e1c56f86311ba719d82ccdaa610577",
   "generator": {
     "path": "tools/site/figures/toolkit-examples.mjs",
     "sha256": "1aed01617853f40b47d3684d5aab41b871a913724985ee657076e620f2014463"
@@ -156,7 +156,7 @@
         "software/cadagent/webkit/assembly/playback.js": "dd575ce02567129d9aa28376d3455f7e352118609cb30ae7dfe89066d17048d7",
         "software/cadagent/webkit/files/file-geometry.js": "1f503af4149f96624ecaba68043ea44eaaa68503988646c5139edb482ab922fd",
         "software/cadagent/webkit/model/model.js": "42a17fd2a2384807233683f01b988e7e98ab52c438726f5eebc3baa7e6e41aec",
-        "software/cadagent/webkit/model/stage.js": "e8539b8c92fdeb8575f41e41fb23ee1efb57ef39ac869124d632c54f7214a109",
+        "software/cadagent/webkit/model/stage.js": "6e5b64584bc519e03b5c37cba503c6248f18ef2c3347352ce23d7985ad92efd2",
         "software/cadagent/webkit/model/viewer.html": "c6ac7505f61a3da42266031eb6ebe6494b7108edca6f7e92256b7c5759ba7a8b",
         "software/cadagent/webkit/model/viewer.js": "7d16b34671951c0ffa69f202783419afaf5c0b0fada49ace55fe1c7062a7041b",
         "software/cadagent/webkit/ui/hud.css": "0a1fbf7e9e796c7bf5d7cb9062b34374da937975e851ad2cce6b8cdb1827325a",
@@ -209,7 +209,7 @@
         "software/cadagent/webkit/files/page.css": "6eeb92c7185e6ae0c43d2eb6bcb11540921b0dca78846aab161af5fbac540d0b",
         "software/cadagent/webkit/files/viewer.css": "62ab9439282d6aa2b0bc0e739f1b80d2084942da46e7c47e5e011be19c629168",
         "software/cadagent/webkit/host/example.stl": "6ebc1638b6e3839f620f0dc9e84f819c7dc15f66a9e27d14a72b48a749c60a7d",
-        "software/cadagent/webkit/model/stage.js": "e8539b8c92fdeb8575f41e41fb23ee1efb57ef39ac869124d632c54f7214a109",
+        "software/cadagent/webkit/model/stage.js": "6e5b64584bc519e03b5c37cba503c6248f18ef2c3347352ce23d7985ad92efd2",
         "software/cadagent/webkit/ui/theme.css": "370dfb29b28c760d48332316651492d0853c3e3aa9bc355e8a7edb1a4b12cf47",
         "software/cadagent/webkit/ui/theme.js": "bec818983711f705b48f9df993ed4ee53a82093f1f750252103d0c1f8366b0e2",
         "software/cadagent/webkit/vendor/file-parsers/STLLoader.js": "5008202cece503fd1ba8c04c0dd9000f6c311e19391b10d6390b90ac42235d6d",

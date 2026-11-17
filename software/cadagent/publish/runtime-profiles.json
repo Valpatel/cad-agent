@@ -14,7 +14,7 @@
             "assembly/playback.js",
             "model/viewer.js"
           ],
-          "sha256": "dff223e998bb65ab301e10e729b21c2c596276771a87a0cca4a318079f7d1de5"
+          "sha256": "37f195fa9c5a6dc945f6acf2be129aef841e0c5ffaad2525a2d42b86b5b0a1e6"
         },
         "assembly/playback.js": {
           "requires": [],
@@ -40,7 +40,7 @@
             "vendor/three/three.module.min.js",
             "ui/appnav.js"
           ],
-          "sha256": "d9063a3da9fa44ff1ae93b48d6b1590426ae474275d74e2aef37759471edbccb"
+          "sha256": "054c3cc1f82cbdcf90ece1a07edbdc514949b1159458f00362b85a3f05e44ecb"
         },
         "model/viewer.js": {
           "requires": [
@@ -52,7 +52,7 @@
             "assembly/guide.js",
             "files/file-geometry.js"
           ],
-          "sha256": "41100a263ff0204482258d5da85a27ba0da09eecfa848b8751791b06edd01241"
+          "sha256": "2c1f78e0ff16266ae3c6e8171433d505143637a8c339e4dd33b67c843cc04132"
         },
         "package.json": {
           "requires": [],

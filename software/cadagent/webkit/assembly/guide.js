@@ -86,6 +86,8 @@ export function validateGuide(guide, manifest) {
   id(guide.snapshot.id, 'Snapshot'); text(guide.snapshot.revision, 'Revision', 200);
   if (!['released', 'wip'].includes(guide.snapshot.status) || !/^[0-9a-f]{40}$/.test(guide.snapshot.source_commit)) fail('Invalid snapshot status/source commit');
   if (guide.source !== undefined && !record(guide.source)) fail('Guide source metadata must be an object');
+  // The guide's own statement of what it is and is not (shown under the version line); optional, plain text.
+  if (guide.source?.qualification !== undefined) text(guide.source.qualification, 'Guide qualification', 2000);
   binding(guide.model, 'Model');
   if (guide.assembly_plan !== undefined) binding(guide.assembly_plan, 'Assembly plan');
   validateView(manifest, { guide: true });
@@ -274,8 +276,12 @@ export async function mountGuide({ app, panel, title, guideUrl, expectedHash, si
   try {
     const controller = createGuideController(viewer, loaded.guide, { plan: loaded.plan }), guide = loaded.guide;
     controls = document.createElement('section'); controls.className = 'hud-section guide-controls';
-    controls.innerHTML = '<h2>Assembly instructions</h2><p class="guide-version"></p><label>Instruction <select aria-label="Instruction step"></select></label><p class="guide-text"></p><div class="hud-chips"><button type="button" class="hud-btn" data-action="previous">Previous</button><button type="button" class="hud-btn" data-action="next">Next</button><button type="button" class="hud-btn" data-action="reset">Assembled</button></div><label>Display <select aria-label="Instruction display"><option value="ghost">Ghost previous parts</option><option value="solid">Solid</option><option value="wireframe">Wireframe</option></select></label><label><input type="checkbox" checked class="guide-explode"> Show authored explosion</label><p>Selected: <output class="guide-selection">None</output></p><label>Selected part appearance <select aria-label="Selected part appearance" disabled><option value="">Use scene mode</option><option value="solid">Solid</option><option value="transparent">Transparent</option><option value="wireframe">Wireframe</option></select></label>';
+    controls.innerHTML = '<h2>Assembly instructions</h2><p class="guide-version"></p><label>Instruction <select aria-label="Instruction step"></select></label><div class="hud-chips"><button type="button" class="hud-btn" data-action="previous">Previous</button><button type="button" class="hud-btn" data-action="next">Next</button><button type="button" class="hud-btn" data-action="reset">Assembled</button></div><p class="guide-text"></p><label>Display <select aria-label="Instruction display"><option value="ghost">Ghost previous parts</option><option value="solid">Solid</option><option value="wireframe">Wireframe</option></select></label><label><input type="checkbox" checked class="guide-explode"> Show authored explosion</label><p>Selected: <output class="guide-selection">None</output></p><label>Selected part appearance <select aria-label="Selected part appearance" disabled><option value="">Use scene mode</option><option value="solid">Solid</option><option value="transparent">Transparent</option><option value="wireframe">Wireframe</option></select></label>';
     controls.querySelector('.guide-version').textContent = `Guide ${guide.snapshot.revision} · ${guide.snapshot.status === 'wip' ? 'work in progress' : 'released'} · source commit ${guide.snapshot.source_commit.slice(0, 10)}`;
+    if (guide.source?.qualification) {
+      const note = document.createElement('p'); note.className = 'hud-note guide-qualification'; note.textContent = guide.source.qualification;
+      controls.querySelector('.guide-version').after(note);
+    }
     const select = controls.querySelector('select'), mode = controls.querySelector('[aria-label="Instruction display"]'), explode = controls.querySelector('.guide-explode');
     const overview = document.createElement('option'); overview.value = ''; overview.textContent = 'Assembled overview'; select.append(overview);
     for (const step of guide.steps) { const option = document.createElement('option'); option.value = step.id; option.textContent = step.title; select.append(option); }

@@ -15,6 +15,10 @@ test('ordinary manifests keep optional mesh hashes; guide frame and every instan
   const legacy = structuredClone(manifest); delete legacy.units; delete legacy.up; delete legacy.parts[0].sha256;
   assert.equal(validateView(legacy), legacy); assert.throws(() => validateGuide(guide, legacy));
 });
+test('a guide may state what it is in source.qualification (#811)', () => {
+  const { guide, manifest } = fixture(); guide.source = { qualification: 'An example sequence, not a verified build procedure.' };
+  assert.equal(validateGuide(guide, manifest), guide);
+});
 const bad = [
   g => g.extra = true, g => g.snapshot.status = 'approved', g => g.snapshot.source_commit = 'main',
   g => g.subassemblies.push(g.subassemblies[0]), g => g.steps.push(g.steps[0]),
@@ -25,6 +29,7 @@ const bad = [
   g => g.model.file = 'https://other.invalid/view.json', g => g.model.file = '/current/view.json',
   g => g.model.file = 'view.json#old', g => g.model.sha256 = 'bad', g => g.steps[0].poster = { file: 'poster.png', sha256: 'bad' },
   g => g.steps[0].opacity = 0.2, g => g.steps[0].partModes = { base: 'transparent' },
+  g => g.source = { qualification: '' }, g => g.source = { qualification: 5 }, g => g.source = { qualification: 'x'.repeat(2001) },
 ];
 for (const [i, mutate] of bad.entries()) test(`invalid guide ${i} fails closed`, () => {
   const { guide, manifest } = fixture(); mutate(guide); assert.throws(() => validateGuide(guide, manifest));

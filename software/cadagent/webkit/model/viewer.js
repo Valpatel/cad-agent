@@ -170,7 +170,7 @@ export async function createViewer({ app, panel, title, manifestUrl, manifest: s
       all.indeterminate = on > 0 && on < members.length;
     };
     if (categories.length > 1) {
-      const head = document.createElement('div');
+      const head = document.createElement('label');
       head.className = 'hud-toggle';
       head.innerHTML = `<input type="checkbox"><span><b>All ${esc((category || 'other parts').toLowerCase())}</b></span>`;
       all = head.querySelector('input');
@@ -185,10 +185,11 @@ export async function createViewer({ app, panel, title, manifestUrl, manifest: s
       list.appendChild(head);
     }
     for (const p of members) {
-      const row = document.createElement('div');
+      // A label, so the whole row toggles the part; both inputs carry the part's name for assistive technology.
+      const row = document.createElement('label'), shown = p.name.replaceAll('_', ' ');
       row.className = 'hud-toggle';
-      row.innerHTML = `<input type="checkbox" ${p.mesh.visible ? 'checked' : ''}><input type="color" value="${esc(p.color)}" `
-        + `style="width:18px;height:18px;border:0;padding:0;background:none"><span>${esc(p.id ? p.id + ' · ' : '')}${esc(p.name.replaceAll('_', ' '))}</span>`;
+      row.innerHTML = `<input type="checkbox" aria-label="Show ${esc(shown)}" ${p.mesh.visible ? 'checked' : ''}><input type="color" aria-label="Colour of ${esc(shown)}" value="${esc(p.color)}" `
+        + `style="width:18px;height:18px;border:0;padding:0;background:none"><span>${esc(p.id ? p.id + ' · ' : '')}${esc(shown)}</span>`;
       const [vis, col] = row.querySelectorAll('input');
       vis.onchange = () => { state.visible = vis.checked ? [...new Set([...state.visible, p.name])] : state.visible.filter(n => n !== p.name); visibilityChanged(); syncAll(); };
       col.oninput = () => { userColors.set(p.name, new THREE.Color(col.value)); p.mesh.material.color.set(col.value); };

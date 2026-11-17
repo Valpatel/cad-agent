@@ -139,6 +139,8 @@ def collect_guides(root: Path, paths: List[str]) -> List[GuideBundle]:
         identifiers.add(snapshot["id"])
         if "source" in guide and not isinstance(guide["source"], dict):
             raise CadConfigError("assembly guide source metadata must be an object")
+        if "qualification" in guide.get("source", {}) and not _text(guide["source"]["qualification"], 2000):
+            raise CadConfigError("assembly guide source.qualification must be nonempty text of at most 2000 characters")
         model = guide.get("model")
         _fields(model, ("file", "sha256"), "model binding")
         if not isinstance(model, dict) or not isinstance(model.get("sha256"), str):

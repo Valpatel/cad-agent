@@ -352,3 +352,17 @@ def test_plan_bytes_are_collected_once_and_stale_bindings_fail(tmp_path):
     (tmp_path / "plan.json").write_bytes(bundle.files["plan.json"] + b" ")
     with pytest.raises(CadConfigError, match="hash mismatch"):
         collect_guides(tmp_path, ["guide.json"])
+
+
+@pytest.mark.parametrize("value, ok", [("An example sequence, not a verified build procedure.", True),
+                                       ("", False), ("   ", False), (5, False), ("x" * 2001, False)])
+def test_source_qualification_is_plain_text_as_the_reader_shows_it(tmp_path, value, ok):
+    """#811: the reader shows `source.qualification` under its version line; both validators hold it to text."""
+    path, guide = fixture(tmp_path)
+    guide["source"] = {"qualification": value}
+    path.write_text(json.dumps(guide))
+    if ok:
+        assert collect(tmp_path, path)
+    else:
+        with pytest.raises(CadConfigError, match="qualification"):
+            collect(tmp_path, path)

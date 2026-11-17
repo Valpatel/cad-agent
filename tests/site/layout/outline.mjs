@@ -184,7 +184,7 @@ export async function readerBoundaryProblems(browser, base) {
     let prior='',same=0;const until=setTimeout(()=>resolve(false),2000);
     const tick=()=>{const p=document.querySelector('.cad-nav-panel'),now=scrollY+':'+p.scrollTop;if(now===prior)same++;else same=0;prior=now;if(same>=12){clearTimeout(until);resolve(true);}else requestAnimationFrame(tick);};requestAnimationFrame(tick);
   }));
-  for(const viewport of [{width:1366,height:900},{width:1440,height:900},{width:1440,height:600},{width:1600,height:900}]){
+  for(const viewport of [{width:1440,height:900},{width:1440,height:600},{width:1600,height:900},{width:1366,height:900}]){
     const page=await browser.newPage({viewport});
     try{
       await readerBoundaryGoto(page,base+'/docs/toolkit',{viewport,evidence,states,problems});await page.waitForSelector('cad-nav[data-ready]');

@@ -199,7 +199,7 @@
    "command": "node --test tests/site/website-*.test.mjs tests/site/toolkit/website-*.test.mjs",
    "needs": {"node_deps": ["tools/site"], "after": ["site-build"]},
    "cost": "slow",
-   "cost_note": "website-build.test.mjs makes about eight more full site builds; over 30 minutes on a loaded 4-CPU machine",
+   "cost_note": "website-build, website-drafts, website-diagrams and website-checks make about eight more full site builds between them, in parallel files; about 9 minutes on a 4-CPU machine, 4.5 in CI (#814)",
    "timeout": 5400,
    "mirrors": [{"workflow": "webkit.yml", "job": "browser", "run": "node --test tests/site/website-*.test.mjs tests/site/toolkit/website-*.test.mjs"}]
   },

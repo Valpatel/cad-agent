@@ -1,2 +1,0 @@
-**Changed**
-- Site browser suite: a failed navigation's receipt now says, for each main-frame document request, which of Playwright's `request`, `response`, `requestfinished` and `requestfailed` events it got and when, which routes the page and its context had, and, when a route handler took it, when the handler ran and ended and how each `fetch`, `fulfill` or `continue` it made settled (status and body size for a fetch). Two planted controls in the suite pin it: a handler that never answers and one that fulfils only after the navigation failed (#686).

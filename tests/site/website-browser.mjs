@@ -939,8 +939,14 @@ async function demoWayBackProblems() {
     try {
       await navigate(page, base + '/toolkit');
       const hrefs = await page.evaluate(() => [...document.querySelectorAll('a[href^="/kit/model/viewer.html"], a[href^="/kit/files/file-viewer.html"], a[href^="/kit/simulation/"]')].map(a => a.getAttribute('href')));
-      for (const [name, [route]] of Object.entries(DEMOS).filter(([name]) => !UNLINKED.has(name)))
-        if (!hrefs.includes(optIn(route))) problems.push(`/toolkit: no link to the ${name} with nav=1 (${hrefs.join(', ') || 'none'})`);
+      // Linked demos must be linked with nav=1; an unlinked one (#811: the rail) must not be linked at all.
+      const linkProblems = hrefs => Object.entries(DEMOS).flatMap(([name, [route]]) => UNLINKED.has(name)
+        ? (hrefs.some(h => h.includes(route)) ? [`/toolkit: still links the ${name} rail (${route})`] : [])
+        : (hrefs.includes(optIn(route)) ? [] : [`/toolkit: no link to the ${name} with nav=1 (${hrefs.join(', ') || 'none'})`]));
+      problems.push(...linkProblems(hrefs));
+      // Planted control: a /toolkit page that links the rail is reported.
+      if (!linkProblems([...hrefs, optIn(DEMOS['build guide'][0])]).some(p => p.startsWith('/toolkit: still links the build guide rail')))
+        problems.push('planted control: a /toolkit link to the unlinked rail was not reported, so this check tests nothing');
     } finally { await page.close(); }
   }
   for (const [name, [demo, viewer]] of Object.entries(DEMOS)) {

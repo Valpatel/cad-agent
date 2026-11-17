@@ -6,11 +6,11 @@ The build-guide preview shows the featured example, Gyropup's turret guide, whic
 
 ```mermaid
 flowchart TD
-    E["Featured guide<br/>kit/assembly/examples/gyropup-turret"] --> G["toolkit-examples.mjs"]
-    F["Rail fixture<br/>tests/fixtures/assembly-plan"] --> G
-    G --> A["assembly/<br/>byte-identical copy, unlinked"]
-    V["Shipped viewers"] --> G
-    G --> P["*.webp + SOURCE.json<br/>captured scene + hashes"]
+    E["Turret guide"] --> G["toolkit-examples.mjs"]
+    F["Rail fixture"] --> G
+    V["Viewers"] --> G
+    G --> A["assembly/ copy"]
+    G --> P["previews + SOURCE.json"]
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
     class P,A here

@@ -147,7 +147,6 @@ try{
     // click, which is how Pause failed to hold in CI (#809). Planted control below: the per-frame rewrite is reported.
     const sameNode=target=>target.evaluate(()=>new Promise(resolve=>{const button=document.querySelector('.replay-controls button[aria-pressed]'),first=button.firstChild;
       let n=0;const tick=()=>++n>5?resolve(__replay.playback.state().playing&&button.firstChild===first):requestAnimationFrame(tick);tick();}));
-    assert.equal(await sameNode(page),true,'the Pause button keeps its text node while the recording plays');
     await page.getByRole('button',{name:'Pause recording',exact:true}).click();
     const held=await page.evaluate(()=>__replay.playback.state());assert.equal(held.playing,false);
     await page.evaluate(()=>new Promise(resolve=>{let n=0;const tick=()=>++n>3?resolve():requestAnimationFrame(tick);tick();}));
@@ -158,6 +157,9 @@ try{
     const slow=await page.evaluate(()=>__replay.playback.state());assert.equal(slow.playing,false,'a 150 ms press on Pause pauses');
     await page.evaluate(()=>new Promise(resolve=>{let n=0;const tick=()=>++n>3?resolve():requestAnimationFrame(tick);tick();}));
     assert.equal(await page.evaluate(()=>__replay.playback.state().time),slow.time,'Pause holds after a slow press');
+    // Proof run (#820): the text-node check moved after the presses, so a press failure shows first.
+    await page.getByRole('button',{name:'Play recording',exact:true}).click();await page.waitForFunction(()=>__replay.playback.state().playing);
+    assert.equal(await sameNode(page),true,'the Pause button keeps its text node while the recording plays');
     await context.close();
     const planted=await browser.newContext({viewport:{width:1100,height:900},reducedMotion:'reduce'}),control=await planted.newPage();
     await control.route('**/simulation/viewer.js',async route=>{const response=await route.fetch();const body=(await response.text()).replace("&&!matchMedia('(prefers-reduced-motion: reduce)').matches",'');

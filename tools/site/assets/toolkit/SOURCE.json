@@ -1,10 +1,10 @@
 {
   "schema": "cad-agent.toolkit-examples/1",
   "scope": "Actual viewer previews of the featured build guide and the original-file example; no physical or project qualification.",
-  "sourceHead": "be59341fe07dcf2327eaf7de7f9d01bf8f7a905a",
+  "sourceHead": "0d56537167e1c6bbc0f4bd3299a0b06304d10213",
   "generator": {
     "path": "tools/site/figures/toolkit-examples.mjs",
-    "sha256": "49e6fe4dd849d2a9bbd0825d6bd5c47ace56b1dedfe564b52519b91fa88c6cd7"
+    "sha256": "6ed9512d01a4a94d6974fe665e9fd6b5d55b0facacbc9e23c21f1750b5879d31"
   },
   "browser": {
     "engine": "chromium",
@@ -24,8 +24,9 @@
     "assembly": {
       "file": "assembly.webp",
       "route": "/kit/model/viewer.html?guide=/kit/assembly/examples/gyropup-turret/guide.json",
-      "sha256": "ec7b8bc5a7ca3f8e058b1c5e415d4205ede6f5b5084abadfa99c73476199e208",
-      "bytes": 81154,
+      "sha256": "ec6d32bc21793d9251e687dc254ffeda1ee47979edd58939c2e63e77bd449d7b",
+      "bytes": 53600,
+      "webpQuality": 0.8,
       "viewport": {
         "width": 960,
         "height": 640
@@ -186,6 +187,7 @@
       "route": "/kit/files/file-viewer.html?file=/kit/host/example.stl",
       "sha256": "e5d2e720afcdce8d5da2e7fd9e34f9e5e29fecad7d86ff1527a6162597b14e78",
       "bytes": 45700,
+      "webpQuality": 0.9,
       "viewport": {
         "width": 960,
         "height": 640

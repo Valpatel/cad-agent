@@ -98,15 +98,18 @@ try {
     if (kind === 'assembly') assert.deepEqual(scene.parts.slice().sort(), view.parts.map(part => part.name).sort());
     if (kind === 'assembly') assert.deepEqual([scene.instruction, scene.display], [previewStep, 'ghost']);
     const png = await page.screenshot({ type: 'png', animations: 'disabled' });
-    const encoded = await page.evaluate(async png => {
+    // The turret preview has far more detail than the old rail bench; a lower quality keeps the home page's lazy card
+    // within a small still of its former bytes (#811). The file-review preview keeps its quality and bytes.
+    const quality = kind === 'assembly' ? .8 : .9;
+    const encoded = await page.evaluate(async ([png, quality]) => {
       const image = new Image(); image.src = `data:image/png;base64,${png}`; await image.decode();
       const canvas = Object.assign(document.createElement('canvas'), { width: image.width, height: image.height });
       canvas.getContext('2d').drawImage(image, 0, 0);
-      return canvas.toDataURL('image/webp', .9).split(',')[1];
-    }, png.toString('base64'));
+      return canvas.toDataURL('image/webp', quality).split(',')[1];
+    }, [png.toString('base64'), quality]);
     const bytes = Buffer.from(encoded, 'base64'), file = `${kind}.webp`;
     await writeFile(path.join(root, output, file), bytes);
-    captures[kind] = { file, route, sha256: hash(bytes), bytes: bytes.length, viewport: { width: 960, height: 640 }, deviceScaleFactor: 1, colorScheme: 'dark', reducedMotion: 'reduce', scene, runtimeInputs: Object.fromEntries([...served].sort(([a], [b]) => a.localeCompare(b))) };
+    captures[kind] = { file, route, sha256: hash(bytes), bytes: bytes.length, webpQuality: quality, viewport: { width: 960, height: 640 }, deviceScaleFactor: 1, colorScheme: 'dark', reducedMotion: 'reduce', scene, runtimeInputs: Object.fromEntries([...served].sort(([a], [b]) => a.localeCompare(b))) };
     await page.close();
   }
   const receipt = {

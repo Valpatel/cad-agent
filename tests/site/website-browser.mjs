@@ -1001,12 +1001,16 @@ async function demoWayBackProblems() {
           const nav = document.querySelector('nav.appnav');
           if (!nav) return null;
           const r = nav.getBoundingClientRect(), v = document.querySelector(viewer)?.getBoundingClientRect();
-          return { bottom: r.bottom, viewerTop: v ? v.top : null, links: [...nav.querySelectorAll('a')].map(a => new URL(a.href).pathname) };
+          return { bottom: r.bottom, viewerTop: v ? v.top : null, links: [...nav.querySelectorAll('a')].map(a => new URL(a.href).pathname),
+            themed: nav.classList.contains('themed'), inner: nav.scrollWidth - nav.clientWidth };
         }, viewer);
         if (!bar) { problems.push(`${name} ${width}px: no top bar back into the site`); continue; }
         const resolved = await Promise.all(bar.links.map(async p => { const r = await page.request.get(base + p); return new URL(r.url()).pathname; }));
         if (JSON.stringify(resolved) !== JSON.stringify(WANT)) problems.push(`${name} ${width}px: the bar leads to ${resolved.join(', ')}, not ${WANT.join(', ')}`);
         if (bar.viewerTop === null || bar.viewerTop < bar.bottom - 1) problems.push(`${name} ${width}px: the viewer starts at ${bar.viewerTop} px, under the ${bar.bottom} px bar`);
+        // #807: the kit's pages carry its theme, so the bar takes its colours; at 390 px its tabs fit without scrolling.
+        if (!bar.themed) problems.push(`${name} ${width}px: the bar keeps its dark colours, not the page's theme`);
+        if (bar.inner > 0) problems.push(`${name} ${width}px: the bar's tabs scroll ${bar.inner} px sideways inside it`);
         if (bad.length) problems.push(`${name} ${width}px: ${[...new Set(bad)].join('; ')}`);
       } finally { await page.close(); }
     }
@@ -1022,11 +1026,18 @@ async function demoWayBackProblems() {
     }
     // A host without nav.json, opted in: no bar (its one 404 is the host's).
     {
-      const { page, answered } = await open(route, 1366, { noNavFile: true });
+      const { page, answered, bad } = await open(route, 1366, { noNavFile: true });
       try {
         await ready(page);
         await answered; await page.evaluate(() => new Promise(done => setTimeout(done, 0)));
         if (await page.locator('nav.appnav').count()) problems.push(`${name} with nav=1 on a host without site/nav.json: a top bar shows`);
+        // The one 404 for nav.json, and its one console line, are all that went wrong (#807). The line may come after
+        // the answer: wait for it (2 s at most), then a moment more for any other.
+        for (const end = Date.now() + 2000; !bad.some(b => b.startsWith('console: ')) && Date.now() < end;) await page.waitForTimeout(50);
+        await page.waitForTimeout(200);
+        const logged = bad.filter(b => b.startsWith('console: ')), other = bad.filter(b => !b.startsWith('console: ') && b !== '404 /site/nav.json');
+        if (other.length || logged.length !== 1 || !/404/.test(logged[0] || ''))
+          problems.push(`${name} with nav=1 on a host without site/nav.json: wanted only the nav.json 404 and its one console error, got ${JSON.stringify(bad)}`);
       } finally { await page.close(); }
     }
   }

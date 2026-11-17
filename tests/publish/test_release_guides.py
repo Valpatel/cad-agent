@@ -395,6 +395,8 @@ def test_packed_model_guide_binds_its_one_binary(tmp_path):
     (lambda m: m["parts"][0].__setitem__("color", 0x336699), "invalid colour"),
     (lambda m: m.__setitem__("encoding", "brotli"), "unknown encoding"),
     (lambda m: m["parts"][0].__setitem__("vertices", 1), "names a vertex that does not exist"),
+    (lambda m: m["parts"].__setitem__(1, "not a part"), "part 2: not an object"),   # #807: was an AttributeError
+    (lambda m: m["parts"].__setitem__(0, None), "part 1: not an object"),
 ])
 def test_release_refuses_every_packed_model_the_reader_refuses(tmp_path, plant, message):
     """Review of #812: each field the reader's validatePackedView and decodeModel refuse is refused here too."""

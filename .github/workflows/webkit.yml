@@ -130,6 +130,11 @@ jobs:
           python-version: '3.12'
       # Invoke pip through setup-python's interpreter; cached script launchers can contain host-only paths.
       - run: python -m pip install -e ".[site]"
+      # The top bar under `cad-agent site --serve`, on a project served by the real Python server (#807).
+      - run: node tests/publish/served-browser.mjs
+        env:
+          PLAYWRIGHT_CHANNEL: chromium
+          PLAYWRIGHT_BROWSER: ${{ matrix.engine }}
       - run: npm run test:assembly-release
         working-directory: tools/site
         env:

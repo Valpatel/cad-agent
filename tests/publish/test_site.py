@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import re
+from pathlib import Path
 
 import pytest
 
@@ -211,6 +212,12 @@ def test_inject_nav_marks_the_current_page_and_respects_pages_with_their_own_bar
     assert site.inject_nav(off, "/x.html", nav) == off
     assert site.inject_nav(b"<p>no body tag", "/x.html", nav).endswith(b"</script>")
     assert site.inject_nav(b"<body></body>", "/x.html", []) == b"<body></body>"
+    # nav=0 in the address turns the bar off, as the kit's own pages read it (fea/fea.html), whatever else it carries
+    plain = b"<html><body><h1>x</h1></body></html>"
+    for address in ("/kit/fea/fea.html?nav=0", "/kit/fea/fea.html?play=1&nav=0#top", "/x.html?nav=1&nav=0"):
+        assert site.inject_nav(plain, address, nav) == plain, address
+    for address in ("/kit/fea/fea.html?nav=1", "/kit/fea/fea.html?nav=00", "/kit/fea/fea.html?x=1#nav=0"):
+        assert b"mountAppNav" in site.inject_nav(plain, address, nav), address
     latin = "<html><body>café Müller</body></html>".encode("latin-1")
     assert site.inject_nav(latin, "/x.html", nav).startswith("<html><body>café Müller".encode("latin-1")), "bytes pass through"
 
@@ -294,3 +301,12 @@ def test_default_nav_picks_up_a_report_written_while_serving(tmp_path):
     finally:
         server.shutdown()
         server.server_close()
+
+
+def test_the_served_bars_share_one_phone_rule():
+    """The bar in this module's pages and the one ui/appnav.js draws on the project's other pages have the same phone
+    rule (44 px link targets at 600 px and below, #807), word for word."""
+    appnav = (Path(site.__file__).parents[1] / "webkit" / "ui" / "appnav.js").read_text()
+    rule = re.search(r"@media\(max-width:600px\)\{\.appnav\{.*?\}\}", appnav, re.S)
+    assert rule, "ui/appnav.js lost its phone rule"
+    assert rule.group(0) in site._NAV_CSS

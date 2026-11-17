@@ -224,34 +224,51 @@ def test_default_nav_normalises_and_dedupes_paths(tmp_path):
 
 
 def test_served_project_pages_get_the_top_bar(tmp_path):
-    import threading, urllib.request
+    import threading, urllib.parse, urllib.request
     root = _project(tmp_path)
     (root / "preview").mkdir()
     (root / "preview" / "index.html").write_text("<html><body><h1>Renders</h1></body></html>")
     (root / "preview" / "sim.html").write_text("<html><body><h1>Sim</h1></body></html>")
-    cfg = dict(CFG, nav=[{"id": "overview", "title": "Overview", "href": "site/"}, {"id": "sim", "title": "Sim", "href": "preview/sim.html"}])
+    model = site.KIT_URL.strip("/") + "/model/viewer.html"
+    cfg = dict(CFG, nav=[{"id": "overview", "title": "Overview", "href": "site/"}, {"id": "sim", "title": "Sim", "href": "preview/sim.html"},
+                         {"id": "model", "title": "3D model", "href": model}])
     server, url = site.serve_site(root, cfg, "x", "127.0.0.1", 0)
     threading.Thread(target=server.serve_forever, daemon=True).start()
     base = url.replace("/site/", "/")
+    injected = re.compile(r'<script type="module">import \{ mountAppNav \} from "([^"]+)";mountAppNav\(\{ root: "/", current: "([^"]*)", injected: true \}\);</script>')
     try:
         with urllib.request.urlopen(base + "preview/sim.html") as r:
             body = r.read().decode()
-            assert "mountAppNav" in body and 'current: "sim"' in body and "<h1>Sim</h1>" in body
+            assert "<h1>Sim</h1>" in body
+        tag = injected.search(body)
+        assert tag and tag.group(2) == "sim", "the server injected the bar, marking this page's tab"
+        assert "mountAppNav" not in (root / "preview" / "sim.html").read_text(), "files on disk are left alone"
+        with urllib.request.urlopen(urllib.parse.urljoin(base + "preview/sim.html", tag.group(1))) as r:   # #799: it was a 404
+            assert r.status == 200 and "export async function mountAppNav" in r.read().decode(), "the injected module is served"
         with urllib.request.urlopen(base + "preview/") as r:
-            assert "mountAppNav" in r.read().decode(), "a folder's index.html gets the bar too"
+            assert injected.search(r.read().decode()), "a folder's index.html gets the bar too"
         with urllib.request.urlopen(url) as r:
             assert r.read().decode().count('class="appnav"') == 1, "the site has its bar built in, not twice"
         with urllib.request.urlopen(base + "site/nav.json") as r:
-            assert json.loads(r.read())["nav"][1]["href"] == "preview/sim.html"
-        assert "mountAppNav" not in (root / "preview" / "sim.html").read_text(), "files on disk are left alone"
+            served = json.loads(r.read())
+            assert served["nav"][1]["href"] == "preview/sim.html"
+            assert served["live"] is True, "the serving bar offers live reload"
+        assert "live" not in json.loads((root / "site" / "nav.json").read_text()), "a static copy does not poll for changes"
         head = urllib.request.Request(base + "preview/sim.html", method="HEAD")
         with urllib.request.urlopen(head) as r, urllib.request.urlopen(base + "preview/sim.html") as g:
             assert r.headers["Content-Length"] == g.headers["Content-Length"] == str(len(g.read()))
-        with urllib.request.urlopen(base + site.KIT_URL.lstrip("/") + "model/viewer.html") as r:
+        # The kit's viewers mention appnav.js (their own bar is opt-in with nav=1, #804) but have no bar in their markup,
+        # so the server still injects one, marking the "3D model" tab; the module the page imports itself is served too.
+        viewer_url = base + model
+        with urllib.request.urlopen(viewer_url) as r:
             viewer = r.read().decode()
-            assert "mountAppNav" in viewer, "the web kit's pages get the bar too"
-        module = re.search(r'import \{ mountAppNav \} from "([^"]+)"', viewer).group(1)
-        with urllib.request.urlopen(base + module.lstrip("/")) as r:      # #799: it was a 404
+        tag = injected.search(viewer)
+        assert tag and tag.group(2) == "model", "the web kit's pages get the bar too, with their tab marked"
+        assert not injected.search((site.KIT_DIR / "model" / "viewer.html").read_text()), "the kit's file has no injected tag"
+        with urllib.request.urlopen(urllib.parse.urljoin(viewer_url, tag.group(1))) as r:
+            assert r.status == 200 and "export async function mountAppNav" in r.read().decode()
+        own = re.search(r"import\('([^']+appnav\.js)'\)", viewer).group(1)
+        with urllib.request.urlopen(urllib.parse.urljoin(viewer_url, own)) as r:
             assert r.status == 200 and "export async function mountAppNav" in r.read().decode()
     finally:
         server.shutdown()

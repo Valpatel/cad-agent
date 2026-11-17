@@ -17,6 +17,9 @@
     <noscript>This interactive preview needs JavaScript. Return to the parts list to download the original CAD file.</noscript>
   </main>
   <script type="module">
+    // &nav=1: show the host site's top bar from <root>/site/nav.json (ui/appnav.js). Without it nothing is requested;
+    // `cad-agent site --serve` adds its own bar to the page as it sends it.
+    if(new URLSearchParams(location.search).get('nav')==='1')import('../ui/appnav.js').then(m=>m.mountAppNav({root:'../../../'})).catch(()=>{});
     const host=document.querySelector('#file-viewer'),fallback=host.querySelector('.file-bootstrap');
     const requestedTheme=new URLSearchParams(location.search).get('theme');
     const explicitTheme=['light','dark','auto'].includes(requestedTheme);

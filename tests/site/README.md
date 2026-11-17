@@ -52,6 +52,7 @@ flowchart TD
 | `test_research_figures.py` | The research charts are drawn from the tables on their pages |
 | `website-browser.mjs` | The site's pages in a real browser, served as Cloudflare Pages serves them (a reference area page's filters included) |
 | `website-build.test.mjs` | `tools/site/build-site.mjs`: what the build makes, links, redirects and headers |
+| `website-checks.test.mjs` | `tools/site/compiler/site-checks.mjs`: link-card tags, `llms.txt` addresses read as a plain link finder reads them, the card's record, the home layer cake's section links (#804) |
 | `website-diagrams.test.mjs` | `tools/site/compiler/site-diagrams.mjs`: Mermaid blocks drawn at build time |
 | `website-html.test.mjs` | `tools/site/compiler/site-html.mjs`: the sanitizer keeps our markup and drops unsafe HTML |
 | `website-preview.test.mjs` | Directory application routes preserve slash-relative modules and scenario queries under Pages-style hosting; the server's IPC record of requests and sockets, kept by time and saying when its window is truncated; idle keep-alive sockets stay open, so no client reuses one the server is closing (#686). |

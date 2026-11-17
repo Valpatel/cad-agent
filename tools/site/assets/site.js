@@ -49,3 +49,24 @@ for (const img of document.querySelectorAll('img[data-motion-src]')) {
   };
   if (document.readyState === 'complete') swap(); else addEventListener('load', swap, { once: true });
 }
+// A link to a closed <details> (or to something inside one), such as /docs/agent-workflow#install-unix, opens it on
+// arrival and when the address's #part changes, so the reader lands on the command, not on a closed toggle (#804).
+// Without script the browser still scrolls to the block's summary; one click opens it.
+const openTarget = () => {
+  let id = '';
+  try { id = decodeURIComponent(location.hash.slice(1)); } catch { return; }
+  const target = id && document.getElementById(id);
+  if (!target) return;
+  let opened = false;
+  for (let d = target.closest('details'); d; d = d.parentElement?.closest('details')) if (!d.open) { d.open = true; opened = true; }
+  // At once, as the browser lands on any other # address: the page's smooth scrolling would leave the reader mid-way.
+  if (opened) target.scrollIntoView({ block: 'start', behavior: 'instant' });
+};
+openTarget();
+addEventListener('hashchange', openTarget);
+// The 404 page's feedback link names the address the reader asked for, not a page of its own (#804).
+for (const a of document.querySelectorAll('a[data-feedback-here]')) {
+  const url = new URL(a.href);
+  url.searchParams.set('page', location.origin + location.pathname + location.search);
+  a.href = url.href;
+}

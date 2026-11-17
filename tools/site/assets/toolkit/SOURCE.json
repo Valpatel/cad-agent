@@ -1,7 +1,7 @@
 {
   "schema": "cad-agent.toolkit-examples/1",
   "scope": "Actual viewer previews and byte-identical synthetic assembly fixture; no physical or project qualification.",
-  "sourceHead": "6c92dc306ddeda502f411b2bae8bf3b3dfde4284",
+  "sourceHead": "f0009b93abd759fefb6d1f51b9151c90e228e73d",
   "fixtureRevision": "1111111111111111111111111111111111111111",
   "generator": {
     "path": "tools/site/figures/toolkit-examples.mjs",
@@ -9,8 +9,8 @@
   },
   "browser": {
     "engine": "chromium",
-    "version": "156.0.8078.79",
-    "selection": "executable:chromium"
+    "version": "153.0.8010.12",
+    "selection": "executable:chrome"
   },
   "copies": {
     "guide.json": {
@@ -58,8 +58,8 @@
     "assembly": {
       "file": "assembly.webp",
       "route": "/kit/model/viewer.html?guide=/web/toolkit/assembly/guide.json",
-      "sha256": "c52150ee40432faa89ccf41bc00871048c3761acde1c5a291468c1923e4264c9",
-      "bytes": 56294,
+      "sha256": "23f1d401bed57a459a67a6a722e7dc3098a2763aaafc97026394f90aad64452c",
+      "bytes": 57406,
       "viewport": {
         "width": 960,
         "height": 640
@@ -90,11 +90,11 @@
         "display": "solid"
       },
       "runtimeInputs": {
-        "software/cadagent/webkit/assembly/guide.js": "e70c2d89fe631a159eefe8b0bb9a28013fa6ca621d10eb240f83322fd7779a5a",
+        "software/cadagent/webkit/assembly/guide.js": "dff223e998bb65ab301e10e729b21c2c596276771a87a0cca4a318079f7d1de5",
         "software/cadagent/webkit/assembly/playback.js": "dd575ce02567129d9aa28376d3455f7e352118609cb30ae7dfe89066d17048d7",
         "software/cadagent/webkit/files/file-geometry.js": "1f503af4149f96624ecaba68043ea44eaaa68503988646c5139edb482ab922fd",
         "software/cadagent/webkit/model/stage.js": "f62b95e16a99e06686d32454397948fd50a67a973736ffc76a03b82f5e54b486",
-        "software/cadagent/webkit/model/viewer.html": "5257149b2f9523840e49c66501678a3ff4ba9721aef3c457d8c5c75c14b5c927",
+        "software/cadagent/webkit/model/viewer.html": "d9063a3da9fa44ff1ae93b48d6b1590426ae474275d74e2aef37759471edbccb",
         "software/cadagent/webkit/model/viewer.js": "41100a263ff0204482258d5da85a27ba0da09eecfa848b8751791b06edd01241",
         "software/cadagent/webkit/ui/hud.css": "0a1fbf7e9e796c7bf5d7cb9062b34374da937975e851ad2cce6b8cdb1827325a",
         "software/cadagent/webkit/ui/panel.js": "94c7a99a7d2d0fbf6305b77d0211487453994b5d5426aacc3f1d01d3020a7d9b",
@@ -119,8 +119,8 @@
     "file-review": {
       "file": "file-review.webp",
       "route": "/kit/files/file-viewer.html?file=/kit/host/example.stl",
-      "sha256": "9e79f4e66b5c67ef92e6dfc5ae59b8651680aafd3c7718749170bbc539f18264",
-      "bytes": 45394,
+      "sha256": "e5d2e720afcdce8d5da2e7fd9e34f9e5e29fecad7d86ff1527a6162597b14e78",
+      "bytes": 45700,
       "viewport": {
         "width": 960,
         "height": 640
@@ -148,9 +148,9 @@
         "software/cadagent/webkit/files/file-mesh-worker.js": "27a1755b197504c75aafb52b56c2a26ac206497002072f232fd671e51b045876",
         "software/cadagent/webkit/files/file-viewer-theme.js": "36ac086d6f6d439a6b9f35f449d82bf5e3bc5ec984f7a2eb6d95f348e75ad8b5",
         "software/cadagent/webkit/files/file-viewer.css": "3b82348293bba0a214ecec2b31ce2830ef3044f4454ffcdc188012857bd87963",
-        "software/cadagent/webkit/files/file-viewer.html": "187f464a88734308eeb736efe7e466ab32a181d2f7ef2516b3f8b679c8910981",
+        "software/cadagent/webkit/files/file-viewer.html": "921d4a195713d54f49bd4f015b7c4f06bc2858a83184f563833399b6a4bbe869",
         "software/cadagent/webkit/files/file-viewer.js": "7e6c3a1bdcf18574af036ac2399382bd620ca057491f6433ca5565b2ae693f37",
-        "software/cadagent/webkit/files/page.css": "575cda24741ee62172de7c8e57b70d4e3cb775b4c98d2f4820cb880e0aecf355",
+        "software/cadagent/webkit/files/page.css": "6eeb92c7185e6ae0c43d2eb6bcb11540921b0dca78846aab161af5fbac540d0b",
         "software/cadagent/webkit/files/viewer.css": "62ab9439282d6aa2b0bc0e739f1b80d2084942da46e7c47e5e011be19c629168",
         "software/cadagent/webkit/host/example.stl": "6ebc1638b6e3839f620f0dc9e84f819c7dc15f66a9e27d14a72b48a749c60a7d",
         "software/cadagent/webkit/model/stage.js": "f62b95e16a99e06686d32454397948fd50a67a973736ffc76a03b82f5e54b486",

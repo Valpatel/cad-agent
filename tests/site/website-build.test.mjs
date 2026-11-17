@@ -477,6 +477,29 @@ test('an image keeps the size its author gave, and its tag survives any alt text
   }
 });
 
+test('a layer-cake block naming a section its page lacks fails the build, and a draft warns and links the page (#804)', async () => {
+  const wt = path.join(tmp, 'wt-section');
+  execFileSync('git', ['worktree', 'add', '--detach', '--quiet', wt, 'HEAD'], { cwd: root });
+  try {
+    const yaml = await readFile(path.join(wt, 'docs/home.yaml'), 'utf8');
+    assert.ok(yaml.includes('href: docs/toolkit.md#commands'), 'the planted section replaces a real one');
+    await writeFile(path.join(wt, 'docs/home.yaml'), yaml.replace('href: docs/toolkit.md#commands', 'href: docs/toolkit.md#no-such-section'));
+    const draft = await new Promise(done => {
+      const p = spawn(process.execPath, ['tools/site/build-site.mjs', '--root', wt, '--worktree', '--out', path.join(tmp, 'draft-section')], { cwd: root });
+      let err = ''; p.stderr.on('data', d => { err += d; }); p.on('close', code => done({ code, err }));
+    });
+    assert.equal(draft.code, 0, `the draft builds: ${draft.err.slice(-400)}`);
+    assert.match(draft.err, /draft: docs\/home\.yaml stack\[\d+\]\.blocks\[\d+\]: docs\/toolkit\.md has no section #no-such-section; linking the page/);
+    const home = await readFile(path.join(tmp, 'draft-section', 'index.html'), 'utf8');
+    assert.doesNotMatch(home, /#no-such-section/, 'the draft links the page, not the missing section');
+    execFileSync('git', ['-c', 'user.name=planted', '-c', 'user.email=planted@example.invalid', 'commit', '--quiet', '--no-verify', '-am', 'planted: a missing section'], { cwd: wt });
+    assert.throws(() => execFileSync(process.execPath, ['tools/site/build-site.mjs', '--root', wt, '--out', path.join(tmp, 'site-section')], { cwd: root, stdio: 'pipe' }),
+      e => /docs\/home\.yaml stack\[\d+\]\.blocks\[\d+\]: docs\/toolkit\.md has no section #no-such-section/.test(String(e.stderr)), 'a build of the commit fails on it');
+  } finally {
+    execFileSync('git', ['worktree', 'remove', '--force', wt], { cwd: root });
+  }
+});
+
 test('doc pages carry the page tree, with this page marked', async () => {
   const toolkit = await readFile(path.join(out, 'docs/toolkit.html'), 'utf8');
   const nav = toolkit.match(/<cad-nav [^>]*>([\s\S]*?)<\/cad-nav>/)?.[1];
@@ -654,7 +677,7 @@ test('the home page shows what runs, then what is in cad-agent, in order, every 
   assert.equal((home.match(/class="run-mini"/g) || []).length, 3, 'robot replay, SCADA and a build guide');
   // The turret recording runs beside the headline on the first screen; See it run then leads with the two viewers.
   const hero = home.slice(home.indexOf('class="hero learning-hero"'), home.indexOf('class="learning-art learning-band"'));
-  assert.match(hero, /<figure class="hero-run"><a class="run-media" href="https:\/\/gyropup\.com\/designer\/sim"[^>]*><picture><source media="\(prefers-reduced-motion: reduce\)" srcset="\/docs\/img\/gyropup\/turret-playground-still\.webp"><img src="\/docs\/img\/gyropup\/turret-playground-still\.webp" width="720" height="336" alt="" fetchpriority="high" decoding="async" data-motion-src="\/docs\/img\/gyropup\/turret-playground\.webp">/, 'the hero loads the 9 KB still at its explicit size; the animation is swapped in after load, never under reduced motion');
+  assert.match(hero, /<figure class="hero-run"><a class="run-media" href="https:\/\/gyropup\.com\/designer\/sim\?design=turret-box"[^>]*><picture><source media="\(prefers-reduced-motion: reduce\)" srcset="\/docs\/img\/gyropup\/turret-playground-still\.webp"><img src="\/docs\/img\/gyropup\/turret-playground-still\.webp" width="720" height="336" alt="" fetchpriority="high" decoding="async" data-motion-src="\/docs\/img\/gyropup\/turret-playground\.webp">/, 'the hero loads the 9 KB still at its explicit size; the animation is swapped in after load, never under reduced motion');
   assert.match(await readFile(path.join(out, 'web/site.js'), 'utf8'), /data-motion-src[\s\S]*prefers-reduced-motion: reduce/, 'site.js swaps the animation in, and not under reduced motion');
   assert.match(hero, /work-in-progress prototype[^<]*not physics validation/, 'the hero caption states its limits');
   assert.ok(hero.indexOf('class="pixel-title"') < hero.indexOf('class="intro"') && hero.indexOf('class="intro"') < hero.indexOf('class="hero-actions"') && hero.indexOf('class="hero-actions"') < hero.indexOf('class="hero-run"'), 'source and focus order: headline, lede, actions, then the recording');
@@ -662,7 +685,8 @@ test('the home page shows what runs, then what is in cad-agent, in order, every 
   assert.doesNotMatch(home.slice(home.indexOf('id="built-with"')), /turret-playground/, 'See it run does not repeat the recording');
   assert.ok(home.indexOf('id="built-with"') < home.indexOf('<cad-model ') && home.lastIndexOf('<cad-model ') < home.indexOf('class="run-minis"'), 'See it run: the two viewers, then the toolkit cards');
   assert.doesNotMatch(home.slice(home.indexOf('class="learning-art learning-band"'), home.indexOf('id="built-with"')), /fetchpriority="high"/, 'the pixel-art band does not compete with the recording');
-  assert.match(home, /href="https:\/\/gyropup\.com\/designer\/sim"/);
+  // The playground opens on the recorded model, not its default robot (#804).
+  assert.match(home, /<a href="https:\/\/gyropup\.com\/designer\/sim\?design=turret-box">Open the playground<\/a>/);
   assert.match(home, /class="more-checks"/);
   // Every local link the new sections add lands on a published page, and every #anchor on a real id.
   const added = home.slice(home.indexOf('id="built-with"'), home.indexOf('class="section help-band"'));
@@ -678,7 +702,7 @@ test('the home page shows what runs, then what is in cad-agent, in order, every 
     for (const layer of ['Agent kit', 'Knowledge', 'Command-line tools', 'Web widgets', 'Checks and tests', 'Simulators', 'Libraries', 'Built on'])
       assert.ok(text.includes(`- **${layer}**`), `${f}: ${layer}`);
     // The running examples, the same ones the page shows (#748): the turret recording, the two viewers, the three cards.
-    for (const example of ["[Gyropup's turret playground](https://gyropup.com/designer/sim)", '[Gyropup](', '[J501 project](', '/toolkit#robot-replay', '/toolkit#scada-simulations', '/toolkit#assembly'])
+    for (const example of ["[Gyropup's turret playground](https://gyropup.com/designer/sim?design=turret-box)", '[Gyropup](', '[J501 project](', '/toolkit#robot-replay', '/toolkit#scada-simulations', '/toolkit#assembly'])
       assert.ok(text.includes(example), `${f}: ${example}`);
     assert.match(text, /not physics validation/, `${f}: the turret's limits`);
   }

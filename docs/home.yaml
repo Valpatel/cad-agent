@@ -3,7 +3,8 @@
 # The build (tools/site/build-site.mjs) fails when a link is not a published page, a picture is not committed, an area
 # is not in docs/areas.yaml or a /toolkit anchor is not one of its examples.
 # What is in cad-agent: a layer cake, top layer first. A block is in the repo today unless it says `planned:` with an
-# open issue; then it is drawn dashed and links to that issue. `count:` names a number the build computes from the repo.
+# open issue; then it is drawn dashed and links to that issue. A block links the section its label names where the page
+# has one (`page.md#section`; the build checks the section exists). `count:` names a number the build computes from the repo.
 # `until:` names the file a planned block awaits; once it exists the build asks for a solid block.
 stack:
 - layer: Agent kit
@@ -17,10 +18,10 @@ stack:
     href: .agents/agents/README.md
   - label: Eval jobs
     count: eval-jobs
-    href: docs/practice/standard-evaluation.md
+    href: docs/practice/standard-evaluation.md#jobs-and-what-they-prove
   - label: Candidate eval tasks
     count: eval-tasks
-    href: docs/practice/standard-evaluation.md
+    href: docs/practice/standard-evaluation.md#candidate-task-catalog
   - label: Local and lower-cost model evals
     planned: 142
 - layer: Knowledge
@@ -48,25 +49,25 @@ stack:
   blocks:
   - label: Commands
     count: commands
-    href: docs/toolkit.md
+    href: docs/toolkit.md#commands
   - label: Build and export
     commands: [build, export-3mf, package, release]
-    href: docs/toolkit.md
+    href: docs/toolkit.md#commands
   - label: Check
     commands: [check, all, holes, overhangs, gates, motion-trace, pcb-check]
-    href: docs/toolkit.md
+    href: docs/toolkit.md#commands
   - label: Design rules
     commands: [rules, choose, snapfit, inserts, bearings]
-    href: docs/toolkit.md
+    href: docs/toolkit.md#commands
   - label: Reports and reviews
     commands: [report, dossier, review-packet, review-section]
-    href: docs/toolkit.md
+    href: docs/toolkit.md#commands
   - label: Print
     commands: [slice, prusa-view, bambu-status]
-    href: docs/toolkit.md
+    href: docs/toolkit.md#commands
   - label: Explore designs
     commands: [compare, optimise]
-    href: docs/toolkit.md
+    href: docs/toolkit.md#commands
   - label: Print list and drawings package
     planned: 302
 - layer: Web widgets
@@ -114,17 +115,17 @@ stack:
   caption: Each states its assumptions
   blocks:
   - label: FEA
-    href: software/cadagent/simulation/README.md
+    href: docs/toolkit.md#stiffness-and-strength-cadagentsimulationfea
   - label: CFD and thermal
     href: docs/research/simulation-tools.md
   - label: Motion and clearance
-    href: docs/practice/gates.md
+    href: docs/practice/gates.md#motion-range-interference-cadagentreviewgatesmotion
   - label: Robot dynamics replay
     href: docs/examples/robot-replay/README.md
   - label: SCADA process models
     href: docs/practice/scada/README.md
   - label: Topology optimisation
-    href: software/cadagent/simulation/README.md
+    href: docs/toolkit.md#topology-optimisation-cadagentsimulationtopopt
   - label: Fluid and thermal engines for SCADA
     planned: 733
   - label: Electrical and PLC simulation
@@ -189,7 +190,7 @@ stack:
   - label: Optuna
     href: docs/explore.md
   - label: Bambu Studio and PrusaSlicer (external)
-    href: docs/toolkit.md
+    href: docs/toolkit.md#real-grams-cadagentmanufacturingslicer-cad-agent-slice
   - label: three.js
     href: software/cadagent/webkit/vendor/README.md
 # The turret recording sits in the hero beside the headline (#748). See it run: the two viewers are written by the build
@@ -206,7 +207,9 @@ showcase:
     hero_caption: A work-in-progress prototype in Gyropup's browser playground, firing foam balls at targets. The
       ball flight is the playground's simplified model, not physics validation.
     alt: A foam-ball turret on a compute box fires a stream of balls at targets in a 3D yard
-    href: https://gyropup.com/designer/sim
+    # The recorded model, so the playground opens on it, not on its default robot (#804); the build checks it is the
+    # recording record's address.
+    href: https://gyropup.com/designer/sim?design=turret-box
   cards:
   - toolkit: robot-replay
     caption: A recorded MuJoCo run of an illustrative two-link arm. Scrub time and orbit; it is a replay, not a

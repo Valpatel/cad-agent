@@ -81,7 +81,7 @@ export function createReplayViewer(container,{recording,recordingUrl,expectedHas
           // Written only when it changes: this runs every frame while playing, and replacing the button's text node
           // between a press and its release makes WebKit drop the click (its target is the pressed node), so Pause
           // could be ignored (#809).
-          if(play.dataset.playing!==String(state.playing)){
+          {
             play.dataset.playing=String(state.playing);play.textContent=state.playing?'Pause':'Play';
             play.setAttribute('aria-label',state.playing?'Pause recording':'Play recording');play.setAttribute('aria-pressed',String(state.playing));
           }

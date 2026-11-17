@@ -1,11 +1,11 @@
 {
   "schema": "cad-agent.toolkit-examples/1",
   "scope": "Actual viewer previews and byte-identical synthetic assembly fixture; no physical or project qualification.",
-  "sourceHead": "54c6a6c8e7a4eaba7cdd0342bbab7a16cf52f14d",
+  "sourceHead": "f0009b93abd759fefb6d1f51b9151c90e228e73d",
   "fixtureRevision": "1111111111111111111111111111111111111111",
   "generator": {
     "path": "tools/site/figures/toolkit-examples.mjs",
-    "sha256": "10a9dd2cf42819e9ed4c7e20601dab357524946fac55212db6becaff59453267"
+    "sha256": "9c97fbd6794f14d5e25eb246369ac80ad113768607b4a60f9f38db09d61c0081"
   },
   "browser": {
     "engine": "chromium",
@@ -57,7 +57,7 @@
   "captures": {
     "assembly": {
       "file": "assembly.webp",
-      "route": "/kit/model/viewer.html?guide=/web/toolkit/assembly/guide.json&nav=0",
+      "route": "/kit/model/viewer.html?guide=/web/toolkit/assembly/guide.json",
       "sha256": "23f1d401bed57a459a67a6a722e7dc3098a2763aaafc97026394f90aad64452c",
       "bytes": 57406,
       "viewport": {
@@ -94,9 +94,8 @@
         "software/cadagent/webkit/assembly/playback.js": "dd575ce02567129d9aa28376d3455f7e352118609cb30ae7dfe89066d17048d7",
         "software/cadagent/webkit/files/file-geometry.js": "1f503af4149f96624ecaba68043ea44eaaa68503988646c5139edb482ab922fd",
         "software/cadagent/webkit/model/stage.js": "f62b95e16a99e06686d32454397948fd50a67a973736ffc76a03b82f5e54b486",
-        "software/cadagent/webkit/model/viewer.html": "f158e86975b71df5dc1d728bb31d9997b205b4ddb31931867185a97691c18376",
+        "software/cadagent/webkit/model/viewer.html": "d9063a3da9fa44ff1ae93b48d6b1590426ae474275d74e2aef37759471edbccb",
         "software/cadagent/webkit/model/viewer.js": "41100a263ff0204482258d5da85a27ba0da09eecfa848b8751791b06edd01241",
-        "software/cadagent/webkit/ui/appnav.js": "3a896c85ca255960505f83ee64db22fffc23ed7835cc8429b5d209a5df0d2795",
         "software/cadagent/webkit/ui/hud.css": "0a1fbf7e9e796c7bf5d7cb9062b34374da937975e851ad2cce6b8cdb1827325a",
         "software/cadagent/webkit/ui/panel.js": "94c7a99a7d2d0fbf6305b77d0211487453994b5d5426aacc3f1d01d3020a7d9b",
         "software/cadagent/webkit/ui/theme.css": "370dfb29b28c760d48332316651492d0853c3e3aa9bc355e8a7edb1a4b12cf47",
@@ -119,7 +118,7 @@
     },
     "file-review": {
       "file": "file-review.webp",
-      "route": "/kit/files/file-viewer.html?file=/kit/host/example.stl&nav=0",
+      "route": "/kit/files/file-viewer.html?file=/kit/host/example.stl",
       "sha256": "e5d2e720afcdce8d5da2e7fd9e34f9e5e29fecad7d86ff1527a6162597b14e78",
       "bytes": 45700,
       "viewport": {
@@ -149,7 +148,7 @@
         "software/cadagent/webkit/files/file-mesh-worker.js": "27a1755b197504c75aafb52b56c2a26ac206497002072f232fd671e51b045876",
         "software/cadagent/webkit/files/file-viewer-theme.js": "36ac086d6f6d439a6b9f35f449d82bf5e3bc5ec984f7a2eb6d95f348e75ad8b5",
         "software/cadagent/webkit/files/file-viewer.css": "3b82348293bba0a214ecec2b31ce2830ef3044f4454ffcdc188012857bd87963",
-        "software/cadagent/webkit/files/file-viewer.html": "9ea8f538730f516949e2acb9ab7336c93238d8ea664c88d6a02ff5dcffa24eeb",
+        "software/cadagent/webkit/files/file-viewer.html": "921d4a195713d54f49bd4f015b7c4f06bc2858a83184f563833399b6a4bbe869",
         "software/cadagent/webkit/files/file-viewer.js": "7e6c3a1bdcf18574af036ac2399382bd620ca057491f6433ca5565b2ae693f37",
         "software/cadagent/webkit/files/page.css": "6eeb92c7185e6ae0c43d2eb6bcb11540921b0dca78846aab161af5fbac540d0b",
         "software/cadagent/webkit/files/viewer.css": "62ab9439282d6aa2b0bc0e739f1b80d2084942da46e7c47e5e011be19c629168",

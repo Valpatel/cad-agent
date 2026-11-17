@@ -56,13 +56,20 @@ for (const img of document.querySelectorAll('img[data-motion-src]')) {
 // A link to a closed <details> (or to something inside one), such as /docs/agent-workflow#install-unix, opens it on
 // arrival and when the address's #part changes, so the reader lands on the command, not on a closed toggle (#804).
 // Without script the browser still scrolls to the block's summary; one click opens it.
-const openTarget = () => {
+// On Back, Forward or a reload the browser puts the reader back where they were, which may be before or after this
+// script runs (#807: 434 px off on a phone). There the block is opened as the reader left it, without scrolling and
+// without scroll anchoring, so the page has the reader's layout again and whichever scroll the browser restores holds.
+const returning = /^(back_forward|reload)$/.test(performance.getEntriesByType?.('navigation')?.[0]?.type || '');
+const openTarget = event => {
   let id = '';
   try { id = decodeURIComponent(location.hash.slice(1)); } catch { return; }
   const target = id && document.getElementById(id);
   if (!target) return;
+  const restore = returning && !event, root = document.documentElement, anchor = root.style.overflowAnchor;
+  if (restore) root.style.overflowAnchor = 'none';
   let opened = false;
   for (let d = target.closest('details'); d; d = d.parentElement?.closest('details')) if (!d.open) { d.open = true; opened = true; }
+  if (restore) { root.getBoundingClientRect(); root.style.overflowAnchor = anchor; return; }   // laid out unanchored
   // At once, as the browser lands on any other # address: the page's smooth scrolling would leave the reader mid-way.
   if (opened) target.scrollIntoView({ block: 'start', behavior: 'instant' });
 };

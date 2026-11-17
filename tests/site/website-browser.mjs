@@ -856,6 +856,7 @@ async function installLinkProblems() {
       if ((await block(page, 'install-unix')).clear) problems.push('planted control: a 90 px scroll padding under the 97 px header was not caught, so the header check tests nothing');
     } finally { await page.close(); }
   }
+  problems.push(...await installBackProblems());
   const missing = await browser.newPage({ viewport: { width: 800, height: 600 } });
   try {
     await navigate(missing, base + '/no-such-page?x=1');
@@ -863,6 +864,46 @@ async function installLinkProblems() {
     const named = href && new URL(href).searchParams.get('page');
     if (named !== base + '/no-such-page?x=1') problems.push(`404 page: the feedback link names ${named}, not the missing address`);
   } finally { await missing.close(); }
+  return problems;
+}
+
+/** Back to an install address on a phone (#807): the reader arrived on /docs/agent-workflow#install-…, scrolled on,
+ * followed a link away and pressed Back. The page comes back where they left it (within 3 px), not where the arrival
+ * scroll put the block. Planted control: web/site.js with its Back/reload case removed and served 600 ms late, so the
+ * browser restores the reader's place first and the old arrival scroll then moves it, must be caught. */
+async function installBackProblems() {
+  const problems = [];
+  const trip = async (id, delta, planted = false) => {
+    const page = await browser.newPage({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+    try {
+      await navigate(page, `${base}/docs/agent-workflow#${id}`);
+      await page.evaluate(d => scrollBy({ top: d, behavior: 'instant' }), delta);
+      await page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
+      const left = await page.evaluate(() => scrollY);
+      if (planted) await page.route(base + '/web/site.js', partHandler(async route => {
+        const response = await route.fetch(), body = (await response.text()).replace('back_forward|reload', 'planted-never');
+        await new Promise(r => setTimeout(r, 600));
+        await route.fulfill({ response, body });
+      }));
+      await navigate(page, base + '/toolkit');
+      await page.goBack({ waitUntil: 'load' });
+      // The browser may animate its restore (the site scrolls smoothly): wait until 20 frames in a row hold still.
+      const back = await page.evaluate(() => new Promise(done => {
+        let last = -1, still = 0;
+        const tick = () => { if (scrollY === last) { if (++still >= 20) return done(scrollY); } else { still = 0; last = scrollY; } requestAnimationFrame(tick); };
+        tick(); setTimeout(() => done(scrollY), 5000);
+      }));
+      const open = await page.evaluate(id => document.getElementById(id)?.open, id);
+      return { left, back, open };
+    } finally { await page.close(); }
+  };
+  for (const id of ['install-unix', 'install-windows']) for (const delta of [300, -200]) {
+    const t = await trip(id, delta);
+    if (Math.abs(t.back - t.left) > 3) problems.push(`390px Back to #${id} (scrolled ${delta} px from arrival): back at ${t.back} px, left at ${t.left} px`);
+    if (!t.open) problems.push(`390px Back to #${id}: the block is closed again`);
+  }
+  const control = await trip('install-unix', 300, true);
+  if (Math.abs(control.back - control.left) <= 3) problems.push(`planted control: the old arrival scroll after a late restore came back at ${control.back} px, left at ${control.left} px, so the Back check tests nothing`);
   return problems;
 }
 

@@ -24,7 +24,8 @@ do not prove that the parts can physically be assembled in that order, that they
 fastener. The text is Gyropup's, verbatim; codes such as "D42" are Gyropup's design-decision numbers. Gyropup is a
 work-in-progress prototype.
 
-## What the converter reads and does
+<details>
+<summary>What the converter reads and does</summary>
 
 It reads three things from the checkout's committed `HEAD` (with `git show`, so uncommitted edits cannot leak in) and
 writes nothing there:
@@ -45,7 +46,10 @@ cartridge) only so no folder holds more than 20 files; the order is the recipe's
 The reader shows the guide's `source.qualification` under its version line, so the statement of what the guide is
 travels with the data.
 
-## Regenerate
+</details>
+
+<details>
+<summary>Regenerate the guide and its card preview</summary>
 
 From the repository root, with a clean Gyropup checkout (read only):
 
@@ -60,6 +64,8 @@ It needs only Python's standard library and `git`. Tests: [test_gyropup_turret_g
 (receipt, cross-group geometry, the converter on a synthetic checkout) and
 [example-browser.mjs](../../../tests/webkit/assembly/example-browser.mjs) (the guide in the shipped reader, phone
 layout and controls, each check shown failing on a planted fault).
+
+</details>
 
 The synthetic rail bench that the demo used to show stays as the reader's test fixture in
 [tests/fixtures/assembly-plan](../../../tests/fixtures/assembly-plan/README.md).

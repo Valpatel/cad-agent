@@ -135,7 +135,7 @@ test('capabilities open owned working examples, with real previews and explicit 
   const replay=cards.find(card=>card.id==='robot-replay');
   assert.match(replay.description,/Gyropup, a work-in-progress wheel-legged robot, in recorded MuJoCo runs from its dated snapshot/);
   for (const phrase of ["Recorded solver output", "replayed, not recomputed", "not a validation of hardware"]) assert.ok(replay.description.includes(phrase), phrase);
-  assert.equal(replay.href,'/kit/simulation/examples/gyropup-v2/viewer.html');
+  assert.equal(replay.href,'/kit/simulation/examples/gyropup-v2/viewer.html?nav=1');
   assert.equal(replay.image,'/kit/simulation/examples/gyropup-v2/card-still.webp');
   assert.equal(replay.motion,'/kit/simulation/examples/gyropup-v2/card.webp');
   assert.ok(replay.docs.startsWith('/repo/folders/'));

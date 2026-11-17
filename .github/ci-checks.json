@@ -289,7 +289,7 @@
   {
    "id": "file-viewer",
    "title": "File viewer, viewer host and simulation replay in a browser",
-   "paths": ["software/cadagent/webkit/**", "tests/webkit/files/**", "tests/webkit/host/**", "tests/webkit/simulation/**", "tools/site/package.json", "tools/site/package-lock.json", "tests/webkit/webkit-server.mjs", "tests/site/npm-context.mjs", "tests/fixtures/file-viewer/**"],
+   "paths": ["software/cadagent/webkit/**", "tests/webkit/files/**", "tests/webkit/host/**", "tests/webkit/simulation/**", "tools/site/package.json", "tools/site/package-lock.json", "tests/webkit/webkit-server.mjs", "tests/site/npm-context.mjs", "tests/fixtures/file-viewer/**", "docs/examples/robot-replay/**"],
    "exclude": ["software/cadagent/webkit/scada/**"],
    "command": "npm run test:file-viewer",
    "cwd": "tools/site",

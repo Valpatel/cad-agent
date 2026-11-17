@@ -1,9 +1,12 @@
 /** A page of named recordings from a replay index: `<div id="replay" data-replay-index="index.json">`. It plays and
  * loops once ready (not under reduced motion; Pause stops it).
- * `?scenario=<id>` opens that scenario. The index's hashes verify the meshes and each recording before display. */
+ * `?scenario=<id>` opens that scenario. The index's hashes verify the meshes and each recording before display.
+ * `&nav=1` shows the host site's top bar from <root>/site/nav.json (ui/appnav.js), as the kit's other viewers do; the
+ * root is the kit folder's parent's parent, wherever the page sits. Without it nothing is requested. */
 import {createReplayViewer} from './viewer.js';
 import {loadReplayIndex} from './replay.js';
 
+if(new URLSearchParams(location.search).get('nav')==='1')import('../ui/appnav.js').then(m=>m.mountAppNav({root:new URL('../../../',import.meta.url).pathname})).catch(()=>{});
 const lifetime=new AbortController(),status=document.querySelector('#receipt-status'),container=document.querySelector('#replay');
 let viewer;
 async function start(){

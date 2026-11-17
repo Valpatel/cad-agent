@@ -122,12 +122,14 @@ export async function toolkitExampleChecks({open,fail}) {
         if(!await page.getByRole('combobox',{name:'STL units',exact:true}).isVisible())fail(where,'STL units control is missing');
       } else if(id==='assembly') {
         await page.waitForFunction(()=>document.body.dataset.ready==='1'&&window.__viewer?.stage.renderer.info.render.triangles>0);
-        const before=await page.evaluate(()=>({parts:window.__viewer.parts.map(p=>p.name).sort(),plate:window.__viewer.parts.find(p=>p.name==='plate').mesh.position.toArray(),revision:window.__guide.guide.snapshot.source_commit}));
-        if(JSON.stringify(before.parts)!==JSON.stringify(['base','fastener','lid','plate','rail'])||before.revision!=='1'.repeat(40))fail(where,'synthetic fixture identity or mesh closure changed');
-        await page.getByRole('combobox',{name:'Instruction step',exact:true}).selectOption('lid');
-        await page.waitForFunction(()=>window.__guide.controller.current==='lid');
-        const after=await page.evaluate(()=>window.__viewer.parts.find(p=>p.name==='plate').mesh.position.toArray());
-        if(JSON.stringify(after)===JSON.stringify(before.plate))fail(where,'instruction changed without moving the source-bound plate');
+        // The featured guide (#811): Gyropup's turret, every mesh its model binds, under its real source revision.
+        const before=await page.evaluate(async()=>{const view=await (await fetch(new URL(window.__guide.guide.model.file,window.__guide.guideUrl))).json();
+          return {parts:window.__viewer.parts.map(p=>p.name).sort(),bound:view.parts.map(p=>p.name).sort(),barrel:window.__viewer.parts.find(p=>p.name==='barrel').mesh.position.toArray(),revision:window.__guide.guide.snapshot.source_commit};});
+        if(JSON.stringify(before.parts)!==JSON.stringify(before.bound)||before.parts.length<5||!/^[0-9a-f]{40}$/.test(before.revision)||before.revision==='1'.repeat(40))fail(where,'featured guide identity or mesh closure changed');
+        await page.getByRole('combobox',{name:'Instruction step',exact:true}).selectOption('step-11');
+        await page.waitForFunction(()=>window.__guide.controller.current==='step-11');
+        const after=await page.evaluate(()=>window.__viewer.parts.find(p=>p.name==='barrel').mesh.position.toArray());
+        if(JSON.stringify(after)===JSON.stringify(before.barrel))fail(where,'instruction changed without drawing the barrel back along its way in');
         await page.getByRole('button',{name:'Assembled',exact:true}).click();
         if(await page.evaluate(()=>window.__guide.controller.current!==null||Object.values(window.__viewer.getState().offsets_mm).some(v=>v.some(n=>n!==0))))fail(where,'Assembled did not reset the authored motion');
       } else if(id==='mechanisms') {

@@ -400,7 +400,9 @@ export function createStage(container, opts = {}) {
         needsDraw = false;
         renderer.render(scene, camera);
         diagnostics.draws++;
-        [drawn, pending] = [pending, drawn ?? []];
+        // Read again after drawing: three.js itself bumps `material.version` while drawing a transparent double-sided
+        // material (one pass per side), and that is not a change to draw.
+        drawn = sceneSignature(renderer, scene, camera, drawn ?? []);
       }
     }
     frameId = requestAnimationFrame(tick);

@@ -41,6 +41,7 @@ flowchart TD
 | `webkit-printed-boss.test.mjs` | `<cad-printed-boss>` without a browser, against `cadagent.mechanical.bosses` |
 | `webkit-server.mjs` | Helper: serves `software/cadagent/webkit/`; no-store by default, with an explicit cacheable mode for native history tests |
 | `webkit-stage-browser.mjs` | Actual floor-grid pixels against projected mathematical lines, filled-floor negative control, themes, shadows, dimming, camera changes and cleanup |
+| `webkit-stage-draw-browser.mjs` | Draw on demand (#822): zero idle draws in each stage viewer, no stale picture after each picture-changing interaction (compared with the same state drawn afresh), off-screen stages, planted missed-draw and always-draw controls |
 | `webkit-torsion-snap.test.mjs` | `<cad-torsion-snap>` without a browser: the port's numbers, Saint-Venant scaling |
 | `webkit-vendor.test.mjs` | The kit's vendored libraries match their receipts |
 

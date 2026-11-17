@@ -26,16 +26,17 @@ assert(check || Boolean(executablePath) !== args.includes('--chromium'), 'Captur
 if (executableIndex >= 0) assert(executablePath && !executablePath.startsWith('--'), '--executable needs a browser path');
 
 // The example is closed over its own bindings: guide -> view -> every mesh, and its receipt names every byte.
-const guideBytes = await bytesAt(`${example}/guide.json`), receiptBytes = await bytesAt(`${example}/receipt.json`);
-const guide = JSON.parse(guideBytes), receipt = JSON.parse(receiptBytes);
+const guideBytes = await bytesAt(`${example}/guide.json`);
+const guide = JSON.parse(guideBytes), receipt = JSON.parse(await bytesAt(`${example}/receipt.json`));
 assert.equal(guide.snapshot.status, 'wip', 'The featured guide is a work-in-progress example');
 assert.equal(guide.snapshot.source_commit, receipt.revision, 'Guide and receipt name the same source revision');
 assert.match(guide.source?.qualification || '', /not a verified build procedure/, 'The guide states what it is not');
 const view = JSON.parse(await bytesAt(`${example}/${guide.model.file}`));
 for (const binding of [guide.model, ...view.parts]) assert.equal(hash(await bytesAt(`${example}/${binding.file}`)), binding.sha256, `Stale binding: ${binding.file}`);
 for (const [name, expected] of Object.entries(receipt.artifacts)) assert.equal(hash(await bytesAt(`${example}/${name}`)), expected, `Stale example: ${name}`);
+// What the preview shows: the guide and its model, not the converter's receipt (which also hashes the converter).
 const featured = { path: example, route: exampleRoute, revision: receipt.revision, steps: guide.steps.length, parts: view.parts.length,
-  guide: hash(guideBytes), receipt: hash(receiptBytes) };
+  guide: hash(guideBytes), view: guide.model.sha256 };
 if (check) {
   const record = JSON.parse(await bytesAt(`${output}/SOURCE.json`));
   assert.deepEqual(record.featured, featured, 'Recapture after the featured example changes');

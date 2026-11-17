@@ -7,7 +7,7 @@
  "committed": "2026-11-11T15:25:14-08:00",
  "generator": {
   "path": "docs/examples/build-guide/gyropup_turret.py",
-  "sha256": "d0a54cf685f2e4522bb3303563e30aae4c25956c99af77e4dfe463ec71297ed1"
+  "sha256": "89e99a88291637982b17648f33a710c38936bf012baac05340988f68a7b1e472"
  },
  "method": "Gyropup's literal STEPS (titles, parts, insertion offsets, camera directions and instruction text) copied in order; each scene mesh translated from its group's frame into the neutral pose (zero pan and tilt, mounting face at z = 0), triangles and normals unchanged. No CAD is imported, rebuilt or simplified, and no vendor source CAD is read or shipped: the scene's bought parts are Gyropup's own envelope meshes.",
  "steps": 12,
@@ -87,7 +87,7 @@
  },
  "artifacts": {
   "LICENSE.txt": "08fcd91542828bfa19db31bc44d0479d3bf7867dadb383b7b19439a2b5597567",
-  "base/README.md": "592a9987e45aeb72755f39e93c275e843335b103276c9a407c4e23645e899f0c",
+  "base/README.md": "6b71fb33e177ad28fbfb5af5d04bbfa6af59ae2b87ce96fd32706d5b9d42e21b",
   "base/base_board.stl": "4b8fff6ca2a8e3dee495cc8bdb76b78b7728c404ae5d416e12a5bc45ad757987",
   "base/base_board_carrier.stl": "0138180326512697cc43d619b509c72e9e19628b8ff78bae174937575e08ccd9",
   "base/base_board_inserts.stl": "d05f7f54b6b153d6de1f88106c1cf75ba9284d7f88b3e545aaa891d3dc8c9aac",
@@ -99,7 +99,7 @@
   "base/pan_base.stl": "e915af5bf2d9103b28cf6eb07257bf927f3121d0fef3ef5c27e92c05b9f2d371",
   "base/pan_pinion.stl": "545744e3e2838459145f0a16806a30c1cb542b0c7e0f16dc405fe6a8189fd377",
   "base/pan_servo.stl": "c34f8149d4a676ce437b4531208aa2f7b5d0703f9e7d1cfe748086c3a8516a74",
-  "cartridge/README.md": "0ce3b44ef1001bd191352737e4fc79877f027abf68d38a542d52ada5858048d0",
+  "cartridge/README.md": "a5cb502368fb26c2394ea61f12fdd42c5883e4b26f386f313445dd9d60753a29",
   "cartridge/barrel.stl": "f54e430e8a2b3a9cc8ecd8de1d8db76509799230542bf79ffa489cec52b9899e",
   "cartridge/cartridge_board.stl": "6fe2bde95c3c82635e12c06171d9633d13e284bb7501a61831992820c33a7122",
   "cartridge/cartridge_body.stl": "cdf4b0cbaf59f40d7b1c6153879fddc7c4a622d98829a9ed412436e0746a4a5e",
@@ -117,7 +117,7 @@
   "cartridge/hopper.stl": "89ed2d919d32ad1045eef3adf4b7f234799ad8e39061440d48268c0fb315a659",
   "cartridge/hopper_lid.stl": "1a01c8cbc59b548a00e7b060111c54e145b2205c25566c05b7704f385deb0816",
   "guide.json": "94db3b52b7e0b385b46582962d2b68f4dbace65f32381e4842b498f9e6ceb0aa",
-  "tilt/README.md": "3052c9d5423c7995f10e3bf4b3a0e149f639925c42514fee574bf905dc3d9d24",
+  "tilt/README.md": "c23cbd18e1645f3619c4f12df3e660688b82c17966c2d94c520820f42931043e",
   "tilt/board_bay.stl": "667e34b614bad21f56378680f3ab7e60350056394fc1002fb330d4be2e901282",
   "tilt/cradle.stl": "7fd34219aeea2bc0879e13069074e5d19359eb68dbfb9207aaf2f5e50b641789",
   "tilt/cradle_plate_l.stl": "f4e91c69d68c42f6c54f3d49ae01ef6126026345a7f6e85145b7ea4e0e85ec70",
@@ -134,7 +134,7 @@
   "tilt/tilt_servo.stl": "12a10874ac27721475d08ba9bc6463fd07f74d7bc506a84a2c0d35a0e45adca8",
   "tilt/tilt_yoke.stl": "b2604c2bd46b0dfd7dbe09adc4648082b82802d8d9fd5c7cee3f2722440bea9b",
   "tilt/turret_board.stl": "7f940e6d05216891baed76704919b23da7bdbbd5c323dcbd732e80932eece323",
-  "turntable/README.md": "93c06861c7ad7bd10fd7df4f5f21c6131de7d21d63b2e5141ad70194a187d600",
+  "turntable/README.md": "9f7cda537e3303e3827c2d84dd2c93cc576dd898d783f5baee059c7de1420dfb",
   "turntable/circlip_50.stl": "9b86035e26d244e1cce1a3ed2d8dee00ef9a19f38f207ea13f24f40bd94da27e",
   "turntable/hall_switch.stl": "7080d0d027e32403a036b13a2aceafb31fd228a7bf2240c1e736a771d931d95a",
   "turntable/pan_bearing.stl": "fb374e7898e00d2b500c810c9cb99bee4e2f80669d2416c67b5decf134dcd9d7",

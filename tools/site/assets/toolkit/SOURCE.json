@@ -1,10 +1,10 @@
 {
   "schema": "cad-agent.toolkit-examples/1",
   "scope": "Actual viewer previews of the featured build guide and the original-file example; no physical or project qualification.",
-  "sourceHead": "0d56537167e1c6bbc0f4bd3299a0b06304d10213",
+  "sourceHead": "f7bdd86f35fe6a7c0c4b8eb2bf1cd11b27d53eed",
   "generator": {
     "path": "tools/site/figures/toolkit-examples.mjs",
-    "sha256": "6ed9512d01a4a94d6974fe665e9fd6b5d55b0facacbc9e23c21f1750b5879d31"
+    "sha256": "79f66a4b0d66862e9a6bd22812d042391b8190720eaeec3c935033dd7a73098e"
   },
   "browser": {
     "engine": "chromium",
@@ -18,7 +18,7 @@
     "steps": 12,
     "parts": 55,
     "guide": "94db3b52b7e0b385b46582962d2b68f4dbace65f32381e4842b498f9e6ceb0aa",
-    "receipt": "030f220db8f99f2ec398ded26ca4b19b286aadc023566cf52ba3773a64ac06b6"
+    "view": "0f1ab8ff7f12b2c58e001c398338ae0efd422cd2cee9a867463c6a5fed6a8f9e"
   },
   "captures": {
     "assembly": {

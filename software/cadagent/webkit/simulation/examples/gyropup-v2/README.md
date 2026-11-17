@@ -21,7 +21,7 @@ flowchart TD
 | [index.json](index.json) | The scenarios, each recording's SHA-256 and the snapshot's summary for it, and the mesh library's hash. |
 | [kerb_drop.json](kerb_drop.json), [side_kerb.json](side_kerb.json), [push.json](push.json), [landing.json](landing.json) | Recorded body poses (one every 33 ms of solver time), fixed scenery such as the kerb, and the camera's followed body. |
 | [robot.json](robot.json), [robot.bin](robot.bin) | Gyropup's rig meshes, each in its own body's frame, packed by `pack_view`. |
-| [receipt.json](receipt.json) | Gyropup revision, every source file's SHA-256, the converter's hash, the method and the limits. |
+| [receipt.json](receipt.json) | Gyropup revision, every source file's SHA-256, the converter's hash, the method, how each shown figure is taken from the summary, the camera rule and the limits. |
 | [LICENSE.txt](LICENSE.txt) | Gyropup's MIT licence, which these meshes and recordings carry. |
 | [card.webp](card.webp), [card-still.webp](card-still.webp), [card.json](card.json) | The toolkit and home cards' animation and still, and their capture record. |
 

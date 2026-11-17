@@ -1,0 +1,110 @@
+{
+ "schema": "cad-agent.replay-index/1",
+ "title": "Gyropup v2: recorded scenarios",
+ "meshes": {
+  "file": "robot.json",
+  "sha256": "3f1cfd02367d22adf242bb9cf7887f83e12be6c5897eb34aa8092d33c82f8314"
+ },
+ "scenarios": [
+  {
+   "id": "kerb_drop",
+   "label": "Drive off a 50 mm kerb at 0.8 m/s",
+   "file": "kerb_drop.json",
+   "sha256": "d4120f00df7f89d020442891eb482d07810e69403244839b5221533423596ec1",
+   "summary": {
+    "title": "From the snapshot's own summary",
+    "verdict": {
+     "pass": true,
+     "label": "pass"
+    },
+    "metrics": [
+     {
+      "label": "Peak motor torque",
+      "value": "34.3 N·m, rear-left leg motor: 29% of its peak-torque limit"
+     },
+     {
+      "label": "Largest lean",
+      "value": "8.3°"
+     }
+    ],
+    "note": "Gyropup's recorded numbers, not a cad-agent verification."
+   }
+  },
+  {
+   "id": "side_kerb",
+   "label": "One wheel up a 30 mm plank, along it and off: the body stays level",
+   "file": "side_kerb.json",
+   "sha256": "4f430613655260d07eda535fa76b532244652a57a0d6cab614961cd13046a5ff",
+   "summary": {
+    "title": "From the snapshot's own summary",
+    "verdict": {
+     "pass": true,
+     "label": "pass"
+    },
+    "metrics": [
+     {
+      "label": "Peak motor torque",
+      "value": "8.0 N·m, left wheel motor: 56% of its peak-torque limit"
+     },
+     {
+      "label": "Largest lean",
+      "value": "8.4°"
+     }
+    ],
+    "note": "Gyropup's recorded numbers, not a cad-agent verification."
+   }
+  },
+  {
+   "id": "push",
+   "label": "Push recovery, front and back",
+   "file": "push.json",
+   "sha256": "0b9cee3f22311528eaba9b3228b9e7413bd9dbd2d449ae99e4d7a15917ee4749",
+   "summary": {
+    "title": "From the snapshot's own summary",
+    "verdict": {
+     "pass": true,
+     "label": "pass"
+    },
+    "metrics": [
+     {
+      "label": "Peak motor torque",
+      "value": "4.4 N·m, left wheel motor: 31% of its peak-torque limit"
+     },
+     {
+      "label": "Largest lean",
+      "value": "7.3°"
+     },
+     {
+      "label": "Events",
+      "value": "push at 2.0 s, push at 5.5 s"
+     }
+    ],
+    "note": "Gyropup's recorded numbers, not a cad-agent verification."
+   }
+  },
+  {
+   "id": "landing",
+   "label": "Dropped from 80 mm while balancing: land and stay up",
+   "file": "landing.json",
+   "sha256": "0a0c32c1f213556db9de358107db5312e1142e252615b0d1cd3f9072231735cb",
+   "summary": {
+    "title": "From the snapshot's own summary",
+    "verdict": {
+     "pass": true,
+     "label": "pass"
+    },
+    "metrics": [
+     {
+      "label": "Peak motor torque",
+      "value": "42.0 N·m, rear-right leg motor: 35% of its peak-torque limit"
+     },
+     {
+      "label": "Largest lean",
+      "value": "0.0°"
+     }
+    ],
+    "note": "Gyropup's recorded numbers, not a cad-agent verification."
+   }
+  }
+ ]
+}

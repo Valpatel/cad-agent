@@ -9,6 +9,38 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
 
 ## Unreleased
 
+## v0.47.0 (2026-11-17)
+
+**New**
+- Robot simulation replay: the featured example is now Gyropup, a work-in-progress wheel-legged robot, in four recorded MuJoCo scenarios from its dated snapshot (kerb drop, plank, push recovery, landing), chosen in the viewer, with the snapshot's own pass verdict and peak motor torque against its limit. Replayed, not recomputed; the two-link arm stays as the editable example (#798).
+- Replay format: optional mesh parts from a packed `cad-agent-model/1` library (`loadMeshLibrary`), fixed `scenery`, `opacity`, a camera-followed body (`view.follow`), and a `cad-agent.replay-index/1` of named recordings with summaries (`loadReplayIndex`, `createReplayViewer({scenarios})`, `selectScenario`) (#798).
+- `docs/examples/robot-replay/gyropup.py` converts Gyropup's recorded snapshot to that format with a receipt of source hashes; `--check` verifies. It needs no MuJoCo (#798).
+- `cad-agent --version` prints the version and the package folder it runs from; every `cad-agent <command> --help` opens with the command's one-line description (#799).
+- Site: every page has link-card tags (`og:title`, `og:description`, `og:url`, `og:image`, `twitter:card`) from its own title, description and address (the 404 page has no `og:url`), one owned card picture drawn by `tools/site/figures/social-card.mjs` with a hash record, and an `apple-touch-icon`. The build fails on a page without its own card tags, and on any address in `llms.txt` or `llms-full.txt` the built site does not serve (#804).
+
+**Changed**
+- Site browser suite: a failed navigation's receipt now says, for each main-frame document request, which of Playwright's `request`, `response`, `requestfinished` and `requestfailed` events it got and when, which routes the page and its context had, and, when a route handler took it, when the handler ran and ended and how each `fetch`, `fulfill` or `continue` it made settled (status and body size for a fetch). Two planted controls in the suite pin it: a handler that never answers and one that fulfils only after the navigation failed (#686).
+- The home and toolkit "Robot simulation replay" cards move: a lazy still, swapped for an animated capture only once the card nears the screen, never under reduced motion or Save-Data (#798).
+- The replay page takes the hosting site's top bar when its address carries `nav=1`, like the model and file demos; without it the page requests nothing extra (#798).
+
+**Fixed**
+- The POSIX installer uninstalls when `CAD_AGENT_UNINSTALL=1` is set, as the install guide says; before, it updated instead. Both installers take `1`, `true` or `yes` to uninstall and empty, `0`, `false` or `no` to install, and stop on any other value. Both installers say that uv, its cache and Pythons stay, and the guide lists what uninstall leaves (#799).
+- When `~/.local/bin` is not on PATH, the installers say how to use `cad-agent` in that terminal and name uv by its full path for `tool update-shell` (#799).
+- The agent guide (and llms.txt) prints `cad-agent choose joining --load 20 --material petg`, a form that decides, instead of the bare command, which exits 2 by design; a test runs every `cad-agent` command the guide prints (#799).
+- The Playwright hints name a command that works in the installer's uv tool environment (`uv tool install ... --with playwright`; it has no pip; quoted for PowerShell on Windows), and `cad-agent update` keeps packages added with `--with` when it reinstalls, from the folder, file, URL or Git source they came from; one it cannot add again exactly is named instead (#799).
+- `cad-agent agents install` and `update` list only the skill links they changed, not every link on every run (#799).
+- The local server's injected top bar imports `/_cadagent/kit/ui/appnav.js`, not a path that was a 404 (#799).
+- The install guide states the first download (about 1.7 GB on Linux x86-64, measured; the installers say about 2 GB) and names the installer scripts by their repository paths; a report's "no render" says which file is missing and what writes it (#799).
+- Site: a link to `/docs/agent-workflow#install-unix` or `#install-windows` opens that install block on arrival and when the address's `#` part changes, so the command shows below the header (which takes two rows on phones); the home card says to name what to build after the pasted line (#804).
+- Site: "For agents" stays in the phone header, which takes a second row below 560 px (#804).
+- Site: the home page's layer-cake blocks open the section their label names (for example `/docs/toolkit#commands`); a build fails on a section the page does not have, and a `--worktree` draft warns and links the page (#804).
+- Site: the toolkit's build-guide and original-file demos show the site's top bar (Explore, Toolkit, For agents; the name leads home). The Toolkit cards link them with `nav=1`, and the viewers then read the host's `site/nav.json` the way a project's `cad-agent site` pages do, so the generic kit names no site of its own. The assembly example's guide line says it is a synthetic fixture (`source commit 1111111111`) (#804).
+- Web kit: `model/viewer.html` and `files/file-viewer.html` show a host site's top bar only when their address carries `nav=1`; without it they load no `ui/appnav.js` and ask for no `site/nav.json`, so a project that copies the kit sees no request and no console line. A host that opts in without the file gets one 404 for it and no bar. `cad-agent site --serve` still adds its bar to them, with their tab marked, because it now skips only pages with a bar in their markup (#804).
+- Site: on phones the whole hero recording fits the first screen at 390x664 and 360x640 (a tighter lede, gaps and action rows; the wording and order are unchanged); at 320x568 it does not (#804).
+- Site: "Open the playground" opens Gyropup's playground on the recorded turret (`?design=turret-box`), not its default robot (#804).
+- Web kit: a viewer's top bar (`ui/appnav.js`) turns live reload on only when `site/nav.json` says the server offers it, which `cad-agent site --serve` now does; a static copy served from `localhost` no longer gets a 404 poll every two seconds (#804).
+- Site: the reference line in `llms.txt` no longer glues a `;` to an address, which plain link finders read as a dead link; the 404 page's feedback link names the missing address, and its link card names no address of its own (#804).
+
 ## v0.46.0 (2026-11-16)
 
 **New**

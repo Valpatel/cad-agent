@@ -1,0 +1,102 @@
+{
+ "schema": "cad-agent.browser-capture/1",
+ "description": "The Gyropup replay viewer seeking through recorded times of one scenario; light theme, paused between frames",
+ "file": "card.webp",
+ "scenario": "kerb_drop",
+ "recorded_times_s": {
+  "start": 1.6,
+  "end": 4.4,
+  "step": 0.066667
+ },
+ "frames": 43,
+ "durations_ms": [
+  700,
+  67,
+  67,
+  67,
+  67,
+  67,
+  67,
+  67,
+  67,
+  67,
+  67,
+  67,
+  67,
+  67,
+  67,
+  67,
+  67,
+  67,
+  67,
+  67,
+  67,
+  67,
+  67,
+  67,
+  67,
+  67,
+  67,
+  67,
+  67,
+  67,
+  67,
+  67,
+  67,
+  67,
+  67,
+  67,
+  67,
+  67,
+  67,
+  67,
+  67,
+  67,
+  900
+ ],
+ "width": 640,
+ "height": 400,
+ "viewport": {
+  "width": 1000,
+  "height": 1000
+ },
+ "camera_after_fit": {
+  "closer": 0.86,
+  "lower_m": 0.03
+ },
+ "browser": {
+  "engine": "chromium",
+  "version": "153.0.8010.12"
+ },
+ "generator": {
+  "path": "docs/examples/robot-replay/capture-gyropup.mjs",
+  "sha256": "bdc87ea3c6bf747d2ef2c6b32ef6ab841acb8469e7f270e060454b144895956b"
+ },
+ "sources": {
+  "docs/examples/robot-replay/capture-gyropup.mjs": "bdc87ea3c6bf747d2ef2c6b32ef6ab841acb8469e7f270e060454b144895956b",
+  "software/cadagent/webkit/simulation/replay.js": "3f26ccc0548150a48b1f502bf393a357742f943853f2faabb4dc6d96034c8160",
+  "software/cadagent/webkit/simulation/viewer.js": "9686f2e4d163cf3553c1e74a124cacda1ed60de69650407e444d9610dbe6b86e",
+  "software/cadagent/webkit/simulation/scene.js": "f510e789c9279004f56f38f6cde3de45c289d4c77c5d168e71deaa2a6740fb26",
+  "software/cadagent/webkit/simulation/scenarios.js": "815ba5c467a5b868f54461a35c56d824b788a72947f8ff4176e8d4090d1d9741",
+  "software/cadagent/webkit/simulation/viewer.css": "dab0c6bf8894a1d56dc6d48f932cc39b23460cef0adb8d81f382b0ea218582e7",
+  "software/cadagent/webkit/simulation/examples/gyropup-v2/viewer.html": "69d0ad1edee4dba65e761b8fc0f4d74eff277460f2f91f2e713f8b6fd7f7caf8",
+  "software/cadagent/webkit/simulation/examples/gyropup-v2/index.json": "fc7c8b91483e5f6be55403fc1e6b6d8933bb6baae45a7c80247642f851952d5e",
+  "software/cadagent/webkit/simulation/examples/gyropup-v2/robot.json": "3f1cfd02367d22adf242bb9cf7887f83e12be6c5897eb34aa8092d33c82f8314",
+  "software/cadagent/webkit/simulation/examples/gyropup-v2/robot.bin": "45c516c47b12bffd6235e721ee86704661d668a196fb7c52a1837b1435837951",
+  "software/cadagent/webkit/simulation/examples/gyropup-v2/kerb_drop.json": "d4120f00df7f89d020442891eb482d07810e69403244839b5221533423596ec1",
+  "software/cadagent/webkit/model/stage.js": "f62b95e16a99e06686d32454397948fd50a67a973736ffc76a03b82f5e54b486",
+  "software/cadagent/webkit/model/model.js": "42a17fd2a2384807233683f01b988e7e98ab52c438726f5eebc3baa7e6e41aec",
+  "software/cadagent/webkit/host/viewer-host.js": "2a1f42a3f86c33932b1c423bb4f9b503c940a657513ae5c9e015b5aff9f9f619",
+  "software/cadagent/webkit/host/viewer-host.css": "53f17e42664222f055707daa0e16b7a8ebb3d5e199a4ebfa5098c3d56454972d",
+  "software/cadagent/webkit/host/stage-controls.js": "557891644146253c768531caedd79bc9909f36fee6538902018f601a9a54836d",
+  "software/cadagent/webkit/ui/theme.js": "bec818983711f705b48f9df993ed4ee53a82093f1f750252103d0c1f8366b0e2",
+  "software/cadagent/webkit/ui/theme.css": "370dfb29b28c760d48332316651492d0853c3e3aa9bc355e8a7edb1a4b12cf47"
+ },
+ "sha256": "ca6da792c68c48375de8867b2117c33dfb0fddbcdcc81b02317e08e87bb98d40",
+ "still": {
+  "file": "card-still.webp",
+  "recorded_time_s": 3,
+  "sha256": "eaeaf1087d903bf6e8e378e251e75e79fdbcb8b737a27b4255503976558f10e7"
+ },
+ "limits": "Recorded solver output from Gyropup's dated snapshot of a work-in-progress prototype, replayed, not recomputed; not a validation of hardware."
+}

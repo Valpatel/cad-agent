@@ -87,8 +87,9 @@ and it must stay that way.
    (the `PN:` prefix may be left out when there is one part number). In Python: `Session.fetch(pn, out,
    choose=["Right Hand"])`. The page data records what was offered and what was chosen.
 
-   Playwright: `pip install playwright` into the environment that runs it, plus Google Chrome (then nothing else is
-   needed; without Chrome the command stops with an install hint).
+   Playwright in the environment that runs it, plus Google Chrome (then nothing else is needed; without Chrome the
+   command stops with an install hint). `cad-agent agents list` prints the command for this install: uv's
+   `tool install --with playwright` for the installer's uv tool install, which has no pip; else pip.
 
    **When McMaster asks for a login** ("Log in to view Product Detail") the tool says so (`LoginRequired`), not that
    the part number is wrong, and asks for no more pages in that run. Retry once later from a new session. Until then,

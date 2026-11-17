@@ -169,6 +169,7 @@ def test_downloads_snippet_links_files_relative_to_the_page(tmp_path):
     assert 'data-vcad-3mf="../exports/box.3mf"' in html and 'data-vcad-name="box"' in html
     assert "3MF missing" in html
     assert 'src="part-box.png"' in html and "no render" in html
+    assert 'title="no preview/part-lid.png yet: a render step in cad-agent.yaml writes it' in html, "says why (#799)"
     assert "bambustudio://open?file=" in html
 
 def test_bambu_url_requires_http_and_encodes():

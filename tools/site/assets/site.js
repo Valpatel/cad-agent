@@ -37,9 +37,8 @@ if (document.querySelector('cad-model')) import('/kit/model/model.js').catch(() 
 if (document.querySelector('details[data-catalogue-id]')) import('/web/discovery.js').catch(() => {});
 // The Toolkit keeps all cards and SVG links usable without JavaScript; this adds search and state controls.
 if (document.querySelector('[data-scada-browser]')) import('/web/toolkit.js').catch(() => {});
-// The home hero's recording (#748): the page loads and paints its 9 KB still; once the page has loaded, the animation
-// (data-motion-src) replaces it when it has arrived. Never under reduced motion, where the picture's still is kept, and
-// never with Save-Data on, where <cad-model> on the same page also asks first.
+// Recordings (#748, #798): the page paints the still; after load (and, for a lazy card, once it nears the screen)
+// data-motion-src swaps the animation in. Never under reduced motion or Save-Data (<cad-model> also asks first there).
 for (const img of document.querySelectorAll('img[data-motion-src]')) {
   const swap = () => {
     if (matchMedia('(prefers-reduced-motion: reduce)').matches || navigator.connection?.saveData) return;
@@ -47,5 +46,31 @@ for (const img of document.querySelectorAll('img[data-motion-src]')) {
     next.onload = () => { img.src = next.src; };
     next.src = img.dataset.motionSrc;
   };
-  if (document.readyState === 'complete') swap(); else addEventListener('load', swap, { once: true });
+  const near = () => new Promise(go => {
+    if (img.loading !== 'lazy' || !window.IntersectionObserver) return go();
+    const seen = new IntersectionObserver(e => { if (e.some(x => x.isIntersecting)) { seen.disconnect(); go(); } }, { rootMargin: '150px 0px' });
+    seen.observe(img);
+  });
+  (document.readyState === 'complete' ? Promise.resolve() : new Promise(go => addEventListener('load', go, { once: true }))).then(near).then(swap);
+}
+// A link to a closed <details> (or to something inside one), such as /docs/agent-workflow#install-unix, opens it on
+// arrival and when the address's #part changes, so the reader lands on the command, not on a closed toggle (#804).
+// Without script the browser still scrolls to the block's summary; one click opens it.
+const openTarget = () => {
+  let id = '';
+  try { id = decodeURIComponent(location.hash.slice(1)); } catch { return; }
+  const target = id && document.getElementById(id);
+  if (!target) return;
+  let opened = false;
+  for (let d = target.closest('details'); d; d = d.parentElement?.closest('details')) if (!d.open) { d.open = true; opened = true; }
+  // At once, as the browser lands on any other # address: the page's smooth scrolling would leave the reader mid-way.
+  if (opened) target.scrollIntoView({ block: 'start', behavior: 'instant' });
+};
+openTarget();
+addEventListener('hashchange', openTarget);
+// The 404 page's feedback link names the address the reader asked for, not a page of its own (#804).
+for (const a of document.querySelectorAll('a[data-feedback-here]')) {
+  const url = new URL(a.href);
+  url.searchParams.set('page', location.origin + location.pathname + location.search);
+  a.href = url.href;
 }

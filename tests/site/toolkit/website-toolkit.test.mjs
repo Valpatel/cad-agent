@@ -133,8 +133,11 @@ test('capabilities open owned working examples, with real previews and explicit 
   assert.throws(()=>toolkitCapabilities(model,{catalog:[{id:'demo-fourbar-animator',url:'https://external.invalid/demo'}]}),/must be locally published/);
   assert.deepEqual(cards.map(card=>card.id),['scada-elements','scada-simulations','models','robot-replay','files','assembly','mechanisms','calculators']);
   const replay=cards.find(card=>card.id==='robot-replay');
-  assert.match(replay.description,/real MuJoCo run of an illustrative two-link arm/);
-  assert.equal(replay.href,'/kit/simulation/viewer.html');
+  assert.match(replay.description,/Gyropup, a work-in-progress wheel-legged robot, in recorded MuJoCo runs from its dated snapshot/);
+  for (const phrase of ["Recorded solver output", "replayed, not recomputed", "not a validation of hardware"]) assert.ok(replay.description.includes(phrase), phrase);
+  assert.equal(replay.href,'/kit/simulation/examples/gyropup-v2/viewer.html?nav=1');
+  assert.equal(replay.image,'/kit/simulation/examples/gyropup-v2/card-still.webp');
+  assert.equal(replay.motion,'/kit/simulation/examples/gyropup-v2/card.webp');
   assert.ok(replay.docs.startsWith('/repo/folders/'));
   for(const card of cards) {
     assert.ok(card.image.startsWith('/') && card.alt.length>20,card.id);
@@ -152,7 +155,9 @@ test('capabilities open owned working examples, with real previews and explicit 
   assert.deepEqual(models.css,['/kit/model/model.css']);
   assert.throws(()=>toolkitPages(model,{has:file=>has(file) && !file.endsWith('file-review.webp')}),/missing example asset.*file-review.webp/);
   assert.throws(()=>toolkitPages(model,{has:file=>has(file) && !file.endsWith('model/viewer.html')}),/missing example asset.*model\/viewer.html/);
-  assert.throws(()=>toolkitPages(model,{has:file=>has(file) && !file.endsWith('two-link-arm/preview.webp')}),/missing example asset.*two-link-arm\/preview.webp/);
+  assert.throws(()=>toolkitPages(model,{has:file=>has(file) && !file.endsWith('gyropup-v2/card-still.webp')}),/missing example asset.*gyropup-v2\/card-still.webp/);
+  assert.throws(()=>toolkitPages(model,{has:file=>has(file) && !file.endsWith('gyropup-v2/card.webp')}),/missing example asset.*gyropup-v2\/card.webp/);
+  assert.match(overview.body,/<img src="\/kit\/simulation\/examples\/gyropup-v2\/card-still.webp"[^>]*loading="lazy" data-motion-src="\/kit\/simulation\/examples\/gyropup-v2\/card.webp">/);
 });
 
 test('published assembly example preserves the complete source-bound fixture closure',()=>{

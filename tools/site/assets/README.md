@@ -1,6 +1,6 @@
 # Website assets
 
-Runtime files keep their public /web/ addresses. The build also copies favicon.ico, install.sh and install.ps1 to their root URLs. Owner README maps become native repository pages with rewritten links, separate from the byte-exact runtime assets.
+Runtime files keep their public /web/ addresses. The build also copies favicon.ico, apple-touch-icon.png, install.sh and install.ps1 to their root URLs. Owner README maps become native repository pages with rewritten links, separate from the byte-exact runtime assets.
 
 ```mermaid
 flowchart TD
@@ -23,6 +23,7 @@ The application theme is owned by the [shared browser UI](../../../software/cada
 | [discovery.css](discovery.css) | Compact shared Explore search and topic layout. |
 | [catalog.css](catalog.css) | Catalogue layout and reading styles. |
 | [favicon.ico](favicon.ico) | Browser icon. |
+| [social-card.png](social-card.png), [apple-touch-icon.png](apple-touch-icon.png), [social-card-source.json](social-card-source.json) | The link card every page's `og:image` names and the home-screen icon (also copied to `/apple-touch-icon.png`), drawn by [social-card.mjs](../figures/social-card.mjs) with their record. |
 | [home.css](home.css) | Learning narrative and independently loaded project showcase layout. |
 | [icon.svg](icon.svg) | Original project emblem. |
 | [install.ps1](install.ps1) | PowerShell installer snapshot source. |

@@ -277,7 +277,7 @@ domains:
         priority: [demo]
         api: [cadagent.simulation.robot]
         pages: [docs/examples/robot-replay/README.md]
-        issues: [515, 710]
+        issues: [515, 710, 798]
         projects: [gyropup]
       - slug: topology-optimisation
         title: Topology optimisation

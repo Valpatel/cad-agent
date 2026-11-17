@@ -380,6 +380,11 @@ export function createStage(container, opts = {}) {
     })
     : null;
   if (visibility) visibility.observe(renderer.domElement); else onScreen = true;
+  // Until the observer's first report (it can come a frame after the first draw is due), measure directly.
+  const inViewport = (element) => {
+    const r = element.getBoundingClientRect();
+    return r.width > 0 && r.height > 0 && r.bottom > 0 && r.right > 0 && r.top < innerHeight && r.left < innerWidth;
+  };
   renderer.domElement.addEventListener('webglcontextrestored', invalidate, { signal: gestures.signal });
   document.addEventListener('visibilitychange', () => { if (!document.hidden) needsDraw = true; }, { signal: gestures.signal });
   function tick() {
@@ -394,7 +399,7 @@ export function createStage(container, opts = {}) {
     }
     controls.update();
     diagnostics.frames++;
-    if (onScreen && !document.hidden) {
+    if ((onScreen ?? inViewport(renderer.domElement)) && !document.hidden) {
       pending = sceneSignature(renderer, scene, camera, pending);
       if (needsDraw || stageDiagnostics.alwaysDraw || !sameSignature(pending, drawn)) {
         needsDraw = false;

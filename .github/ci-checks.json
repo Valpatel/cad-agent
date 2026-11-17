@@ -313,11 +313,13 @@
    "id": "served-bar",
    "title": "The top bar under cad-agent site --serve in a browser (the Python server serves a fixture project)",
    "paths": ["software/cadagent/webkit/ui/**", "software/cadagent/webkit/files/**", "software/cadagent/webkit/fea/**", "software/cadagent/webkit/host/**", "software/cadagent/publish/site.py", "tests/publish/served-browser.mjs", "tools/site/package.json", "tools/site/package-lock.json", "tests/site/npm-context.mjs"],
-   "command": "node tests/publish/served-browser.mjs",
+   "command": "npm run test:served-bar",
+   "cwd": "tools/site",
    "engines": ["chromium", "webkit"],
    "needs": {"node_deps": ["tools/site"], "python": {"version": "3.12", "modules": ["yaml", "numpy", "packaging", "markdown"]}},
    "cost": "fast",
-   "mirrors": [{"workflow": "webkit.yml", "job": "browser", "run": "node tests/publish/served-browser.mjs"}],
+   "subset": true,
+   "mirrors": [{"workflow": "webkit.yml", "job": "browser", "run": "npm run test:assembly-release"}],
    "env": {"PYTHONPATH": "{root}/software"}
   },
   {

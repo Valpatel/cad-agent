@@ -201,12 +201,15 @@ export async function readerBoundaryProblems(browser, base) {
       const labelExposed=await page.locator('label[for=explore-reader-search]').evaluate(el=>{const r=el.getBoundingClientRect();return el.contains(document.elementFromPoint(r.x+r.width/2,r.y+r.height/2));});
       if(!exposed||!labelExposed)problems.push('reader boundary: global search is covered');
       await search.click();await search.fill('counterbores');if(await search.inputValue()!=='counterbores')problems.push('reader boundary: search input inaccessible');
-      // The planted controls where the outline is in the tree, so the section tracker can move the panel (from 1400 px
-      // the outline has its own column, #807).
-      if(viewport.width===1366&&viewport.height===900){
+      // Planted controls. The old opaque cover: at 1440x900 (as before #807) and 1366x900. The old scroll chain: at 1366x900
+      // only, where the outline is still in the tree, so the section tracker moves the panel; from 1400 px the outline has
+      // its own column (#807) and nothing moves the tree's panel, so that trap cannot be planted at 1440.
+      if(viewport.height===900&&(viewport.width===1440||viewport.width===1366)){
         const cover=await page.addStyleTag({content:'cad-nav [data-nav-controls]{position:static!important}cad-nav .cad-nav-panel::before{display:block!important}'});
         const covered=await page.locator('label[for=explore-reader-search]').evaluate(el=>{const r=el.getBoundingClientRect();return !el.contains(document.elementFromPoint(r.x+r.width/2,r.y+r.height/2));});
-        states.push({legacyCoverRejected:covered});if(!covered)problems.push('reader boundary: old opaque cover control was not rejected');await cover.evaluate(el=>el.remove());
+        states.push({viewport,legacyCoverRejected:covered});if(!covered)problems.push('reader boundary: old opaque cover control was not rejected at '+viewport.width+'px');await cover.evaluate(el=>el.remove());
+      }
+      if(viewport.width===1366&&viewport.height===900){
         await page.addStyleTag({content:'cad-nav .cad-nav-panel{overscroll-behavior-y:auto!important}'});
         await page.mouse.move(box.x+box.width/2,box.y+150);await page.mouse.wheel(0,-300);await page.waitForFunction(y=>scrollY<y,before.article);await quiet(page);
         const negative=await snapshot(page);states.push({negative});
@@ -312,6 +315,8 @@ export async function readerOverflowProblems(browser, base) {
     const wheel=await state();states.push({wheel});if(wheel.article<100)problems.push('reader overflow: actual wheel over fitting tree does not scroll article');
     await panel.evaluate(p=>{for(const group of p.querySelectorAll('details'))group.open=true;});const expanded=await current({width:1920,height:1080,overflow:true,position:'sticky'});states.push({expanded});if(expanded.fits||expanded.contain!=='contain')problems.push('reader overflow: expanded tree does not contain its wheel');
     await page.getByRole('searchbox',{name:'Filter topic pages'}).fill('zzzz-no-such-page');const filtered=await current({width:1920,height:1080,overflow:false,position:'sticky'});states.push({filtered});if(!filtered.fits||filtered.contain!=='auto')problems.push('reader overflow: filtering leaves stale containment');
+    // 1440x600, as before #807: the outline now has its own column, so the filtered tree fits and holds no containment.
+    await page.setViewportSize({width:1440,height:600});const shortWide=await current({width:1440,height:600,overflow:false,position:'sticky'});states.push({shortWide});if(!shortWide.fits||shortWide.contain!=='auto')problems.push('reader overflow: short 1440px layout with the outline in its own column traps wheel input');
     // 1366 px: the widest the outline sits in the left tree (from 1400 px it has its own column, #807).
     await page.setViewportSize({width:1366,height:600});const short=await current({width:1366,height:600,overflow:true,position:'sticky'});states.push({short});if(short.fits||short.contain!=='contain')problems.push('reader overflow: short left-outline layout does not regain containment');
     await page.setViewportSize({width:390,height:844});const mobile=await current({width:390,height:844,overflow:false,position:'static'});states.push({mobile});if(mobile.position!=='static'||mobile.contain!=='auto')problems.push('reader overflow: mobile retains containment');

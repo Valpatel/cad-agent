@@ -5,7 +5,8 @@
   "scripts": {
     "test:webkit-unit": "node --test ../../tests/webkit/webkit-*.test.mjs ../../tests/webkit/files/*.test.mjs ../../tests/webkit/assembly/*.test.mjs ../../tests/webkit/simulation/*.test.mjs",
     "test:assembly-guide": "node ../../tests/webkit/assembly/browser.mjs && node ../../tests/webkit/assembly/example-browser.mjs",
-    "test:assembly-release": "node ../../tests/webkit/assembly/release-browser.mjs",
+    "test:assembly-release": "node ../../tests/webkit/assembly/release-browser.mjs && npm run test:served-bar",
+    "test:served-bar": "node ../../tests/publish/served-browser.mjs",
     "test:simulation-replay": "node ../../tests/webkit/simulation/browser.mjs && node ../../tests/webkit/simulation/scenarios-browser.mjs",
     "test:fea": "node ../../tests/webkit/webkit-fea-browser.mjs",
     "test:stage": "node ../../tests/webkit/webkit-stage-browser.mjs",

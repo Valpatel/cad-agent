@@ -38,7 +38,7 @@ flowchart TD
 | `test_site_review.py` | The project site's review pages, built from the gate-bench fixture |
 | `test_view.py` | `cadagent.publish.view`: STL round trips and the 3D view export, bad input refused before writing |
 
-Run: `pytest tests/publish` (with `PYTHONPATH=software`); the browser check: `node tests/publish/served-browser.mjs` (site npm dependencies, Python with the `site` extra).
+Run: `pytest tests/publish` (with `PYTHONPATH=software`); the browser check: `npm run test:served-bar` in `tools/site` (CI runs it after `test:assembly-release`) (site npm dependencies, Python with the `site` extra).
 
 Related: [tests](../README.md) · [where files go](../../.github/CONTRIBUTING.md#where-files-go)
 

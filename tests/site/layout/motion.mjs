@@ -328,7 +328,10 @@ export async function replayCardProblems(browser, base, receipt = {}) {
     {
       const { ctx, page, requests, before } = await open({ reducedMotion:'no-preference' });
       try {
-        if (before[ANIMATION] || before[STILL]) out.push(`before any scroll the card loaded ${JSON.stringify(before)}`);
+        // The animation waits for the visitor. The 9 KB still is a native loading=lazy image: when the browser fetches it
+        // is its own lookahead (Chromium's distance depends on the connection), so it is checked as lazy, not timed.
+        if (before[ANIMATION]) out.push(`before any scroll the card's animation loaded ${JSON.stringify(before)}`);
+        if (before[STILL] > 1 || await page.locator(CARD).evaluate(img => img.loading) !== 'lazy') out.push(`the card's still is not a single lazy image: ${JSON.stringify(before)}`);
         await near(page);
         await page.waitForFunction(([sel, src]) => new URL(document.querySelector(sel).currentSrc).pathname === src, [CARD, ANIMATION], {timeout:20000})
           .catch(() => out.push('near the card, the animation never replaced the still'));

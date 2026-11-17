@@ -76,7 +76,7 @@ def test_wheels_rest_on_floor_and_scenery():
     assert 0.080 < min(heights) and max(heights) < 0.0870
     kerb = json.loads((BUNDLE / "kerb_drop.json").read_bytes())
     assert kerb["scenery"][0]["shape"] == "box" and kerb["scenery"][0]["size"][2] == pytest.approx(0.05)
-    assert kerb["view"]["follow"] == "base" and recording["view"]["follow"] == "base"      # the push travels 0.65 m
+    assert kerb["view"]["follow"] == "base" and recording["view"]["follow"] == "base"      # the push: 0.37 m from its start (0.65 m end to end)
     # A run that stays on its spot is framed whole (#809): the landing's base moves 9 mm across the floor.
     assert "follow" not in json.loads((BUNDLE / "landing.json").read_bytes())["view"]
     receipt = json.loads((BUNDLE / "receipt.json").read_bytes())
@@ -88,9 +88,9 @@ def test_committed_figures_are_the_snapshots_own():
     recorded 0.04° lean reads 0.04°, not 0.0°."""
     index = json.loads((BUNDLE / "index.json").read_bytes())
     receipt = json.loads((BUNDLE / "receipt.json").read_bytes())
-    assert "max_theta_deg to two decimals" in receipt["figures"] and "shows no lean" in receipt["figures"]
+    assert "max_theta_deg to two decimals" in receipt["figures"] and "fore-aft (pitch)" in receipt["figures"] and "shows no lean" in receipt["figures"]
     shown = {s["id"]: {m["label"]: m["value"] for m in s["summary"]["metrics"]} for s in index["scenarios"]}
-    assert {k: v["Largest lean"] for k, v in shown.items()} == {"kerb_drop": "8.32°", "side_kerb": "8.45°", "push": "7.35°", "landing": "0.04°"}
+    assert {k: v["Largest fore-aft lean"] for k, v in shown.items()} == {"kerb_drop": "8.32°", "side_kerb": "8.45°", "push": "7.35°", "landing": "0.04°"}
     assert shown["landing"]["Peak motor torque"] == "42.0 N·m, rear-right leg motor: 35% of its peak-torque limit"
 
 
@@ -133,7 +133,8 @@ def snapshot(tmp_path):
               "wheel_r": {"peak_torque_nm": 6.0, "of_peak": 0.42, "of_rated": 1.2}}
     summary = {"name": "Synthetic", "passed": 4, "total": 4, "physical_test": False, "estimates": [], "scenarios": {}}
     for k, name in enumerate(converter.SCENARIOS):
-        frames = [[0.5 * i * (k == 0), 0, 0.37, 1, 0, 0, 0] + [0.01 * i] * 12 for i in range(4)]
+        # The kerb drives 1.5 m; the plank run 0.3 m, between the follow threshold and the old 1 m rule (#809).
+        frames = [[0.5 * i * (k == 0) + 0.1 * i * (k == 1), 0, 0.37, 1, 0, 0, 0] + [0.01 * i] * 12 for i in range(4)]
         run = {"scenario": name, "title": f"Synthetic {name}", "pass": True, "reasons": [], "max_theta_deg": 2.5,
                "motors": motors, "qpos_layout": layout, "events": [{"t": 0.05, "type": "push"}] if name == "push" else [],
                "props": [{"name": "kerb", "type": 6, "size": [1, 1, 0.025], "pos": [0, 0, 0.025], "quat": [1, 0, 0, 0],
@@ -178,6 +179,7 @@ def test_converter_writes_a_checked_deterministic_example(snapshot, tmp_path):
     assert any(g.get("opacity") == 0.35 for g in recording["bodies"][0]["geometry"])
     assert recording["scenery"][0]["size"] == [2, 2, 0.05]
     assert recording["view"]["follow"] == "base"                    # it drives 1.5 m
+    assert json.loads((out / "side_kerb.json").read_bytes())["view"]["follow"] == "base"   # 0.3 m: above 0.1 m, below 1 m
     assert "follow" not in json.loads((out / "push.json").read_bytes())["view"]
     assert "mujoco" not in sys.modules
 
@@ -273,7 +275,7 @@ def test_lean_is_shown_as_recorded_or_not_at_all(snapshot, tmp_path):
     converter.convert(snapshot, out)
     metrics = {s["id"]: s["summary"]["metrics"] for s in json.loads((out / "index.json").read_bytes())["scenarios"]}
     assert [m["label"] for m in metrics["landing"]] == ["Peak motor torque"]
-    assert {"label": "Largest lean", "value": "0.04°"} in metrics["push"]
+    assert {"label": "Largest fore-aft lean", "value": "0.04°"} in metrics["push"]
     summary["scenarios"]["push"]["max_theta_deg"] = "7°"
     path.write_text(json.dumps(summary))
     git(snapshot, "commit", "-q", "-am", "a lean that is not a number")

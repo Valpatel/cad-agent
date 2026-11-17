@@ -104,7 +104,7 @@ try{
     text=await summaryText(page);
     assert.ok(text.includes(index.scenarios[2].summary.metrics[0].value)&&text.includes('push at 2.0 s'),text);
     assert.ok(!text.includes(kerb.metrics[0].value),'the summary still shows the previous scenario');
-    // The push run leaves its spot (0.65 m), so the camera follows its base as it does the kerb's.
+    // The push run leaves its spot (0.37 m from its start, 0.65 m end to end), so the camera follows its base as it does the kerb's.
     const pushed=read.target;read=await seekAndRead(page,4.95);
     const pushMoved=read.target[0]-pushed[0],pushBase=frameAt('push',4.95).poses[0].position[0]-frameAt('push',2.97).poses[0].position[0];
     assert.ok(Math.abs(pushMoved-pushBase)<1e-6&&Math.abs(pushBase)>0.01,`camera followed ${pushMoved} m, base moved ${pushBase} m`);
@@ -145,9 +145,13 @@ try{
     assert.equal(await page.evaluate(()=>__replay.playback.state().loop),true);
     // While playing, the button keeps its text node: one replaced between a press and its release makes WebKit drop the
     // click, which is how Pause failed to hold in CI (#809). Planted control below: the per-frame rewrite is reported.
-    const sameNode=target=>target.evaluate(()=>new Promise(resolve=>{const button=document.querySelector('.replay-controls button[aria-pressed]'),first=button.firstChild;
-      let n=0;const tick=()=>++n>5?resolve(__replay.playback.state().playing&&button.firstChild===first):requestAnimationFrame(tick);tick();}));
+    const sameNode=(target,selector='.replay-controls button[aria-pressed]')=>target.evaluate(selector=>new Promise(resolve=>{const node=document.querySelector(selector),first=node.firstChild;
+      let n=0;const tick=()=>++n>5?resolve(__replay.playback.state().playing&&node.firstChild===first):requestAnimationFrame(tick);tick();}),selector);
     assert.equal(await sameNode(page),true,'the Pause button keeps its text node while the recording plays');
+    // So does a speed outside the menu's (set through the API or a restored view), in its own option.
+    await page.evaluate(()=>__replay.playback.setSpeed(.75));
+    assert.equal(await sameNode(page,'[data-custom-speed]'),true,'the custom speed option keeps its text node while the recording plays');
+    await page.evaluate(()=>__replay.playback.setSpeed(1));
     await page.getByRole('button',{name:'Pause recording',exact:true}).click();
     const held=await page.evaluate(()=>__replay.playback.state());assert.equal(held.playing,false);
     await page.evaluate(()=>new Promise(resolve=>{let n=0;const tick=()=>++n>3?resolve():requestAnimationFrame(tick);tick();}));

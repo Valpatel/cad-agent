@@ -54,14 +54,16 @@ MOTOR_NAMES = {"motor_f_l": "front-left leg motor", "motor_r_l": "rear-left leg 
 TIMESTEP_SOURCE, SAMPLING_SOURCE = "software/simulation/robot_v2.py", "software/simulation/scenarios.py"
 SAMPLING_RULE = "frame_every = max(1, int(round(1 / (FPS * dt))))"
 # The camera follows the base once it travels this far across the floor from where it started (m). Framing a whole run
-# that travels further leaves the robot a fraction of a phone's view (#809): the push run travels 0.65 m.
+# that travels further leaves the robot a fraction of a phone's view (#809): the push run gets 0.37 m from its start
+# (0.65 m end to end).
 FOLLOW_TRAVEL_M = 0.1
 # How the summary's numbers are shown. Recorded in the receipt, so a reader knows what each figure is and is not.
 FIGURES = ("Peak motor torque: the summary's peak_torque_nm of the motor with the largest of_peak (its peak over the run "
            "as a fraction of that motor's peak-torque limit, its control range), to 0.1 N·m and a whole percent. Largest "
-           "lean: the summary's max_theta_deg to two decimals, the precision scenarios.py records it to (so a small lean "
-           "such as the landing's 0.04° does not read as zero): the largest angle from vertical of the line from the wheel axle to the centre of mass, measured at "
-           "every solver step from the start of the run (controller_v2.py's theta). A run whose summary has no such value "
+           "fore-aft lean: the summary's max_theta_deg to two decimals, the precision scenarios.py records it to (so a small lean "
+           "such as the landing's 0.04° does not read as zero): the largest fore-aft (pitch) angle from vertical of the line "
+           "from the wheel axle to the centre of mass of every body but the wheels, measured at every solver step from the "
+           "start of the run (controller_v2.py's theta; sideways tilt is not in it). A run whose summary has no such value "
            "shows no lean.")
 LIMITS = ("Replay of recorded solver output from a dated snapshot of a work-in-progress prototype. The browser "
           "interpolates the recorded poses; nothing is recomputed. Pass verdicts and torques are the snapshot's own "
@@ -241,7 +243,7 @@ def summary_block(entry, events):
                          f"peak-torque limit"}]
     lean = lean_text(entry)
     if lean is not None:
-        metrics.append({"label": "Largest lean", "value": lean})
+        metrics.append({"label": "Largest fore-aft lean", "value": lean})
     if events:
         metrics.append({"label": "Events", "value": ", ".join(f"{e['type']} at {e['t']:.1f} s" for e in events)})
     verdict = {"pass": bool(entry["pass"]), "label": "pass" if entry["pass"] else "fail"}

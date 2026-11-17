@@ -23,7 +23,7 @@
       "value": "34.3 N·m, rear-left leg motor: 29% of its peak-torque limit"
      },
      {
-      "label": "Largest lean",
+      "label": "Largest fore-aft lean",
       "value": "8.32°"
      }
     ],
@@ -47,7 +47,7 @@
       "value": "8.0 N·m, left wheel motor: 56% of its peak-torque limit"
      },
      {
-      "label": "Largest lean",
+      "label": "Largest fore-aft lean",
       "value": "8.45°"
      }
     ],
@@ -71,7 +71,7 @@
       "value": "4.4 N·m, left wheel motor: 31% of its peak-torque limit"
      },
      {
-      "label": "Largest lean",
+      "label": "Largest fore-aft lean",
       "value": "7.35°"
      },
      {
@@ -99,7 +99,7 @@
       "value": "42.0 N·m, rear-right leg motor: 35% of its peak-torque limit"
      },
      {
-      "label": "Largest lean",
+      "label": "Largest fore-aft lean",
       "value": "0.04°"
      }
     ],

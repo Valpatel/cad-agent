@@ -86,7 +86,7 @@ export function createReplayViewer(container,{recording,recordingUrl,expectedHas
             play.setAttribute('aria-label',state.playing?'Pause recording':'Play recording');play.setAttribute('aria-pressed',String(state.playing));
           }
           let custom=speed.querySelector('[data-custom-speed]');
-          if(![.25,.5,1,2].includes(state.speed)){if(!custom){custom=el('option');custom.dataset.customSpeed='true';speed.append(custom);}custom.value=String(state.speed);custom.textContent=`${state.speed}×`;}
+          if(![.25,.5,1,2].includes(state.speed)){if(!custom){custom=el('option');custom.dataset.customSpeed='true';speed.append(custom);}if(custom.value!==String(state.speed)){custom.value=String(state.speed);custom.textContent=`${state.speed}×`;}}
           else custom?.remove();
           if(speed.value!==String(state.speed))speed.value=String(state.speed);
           onState({state:'ready',playback:state});

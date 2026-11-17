@@ -80,30 +80,50 @@ def test_committed_example_check_catches_planted_faults(tmp_path):
     assert "guide.json: step-08 text does not restore to Gyropup's recorded original" in problems
 
 
+TREE = {"docs/wiring.md", "docs/electronics/base-board-service.md", "docs/a/dup.md", "docs/b/dup.md"}
+
+
 def test_text_rules_drop_codes_and_restore_the_original():
     text = "Fit it on the bench (D48): 4 x M3 (no bumper on the bench, D42); see docs/wiring.md. Later (v1)."
-    cleaned, edits = converter.clean_text(text)
+    cleaned, edits = converter.clean_text(text, TREE)
     assert cleaned == "Fit it on the bench: 4 x M3 (no bumper on the bench); see Gyropup's docs/wiring.md. Later."
     assert [e["rule"] for e in edits] == ["code-only-parenthesis", "code-only-parenthesis", "code-ending-parenthesis",
                                           "repository-path"]
     assert converter.restore_text(cleaned, edits) == text
     # Ordinary parentheses, part numbers and measurements are left alone.
     keep = "4 x M3 x 16 (heads sunk); the DT04-12PA (TE drawing); a D-shaped hole; 12 V (Class 2)."
-    assert converter.clean_text(keep) == (keep, [])
+    assert converter.clean_text(keep, TREE) == (keep, [])
     # A code no rule covers stops the conversion rather than reach a visitor.
     with pytest.raises(ValueError, match="no rule covers"):
-        converter.clean_text("as decided in D42 last week")
+        converter.clean_text("as decided in D42 last week", TREE)
     # Planted: with the rules removed, the committed recipe's codes are caught.
     rules = converter.TEXT_RULES
     try:
         converter.TEXT_RULES = ()
         with pytest.raises(ValueError, match="no rule covers"):
-            converter.clean_text("go together on the bench (D48): 8 x M3")
+            converter.clean_text("go together on the bench (D48): 8 x M3", TREE)
     finally:
         converter.TEXT_RULES = rules
     # A tampered edit list does not restore.
     with pytest.raises(ValueError, match="does not match"):
         converter.restore_text(cleaned, [{**edits[-1], "at": edits[-1]["at"] + 3}])
+
+
+def test_repository_paths_are_checked_against_the_revision_tree():
+    """Review of #812: a path shown as Gyropup's must exist at the pinned revision."""
+    moved, edits = converter.clean_text("unverified: docs/base-board-service.md. Glue", TREE)
+    assert moved == "unverified: Gyropup's docs/electronics/base-board-service.md. Glue"
+    assert edits[0]["rule"] == "repository-path-moved" and edits[0]["old"] == "docs/base-board-service.md"
+    assert converter.restore_text(moved, edits) == "unverified: docs/base-board-service.md. Glue"
+    with pytest.raises(ValueError, match="not in the revision"):
+        converter.clean_text("see docs/nowhere.md", TREE)
+    with pytest.raises(ValueError, match="ambiguous"):
+        converter.clean_text("see docs/dup.md", TREE)
+    # The committed guide names only paths that exist at its revision (the receipt lists each, as Gyropup's text had it).
+    receipt = json.loads((BUNDLE / "receipt.json").read_bytes())
+    shown = [e["new"].removeprefix("Gyropup's ") for v in receipt["text_edits"].values() for e in v["edits"]
+             if e["rule"].startswith("repository-path")]
+    assert shown == ["docs/electronics/base-board-service.md", "docs/turret/turret-wiring.md"]
 
 
 def test_neutral_pose_keeps_parts_of_different_groups_together():
@@ -210,4 +230,17 @@ def test_converter_refuses_a_dirty_checkout(tmp_path, small):
     make_repo(tmp_path / "repo")
     (tmp_path / "repo/hardware/exports/sim/turret_box/base_part.stl").write_bytes(b"edited")
     with pytest.raises(SystemExit, match="uncommitted"):
+        converter.convert(tmp_path / "repo", tmp_path / "out")
+
+
+def test_converter_refuses_a_part_name_that_is_not_a_plain_name(tmp_path, small):
+    """Scene part names become scratch file names; a name with a path in it is refused (hardening, review of #812)."""
+    make_repo(tmp_path / "repo")
+    scene = tmp_path / "repo/hardware/exports/sim/turret_box/manifest.json"
+    data = json.loads(scene.read_text())
+    data["parts"][0]["name"] = "../escape"
+    scene.write_text(json.dumps(data))
+    subprocess.run(["git", "-C", str(tmp_path / "repo"), "-c", "user.name=t", "-c", "user.email=t@example.invalid",
+                    "commit", "-qam", "planted"], check=True, capture_output=True)
+    with pytest.raises(ValueError, match="not a plain name"):
         converter.convert(tmp_path / "repo", tmp_path / "out")

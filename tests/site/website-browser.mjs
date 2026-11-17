@@ -906,8 +906,12 @@ async function phoneFirstScreenProblems() {
  * gets no bar. */
 async function demoWayBackProblems() {
   const problems = [];
-  const DEMOS = { 'build guide': ['/kit/model/viewer.html?guide=/kit/assembly/examples/gyropup-turret/guide.json', '#hud'], 'file viewer': ['/kit/files/file-viewer.html?file=/kit/host/example.stl', '#file-viewer'],
+  const DEMOS = { 'build guide': ['/kit/model/viewer.html?guide=/web/toolkit/assembly/guide.json', '#hud'], 'file viewer': ['/kit/files/file-viewer.html?file=/kit/host/example.stl', '#file-viewer'],
     'robot replay': ['/kit/simulation/examples/gyropup-v2/viewer.html', '#replay'] };   // #798
+  // #811: the cards link the featured turret guide; the rail bench keeps its published URL, unlinked, and still gets
+  // the bar with nav=1, but no card has to link it.
+  DEMOS['featured build guide'] = ['/kit/model/viewer.html?guide=/kit/assembly/examples/gyropup-turret/guide.json', '#hud'];
+  const UNLINKED = new Set(['build guide']);
   const optIn = demo => demo + (demo.includes('?') ? '&' : '?') + 'nav=1';
   const WANT = ['/', '/explore', '/toolkit', '/docs/agent-workflow'];
   const open = async (route, width, { noNavFile = false } = {}) => {
@@ -935,7 +939,7 @@ async function demoWayBackProblems() {
     try {
       await navigate(page, base + '/toolkit');
       const hrefs = await page.evaluate(() => [...document.querySelectorAll('a[href^="/kit/model/viewer.html"], a[href^="/kit/files/file-viewer.html"], a[href^="/kit/simulation/"]')].map(a => a.getAttribute('href')));
-      for (const [name, [route]] of Object.entries(DEMOS))
+      for (const [name, [route]] of Object.entries(DEMOS).filter(([name]) => !UNLINKED.has(name)))
         if (!hrefs.includes(optIn(route))) problems.push(`/toolkit: no link to the ${name} with nav=1 (${hrefs.join(', ') || 'none'})`);
     } finally { await page.close(); }
   }

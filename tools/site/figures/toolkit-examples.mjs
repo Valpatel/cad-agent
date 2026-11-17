@@ -3,14 +3,17 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
-import { readFile, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import http from 'node:http';
 import path from 'node:path';
 import { chromium } from '@playwright/test';
 
 const root = path.resolve(import.meta.dirname, '../../..');
 // The featured build guide (#811): Gyropup's authored turret order, converted by docs/examples/build-guide/.
-// The synthetic rail bench stays a test fixture (tests/fixtures/assembly-plan/) and is not published.
+// The synthetic rail bench stays the reader's test fixture and stays published, unlinked, at its existing URL
+// (/web/toolkit/assembly/): copied byte for byte from tests/fixtures/assembly-plan/ as before.
+const source = 'tests/fixtures/assembly-plan';
+const names = ['guide.json', 'view.json', 'plan.json', 'base.stl', 'rail.stl', 'plate.stl', 'fastener.stl', 'lid.stl'];
 const example = 'software/cadagent/webkit/assembly/examples/gyropup-turret';
 const exampleRoute = '/kit/assembly/examples/gyropup-turret/guide.json';
 const previewStep = 'step-11';          // barrel, hopper and lid arriving over the ghosted turret
@@ -24,6 +27,18 @@ const executablePath = executableIndex < 0 ? undefined : args[executableIndex + 
 assert(args.every((arg, i) => arg === '--check' || arg === '--chromium' || arg === '--executable' || i === executableIndex + 1 && executableIndex >= 0), 'Use --check, --chromium (installed Playwright Chromium), or --executable /path/to/chromium');
 assert(check || Boolean(executablePath) !== args.includes('--chromium'), 'Capture requires exactly one explicit browser selection');
 if (executableIndex >= 0) assert(executablePath && !executablePath.startsWith('--'), '--executable needs a browser path');
+
+const inputs = new Map(await Promise.all(names.map(async name => [name, await bytesAt(`${source}/${name}`)])));
+{
+  const railGuide = JSON.parse(inputs.get('guide.json')), railView = JSON.parse(inputs.get('view.json')), plan = JSON.parse(inputs.get('plan.json'));
+  assert.equal(railGuide.snapshot.source_commit, '1'.repeat(40), 'Keep the synthetic fixture identity explicit');
+  assert.equal(plan.source.revision, railGuide.snapshot.source_commit);
+  for (const binding of [railGuide.model, railGuide.assembly_plan, ...railView.parts]) {
+    assert(inputs.has(binding.file), `Bundle is not closed: ${binding.file}`);
+    assert.equal(hash(inputs.get(binding.file)), binding.sha256, `Stale binding: ${binding.file}`);
+  }
+}
+const copies = Object.fromEntries([...inputs].map(([name, bytes]) => [name, { source: `${source}/${name}`, sha256: hash(bytes), bytes: bytes.length }]));
 
 // The example is closed over its own bindings: guide -> view -> every mesh, and its receipt names every byte.
 const guideBytes = await bytesAt(`${example}/guide.json`);
@@ -42,6 +57,8 @@ const featured = { path: example, route: exampleRoute, revision: receipt.revisio
 if (check) {
   const record = JSON.parse(await bytesAt(`${output}/SOURCE.json`));
   assert.deepEqual(record.featured, featured, 'Recapture after the featured example changes');
+  assert.deepEqual(record.copies, copies);
+  for (const [name, bytes] of inputs) assert.deepEqual(await bytesAt(`${output}/assembly/${name}`), bytes, `Changed bundle: ${name}`);
   assert.equal(record.generator.sha256, hash(await bytesAt(generator)), 'Recapture after generator changes');
   for (const capture of Object.values(record.captures)) {
     assert.equal(hash(await bytesAt(`${output}/${capture.file}`)), capture.sha256, 'Changed preview');
@@ -51,6 +68,8 @@ if (check) {
   process.exit(0);
 }
 
+await mkdir(path.join(root, output, 'assembly'), { recursive: true });
+for (const [name, bytes] of inputs) await writeFile(path.join(root, output, 'assembly', name), bytes);
 const types = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.wasm': 'application/wasm', '.woff2': 'font/woff2', '.svg': 'image/svg+xml', '.stl': 'application/octet-stream' };
 const served = new Map();
 const server = http.createServer(async (req, res) => {
@@ -117,14 +136,14 @@ try {
   }
   const receipt = {
     schema: 'cad-agent.toolkit-examples/1',
-    scope: 'Actual viewer previews of the featured build guide and the original-file example; no physical or project qualification.',
+    scope: 'Actual viewer previews of the featured build guide and the original-file example, and the byte-identical synthetic assembly fixture kept at its published URL; no physical or project qualification.',
     sourceHead: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim(),
     generator: { path: generator, sha256: hash(await bytesAt(generator)) },
     browser: { engine: 'chromium', version: browser.version(), selection: executablePath ? `executable:${path.basename(executablePath)}` : 'installed-playwright-chromium' },
-    featured, captures
+    featured, copies, captures
   };
   await writeFile(path.join(root, output, 'SOURCE.json'), JSON.stringify(receipt, null, 2) + '\n');
-  console.log(`Wrote ${output}: 2 actual viewer previews; featured guide ${featured.revision.slice(0, 7)}.`);
+  console.log(`Wrote ${output}: 8 unchanged fixture inputs, 2 actual viewer previews; featured guide ${featured.revision.slice(0, 7)}.`);
 } finally {
   await browser?.close();
   await new Promise(resolve => server.close(resolve));

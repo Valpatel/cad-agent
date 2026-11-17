@@ -305,11 +305,15 @@ test('Toolkit working-example cards resolve to published local pages and complet
     if(url.hash) assert.ok((await readFile(target,'utf8')).includes(`id="${url.hash.slice(1)}"`),`${id} destination anchor`);
     for(const key of ['guide','file']) if(url.searchParams.has(key)) assert.ok(existsSync(local(url.searchParams.get(key))),`${id} input asset`);
   }
-  // The featured build guide (#811) is published with every byte its guide binds.
+  const guide=await json('web/toolkit/assembly/guide.json'),view=await json('web/toolkit/assembly/view.json');
+  for(const binding of [guide.model,guide.assembly_plan,...view.parts]) {
+    const bytes=await readFile(path.join(out,'web/toolkit/assembly',binding.file));
+    assert.equal(createHash('sha256').update(bytes).digest('hex'),binding.sha256,binding.file);
+  }
+  // The featured build guide (#811) is published with every byte its guide binds; the rail above keeps its URL, unlinked.
   const featured='kit/assembly/examples/gyropup-turret';
-  const guide=await json(`${featured}/guide.json`),view=await json(`${featured}/${guide.model.file}`);
-  assert.ok(!existsSync(path.join(out,'web/toolkit/assembly')),'the synthetic fixture is not published for visitors');
-  for(const binding of [guide.model,{file:view.bin,sha256:view.sha256}]) {
+  const turret=await json(`${featured}/guide.json`),packed=await json(`${featured}/${turret.model.file}`);
+  for(const binding of [turret.model,{file:packed.bin,sha256:packed.sha256}]) {
     const bytes=await readFile(path.join(out,featured,binding.file));
     assert.equal(createHash('sha256').update(bytes).digest('hex'),binding.sha256,binding.file);
   }

@@ -1,10 +1,10 @@
 {
   "schema": "cad-agent.toolkit-examples/1",
-  "scope": "Actual viewer previews of the featured build guide and the original-file example; no physical or project qualification.",
-  "sourceHead": "fc56a2fc0fd62212bfc75848dd56b08e238e3700",
+  "scope": "Actual viewer previews of the featured build guide and the original-file example, and the byte-identical synthetic assembly fixture kept at its published URL; no physical or project qualification.",
+  "sourceHead": "cc7cdd113b0ec17c774fcb557b6ade328a94ae2a",
   "generator": {
     "path": "tools/site/figures/toolkit-examples.mjs",
-    "sha256": "54e71b9acc1714bd2a97a124bc11298945bdebbf42eb9776acfd540842b7af3d"
+    "sha256": "1aed01617853f40b47d3684d5aab41b871a913724985ee657076e620f2014463"
   },
   "browser": {
     "engine": "chromium",
@@ -17,8 +17,50 @@
     "revision": "41c5c266569d6141ecda28711188343b54ab43d8",
     "steps": 12,
     "parts": 55,
-    "guide": "6d6495d9d2953eafba619c27d76814cd7da73b345313423db29a1b56230a2130",
+    "guide": "0adebf6c791a551a1a3ed1cf63dfc325e56f839a35379c1299a5f2e6e90680ca",
     "view": "0bb171c10c3bd48578a1ca4fa1757817dc0375a9031d396d036533d5bd02f937"
+  },
+  "copies": {
+    "guide.json": {
+      "source": "tests/fixtures/assembly-plan/guide.json",
+      "sha256": "e5b2f93ce6826bfe600dac6f34959a7c476adc45b0de349dcbb1c2e8faf9c30f",
+      "bytes": 1318
+    },
+    "view.json": {
+      "source": "tests/fixtures/assembly-plan/view.json",
+      "sha256": "bee31d8cbd34e12c9fdfa18af8cfa801f1736311a474e192b9bd8dd6861edcd1",
+      "bytes": 1563
+    },
+    "plan.json": {
+      "source": "tests/fixtures/assembly-plan/plan.json",
+      "sha256": "67126dfab8ca7648a2d9a81388d1edcc43dee0be2a11a62b7a45016bc84c2e2d",
+      "bytes": 2911
+    },
+    "base.stl": {
+      "source": "tests/fixtures/assembly-plan/base.stl",
+      "sha256": "d200e907a9e7e414f9e7d764189a033b32f2eebf5fbaecd811f17d26b90cd1bd",
+      "bytes": 684
+    },
+    "rail.stl": {
+      "source": "tests/fixtures/assembly-plan/rail.stl",
+      "sha256": "774aecf78f7fd69f2f0bbf3b2506d223d32304db555e8fd760ba272e29fb0bc0",
+      "bytes": 1284
+    },
+    "plate.stl": {
+      "source": "tests/fixtures/assembly-plan/plate.stl",
+      "sha256": "bcfcbb2e396da36084ad961112a89836ce6c52e5a68e022b8503b4018f2877a8",
+      "bytes": 684
+    },
+    "fastener.stl": {
+      "source": "tests/fixtures/assembly-plan/fastener.stl",
+      "sha256": "054f51f7691b78d320ce7c66501fbdba2b748f2963b16dd7350e23b157270886",
+      "bytes": 684
+    },
+    "lid.stl": {
+      "source": "tests/fixtures/assembly-plan/lid.stl",
+      "sha256": "fe32664fd39263bc01c1f2b6b45e2e3daa0bd741d48ea050b119ef7ee109150e",
+      "bytes": 684
+    }
   },
   "captures": {
     "assembly": {
@@ -107,7 +149,7 @@
         "display": "ghost"
       },
       "runtimeInputs": {
-        "software/cadagent/webkit/assembly/examples/gyropup-turret/guide.json": "6d6495d9d2953eafba619c27d76814cd7da73b345313423db29a1b56230a2130",
+        "software/cadagent/webkit/assembly/examples/gyropup-turret/guide.json": "0adebf6c791a551a1a3ed1cf63dfc325e56f839a35379c1299a5f2e6e90680ca",
         "software/cadagent/webkit/assembly/examples/gyropup-turret/model.bin": "58c31a0d74bf760779b34b6fda334a4b7472d213241611843c421ec8b694575e",
         "software/cadagent/webkit/assembly/examples/gyropup-turret/model.json": "0bb171c10c3bd48578a1ca4fa1757817dc0375a9031d396d036533d5bd02f937",
         "software/cadagent/webkit/assembly/guide.js": "4028c17a333b31504888e6123e9e2f12782760ec167f88e8b0f50c80936da394",
@@ -115,7 +157,7 @@
         "software/cadagent/webkit/files/file-geometry.js": "1f503af4149f96624ecaba68043ea44eaaa68503988646c5139edb482ab922fd",
         "software/cadagent/webkit/model/model.js": "42a17fd2a2384807233683f01b988e7e98ab52c438726f5eebc3baa7e6e41aec",
         "software/cadagent/webkit/model/stage.js": "f62b95e16a99e06686d32454397948fd50a67a973736ffc76a03b82f5e54b486",
-        "software/cadagent/webkit/model/viewer.html": "dbf71fb963c56334f5eb214676eb89dd58089d3005910205a87376de9c053a3a",
+        "software/cadagent/webkit/model/viewer.html": "c6ac7505f61a3da42266031eb6ebe6494b7108edca6f7e92256b7c5759ba7a8b",
         "software/cadagent/webkit/model/viewer.js": "7d16b34671951c0ffa69f202783419afaf5c0b0fada49ace55fe1c7062a7041b",
         "software/cadagent/webkit/ui/hud.css": "0a1fbf7e9e796c7bf5d7cb9062b34374da937975e851ad2cce6b8cdb1827325a",
         "software/cadagent/webkit/ui/panel.js": "94c7a99a7d2d0fbf6305b77d0211487453994b5d5426aacc3f1d01d3020a7d9b",

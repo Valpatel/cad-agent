@@ -48,8 +48,10 @@ left out and listed in the receipt.
 
 The instruction text is Gyropup's, with three rules applied in order, each recorded in the receipt with its pattern:
 a parenthesis holding only a design-log code or version tag (" (D48)", " (v1)") is dropped; a code ending a
-parenthesised list (", D42") is dropped; a repository path ("docs/turret-wiring.md") is named as Gyropup's. A code no
-rule covers stops the conversion. Every edit is listed with its position, so undoing them restores Gyropup's text,
+parenthesised list (", D42") is dropped; a repository path is checked against the revision's tree (`git ls-tree`)
+and named as Gyropup's, and a path that has moved since the text was written is mapped to the one file with that name
+("docs/base-board-service.md" becomes "Gyropup's docs/electronics/base-board-service.md"). A missing or ambiguous path,
+or a code no rule covers, stops the conversion. Every edit is listed with its position, so undoing them restores Gyropup's text,
 whose SHA-256 the receipt records and `--check` verifies.
 
 The reader shows the guide's `source.qualification` under its version line, so the statement of what the guide is

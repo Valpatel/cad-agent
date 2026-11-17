@@ -48,7 +48,7 @@
             "vendor/three/three.module.min.js",
             "ui/appnav.js"
           ],
-          "sha256": "dbf71fb963c56334f5eb214676eb89dd58089d3005910205a87376de9c053a3a"
+          "sha256": "c6ac7505f61a3da42266031eb6ebe6494b7108edca6f7e92256b7c5759ba7a8b"
         },
         "model/viewer.js": {
           "requires": [
@@ -69,7 +69,7 @@
         },
         "ui/appnav.js": {
           "requires": [],
-          "sha256": "0687ba81eeade0e207703f06793aa5f0f3600ee05d1b52f956f390dcacdabfaf"
+          "sha256": "ab5bee7e0a0fdab55fd50a30eaf3e2a15a1deb40d0c944890b9f21f00ff701eb"
         },
         "ui/hud.css": {
           "requires": [

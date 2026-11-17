@@ -7,7 +7,7 @@
 Reads, and never writes or runs, three things from the checkout's committed HEAD (`git show`, so uncommitted edits
 cannot leak in): the turret's authored assembly order (`STEPS` in `hardware/cad/turret/turret_assembly.py`, read as a
 Python literal with `ast.literal_eval`; the file is never imported or executed), the turret's browser scene
-(`hardware/exports/sim/turret_box/manifest.json`) and that scene's STL meshes. Gyropup's own `docs/turret-assembly.md`
+(`hardware/exports/sim/turret_box/manifest.json`) and that scene's STL meshes. Gyropup's own `docs/turret/turret-assembly.md`
 is written from the same `STEPS`.
 
 Each step keeps Gyropup's title, instruction text, the parts it adds, how far each new part is drawn back along the
@@ -18,7 +18,9 @@ at z = 0), then all are packed into one `cad-agent-model/1` model with cad-agent
 step adds are left out and listed in the receipt.
 
 The instruction text is Gyropup's, with three explicit rules applied (TEXT_RULES): its design-log codes (D42, D48) and
-version tags (v1) are dropped and its repository paths are named as Gyropup's. Every edit is recorded in the receipt
+version tags (v1) are dropped, and each repository path it names is checked against the revision's tree: named as
+Gyropup's where it exists, or mapped to the one file with the same name where it moved; a path that is missing or
+ambiguous stops the conversion. Every edit is recorded in the receipt
 with its position, so the original text can be restored exactly and checked against its recorded SHA-256.
 
 This is presentation of an authored sequence. It does not check that the parts can go together in that order, that
@@ -63,8 +65,10 @@ TEXT_RULES = (
      "A parenthesis holding only a design-log code or version tag, such as ' (D48)' or ' (v1)', is dropped."),
     ("code-ending-parenthesis", r", ?" + CODE + r"(?=\))", "",
      "A code that ends a parenthesised list, such as ', D42' in '(no bumper on the bench, D42)', is dropped."),
-    ("repository-path", r"(?<![\w/'])(?=docs/[\w./-]+\.md)", "Gyropup's ",
-     "A path into Gyropup's repository, such as 'docs/turret-wiring.md', is named as Gyropup's."),
+    ("repository-path", r"(?<![\w/'])docs/[\w./-]+\.md", "Gyropup's <path>",
+     "A path into Gyropup's repository is checked against the revision's tree (git ls-tree) and named as Gyropup's. A "
+     "path that moved is mapped to the one file in the tree with the same name; a missing or ambiguous path stops the "
+     "conversion, so no path a visitor cannot find is shown."),
 )
 QUALIFICATION = ("Example sequence from a work-in-progress prototype, not a verified build procedure. A CAD step order "
                  "does not prove the parts can physically be assembled in that order, or that they fit.")
@@ -78,15 +82,34 @@ def encoded(value) -> bytes:
     return (json.dumps(value, ensure_ascii=False, allow_nan=False, indent=1) + "\n").encode()
 
 
-def clean_text(text: str):
-    """(text with TEXT_RULES applied, edits) where each edit is {rule, at, old, new} on the text as it then stood."""
+def resolve_path(path: str, tree) -> str:
+    """The path as it is in the revision's tree: itself, or the one file there with the same name."""
+    if path in tree:
+        return path
+    name = path.rsplit("/", 1)[-1]
+    found = sorted(p for p in tree if p.rsplit("/", 1)[-1] == name)
+    if len(found) != 1:
+        raise ValueError(f"{path}: {'not in the revision' if not found else 'ambiguous: ' + ', '.join(found)}; "
+                         "a visitor could not find it")
+    return found[0]
+
+
+def clean_text(text: str, tree):
+    """(text with TEXT_RULES applied, edits) where each edit is {rule, at, old, new} on the text as it then stood.
+    `tree` is the set of file paths at the pinned revision, for the repository-path rule."""
     edits = []
     for name, pattern, replacement, _ in TEXT_RULES:
         out, last = [], 0
         for match in re.finditer(pattern, text):
             out.append(text[last:match.start()])
-            edits.append({"rule": name, "at": sum(map(len, out)), "old": match.group(0), "new": replacement})
-            out.append(replacement)
+            if name == "repository-path":
+                resolved = resolve_path(match.group(0), tree)
+                new = "Gyropup's " + resolved
+                rule = name if resolved == match.group(0) else name + "-moved"
+            else:
+                new, rule = replacement, name
+            edits.append({"rule": rule, "at": sum(map(len, out)), "old": match.group(0), "new": new})
+            out.append(new)
             last = match.end()
         text = "".join(out) + text[last:]
     left = re.findall(r"\b" + CODE + r"\b", text)
@@ -169,6 +192,7 @@ def convert(checkout: Path, out: Path) -> dict:
     if git(checkout, "status", "--porcelain", "--", RECIPE, SCENE_DIR, LICENSE):
         raise SystemExit(f"{checkout}: the recipe, scene or licence has uncommitted changes; convert a clean checkout")
     revision, committed = git(checkout, "rev-parse", "HEAD"), git(checkout, "show", "-s", "--format=%cI", "HEAD")
+    tree = set(git(checkout, "ls-tree", "-r", "--name-only", revision).splitlines())
     sources = {}
 
     def read(rel: str) -> bytes:
@@ -182,6 +206,9 @@ def convert(checkout: Path, out: Path) -> dict:
     rows = authored_steps(read(RECIPE))
     scene = json.loads(read(SCENE))
     entries = [p for p in scene["parts"] if p["group"] in GROUPS]
+    for entry in entries:                              # names become scratch file names
+        if not re.fullmatch(r"[\w-]+", str(entry.get("name"))):
+            raise ValueError(f"scene part name {entry.get('name')!r} is not a plain name")
     by_part = {}
     for entry in entries:
         by_part.setdefault(entry["part"], []).append(entry)
@@ -213,7 +240,7 @@ def convert(checkout: Path, out: Path) -> dict:
                 offsets[entry["name"]] = [0.0, 0.0, float(lift)] if isinstance(lift, (int, float)) else [float(v) for v in lift]
         shown += highlight
         step_id = f"step-{number:02d}"
-        text, edits = clean_text(authored)
+        text, edits = clean_text(authored, tree)
         assert restore_text(text, edits) == authored
         text_edits[step_id] = {"original_sha256": sha(authored.encode()), "edits": edits}
         steps.append({"id": step_id, "title": title, "text": text, "subassembly": stage[0],
@@ -257,9 +284,10 @@ def convert(checkout: Path, out: Path) -> dict:
         "generator": {"path": GENERATOR, "sha256": sha((ROOT / GENERATOR).read_bytes())},
         "method": ("Gyropup's literal STEPS (titles, parts, insertion offsets, camera directions and instruction text) "
                    "copied in order; each scene mesh translated from its group's frame into the neutral pose (zero pan "
-                   "and tilt, mounting face at z = 0), triangles unchanged, then packed by cad-agent's pack_view into "
-                   "one cad-agent-model/1 model (welded, quantised to 16-bit steps across the turret's box). No CAD is "
-                   "imported, rebuilt or simplified, and no vendor source CAD is read or shipped: the scene's bought "
+                   "and tilt, mounting face at z = 0), triangles unchanged before packing; then packed by cad-agent's "
+                   "pack_view into one cad-agent-model/1 model: welded (which drops degenerate triangles; model.json "
+                   "counts what remains) and quantised to box/65535 steps. No CAD is imported or rebuilt, and no "
+                   "vendor source CAD is read or shipped: the scene's bought "
                    "parts are Gyropup's own envelope meshes. Instruction text: the text_rules below, every edit listed "
                    "under text_edits with its position; undoing them restores the original, whose SHA-256 is recorded."),
         "text_rules": [{"rule": n, "pattern": pat, "replacement": rep, "why": why} for n, pat, rep, why in TEXT_RULES],

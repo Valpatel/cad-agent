@@ -151,3 +151,16 @@ test('a guide may bind a packed cad-agent-model/1; every packed field is checked
   const missing = structuredClone(model); missing.parts = missing.parts.filter(p => p.name !== 'barrel');
   assert.throws(() => validateGuide(guide, missing), /unknown, duplicate or missing/);
 });
+
+test('loadGuide refuses an assembly plan beside a packed model, which carries no per-part mesh hashes (#811)', async () => {
+  const folder = new URL('../../../software/cadagent/webkit/assembly/examples/gyropup-turret/', import.meta.url);
+  const guide = JSON.parse(await readFile(new URL('guide.json', folder))), model = await readFile(new URL('model.json', folder));
+  const files = { 'guide.json': JSON.stringify(guide), 'model.json': model };
+  const fetcher = async url => new Response(files[String(url).split('/').pop()] ?? new Uint8Array());
+  const loaded = await loadGuide('https://host/turret/guide.json', { fetcher });
+  assert.equal(loaded.manifest.schema, 'cad-agent-model/1');
+  // Planted: the same guide with a plan bound beside its packed model is refused before the plan is read.
+  const planned = structuredClone(guide); planned.assembly_plan = { file: 'plan.json', sha256: '0'.repeat(64) };
+  files['guide.json'] = JSON.stringify(planned);
+  await assert.rejects(loadGuide('https://host/turret/guide.json', { fetcher }), /per-part mesh hashes/);
+});

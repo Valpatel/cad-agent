@@ -10298,7 +10298,7 @@ Guides explain how to use the toolkit. Folder maps lead into its code, tests and
 </details>
 
 <details>
-<summary>tools — 22 folders</summary>
+<summary>tools — 23 folders</summary>
 
 <details>
 <summary><code>tools/README.md</code> — 1 folders</summary>
@@ -10440,6 +10440,19 @@ Guides explain how to use the toolkit. Folder maps lead into its code, tests and
 | Folder |
 |---|
 | `tools/site/assets/toolkit` |
+
+</details>
+
+<details>
+<summary><code>tools/site/assets/toolkit/assembly/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-tools/d-site/d-assets/d-toolkit/d-assembly/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/tools/site/assets/toolkit/assembly/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `tools/site/assets/toolkit/assembly` |
 
 </details>
 

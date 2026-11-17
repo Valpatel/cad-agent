@@ -11,7 +11,10 @@ const guide = JSON.parse(await readFile(new URL('guide.json', example)));
 const route = '/kit/model/viewer.html?guide=../assembly/examples/gyropup-turret/guide.json';
 const engine = process.env.PLAYWRIGHT_BROWSER === 'webkit' ? webkit : chromium;
 const out = process.env.TEST_OUTPUT || '/tmp/cad-agent-assembly-example'; await mkdir(out, { recursive: true });
-const site = await serveWebkit(new Map([['/favicon.ico', (_, res) => res.writeHead(204).end()]]));
+// The site's own bar (ui/appnav.js) reads <root>/site/nav.json; these are the site's real tabs (#804).
+const NAV = { title: 'cad-agent', nav: [{ title: 'Explore', href: 'explore' }, { title: 'Toolkit', href: 'toolkit' }, { title: 'For agents', href: 'docs/agent-workflow' }] };
+const site = await serveWebkit(new Map([['/favicon.ico', (_, res) => res.writeHead(204).end()],
+  ['/site/nav.json', (_, res) => res.writeHead(200, { 'Content-Type': 'application/json' }).end(JSON.stringify(NAV))]]));
 const PHRASES = ['Example sequence', 'work-in-progress', 'not a verified build procedure', 'CAD step order does not prove'];
 const STEPS = ['step-01', 'step-03', 'step-11'];
 let browser; const cases = [];
@@ -48,13 +51,17 @@ const phoneProblems = page => page.evaluate(() => {
   const canvas = document.querySelector('#app canvas')?.getBoundingClientRect();
   if (!(app.top < panel.top && canvas && canvas.height > 200 && canvas.top < innerHeight / 2)) problems.push(`the 3D view is not first (view ${app.top}, panel ${panel.top})`);
   if (document.documentElement.scrollWidth > innerWidth + 1) problems.push('the page scrolls sideways');
-  for (const e of document.querySelectorAll('#hud a, #hud button, #hud select, #hud input')) {
+  const bar = document.querySelector('nav.appnav')?.getBoundingClientRect();
+  if (bar && app.top < bar.bottom - 1) problems.push(`the 3D view starts under the site bar (${app.top} < ${bar.bottom})`);
+  if (panel.top < app.bottom - 1) problems.push(`the panel covers ${Math.round(app.bottom - panel.top)} px of the 3D view`);
+  for (const e of document.querySelectorAll('#hud a, #hud button, #hud select, #hud input, nav.appnav a')) {
     if (!e.getClientRects().length || getComputedStyle(e).visibility === 'hidden') continue;
     const target = (e.closest('label') || e).getBoundingClientRect();
     const name = (e.getAttribute('aria-label') || e.labels?.[0]?.textContent || e.textContent || e.title || '').trim();
     const what = `${e.tagName.toLowerCase()} "${name.slice(0, 30)}"`;
     if (!name) problems.push(`${what}: no label`);
     if (target.width < 44 || target.height < 44) problems.push(`${what}: ${Math.round(target.width)} x ${Math.round(target.height)} px`);
+    if (target.left < 0 || target.right > innerWidth + 1) problems.push(`${what}: cut off at the screen's edge (${Math.round(target.left)}-${Math.round(target.right)} of ${innerWidth})`);
   }
   return problems;
 });
@@ -130,6 +137,35 @@ try {
       }
       assert.deepEqual(bad, [], `${viewport.width}px: errors`);
       cases.push({ viewport: viewport.width, planted: true });
+    } finally { await context.close(); }
+  }
+  // The URL visitors get: the cards link the reader with nav=1, so the site's bar sits above it (review of #812).
+  for (const viewport of [{ width: 390, height: 664 }, { width: 360, height: 640 }]) {
+    const context = await browser.newContext({ viewport, deviceScaleFactor: 1, reducedMotion: 'reduce' });
+    try {
+      const page = await context.newPage(), bad = [];
+      page.on('pageerror', e => bad.push(e.message));
+      page.on('console', m => { if (m.type() === 'error') bad.push('console: ' + m.text()); });
+      page.on('response', r => { if (r.status() >= 400) bad.push(`${r.status()} ${new URL(r.url()).pathname}`); });
+      await page.goto(site.url + route + '&nav=1');
+      await page.waitForFunction(() => document.body.dataset.ready === '1' && document.querySelector('nav.appnav'), null, { timeout: 60000 });
+      for (const id of ['step-08', 'step-10']) {
+        await choose(page, id);
+        assert.deepEqual([...await phoneProblems(page), ...await firstScreenProblems(page, id)], [], `nav=1 ${viewport.width} x ${viewport.height} ${id}`);
+      }
+      await page.screenshot({ path: `${out}/${engine.name()}-nav-${viewport.width}x${viewport.height}.png` });
+      if (viewport.width === 360) {
+        // Planted: the bar's desktop tab size, and the view at its full 55vh under the bar (as before), are each caught.
+        const small = await page.addStyleTag({ content: '.appnav a.tab{min-height:0!important;padding:6px 10px!important;font-size:12px!important;letter-spacing:.08em!important}' });
+        const found = await phoneProblems(page);
+        assert.ok(found.some(p => /^a ".*": \d+ x \d\d? px|cut off at the screen's edge/.test(p) && /Explore|Toolkit|For agents/.test(p)), `planted: small or cut-off bar tabs are caught (${found.join('; ')})`);
+        await small.evaluate(e => e.remove());
+        const under = await page.addStyleTag({ content: 'body #app{height:55vh!important}' });
+        assert.ok((await phoneProblems(page)).some(p => /the panel covers \d+ px of the 3D view/.test(p)), 'planted: a panel over the view is caught');
+        await under.evaluate(e => e.remove());
+      }
+      assert.deepEqual(bad, [], `nav=1 ${viewport.width}: errors`);
+      cases.push({ viewport: viewport.width, nav: true });
     } finally { await context.close(); }
   }
   await writeFile(`${out}/${engine.name()}-example-report.json`, JSON.stringify({ passed: true, browser: browser.version(), cases }, null, 2));

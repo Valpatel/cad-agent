@@ -7,16 +7,19 @@ The build-guide preview shows the featured example, Gyropup's turret guide, whic
 ```mermaid
 flowchart TD
     E["Featured guide<br/>kit/assembly/examples/gyropup-turret"] --> G["toolkit-examples.mjs"]
+    F["Rail fixture<br/>tests/fixtures/assembly-plan"] --> G
+    G --> A["assembly/<br/>byte-identical copy, unlinked"]
     V["Shipped viewers"] --> G
     G --> P["*.webp + SOURCE.json<br/>captured scene + hashes"]
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
-    class P here
-    class E,V,G near
+    class P,A here
+    class E,F,V,G near
 ```
 
 | File | Purpose |
 |---|---|
+| [assembly/](assembly/README.md) | The synthetic rail fixture, copied byte for byte and kept at its published URL; unlinked, not featured. |
 | [assembly.webp](assembly.webp) | Actual assembly reader on step 11 of Gyropup's turret guide: the barrel, hopper and lid arrive over the ghosted turret. |
 | [file-review.webp](file-review.webp) | Actual original STL viewer, showing the existing host example block in isometric view. |
 | [SOURCE.json](SOURCE.json) | The featured guide's revision and hashes, generator and runtime hashes, preview hashes; browser version, route and controlled scene state. |

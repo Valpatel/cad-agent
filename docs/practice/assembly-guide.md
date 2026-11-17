@@ -57,6 +57,8 @@ by the product's instruction/BOM records, not invented as geometry or silently c
 The model binding may name a packed `cad-agent-model/1` (written by `cadagent.publish.view.pack_view`) instead of
 an STL manifest: its binary's SHA-256 binds every mesh, and the reader and release packaging accept it; an assembly
 plan still needs a manifest with per-part STL hashes.
+A packed model is welded, quantised display geometry, not dimensions: each axis is stored in steps of its box
+size / 65535 (about 0.004 mm for a 250 mm assembly, 0.03 mm for a 2 m one).
 Optional `source.qualification` is plain text (up to 2,000 characters) saying what the guide is and is not, for
 example "an example sequence, not a verified build procedure"; the reader shows it under the version line. The
 toolkit's [featured guide](../examples/build-guide/README.md), Gyropup's turret, uses it.

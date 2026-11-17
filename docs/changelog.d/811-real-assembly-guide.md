@@ -5,5 +5,6 @@
 
 **Changed**
 - Assembly reader: Previous and Next sit above the step's text; on phones the step list, the buttons and the text come before the version line, so a long step keeps its buttons on a 390 × 664 screen. At phone widths every control is at least 44 px, and each part's show and colour inputs carry the part's name (#811).
-- The installed wheel now includes the assembly reader's examples (`webkit/assembly/examples/`): about 350 KB more (#811).
-- The synthetic rail bench is no longer published under `/web/toolkit/assembly/`; it stays as the reader's test fixture in `tests/fixtures/assembly-plan/` (#811).
+- The installed wheel now includes the assembly reader's examples (`webkit/assembly/examples/`): about 350 KB more. Exported assembly readers now carry `model/model.js` (33 KB), which the reader loads only for a packed model (#811).
+- The synthetic rail bench is no longer featured on any card; it stays the reader's test fixture and stays published at `/web/toolkit/assembly/`, so existing links to it keep working (#811).
+- The site's top bar (`ui/appnav.js`) on phones: every link is a 44 px target and all fit at 360 px; the assembly reader takes the bar's height from its 3D view, not from under its panel, and keeps its own top bar on one row (#811).

@@ -26,6 +26,8 @@ authored `offsets_mm`, plain instruction `text`, an optional hash-bound poster a
 may require earlier step IDs. Subassemblies are named visibility sets, not geometric rigid-body declarations.
 The bound model may instead be a packed `cad-agent-model/1` from `cadagent.publish.view.pack_view`: one
 hash-bound binary carries every mesh (an assembly plan still needs per-part STL hashes).
+A packed model is welded, quantised display geometry, not dimensions: each axis is stored in steps of its box
+size / 65535 (about 0.004 mm for a 250 mm assembly, 0.03 mm for a 2 m one).
 An optional plain-text `source.qualification` states what the guide is and is not; the reader shows it under the
 version line.
 

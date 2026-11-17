@@ -7,9 +7,9 @@
  "committed": "2026-11-11T15:25:14-08:00",
  "generator": {
   "path": "docs/examples/build-guide/gyropup_turret.py",
-  "sha256": "8e4d074be7769f2c2f7f9d4a1bc95e9fb842773000a6b1980d1f87c8da076280"
+  "sha256": "3273f2421993d191c73e71b4950be4e06c679c755aa642103c4173792fea4a80"
  },
- "method": "Gyropup's literal STEPS (titles, parts, insertion offsets, camera directions and instruction text) copied in order; each scene mesh translated from its group's frame into the neutral pose (zero pan and tilt, mounting face at z = 0), triangles unchanged, then packed by cad-agent's pack_view into one cad-agent-model/1 model (welded, quantised to 16-bit steps across the turret's box). No CAD is imported, rebuilt or simplified, and no vendor source CAD is read or shipped: the scene's bought parts are Gyropup's own envelope meshes. Instruction text: the text_rules below, every edit listed under text_edits with its position; undoing them restores the original, whose SHA-256 is recorded.",
+ "method": "Gyropup's literal STEPS (titles, parts, insertion offsets, camera directions and instruction text) copied in order; each scene mesh translated from its group's frame into the neutral pose (zero pan and tilt, mounting face at z = 0), triangles unchanged before packing; then packed by cad-agent's pack_view into one cad-agent-model/1 model: welded (which drops degenerate triangles; model.json counts what remains) and quantised to box/65535 steps. No CAD is imported or rebuilt, and no vendor source CAD is read or shipped: the scene's bought parts are Gyropup's own envelope meshes. Instruction text: the text_rules below, every edit listed under text_edits with its position; undoing them restores the original, whose SHA-256 is recorded.",
  "text_rules": [
   {
    "rule": "code-only-parenthesis",
@@ -25,9 +25,9 @@
   },
   {
    "rule": "repository-path",
-   "pattern": "(?<![\\w/'])(?=docs/[\\w./-]+\\.md)",
-   "replacement": "Gyropup's ",
-   "why": "A path into Gyropup's repository, such as 'docs/turret-wiring.md', is named as Gyropup's."
+   "pattern": "(?<![\\w/'])docs/[\\w./-]+\\.md",
+   "replacement": "Gyropup's <path>",
+   "why": "A path into Gyropup's repository is checked against the revision's tree (git ls-tree) and named as Gyropup's. A path that moved is mapped to the one file in the tree with the same name; a missing or ambiguous path stops the conversion, so no path a visitor cannot find is shown."
   }
  ],
  "text_edits": {
@@ -50,10 +50,10 @@
    "original_sha256": "94f0004c67b74c1c1c6d8e42818f34d827e407bd64f6bae1da2a60048ea09191",
    "edits": [
     {
-     "rule": "repository-path",
+     "rule": "repository-path-moved",
      "at": 408,
-     "old": "",
-     "new": "Gyropup's "
+     "old": "docs/base-board-service.md",
+     "new": "Gyropup's docs/electronics/base-board-service.md"
     }
    ]
   },
@@ -92,10 +92,10 @@
    "original_sha256": "fa8d9a8769c3bab064bd2a0d56d99ed305784e2d836f4de564e0582644453ac1",
    "edits": [
     {
-     "rule": "repository-path",
+     "rule": "repository-path-moved",
      "at": 1131,
-     "old": "",
-     "new": "Gyropup's "
+     "old": "docs/turret-wiring.md",
+     "new": "Gyropup's docs/turret/turret-wiring.md"
     }
    ]
   },
@@ -256,7 +256,7 @@
  },
  "artifacts": {
   "LICENSE.txt": "08fcd91542828bfa19db31bc44d0479d3bf7867dadb383b7b19439a2b5597567",
-  "guide.json": "6d6495d9d2953eafba619c27d76814cd7da73b345313423db29a1b56230a2130",
+  "guide.json": "0adebf6c791a551a1a3ed1cf63dfc325e56f839a35379c1299a5f2e6e90680ca",
   "model.bin": "58c31a0d74bf760779b34b6fda334a4b7472d213241611843c421ec8b694575e",
   "model.json": "0bb171c10c3bd48578a1ca4fa1757817dc0375a9031d396d036533d5bd02f937"
  }

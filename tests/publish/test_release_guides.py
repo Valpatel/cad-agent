@@ -385,3 +385,28 @@ def test_packed_model_guide_binds_its_one_binary(tmp_path):
     (root / "guide/guide.json").write_text(json.dumps(guide))
     with pytest.raises(CadConfigError, match="per-part mesh hashes"):
         collect(root, root / "guide/guide.json")
+
+
+@pytest.mark.parametrize("plant, message", [
+    (lambda m: m.pop("quant"), "invalid quantisation"),
+    (lambda m: m.pop("box_mm"), "invalid box_mm"),
+    (lambda m: m["parts"][0].__setitem__("index_bits", 8), "invalid index width"),
+    (lambda m: m["parts"][-1].__setitem__("offset", 10 ** 9), "shorter than the model says"),
+    (lambda m: m["parts"][0].__setitem__("color", 0x336699), "invalid colour"),
+    (lambda m: m.__setitem__("encoding", "brotli"), "unknown encoding"),
+    (lambda m: m["parts"][0].__setitem__("vertices", 1), "names a vertex that does not exist"),
+])
+def test_release_refuses_every_packed_model_the_reader_refuses(tmp_path, plant, message):
+    """Review of #812: each field the reader's validatePackedView and decodeModel refuse is refused here too."""
+    example = Path(__file__).resolve().parents[2] / "software/cadagent/webkit/assembly/examples/gyropup-turret"
+    root = tmp_path / "project"
+    shutil.copytree(example, root / "guide")
+    model = json.loads((root / "guide/model.json").read_text())
+    plant(model)
+    data = (json.dumps(model, indent=1) + "\n").encode()
+    (root / "guide/model.json").write_bytes(data)
+    guide = json.loads((root / "guide/guide.json").read_text())
+    guide["model"]["sha256"] = digest(data)
+    (root / "guide/guide.json").write_text(json.dumps(guide))
+    with pytest.raises(CadConfigError, match=message):
+        collect(root, root / "guide/guide.json")

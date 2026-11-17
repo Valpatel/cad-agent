@@ -27,7 +27,7 @@ const generator='docs/examples/robot-replay/capture-gyropup.mjs',bundle='softwar
 const ANIMATION='card.webp',STILL='card-still.webp',RECORD='card.json';
 const SCENARIO='kerb_drop',START=1.6,END=4.4,FPS=15,STILL_AT=3.0,SIZE={width:640,height:400},QUALITY=58;
 const VIEWPORT={width:1000,height:1000};
-const CLOSER=0.86,LOWER=0.03;   // after Fit: camera this much nearer its target, both this many metres lower, so the robot
+const CLOSER=1,LOWER=0.03;   // after Fit: camera this much nearer its target (Fit alone fills the card since #809), both this many metres lower, so the robot
                                // fills the card and its wheels stay in frame after the 50 mm drop
 const hash=bytes=>createHash('sha256').update(bytes).digest('hex');
 const sourcePaths=[generator,...['replay.js','viewer.js','scene.js','scenarios.js','viewer.css',`examples/gyropup-v2/viewer.html`,`examples/gyropup-v2/index.json`,`examples/gyropup-v2/robot.json`,`examples/gyropup-v2/robot.bin`,`examples/gyropup-v2/${SCENARIO}.json`].map(p=>'software/cadagent/webkit/simulation/'+p),

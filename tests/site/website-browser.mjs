@@ -907,7 +907,8 @@ async function phoneFirstScreenProblems() {
 async function demoWayBackProblems() {
   const problems = [];
   const DEMOS = { 'build guide': ['/kit/model/viewer.html?guide=/web/toolkit/assembly/guide.json', '#hud'], 'file viewer': ['/kit/files/file-viewer.html?file=/kit/host/example.stl', '#file-viewer'],
-    'robot replay': ['/kit/simulation/examples/gyropup-v2/viewer.html', '#replay'] };   // #798
+    // #798; its first element is the page header, so the header (not the stage below it) must clear the bar (#809).
+    'robot replay': ['/kit/simulation/examples/gyropup-v2/viewer.html', '.replay-page-header'] };
   // #811: the cards link the featured turret guide; the rail bench keeps its published URL, unlinked, and still gets
   // the bar with nav=1, but no card has to link it.
   DEMOS['featured build guide'] = ['/kit/model/viewer.html?guide=/kit/assembly/examples/gyropup-turret/guide.json', '#hud'];
@@ -949,23 +950,31 @@ async function demoWayBackProblems() {
         problems.push('planted control: a /toolkit link to the unlinked rail was not reported, so this check tests nothing');
     } finally { await page.close(); }
   }
+  const readBar = (page, viewer) => page.evaluate(viewer => {
+    const nav = document.querySelector('nav.appnav');
+    if (!nav) return null;
+    const r = nav.getBoundingClientRect(), v = document.querySelector(viewer)?.getBoundingClientRect();
+    return { bottom: r.bottom, viewerTop: v ? v.top : null, links: [...nav.querySelectorAll('a')].map(a => new URL(a.href).pathname) };
+  }, viewer);
+  const underBar = bar => bar.viewerTop === null || bar.viewerTop < bar.bottom - 1;
   for (const [name, [demo, viewer]] of Object.entries(DEMOS)) {
     const route = optIn(demo);
     for (const width of [390, 1366]) {
       const { page, bad } = await open(route, width);
       try {
         await page.locator('nav.appnav').waitFor({ state: 'visible', timeout: 10000 }).catch(() => {});
-        const bar = await page.evaluate(viewer => {
-          const nav = document.querySelector('nav.appnav');
-          if (!nav) return null;
-          const r = nav.getBoundingClientRect(), v = document.querySelector(viewer)?.getBoundingClientRect();
-          return { bottom: r.bottom, viewerTop: v ? v.top : null, links: [...nav.querySelectorAll('a')].map(a => new URL(a.href).pathname) };
-        }, viewer);
+        const bar = await readBar(page, viewer);
         if (!bar) { problems.push(`${name} ${width}px: no top bar back into the site`); continue; }
         const resolved = await Promise.all(bar.links.map(async p => { const r = await page.request.get(base + p); return new URL(r.url()).pathname; }));
         if (JSON.stringify(resolved) !== JSON.stringify(WANT)) problems.push(`${name} ${width}px: the bar leads to ${resolved.join(', ')}, not ${WANT.join(', ')}`);
-        if (bar.viewerTop === null || bar.viewerTop < bar.bottom - 1) problems.push(`${name} ${width}px: the viewer starts at ${bar.viewerTop} px, under the ${bar.bottom} px bar`);
+        if (underBar(bar)) problems.push(`${name} ${width}px: the viewer starts at ${bar.viewerTop} px, under the ${bar.bottom} px bar`);
         if (bad.length) problems.push(`${name} ${width}px: ${[...new Set(bad)].join('; ')}`);
+        // Planted control (#809): the replay page with no body padding under the bar must be reported.
+        if (name === 'robot replay' && width === 390) {
+          await page.addStyleTag({ content: 'body.has-appnav{padding-top:0!important}' });
+          const planted = await readBar(page, viewer);
+          if (!planted || !underBar(planted)) problems.push(`planted control: ${name} with no body padding under the bar was not reported (${JSON.stringify(planted)}), so this check tests nothing`);
+        }
       } finally { await page.close(); }
     }
     // Without the opt-in: a project that copies the kit; nothing asks for nav.json and nothing is logged.

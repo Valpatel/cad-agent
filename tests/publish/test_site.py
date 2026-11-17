@@ -214,9 +214,10 @@ def test_inject_nav_marks_the_current_page_and_respects_pages_with_their_own_bar
     assert site.inject_nav(b"<body></body>", "/x.html", []) == b"<body></body>"
     # nav=0 in the address turns the bar off, as the kit's own pages read it (fea/fea.html), whatever else it carries
     plain = b"<html><body><h1>x</h1></body></html>"
-    for address in ("/kit/fea/fea.html?nav=0", "/kit/fea/fea.html?play=1&nav=0#top", "/x.html?nav=1&nav=0"):
+    # A repeated nav= is read by its first value, as the pages' URLSearchParams.get does (#807 review).
+    for address in ("/kit/fea/fea.html?nav=0", "/kit/fea/fea.html?play=1&nav=0#top", "/x.html?nav=0&nav=1"):
         assert site.inject_nav(plain, address, nav) == plain, address
-    for address in ("/kit/fea/fea.html?nav=1", "/kit/fea/fea.html?nav=00", "/kit/fea/fea.html?x=1#nav=0"):
+    for address in ("/kit/fea/fea.html?nav=1", "/kit/fea/fea.html?nav=00", "/kit/fea/fea.html?x=1#nav=0", "/x.html?nav=1&nav=0"):
         assert b"mountAppNav" in site.inject_nav(plain, address, nav), address
     latin = "<html><body>café Müller</body></html>".encode("latin-1")
     assert site.inject_nav(latin, "/x.html", nav).startswith("<html><body>café Müller".encode("latin-1")), "bytes pass through"

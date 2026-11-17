@@ -215,6 +215,16 @@ export async function readerBoundaryProblems(browser, base) {
         const negative=await snapshot(page);states.push({negative});
         if(!(negative.article<before.article&&negative.panel>0))problems.push('reader boundary: old scroll-chain control did not reproduce the trap');
       }
+      // From 1400 px the trap itself cannot be planted (above), but the chain can: without the panel's containment the
+      // wheel at its top scrolls the article, which the boundary assertion's article clause must see (#807 review).
+      if(viewport.width===1440&&viewport.height===900){
+        const chain=await page.addStyleTag({content:'cad-nav .cad-nav-panel{overscroll-behavior-y:auto!important}'});
+        await page.mouse.move(box.x+box.width/2,box.y+150);await page.mouse.wheel(0,-300);
+        await page.waitForFunction(y=>scrollY<y,before.article,{timeout:3000}).catch(()=>{});await quiet(page);
+        const chained=await snapshot(page);states.push({viewport,chained});
+        if(!(chained.article<before.article))problems.push('reader boundary: old scroll-chain control did not scroll the article at 1440px');
+        await chain.evaluate(el=>el.remove());
+      }
       await scrollOutline(page,await page.evaluate(()=>document.documentElement.scrollHeight));await quiet(page);
       const bottom=await page.evaluate(()=>{const rect=e=>{const r=e.getBoundingClientRect();return {top:r.top,bottom:r.bottom,height:r.height};};return {host:rect(document.querySelector('cad-nav')),panel:rect(document.querySelector('.cad-nav-panel')),controls:rect(document.querySelector('[data-nav-controls]')),header:rect(document.querySelector('.site-header'))};});states.push({viewport,bottom});
       if(bottom.controls.top<bottom.header.bottom||bottom.controls.bottom>viewport.height||bottom.panel.height<bottom.controls.height+44)problems.push('reader boundary: footer leaves controls or links without room '+JSON.stringify(bottom));
@@ -328,7 +338,8 @@ export async function readerOverflowProblems(browser, base) {
  * 1600 px on /docs/linkages the panel is scrolled so a tree row straddles its top edge; no part of any row may show
  * between the panel's top and the controls' top, and the strip just inside the panel's top hits the controls. The rail
  * shows at 1440 and 1600 (the tree's own outline then hides) and not at 1280. Planted control: the controls stuck at
- * top:0 again, as before #807, show the straddling row and are reported. */
+ * top:0 again, as before #807, show the straddling row and are reported. Also the shell width at 1440 px on the
+ * other pages, and a docs page without an outline (below). */
 export async function treeEdgeProblems(browser, base) {
   const problems = [];
   const measure = page => page.evaluate(() => {
@@ -359,6 +370,32 @@ export async function treeEdgeProblems(browser, base) {
         const planted = await measure(page);
         if (!planted.showing.length && planted.hits) problems.push('planted control: controls stuck at top:0 showed no row above the search, so the tree-edge check tests nothing');
       }
+    } finally { await page.close(); }
+  }
+  // The wider shell from 1400 px is the docs pages' only: at 1440 px the other pages keep dev's 1240 px shell (#807
+  // review), and a docs page with no outline has no empty column (the article keeps the room). Planted control: the
+  // widening unscoped, as first written, is reported.
+  const shell = page => page.evaluate(() => Math.round(document.querySelector('main.wrap, main .wrap, .site-header .wrap').getBoundingClientRect().width));
+  for (const route of ['/', '/explore', '/toolkit', '/references/laser-cutting']) {
+    const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+    try {
+      await navigate(page, base + route);
+      const width = await shell(page);
+      if (width !== 1240) problems.push(`1440px ${route}: the page shell is ${width} px, not the 1240 px it is below 1500 px`);
+      if (route === '/') {
+        await page.addStyleTag({ content: '@media(min-width:1400px){.wrap{width:calc(100% - clamp(96px,6vw,192px))}}' });
+        if (await shell(page) === 1240) problems.push('planted control: an unscoped wider shell at 1440 px was not reported, so the shell check tests nothing');
+      }
+    } finally { await page.close(); }
+  }
+  {
+    const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+    try {
+      await navigate(page, base + '/docs/share-badge');
+      const m = await page.evaluate(() => ({ rail: !!document.querySelector('.doc-rail'), main: document.querySelector('.doc-main').getBoundingClientRect().right,
+        layout: document.querySelector('.doc-layout').getBoundingClientRect().right }));
+      if (m.rail) problems.push('1440px /docs/share-badge: it has an outline now; pick a docs page without one for this check');
+      else if (m.layout - m.main > 2) problems.push(`1440px /docs/share-badge: no outline, yet ${Math.round(m.layout - m.main)} px of empty column beside the article`);
     } finally { await page.close(); }
   }
   return problems;

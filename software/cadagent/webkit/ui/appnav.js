@@ -74,8 +74,10 @@ export async function mountAppNav({ root = '../', current = '', injected = false
   // Where the page's first boxes sit, and its padding: a page laid out for the bar moves them itself on has-appnav.
   const layout = () => [getComputedStyle(body).paddingTop, ...[...body.children].filter((e) => e !== nav && e.tagName !== 'SCRIPT')
     .slice(0, 8).map((e) => Math.round(e.getBoundingClientRect().top))].join();
-  const pad = parseFloat(getComputedStyle(body).paddingTop) || 0, unmoved = layout();
+  // The bar goes in first, so the class is the only change between the two measurements: a page whose first child's
+  // margin changes when it stops being first (body>:first-child{margin-top:0}) must not read as having made room.
   body.prepend(nav);
+  const pad = parseFloat(getComputedStyle(body).paddingTop) || 0, unmoved = layout();
   body.classList.add('has-appnav');
   if (injected) {
     nav.dataset.injected = '1';

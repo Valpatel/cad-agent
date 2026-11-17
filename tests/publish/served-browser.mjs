@@ -5,6 +5,7 @@
  * - the kit's file viewer, with the server's injected bar and with its own (nav=1): the viewer starts at the bar's
  *   bottom, not a bar's height lower (the injected bar used to pad the body as well as the page's own has-appnav room);
  * - fea/fea.html?nav=0: no injected bar, and the server sent no injection;
+ * - a plain project page whose first child's margin depends on being first: still padded below the injected bar;
  * - the kit pages' bar takes the kit theme's colours, light or dark with the reader's setting.
  * Planted controls: the site's bar without its phone rule, and the old double offset (the body padded on top of the
  * page's own room), must each be reported. Needs Python with cadagent's `site` extra (markdown). */
@@ -20,6 +21,9 @@ const repo = fileURLToPath(new URL('../../', import.meta.url));
 const project = await mkdtemp(path.join(os.tmpdir(), 'cad-agent-served-bar-'));
 await writeFile(path.join(project, 'README.md'), '# Served bar fixture\n\nA project page under the served top bar.\n');
 await copyFile(path.join(repo, 'software/cadagent/webkit/host/example.stl'), path.join(project, 'part.stl'));
+// A project page whose first child's margin depends on being first (#807 review): the bar must not read as room made.
+await writeFile(path.join(project, 'first-child.html'), '<!doctype html><html lang="en"><head><meta charset="utf-8"><title>First child</title>'
+  + '<style>body{margin:0}h1{margin-top:40px}body>:first-child{margin-top:0}</style></head><body><h1 id="heading">A project page</h1><p>Text.</p></body></html>\n');
 const nav = [{ id: 'overview', title: 'Overview', href: 'site/' }, { id: 'model', title: 'Model', href: 'site/index.html#model' },
   { id: 'files', title: 'Files', href: '_cadagent/kit/files/file-viewer.html?file=/part.stl' }, { id: 'readme', title: 'Readme', href: 'README.md' }];
 const server = spawn(process.env.PYTHON || 'python3', ['-c', `import sys, json
@@ -100,6 +104,17 @@ try {
         if (errors.length) problems.push(`${at}: ${errors.join('; ')}`);
       } finally { await page.close(); }
     }
+  }
+  // A page not laid out for the bar, whose first child loses its margin when the bar goes in first: still padded.
+  for (const width of [390, 1366]) {
+    const { page, errors } = await open('/first-child.html', width);
+    try {
+      await page.locator('nav.appnav').waitFor({ state: 'visible', timeout: 10000 }).catch(() => {});
+      const b = await bar(page), top = await page.evaluate(() => document.getElementById('heading').getBoundingClientRect().top);
+      if (!b) problems.push(`first-child.html ${width}px: no top bar`);
+      else if (top < b.bottom - 1) problems.push(`first-child.html ${width}px: the heading starts at ${Math.round(top)} px, under the ${Math.round(b.bottom)} px bar`);
+      if (errors.length) problems.push(`first-child.html ${width}px: ${errors.join('; ')}`);
+    } finally { await page.close(); }
   }
   // nav=0: the server sends no injection and no bar shows; without it the same page gets the injected script.
   for (const [query, wanted] of [['?nav=0', false], ['?nav=1', true]]) {

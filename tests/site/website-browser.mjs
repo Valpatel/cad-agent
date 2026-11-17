@@ -774,7 +774,7 @@ try {
       await tall.close();
       // A wheel over the page tree scrolls the page when the tree has nothing to scroll (review 3: the panel trapped it).
       // Every group is folded first, so the panel is still a scroll container but has nothing to scroll whatever the
-      // number of pages. The open Docs group alone outgrew 1080 px when the vision page arrived (#148); from 1500 px the
+      // number of pages. The open Docs group alone outgrew 1080 px when the vision page arrived (#148); from 1400 px the
       // tree leaves out the page's outline.
       const desk = await browser.newPage({ viewport: { width: 1920, height: 1080 } });
       await navigate(desk, base + '/docs/toolkit');
@@ -872,10 +872,13 @@ async function installLinkProblems() {
  * followed a link away and pressed Back. The page comes back where they left it (within 3 px), not where the arrival
  * scroll put the block (Chromium restored it first or last; WebKit landed on the # part). Planted control: web/site.js
  * without its kept place and served 600 ms late, so the browser restores first and the arrival scroll then moves it,
- * must be caught. */
+ * must be caught. A new # part right after Back (inside the 1.5 s hold) lands on its own block; planted control: the
+ * hold without its # check keeps the old place, and is reported. */
 async function installBackProblems() {
   const problems = [];
-  const trip = async (id, delta, planted = false) => {
+  // planted: 'late' serves site.js 600 ms late without its kept place; 'hash' serves it without the hold's # check.
+  // jump: an id to move the # part to right after Back, inside the hold.
+  const trip = async (id, delta, { planted = null, jump = null } = {}) => {
     const page = await browser.newPage({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
     try {
       await navigate(page, `${base}/docs/agent-workflow#${id}`);
@@ -883,21 +886,29 @@ async function installBackProblems() {
       await page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
       const left = await page.evaluate(() => scrollY);
       if (planted) await page.route(base + '/web/site.js', partHandler(async route => {
-        const response = await route.fetch(), text = await response.text(), body = text.replace('history.state?.cadReaderY', 'undefined');
-        if (body === text) throw new Error('planted control: web/site.js no longer reads history.state?.cadReaderY');
-        await new Promise(r => setTimeout(r, 600));
+        const response = await route.fetch(), text = await response.text();
+        const body = planted === 'late' ? text.replace('history.state?.cadReaderY', 'undefined') : text.replace('location.hash !== at || ', '');
+        if (body === text) throw new Error(`planted control (${planted}): web/site.js no longer has the code it removes`);
+        if (planted === 'late') await new Promise(r => setTimeout(r, 600));
         await route.fulfill({ response, body });
       }));
       await navigate(page, base + '/toolkit');
       await page.goBack({ waitUntil: 'load' });
-      // The browser may animate its restore (the site scrolls smoothly): wait until 20 frames in a row hold still.
+      if (jump) await page.evaluate(to => { location.hash = to; }, jump);
+      // The browser may animate its restore (the site scrolls smoothly): wait until 20 frames in a row hold still, and
+      // past the 1.5 s hold.
       const back = await page.evaluate(() => new Promise(done => {
         let last = -1, still = 0;
-        const tick = () => { if (scrollY === last) { if (++still >= 20) return done(scrollY); } else { still = 0; last = scrollY; } requestAnimationFrame(tick); };
+        const start = performance.now();
+        const tick = () => { if (scrollY === last) { if (++still >= 20 && performance.now() - start > 1700) return done(scrollY); } else { still = 0; last = scrollY; } requestAnimationFrame(tick); };
         tick(); setTimeout(() => done(scrollY), 5000);
       }));
       const open = await page.evaluate(id => document.getElementById(id)?.open, id);
-      return { left, back, open };
+      const landed = jump ? await page.evaluate(to => {
+        const t = document.getElementById(to), s = (t?.matches('details') ? t.querySelector('summary') : t)?.getBoundingClientRect(), header = document.querySelector('.site-header').getBoundingClientRect().bottom;
+        return { top: s ? Math.round(s.top) : null, shown: !!s && s.top >= header - 0.5 && s.top < innerHeight - 60 };
+      }, jump) : null;
+      return { left, back, open, landed };
     } finally { await page.close(); }
   };
   for (const id of ['install-unix', 'install-windows']) for (const delta of [300, -200]) {
@@ -905,8 +916,14 @@ async function installBackProblems() {
     if (Math.abs(t.back - t.left) > 3) problems.push(`390px Back to #${id} (scrolled ${delta} px from arrival): back at ${t.back} px, left at ${t.left} px`);
     if (!t.open) problems.push(`390px Back to #${id}: the block is closed again`);
   }
-  const control = await trip('install-unix', 300, true);
+  const control = await trip('install-unix', 300, { planted: 'late' });
   if (Math.abs(control.back - control.left) <= 3) problems.push(`planted control: the old arrival scroll after a late restore came back at ${control.back} px, left at ${control.left} px, so the Back check tests nothing`);
+  // A new # part right after Back (a link or a script, inside the 1.5 s hold) lands on its target; the hold lets go.
+  // #install is the section's heading, well above the place the reader left.
+  const jumped = await trip('install-unix', 300, { jump: 'install' });
+  if (!jumped.landed.shown) problems.push(`390px Back to #install-unix, then #install: the heading is at ${jumped.landed.top} px, not on the screen below the header (page at ${jumped.back} px)`);
+  const held = await trip('install-unix', 300, { planted: 'hash', jump: 'install' });
+  if (held.landed.shown) problems.push('planted control: a hold that ignores a new # part still let #install land, so the # check tests nothing');
   return problems;
 }
 

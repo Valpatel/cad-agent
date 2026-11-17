@@ -60,7 +60,7 @@ for (const img of document.querySelectorAll('img[data-motion-src]')) {
 // Engines differ: Chromium restores the scroll before or after this script runs, WebKit lands on the # part again. So
 // while such a page is read, its place is kept in its own history entry (history.state, which a fresh link to it does
 // not have). Back there, the block opens without scroll anchoring and the page goes to that place, and keeps it
-// through the engine's own restore until the reader scrolls, taps or types, or 1.5 s pass.
+// through the engine's own restore until the reader scrolls, taps or types, the # part changes, or 1.5 s pass.
 const saved = history.state?.cadReaderY;
 let keeping = false;
 const keepPlace = () => {
@@ -73,10 +73,13 @@ const keepPlace = () => {
   save();
 };
 const restorePlace = y => {
-  const put = () => scrollTo({ top: y, behavior: 'instant' }), until = performance.now() + 1500;
+  const put = () => scrollTo({ top: y, behavior: 'instant' }), until = performance.now() + 1500, at = location.hash;
   let reader = false;
   for (const name of ['wheel', 'touchstart', 'pointerdown', 'keydown']) addEventListener(name, () => { reader = true; }, { once: true, passive: true, capture: true });
-  const hold = () => { if (reader || performance.now() > until) return; if (Math.abs(scrollY - y) > 1) put(); requestAnimationFrame(hold); };
+  // A new # part (a link, a script, the browser's Back to another # of this page) ends the hold, checked in the frame
+  // itself: a hashchange listener can run after a frame has already put the page back. Another script's scroll cannot
+  // be told from the engine's own restore, which is what the hold outlasts, so it still waits out the 1.5 s.
+  const hold = () => { if (reader || location.hash !== at || performance.now() > until) return; if (Math.abs(scrollY - y) > 1) put(); requestAnimationFrame(hold); };
   put(); requestAnimationFrame(hold);
 };
 const openTarget = event => {

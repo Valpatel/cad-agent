@@ -412,7 +412,7 @@ Guides explain how to use the toolkit. Folder maps lead into its code, tests and
 </details>
 
 <details>
-<summary>docs — 54 folders</summary>
+<summary>docs — 55 folders</summary>
 
 <details>
 <summary><code>docs/README.md</code> — 1 folders</summary>
@@ -450,6 +450,19 @@ Guides explain how to use the toolkit. Folder maps lead into its code, tests and
 | Folder |
 |---|
 | `docs/examples` |
+
+</details>
+
+<details>
+<summary><code>docs/examples/build-guide/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-docs/d-examples/d-build-guide/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/docs/examples/build-guide/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `docs/examples/build-guide` |
 
 </details>
 
@@ -1119,7 +1132,7 @@ Guides explain how to use the toolkit. Folder maps lead into its code, tests and
 </details>
 
 <details>
-<summary>software — 1186 folders</summary>
+<summary>software — 1192 folders</summary>
 
 <details>
 <summary><code>software/README.md</code> — 1 folders</summary>
@@ -1391,6 +1404,84 @@ Guides explain how to use the toolkit. Folder maps lead into its code, tests and
 | Folder |
 |---|
 | `software/cadagent/webkit/assembly` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/assembly/examples/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-assembly/d-examples/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/assembly/examples/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/assembly/examples` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/assembly/examples/gyropup-turret/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-assembly/d-examples/d-gyropup-turret/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/assembly/examples/gyropup-turret/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/assembly/examples/gyropup-turret` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/assembly/examples/gyropup-turret/base/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-assembly/d-examples/d-gyropup-turret/d-base/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/assembly/examples/gyropup-turret/base/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/assembly/examples/gyropup-turret/base` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/assembly/examples/gyropup-turret/cartridge/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-assembly/d-examples/d-gyropup-turret/d-cartridge/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/assembly/examples/gyropup-turret/cartridge/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/assembly/examples/gyropup-turret/cartridge` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/assembly/examples/gyropup-turret/tilt/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-assembly/d-examples/d-gyropup-turret/d-tilt/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/assembly/examples/gyropup-turret/tilt/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/assembly/examples/gyropup-turret/tilt` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/assembly/examples/gyropup-turret/turntable/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-assembly/d-examples/d-gyropup-turret/d-turntable/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/assembly/examples/gyropup-turret/turntable/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/assembly/examples/gyropup-turret/turntable` |
 
 </details>
 
@@ -10259,7 +10350,7 @@ Guides explain how to use the toolkit. Folder maps lead into its code, tests and
 </details>
 
 <details>
-<summary>tools — 23 folders</summary>
+<summary>tools — 22 folders</summary>
 
 <details>
 <summary><code>tools/README.md</code> — 1 folders</summary>
@@ -10401,19 +10492,6 @@ Guides explain how to use the toolkit. Folder maps lead into its code, tests and
 | Folder |
 |---|
 | `tools/site/assets/toolkit` |
-
-</details>
-
-<details>
-<summary><code>tools/site/assets/toolkit/assembly/README.md</code> — 1 folders</summary>
-
-[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-tools/d-site/d-assets/d-toolkit/d-assembly/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/tools/site/assets/toolkit/assembly/README.md)
-
-- Owned folder map.
-
-| Folder |
-|---|
-| `tools/site/assets/toolkit/assembly` |
 
 </details>
 

@@ -1,0 +1,1028 @@
+{
+ "schema": "cad-agent.assembly-guide/1",
+ "snapshot": {
+  "id": "gyropup-turret-41c5c266569d",
+  "revision": "Gyropup turret 41c5c26",
+  "status": "wip",
+  "source_commit": "41c5c266569d6141ecda28711188343b54ab43d8"
+ },
+ "model": {
+  "file": "view.json",
+  "sha256": "0f1ab8ff7f12b2c58e001c398338ae0efd422cd2cee9a867463c6a5fed6a8f9e"
+ },
+ "source": {
+  "project": "Valpatel/gyropup",
+  "repository": "https://github.com/Valpatel/gyropup",
+  "license": "MIT",
+  "recipe": "hardware/cad/turret/turret_assembly.py",
+  "qualification": "Example sequence from a work-in-progress prototype, not a verified build procedure. A CAD step order does not prove the parts can physically be assembled in that order, or that they fit."
+ },
+ "subassemblies": [
+  {
+   "id": "base",
+   "title": "Base: the pan base, its servo and pinion, the DT12 socket and the base-board module",
+   "parts": [
+    "pan_base",
+    "pan_servo",
+    "pan_pinion",
+    "dt_receptacle",
+    "base_board_carrier",
+    "base_board",
+    "base_board_inserts",
+    "base_board_screws",
+    "base_carrier_inserts",
+    "base_carrier_screws",
+    "index_magnet"
+   ]
+  },
+  {
+   "id": "turntable",
+   "title": "Turntable: the pan bearing and clamp, the turntable and the slip ring",
+   "parts": [
+    "pan_bearing",
+    "pan_bearing_inner",
+    "pan_clamp",
+    "pan_ring",
+    "hall_switch",
+    "pan_spacer",
+    "circlip_50",
+    "ring_driver",
+    "slip_ring",
+    "slip_ring_rotor",
+    "ring_coupling",
+    "ring_carrier"
+   ]
+  },
+  {
+   "id": "tilt",
+   "title": "Tilt: the tilt yoke and board bay, the tilt servo and cradle, and the laser",
+   "parts": [
+    "tilt_yoke",
+    "ring_leads_rotor",
+    "board_bay",
+    "turret_board",
+    "tilt_servo",
+    "tilt_bearing",
+    "tilt_bearing_inner",
+    "cradle",
+    "cradle_plate_l",
+    "cradle_plate_r",
+    "stop_lug",
+    "horn_boss",
+    "pivot_spacer",
+    "shoulder_screw",
+    "laser_mount",
+    "laser"
+   ]
+  },
+  {
+   "id": "cartridge",
+   "title": "Cartridge: the launcher cartridge, the barrel and hopper, and its thumbscrew",
+   "parts": [
+    "cartridge_body",
+    "feed_motor",
+    "dial",
+    "flywheel_motor_l",
+    "flywheel_motor_r",
+    "flywheel",
+    "flywheel_m",
+    "flywheel_tyre",
+    "flywheel_tyre_m",
+    "cartridge_board",
+    "esc_l",
+    "esc_r",
+    "barrel",
+    "hopper",
+    "hopper_lid",
+    "ct_thumbscrew"
+   ]
+  }
+ ],
+ "steps": [
+  {
+   "id": "step-01",
+   "title": "The pan base and its inserts",
+   "text": "Heat-set inserts first, with the base on its foot: 5 x M3 in the clamp ears, 3 x M3 in the carrier bosses (from below), 4 x M3 in the external carrier anchors, 4 x M4 in the DT pad. The bumper tabs' 5 short M3 wait for the robot (no bumper on the bench, D42).",
+   "subassembly": "base",
+   "parts": [
+    "pan_base"
+   ],
+   "highlight": [
+    "pan_base"
+   ],
+   "offsets_mm": {
+    "pan_base": [
+     0.0,
+     0.0,
+     0.0
+    ]
+   },
+   "camera": {
+    "direction": [
+     0.6,
+     -1.0,
+     0.7
+    ]
+   }
+  },
+  {
+   "id": "step-02",
+   "title": "The pan servo, its pinion and the DT12 receptacle",
+   "text": "The STS3215 drops into its pocket, bus plugs down, on its four posts: 4 x M2 x 20 up through the foot. The pinion on its horn: 4 x M3 x 16 (heads sunk). The DT04-12PA on the pad: 4 x M4 x 10; its 12 pins and the W12P wedge with the harness to the base board.",
+   "subassembly": "base",
+   "parts": [
+    "pan_base",
+    "pan_servo",
+    "pan_pinion",
+    "dt_receptacle"
+   ],
+   "highlight": [
+    "pan_servo",
+    "pan_pinion",
+    "dt_receptacle"
+   ],
+   "offsets_mm": {
+    "pan_servo": [
+     0.0,
+     0.0,
+     40.0
+    ],
+    "pan_pinion": [
+     0.0,
+     0.0,
+     70.0
+    ],
+    "dt_receptacle": [
+     0.0,
+     -40.0,
+     0.0
+    ]
+   },
+   "camera": {
+    "direction": [
+     0.6,
+     -1.0,
+     0.7
+    ]
+   },
+   "requires": [
+    "step-01"
+   ]
+  },
+  {
+   "id": "step-03",
+   "title": "The removable base-board module and the index magnet",
+   "text": "On the bench, fit four M3 inserts in the carrier and screw the drilled PCB onto its standoffs with four M3 x 6. Fit four M3 inserts in the base anchors from +x. Connect the harness, then slide the entire module in from +x and secure it with four M3 x 8 from outside. Remove the robot bumper before service; PCB screws are accessed only on the bench. Harness disconnection access and slack remain unverified: docs/base-board-service.md. Glue the index magnet in its housing pocket.",
+   "subassembly": "base",
+   "parts": [
+    "pan_base",
+    "pan_servo",
+    "pan_pinion",
+    "dt_receptacle",
+    "base_board_carrier",
+    "base_board",
+    "base_board_inserts",
+    "base_board_screws",
+    "base_carrier_inserts",
+    "base_carrier_screws",
+    "index_magnet"
+   ],
+   "highlight": [
+    "base_board_carrier",
+    "base_board",
+    "base_board_inserts",
+    "base_board_screws",
+    "base_carrier_inserts",
+    "base_carrier_screws",
+    "index_magnet"
+   ],
+   "offsets_mm": {
+    "base_board_carrier": [
+     45.0,
+     0.0,
+     0.0
+    ],
+    "base_board": [
+     30.0,
+     0.0,
+     0.0
+    ],
+    "base_board_inserts": [
+     45.0,
+     0.0,
+     0.0
+    ],
+    "base_board_screws": [
+     25.0,
+     0.0,
+     0.0
+    ],
+    "base_carrier_inserts": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "base_carrier_screws": [
+     65.0,
+     0.0,
+     0.0
+    ],
+    "index_magnet": [
+     0.0,
+     0.0,
+     25.0
+    ]
+   },
+   "camera": {
+    "direction": [
+     0.8,
+     -0.6,
+     0.7
+    ]
+   },
+   "requires": [
+    "step-02"
+   ]
+  },
+  {
+   "id": "step-04",
+   "title": "The pan bearing and its clamp",
+   "text": "The 6810-2RS pressed into its seat onto the Ø62 shoulder; the aluminium clamp ring (SendCutSend) over it: 5 x M3 x 8.",
+   "subassembly": "turntable",
+   "parts": [
+    "pan_base",
+    "pan_servo",
+    "pan_pinion",
+    "dt_receptacle",
+    "base_board_carrier",
+    "base_board",
+    "base_board_inserts",
+    "base_board_screws",
+    "base_carrier_inserts",
+    "base_carrier_screws",
+    "index_magnet",
+    "pan_bearing",
+    "pan_bearing_inner",
+    "pan_clamp"
+   ],
+   "highlight": [
+    "pan_bearing",
+    "pan_bearing_inner",
+    "pan_clamp"
+   ],
+   "offsets_mm": {
+    "pan_bearing": [
+     0.0,
+     0.0,
+     30.0
+    ],
+    "pan_bearing_inner": [
+     0.0,
+     0.0,
+     30.0
+    ],
+    "pan_clamp": [
+     0.0,
+     0.0,
+     50.0
+    ]
+   },
+   "camera": {
+    "direction": [
+     0.6,
+     -1.0,
+     0.8
+    ]
+   },
+   "requires": [
+    "step-03"
+   ]
+  },
+  {
+   "id": "step-05",
+   "title": "The turntable, its spacer and the circlip",
+   "text": "Before it goes in: 4 x M4 inserts in its top, the hall switch glued in the pocket underneath (leads up its hole). Its journal down through the inner race, the gear in mesh with the pinion; from below, through the foot's Ø65 opening, the spacer and the DIN 471-50 circlip in its groove (circlip pliers).",
+   "subassembly": "turntable",
+   "parts": [
+    "pan_base",
+    "pan_servo",
+    "pan_pinion",
+    "dt_receptacle",
+    "base_board_carrier",
+    "base_board",
+    "base_board_inserts",
+    "base_board_screws",
+    "base_carrier_inserts",
+    "base_carrier_screws",
+    "index_magnet",
+    "pan_bearing",
+    "pan_bearing_inner",
+    "pan_clamp",
+    "pan_ring",
+    "hall_switch",
+    "pan_spacer",
+    "circlip_50"
+   ],
+   "highlight": [
+    "pan_ring",
+    "hall_switch",
+    "pan_spacer",
+    "circlip_50"
+   ],
+   "offsets_mm": {
+    "pan_ring": [
+     0.0,
+     0.0,
+     45.0
+    ],
+    "hall_switch": [
+     0.0,
+     0.0,
+     45.0
+    ],
+    "pan_spacer": [
+     0.0,
+     0.0,
+     -45.0
+    ],
+    "circlip_50": [
+     0.0,
+     0.0,
+     -60.0
+    ]
+   },
+   "camera": {
+    "direction": [
+     0.6,
+     -1.0,
+     0.45
+    ]
+   },
+   "requires": [
+    "step-04"
+   ]
+  },
+  {
+   "id": "step-06",
+   "title": "The ring driver and the slip ring on its carrier",
+   "text": "The driver pressed into the top of the turntable's bore (three crush ribs and a drop of CA). The ring screwed to its carrier (3 x M3 x 8 with washers), a 25 mm length of the 5/16 in tube on its rotor stub, its rotor leads gathered; from below, the ring goes up the bore, the tube into the driver's socket and the leads out through the driver's crescent; the carrier's tabs into their pockets: 3 x M3 x 10 flat heads.",
+   "subassembly": "turntable",
+   "parts": [
+    "pan_base",
+    "pan_servo",
+    "pan_pinion",
+    "dt_receptacle",
+    "base_board_carrier",
+    "base_board",
+    "base_board_inserts",
+    "base_board_screws",
+    "base_carrier_inserts",
+    "base_carrier_screws",
+    "index_magnet",
+    "pan_bearing",
+    "pan_bearing_inner",
+    "pan_clamp",
+    "pan_ring",
+    "hall_switch",
+    "pan_spacer",
+    "circlip_50",
+    "ring_driver",
+    "slip_ring",
+    "slip_ring_rotor",
+    "ring_coupling",
+    "ring_carrier"
+   ],
+   "highlight": [
+    "ring_driver",
+    "slip_ring",
+    "slip_ring_rotor",
+    "ring_coupling",
+    "ring_carrier"
+   ],
+   "offsets_mm": {
+    "ring_driver": [
+     0.0,
+     0.0,
+     60.0
+    ],
+    "slip_ring": [
+     0.0,
+     0.0,
+     -70.0
+    ],
+    "slip_ring_rotor": [
+     0.0,
+     0.0,
+     -70.0
+    ],
+    "ring_coupling": [
+     0.0,
+     0.0,
+     -70.0
+    ],
+    "ring_carrier": [
+     0.0,
+     0.0,
+     -70.0
+    ]
+   },
+   "camera": {
+    "direction": [
+     0.6,
+     -1.0,
+     -0.35
+    ]
+   },
+   "requires": [
+    "step-05"
+   ]
+  },
+  {
+   "id": "step-07",
+   "title": "The tilt yoke and the turret-board bay",
+   "text": "The rotor leads through the yoke's slot, the yoke on the turntable: 4 x M4 x 12. 4 x M3 inserts in the -y arm, the bay on them: 4 x M3 x 8 flat heads; the three boards on their standoffs (12 and 14 mm); the ring's rotor plug and the hall into level 2.",
+   "subassembly": "tilt",
+   "parts": [
+    "pan_base",
+    "pan_servo",
+    "pan_pinion",
+    "dt_receptacle",
+    "base_board_carrier",
+    "base_board",
+    "base_board_inserts",
+    "base_board_screws",
+    "base_carrier_inserts",
+    "base_carrier_screws",
+    "index_magnet",
+    "pan_bearing",
+    "pan_bearing_inner",
+    "pan_clamp",
+    "pan_ring",
+    "hall_switch",
+    "pan_spacer",
+    "circlip_50",
+    "ring_driver",
+    "slip_ring",
+    "slip_ring_rotor",
+    "ring_coupling",
+    "ring_carrier",
+    "tilt_yoke",
+    "ring_leads_rotor",
+    "board_bay",
+    "turret_board"
+   ],
+   "highlight": [
+    "tilt_yoke",
+    "ring_leads_rotor",
+    "board_bay",
+    "turret_board"
+   ],
+   "offsets_mm": {
+    "tilt_yoke": [
+     0.0,
+     0.0,
+     50.0
+    ],
+    "ring_leads_rotor": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "board_bay": [
+     0.0,
+     -40.0,
+     0.0
+    ],
+    "turret_board": [
+     0.0,
+     -70.0,
+     0.0
+    ]
+   },
+   "camera": {
+    "direction": [
+     0.5,
+     -1.0,
+     0.5
+    ]
+   },
+   "requires": [
+    "step-06"
+   ]
+  },
+  {
+   "id": "step-08",
+   "title": "The tilt servo and the cradle on its aluminium cheeks",
+   "text": "The rail frame, its two aluminium plates and the stop lug go together on the bench (D48): 8 x M3 inserts into the rail frame's two rebates, put in from the side; the aluminium stop lug onto the -y plate's outer face, 2 x M3 x 6 flat heads from the plate's inner face into its tapped holes, a drop of CA gel under it; each plate into its rail's rebate, 4 x M3 x 8 button heads. Then the STS3215 into its pocket on the +y arm, 4 x M2 x 10 from the arm's inner face, and the MR126 into the -y arm's seat. The cradle between the arms: the horn boss between the +y plate and the servo's horn, 4 x M3 x 14 flat heads from the plate's inner face into the horn (snug: 1.8 mm of thread); on the -y side the pivot spacer, its land against the bearing, and the ISO 7379 shoulder screw through the arm, the bearing and the spacer into the plate's tapped hole (snug, about 0.15 N m, a drop of CA gel on the thread). Check the +12 and -25 deg stops by hand before anything else: the lug meets the yoke's two sectors, and the barrel cannot be pushed past either.",
+   "subassembly": "tilt",
+   "parts": [
+    "pan_base",
+    "pan_servo",
+    "pan_pinion",
+    "dt_receptacle",
+    "base_board_carrier",
+    "base_board",
+    "base_board_inserts",
+    "base_board_screws",
+    "base_carrier_inserts",
+    "base_carrier_screws",
+    "index_magnet",
+    "pan_bearing",
+    "pan_bearing_inner",
+    "pan_clamp",
+    "pan_ring",
+    "hall_switch",
+    "pan_spacer",
+    "circlip_50",
+    "ring_driver",
+    "slip_ring",
+    "slip_ring_rotor",
+    "ring_coupling",
+    "ring_carrier",
+    "tilt_yoke",
+    "ring_leads_rotor",
+    "board_bay",
+    "turret_board",
+    "tilt_servo",
+    "tilt_bearing",
+    "tilt_bearing_inner",
+    "cradle",
+    "cradle_plate_l",
+    "cradle_plate_r",
+    "stop_lug",
+    "horn_boss",
+    "pivot_spacer",
+    "shoulder_screw"
+   ],
+   "highlight": [
+    "tilt_servo",
+    "tilt_bearing",
+    "tilt_bearing_inner",
+    "cradle",
+    "cradle_plate_l",
+    "cradle_plate_r",
+    "stop_lug",
+    "horn_boss",
+    "pivot_spacer",
+    "shoulder_screw"
+   ],
+   "offsets_mm": {
+    "tilt_servo": [
+     0.0,
+     40.0,
+     0.0
+    ],
+    "tilt_bearing": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "tilt_bearing_inner": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "cradle": [
+     0.0,
+     0.0,
+     55.0
+    ],
+    "cradle_plate_l": [
+     0.0,
+     22.0,
+     55.0
+    ],
+    "cradle_plate_r": [
+     0.0,
+     -22.0,
+     55.0
+    ],
+    "stop_lug": [
+     0.0,
+     -38.0,
+     55.0
+    ],
+    "horn_boss": [
+     0.0,
+     14.0,
+     0.0
+    ],
+    "pivot_spacer": [
+     0.0,
+     -14.0,
+     0.0
+    ],
+    "shoulder_screw": [
+     0.0,
+     -40.0,
+     0.0
+    ]
+   },
+   "camera": {
+    "direction": [
+     0.5,
+     -1.0,
+     0.5
+    ]
+   },
+   "requires": [
+    "step-07"
+   ]
+  },
+  {
+   "id": "step-09",
+   "title": "The laser",
+   "text": "The mount on the cradle's tab: 2 x M3 x 10 up through it; the laser in the mount on three nylon-tip M3 set screws (boresight them on the bench).",
+   "subassembly": "tilt",
+   "parts": [
+    "pan_base",
+    "pan_servo",
+    "pan_pinion",
+    "dt_receptacle",
+    "base_board_carrier",
+    "base_board",
+    "base_board_inserts",
+    "base_board_screws",
+    "base_carrier_inserts",
+    "base_carrier_screws",
+    "index_magnet",
+    "pan_bearing",
+    "pan_bearing_inner",
+    "pan_clamp",
+    "pan_ring",
+    "hall_switch",
+    "pan_spacer",
+    "circlip_50",
+    "ring_driver",
+    "slip_ring",
+    "slip_ring_rotor",
+    "ring_coupling",
+    "ring_carrier",
+    "tilt_yoke",
+    "ring_leads_rotor",
+    "board_bay",
+    "turret_board",
+    "tilt_servo",
+    "tilt_bearing",
+    "tilt_bearing_inner",
+    "cradle",
+    "cradle_plate_l",
+    "cradle_plate_r",
+    "stop_lug",
+    "horn_boss",
+    "pivot_spacer",
+    "shoulder_screw",
+    "laser_mount",
+    "laser"
+   ],
+   "highlight": [
+    "laser_mount",
+    "laser"
+   ],
+   "offsets_mm": {
+    "laser_mount": [
+     0.0,
+     0.0,
+     -30.0
+    ],
+    "laser": [
+     0.0,
+     0.0,
+     -30.0
+    ]
+   },
+   "camera": {
+    "direction": [
+     0.7,
+     -1.0,
+     0.4
+    ]
+   },
+   "requires": [
+    "step-08"
+   ]
+  },
+  {
+   "id": "step-10",
+   "title": "The cartridge: feed servo, dial, flywheel motors and the cartridge board",
+   "text": "On the bench, not on the turret. The feed servo (its bus ID set to 3 beforehand) up against the dial floor's underside, its horn through the floor and its length to the rear: 4 x M2 x 6 flat heads from above, flush. The dial onto the horn: 4 x M3 x 8 down through the holes in its cone (the hopper off); set the servo's zero so a pocket is centred over the exit hole and write the count down. Each X2216 with its hub: the prop adapter from its box on the bell (3 x M2), the hub's flat face on the adapter's flange, its bore reamed to 5.00 on the pilot, the washer and an M5 nylon-insert nut (snug plus a quarter turn); turn it by hand with a dial indicator on the rim: under 0.15 mm, or re-seat; then the Ø34 tyre stretched on. Each motor goes up through the opening under its shell to the plate, its leads out through the slot: 4 x M3 x 6 in the radial slots (never longer: the motor has 2.8 mm of thread). The two AM32 ESCs on the cage plate on foam tape, each motor's leads to its ESC; the cartridge board on its four posts over them (4 x M3 x 6), the brake FETs' drains to the phase leads, and the pigtail to the two CT plugs (docs/turret-wiring.md).",
+   "subassembly": "cartridge",
+   "parts": [
+    "pan_base",
+    "pan_servo",
+    "pan_pinion",
+    "dt_receptacle",
+    "base_board_carrier",
+    "base_board",
+    "base_board_inserts",
+    "base_board_screws",
+    "base_carrier_inserts",
+    "base_carrier_screws",
+    "index_magnet",
+    "pan_bearing",
+    "pan_bearing_inner",
+    "pan_clamp",
+    "pan_ring",
+    "hall_switch",
+    "pan_spacer",
+    "circlip_50",
+    "ring_driver",
+    "slip_ring",
+    "slip_ring_rotor",
+    "ring_coupling",
+    "ring_carrier",
+    "tilt_yoke",
+    "ring_leads_rotor",
+    "board_bay",
+    "turret_board",
+    "tilt_servo",
+    "tilt_bearing",
+    "tilt_bearing_inner",
+    "cradle",
+    "cradle_plate_l",
+    "cradle_plate_r",
+    "stop_lug",
+    "horn_boss",
+    "pivot_spacer",
+    "shoulder_screw",
+    "laser_mount",
+    "laser",
+    "cartridge_body",
+    "feed_motor",
+    "dial",
+    "flywheel_motor_l",
+    "flywheel_motor_r",
+    "flywheel",
+    "flywheel_m",
+    "flywheel_tyre",
+    "flywheel_tyre_m",
+    "cartridge_board",
+    "esc_l",
+    "esc_r"
+   ],
+   "highlight": [
+    "cartridge_body",
+    "feed_motor",
+    "dial",
+    "flywheel_motor_l",
+    "flywheel_motor_r",
+    "flywheel",
+    "flywheel_m",
+    "flywheel_tyre",
+    "flywheel_tyre_m",
+    "cartridge_board",
+    "esc_l",
+    "esc_r"
+   ],
+   "offsets_mm": {
+    "cartridge_body": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "feed_motor": [
+     0.0,
+     0.0,
+     -40.0
+    ],
+    "dial": [
+     0.0,
+     0.0,
+     40.0
+    ],
+    "flywheel_motor_l": [
+     0.0,
+     0.0,
+     -35.0
+    ],
+    "flywheel_motor_r": [
+     0.0,
+     0.0,
+     -35.0
+    ],
+    "flywheel": [
+     0.0,
+     0.0,
+     -50.0
+    ],
+    "flywheel_m": [
+     0.0,
+     0.0,
+     -50.0
+    ],
+    "flywheel_tyre": [
+     0.0,
+     0.0,
+     -50.0
+    ],
+    "flywheel_tyre_m": [
+     0.0,
+     0.0,
+     -50.0
+    ],
+    "cartridge_board": [
+     0.0,
+     0.0,
+     60.0
+    ],
+    "esc_l": [
+     0.0,
+     0.0,
+     25.0
+    ],
+    "esc_r": [
+     0.0,
+     0.0,
+     25.0
+    ]
+   },
+   "camera": {
+    "direction": [
+     0.6,
+     -1.0,
+     0.6
+    ]
+   },
+   "requires": [
+    "step-09"
+   ]
+  },
+  {
+   "id": "step-11",
+   "title": "The barrel, the hopper and the lid",
+   "text": "The barrel into its socket (a nylon-tip M3 set screw through the socket's insert), the gates' emitters and receivers in its bosses; the hopper on the housing (3 x M3 x 8: the front one through the hole in the cage plate); the lid. The fill flap and its spring wait for the dock (v1).",
+   "subassembly": "cartridge",
+   "parts": [
+    "pan_base",
+    "pan_servo",
+    "pan_pinion",
+    "dt_receptacle",
+    "base_board_carrier",
+    "base_board",
+    "base_board_inserts",
+    "base_board_screws",
+    "base_carrier_inserts",
+    "base_carrier_screws",
+    "index_magnet",
+    "pan_bearing",
+    "pan_bearing_inner",
+    "pan_clamp",
+    "pan_ring",
+    "hall_switch",
+    "pan_spacer",
+    "circlip_50",
+    "ring_driver",
+    "slip_ring",
+    "slip_ring_rotor",
+    "ring_coupling",
+    "ring_carrier",
+    "tilt_yoke",
+    "ring_leads_rotor",
+    "board_bay",
+    "turret_board",
+    "tilt_servo",
+    "tilt_bearing",
+    "tilt_bearing_inner",
+    "cradle",
+    "cradle_plate_l",
+    "cradle_plate_r",
+    "stop_lug",
+    "horn_boss",
+    "pivot_spacer",
+    "shoulder_screw",
+    "laser_mount",
+    "laser",
+    "cartridge_body",
+    "feed_motor",
+    "dial",
+    "flywheel_motor_l",
+    "flywheel_motor_r",
+    "flywheel",
+    "flywheel_m",
+    "flywheel_tyre",
+    "flywheel_tyre_m",
+    "cartridge_board",
+    "esc_l",
+    "esc_r",
+    "barrel",
+    "hopper",
+    "hopper_lid"
+   ],
+   "highlight": [
+    "barrel",
+    "hopper",
+    "hopper_lid"
+   ],
+   "offsets_mm": {
+    "barrel": [
+     40.0,
+     0.0,
+     0.0
+    ],
+    "hopper": [
+     0.0,
+     0.0,
+     40.0
+    ],
+    "hopper_lid": [
+     0.0,
+     0.0,
+     70.0
+    ]
+   },
+   "camera": {
+    "direction": [
+     0.6,
+     -1.0,
+     0.6
+    ]
+   },
+   "requires": [
+    "step-10"
+   ]
+  },
+  {
+   "id": "step-12",
+   "title": "The cartridge on the cradle, the mount",
+   "text": "The cartridge down onto the cradle's two dowels, the knurled thumbscrew up into its insert (its O-ring keeps it in the rail); the two CT plugs (2 x 3 power, 2 x 5 signal). Then the turret on its stand: 2 x Ø5 dowels, 4 x M5 x 16, and the DT12 plug (the stand's two dock inserts went in from below with a flat tip, the top face on a flat plate and the seat checked flat after; the dock adapter's M3s are no longer than its base + 5 mm). The TPU bumper ring (5 x M3 x 20 and oversized washers on the base's tabs) is for the robot (v1).",
+   "subassembly": "cartridge",
+   "parts": [
+    "pan_base",
+    "pan_servo",
+    "pan_pinion",
+    "dt_receptacle",
+    "base_board_carrier",
+    "base_board",
+    "base_board_inserts",
+    "base_board_screws",
+    "base_carrier_inserts",
+    "base_carrier_screws",
+    "index_magnet",
+    "pan_bearing",
+    "pan_bearing_inner",
+    "pan_clamp",
+    "pan_ring",
+    "hall_switch",
+    "pan_spacer",
+    "circlip_50",
+    "ring_driver",
+    "slip_ring",
+    "slip_ring_rotor",
+    "ring_coupling",
+    "ring_carrier",
+    "tilt_yoke",
+    "ring_leads_rotor",
+    "board_bay",
+    "turret_board",
+    "tilt_servo",
+    "tilt_bearing",
+    "tilt_bearing_inner",
+    "cradle",
+    "cradle_plate_l",
+    "cradle_plate_r",
+    "stop_lug",
+    "horn_boss",
+    "pivot_spacer",
+    "shoulder_screw",
+    "laser_mount",
+    "laser",
+    "cartridge_body",
+    "feed_motor",
+    "dial",
+    "flywheel_motor_l",
+    "flywheel_motor_r",
+    "flywheel",
+    "flywheel_m",
+    "flywheel_tyre",
+    "flywheel_tyre_m",
+    "cartridge_board",
+    "esc_l",
+    "esc_r",
+    "barrel",
+    "hopper",
+    "hopper_lid",
+    "ct_thumbscrew"
+   ],
+   "highlight": [
+    "ct_thumbscrew"
+   ],
+   "offsets_mm": {
+    "ct_thumbscrew": [
+     0.0,
+     0.0,
+     -30.0
+    ]
+   },
+   "camera": {
+    "direction": [
+     0.6,
+     -1.0,
+     0.5
+    ]
+   },
+   "requires": [
+    "step-11"
+   ]
+  }
+ ]
+}

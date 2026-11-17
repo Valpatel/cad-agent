@@ -305,9 +305,12 @@ test('Toolkit working-example cards resolve to published local pages and complet
     if(url.hash) assert.ok((await readFile(target,'utf8')).includes(`id="${url.hash.slice(1)}"`),`${id} destination anchor`);
     for(const key of ['guide','file']) if(url.searchParams.has(key)) assert.ok(existsSync(local(url.searchParams.get(key))),`${id} input asset`);
   }
-  const guide=await json('web/toolkit/assembly/guide.json'),view=await json('web/toolkit/assembly/view.json');
-  for(const binding of [guide.model,guide.assembly_plan,...view.parts]) {
-    const bytes=await readFile(path.join(out,'web/toolkit/assembly',binding.file));
+  // The featured build guide (#811) is published with every byte its guide binds.
+  const featured='kit/assembly/examples/gyropup-turret';
+  const guide=await json(`${featured}/guide.json`),view=await json(`${featured}/${guide.model.file}`);
+  assert.ok(!existsSync(path.join(out,'web/toolkit/assembly')),'the synthetic fixture is not published for visitors');
+  for(const binding of [guide.model,...view.parts]) {
+    const bytes=await readFile(path.join(out,featured,binding.file));
     assert.equal(createHash('sha256').update(bytes).digest('hex'),binding.sha256,binding.file);
   }
   const model=await readFile(path.join(out,'toolkit/models.html'),'utf8');

@@ -54,6 +54,9 @@ unchanged assembled mesh. They are illustrative offsets, not certified insertion
 not a joint or rigid-body declaration. Exact mesh names identify repeated instances; catalogue/BOM keys are
 separate and may be retained in optional `source` metadata. Intentionally unmodelled hardware must be disclosed
 by the product's instruction/BOM records, not invented as geometry or silently counted as a modelled instance.
+Optional `source.qualification` is plain text (up to 2,000 characters) saying what the guide is and is not, for
+example "an example sequence, not a verified build procedure"; the reader shows it under the version line. The
+toolkit's [featured guide](../examples/build-guide/README.md), Gyropup's turret, uses it.
 
 Optional `poster` is `{file, sha256}`; optional camera `direction` is a nonzero CAD-frame vector from the scene
 towards the camera. Guide-bound viewers allow underside inspection; ordinary viewers retain the existing stage orbit limit. Unknown guide/step fields, duplicate IDs, unknown instances, bad prerequisites, invalid frame,

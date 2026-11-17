@@ -906,7 +906,7 @@ async function phoneFirstScreenProblems() {
  * gets no bar. */
 async function demoWayBackProblems() {
   const problems = [];
-  const DEMOS = { 'build guide': ['/kit/model/viewer.html?guide=/web/toolkit/assembly/guide.json', '#hud'], 'file viewer': ['/kit/files/file-viewer.html?file=/kit/host/example.stl', '#file-viewer'],
+  const DEMOS = { 'build guide': ['/kit/model/viewer.html?guide=/kit/assembly/examples/gyropup-turret/guide.json', '#hud'], 'file viewer': ['/kit/files/file-viewer.html?file=/kit/host/example.stl', '#file-viewer'],
     'robot replay': ['/kit/simulation/examples/gyropup-v2/viewer.html', '#replay'] };   // #798
   const optIn = demo => demo + (demo.includes('?') ? '&' : '?') + 'nav=1';
   const WANT = ['/', '/explore', '/toolkit', '/docs/agent-workflow'];

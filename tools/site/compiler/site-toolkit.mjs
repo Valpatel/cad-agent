@@ -121,6 +121,12 @@ export function toolkitFullText(pages, origin) {
   }).join('');
 }
 
+/** What a build-guide caption must say (#811): its guide is an example sequence of a work-in-progress prototype,
+ * not a verified build procedure, and a CAD step order does not prove the parts can physically go together. Returns
+ * the phrases a caption lacks (case-insensitive); the toolkit card and the home card are both held to it. */
+export const BUILD_GUIDE_PHRASES = ['example sequence', 'work-in-progress', 'not a verified build procedure', 'CAD step order does not prove'];
+export const buildGuideCaptionMissing = caption => BUILD_GUIDE_PHRASES.filter(p => !String(caption || '').toLowerCase().includes(p.toLowerCase()));
+
 /** Capability cards are a presentation index of existing, locally owned examples. */
 export function toolkitCapabilities(m, {catalog = [], has} = {}) {
   const scenario = m.simulations.find(s=>s.id==='wastewater-digester') || m.simulations[0];
@@ -152,9 +158,9 @@ export function toolkitCapabilities(m, {catalog = [], has} = {}) {
       image:'/web/toolkit/file-review.webp', alt:'The original-file viewer displaying the example fixture STL',
       href:'/kit/files/file-viewer.html?file=/kit/host/example.stl&nav=1', action:'Open file example', docs:'/docs/file-viewer'},
     {id:'assembly', title:'Assembly & build guides', kind:'Step-by-step instructions',
-      description:'Inspect a synthetic rail assembly and step through its declared insertion sequence. It is a test fixture, not a project, so its guide names source commit 1111111111.',
-      image:'/web/toolkit/assembly.webp', alt:'The build-guide viewer displaying the synthetic rail assembly and its instruction controls',
-      href:'/kit/model/viewer.html?guide=/web/toolkit/assembly/guide.json&nav=1', action:'Follow the build', docs:'/docs/practice/assembly-guide'},
+      description:'Step through Gyropup\'s turret, a work-in-progress prototype, in its own authored assembly order: twelve steps, each step\'s new parts highlighted and drawn back along the way they go in, earlier parts ghosted. An example sequence, not a verified build procedure; a CAD step order does not prove the parts can physically go together.',
+      image:'/web/toolkit/assembly.webp', alt:'The build-guide viewer on step 11 of Gyropup\'s turret: the barrel, hopper and lid arrive over the ghosted turret, beside the step\'s instructions',
+      href:'/kit/model/viewer.html?guide=/kit/assembly/examples/gyropup-turret/guide.json&nav=1', action:'Follow the build', docs:'/docs/practice/assembly-guide'},
     {id:'mechanisms', title:'Mechanism motion', kind:'Interactive kinematics',
       description:'Change a four-bar linkage’s dimensions and drive its motion. See reachable positions and geometric limits.',
       image:'/docs/img/formulas/fourbar-animator.svg', alt:'Four-bar linkage with a driven crank and moving coupler',
@@ -164,6 +170,8 @@ export function toolkitCapabilities(m, {catalog = [], has} = {}) {
       image:'/docs/img/compliant/cantilever-explorer.svg', alt:'Cantilever snap-arm explorer showing geometry, load and deflection',
       href:demo('demo-snap-arm-explorer','/docs/compliant#try-it-the-snap-arm-explorer'), action:'Try the snap arm', docs:'/docs/compliant', fit:'contain'},
   ];
+  const guideCard = cards.find(c => c.id === 'assembly'), missing = buildGuideCaptionMissing(guideCard.description);
+  if (missing.length) throw new Error(`Toolkit: the build-guide card's description says "${missing.join('", "')}"`);
   if (has) for (const card of cards) {
     for (const asset of [card.image, card.motion, card.href].filter(Boolean)) {
       const pathname = new URL(asset, 'https://cad.example').pathname;

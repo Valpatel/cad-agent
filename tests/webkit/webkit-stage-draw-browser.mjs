@@ -215,7 +215,8 @@ try {
     await check(page, E, 'FEA result field', () => page.evaluate(() => __fea.setField('disp')));
     await check(page, E, 'FEA deformation scale', () => page.evaluate(() => __fea.setExaggeration(5)));
     await check(page, E, 'FEA section clip', () => page.evaluate(() => __fea.setClip('x', 0.5, false)));
-    await check(page, E, 'FEA load playback', async () => { await page.evaluate(() => __fea.play(true)); await page.waitForTimeout(700); await page.evaluate(() => __fea.play(false)); });
+    // Playback starts in the 0.8 s hold at the design load, so it runs long enough to ramp past it.
+    await check(page, E, 'FEA load playback', async () => { await page.evaluate(() => __fea.play(true)); await page.waitForTimeout(3000); await page.evaluate(() => __fea.play(false)); });
     await page.close();
   }
 

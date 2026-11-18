@@ -1,6 +1,6 @@
 ---
 name: design-process
-description: 'Use when building or changing a mechanical design with cad-agent (an enclosure, a robot, a mechanism, any assembly). Work section by section: frame each section with its requirements and interfaces before drawing, write a small spec card per part with its geometry, declare cavities, joints, fasteners and assembly steps in the build script, run cad-agent gates and cad-agent dossier and fix them in order, render the section review packet and critique it against the checklist with the measurements first, then hand the section to a separate reviewer. Includes the work-tracking rules.'
+description: 'Use when building or changing a mechanical design with cad-agent (an enclosure, a robot, a mechanism, any assembly), or when asked to make something to 3D print for a named printer, in one colour or several, even when the request names no project and no tool. Work section by section: frame each section with its requirements and interfaces before drawing, write a small spec card per part with its geometry, declare cavities, joints, fasteners and assembly steps in the build script, run cad-agent gates and cad-agent dossier and fix them in order, render the section review packet and critique it against the checklist with the measurements first, then hand the section to a separate reviewer. Includes the work-tracking rules.'
 ---
 
 # Design process: section by section
@@ -31,6 +31,12 @@ References: [`docs/practice/dossier.md`](../../../docs/practice/dossier.md) (the
 
 ## Before you start
 
+- **Find the toolkit's owner before you write a tool.** A request to 3D print something is a design task for this
+  process even when it names no project and no tool. Before writing a 3MF writer, a slicer command line, a toolpath
+  or model renderer or a test coupon, look for it in [the toolkit guide](../../../docs/toolkit.md): most already
+  exist, tested ([lesson](../../../docs/lessons/process/agent-process.md#open-the-toolkit-you-can-see-before-building-its-tools)).
+  If `cad-agent` is not installed, say so and ask the user before [installing it](../../../docs/practice/agent-workflow.md#install);
+  a checkout already on the computer can be run where it is.
 - **Track it, as if the session could end any minute** (token budgets, crashes): one GitHub issue per section or
   piece of work, a `feat/` branch pushed at once, a draft PR with `Closes #N`. Commit and push at least every 30
   minutes, WIP commits included, and leave a checkpoint comment on the issue: done, next, what is running and where.
@@ -129,6 +135,21 @@ Exit 1 means a joint failed; exit 2 means the input could not be checked. A conf
 the generated JSON; it does not run this standalone calculator. Use its torque ceilings rather than the screw's
 rating, and follow the guide's coupon plan before claiming physical strength or retained preload. Keep equations,
 source tables and model limits in the guide instead of duplicating them in the card.
+
+**For a part printed in several colours or materials on a tool changer** (inlaid lettering, a badge, parts of
+different colours on one plate), write the PrusaSlicer project with
+`cadagent.manufacturing.prusa3mf.write_project`: one object per part, a volume per colour on its tool, and the wipe
+tower's place in the file ([PrusaSlicer projects](../../../docs/toolkit.md#prusaslicer-projects-cadagentmanufacturingprusa3mf)).
+Slice that file with `cadagent.manufacturing.slicer.slice_part` and `engine='prusa'`, which keeps what PrusaSlicer
+said ([Real grams](../../../docs/toolkit.md#real-grams-cadagentmanufacturingslicer-cad-agent-slice)), and look at it
+with `cad-agent prusa-view` rather than a renderer of your own. A result that is not `ok` is a finding. Locate each
+"long bridging" or "floating bridge anchors" note with `cadagent.manufacturing.gcode.bridge_report`
+([lesson](../../../docs/lessons/mechanical/printing-without-supports.md#find-a-long-bridging-warning-in-the-g-code-before-changing-the-geometry))
+before calling it intended; an intended one (a sealed void, a blind pocket) becomes a decision with its reason. Shape
+the colour volumes as the [multi-colour lessons](../../../docs/lessons/mechanical/printing-without-supports.md#several-colours-on-a-tool-changer) say.
+Which filament is on which tool is the user's to say: record the mapping you assumed and repeat it in the report.
+The slice proves neither contrast, translucency nor fit; print the smallest coupon that shows them before the long
+print.
 
 **For laser-cut or bent-sheet parts with clinch hardware or riveted seams**, follow the existing
 [sheet-metal-hardware workflow](../sheet-metal-hardware/SKILL.md). Its six-step example connects the shop's bend

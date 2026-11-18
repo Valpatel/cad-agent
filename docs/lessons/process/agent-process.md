@@ -70,6 +70,35 @@ flowchart TD
   backed by a search result.
 - **Source:** 2026-10-25T02:18, 02:19.
 
+### Open the toolkit you can see before building its tools
+- **Rule:** When a task needs an exporter, a slicer command line, a renderer or a coupon, first look for a toolkit
+  that owns it: on PATH, in the harness's skills, and in the checkouts a directory listing names. If one is there
+  but not installed, say so and ask before installing; do not rebuild its tools in the project.
+- **Incident:** asked for objects to 3D print on a Prusa XL 5T, with no project and no tool named, the agent wrote a
+  multi-volume 3MF writer, a PrusaSlicer command line and a G-code toolpath renderer. `cad-agent` was not on PATH
+  and no cad-agent skill was linked into the harness, so no skill loaded. The session's first directory survey
+  named a cad-agent checkout; it was not opened until the user asked, five days later, whether the skills had been
+  used. That checkout already had `prusa3mf.write_project`, `cad-agent slice` with PrusaSlicer, `cad-agent
+  prusa-view` and `gcode.bridge_report`. The hand-written path met the wipe-tower conflict the toolkit's writer
+  avoids ([multi-colour lessons](../mechanical/printing-without-supports.md#several-colours-on-a-tool-changer)). #824 changed the `design-process`
+  description to match a plain print request and pointed it at those tools.
+- **Check:** before the first tool file is written, the session record names the toolkit looked for, where (PATH,
+  skills folder, checkouts) and what was found. A new tool's first commit says which existing owner was ruled out.
+- **Source:** 2026-11-13T21:54, 22:00, 22:02; 2026-11-18T13:06.
+
+### Give a scoring panel one judge who measures
+- **Rule:** When the user asks for a panel that scores a design, make at least one judge measure the geometry
+  read-only and report numbers. Scores read from pictures rise as the pictures improve; they do not find a mechanism
+  that cannot work. A panel of agents is not the separate reviewer's sign-off, and its score is not evidence of fit.
+- **Incident:** four fresh agents scored a printed puzzle vault over nine rounds, from renders, the source and a
+  written brief. Three judged look and play. The fourth ran measurements on the meshes and found the faults that
+  mattered: a printed spring with no room to compress, key hooks that did not reach the surfaces they were meant to
+  catch, and a folded card that did not fit its slot. Its score was the last to reach the user's target. None of
+  the four could tell whether the part prints, and the final report said so.
+- **Check:** each round's record separates measured findings (a number, the two solids, the command) from scores,
+  and names what no judge could verify. `design-process` step 6 applies: measurements first, then the images.
+- **Source:** 2026-11-18T00:45 to 03:15; `report.json`.
+
 ### Mine and handle only the data the user selects
 - **Rule:** Limit history mining and data handling to the sources the user names. Write that scope down where future
   runs will see it.

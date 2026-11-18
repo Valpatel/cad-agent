@@ -237,3 +237,89 @@ flowchart TD
   [slicer grams](../simulation/simulation-and-material.md), "Judge material savings on slicer grams, not CAD volume".
 
 </details>
+
+## Several colours on a tool changer
+
+These three lessons come from a later Claude Code session, 2026-11-13 to 2026-11-18 (session
+`76532d1a-0b54-4a38-8fa6-03369967da17`): a pendant and a 13-part puzzle vault in three colours for a Prusa XL 5T,
+modelled as triangle meshes with manifold3d and sliced with PrusaSlicer 2.9.6. That session did not use cad-agent
+(#824); its files are in a contributor's private project, and the paths in this section are relative to it. Nothing
+was printed, so these are rules for files that slice without an error, not proof of colour, fit or function.
+
+```mermaid
+flowchart TD
+    V["colour volumes<br/>pocket cut through the surface"] --> P["project 3MF<br/>volumes on tools, tower placed"]
+    P --> S["slice, log kept"]
+    S --> E{"error or<br/>stability note?"}
+    E -->|"tower conflict"| P
+    E -->|"bridge note"| B["bridge_report:<br/>where it is"]
+    B -->|"intended void"| D["a decision<br/>+ a coupon"]
+    B -->|"real overhang"| V
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
+    class V,P,S,E,B here
+    class D out
+```
+
+Timestamps are UTC from the session transcript. In cad-agent the project file is
+`cadagent.manufacturing.prusa3mf.write_project`, the slice is `cad-agent slice` with `cad.slicer.engine: prusa`, and
+the bridge listing is `cadagent.manufacturing.gcode.bridge_report`
+([toolkit guide](../../toolkit.md#prusaslicer-projects-cadagentmanufacturingprusa3mf)).
+
+### Cut an inlay's pocket with a cutter that passes through the surface
+- **Rule:** make the pocket for a colour inlay by cutting the body with a solid that starts at the pocket floor and
+  ends beyond the body's surface, then trim the inlay itself to the surface. A cutter that ends exactly on the
+  surface can leave a zero-thickness skin of the body's colour over the inlay.
+- **Check:** each colour volume is watertight, the volumes of one object do not overlap (their pairwise intersection
+  has no volume), and their volumes add up to the volume of their union. Look at the inlaid face in the slicer's
+  preview by tool, not only in a shaded render.
+
+<details>
+<summary>Incident and source</summary>
+
+- **Incident:** the vault's cap, base and stand carry black and gold inlays in a white or black body. The first
+  inlays were cut with solids whose top face lay in the body's surface. Renders of the cap showed white slivers over
+  the inlays. The cutters were changed to run from the inlay floor to 1 mm above the surface, and the slivers went.
+  Nothing in the session measured the slivers; they were seen in renders and removed at the source.
+- **Source:** 2026-11-18T01:19, 01:36; `vault.py` (the cap's "visible art" block).
+
+</details>
+
+### Place the wipe tower in the project file, and treat a tower conflict as an error
+- **Rule:** PrusaSlicer writes G-code even when it reports `gcode path conflicts found between WipeTower and <part>`.
+  That line is an error: the tower and the part share space. Write the tower's place into the project file, clear of
+  the parts, instead of moving the part until the message stops.
+- **Check:** the slice's log has no `[error]` line, and the result is `ok` (`cad-agent slice` fails a part whose log
+  carries an error). The project file read back has the tower where it was asked.
+
+<details>
+<summary>Incident and source</summary>
+
+- **Incident:** both objects were sliced from a hand-written 3MF with no wipe tower place, centred on the bed. Both
+  runs logged the conflict and still exported G-code. The session cleared it by passing a different `--center` to
+  PrusaSlicer (twice, by trial), which moved the part and left the tower at PrusaSlicer's default place.
+  `prusa3mf.write_project` writes the tower's place and reads it back; it was not used.
+- **Source:** 2026-11-13T22:00; 2026-11-18T00:32, 01:12.
+
+</details>
+
+### Record a sealed void's bridge notes as a decision, and print its coupon first
+- **Rule:** a void sealed inside a part (a light-reveal message, a hidden pocket) is roofed by bridges, and
+  PrusaSlicer reports them as "long bridging extrusions" or "floating bridge anchors". Find each note in the G-code
+  before calling it intended, record the intended ones as a decision with the void's width and roof thickness, and
+  print the smallest coupon that carries the same void before the full print.
+- **Check:** `bridge_report` lists the longest bridges with height and position, and each lies over a declared void.
+  The report says which notes were located and which were assumed. A coupon with the same void, skin and cover
+  thickness is sliced with the same settings.
+
+<details>
+<summary>Incident and source</summary>
+
+- **Incident:** the cap hides lettering as voids 1 to 2.6 mm wide under a 0.9 mm skin, to show against a light. Every
+  slice of the vault reported long bridging and floating bridge anchors, and one reported low bed adhesion for a
+  small plug. The session attributed the bridge notes to the voids because a coupon carrying only the voids drew
+  the same note. It did not list the bridges by position, so a bridge elsewhere in a 13-part plate would have been
+  reported under the same words. Whether the message shows through the chosen filament was a 2D estimate.
+- **Source:** 2026-11-18T00:32, 01:21, 01:42; `overrides.ini`; `light_test_coupon.3mf`.
+
+</details>

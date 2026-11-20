@@ -583,7 +583,7 @@ class CadModel extends (typeof HTMLElement === 'undefined' ? class {} : HTMLElem
     };
     this.stats = { parts: meshes.length, triangles: model.triangles, bytes: model.bytes };
     if (this.#addedTabStop && this.getAttribute('tabindex') === '0') {
-      if (this.ownerDocument.activeElement === this) apart.focus({ preventScroll: true });
+      if (this.getRootNode().activeElement === this) apart.focus({ preventScroll: true });
       this.removeAttribute('tabindex');
     }
     this.#addedTabStop = false;

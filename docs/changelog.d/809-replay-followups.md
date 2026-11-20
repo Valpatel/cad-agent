@@ -1,5 +1,5 @@
 **Fixed**
-- Replay viewer: the Play/Pause button is rewritten only when the playing state changes (and the custom speed option only when the speed does). It was rewritten every frame, and in WebKit (Safari) a press that spans a frame then did not pause: WebKit drops a click whose pressed text node is replaced before the release. A proof run with the rewrite put back failed a 150 ms press in WebKit and passed it in Chromium (#809, #820).
+- Replay viewer: the Play/Pause button is rewritten only when the playing state changes (and the custom speed option only when the speed does). It was rewritten every frame, and in WebKit (the engine Safari uses) a press that spans a frame then did not pause, most likely because WebKit drops a click whose pressed text node is replaced before the release. A proof run with the rewrite put back failed a 150 ms press in WebKit and passed it in Chromium (#809, #820).
 - Gyropup replay: the landing scenario shows its recorded largest fore-aft lean, 0.04°, instead of "0.0°". Every lean is shown to the two decimals Gyropup's summary records and labelled fore-aft (the pitch of the axle-to-centre-of-mass line, not sideways tilt); a run whose summary has none shows none. The receipt states how each shown figure is taken from the summary (#809).
 
 **Changed**

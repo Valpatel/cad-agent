@@ -164,8 +164,7 @@ stack:
     note: reports, renders, sites
     href: software/cadagent/publish/README.md
   - label: Involute gears
-    planned: 723
-    until: software/cadagent/mechanical/gears.py
+    href: docs/mechanical/gears.md
 - layer: Built on
   caption: Open source underneath
   blocks:

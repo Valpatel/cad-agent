@@ -4,7 +4,9 @@
 runs nothing. Features:
 
 * ``cad-parts``: one row per printable part — valid CAD, exactly one solid,
-  watertight STL, within the printer bed. Evidence: ``preview/part-<name>.png``.
+  watertight STL, within the printer bed, as recorded at build time. A declared
+  ``stl_sha256`` must match the current STL bytes; legacy records explicitly
+  report that STL freshness was not recorded. Evidence: ``preview/part-<name>.png``.
 * ``cad-print-files``: STL, 3MF and STEP present for every printed part.
 * A part made another way (a dossier card's ``material.process`` or ``cad: part_process:`` names welded fabrication,
   cut sheet, machining, moulding or a bought part; ``cadagent.manufacturing.process.part_processes``) is a **skip**
@@ -39,6 +41,7 @@ from cadagent.geometry import within_bed
 from cadagent.publish.htmlreport import SCHEMA_VERSION, canonical_status, render_page
 from cadagent.links import missing_links
 from cadagent.project import CadProject, Check, lookup, source_stamp
+from cadagent.review.evidence import hashes_are_current
 
 RESULTS_NAME = "cad-agent-results.json"
 REPORT_NAME = "cad-agent-report.html"
@@ -101,6 +104,15 @@ def _part_row(project: CadProject, part: str, info: Dict[str, Any], report_dir: 
     bounds = info.get("print_bounds_mm")
     bed = project.printer.bed_mm
     facts = []
+    if "stl_sha256" in info:
+        stl = project.exports_dir / f"{part}.stl"
+        binding = {"artifact_sha256": {str(stl): info["stl_sha256"]}}
+        if hashes_are_current(project.root, binding):
+            facts.append("STL bytes match recorded build checks")
+        else:
+            problems.append("STL binding missing, unreadable, changed or malformed; rebuild part evidence")
+    else:
+        facts.append("recorded build checks; STL freshness not recorded")
     if isinstance(bounds, list) and len(bounds) == 3:
         facts.append(f"{_fmt_mm(bounds)} mm")
     if bed:
@@ -119,7 +131,7 @@ def _part_row(project: CadProject, part: str, info: Dict[str, Any], report_dir: 
         if image.is_file() else None
     )
     ok = not problems
-    message = ("valid single solid · watertight · " if ok else "; ".join(problems) + " · ") + " · ".join(facts)
+    message = ("recorded valid single solid · watertight · " if ok else "; ".join(problems) + " · ") + " · ".join(facts)
     return _row(project.part_label(part), ok, message, "\n".join(problems), evidence)
 
 def holes_feature(project: CadProject) -> Dict[str, Any]:

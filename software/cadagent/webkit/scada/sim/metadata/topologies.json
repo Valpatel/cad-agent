@@ -112,7 +112,7 @@
     "software/cadagent/webkit/scada/ui/src/viewer/viewer.css": "658e5ae5555c3e38c4a139e9462e638620c19178bdf9de9d0e7af125262a85c6",
     "software/cadagent/webkit/scada/ui/src/viewer/viewer.mjs": "fb8e33c4eb234ed3ecf3c273bfeafaebfc5dbc032423a600f0032d4fa1f0b1c9",
     "software/cadagent/webkit/scada/ui/src/workspace/popover.css": "7192413b02f647ac2b21960ab35cfc5ec3e7a0232568816c574d0862cbc937fc",
-    "software/cadagent/webkit/scada/ui/src/workspace/popover.mjs": "4fdd4689d24712ca312aeaa9444d46140fa26300a6bb822d63326ba0d50606d5",
+    "software/cadagent/webkit/scada/ui/src/workspace/popover.mjs": "118539d243f4b62cbe055d9da8e6b7eeadfb366d7d50b26eab03563a727310a8",
     "software/cadagent/webkit/scada/ui/src/workspace/workspace.css": "ab34edc9ab0e19d181b50a7cb33c8f33f406113d195dd367728f16688e05fafd",
     "software/cadagent/webkit/scada/ui/src/workspace/workspace.mjs": "f5b61854a6bd3df76885abef47c55e9e5be7ae08c789afc7c5c33c938261a5e6",
     "tools/webkit/scada/explorer/scenario_gallery_docs.py": "29f638eb3de50d7cb85f3de6f6101a0d0855c446df6475395301ed1cb16f5856",

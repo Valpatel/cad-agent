@@ -789,8 +789,8 @@ Refused, with the reason in the `motion:<group>` message and `density[].symmetry
 Limits. This is a measurement, not a proof: the boundary is compared at sample points and the booleans and
 integrals are OCCT's. A feature smaller than those limits can leave a part with a measured order of symmetry even when it has only one such feature.
 The gate queries the actual sampled pose when the gap is within `touch_mm / 10` of the contact threshold, or shared or
-outside volume is within `overlap_mm3 / 2` of its threshold. Collision-onset bisection also uses actual poses. The verdict
-carries the assumption line for the shortcut only when a joint's poses were queried once. `symmetry=False` (`cad:
+outside volume is within `overlap_mm3 / 2` of its threshold. Collision-onset bisection also uses actual poses. The joint’s summary states when near-threshold pairs were rechecked at their sampled poses. The verdict
+carries the assumption line for the shortcut only when measured symmetry was used. `symmetry=False` (`cad:
 gates: motion: {symmetry: false}`) queries every sample.
 
 **Driven joints (one degree of freedom, several joints).** In a linkage one joint's value sets another's: the two

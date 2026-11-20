@@ -91,7 +91,7 @@ IDENTITY: Tuple[float, ...] = (1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0,
 SYMMETRY_ASSUMPTION = (       # stated only in a verdict where a joint's repeating poses were queried once
     "a revolute joint that carries no other joint, and whose moving parts each measure as unchanged by a rotation "
     "about its axis (a body of revolution, or a pattern repeating every 360/N deg), has samples that are the same "
-    "pose: each distinct pose is queried once. The measurement is on the solids and held under what this gate "
+    "pose: each distinct pose is queried once unless a pair needs a sampled-pose threshold check. The measurement is on the solids and held under what this gate "
     "reports: between two poses treated as one, each solid's boundary (compared at every vertex and at points "
     "inside every edge and face) moves by no more than touch_mm/20 and no more than overlap_mm3/4 of its volume "
     "changes place, kernel integration error included, so a pair's gap differs by no more than touch_mm/10 and its "
@@ -1051,13 +1051,21 @@ def run_motion(world: World, joints: Mapping[str, Any], *, tol: Tolerances = Tol
                         near.setdefault(jid, {}).setdefault((pair, placed), set()).add(round(vmap[jid][0], 9))
         for jid in sorted(near):
             measure_turn(jid, near[jid])
+        threshold_rechecks = set()
         last: Tuple[int, Any] = (-1, None)
         for pi, pair in candidates:
             if last[0] != pi:       # the same place for every part of a repeating body; fewer distinct poses
                 last = (pi, kernel_mats(vmaps[pi]) if turns else world_mats(vmaps[pi]))
             relation = world.relate(last[1], *pair)
             if turns and _near_symmetry_threshold(relation, tol):
-                relation = world.relate(world_mats(vmaps[pi]), *pair)
+                sampled = world_mats(vmaps[pi])
+                relation = world.relate(sampled, *pair)
+                for key in pair:
+                    joint = turner.get(key)
+                    body = world.body(key)
+                    if (joint in turns and joint not in threshold_rechecks
+                            and matrix_key(sampled.get(body, IDENTITY)) != matrix_key(last[1].get(body, IDENTITY))):
+                        threshold_rechecks.add(joint)
             pair_rows.setdefault(pair, []).append((pi, relation))
 
         # -- classify
@@ -1146,7 +1154,7 @@ def run_motion(world: World, joints: Mapping[str, Any], *, tol: Tolerances = Tol
             text += "; driven, not sampled: " + ", ".join(d["law"] for d in group_driven)
         for d in [x for row in density for x in [row] + row.get("drives", [])]:
             if "symmetry" in d:
-                text += "; " + _repeats_text(d["joint"], d["symmetry"])
+                text += "; " + _repeats_text(d["joint"], d["symmetry"], d["joint"] in threshold_rechecks)
             elif d["joint"] in unmeasured:
                 d["symmetry_not_measured"] = unmeasured[d["joint"]]
                 text += (f"; {d['joint']} is queried at every sample: the symmetry of {unmeasured[d['joint']]['part']} "
@@ -1327,15 +1335,16 @@ def _held(row: Mapping[str, Any]) -> str:
             f"{row['points']} boundary points (limit {row['limit_mm']:g})")
 
 
-def _repeats_text(jid: str, row: Mapping[str, Any]) -> str:
+def _repeats_text(jid: str, row: Mapping[str, Any], threshold_rechecks: bool) -> str:
     """The sentence of the ``motion:<group>`` message for a joint whose repeating poses were queried once. Each
     part is measured at its own period and held to its own limits, so a body whose parts repeat at different
     turns is reported per part, never as one difference "after one step" of the period they share."""
+    query = ("with near-threshold pairs rechecked at their sampled poses" if threshold_rechecks else "queried once")
     n = len(row["parts"])
     body = f"{jid}'s moving body ({n} part{'s' if n != 1 else ''}) measures as "
     if row["kind"] == "revolution":
         return (f"{body}a body of revolution about the joint axis (the largest difference over the three test "
-                f"angles is {_held(row)}): its {row['samples']} samples are one pose, queried once")
+                f"angles is {_held(row)}): its {row['samples']} samples are one pose, {query}")
     orders = {int(p["order"]) for p in row["parts"].values()}
     if orders == {int(row["order"])}:
         how = f"the difference after one such step is {_held(row)}"
@@ -1351,9 +1360,9 @@ def _repeats_text(jid: str, row: Mapping[str, Any]) -> str:
                + "; ".join(named) + more)
     body += f"repeating every {row['period_deg']:g} deg about the joint axis ({how})"
     if row["distinct_poses"] == 1:
-        return f"{body}: its {row['samples']} samples are one pose, queried once"
-    return (f"{body}: its {row['samples']} samples are {row['distinct_poses']} distinct poses of one period, each "
-            "queried once")
+        return f"{body}: its {row['samples']} samples are one pose, {query}"
+    detail = query if threshold_rechecks else "each queried once"
+    return f"{body}: its {row['samples']} samples are {row['distinct_poses']} distinct poses of one period, {detail}"
 
 
 def _carries(parent: Mapping[str, Optional[str]], ancestor: str, jid: str) -> bool:

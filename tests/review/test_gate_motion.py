@@ -1673,3 +1673,18 @@ def test_half_turn_checks_real_pose_at_the_collision_threshold():
     result, full = _same_checks(asm, joints, samples={"J": 5})
     assert result["stats"]["symmetric_joints"] == 1
     assert not full["pass"] and any(c["id"] == "collision:bar|pad" for c in result["checks"])
+    message = next(row["message"] for row in result["checks"] if row["id"] == "motion:J")
+    assert "near-threshold pairs rechecked at their sampled poses" in message
+
+
+def test_body_of_revolution_reports_threshold_rechecks_at_sampled_poses():
+    from cadagent.review.gates import Assembly
+
+    cq = _cq()
+    asm = Assembly()
+    asm.add("shaft", cq.Workplane("XY").cylinder(1, 3).val())
+    asm.add("pad", cq.Workplane("XY").box(2, 2, 2).translate((4.01, 0, 0)).val())
+    result, _ = _same_checks(asm, {"J": turn("shaft", "pad", (0, 360))}, samples={"J": 5}, refine_steps=0)
+    message = next(row["message"] for row in result["checks"] if row["id"] == "motion:J")
+    assert result["stats"]["kernel_queries"] > 1
+    assert "5 samples are one pose, with near-threshold pairs rechecked at their sampled poses" in message

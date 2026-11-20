@@ -31,8 +31,8 @@ The Linux build uses CMake 3.31.6 and Ninja (Python distribution 1.11.1.4). With
 ```sh
 source_dir="$(pwd -P)"
 emcmake cmake -S "$source_dir" -B build -G Ninja -DCMAKE_BUILD_TYPE=Release \
-  "-DCMAKE_C_FLAGS=-ffile-prefix-map=$source_dir=." \
-  "-DCMAKE_CXX_FLAGS=-ffile-prefix-map=$source_dir=." \
+  "-DCMAKE_C_FLAGS=-ffile-prefix-map=\"$source_dir\"=." \
+  "-DCMAKE_CXX_FLAGS=-ffile-prefix-map=\"$source_dir\"=." \
   -DCMAKE_EXE_LINKER_FLAGS=-sDYNAMIC_EXECUTION=0
 cmake --build build --target OcctImportJS
 ```

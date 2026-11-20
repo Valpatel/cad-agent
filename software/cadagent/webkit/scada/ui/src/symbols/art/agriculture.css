@@ -1,0 +1,46 @@
+/* Draft additive namespace. SVG geometry responds only to supplied state. */
+.scada-component .scada-agri-label{font-family:ui-monospace,monospace;font-size:8px;font-weight:600;letter-spacing:.25px;fill:#cdeee7}
+.scada-component .scada-agri-flow{animation:scada-agri-flow var(--agri-duration,2s) linear infinite}
+.scada-component .scada-agri-airflow{opacity:var(--agri-air-opacity,1)}
+.scada-component .scada-agri-vent-air{opacity:var(--agri-vent-air,0)}
+.scada-component .scada-agri-art[data-agri-active="false"] :is(.scada-agri-vent-air,.scada-agri-nft-stream){opacity:0}
+.scada-component .scada-agri-wave{animation:scada-agri-wave 4.8s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
+.scada-component .scada-agri-fish{animation:scada-agri-fish 5.6s ease-in-out infinite;animation-delay:var(--agri-delay,0s)}
+.scada-component .scada-agri-leaf{animation:scada-agri-leaf 5.4s ease-in-out infinite;transform-origin:0 0}
+.scada-component .scada-agri-bubble{animation:scada-agri-bubble calc(var(--agri-duration,2s)*1.6) linear infinite;animation-delay:var(--agri-delay,0s);opacity:var(--agri-air-opacity,.8)}
+.scada-component .scada-agri-media{animation:scada-agri-media 4s ease-in-out infinite;animation-delay:var(--agri-delay,0s)}
+.scada-component .scada-agri-drop{animation:scada-agri-drop var(--agri-duration,2s) linear infinite;animation-delay:var(--agri-delay,0s)}
+.scada-component .scada-agri-mist{animation:scada-agri-mist calc(var(--agri-duration,2s)*1.4) ease-in-out infinite;animation-delay:var(--agri-delay,0s);transform-origin:90px 105px}
+.scada-component .scada-agri-light-cell{animation:scada-agri-light 4.7s ease-in-out infinite;animation-delay:var(--agri-delay,0s)}
+.scada-component .scada-agri-light-ray{animation:scada-agri-light 4.7s ease-in-out infinite}
+.scada-component .scada-agri-fan{animation:scada-agri-spin var(--agri-duration,2s) linear infinite}
+.scada-component .scada-agri-sensor-wave{animation:scada-agri-sensor 3.5s ease-in-out infinite}
+.scada-component .scada-agri-monitor{animation:scada-agri-light 3.6s ease-in-out infinite}
+.scada-component .scada-agri-leak{animation:scada-agri-flow .8s linear infinite}
+.scada-component .scada-agri-heat{animation:scada-agri-heat 3s ease-in-out infinite}
+.scada-component .scada-agri-art[data-agri-active="false"] .scada-agri-motion,
+.scada-component .scada-agri-art[data-agri-active="false"] .scada-agri-monitor{animation-play-state:paused}
+.scada-component .scada-agri-art[data-agri-active="false"] :is(.scada-agri-bubbles,.scada-agri-drop,.scada-agri-mist,.scada-agri-light-beam){opacity:0}
+.scada-component .scada-agri-art[data-agri-active="false"] .scada-agri-light-cell{fill:#708579;opacity:.3}
+.scada-component .scada-agri-art[data-agri-active="false"][data-agri-type="grow-light"] .scada-agri-light-ray{opacity:0}
+.scada-component .scada-agri-art[data-agri-running="false"] *,
+.scada-component[data-status="offline"] .scada-agri-art *,
+.motion-paused .scada-component .scada-agri-art *{animation-play-state:paused!important}
+.scada-component .scada-agri-art[data-agri-phase="idle"] .scada-agri-flow,
+.scada-component .scada-agri-art[data-agri-phase="holding"] .scada-agri-flow{animation-play-state:paused}
+.scada-component .scada-biofilter-media[data-dry=true] .scada-agri-media{animation-play-state:paused!important}
+/* The chamber has one declared nozzle-fault state, not per-nozzle controls. */
+.scada-component[data-damage="nozzle-fault"] .scada-agri-art[data-agri-type="aeroponic-chamber"] .scada-agri-mist{animation-play-state:paused!important;opacity:0}
+@keyframes scada-agri-flow{to{stroke-dashoffset:-22}}
+@keyframes scada-agri-wave{50%{transform:scaleX(1.035) translateY(1px)}}
+@keyframes scada-agri-fish{50%{transform:translateX(6px) translateY(-2px)}}
+@keyframes scada-agri-leaf{50%{transform:rotate(3deg)}}
+@keyframes scada-agri-bubble{0%{transform:translateY(0);opacity:0}15%{opacity:var(--agri-air-opacity,.8)}85%{opacity:var(--agri-air-opacity,.8)}100%{transform:translateY(calc(var(--agri-rise,40px)*-1));opacity:0}}
+@keyframes scada-agri-media{50%{transform:translateY(-2px)}}
+@keyframes scada-agri-drop{0%{transform:translateY(0);opacity:0}15%{opacity:.8}85%{opacity:.8}100%{transform:translateY(var(--agri-drop,25px));opacity:0}}
+@keyframes scada-agri-mist{50%{transform:scaleX(.88);filter:brightness(1.12)}}
+@keyframes scada-agri-light{50%{filter:brightness(1.2)}}
+@keyframes scada-agri-spin{to{transform:rotate(360deg)}}
+@keyframes scada-agri-sensor{50%{transform:translateX(3px);opacity:.4}}
+@keyframes scada-agri-heat{50%{transform:translateY(-3px);opacity:.55}}
+@media(prefers-reduced-motion:reduce){.scada-component .scada-agri-art *{animation:none!important;transition:none!important}.scada-component .scada-agri-bubble{opacity:var(--agri-air-opacity,.8)}}

@@ -1,0 +1,78 @@
+/* Power-sector mechanisms. Rendered state is the clock authority; no timers. */
+.scada-component .scada-power-art{--scada-power-cycle:2.4s}
+.scada-component .scada-power-motion{animation-play-state:paused;transform-box:view-box}
+.scada-component .scada-power-rotor{animation:scada-power-spin var(--scada-power-cycle) linear infinite paused}
+.scada-component .scada-power-blade-shimmer{animation:scada-power-shimmer calc(var(--scada-power-cycle) * .5) ease-in-out infinite paused}
+.scada-component .scada-energy-flow{animation:scada-power-flow var(--scada-power-cycle) linear infinite paused;opacity:var(--scada-power-flow-opacity,1)}
+.scada-component .scada-electrical-flow{animation:scada-power-electrons var(--scada-power-cycle) linear infinite paused;opacity:var(--scada-power-current-opacity,1)}
+.scada-component .scada-power-flow-lane .scada-electrical-flow{opacity:var(--scada-power-flow-opacity,1)}
+.scada-component .scada-power-load-mark{opacity:calc(.15 + var(--scada-power-load,.6) * .85)}
+.scada-component .scada-power-flame{animation:scada-power-flame 1.9s ease-in-out infinite paused;transform-origin:78px 81px}
+.scada-component .scada-power-flame-core{animation:scada-power-flame 2.3s ease-in-out infinite paused;transform-origin:79px 82px}
+.scada-component .scada-power-drips{animation:scada-power-drip 1.7s linear infinite paused}
+.scada-component .scada-power-waterline{animation:scada-power-water 3.9s ease-in-out infinite paused}
+.scada-component :is(.scada-power-heat-rise,.scada-power-gas-plume){animation:scada-power-rise 3.6s ease-in-out infinite paused}
+.scada-component .scada-power-bubble{animation:scada-power-bubble 3.3s ease-in-out infinite paused}
+.scada-component .scada-power-current-lines{animation:scada-power-flow var(--scada-power-current-duration,3s) linear infinite paused}
+.scada-component .scada-power-ocean-wave{animation:scada-power-wave var(--scada-power-wave-duration,3s) ease-in-out infinite paused}
+.scada-component .scada-power-buoy{animation:scada-power-bob var(--scada-power-wave-duration,3s) ease-in-out infinite paused}
+.scada-component :is(.scada-power-monitor,.scada-power-charge,.scada-power-convert-pulse,.scada-power-field-pulse,.scada-power-protection-pulse,.scada-power-signal){animation:scada-power-pulse var(--scada-power-cycle) ease-in-out infinite paused}
+.scada-component .scada-power-arc{animation:scada-power-arc 2.8s ease-in-out infinite paused}
+.scada-component .scada-power-solar-glint{animation:scada-power-glint 4.7s ease-in-out infinite paused}
+.scada-component .scada-genset-piston{animation:scada-genset-piston calc(var(--scada-power-cycle) * .42) ease-in-out infinite paused}
+.scada-component:is([data-active=false],[data-failed=true]) .scada-genset-exhaust{opacity:0!important}
+.scada-component .scada-power-reverse,.scada-component .scada-power-reverse-flow :is(.scada-energy-flow,.scada-electrical-flow),
+.scada-component .scada-power-current[data-direction=ebb] .scada-power-current-lines{animation-direction:reverse}
+
+/* Activity drives production. The circulation and residual layers below have
+   separate supplied state, so stopping a shaft cannot drain or freeze a loop. */
+.scada-component[data-scada-host-state=false][data-active=true][data-running=true]:not([data-failed=true]):not([data-status=offline]) .scada-power-art :is(.scada-power-motion,.scada-power-monitor){animation-play-state:running}
+.scada-component[data-running=true]:not([data-status=offline]) .scada-power-art :is(.scada-power-flow-lane .scada-energy-flow,.scada-power-incident .scada-power-motion,.scada-power-incident.scada-power-arc,.scada-power-environment .scada-power-motion,.scada-power-thermal .scada-power-motion){animation-play-state:running}
+.scada-component .scada-power-art:is([data-power-speed-zero=true],[data-power-drive-blocked=true]) .scada-power-drive .scada-power-motion,
+.scada-component .scada-power-drive[data-drive-blocked=true] .scada-power-motion{animation-play-state:paused!important}
+.scada-component .scada-power-art:is([data-power-speed-zero=true],[data-power-drive-blocked=true]) .scada-electrical-flow{animation-play-state:paused!important;opacity:0!important}
+.scada-component .scada-genset-art:is([data-power-speed-zero=true],[data-power-drive-blocked=true]) .scada-genset-exhaust{opacity:0!important}
+.scada-component:is([data-active=false],[data-failed=true]) .scada-power-art :is(.scada-power-drive .scada-power-motion,.scada-power-combustion .scada-power-motion,.scada-electrical-flow,.scada-power-convert-pulse,.scada-power-field-pulse,.scada-power-charge){animation-play-state:paused!important}
+.scada-component:is([data-active=false],[data-failed=true]) .scada-power-combustion,
+.scada-component .scada-power-combustion[data-lit=false]{opacity:0}
+.scada-component:is([data-active=false],[data-failed=true]) .scada-power-art .scada-electrical-flow{opacity:0}
+.scada-component .scada-power-art [data-flowing=false] :is(.scada-energy-flow,.scada-electrical-flow),
+.scada-component .scada-power-art [data-conducting=false] :is(.scada-electrical-flow,.scada-power-convert-pulse,.scada-power-field-pulse),
+.scada-component .scada-power-art [data-connected=false] :is(.scada-power-signal,.scada-power-monitor),
+.scada-component .scada-power-art [data-cell-active=false] .scada-power-charge,
+.scada-component .scada-power-art [data-stressed=false] .scada-power-protection-pulse{animation-play-state:paused!important;opacity:0!important}
+.scada-component .scada-power-art [data-automatic=false] .scada-power-monitor{animation-play-state:paused!important}
+.scada-component .scada-power-art [data-wave=false] :is(.scada-power-buoy,.scada-power-ocean-wave),
+.scada-component .scada-power-art .scada-power-current:is([data-current=false],[data-direction=stopped]) .scada-power-current-lines{animation-play-state:paused!important}
+.scada-component[data-status=warning] .scada-power-indicator>rect{stroke:#ffd38a}
+.scada-component[data-failed=true] .scada-power-indicator>rect{stroke:#ff9cbe}
+.scada-component:is([data-running=false],[data-status=offline]) .scada-power-art :is(.scada-power-motion,.scada-power-monitor,.scada-power-arc),
+.motion-paused .scada-component .scada-power-art *,
+.is-paused .scada-component .scada-power-art *,
+.is-preview-paused .scada-component .scada-power-art *,
+.twin-document-hidden .scada-component .scada-power-art *{animation-play-state:paused!important}
+
+@keyframes scada-power-spin{to{transform:rotate(360deg)}}
+@keyframes scada-power-shimmer{0%,100%{opacity:.55}50%{opacity:1}}
+@keyframes scada-power-flow{to{stroke-dashoffset:-24}}
+@keyframes scada-power-electrons{to{stroke-dashoffset:-20}}
+@keyframes scada-power-flame{0%,100%{transform:scaleX(var(--scada-power-flame,.7)) scaleY(.94)}50%{transform:scaleX(calc(var(--scada-power-flame,.7) + .08)) scaleY(1.04)}}
+@keyframes scada-power-drip{to{stroke-dashoffset:-16}}
+@keyframes scada-power-water{0%,100%{transform:translateY(0)}50%{transform:translateY(1.2px)}}
+@keyframes scada-power-rise{0%,100%{transform:translateY(0);opacity:.45}50%{transform:translateY(-3px);opacity:.8}}
+@keyframes scada-power-bubble{0%,100%{transform:translateY(0);opacity:.5}50%{transform:translateY(-3px);opacity:1}}
+@keyframes scada-power-wave{0%,100%{transform:translateY(0)}50%{transform:translateY(var(--scada-power-wave-height,3px))}}
+@keyframes scada-power-bob{0%,100%{transform:translateY(calc(var(--scada-power-wave-height,3px) * -.5))}50%{transform:translateY(calc(var(--scada-power-wave-height,3px) * .5))}}
+@keyframes scada-power-pulse{0%,100%{opacity:.55}50%{opacity:1}}
+@keyframes scada-power-arc{0%,100%{opacity:.5}50%{opacity:.95}}
+@keyframes scada-power-glint{0%,100%{opacity:.4}50%{opacity:.85}}
+@keyframes scada-genset-piston{0%,100%{transform:translateY(0)}50%{transform:translateY(var(--scada-genset-stroke,1.5px))}}
+@media(prefers-reduced-motion:reduce){
+ .scada-component .scada-power-art :is(.scada-power-motion,.scada-power-monitor,.scada-power-arc){animation:none!important;transform:none!important}
+}
+
+/* Protection devices retain their physical identity without color or motion. */
+.scada-component .scada-power-detail-label{fill:#b7cfda;font:600 7px ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.2px}
+.scada-component .scada-relay-function{fill:#c4f5e7;font:700 15px ui-monospace,SFMono-Regular,Consolas,monospace}
+.scada-component .scada-relay-reading{fill:#a9eddc;font:600 11px ui-monospace,SFMono-Regular,Consolas,monospace}
+.scada-component .scada-relay-display[data-connected=false] :is(.scada-relay-function,.scada-relay-reading){fill:#8fa6b5}

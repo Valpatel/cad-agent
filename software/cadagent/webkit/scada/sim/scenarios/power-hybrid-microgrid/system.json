@@ -1,0 +1,2903 @@
+{
+  "format": "scada-system",
+  "version": 1,
+  "system": {
+    "id": "power-hybrid-microgrid",
+    "label": "Hybrid islandable microgrid",
+    "description": "PV/converter, battery/converter and a gas genset serve local loads through an explicitly controlled grid connection. Island operation is a connection state of the same graph."
+  },
+  "components": [
+    {
+      "id": "pv",
+      "type": "solar-panel",
+      "label": "Local PV array",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/pv/active",
+        "running": "/components/pv/running",
+        "fault": "/components/pv/fault",
+        "status": "/components/pv/status",
+        "load": "/components/pv/load",
+        "damage": "/components/pv/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "P18",
+        "P20"
+      ]
+    },
+    {
+      "id": "pvInverter",
+      "type": "power-inverter",
+      "label": "PV DC / AC inverter",
+      "variant": "dc-to-ac",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "direction": "forward",
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/pvInverter/active",
+        "running": "/components/pvInverter/running",
+        "fault": "/components/pvInverter/fault",
+        "status": "/components/pvInverter/status",
+        "load": "/components/pvInverter/load",
+        "direction": "/components/pvInverter/direction",
+        "damage": "/components/pvInverter/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "P18",
+        "P20"
+      ]
+    },
+    {
+      "id": "engine",
+      "type": "generator",
+      "label": "Local natural-gas genset",
+      "variant": "natural-gas-enclosed",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/engine/active",
+        "running": "/components/engine/running",
+        "fault": "/components/engine/fault",
+        "status": "/components/engine/status",
+        "load": "/components/engine/load",
+        "speed": "/components/engine/speed",
+        "damage": "/components/engine/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "P18",
+        "P20"
+      ]
+    },
+    {
+      "id": "fuel",
+      "type": "gas-holder",
+      "label": "Explicit natural-gas supply",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "level": 55,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/fuel/active",
+        "running": "/components/fuel/running",
+        "fault": "/components/fuel/fault",
+        "status": "/components/fuel/status",
+        "level": "/components/fuel/level",
+        "damage": "/components/fuel/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "P18",
+        "P20"
+      ]
+    },
+    {
+      "id": "regulator",
+      "type": "fuel-pressure-regulator",
+      "label": "Fuel-gas pressure regulator",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "open": true,
+        "opening": 100,
+        "pressure": 45,
+        "flow": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/regulator/active",
+        "running": "/components/regulator/running",
+        "fault": "/components/regulator/fault",
+        "status": "/components/regulator/status",
+        "open": "/components/regulator/open",
+        "opening": "/components/regulator/opening",
+        "pressure": "/components/regulator/pressure",
+        "flow": "/components/regulator/flow",
+        "damage": "/components/regulator/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "P18",
+        "P20"
+      ]
+    },
+    {
+      "id": "battery",
+      "type": "battery",
+      "label": "Finite island-support DC storage",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "level": 55,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/battery/active",
+        "running": "/components/battery/running",
+        "fault": "/components/battery/fault",
+        "status": "/components/battery/status",
+        "level": "/components/battery/level",
+        "damage": "/components/battery/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "P18",
+        "P20"
+      ]
+    },
+    {
+      "id": "storageConverter",
+      "type": "power-inverter",
+      "label": "Bidirectional storage conversion",
+      "variant": "bidirectional",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "direction": "forward",
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/storageConverter/active",
+        "running": "/components/storageConverter/running",
+        "fault": "/components/storageConverter/fault",
+        "status": "/components/storageConverter/status",
+        "load": "/components/storageConverter/load",
+        "direction": "/components/storageConverter/direction",
+        "damage": "/components/storageConverter/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "P18",
+        "P20"
+      ]
+    },
+    {
+      "id": "localBay",
+      "type": "hv-circuit-breaker",
+      "label": "Local AC connection bay",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "open": false,
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/localBay/active",
+        "running": "/components/localBay/running",
+        "fault": "/components/localBay/fault",
+        "status": "/components/localBay/status",
+        "open": "/components/localBay/open",
+        "load": "/components/localBay/load",
+        "damage": "/components/localBay/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "P18",
+        "P20"
+      ]
+    },
+    {
+      "id": "grid",
+      "type": "transformer",
+      "label": "Explicit utility-import boundary",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/grid/active",
+        "running": "/components/grid/running",
+        "fault": "/components/grid/fault",
+        "status": "/components/grid/status",
+        "load": "/components/grid/load",
+        "damage": "/components/grid/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "P18",
+        "P20"
+      ]
+    },
+    {
+      "id": "gridTie",
+      "type": "hv-circuit-breaker",
+      "label": "Explicit grid-tie state",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "open": false,
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/gridTie/active",
+        "running": "/components/gridTie/running",
+        "fault": "/components/gridTie/fault",
+        "status": "/components/gridTie/status",
+        "open": "/components/gridTie/open",
+        "load": "/components/gridTie/load",
+        "damage": "/components/gridTie/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "P18",
+        "P20"
+      ]
+    },
+    {
+      "id": "load",
+      "type": "motor",
+      "label": "Local microgrid demand",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/load/active",
+        "running": "/components/load/running",
+        "fault": "/components/load/fault",
+        "status": "/components/load/status",
+        "load": "/components/load/load",
+        "speed": "/components/load/speed",
+        "damage": "/components/load/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "P18",
+        "P20"
+      ]
+    },
+    {
+      "id": "station",
+      "type": "transformer",
+      "label": "Explicit station-service boundary",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/station/active",
+        "running": "/components/station/running",
+        "fault": "/components/station/fault",
+        "status": "/components/station/status",
+        "load": "/components/station/load",
+        "damage": "/components/station/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "P18",
+        "P20"
+      ]
+    },
+    {
+      "id": "plc",
+      "type": "plc-rack",
+      "label": "Shared plant controller",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "connected": true,
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/plc/active",
+        "running": "/components/plc/running",
+        "fault": "/components/plc/fault",
+        "status": "/components/plc/status",
+        "connected": "/components/plc/connected",
+        "load": "/components/plc/load",
+        "damage": "/components/plc/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "P18",
+        "P20"
+      ]
+    },
+    {
+      "id": "dcService",
+      "type": "power-rectifier",
+      "label": "Explicit station AC/DC service",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "direction": "forward",
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/dcService/active",
+        "running": "/components/dcService/running",
+        "fault": "/components/dcService/fault",
+        "status": "/components/dcService/status",
+        "load": "/components/dcService/load",
+        "direction": "/components/dcService/direction",
+        "damage": "/components/dcService/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "P18",
+        "P20"
+      ]
+    },
+    {
+      "id": "engineAir",
+      "type": "fan",
+      "label": "Explicit combustion-air boundary",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/engineAir/active",
+        "running": "/components/engineAir/running",
+        "fault": "/components/engineAir/fault",
+        "status": "/components/engineAir/status",
+        "load": "/components/engineAir/load",
+        "speed": "/components/engineAir/speed",
+        "damage": "/components/engineAir/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "P18",
+        "P20"
+      ]
+    },
+    {
+      "id": "engineExhaust",
+      "type": "gas-holder",
+      "label": "Explicit combustion-exhaust boundary",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "level": 55,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/engineExhaust/active",
+        "running": "/components/engineExhaust/running",
+        "fault": "/components/engineExhaust/fault",
+        "status": "/components/engineExhaust/status",
+        "level": "/components/engineExhaust/level",
+        "damage": "/components/engineExhaust/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "P18",
+        "P20"
+      ]
+    },
+    {
+      "id": "acBus",
+      "type": "busbar",
+      "variant": "bidirectional",
+      "label": "Common AC bus \u00b7 import / storage / export",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/acBus/active",
+        "running": "/components/acBus/running",
+        "fault": "/components/acBus/fault",
+        "status": "/components/acBus/status",
+        "load": "/components/acBus/load",
+        "damage": "/components/acBus/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "P18",
+        "P20"
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "fuel-outlet-to-regulator-inlet",
+      "from": {
+        "component": "fuel",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "regulator",
+        "port": "inlet"
+      },
+      "medium": "gas",
+      "label": "Natural gas",
+      "flowBinding": "/flows/fuel-outlet-to-regulator-inlet"
+    },
+    {
+      "id": "regulator-outlet-to-engine-fuel",
+      "from": {
+        "component": "regulator",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "engine",
+        "port": "fuel"
+      },
+      "medium": "gas",
+      "label": "Regulated fuel",
+      "flowBinding": "/flows/regulator-outlet-to-engine-fuel"
+    },
+    {
+      "id": "pv-dc-to-pvInverter-dc",
+      "from": {
+        "component": "pv",
+        "port": "dc"
+      },
+      "to": {
+        "component": "pvInverter",
+        "port": "dc"
+      },
+      "medium": "electricity",
+      "label": "electricity",
+      "flowBinding": "/flows/pv-dc-to-pvInverter-dc"
+    },
+    {
+      "id": "pvInverter-ac-to-acBus-supply",
+      "from": {
+        "component": "pvInverter",
+        "port": "ac"
+      },
+      "to": {
+        "component": "acBus",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "label": "electricity",
+      "flowBinding": "/flows/pvInverter-ac-to-acBus-supply"
+    },
+    {
+      "id": "engine-output-to-acBus-supply",
+      "from": {
+        "component": "engine",
+        "port": "output"
+      },
+      "to": {
+        "component": "acBus",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "label": "electricity",
+      "flowBinding": "/flows/engine-output-to-acBus-supply"
+    },
+    {
+      "id": "grid-secondary-to-gridTie-line",
+      "from": {
+        "component": "grid",
+        "port": "secondary"
+      },
+      "to": {
+        "component": "gridTie",
+        "port": "line"
+      },
+      "medium": "electricity",
+      "label": "electricity",
+      "flowBinding": "/flows/grid-secondary-to-gridTie-line"
+    },
+    {
+      "id": "gridTie-load-to-acBus-supply",
+      "from": {
+        "component": "gridTie",
+        "port": "load"
+      },
+      "to": {
+        "component": "acBus",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "label": "electricity",
+      "flowBinding": "/flows/gridTie-load-to-acBus-supply"
+    },
+    {
+      "id": "localBay-load-to-load-supply",
+      "from": {
+        "component": "localBay",
+        "port": "load"
+      },
+      "to": {
+        "component": "load",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "label": "electricity",
+      "flowBinding": "/flows/localBay-load-to-load-supply"
+    },
+    {
+      "id": "battery-dc-to-storageConverter-dc",
+      "from": {
+        "component": "battery",
+        "port": "dc"
+      },
+      "to": {
+        "component": "storageConverter",
+        "port": "dc"
+      },
+      "medium": "electricity",
+      "label": "Storage DC",
+      "flowBinding": "/flows/battery-dc-to-storageConverter-dc"
+    },
+    {
+      "id": "storageConverter-ac-to-acBus-branch-a",
+      "from": {
+        "component": "storageConverter",
+        "port": "ac"
+      },
+      "to": {
+        "component": "acBus",
+        "port": "branch-a"
+      },
+      "medium": "electricity",
+      "label": "Storage AC",
+      "flowBinding": "/flows/storageConverter-ac-to-acBus-branch-a"
+    },
+    {
+      "id": "station-secondary-to-dcService-ac",
+      "from": {
+        "component": "station",
+        "port": "secondary"
+      },
+      "to": {
+        "component": "dcService",
+        "port": "ac"
+      },
+      "medium": "electricity",
+      "label": "Station AC input",
+      "flowBinding": "/flows/station-secondary-to-dcService-ac"
+    },
+    {
+      "id": "station-secondary-to-plc-power",
+      "from": {
+        "component": "station",
+        "port": "secondary"
+      },
+      "to": {
+        "component": "plc",
+        "port": "power"
+      },
+      "medium": "electricity",
+      "label": "Station control power",
+      "flowBinding": "/flows/station-secondary-to-plc-power"
+    },
+    {
+      "id": "dcService-dc-to-gridTie-supply",
+      "from": {
+        "component": "dcService",
+        "port": "dc"
+      },
+      "to": {
+        "component": "gridTie",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "label": "Station auxiliary DC",
+      "flowBinding": "/flows/dcService-dc-to-gridTie-supply"
+    },
+    {
+      "id": "dcService-dc-to-localBay-supply",
+      "from": {
+        "component": "dcService",
+        "port": "dc"
+      },
+      "to": {
+        "component": "localBay",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "label": "Station auxiliary DC",
+      "flowBinding": "/flows/dcService-dc-to-localBay-supply"
+    },
+    {
+      "id": "plc-io-to-storageConverter-control",
+      "from": {
+        "component": "plc",
+        "port": "io"
+      },
+      "to": {
+        "component": "storageConverter",
+        "port": "control"
+      },
+      "medium": "data",
+      "label": "data",
+      "flowBinding": "/flows/plc-io-to-storageConverter-control"
+    },
+    {
+      "id": "plc-io-to-gridTie-control",
+      "from": {
+        "component": "plc",
+        "port": "io"
+      },
+      "to": {
+        "component": "gridTie",
+        "port": "control"
+      },
+      "medium": "data",
+      "label": "data",
+      "flowBinding": "/flows/plc-io-to-gridTie-control"
+    },
+    {
+      "id": "plc-io-to-pvInverter-control",
+      "from": {
+        "component": "plc",
+        "port": "io"
+      },
+      "to": {
+        "component": "pvInverter",
+        "port": "control"
+      },
+      "medium": "data",
+      "label": "data",
+      "flowBinding": "/flows/plc-io-to-pvInverter-control"
+    },
+    {
+      "id": "engineAir-outlet-to-engine-air",
+      "from": {
+        "component": "engineAir",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "engine",
+        "port": "air"
+      },
+      "medium": "air",
+      "label": "Combustion air",
+      "flowBinding": "/flows/engineAir-outlet-to-engine-air"
+    },
+    {
+      "id": "station-secondary-to-engineAir-supply",
+      "from": {
+        "component": "station",
+        "port": "secondary"
+      },
+      "to": {
+        "component": "engineAir",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "label": "Air supply power",
+      "flowBinding": "/flows/station-secondary-to-engineAir-supply"
+    },
+    {
+      "id": "engine-exhaust-to-engineExhaust-inlet",
+      "from": {
+        "component": "engine",
+        "port": "exhaust"
+      },
+      "to": {
+        "component": "engineExhaust",
+        "port": "inlet"
+      },
+      "medium": "gas",
+      "label": "Combustion exhaust",
+      "flowBinding": "/flows/engine-exhaust-to-engineExhaust-inlet"
+    },
+    {
+      "id": "acBus-branch-b-to-localBay-line",
+      "from": {
+        "component": "acBus",
+        "port": "branch-b"
+      },
+      "to": {
+        "component": "localBay",
+        "port": "line"
+      },
+      "medium": "electricity",
+      "label": "AC bus to isolated load/export bay",
+      "flowBinding": "/flows/acBus-branch-b-to-localBay-line"
+    }
+  ],
+  "views": [
+    {
+      "id": "sources",
+      "label": "Local solar and engine sources",
+      "canvas": {
+        "width": 1280,
+        "height": 940
+      },
+      "placements": [
+        {
+          "component": "pv",
+          "x": 60,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "pvInverter",
+          "x": 360,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "fuel",
+          "x": 660,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "regulator",
+          "x": 960,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "engine",
+          "x": 960,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "acBus",
+          "x": 660,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "localBay",
+          "x": 360,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "engineAir",
+          "x": 60,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "engineExhaust",
+          "x": 60,
+          "y": 620,
+          "width": 200,
+          "height": 190
+        }
+      ],
+      "routes": [
+        {
+          "connection": "fuel-outlet-to-regulator-inlet",
+          "points": [
+            {
+              "x": 860,
+              "y": 155
+            },
+            {
+              "x": 960,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "regulator-outlet-to-engine-fuel",
+          "points": [
+            {
+              "x": 1060,
+              "y": 250
+            },
+            {
+              "x": 1060,
+              "y": 340
+            }
+          ]
+        },
+        {
+          "connection": "pv-dc-to-pvInverter-dc",
+          "points": [
+            {
+              "x": 260,
+              "y": 155
+            },
+            {
+              "x": 360,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "pvInverter-ac-to-acBus-supply",
+          "points": [
+            {
+              "x": 560,
+              "y": 155
+            },
+            {
+              "x": 584,
+              "y": 155
+            },
+            {
+              "x": 584,
+              "y": 316
+            },
+            {
+              "x": 636,
+              "y": 316
+            },
+            {
+              "x": 636,
+              "y": 435
+            },
+            {
+              "x": 660,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "engine-output-to-acBus-supply",
+          "points": [
+            {
+              "x": 960,
+              "y": 435
+            },
+            {
+              "x": 860,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "engineAir-outlet-to-engine-air",
+          "points": [
+            {
+              "x": 260,
+              "y": 435
+            },
+            {
+              "x": 336,
+              "y": 435
+            },
+            {
+              "x": 336,
+              "y": 316
+            },
+            {
+              "x": 936,
+              "y": 316
+            },
+            {
+              "x": 936,
+              "y": 435
+            },
+            {
+              "x": 960,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "engine-exhaust-to-engineExhaust-inlet",
+          "points": [
+            {
+              "x": 960,
+              "y": 435
+            },
+            {
+              "x": 936,
+              "y": 435
+            },
+            {
+              "x": 936,
+              "y": 596
+            },
+            {
+              "x": 284,
+              "y": 596
+            },
+            {
+              "x": 284,
+              "y": 715
+            },
+            {
+              "x": 260,
+              "y": 715
+            }
+          ]
+        },
+        {
+          "connection": "acBus-branch-b-to-localBay-line",
+          "points": [
+            {
+              "x": 660,
+              "y": 435
+            },
+            {
+              "x": 560,
+              "y": 435
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "storage",
+      "label": "Finite island-support storage",
+      "canvas": {
+        "width": 980,
+        "height": 660
+      },
+      "placements": [
+        {
+          "component": "battery",
+          "x": 60,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "storageConverter",
+          "x": 360,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "acBus",
+          "x": 660,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "localBay",
+          "x": 660,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        }
+      ],
+      "routes": [
+        {
+          "connection": "battery-dc-to-storageConverter-dc",
+          "points": [
+            {
+              "x": 260,
+              "y": 155
+            },
+            {
+              "x": 360,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "storageConverter-ac-to-acBus-branch-a",
+          "points": [
+            {
+              "x": 560,
+              "y": 155
+            },
+            {
+              "x": 660,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "acBus-branch-b-to-localBay-line",
+          "points": [
+            {
+              "x": 760,
+              "y": 250
+            },
+            {
+              "x": 760,
+              "y": 340
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "island",
+      "label": "Explicit grid-tie and local load",
+      "canvas": {
+        "width": 980,
+        "height": 660
+      },
+      "placements": [
+        {
+          "component": "grid",
+          "x": 60,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "gridTie",
+          "x": 360,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "acBus",
+          "x": 660,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "localBay",
+          "x": 660,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "load",
+          "x": 360,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        }
+      ],
+      "routes": [
+        {
+          "connection": "grid-secondary-to-gridTie-line",
+          "points": [
+            {
+              "x": 260,
+              "y": 155
+            },
+            {
+              "x": 360,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "gridTie-load-to-acBus-supply",
+          "points": [
+            {
+              "x": 560,
+              "y": 155
+            },
+            {
+              "x": 660,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "localBay-load-to-load-supply",
+          "points": [
+            {
+              "x": 660,
+              "y": 435
+            },
+            {
+              "x": 560,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "acBus-branch-b-to-localBay-line",
+          "points": [
+            {
+              "x": 760,
+              "y": 250
+            },
+            {
+              "x": 760,
+              "y": 340
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "controls",
+      "label": "Shared controls and station service",
+      "canvas": {
+        "width": 980,
+        "height": 660
+      },
+      "placements": [
+        {
+          "component": "station",
+          "x": 60,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "plc",
+          "x": 360,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "gridTie",
+          "x": 660,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "storageConverter",
+          "x": 660,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "pvInverter",
+          "x": 360,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "dcService",
+          "x": 60,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        }
+      ],
+      "routes": [
+        {
+          "connection": "station-secondary-to-dcService-ac",
+          "points": [
+            {
+              "x": 160,
+              "y": 250
+            },
+            {
+              "x": 160,
+              "y": 340
+            }
+          ]
+        },
+        {
+          "connection": "station-secondary-to-plc-power",
+          "points": [
+            {
+              "x": 260,
+              "y": 155
+            },
+            {
+              "x": 360,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "dcService-dc-to-gridTie-supply",
+          "points": [
+            {
+              "x": 260,
+              "y": 435
+            },
+            {
+              "x": 284,
+              "y": 435
+            },
+            {
+              "x": 284,
+              "y": 274
+            },
+            {
+              "x": 636,
+              "y": 274
+            },
+            {
+              "x": 636,
+              "y": 155
+            },
+            {
+              "x": 660,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "plc-io-to-storageConverter-control",
+          "points": [
+            {
+              "x": 560,
+              "y": 155
+            },
+            {
+              "x": 584,
+              "y": 155
+            },
+            {
+              "x": 584,
+              "y": 316
+            },
+            {
+              "x": 636,
+              "y": 316
+            },
+            {
+              "x": 636,
+              "y": 435
+            },
+            {
+              "x": 660,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "plc-io-to-gridTie-control",
+          "points": [
+            {
+              "x": 560,
+              "y": 155
+            },
+            {
+              "x": 660,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "plc-io-to-pvInverter-control",
+          "points": [
+            {
+              "x": 460,
+              "y": 250
+            },
+            {
+              "x": 460,
+              "y": 340
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "commands": [
+    {
+      "id": "pv-enabled",
+      "label": "Equipment enabled",
+      "component": "pv",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "pv"
+      }
+    },
+    {
+      "id": "pv-load",
+      "label": "Requested output / load (%)",
+      "component": "pv",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "pv"
+      }
+    },
+    {
+      "id": "pv-fault",
+      "label": "Inject fictional fault",
+      "component": "pv",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "pv",
+        "value": true
+      }
+    },
+    {
+      "id": "pv-repair",
+      "label": "Repair damage",
+      "component": "pv",
+      "action": "repair",
+      "arguments": {
+        "equipment": "pv"
+      }
+    },
+    {
+      "id": "pv-environment",
+      "label": "Shared environmental light index",
+      "component": "pv",
+      "action": "setEnvironment",
+      "arguments": {
+        "key": "light"
+      }
+    },
+    {
+      "id": "pvInverter-enabled",
+      "label": "Equipment enabled",
+      "component": "pvInverter",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "pvInverter"
+      }
+    },
+    {
+      "id": "pvInverter-load",
+      "label": "Requested output / load (%)",
+      "component": "pvInverter",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "pvInverter"
+      }
+    },
+    {
+      "id": "pvInverter-fault",
+      "label": "Inject fictional fault",
+      "component": "pvInverter",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "pvInverter",
+        "value": true
+      }
+    },
+    {
+      "id": "pvInverter-repair",
+      "label": "Repair damage",
+      "component": "pvInverter",
+      "action": "repair",
+      "arguments": {
+        "equipment": "pvInverter"
+      }
+    },
+    {
+      "id": "pvInverter-mode-forward",
+      "label": "Forward conversion",
+      "component": "pvInverter",
+      "action": "setMode",
+      "arguments": {
+        "equipment": "pvInverter",
+        "value": "forward"
+      }
+    },
+    {
+      "id": "pvInverter-mode-idle",
+      "label": "Idle conversion",
+      "component": "pvInverter",
+      "action": "setMode",
+      "arguments": {
+        "equipment": "pvInverter",
+        "value": "idle"
+      }
+    },
+    {
+      "id": "engine-enabled",
+      "label": "Equipment enabled",
+      "component": "engine",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "engine"
+      }
+    },
+    {
+      "id": "engine-load",
+      "label": "Requested output / load (%)",
+      "component": "engine",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "engine"
+      }
+    },
+    {
+      "id": "engine-fault",
+      "label": "Inject fictional fault",
+      "component": "engine",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "engine",
+        "value": true
+      }
+    },
+    {
+      "id": "engine-repair",
+      "label": "Repair damage",
+      "component": "engine",
+      "action": "repair",
+      "arguments": {
+        "equipment": "engine"
+      }
+    },
+    {
+      "id": "fuel-enabled",
+      "label": "Equipment enabled",
+      "component": "fuel",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "fuel"
+      }
+    },
+    {
+      "id": "fuel-load",
+      "label": "Requested output / load (%)",
+      "component": "fuel",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "fuel"
+      }
+    },
+    {
+      "id": "fuel-fault",
+      "label": "Inject fictional fault",
+      "component": "fuel",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "fuel",
+        "value": true
+      }
+    },
+    {
+      "id": "fuel-repair",
+      "label": "Repair damage",
+      "component": "fuel",
+      "action": "repair",
+      "arguments": {
+        "equipment": "fuel"
+      }
+    },
+    {
+      "id": "regulator-enabled",
+      "label": "Equipment enabled",
+      "component": "regulator",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "regulator"
+      }
+    },
+    {
+      "id": "regulator-load",
+      "label": "Requested output / load (%)",
+      "component": "regulator",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "regulator"
+      }
+    },
+    {
+      "id": "regulator-fault",
+      "label": "Inject fictional fault",
+      "component": "regulator",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "regulator",
+        "value": true
+      }
+    },
+    {
+      "id": "regulator-repair",
+      "label": "Repair damage",
+      "component": "regulator",
+      "action": "repair",
+      "arguments": {
+        "equipment": "regulator"
+      }
+    },
+    {
+      "id": "regulator-open",
+      "label": "Flow path open",
+      "component": "regulator",
+      "action": "setOpen",
+      "arguments": {
+        "equipment": "regulator"
+      }
+    },
+    {
+      "id": "battery-enabled",
+      "label": "Equipment enabled",
+      "component": "battery",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "battery"
+      }
+    },
+    {
+      "id": "battery-load",
+      "label": "Requested output / load (%)",
+      "component": "battery",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "battery"
+      }
+    },
+    {
+      "id": "battery-fault",
+      "label": "Inject fictional fault",
+      "component": "battery",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "battery",
+        "value": true
+      }
+    },
+    {
+      "id": "battery-repair",
+      "label": "Repair damage",
+      "component": "battery",
+      "action": "repair",
+      "arguments": {
+        "equipment": "battery"
+      }
+    },
+    {
+      "id": "battery-mode-discharge",
+      "label": "Discharge stored energy",
+      "component": "battery",
+      "action": "setMode",
+      "arguments": {
+        "equipment": "battery",
+        "value": "discharge"
+      }
+    },
+    {
+      "id": "battery-mode-charge",
+      "label": "Charge stored energy",
+      "component": "battery",
+      "action": "setMode",
+      "arguments": {
+        "equipment": "battery",
+        "value": "charge"
+      }
+    },
+    {
+      "id": "battery-mode-idle",
+      "label": "Idle conversion",
+      "component": "battery",
+      "action": "setMode",
+      "arguments": {
+        "equipment": "battery",
+        "value": "idle"
+      }
+    },
+    {
+      "id": "storageConverter-enabled",
+      "label": "Equipment enabled",
+      "component": "storageConverter",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "storageConverter"
+      }
+    },
+    {
+      "id": "storageConverter-load",
+      "label": "Requested output / load (%)",
+      "component": "storageConverter",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "storageConverter"
+      }
+    },
+    {
+      "id": "storageConverter-fault",
+      "label": "Inject fictional fault",
+      "component": "storageConverter",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "storageConverter",
+        "value": true
+      }
+    },
+    {
+      "id": "storageConverter-repair",
+      "label": "Repair damage",
+      "component": "storageConverter",
+      "action": "repair",
+      "arguments": {
+        "equipment": "storageConverter"
+      }
+    },
+    {
+      "id": "storageConverter-mode-forward",
+      "label": "Forward conversion",
+      "component": "storageConverter",
+      "action": "setMode",
+      "arguments": {
+        "equipment": "storageConverter",
+        "value": "forward"
+      }
+    },
+    {
+      "id": "storageConverter-mode-reverse",
+      "label": "Reverse conversion",
+      "component": "storageConverter",
+      "action": "setMode",
+      "arguments": {
+        "equipment": "storageConverter",
+        "value": "reverse"
+      }
+    },
+    {
+      "id": "storageConverter-mode-idle",
+      "label": "Idle conversion",
+      "component": "storageConverter",
+      "action": "setMode",
+      "arguments": {
+        "equipment": "storageConverter",
+        "value": "idle"
+      }
+    },
+    {
+      "id": "localBay-enabled",
+      "label": "Equipment enabled",
+      "component": "localBay",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "localBay"
+      }
+    },
+    {
+      "id": "localBay-load",
+      "label": "Requested output / load (%)",
+      "component": "localBay",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "localBay"
+      }
+    },
+    {
+      "id": "localBay-fault",
+      "label": "Inject fictional fault",
+      "component": "localBay",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "localBay",
+        "value": true
+      }
+    },
+    {
+      "id": "localBay-repair",
+      "label": "Repair damage",
+      "component": "localBay",
+      "action": "repair",
+      "arguments": {
+        "equipment": "localBay"
+      }
+    },
+    {
+      "id": "localBay-open",
+      "label": "Contacts open / isolated",
+      "component": "localBay",
+      "action": "setOpen",
+      "arguments": {
+        "equipment": "localBay"
+      }
+    },
+    {
+      "id": "grid-enabled",
+      "label": "Equipment enabled",
+      "component": "grid",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "grid"
+      }
+    },
+    {
+      "id": "grid-load",
+      "label": "Requested output / load (%)",
+      "component": "grid",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "grid"
+      }
+    },
+    {
+      "id": "grid-fault",
+      "label": "Inject fictional fault",
+      "component": "grid",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "grid",
+        "value": true
+      }
+    },
+    {
+      "id": "grid-repair",
+      "label": "Repair damage",
+      "component": "grid",
+      "action": "repair",
+      "arguments": {
+        "equipment": "grid"
+      }
+    },
+    {
+      "id": "gridTie-enabled",
+      "label": "Equipment enabled",
+      "component": "gridTie",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "gridTie"
+      }
+    },
+    {
+      "id": "gridTie-load",
+      "label": "Requested output / load (%)",
+      "component": "gridTie",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "gridTie"
+      }
+    },
+    {
+      "id": "gridTie-fault",
+      "label": "Inject fictional fault",
+      "component": "gridTie",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "gridTie",
+        "value": true
+      }
+    },
+    {
+      "id": "gridTie-repair",
+      "label": "Repair damage",
+      "component": "gridTie",
+      "action": "repair",
+      "arguments": {
+        "equipment": "gridTie"
+      }
+    },
+    {
+      "id": "gridTie-open",
+      "label": "Contacts open / isolated",
+      "component": "gridTie",
+      "action": "setOpen",
+      "arguments": {
+        "equipment": "gridTie"
+      }
+    },
+    {
+      "id": "load-enabled",
+      "label": "Equipment enabled",
+      "component": "load",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "load"
+      }
+    },
+    {
+      "id": "load-load",
+      "label": "Requested output / load (%)",
+      "component": "load",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "load"
+      }
+    },
+    {
+      "id": "load-fault",
+      "label": "Inject fictional fault",
+      "component": "load",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "load",
+        "value": true
+      }
+    },
+    {
+      "id": "load-repair",
+      "label": "Repair damage",
+      "component": "load",
+      "action": "repair",
+      "arguments": {
+        "equipment": "load"
+      }
+    },
+    {
+      "id": "station-enabled",
+      "label": "Equipment enabled",
+      "component": "station",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "station"
+      }
+    },
+    {
+      "id": "station-load",
+      "label": "Requested output / load (%)",
+      "component": "station",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "station"
+      }
+    },
+    {
+      "id": "station-fault",
+      "label": "Inject fictional fault",
+      "component": "station",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "station",
+        "value": true
+      }
+    },
+    {
+      "id": "station-repair",
+      "label": "Repair damage",
+      "component": "station",
+      "action": "repair",
+      "arguments": {
+        "equipment": "station"
+      }
+    },
+    {
+      "id": "plc-enabled",
+      "label": "Equipment enabled",
+      "component": "plc",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "plc"
+      }
+    },
+    {
+      "id": "plc-load",
+      "label": "Requested output / load (%)",
+      "component": "plc",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "plc"
+      }
+    },
+    {
+      "id": "plc-fault",
+      "label": "Inject fictional fault",
+      "component": "plc",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "plc",
+        "value": true
+      }
+    },
+    {
+      "id": "plc-repair",
+      "label": "Repair damage",
+      "component": "plc",
+      "action": "repair",
+      "arguments": {
+        "equipment": "plc"
+      }
+    },
+    {
+      "id": "dcService-enabled",
+      "label": "Equipment enabled",
+      "component": "dcService",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "dcService"
+      }
+    },
+    {
+      "id": "dcService-load",
+      "label": "Requested output / load (%)",
+      "component": "dcService",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "dcService"
+      }
+    },
+    {
+      "id": "dcService-fault",
+      "label": "Inject fictional fault",
+      "component": "dcService",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "dcService",
+        "value": true
+      }
+    },
+    {
+      "id": "dcService-repair",
+      "label": "Repair damage",
+      "component": "dcService",
+      "action": "repair",
+      "arguments": {
+        "equipment": "dcService"
+      }
+    },
+    {
+      "id": "dcService-mode-forward",
+      "label": "Forward conversion",
+      "component": "dcService",
+      "action": "setMode",
+      "arguments": {
+        "equipment": "dcService",
+        "value": "forward"
+      }
+    },
+    {
+      "id": "dcService-mode-idle",
+      "label": "Idle conversion",
+      "component": "dcService",
+      "action": "setMode",
+      "arguments": {
+        "equipment": "dcService",
+        "value": "idle"
+      }
+    },
+    {
+      "id": "engineAir-enabled",
+      "label": "Equipment enabled",
+      "component": "engineAir",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "engineAir"
+      }
+    },
+    {
+      "id": "engineAir-load",
+      "label": "Requested output / load (%)",
+      "component": "engineAir",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "engineAir"
+      }
+    },
+    {
+      "id": "engineAir-fault",
+      "label": "Inject fictional fault",
+      "component": "engineAir",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "engineAir",
+        "value": true
+      }
+    },
+    {
+      "id": "engineAir-repair",
+      "label": "Repair damage",
+      "component": "engineAir",
+      "action": "repair",
+      "arguments": {
+        "equipment": "engineAir"
+      }
+    },
+    {
+      "id": "engineExhaust-enabled",
+      "label": "Equipment enabled",
+      "component": "engineExhaust",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "engineExhaust"
+      }
+    },
+    {
+      "id": "engineExhaust-load",
+      "label": "Requested output / load (%)",
+      "component": "engineExhaust",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "engineExhaust"
+      }
+    },
+    {
+      "id": "engineExhaust-fault",
+      "label": "Inject fictional fault",
+      "component": "engineExhaust",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "engineExhaust",
+        "value": true
+      }
+    },
+    {
+      "id": "engineExhaust-repair",
+      "label": "Repair damage",
+      "component": "engineExhaust",
+      "action": "repair",
+      "arguments": {
+        "equipment": "engineExhaust"
+      }
+    },
+    {
+      "id": "plant-setRunning",
+      "label": "Run shared plant",
+      "action": "setRunning",
+      "arguments": {}
+    },
+    {
+      "id": "plant-step",
+      "label": "Advance one toy minute",
+      "action": "step",
+      "arguments": {
+        "value": 1
+      }
+    },
+    {
+      "id": "plant-reset",
+      "label": "Reset dynamics \u00b7 retain edited parameters",
+      "action": "reset",
+      "arguments": {}
+    },
+    {
+      "id": "acBus-enabled",
+      "label": "Equipment enabled",
+      "component": "acBus",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "acBus"
+      }
+    },
+    {
+      "id": "acBus-load",
+      "label": "Requested output / load (%)",
+      "component": "acBus",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "acBus"
+      }
+    },
+    {
+      "id": "acBus-fault",
+      "label": "Inject fictional fault",
+      "component": "acBus",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "acBus",
+        "value": true
+      }
+    },
+    {
+      "id": "acBus-repair",
+      "label": "Repair damage",
+      "component": "acBus",
+      "action": "repair",
+      "arguments": {
+        "equipment": "acBus"
+      }
+    }
+  ],
+  "controls": [
+    {
+      "id": "pv-enabled-control",
+      "label": "Equipment enabled",
+      "component": "pv",
+      "kind": "toggle",
+      "command": "pv-enabled",
+      "binding": "/controls/pv/enabled"
+    },
+    {
+      "id": "pv-load-control",
+      "label": "Requested output / load (%)",
+      "component": "pv",
+      "kind": "range",
+      "command": "pv-load",
+      "binding": "/controls/pv/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "pv-fault-control",
+      "label": "Inject fictional fault",
+      "component": "pv",
+      "kind": "button",
+      "command": "pv-fault"
+    },
+    {
+      "id": "pv-repair-control",
+      "label": "Repair damage",
+      "component": "pv",
+      "kind": "button",
+      "command": "pv-repair"
+    },
+    {
+      "id": "pv-environment-control",
+      "label": "Shared environmental light index",
+      "component": "pv",
+      "kind": "range",
+      "command": "pv-environment",
+      "binding": "/environment/light",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "pvInverter-enabled-control",
+      "label": "Equipment enabled",
+      "component": "pvInverter",
+      "kind": "toggle",
+      "command": "pvInverter-enabled",
+      "binding": "/controls/pvInverter/enabled"
+    },
+    {
+      "id": "pvInverter-load-control",
+      "label": "Requested output / load (%)",
+      "component": "pvInverter",
+      "kind": "range",
+      "command": "pvInverter-load",
+      "binding": "/controls/pvInverter/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "pvInverter-fault-control",
+      "label": "Inject fictional fault",
+      "component": "pvInverter",
+      "kind": "button",
+      "command": "pvInverter-fault"
+    },
+    {
+      "id": "pvInverter-repair-control",
+      "label": "Repair damage",
+      "component": "pvInverter",
+      "kind": "button",
+      "command": "pvInverter-repair"
+    },
+    {
+      "id": "pvInverter-mode-forward-control",
+      "label": "Forward conversion",
+      "component": "pvInverter",
+      "kind": "button",
+      "command": "pvInverter-mode-forward"
+    },
+    {
+      "id": "pvInverter-mode-idle-control",
+      "label": "Idle conversion",
+      "component": "pvInverter",
+      "kind": "button",
+      "command": "pvInverter-mode-idle"
+    },
+    {
+      "id": "engine-enabled-control",
+      "label": "Equipment enabled",
+      "component": "engine",
+      "kind": "toggle",
+      "command": "engine-enabled",
+      "binding": "/controls/engine/enabled"
+    },
+    {
+      "id": "engine-load-control",
+      "label": "Requested output / load (%)",
+      "component": "engine",
+      "kind": "range",
+      "command": "engine-load",
+      "binding": "/controls/engine/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "engine-fault-control",
+      "label": "Inject fictional fault",
+      "component": "engine",
+      "kind": "button",
+      "command": "engine-fault"
+    },
+    {
+      "id": "engine-repair-control",
+      "label": "Repair damage",
+      "component": "engine",
+      "kind": "button",
+      "command": "engine-repair"
+    },
+    {
+      "id": "fuel-enabled-control",
+      "label": "Equipment enabled",
+      "component": "fuel",
+      "kind": "toggle",
+      "command": "fuel-enabled",
+      "binding": "/controls/fuel/enabled"
+    },
+    {
+      "id": "fuel-load-control",
+      "label": "Requested output / load (%)",
+      "component": "fuel",
+      "kind": "range",
+      "command": "fuel-load",
+      "binding": "/controls/fuel/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "fuel-fault-control",
+      "label": "Inject fictional fault",
+      "component": "fuel",
+      "kind": "button",
+      "command": "fuel-fault"
+    },
+    {
+      "id": "fuel-repair-control",
+      "label": "Repair damage",
+      "component": "fuel",
+      "kind": "button",
+      "command": "fuel-repair"
+    },
+    {
+      "id": "regulator-enabled-control",
+      "label": "Equipment enabled",
+      "component": "regulator",
+      "kind": "toggle",
+      "command": "regulator-enabled",
+      "binding": "/controls/regulator/enabled"
+    },
+    {
+      "id": "regulator-load-control",
+      "label": "Requested output / load (%)",
+      "component": "regulator",
+      "kind": "range",
+      "command": "regulator-load",
+      "binding": "/controls/regulator/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "regulator-fault-control",
+      "label": "Inject fictional fault",
+      "component": "regulator",
+      "kind": "button",
+      "command": "regulator-fault"
+    },
+    {
+      "id": "regulator-repair-control",
+      "label": "Repair damage",
+      "component": "regulator",
+      "kind": "button",
+      "command": "regulator-repair"
+    },
+    {
+      "id": "regulator-open-control",
+      "label": "Flow path open",
+      "component": "regulator",
+      "kind": "toggle",
+      "command": "regulator-open",
+      "binding": "/controls/regulator/open"
+    },
+    {
+      "id": "battery-enabled-control",
+      "label": "Equipment enabled",
+      "component": "battery",
+      "kind": "toggle",
+      "command": "battery-enabled",
+      "binding": "/controls/battery/enabled"
+    },
+    {
+      "id": "battery-load-control",
+      "label": "Requested output / load (%)",
+      "component": "battery",
+      "kind": "range",
+      "command": "battery-load",
+      "binding": "/controls/battery/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "battery-fault-control",
+      "label": "Inject fictional fault",
+      "component": "battery",
+      "kind": "button",
+      "command": "battery-fault"
+    },
+    {
+      "id": "battery-repair-control",
+      "label": "Repair damage",
+      "component": "battery",
+      "kind": "button",
+      "command": "battery-repair"
+    },
+    {
+      "id": "battery-mode-discharge-control",
+      "label": "Discharge stored energy",
+      "component": "battery",
+      "kind": "button",
+      "command": "battery-mode-discharge"
+    },
+    {
+      "id": "battery-mode-charge-control",
+      "label": "Charge stored energy",
+      "component": "battery",
+      "kind": "button",
+      "command": "battery-mode-charge"
+    },
+    {
+      "id": "battery-mode-idle-control",
+      "label": "Idle conversion",
+      "component": "battery",
+      "kind": "button",
+      "command": "battery-mode-idle"
+    },
+    {
+      "id": "storageConverter-enabled-control",
+      "label": "Equipment enabled",
+      "component": "storageConverter",
+      "kind": "toggle",
+      "command": "storageConverter-enabled",
+      "binding": "/controls/storageConverter/enabled"
+    },
+    {
+      "id": "storageConverter-load-control",
+      "label": "Requested output / load (%)",
+      "component": "storageConverter",
+      "kind": "range",
+      "command": "storageConverter-load",
+      "binding": "/controls/storageConverter/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "storageConverter-fault-control",
+      "label": "Inject fictional fault",
+      "component": "storageConverter",
+      "kind": "button",
+      "command": "storageConverter-fault"
+    },
+    {
+      "id": "storageConverter-repair-control",
+      "label": "Repair damage",
+      "component": "storageConverter",
+      "kind": "button",
+      "command": "storageConverter-repair"
+    },
+    {
+      "id": "storageConverter-mode-forward-control",
+      "label": "Forward conversion",
+      "component": "storageConverter",
+      "kind": "button",
+      "command": "storageConverter-mode-forward"
+    },
+    {
+      "id": "storageConverter-mode-reverse-control",
+      "label": "Reverse conversion",
+      "component": "storageConverter",
+      "kind": "button",
+      "command": "storageConverter-mode-reverse"
+    },
+    {
+      "id": "storageConverter-mode-idle-control",
+      "label": "Idle conversion",
+      "component": "storageConverter",
+      "kind": "button",
+      "command": "storageConverter-mode-idle"
+    },
+    {
+      "id": "localBay-enabled-control",
+      "label": "Equipment enabled",
+      "component": "localBay",
+      "kind": "toggle",
+      "command": "localBay-enabled",
+      "binding": "/controls/localBay/enabled"
+    },
+    {
+      "id": "localBay-load-control",
+      "label": "Requested output / load (%)",
+      "component": "localBay",
+      "kind": "range",
+      "command": "localBay-load",
+      "binding": "/controls/localBay/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "localBay-fault-control",
+      "label": "Inject fictional fault",
+      "component": "localBay",
+      "kind": "button",
+      "command": "localBay-fault"
+    },
+    {
+      "id": "localBay-repair-control",
+      "label": "Repair damage",
+      "component": "localBay",
+      "kind": "button",
+      "command": "localBay-repair"
+    },
+    {
+      "id": "localBay-open-control",
+      "label": "Contacts open / isolated",
+      "component": "localBay",
+      "kind": "toggle",
+      "command": "localBay-open",
+      "binding": "/controls/localBay/open"
+    },
+    {
+      "id": "grid-enabled-control",
+      "label": "Equipment enabled",
+      "component": "grid",
+      "kind": "toggle",
+      "command": "grid-enabled",
+      "binding": "/controls/grid/enabled"
+    },
+    {
+      "id": "grid-load-control",
+      "label": "Requested output / load (%)",
+      "component": "grid",
+      "kind": "range",
+      "command": "grid-load",
+      "binding": "/controls/grid/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "grid-fault-control",
+      "label": "Inject fictional fault",
+      "component": "grid",
+      "kind": "button",
+      "command": "grid-fault"
+    },
+    {
+      "id": "grid-repair-control",
+      "label": "Repair damage",
+      "component": "grid",
+      "kind": "button",
+      "command": "grid-repair"
+    },
+    {
+      "id": "gridTie-enabled-control",
+      "label": "Equipment enabled",
+      "component": "gridTie",
+      "kind": "toggle",
+      "command": "gridTie-enabled",
+      "binding": "/controls/gridTie/enabled"
+    },
+    {
+      "id": "gridTie-load-control",
+      "label": "Requested output / load (%)",
+      "component": "gridTie",
+      "kind": "range",
+      "command": "gridTie-load",
+      "binding": "/controls/gridTie/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "gridTie-fault-control",
+      "label": "Inject fictional fault",
+      "component": "gridTie",
+      "kind": "button",
+      "command": "gridTie-fault"
+    },
+    {
+      "id": "gridTie-repair-control",
+      "label": "Repair damage",
+      "component": "gridTie",
+      "kind": "button",
+      "command": "gridTie-repair"
+    },
+    {
+      "id": "gridTie-open-control",
+      "label": "Contacts open / isolated",
+      "component": "gridTie",
+      "kind": "toggle",
+      "command": "gridTie-open",
+      "binding": "/controls/gridTie/open"
+    },
+    {
+      "id": "load-enabled-control",
+      "label": "Equipment enabled",
+      "component": "load",
+      "kind": "toggle",
+      "command": "load-enabled",
+      "binding": "/controls/load/enabled"
+    },
+    {
+      "id": "load-load-control",
+      "label": "Requested output / load (%)",
+      "component": "load",
+      "kind": "range",
+      "command": "load-load",
+      "binding": "/controls/load/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "load-fault-control",
+      "label": "Inject fictional fault",
+      "component": "load",
+      "kind": "button",
+      "command": "load-fault"
+    },
+    {
+      "id": "load-repair-control",
+      "label": "Repair damage",
+      "component": "load",
+      "kind": "button",
+      "command": "load-repair"
+    },
+    {
+      "id": "station-enabled-control",
+      "label": "Equipment enabled",
+      "component": "station",
+      "kind": "toggle",
+      "command": "station-enabled",
+      "binding": "/controls/station/enabled"
+    },
+    {
+      "id": "station-load-control",
+      "label": "Requested output / load (%)",
+      "component": "station",
+      "kind": "range",
+      "command": "station-load",
+      "binding": "/controls/station/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "station-fault-control",
+      "label": "Inject fictional fault",
+      "component": "station",
+      "kind": "button",
+      "command": "station-fault"
+    },
+    {
+      "id": "station-repair-control",
+      "label": "Repair damage",
+      "component": "station",
+      "kind": "button",
+      "command": "station-repair"
+    },
+    {
+      "id": "plc-enabled-control",
+      "label": "Equipment enabled",
+      "component": "plc",
+      "kind": "toggle",
+      "command": "plc-enabled",
+      "binding": "/controls/plc/enabled"
+    },
+    {
+      "id": "plc-load-control",
+      "label": "Requested output / load (%)",
+      "component": "plc",
+      "kind": "range",
+      "command": "plc-load",
+      "binding": "/controls/plc/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "plc-fault-control",
+      "label": "Inject fictional fault",
+      "component": "plc",
+      "kind": "button",
+      "command": "plc-fault"
+    },
+    {
+      "id": "plc-repair-control",
+      "label": "Repair damage",
+      "component": "plc",
+      "kind": "button",
+      "command": "plc-repair"
+    },
+    {
+      "id": "dcService-enabled-control",
+      "label": "Equipment enabled",
+      "component": "dcService",
+      "kind": "toggle",
+      "command": "dcService-enabled",
+      "binding": "/controls/dcService/enabled"
+    },
+    {
+      "id": "dcService-load-control",
+      "label": "Requested output / load (%)",
+      "component": "dcService",
+      "kind": "range",
+      "command": "dcService-load",
+      "binding": "/controls/dcService/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "dcService-fault-control",
+      "label": "Inject fictional fault",
+      "component": "dcService",
+      "kind": "button",
+      "command": "dcService-fault"
+    },
+    {
+      "id": "dcService-repair-control",
+      "label": "Repair damage",
+      "component": "dcService",
+      "kind": "button",
+      "command": "dcService-repair"
+    },
+    {
+      "id": "dcService-mode-forward-control",
+      "label": "Forward conversion",
+      "component": "dcService",
+      "kind": "button",
+      "command": "dcService-mode-forward"
+    },
+    {
+      "id": "dcService-mode-idle-control",
+      "label": "Idle conversion",
+      "component": "dcService",
+      "kind": "button",
+      "command": "dcService-mode-idle"
+    },
+    {
+      "id": "engineAir-enabled-control",
+      "label": "Equipment enabled",
+      "component": "engineAir",
+      "kind": "toggle",
+      "command": "engineAir-enabled",
+      "binding": "/controls/engineAir/enabled"
+    },
+    {
+      "id": "engineAir-load-control",
+      "label": "Requested output / load (%)",
+      "component": "engineAir",
+      "kind": "range",
+      "command": "engineAir-load",
+      "binding": "/controls/engineAir/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "engineAir-fault-control",
+      "label": "Inject fictional fault",
+      "component": "engineAir",
+      "kind": "button",
+      "command": "engineAir-fault"
+    },
+    {
+      "id": "engineAir-repair-control",
+      "label": "Repair damage",
+      "component": "engineAir",
+      "kind": "button",
+      "command": "engineAir-repair"
+    },
+    {
+      "id": "engineExhaust-enabled-control",
+      "label": "Equipment enabled",
+      "component": "engineExhaust",
+      "kind": "toggle",
+      "command": "engineExhaust-enabled",
+      "binding": "/controls/engineExhaust/enabled"
+    },
+    {
+      "id": "engineExhaust-load-control",
+      "label": "Requested output / load (%)",
+      "component": "engineExhaust",
+      "kind": "range",
+      "command": "engineExhaust-load",
+      "binding": "/controls/engineExhaust/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "engineExhaust-fault-control",
+      "label": "Inject fictional fault",
+      "component": "engineExhaust",
+      "kind": "button",
+      "command": "engineExhaust-fault"
+    },
+    {
+      "id": "engineExhaust-repair-control",
+      "label": "Repair damage",
+      "component": "engineExhaust",
+      "kind": "button",
+      "command": "engineExhaust-repair"
+    },
+    {
+      "id": "plant-setRunning-control",
+      "label": "Run shared plant",
+      "kind": "toggle",
+      "command": "plant-setRunning",
+      "binding": "/running"
+    },
+    {
+      "id": "plant-step-control",
+      "label": "Advance one toy minute",
+      "kind": "button",
+      "command": "plant-step"
+    },
+    {
+      "id": "plant-reset-control",
+      "label": "Reset dynamics \u00b7 retain edited parameters",
+      "kind": "button",
+      "command": "plant-reset"
+    },
+    {
+      "id": "acBus-enabled-control",
+      "label": "Equipment enabled",
+      "component": "acBus",
+      "kind": "toggle",
+      "command": "acBus-enabled",
+      "binding": "/controls/acBus/enabled"
+    },
+    {
+      "id": "acBus-load-control",
+      "label": "Requested output / load (%)",
+      "component": "acBus",
+      "kind": "range",
+      "command": "acBus-load",
+      "binding": "/controls/acBus/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "acBus-fault-control",
+      "label": "Inject fictional fault",
+      "component": "acBus",
+      "kind": "button",
+      "command": "acBus-fault"
+    },
+    {
+      "id": "acBus-repair-control",
+      "label": "Repair damage",
+      "component": "acBus",
+      "kind": "button",
+      "command": "acBus-repair"
+    }
+  ],
+  "provenance": [
+    {
+      "id": "assumed-model",
+      "label": "Editable normalized model guesses",
+      "kind": "assumed",
+      "description": "Every capacity, inventory, thermal index, loss, response and incident coefficient is an authoring choice, not validated by the references."
+    },
+    {
+      "id": "authored-layout",
+      "label": "Illustrative plant routing and layout",
+      "kind": "illustrative",
+      "description": "Coordinates, asset tags, selected concept composition and simplified connections are editable authored diagrams, not a verified P&ID or electrical design."
+    },
+    {
+      "id": "P18",
+      "label": "P18 \u00b7 structural reference",
+      "kind": "external",
+      "source": "DOE, [Solar Photovoltaic System Design Basics](https://www.energy.gov/cmei/systems/solar-photovoltaic-system-design-basics), updated 2022-07-08",
+      "description": "Mounting, inverter and storage sections | Supports: PV DC output, inverter conversion and optional storage are explicit components. Tracking is a visual/configuration variant, not a different generator family. | Reviewed 2026-11-13. Does not validate toy parameters."
+    },
+    {
+      "id": "P20",
+      "label": "P20 \u00b7 structural reference",
+      "kind": "external",
+      "source": "DOE, [Distributed Energy Resources and Microgrids Basics](https://www.energy.gov/cmei/systems/solar-integration-distributed-energy-resources-and-microgrids-basics), updated 2026-05-05",
+      "description": "DER and islands/microgrids sections | Supports: A microgrid composition needs local sources, loads, controls and a defined grid connection. Islanded is a system connection state, not a new generator icon. | Reviewed 2026-11-13. Does not validate toy parameters."
+    }
+  ],
+  "assumptions": [
+    {
+      "id": "normalized",
+      "label": "All model numbers are editable teaching assumptions",
+      "value": true,
+      "provenance": "assumed-model"
+    },
+    {
+      "id": "circuitIdentity",
+      "label": "Separate named circuits never mix stock through heat links",
+      "value": true,
+      "provenance": "authored-layout"
+    },
+    {
+      "id": "engineRatedPowerKW",
+      "label": "Local natural-gas genset illustrative nameplate preset",
+      "value": 100,
+      "unit": "kW",
+      "description": "Editable illustrative label, not a verified product rating or a calibrated equation. Capacity, fuel and enclosure are independent choices.",
+      "provenance": "assumed-model"
+    },
+    {
+      "id": "enginePowerDisplayScale",
+      "label": "Optional power display scale for this isolated example",
+      "value": 1.25,
+      "unit": "kW per normalized power unit",
+      "description": "Explicit authoring mapping only. The headless model remains normalized; this label never silently changes equations or another scenario.",
+      "provenance": "assumed-model"
+    }
+  ],
+  "units": {
+    "power": "normalized power units; explicit optional display mapping",
+    "flow": "normalized material units per toy minute",
+    "inventory": "normalized finite stock",
+    "heat": "normalized stored heat; not a physical operating temperature"
+  }
+}

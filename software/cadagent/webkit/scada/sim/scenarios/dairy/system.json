@@ -1,0 +1,2422 @@
+{
+  "$schema": "../../../scada-ui/schema/scada-system.schema.json",
+  "format": "scada-system",
+  "version": 1,
+  "system": {
+    "id": "dairy",
+    "label": "Dairy processing",
+    "description": "Receiving, separation, heating/cooling, holding and filling form a toy dairy process. Displayed readings are illustrative, not food-safety limits."
+  },
+  "components": [
+    {
+      "id": "receiving",
+      "type": "tank",
+      "label": "Receiving tank",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "level": 55,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/receiving/active",
+        "running": "/components/receiving/running",
+        "fault": "/components/receiving/fault",
+        "status": "/components/receiving/status",
+        "level": "/components/receiving/level",
+        "damage": "/components/receiving/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "pitPump",
+      "type": "submersible-pump",
+      "label": "Receiving transfer pump",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/pitPump/active",
+        "running": "/components/pitPump/running",
+        "fault": "/components/pitPump/fault",
+        "status": "/components/pitPump/status",
+        "load": "/components/pitPump/load",
+        "speed": "/components/pitPump/speed",
+        "damage": "/components/pitPump/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "drive",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "strainer",
+      "type": "filter",
+      "label": "Intake strainer",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/strainer/active",
+        "running": "/components/strainer/running",
+        "fault": "/components/strainer/fault",
+        "status": "/components/strainer/status",
+        "load": "/components/strainer/load",
+        "damage": "/components/strainer/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "backwash",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "separator",
+      "type": "centrifuge",
+      "label": "Separation centrifuge",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/separator/active",
+        "running": "/components/separator/running",
+        "fault": "/components/separator/fault",
+        "status": "/components/separator/status",
+        "load": "/components/separator/load",
+        "speed": "/components/separator/speed",
+        "damage": "/components/separator/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "supply",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "reject",
+          "side": "right",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "exchanger",
+      "type": "heat-exchanger",
+      "label": "Thermal processing exchanger",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "temperature": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/exchanger/active",
+        "running": "/components/exchanger/running",
+        "fault": "/components/exchanger/fault",
+        "status": "/components/exchanger/status",
+        "load": "/components/exchanger/load",
+        "temperature": "/components/exchanger/temperature",
+        "damage": "/components/exchanger/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "hot-in",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "hot-out",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "cold-in",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "cold-out",
+          "side": "right",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "hold",
+      "type": "reactor",
+      "label": "Holding vessel",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "level": 55,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/hold/active",
+        "running": "/components/hold/running",
+        "fault": "/components/hold/fault",
+        "status": "/components/hold/status",
+        "level": "/components/hold/level",
+        "damage": "/components/hold/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "vent",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "gas-inlet",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "buffer",
+      "type": "tank",
+      "label": "Filling buffer",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "level": 55,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/buffer/active",
+        "running": "/components/buffer/running",
+        "fault": "/components/buffer/fault",
+        "status": "/components/buffer/status",
+        "level": "/components/buffer/level",
+        "damage": "/components/buffer/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "filler",
+      "type": "filling-line",
+      "label": "Container filling",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/filler/active",
+        "running": "/components/filler/running",
+        "fault": "/components/filler/fault",
+        "status": "/components/filler/status",
+        "load": "/components/filler/load",
+        "speed": "/components/filler/speed",
+        "damage": "/components/filler/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "supply",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "packer",
+      "type": "packaging-line",
+      "label": "Case packing",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/packer/active",
+        "running": "/components/packer/running",
+        "fault": "/components/packer/fault",
+        "status": "/components/packer/status",
+        "load": "/components/packer/load",
+        "speed": "/components/packer/speed",
+        "damage": "/components/packer/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "supply",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "power",
+      "type": "generator",
+      "label": "Demonstration site power",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/power/active",
+        "running": "/components/power/running",
+        "fault": "/components/power/fault",
+        "status": "/components/power/status",
+        "load": "/components/power/load",
+        "speed": "/components/power/speed",
+        "damage": "/components/power/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "fuel",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "output",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "exhaust",
+          "side": "right",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "controller",
+      "type": "remote-io",
+      "label": "Distributed line IO",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "connected": true,
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/controller/active",
+        "running": "/components/controller/running",
+        "fault": "/components/controller/fault",
+        "status": "/components/controller/status",
+        "connected": "/components/controller/connected",
+        "load": "/components/controller/load",
+        "damage": "/components/controller/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "power",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "inputs",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outputs",
+          "side": "right",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "flow",
+      "type": "flow-meter",
+      "label": "Transfer flow monitor",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "value": 42,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/flow/active",
+        "running": "/components/flow/running",
+        "fault": "/components/flow/fault",
+        "status": "/components/flow/status",
+        "value": "/components/flow/value",
+        "damage": "/components/flow/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "process",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "signal",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "power",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "temperature",
+      "type": "temperature-sensor",
+      "label": "Thermal outlet monitor",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "value": 42,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/temperature/active",
+        "running": "/components/temperature/running",
+        "fault": "/components/temperature/fault",
+        "status": "/components/temperature/status",
+        "value": "/components/temperature/value",
+        "damage": "/components/temperature/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "process",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "signal",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "power",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "receiving-to-pitPump",
+      "from": {
+        "component": "receiving",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "pitPump",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "flowBinding": "/flows/receiving-to-pitPump",
+      "label": "Receiving tank \u2192 Receiving transfer pump"
+    },
+    {
+      "id": "pitPump-to-strainer",
+      "from": {
+        "component": "pitPump",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "strainer",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "flowBinding": "/flows/pitPump-to-strainer",
+      "label": "Receiving transfer pump \u2192 Intake strainer"
+    },
+    {
+      "id": "strainer-to-separator",
+      "from": {
+        "component": "strainer",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "separator",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "flowBinding": "/flows/strainer-to-separator",
+      "label": "Intake strainer \u2192 Separation centrifuge"
+    },
+    {
+      "id": "separator-to-exchanger",
+      "from": {
+        "component": "separator",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "exchanger",
+        "port": "hot-in"
+      },
+      "medium": "liquid",
+      "flowBinding": "/flows/separator-to-exchanger",
+      "label": "Separation centrifuge \u2192 Thermal processing exchanger"
+    },
+    {
+      "id": "exchanger-to-hold",
+      "from": {
+        "component": "exchanger",
+        "port": "hot-out"
+      },
+      "to": {
+        "component": "hold",
+        "port": "inlet"
+      },
+      "medium": "thermal-fluid",
+      "flowBinding": "/flows/exchanger-to-hold",
+      "label": "Thermal processing exchanger \u2192 Holding vessel"
+    },
+    {
+      "id": "hold-to-buffer",
+      "from": {
+        "component": "hold",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "buffer",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "flowBinding": "/flows/hold-to-buffer",
+      "label": "Holding vessel \u2192 Filling buffer"
+    },
+    {
+      "id": "buffer-to-filler",
+      "from": {
+        "component": "buffer",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "filler",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "flowBinding": "/flows/buffer-to-filler",
+      "label": "Filling buffer \u2192 Container filling"
+    },
+    {
+      "id": "filler-to-packer",
+      "from": {
+        "component": "filler",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "packer",
+        "port": "inlet"
+      },
+      "medium": "product",
+      "flowBinding": "/flows/filler-to-packer",
+      "label": "Container filling \u2192 Case packing"
+    },
+    {
+      "id": "power-to-pitPump",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "pitPump",
+        "port": "drive"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-pitPump",
+      "label": "Demonstration site power \u2192 Receiving transfer pump"
+    },
+    {
+      "id": "power-to-separator",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "separator",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-separator",
+      "label": "Demonstration site power \u2192 Separation centrifuge"
+    },
+    {
+      "id": "power-to-filler",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "filler",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-filler",
+      "label": "Demonstration site power \u2192 Container filling"
+    },
+    {
+      "id": "power-to-packer",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "packer",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-packer",
+      "label": "Demonstration site power \u2192 Case packing"
+    },
+    {
+      "id": "power-to-controller",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "controller",
+        "port": "power"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-controller",
+      "label": "Demonstration site power \u2192 Distributed line IO"
+    },
+    {
+      "id": "power-to-flow",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "flow",
+        "port": "power"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-flow",
+      "label": "Demonstration site power \u2192 Transfer flow monitor"
+    },
+    {
+      "id": "power-to-temperature",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "temperature",
+        "port": "power"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-temperature",
+      "label": "Demonstration site power \u2192 Thermal outlet monitor"
+    },
+    {
+      "id": "pitPump-to-flow",
+      "from": {
+        "component": "pitPump",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "flow",
+        "port": "process"
+      },
+      "medium": "measurement",
+      "flowBinding": "/flows/pitPump-to-flow",
+      "label": "Receiving transfer pump \u2192 Transfer flow monitor"
+    },
+    {
+      "id": "flow-to-controller",
+      "from": {
+        "component": "flow",
+        "port": "signal"
+      },
+      "to": {
+        "component": "controller",
+        "port": "network"
+      },
+      "medium": "data",
+      "flowBinding": "/flows/flow-to-controller",
+      "label": "Transfer flow monitor \u2192 Distributed line IO"
+    },
+    {
+      "id": "exchanger-to-temperature",
+      "from": {
+        "component": "exchanger",
+        "port": "hot-out"
+      },
+      "to": {
+        "component": "temperature",
+        "port": "process"
+      },
+      "medium": "measurement",
+      "flowBinding": "/flows/exchanger-to-temperature",
+      "label": "Thermal processing exchanger \u2192 Thermal outlet monitor"
+    },
+    {
+      "id": "temperature-to-controller",
+      "from": {
+        "component": "temperature",
+        "port": "signal"
+      },
+      "to": {
+        "component": "controller",
+        "port": "network"
+      },
+      "medium": "data",
+      "flowBinding": "/flows/temperature-to-controller",
+      "label": "Thermal outlet monitor \u2192 Distributed line IO"
+    }
+  ],
+  "views": [
+    {
+      "id": "process",
+      "label": "Main process",
+      "canvas": {
+        "width": 1280,
+        "height": 940
+      },
+      "placements": [
+        {
+          "component": "receiving",
+          "x": 60,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "pitPump",
+          "x": 360,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "strainer",
+          "x": 660,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "separator",
+          "x": 960,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "exchanger",
+          "x": 960,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "hold",
+          "x": 660,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "buffer",
+          "x": 360,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "filler",
+          "x": 60,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "packer",
+          "x": 60,
+          "y": 620,
+          "width": 200,
+          "height": 190
+        }
+      ],
+      "routes": [
+        {
+          "connection": "receiving-to-pitPump",
+          "points": [
+            {
+              "x": 260,
+              "y": 155
+            },
+            {
+              "x": 360,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "pitPump-to-strainer",
+          "points": [
+            {
+              "x": 560,
+              "y": 155
+            },
+            {
+              "x": 660,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "strainer-to-separator",
+          "points": [
+            {
+              "x": 860,
+              "y": 155
+            },
+            {
+              "x": 960,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "separator-to-exchanger",
+          "points": [
+            {
+              "x": 1060,
+              "y": 250
+            },
+            {
+              "x": 1060,
+              "y": 340
+            }
+          ]
+        },
+        {
+          "connection": "exchanger-to-hold",
+          "points": [
+            {
+              "x": 960,
+              "y": 435
+            },
+            {
+              "x": 860,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "hold-to-buffer",
+          "points": [
+            {
+              "x": 660,
+              "y": 435
+            },
+            {
+              "x": 560,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "buffer-to-filler",
+          "points": [
+            {
+              "x": 360,
+              "y": 435
+            },
+            {
+              "x": 260,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "filler-to-packer",
+          "points": [
+            {
+              "x": 160,
+              "y": 530
+            },
+            {
+              "x": 160,
+              "y": 620
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "utilities",
+      "label": "Utilities & control",
+      "canvas": {
+        "width": 980,
+        "height": 660
+      },
+      "placements": [
+        {
+          "component": "power",
+          "x": 60,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "controller",
+          "x": 360,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "flow",
+          "x": 660,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "temperature",
+          "x": 660,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "separator",
+          "x": 360,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "filler",
+          "x": 60,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        }
+      ],
+      "routes": [
+        {
+          "connection": "power-to-separator",
+          "points": [
+            {
+              "x": 260,
+              "y": 155
+            },
+            {
+              "x": 284,
+              "y": 155
+            },
+            {
+              "x": 284,
+              "y": 316
+            },
+            {
+              "x": 336,
+              "y": 316
+            },
+            {
+              "x": 336,
+              "y": 435
+            },
+            {
+              "x": 360,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "power-to-filler",
+          "points": [
+            {
+              "x": 160,
+              "y": 250
+            },
+            {
+              "x": 160,
+              "y": 340
+            }
+          ]
+        },
+        {
+          "connection": "power-to-controller",
+          "points": [
+            {
+              "x": 260,
+              "y": 155
+            },
+            {
+              "x": 360,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "power-to-flow",
+          "points": [
+            {
+              "x": 260,
+              "y": 155
+            },
+            {
+              "x": 336,
+              "y": 155
+            },
+            {
+              "x": 336,
+              "y": 36
+            },
+            {
+              "x": 636,
+              "y": 36
+            },
+            {
+              "x": 636,
+              "y": 155
+            },
+            {
+              "x": 660,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "power-to-temperature",
+          "points": [
+            {
+              "x": 260,
+              "y": 155
+            },
+            {
+              "x": 284,
+              "y": 155
+            },
+            {
+              "x": 284,
+              "y": 316
+            },
+            {
+              "x": 636,
+              "y": 316
+            },
+            {
+              "x": 636,
+              "y": 435
+            },
+            {
+              "x": 660,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "flow-to-controller",
+          "points": [
+            {
+              "x": 660,
+              "y": 155
+            },
+            {
+              "x": 560,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "temperature-to-controller",
+          "points": [
+            {
+              "x": 660,
+              "y": 435
+            },
+            {
+              "x": 636,
+              "y": 435
+            },
+            {
+              "x": 636,
+              "y": 274
+            },
+            {
+              "x": 584,
+              "y": 274
+            },
+            {
+              "x": 584,
+              "y": 155
+            },
+            {
+              "x": 560,
+              "y": 155
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "finishing",
+      "label": "Finishing & storage",
+      "canvas": {
+        "width": 980,
+        "height": 940
+      },
+      "placements": [
+        {
+          "component": "exchanger",
+          "x": 60,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "hold",
+          "x": 360,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "buffer",
+          "x": 660,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "filler",
+          "x": 660,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "packer",
+          "x": 360,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "controller",
+          "x": 60,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "flow",
+          "x": 60,
+          "y": 620,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "temperature",
+          "x": 360,
+          "y": 620,
+          "width": 200,
+          "height": 190
+        }
+      ],
+      "routes": [
+        {
+          "connection": "exchanger-to-hold",
+          "points": [
+            {
+              "x": 260,
+              "y": 155
+            },
+            {
+              "x": 360,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "hold-to-buffer",
+          "points": [
+            {
+              "x": 560,
+              "y": 155
+            },
+            {
+              "x": 660,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "buffer-to-filler",
+          "points": [
+            {
+              "x": 760,
+              "y": 250
+            },
+            {
+              "x": 760,
+              "y": 340
+            }
+          ]
+        },
+        {
+          "connection": "filler-to-packer",
+          "points": [
+            {
+              "x": 660,
+              "y": 435
+            },
+            {
+              "x": 560,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "flow-to-controller",
+          "points": [
+            {
+              "x": 160,
+              "y": 620
+            },
+            {
+              "x": 160,
+              "y": 530
+            }
+          ]
+        },
+        {
+          "connection": "exchanger-to-temperature",
+          "points": [
+            {
+              "x": 160,
+              "y": 250
+            },
+            {
+              "x": 160,
+              "y": 316
+            },
+            {
+              "x": 284,
+              "y": 316
+            },
+            {
+              "x": 284,
+              "y": 596
+            },
+            {
+              "x": 460,
+              "y": 596
+            },
+            {
+              "x": 460,
+              "y": 620
+            }
+          ]
+        },
+        {
+          "connection": "temperature-to-controller",
+          "points": [
+            {
+              "x": 360,
+              "y": 715
+            },
+            {
+              "x": 336,
+              "y": 715
+            },
+            {
+              "x": 336,
+              "y": 554
+            },
+            {
+              "x": 284,
+              "y": 554
+            },
+            {
+              "x": 284,
+              "y": 435
+            },
+            {
+              "x": 260,
+              "y": 435
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "commands": [
+    {
+      "id": "receiving-enabled",
+      "label": "Receiving tank \u00b7 Enabled",
+      "component": "receiving",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "receiving"
+      }
+    },
+    {
+      "id": "receiving-load",
+      "label": "Receiving tank \u00b7 Requested load",
+      "component": "receiving",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "receiving"
+      }
+    },
+    {
+      "id": "receiving-fault",
+      "label": "Receiving tank \u00b7 Injected failure",
+      "component": "receiving",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "receiving"
+      }
+    },
+    {
+      "id": "receiving-repair",
+      "label": "Repair Receiving tank",
+      "component": "receiving",
+      "action": "repair",
+      "arguments": {
+        "equipment": "receiving"
+      }
+    },
+    {
+      "id": "pitPump-enabled",
+      "label": "Receiving transfer pump \u00b7 Enabled",
+      "component": "pitPump",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "pitPump"
+      }
+    },
+    {
+      "id": "pitPump-load",
+      "label": "Receiving transfer pump \u00b7 Requested load",
+      "component": "pitPump",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "pitPump"
+      }
+    },
+    {
+      "id": "pitPump-fault",
+      "label": "Receiving transfer pump \u00b7 Injected failure",
+      "component": "pitPump",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "pitPump"
+      }
+    },
+    {
+      "id": "pitPump-repair",
+      "label": "Repair Receiving transfer pump",
+      "component": "pitPump",
+      "action": "repair",
+      "arguments": {
+        "equipment": "pitPump"
+      }
+    },
+    {
+      "id": "strainer-enabled",
+      "label": "Intake strainer \u00b7 Enabled",
+      "component": "strainer",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "strainer"
+      }
+    },
+    {
+      "id": "strainer-load",
+      "label": "Intake strainer \u00b7 Requested load",
+      "component": "strainer",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "strainer"
+      }
+    },
+    {
+      "id": "strainer-fault",
+      "label": "Intake strainer \u00b7 Injected failure",
+      "component": "strainer",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "strainer"
+      }
+    },
+    {
+      "id": "strainer-repair",
+      "label": "Repair Intake strainer",
+      "component": "strainer",
+      "action": "repair",
+      "arguments": {
+        "equipment": "strainer"
+      }
+    },
+    {
+      "id": "separator-enabled",
+      "label": "Separation centrifuge \u00b7 Enabled",
+      "component": "separator",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "separator"
+      }
+    },
+    {
+      "id": "separator-load",
+      "label": "Separation centrifuge \u00b7 Requested load",
+      "component": "separator",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "separator"
+      }
+    },
+    {
+      "id": "separator-fault",
+      "label": "Separation centrifuge \u00b7 Injected failure",
+      "component": "separator",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "separator"
+      }
+    },
+    {
+      "id": "separator-repair",
+      "label": "Repair Separation centrifuge",
+      "component": "separator",
+      "action": "repair",
+      "arguments": {
+        "equipment": "separator"
+      }
+    },
+    {
+      "id": "exchanger-enabled",
+      "label": "Thermal processing exchanger \u00b7 Enabled",
+      "component": "exchanger",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "exchanger"
+      }
+    },
+    {
+      "id": "exchanger-load",
+      "label": "Thermal processing exchanger \u00b7 Requested load",
+      "component": "exchanger",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "exchanger"
+      }
+    },
+    {
+      "id": "exchanger-fault",
+      "label": "Thermal processing exchanger \u00b7 Injected failure",
+      "component": "exchanger",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "exchanger"
+      }
+    },
+    {
+      "id": "exchanger-repair",
+      "label": "Repair Thermal processing exchanger",
+      "component": "exchanger",
+      "action": "repair",
+      "arguments": {
+        "equipment": "exchanger"
+      }
+    },
+    {
+      "id": "hold-enabled",
+      "label": "Holding vessel \u00b7 Enabled",
+      "component": "hold",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "hold"
+      }
+    },
+    {
+      "id": "hold-load",
+      "label": "Holding vessel \u00b7 Requested load",
+      "component": "hold",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "hold"
+      }
+    },
+    {
+      "id": "hold-fault",
+      "label": "Holding vessel \u00b7 Injected failure",
+      "component": "hold",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "hold"
+      }
+    },
+    {
+      "id": "hold-repair",
+      "label": "Repair Holding vessel",
+      "component": "hold",
+      "action": "repair",
+      "arguments": {
+        "equipment": "hold"
+      }
+    },
+    {
+      "id": "buffer-enabled",
+      "label": "Filling buffer \u00b7 Enabled",
+      "component": "buffer",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "buffer"
+      }
+    },
+    {
+      "id": "buffer-load",
+      "label": "Filling buffer \u00b7 Requested load",
+      "component": "buffer",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "buffer"
+      }
+    },
+    {
+      "id": "buffer-fault",
+      "label": "Filling buffer \u00b7 Injected failure",
+      "component": "buffer",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "buffer"
+      }
+    },
+    {
+      "id": "buffer-repair",
+      "label": "Repair Filling buffer",
+      "component": "buffer",
+      "action": "repair",
+      "arguments": {
+        "equipment": "buffer"
+      }
+    },
+    {
+      "id": "filler-enabled",
+      "label": "Container filling \u00b7 Enabled",
+      "component": "filler",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "filler"
+      }
+    },
+    {
+      "id": "filler-load",
+      "label": "Container filling \u00b7 Requested load",
+      "component": "filler",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "filler"
+      }
+    },
+    {
+      "id": "filler-fault",
+      "label": "Container filling \u00b7 Injected failure",
+      "component": "filler",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "filler"
+      }
+    },
+    {
+      "id": "filler-repair",
+      "label": "Repair Container filling",
+      "component": "filler",
+      "action": "repair",
+      "arguments": {
+        "equipment": "filler"
+      }
+    },
+    {
+      "id": "packer-enabled",
+      "label": "Case packing \u00b7 Enabled",
+      "component": "packer",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "packer"
+      }
+    },
+    {
+      "id": "packer-load",
+      "label": "Case packing \u00b7 Requested load",
+      "component": "packer",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "packer"
+      }
+    },
+    {
+      "id": "packer-fault",
+      "label": "Case packing \u00b7 Injected failure",
+      "component": "packer",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "packer"
+      }
+    },
+    {
+      "id": "packer-repair",
+      "label": "Repair Case packing",
+      "component": "packer",
+      "action": "repair",
+      "arguments": {
+        "equipment": "packer"
+      }
+    },
+    {
+      "id": "power-enabled",
+      "label": "Demonstration site power \u00b7 Enabled",
+      "component": "power",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "power"
+      }
+    },
+    {
+      "id": "power-load",
+      "label": "Demonstration site power \u00b7 Requested load",
+      "component": "power",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "power"
+      }
+    },
+    {
+      "id": "power-fault",
+      "label": "Demonstration site power \u00b7 Injected failure",
+      "component": "power",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "power"
+      }
+    },
+    {
+      "id": "power-repair",
+      "label": "Repair Demonstration site power",
+      "component": "power",
+      "action": "repair",
+      "arguments": {
+        "equipment": "power"
+      }
+    },
+    {
+      "id": "controller-enabled",
+      "label": "Distributed line IO \u00b7 Enabled",
+      "component": "controller",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "controller"
+      }
+    },
+    {
+      "id": "controller-load",
+      "label": "Distributed line IO \u00b7 Requested load",
+      "component": "controller",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "controller"
+      }
+    },
+    {
+      "id": "controller-fault",
+      "label": "Distributed line IO \u00b7 Injected failure",
+      "component": "controller",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "controller"
+      }
+    },
+    {
+      "id": "controller-repair",
+      "label": "Repair Distributed line IO",
+      "component": "controller",
+      "action": "repair",
+      "arguments": {
+        "equipment": "controller"
+      }
+    },
+    {
+      "id": "flow-enabled",
+      "label": "Transfer flow monitor \u00b7 Enabled",
+      "component": "flow",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "flow"
+      }
+    },
+    {
+      "id": "flow-load",
+      "label": "Transfer flow monitor \u00b7 Requested load",
+      "component": "flow",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "flow"
+      }
+    },
+    {
+      "id": "flow-fault",
+      "label": "Transfer flow monitor \u00b7 Injected failure",
+      "component": "flow",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "flow"
+      }
+    },
+    {
+      "id": "flow-repair",
+      "label": "Repair Transfer flow monitor",
+      "component": "flow",
+      "action": "repair",
+      "arguments": {
+        "equipment": "flow"
+      }
+    },
+    {
+      "id": "temperature-enabled",
+      "label": "Thermal outlet monitor \u00b7 Enabled",
+      "component": "temperature",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "temperature"
+      }
+    },
+    {
+      "id": "temperature-load",
+      "label": "Thermal outlet monitor \u00b7 Requested load",
+      "component": "temperature",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "temperature"
+      }
+    },
+    {
+      "id": "temperature-fault",
+      "label": "Thermal outlet monitor \u00b7 Injected failure",
+      "component": "temperature",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "temperature"
+      }
+    },
+    {
+      "id": "temperature-repair",
+      "label": "Repair Thermal outlet monitor",
+      "component": "temperature",
+      "action": "repair",
+      "arguments": {
+        "equipment": "temperature"
+      }
+    },
+    {
+      "id": "plant-setRunning",
+      "label": "Run the shared plant",
+      "action": "setRunning",
+      "arguments": {}
+    },
+    {
+      "id": "plant-step",
+      "label": "Advance one model step",
+      "action": "step",
+      "arguments": {
+        "value": 1
+      }
+    },
+    {
+      "id": "plant-reset",
+      "label": "Reset dynamics \u00b7 keep edited parameters",
+      "action": "reset",
+      "arguments": {}
+    }
+  ],
+  "controls": [
+    {
+      "id": "receiving-enabled-control",
+      "label": "Enabled",
+      "component": "receiving",
+      "kind": "toggle",
+      "command": "receiving-enabled",
+      "binding": "/controls/receiving/enabled"
+    },
+    {
+      "id": "receiving-load-control",
+      "label": "Requested load",
+      "component": "receiving",
+      "kind": "range",
+      "command": "receiving-load",
+      "binding": "/controls/receiving/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "receiving-fault-control",
+      "label": "Injected failure",
+      "component": "receiving",
+      "kind": "toggle",
+      "command": "receiving-fault",
+      "binding": "/controls/receiving/fault"
+    },
+    {
+      "id": "receiving-repair-control",
+      "label": "Repair component",
+      "component": "receiving",
+      "kind": "button",
+      "command": "receiving-repair"
+    },
+    {
+      "id": "pitPump-enabled-control",
+      "label": "Enabled",
+      "component": "pitPump",
+      "kind": "toggle",
+      "command": "pitPump-enabled",
+      "binding": "/controls/pitPump/enabled"
+    },
+    {
+      "id": "pitPump-load-control",
+      "label": "Requested load",
+      "component": "pitPump",
+      "kind": "range",
+      "command": "pitPump-load",
+      "binding": "/controls/pitPump/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "pitPump-fault-control",
+      "label": "Injected failure",
+      "component": "pitPump",
+      "kind": "toggle",
+      "command": "pitPump-fault",
+      "binding": "/controls/pitPump/fault"
+    },
+    {
+      "id": "pitPump-repair-control",
+      "label": "Repair component",
+      "component": "pitPump",
+      "kind": "button",
+      "command": "pitPump-repair"
+    },
+    {
+      "id": "strainer-enabled-control",
+      "label": "Enabled",
+      "component": "strainer",
+      "kind": "toggle",
+      "command": "strainer-enabled",
+      "binding": "/controls/strainer/enabled"
+    },
+    {
+      "id": "strainer-load-control",
+      "label": "Requested load",
+      "component": "strainer",
+      "kind": "range",
+      "command": "strainer-load",
+      "binding": "/controls/strainer/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "strainer-fault-control",
+      "label": "Injected failure",
+      "component": "strainer",
+      "kind": "toggle",
+      "command": "strainer-fault",
+      "binding": "/controls/strainer/fault"
+    },
+    {
+      "id": "strainer-repair-control",
+      "label": "Repair component",
+      "component": "strainer",
+      "kind": "button",
+      "command": "strainer-repair"
+    },
+    {
+      "id": "separator-enabled-control",
+      "label": "Enabled",
+      "component": "separator",
+      "kind": "toggle",
+      "command": "separator-enabled",
+      "binding": "/controls/separator/enabled"
+    },
+    {
+      "id": "separator-load-control",
+      "label": "Requested load",
+      "component": "separator",
+      "kind": "range",
+      "command": "separator-load",
+      "binding": "/controls/separator/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "separator-fault-control",
+      "label": "Injected failure",
+      "component": "separator",
+      "kind": "toggle",
+      "command": "separator-fault",
+      "binding": "/controls/separator/fault"
+    },
+    {
+      "id": "separator-repair-control",
+      "label": "Repair component",
+      "component": "separator",
+      "kind": "button",
+      "command": "separator-repair"
+    },
+    {
+      "id": "exchanger-enabled-control",
+      "label": "Enabled",
+      "component": "exchanger",
+      "kind": "toggle",
+      "command": "exchanger-enabled",
+      "binding": "/controls/exchanger/enabled"
+    },
+    {
+      "id": "exchanger-load-control",
+      "label": "Requested load",
+      "component": "exchanger",
+      "kind": "range",
+      "command": "exchanger-load",
+      "binding": "/controls/exchanger/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "exchanger-fault-control",
+      "label": "Injected failure",
+      "component": "exchanger",
+      "kind": "toggle",
+      "command": "exchanger-fault",
+      "binding": "/controls/exchanger/fault"
+    },
+    {
+      "id": "exchanger-repair-control",
+      "label": "Repair component",
+      "component": "exchanger",
+      "kind": "button",
+      "command": "exchanger-repair"
+    },
+    {
+      "id": "hold-enabled-control",
+      "label": "Enabled",
+      "component": "hold",
+      "kind": "toggle",
+      "command": "hold-enabled",
+      "binding": "/controls/hold/enabled"
+    },
+    {
+      "id": "hold-load-control",
+      "label": "Requested load",
+      "component": "hold",
+      "kind": "range",
+      "command": "hold-load",
+      "binding": "/controls/hold/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "hold-fault-control",
+      "label": "Injected failure",
+      "component": "hold",
+      "kind": "toggle",
+      "command": "hold-fault",
+      "binding": "/controls/hold/fault"
+    },
+    {
+      "id": "hold-repair-control",
+      "label": "Repair component",
+      "component": "hold",
+      "kind": "button",
+      "command": "hold-repair"
+    },
+    {
+      "id": "buffer-enabled-control",
+      "label": "Enabled",
+      "component": "buffer",
+      "kind": "toggle",
+      "command": "buffer-enabled",
+      "binding": "/controls/buffer/enabled"
+    },
+    {
+      "id": "buffer-load-control",
+      "label": "Requested load",
+      "component": "buffer",
+      "kind": "range",
+      "command": "buffer-load",
+      "binding": "/controls/buffer/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "buffer-fault-control",
+      "label": "Injected failure",
+      "component": "buffer",
+      "kind": "toggle",
+      "command": "buffer-fault",
+      "binding": "/controls/buffer/fault"
+    },
+    {
+      "id": "buffer-repair-control",
+      "label": "Repair component",
+      "component": "buffer",
+      "kind": "button",
+      "command": "buffer-repair"
+    },
+    {
+      "id": "filler-enabled-control",
+      "label": "Enabled",
+      "component": "filler",
+      "kind": "toggle",
+      "command": "filler-enabled",
+      "binding": "/controls/filler/enabled"
+    },
+    {
+      "id": "filler-load-control",
+      "label": "Requested load",
+      "component": "filler",
+      "kind": "range",
+      "command": "filler-load",
+      "binding": "/controls/filler/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "filler-fault-control",
+      "label": "Injected failure",
+      "component": "filler",
+      "kind": "toggle",
+      "command": "filler-fault",
+      "binding": "/controls/filler/fault"
+    },
+    {
+      "id": "filler-repair-control",
+      "label": "Repair component",
+      "component": "filler",
+      "kind": "button",
+      "command": "filler-repair"
+    },
+    {
+      "id": "packer-enabled-control",
+      "label": "Enabled",
+      "component": "packer",
+      "kind": "toggle",
+      "command": "packer-enabled",
+      "binding": "/controls/packer/enabled"
+    },
+    {
+      "id": "packer-load-control",
+      "label": "Requested load",
+      "component": "packer",
+      "kind": "range",
+      "command": "packer-load",
+      "binding": "/controls/packer/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "packer-fault-control",
+      "label": "Injected failure",
+      "component": "packer",
+      "kind": "toggle",
+      "command": "packer-fault",
+      "binding": "/controls/packer/fault"
+    },
+    {
+      "id": "packer-repair-control",
+      "label": "Repair component",
+      "component": "packer",
+      "kind": "button",
+      "command": "packer-repair"
+    },
+    {
+      "id": "power-enabled-control",
+      "label": "Enabled",
+      "component": "power",
+      "kind": "toggle",
+      "command": "power-enabled",
+      "binding": "/controls/power/enabled"
+    },
+    {
+      "id": "power-load-control",
+      "label": "Requested load",
+      "component": "power",
+      "kind": "range",
+      "command": "power-load",
+      "binding": "/controls/power/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "power-fault-control",
+      "label": "Injected failure",
+      "component": "power",
+      "kind": "toggle",
+      "command": "power-fault",
+      "binding": "/controls/power/fault"
+    },
+    {
+      "id": "power-repair-control",
+      "label": "Repair component",
+      "component": "power",
+      "kind": "button",
+      "command": "power-repair"
+    },
+    {
+      "id": "controller-enabled-control",
+      "label": "Enabled",
+      "component": "controller",
+      "kind": "toggle",
+      "command": "controller-enabled",
+      "binding": "/controls/controller/enabled"
+    },
+    {
+      "id": "controller-load-control",
+      "label": "Requested load",
+      "component": "controller",
+      "kind": "range",
+      "command": "controller-load",
+      "binding": "/controls/controller/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "controller-fault-control",
+      "label": "Injected failure",
+      "component": "controller",
+      "kind": "toggle",
+      "command": "controller-fault",
+      "binding": "/controls/controller/fault"
+    },
+    {
+      "id": "controller-repair-control",
+      "label": "Repair component",
+      "component": "controller",
+      "kind": "button",
+      "command": "controller-repair"
+    },
+    {
+      "id": "flow-enabled-control",
+      "label": "Enabled",
+      "component": "flow",
+      "kind": "toggle",
+      "command": "flow-enabled",
+      "binding": "/controls/flow/enabled"
+    },
+    {
+      "id": "flow-load-control",
+      "label": "Requested load",
+      "component": "flow",
+      "kind": "range",
+      "command": "flow-load",
+      "binding": "/controls/flow/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "flow-fault-control",
+      "label": "Injected failure",
+      "component": "flow",
+      "kind": "toggle",
+      "command": "flow-fault",
+      "binding": "/controls/flow/fault"
+    },
+    {
+      "id": "flow-repair-control",
+      "label": "Repair component",
+      "component": "flow",
+      "kind": "button",
+      "command": "flow-repair"
+    },
+    {
+      "id": "temperature-enabled-control",
+      "label": "Enabled",
+      "component": "temperature",
+      "kind": "toggle",
+      "command": "temperature-enabled",
+      "binding": "/controls/temperature/enabled"
+    },
+    {
+      "id": "temperature-load-control",
+      "label": "Requested load",
+      "component": "temperature",
+      "kind": "range",
+      "command": "temperature-load",
+      "binding": "/controls/temperature/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "temperature-fault-control",
+      "label": "Injected failure",
+      "component": "temperature",
+      "kind": "toggle",
+      "command": "temperature-fault",
+      "binding": "/controls/temperature/fault"
+    },
+    {
+      "id": "temperature-repair-control",
+      "label": "Repair component",
+      "component": "temperature",
+      "kind": "button",
+      "command": "temperature-repair"
+    },
+    {
+      "id": "plant-setRunning-control",
+      "label": "Run the shared plant",
+      "kind": "toggle",
+      "command": "plant-setRunning",
+      "binding": "/running"
+    },
+    {
+      "id": "plant-step-control",
+      "label": "Advance one model step",
+      "kind": "button",
+      "command": "plant-step"
+    },
+    {
+      "id": "plant-reset-control",
+      "label": "Reset dynamics \u00b7 keep edited parameters",
+      "kind": "button",
+      "command": "plant-reset"
+    }
+  ],
+  "units": {
+    "flow": "normalized flow units",
+    "inventory": "normalized inventory units",
+    "load": "% requested demonstration load",
+    "pressure": "normalized pressure index",
+    "temperature": "normalized model thermal index; artwork displays an illustrative range"
+  },
+  "provenance": [
+    {
+      "id": "demo-model",
+      "label": "Editable placeholder model",
+      "kind": "assumed",
+      "description": "Family-level normalized behavior for UI experimentation; no calibrated industry process, safety envelope or recipe."
+    },
+    {
+      "id": "assumed-topology",
+      "label": "Illustrative editable routing",
+      "kind": "illustrative",
+      "description": "Industry-inspired stage names and interfaces. This is not a verified plant P&ID, wiring diagram or production design."
+    }
+  ],
+  "assumptions": [
+    {
+      "id": "nominalCapacity",
+      "label": "Default normalized stage capacity",
+      "value": 75,
+      "unit": "normalized units",
+      "provenance": "demo-model"
+    },
+    {
+      "id": "warningIndex",
+      "label": "Demonstration warning threshold",
+      "value": 78,
+      "unit": "normalized index",
+      "provenance": "demo-model"
+    },
+    {
+      "id": "optionalUtilities",
+      "label": "Utility equipment is illustrative and may be optional",
+      "value": true,
+      "provenance": "assumed-topology"
+    }
+  ]
+}

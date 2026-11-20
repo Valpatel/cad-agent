@@ -71,14 +71,14 @@ test('safeUrl keeps web, mail, data-image and relative URLs only', () => {
 });
 
 test('link rewriting touches real tags only, and decodes and encodes each URL once', () => {
-  // Review of #108: a snippet showing <a href="kit/file-viewer.html?file=...&back=..."> was rewritten into a GitHub URL.
+  // Review of #108: a snippet showing <a href="kit/files/file-viewer.html?file=...&back=..."> was rewritten into a GitHub URL.
   const html = sanitize('<p><a href="docs/a.md?x=1&amp;y=2">real</a></p>'
-    + '<pre><code>&lt;a href="kit/file-viewer.html?file=a.step&amp;back=index.html"&gt;open&lt;/a&gt;</code></pre>');
+    + '<pre><code>&lt;a href="kit/files/file-viewer.html?file=a.step&amp;back=index.html"&gt;open&lt;/a&gt;</code></pre>');
   const seen = [];
   const out = rewriteUrls(html, url => { seen.push(url); return `/x/${url}`; });
   assert.deepEqual(seen, ['docs/a.md?x=1&y=2'], 'only the real link is offered, decoded');
   assert.match(out, /<a href="\/x\/docs\/a\.md\?x=1&amp;y=2">/);
-  assert.ok(out.includes('href="kit/file-viewer.html?file=a.step&amp;back=index.html"'), out);
+  assert.ok(out.includes('href="kit/files/file-viewer.html?file=a.step&amp;back=index.html"'), out);
   assert.ok(!out.includes('&amp;amp;'));
   assert.equal(rewriteUrls(html, () => null), html, 'returning null keeps the tag as it was');
 });

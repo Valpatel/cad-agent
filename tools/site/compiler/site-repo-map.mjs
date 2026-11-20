@@ -29,14 +29,16 @@ export function inventory(files) {
 // Lex the WHOLE document before walking: reference definitions may live in another section.
 const lexMarkdown = text => marked.lexer(text.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n/, ''));
 function tokenDetails(tokens) {
-  const links = [], tables = [], diagrams = [];
+  const links = [], tables = [], diagrams = [], figures = [];
   marked.walkTokens(tokens, token => {
     if (token.type === 'link' || token.type === 'image') links.push(token.href);
+    if (token.type === 'image') figures.push(token.href);
     if (token.type === 'table') tables.push(token.raw);
     if (token.type === 'html') for (const match of token.text.matchAll(/\b(?:href|src)=["']([^"']*)["']/gi)) links.push(match[1]);
+    if (token.type === 'html') for (const match of token.text.matchAll(/<img\b[^>]*\bsrc=["']([^"']*)["']/gi)) figures.push(match[1]);
     if (token.type === 'code' && token.lang === 'mermaid') diagrams.push(token.text);
   });
-  return { links, tables: tables.join('\n'), diagrams };
+  return { links, tables: tables.join('\n'), diagrams, figures };
 }
 export function markdown(text) { return tokenDetails(lexMarkdown(text)); }
 const beneath = (file, root) => file === root || file.startsWith(root + '/');
@@ -98,9 +100,14 @@ export function checkMap({ files, read, policy, publication = null }) {
     }
     if ((p && owner !== dir + '/README.md' && p.members !== 'policy') || !dir) continue;
     const doc = md(owner);
-    if (!doc.diagrams.length) problems.push(`${owner}: missing Mermaid map`);
+    const svgMap = doc.figures.some(href => {
+      const target = resolve(owner, href);
+      return target && target.endsWith('.svg') && known.has(target) && /<svg\b/.test(read(target));
+    });
+    if (!doc.diagrams.length && !svgMap) problems.push(`${owner}: missing Mermaid or local SVG map`);
     if (!doc.tables.trim()) problems.push(`${owner}: missing file/folder table`);
     const links = doc.links.map(h => resolve(owner, h)).filter(Boolean);
+    const tableLinks = markdown(doc.tables).links.map(h => resolve(owner, h)).filter(Boolean);
     const parent = posix.dirname(dir) === '.' ? '' : posix.dirname(dir), parentOwner = ownerOf(parent);
     if (parentOwner !== owner && !links.includes(parentOwner) && !doc.links.includes(sourceURL(parentOwner))) problems.push(`${owner}: missing up link to ${parentOwner}`);
     for (const name of [...dirs.get(dir)].sort()) {
@@ -114,7 +121,7 @@ export function checkMap({ files, read, policy, publication = null }) {
         continue;
       }
       if (dir === 'docs/changelog.d' && /^\d+-[a-z0-9-]+\.md$/.test(name)) continue; // Actual cut_release parser tests own fragment format.
-      const literal = doc.tables.includes('`' + name + '`') || doc.tables.includes('`' + name + '/`') || doc.tables.includes('[' + name + ']') || doc.tables.includes('[' + name + '/]') || doc.tables.includes('](' + name + '/') || doc.tables.includes('](' + name + ')');
+      const literal = tableLinks.includes(item) || doc.tables.includes('`' + name + '`') || doc.tables.includes('`' + name + '/`') || doc.tables.includes('[' + name + ']') || doc.tables.includes('[' + name + '/]') || doc.tables.includes('](' + name + '/') || doc.tables.includes('](' + name + ')');
       if (!literal) problems.push(`${owner}: table missing ${name}`);
       if (p?.members === 'policy' && !dirs.has(item) && !links.includes(item))
         problems.push(`${owner}: policy file ${item} needs its exact owner link`);

@@ -306,6 +306,18 @@
     {
       "source": "docs/examples/numbered-coupons/README.md",
       "public": "docs/numbered-coupons.md"
+    },
+    {
+      "source": "docs/practice/scada/architecture.md",
+      "public": "docs/scada/architecture.md"
+    },
+    {
+      "source": "docs/practice/scada/local-use.md",
+      "public": "docs/scada/local-use.md"
+    },
+    {
+      "source": "docs/practice/scada/resources-and-growth.md",
+      "public": "docs/scada/resources-and-growth.md"
     }
   ],
   "unpublished": [

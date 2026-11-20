@@ -9,6 +9,197 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
 
 ## Unreleased
 
+## v0.48.0 (2026-11-17)
+
+**New**
+- The toolkit's build-guide demo and the home page's "Assembly & build guides" card now step through a real assembly: Gyropup's turret, twelve steps over 55 parts in the order Gyropup's own recipe gives, each step's new parts highlighted and drawn back along the way they go in, earlier parts ghosted. It is an example sequence from a work-in-progress prototype, not a verified build procedure; a CAD step order does not prove the parts can physically be assembled in that order. Converter, receipt and `--check`: `docs/examples/build-guide/`. Gyropup's design-log codes (D42, v1) are dropped from its instruction text by stated rules, every edit recorded so the original text can be restored and checked (#811).
+- Assembly guides may bind a packed `cad-agent-model/1` (from `pack_view`) instead of an STL manifest; the reader and release packaging accept it. The turret's 55 meshes take 306 KB this way instead of 4.4 MB of STL (#811).
+- Assembly reader: a guide's optional plain-text `source.qualification` (what the guide is and is not) is shown under its version line (#811).
+
+**Changed**
+- Assembly reader: Previous and Next sit above the step's text; on phones the step list, the buttons and the text come before the version line, so a long step keeps its buttons on a 390 × 664 screen. At phone widths every control is at least 44 px, and each part's show and colour inputs carry the part's name (#811).
+- The installed wheel now includes the assembly reader's examples (`webkit/assembly/examples/`): about 350 KB more. Exported assembly readers now carry `model/model.js` (33 KB), which the reader loads only for a packed model (#811).
+- The synthetic rail bench is no longer featured on any card; it stays the reader's test fixture and stays published at `/web/toolkit/assembly/`, so existing links to it keep working (#811).
+- The site's top bar (`ui/appnav.js`) on phones: every link is a 44 px target and all fit at 360 px; the assembly reader takes the bar's height from its 3D view, not from under its panel, and keeps its own top bar on one row (#811).
+
+## v0.47.0 (2026-11-17)
+
+**New**
+- Robot simulation replay: the featured example is now Gyropup, a work-in-progress wheel-legged robot, in four recorded MuJoCo scenarios from its dated snapshot (kerb drop, plank, push recovery, landing), chosen in the viewer, with the snapshot's own pass verdict and peak motor torque against its limit. Replayed, not recomputed; the two-link arm stays as the editable example (#798).
+- Replay format: optional mesh parts from a packed `cad-agent-model/1` library (`loadMeshLibrary`), fixed `scenery`, `opacity`, a camera-followed body (`view.follow`), and a `cad-agent.replay-index/1` of named recordings with summaries (`loadReplayIndex`, `createReplayViewer({scenarios})`, `selectScenario`) (#798).
+- `docs/examples/robot-replay/gyropup.py` converts Gyropup's recorded snapshot to that format with a receipt of source hashes; `--check` verifies. It needs no MuJoCo (#798).
+- `cad-agent --version` prints the version and the package folder it runs from; every `cad-agent <command> --help` opens with the command's one-line description (#799).
+- Site: every page has link-card tags (`og:title`, `og:description`, `og:url`, `og:image`, `twitter:card`) from its own title, description and address (the 404 page has no `og:url`), one owned card picture drawn by `tools/site/figures/social-card.mjs` with a hash record, and an `apple-touch-icon`. The build fails on a page without its own card tags, and on any address in `llms.txt` or `llms-full.txt` the built site does not serve (#804).
+
+**Changed**
+- Site browser suite: a failed navigation's receipt now says, for each main-frame document request, which of Playwright's `request`, `response`, `requestfinished` and `requestfailed` events it got and when, which routes the page and its context had, and, when a route handler took it, when the handler ran and ended and how each `fetch`, `fulfill` or `continue` it made settled (status and body size for a fetch). Two planted controls in the suite pin it: a handler that never answers and one that fulfils only after the navigation failed (#686).
+- The home and toolkit "Robot simulation replay" cards move: a lazy still, swapped for an animated capture only once the card nears the screen, never under reduced motion or Save-Data (#798).
+- The replay page takes the hosting site's top bar when its address carries `nav=1`, like the model and file demos; without it the page requests nothing extra (#798).
+
+**Fixed**
+- The POSIX installer uninstalls when `CAD_AGENT_UNINSTALL=1` is set, as the install guide says; before, it updated instead. Both installers take `1`, `true` or `yes` to uninstall and empty, `0`, `false` or `no` to install, and stop on any other value. Both installers say that uv, its cache and Pythons stay, and the guide lists what uninstall leaves (#799).
+- When `~/.local/bin` is not on PATH, the installers say how to use `cad-agent` in that terminal and name uv by its full path for `tool update-shell` (#799).
+- The agent guide (and llms.txt) prints `cad-agent choose joining --load 20 --material petg`, a form that decides, instead of the bare command, which exits 2 by design; a test runs every `cad-agent` command the guide prints (#799).
+- The Playwright hints name a command that works in the installer's uv tool environment (`uv tool install ... --with playwright`; it has no pip; quoted for PowerShell on Windows), and `cad-agent update` keeps packages added with `--with` when it reinstalls, from the folder, file, URL or Git source they came from; one it cannot add again exactly is named instead (#799).
+- `cad-agent agents install` and `update` list only the skill links they changed, not every link on every run (#799).
+- The local server's injected top bar imports `/_cadagent/kit/ui/appnav.js`, not a path that was a 404 (#799).
+- The install guide states the first download (about 1.7 GB on Linux x86-64, measured; the installers say about 2 GB) and names the installer scripts by their repository paths; a report's "no render" says which file is missing and what writes it (#799).
+- Site: a link to `/docs/agent-workflow#install-unix` or `#install-windows` opens that install block on arrival and when the address's `#` part changes, so the command shows below the header (which takes two rows on phones); the home card says to name what to build after the pasted line (#804).
+- Site: "For agents" stays in the phone header, which takes a second row below 560 px (#804).
+- Site: the home page's layer-cake blocks open the section their label names (for example `/docs/toolkit#commands`); a build fails on a section the page does not have, and a `--worktree` draft warns and links the page (#804).
+- Site: the toolkit's build-guide and original-file demos show the site's top bar (Explore, Toolkit, For agents; the name leads home). The Toolkit cards link them with `nav=1`, and the viewers then read the host's `site/nav.json` the way a project's `cad-agent site` pages do, so the generic kit names no site of its own. The assembly example's guide line says it is a synthetic fixture (`source commit 1111111111`) (#804).
+- Web kit: `model/viewer.html` and `files/file-viewer.html` show a host site's top bar only when their address carries `nav=1`; without it they load no `ui/appnav.js` and ask for no `site/nav.json`, so a project that copies the kit sees no request and no console line. A host that opts in without the file gets one 404 for it and no bar. `cad-agent site --serve` still adds its bar to them, with their tab marked, because it now skips only pages with a bar in their markup (#804).
+- Site: on phones the whole hero recording fits the first screen at 390x664 and 360x640 (a tighter lede, gaps and action rows; the wording and order are unchanged); at 320x568 it does not (#804).
+- Site: "Open the playground" opens Gyropup's playground on the recorded turret (`?design=turret-box`), not its default robot (#804).
+- Web kit: a viewer's top bar (`ui/appnav.js`) turns live reload on only when `site/nav.json` says the server offers it, which `cad-agent site --serve` now does; a static copy served from `localhost` no longer gets a 404 poll every two seconds (#804).
+- Site: the reference line in `llms.txt` no longer glues a `;` to an address, which plain link finders read as a dead link; the 404 page's feedback link names the missing address, and its link card names no address of its own (#804).
+
+## v0.46.0 (2026-11-16)
+
+**New**
+- `<cad-model loading="scroll">`: the viewer keeps its look-ahead but starts nothing (no three.js, no model data) until the reader scrolls the page, or focuses or presses inside the element; the element joins the tab order so a keyboard reader can start it without scrolling. Other viewers load as before (#748).
+- `tools/archive_pointers.py`: adds offline-mirror `archive` pointers (`sha256`, `kind`, `fetched`, `redistribute: false`) to reference records whose url is in a mirror's JSONL manifest kept outside the repo. Dry run by default, `--write` to apply; existing pointers are never overwritten and a sha256 mismatch is reported. Shards keep the importer's exact layout and the core file keeps its comments (#789).
+
+**Changed**
+- Home page: the first screen now shows a real running example. The headline, a shorter lede and the actions sit beside (on phones, above) Gyropup's turret playground recording, with its limits in one line (a work-in-progress prototype, not physics validation) and a link to the live playground. The page loads its 9 KB still first and swaps in the 324 KB animation after the page has loaded; under reduced motion, with Save-Data, or without script, the still stays (#748).
+- Home page: the pixel-art workshop is a slim cropped band between the hero and "See it run", which now leads with the two interactive 3D viewers. They use `loading="scroll"`, so a visitor who does not scroll downloads no 3D model at any screen size (#748).
+- `llms.txt` lists the home page's running examples under "See it run", and `index.md` follows the new hero order (#748).
+- `ScadaViewer.render()` now emits the same scale-note text that the mounted camera shows (`… · drag or pinch to explore` below 80% zoom); the visible text after mount is unchanged (#761).
+- Agent kit, `cad-pr-review`: "After the merge" now deletes the merged head branch on origin once its tip equals the merged head, and in a cloud session, whose git proxy has refused the delete (observed 2026-11-16), names the branch to the owner instead of retrying; the worktree, its venv and temp folder and the local branch go only after the worktree is clean and its head is on `origin/dev`. The merge conditions use "released" for a PR free to merge, link the work-claim section, rely on the role line rather than the shared footer, date the two refusals, and note that a failed job may be re-run once, by the author side, only for a failure the diff did not cause and only after the whole workflow run has finished (#772).
+- Agent kit, `cad-remote-runs`: a cloud session commits CI's SCADA recapture artifact unchanged (on `dev` since #763) and fetches it through the MCP artifact download; the folder-map width limit is stated as measured (#762).
+- CONTRIBUTING: agents use absolute paths for worktree commands; do not edit a PR description after opening (it re-runs CI and the gates); a new pull-request check step, or a suite naming a new repo file, updates `.github/ci-checks.json`; the merged branch is deleted after the worktree (#772).
+- The build-plates figure generator moved to `tools/figures/plates_figure.py`, beside the other figure generators (#789).
+
+**Fixed**
+- SCADA viewer: a live simulation tick no longer replaces the camera's zoom readout (a click target) or the scale note, and no longer strips and re-applies the diagram's camera style and `data-camera-*` attributes. A tick now writes only values that changed, so a press and release that straddle a tick stay on the same nodes, and keyboard focus and hover survive (#761).
+
+## v0.45.0 (2026-11-16)
+
+**New**
+- `tools/site/figures/gyropup-turret.mjs` records Gyropup's turret browser playground from a clean local checkout into
+  `docs/img/gyropup/turret-playground.webp` and a reduced-motion still, with its commit in `SOURCE.json`. It is a
+  playground of a work-in-progress prototype, not physics validation (#748).
+- `cad-pr-review` skill: one review-criteria page (severities, checks for every PR and by change type, the evidence
+  each needs, what a pass verdict does not mean), independence rules for the reviewer, and "Merging without the
+  owner": when an agent merges into `dev`, which PRs need the owner's go-ahead recorded on the PR first (it never
+  replaces a gate), and a post-merge checklist
+  (#750).
+- `cad-pr-review` and `cad-pr-reviewer` give the GitHub MCP tool beside each `gh` command, including the gate re-run
+  and the merge, and a stated substitute for the local `tools/ci_gates.py` run in a session without `gh`; what the
+  MCP merge needs under the ruleset and what its refusals mean (#750).
+- `python3 tools/ci/preflight.py`: before pushing, lists the checks CI runs for the files a branch changes (since `origin/dev`, plus uncommitted ones, or `--paths`) and runs those this machine can. Checks it cannot run (a missing Playwright engine or build, a Python minor CI pins for a version-sensitive check, uninstalled Node dependencies, Windows) are reported as `not run` with the reason, never as passed, and listed again at the end; slow ones run with `--slow`. A step that exists only for CI (the SCADA recapture after a failed provenance check) is listed as `ci only` with its reason and never run. Editing a workflow file selects every check that workflow runs. It exits 0 only when every selected check ran and passed (or none was selected, said as such), 1 when one failed and 3 when some did not run here; a pass on another browser, Python or Node than CI's is counted separately. `--list`, `--json` and `--only` serve agents. The path-to-check mapping is `.github/ci-checks.json`, and `tests/repo/ci/test_ci_checks.py` fails when a pull-request workflow gains a check it does not mirror (#759).
+- CI: when the SCADA gallery and scenario provenance check fails, the `scada (chromium)` job regenerates the stale outputs on its pinned shell and uploads them, with a hash manifest, as the `scada-recapture-<head SHA>` artifact; an author without that shell commits it unchanged instead of editing capture hashes (#762).
+
+**Changed**
+- Architecture explanations use subject-specific animated SVGs, with a complete inline gallery and static alternatives.
+- The agent guide explains how to identify and reuse an authorized existing toolkit when a workspace disallows installation or updates, and records provider provenance without assuming a default checkout (#743).
+- The home page leads with what runs: "See it run" sits under the hero, with Gyropup's turret playground first, then
+  the two 3D viewers and cards that open `/toolkit` robot replay, SCADA and build-guide examples (#748).
+- A new "What is in cad-agent" figure shows the stack as a layer cake of blocks, from the open source it is built on,
+  through the libraries, simulators, checks and tests, web widgets and command-line tools, to knowledge and the agent
+  kit. Counts (commands, skills, formulas, tests, references, …) are computed by the build; dashed blocks are planned
+  and link their issue. The README, `index.md`, `llms.txt` and the page title say the same (#748).
+- The checks reel keeps its animated tiles; three more checks stay one click away as text links. A "From frontier to
+  local" section says what the evals measure today and what is next (#748).
+- `/toolkit` example cards carry anchors (`/toolkit#robot-replay`, `#scada-simulations`, `#assembly`, …) (#748).
+- `cad-agent agents install` reports `cad-pr-review` and `cad-pr-reviewer` as needing GitHub access through `gh` or
+  the GitHub MCP tools, which it cannot check from here, instead of `gh` alone (#750).
+- The `cad-remote-runs` skill has a "Working from a cloud container" section: GitHub through MCP tools when `gh` is
+  missing, worktrees and venvs, Chromium-only Playwright, Python 3.12 for provenance checks, regenerating provenance
+  receipts with their generators (never editing a hash), slow steps and an orchestration pattern. `AGENTS.md` points at it, and
+  `.agents/SYMPTOM-INDEX.md` finds the dated evidence by its error text (#758).
+
+**Fixed**
+- `<cad-model>` (`kit/model/model.js`): on a touch screen a one-finger drag now turns the model without scrolling the page; two fingers still zoom the page. It turns the model up and down as well as sideways only while the viewer is at most half as tall as the space that scrolls past it; a taller viewer leaves vertical swipes to the page and turns only sideways (the rule, its limits and the phone figures are in the #769 bullet below) (#650, #769). Two fingers never zoom or pan the model itself (it has no pinch zoom), and a second finger cancels a one-finger turn. Checked with real touch input in Chromium's emulated phone mode only; dragging in Safari and on a physical phone is not yet checked.
+- `<cad-model>`: the turntable never steps backwards when a frame is stamped before the previous one.
+- `<cad-model>`: Explode no longer throws `Invalid explode factor` when the browser's first animation frame is timestamped slightly before the click or Enter press; the tween clamps its progress at both ends (#680).
+- Website visual-layout checks recognize visible images inside inline picture wrappers while retaining hidden-image and minimum-size checks.
+- SCADA Explorer: live ticks no longer rewrite unchanged text on Pause/Run and the sound controls, so a click whose press and release straddle a tick keeps its target; WebKit could drop such a click and leave the session running (#745).
+- SCADA Explorer browser suite: pausing is verified rather than assumed, and a fake-clock check places a tick inside the Pause click, then proves paused and running session round trips restore exactly, with ticks resuming only after import (#745).
+- `tools/ci_gates.py` review gate: a verdict marker followed by one attribution footer that the posting tool appends (a `---` line, then one `_Generated by [Name](https://...)_` line) now counts, so a reviewer in a cloud session can clear the gate. Any other text after the marker, a second footer or a footer with no marker still voids it (#751).
+- `<cad-model>` (`kit/model/model.js`): on a touch screen a viewer now takes vertical drags only while it is at most half as tall as the space that scrolls past it: the visible viewport, or the shortest box around it that can scroll vertically (a scrolling `overflow-y` with content taller than the box) when that is shorter. What lies beside a viewer is no longer counted as free, because it may be another viewer. With two viewers side by side in phone landscape (844×390, 740×360, 932×430) a vertical swipe on the home page layout now scrolls from all 35 sampled start points, where before it scrolled from 5 (the gutters). Those viewers now turn only under sideways drags in phone landscape (in portrait they still turn both ways). A viewer nearly as tall as its scrollable box lets the box scroll again, also behind wrappers that cannot scroll themselves; a wrapper with only `overflow-x:auto` no longer counts (#769).
+- `<cad-model>`: a second finger on the canvas ends a one-finger turn and is itself ignored, so a pinch zooms the page and leaves the view alone (#769).
+- Limits: checked with emulated touch in desktop Chromium only, not in Safari, Chrome on Android or on a physical phone. In portrait the home page's viewers keep vertical turning, and with the first viewer centred a vertical swipe scrolls from 18 of 35 sampled start points at 390×844, 28 at 412×915 and 15 at 360×640; with both viewers on screen at the worst offset, from 7, 7 and 14 (about 51–62 % of the screen takes the swipe, and only the band between the cards and the side gutters scroll). The page is never trapped there, and this is the same as before. On a page that does not scroll at all, a viewer taller than half the viewport now turns only sideways. The rule is decided again when the viewer, the viewport or a scrolling box around it changes size, or the viewer is connected again; not when an ancestor's `overflow` changes or its content starts to overflow without a resize (#769).
+
+## v0.44.1 (2026-11-14)
+
+**Changed**
+- Clarify toolkit, viewer and agent documentation journeys; replace stale feature-branch guidance with shipped source owners and explain current handoffs with reproducible animated SVGs and static alternatives. No runtime API changes.
+
+## v0.44.0 (2026-11-14)
+
+**New**
+- Explorer equipment settings show the actual active equation provider or built-in kernel implementation, contract units and accepted configuration beside editable parameters (#729).
+
+**Changed**
+- SCADA equipment displays its stable unique ID in the diagram and equipment pickers, and inspection no longer leaves a persistent pressed selection fill (#729).
+- Equipment inspection opens compact screen-space quick controls beside the equipment. Detailed readings and host model settings are an explicit second level, preserving the diagram for routine operation (#729).
+
+**Fixed**
+- SCADA valve symbols and diagram cards distinguish open, closed and partial positions with color, geometry and readable labels. Offline readings remain unavailable, while inactive or damaged equipment retains its supplied position (#731).
+- Butterfly valve levers stay inside their symbol bounds, and the shared gallery includes representative valve position and unavailable states (#731).
+
+**Projects must change**
+- `ScadaViewer.openInspector()` now opens nonmodal quick controls; use `openDetails()` for the complete native inspector, or supply `onDetails` to open host-owned model settings (#729).
+
+## v0.43.0 (2026-11-14)
+
+**New**
+- Toolkit capability cards now include owned previews and direct examples for 3D CAD review, recorded robot simulation, original-file viewing, assembly instructions, linkage motion and engineering calculators alongside SCADA. The published assembly example includes its complete source-bound fixture; planned review modes remain clearly identified (#704).
+- Add an inspectable recorded MuJoCo arm simulation with play/pause, time scrubbing, speed and Fit; reusable bounded pose playback, editable illustrative inputs, solver/source receipts and a portable browser example.
+- SCADA equipment can expose a declared valve or motor toggle directly on the diagram, using the same adapter and inspector controls. Missing readings disable the action and read-only observers cannot command equipment.
+- Wastewater, winery and brewery examples now include connected plant overviews, measurement taps, branch valves, PLC/remote I/O and focused views of the same model. Their documented normalized assumptions remain editable; valve isolation and PLC loss have tested downstream effects.
+
+**Changed**
+- Give the SCADA Explorer a fluid desktop workspace and the same local-font, light/dark palette and persisted theme controls as the public Toolkit, while preserving mobile document scrolling and standalone copied-kit operation.
+- Fit simple process chains into balanced rows on wide displays, preserving equipment identities, port connections and manually positioned cameras; complex diagrams keep their authored layouts.
+- Put zoom in, zoom out, readable scale and Fit in one screen-space SCADA camera toolbar, shared by direct cameras and managed viewers (#705).
+- Standalone CAD and assembly viewers follow the shared application theme, with readable controls in both palettes; explicit original-file theme overrides and scoped embedded-viewer APIs remain available.
+- Project-owned SCADA libraries, artwork, scenarios, maintenance tools and agent skills now use MIT, with complete licenses in portable packages and unchanged third-party notices (#713).
+- SCADA Toolkit documentation stays in the shared cad-agent navigation, with native library maps, local setup and canonical agent workflows (#713).
+
+**Fixed**
+- Use wide and ultrawide displays for site collections, document figures/tables and contained viewer examples while keeping prose readable. Compose the homepage introduction beside its artwork on wide screens, with bounded artwork and model-view heights (#703).
+- SCADA native controls follow the current application palette in WebKit. Switching views mounts a new SVG canvas atomically so tank and equipment gradient fills remain visible; ordinary model ticks preserve animation, focus and camera state.
+
+**Projects must change**
+- Direct diagram controls are optional; existing system definitions retain their inspectors. Saved sessions for the previous wastewater, winery and brewery topologies are rejected without changing the current session. Start a new session for those expanded examples; no compatibility model or runtime alias is added.
+
+## v0.42.0 (2026-11-14)
+
+**New**
+- Add a contained viewer host for ordinary assembly and original CAD-file viewing, with independent cameras, scoped controls and lifecycle handling (#691).
+- Native Toolkit sections for animated SCADA equipment and 61 example simulations, including a wastewater digester with shared treatment, sludge/energy and control views.
+- Local SCADA UI and simulation libraries, editable equation providers, browsable asset galleries and agent skills for components, models, system definitions and visual review.
+
+**Changed**
+- Agent issue tracking distinguishes ongoing programs, bounded work, understood quick fixes and pending design reviews, with a bundled label guide and evidence-based issue templates (#679).
+- Bound portable assembly-guide exports to a checked runtime dependency profile containing the required modules, notices and source-bound assets.
+- SCADA runtime, library images, maintenance tools and tests have distinct canonical owners. Equipment and scenario galleries are grouped by domain and type.
+- Folder maps support compact owned SVGs, and JavaScript-only test folders no longer require Python package markers.
+- Organize browser modules under their actual model, file, UI, document, assembly, analysis and calculator owners (#696).
+
+**Fixed**
+- Prevent broad filled floor-grid polygons in WebKit's shared 3D stage while preserving the camera range, grid axes, themes, dimming, ground shadows, and viewer controls.
+- The homepage’s recorded thermal and airflow examples and diagnosis card now link to their CFD evidence and its limits, instead of the unrelated contact-FEA survey (#677).
+- FEA `Study.converge()` compares unrounded design stresses, so tiny loads cannot falsely pass after rounding to zero; its stress pair and relative change retain full numerical precision (#687).
+- Mobile Toolkit readability, element-filter reset, nested application routing and draft asset selection.
+
+**Projects must change**
+- Refresh copied kits with `cad-agent webkit` and update direct imports and entry URLs to the [canonical owner paths](software/cadagent/webkit/README.md), such as `model/viewer.html` and `files/file-viewer.html`. Flat module URLs are removed; generated guides use the current paths (#696).
+- Re-run FEA convergence checks whose stress changes were affected by rounding to 0.01 MPa; convergence records now contain unrounded numerical values. Display summaries remain rounded (#687).
+
+## v0.41.1 (2026-11-13)
+
+**Fixed**
+- The four-bar transmission-angle chart describes the 40° band as a guideline instead of claiming every angle below it binds; actual kinematic lock reporting is unchanged (#670).
+- `pcb-check` explains that reports missing severity metadata need regeneration with KiCad CLI 10 or newer and `--severity-all`, rather than asking KiCad 9 users to repeat a flag that cannot add the metadata. Incomplete reports still fail closed (#672).
+
+## v0.41.0 (2026-11-13)
+
+**Changed**
+- Legacy CLI evaluation trials can request low, medium or high reasoning effort, preserving medium by default and recording requested effort separately from unknown effective effort; historical records are not backfilled (#665).
+
 ## v0.40.1 (2026-11-13)
 
 **New**

@@ -56,8 +56,39 @@ function binding(value, where) {
   assetURL(value.file, 'https://guide.invalid/bundle/guide.json');
   if (!hashPattern.test(value.sha256)) fail(`${where}: invalid SHA-256`);
 }
+export const PACKED_SCHEMA = 'cad-agent-model/1';
+const bounds = (b, name) => {
+  if (!Array.isArray(b) || b.length !== 6 || !b.every(Number.isFinite) || b.some(n => Math.abs(n) > 1e9) || [0, 1, 2].some(i => b[i] > b[i + 3])) fail(`Invalid bounds for ${name}`);
+};
+const count = (n, where) => { if (!Number.isSafeInteger(n) || n < 0) fail(`${where}: invalid count`); };
+/** A model packed by `cadagent.publish.view.pack_view` (`cad-agent-model/1`): one hash-bound binary for every part.
+ * The binary's SHA-256 binds every mesh, so parts carry no file or hash of their own. */
+export function validatePackedView(model) {
+  if (!record(model) || model.schema !== PACKED_SCHEMA) fail('Not a packed model');
+  if (model.units !== 'mm' || model.up !== 'z') fail('Packed model must be mm, z-up');
+  viewAssetURL(model.bin, 'https://guide.invalid/model.json', { guide: true });
+  if (!hashPattern.test(model.sha256)) fail('Packed model: invalid binary SHA-256');
+  if (model.encoding !== undefined && model.encoding !== 'gzip') fail('Packed model: unknown encoding');
+  if (!Number.isInteger(model.quant) || model.quant < 1 || model.quant > 65535) fail('Packed model: invalid quantisation');
+  bounds(model.box_mm, 'the packed model');
+  if (!Array.isArray(model.parts) || !model.parts.length || model.parts.length > 2000) fail('Model manifest needs 1..2000 parts');
+  const names = new Set();
+  for (const p of model.parts) {
+    if (!record(p)) fail('Invalid model part');
+    text(p.name, 'Part name', 200);
+    if (names.has(p.name)) fail(`Duplicate model part ${p.name}`);
+    names.add(p.name); bounds(p.bounds_mm, p.name);
+    for (const k of ['vertices', 'triangles', 'offset']) count(p[k], `${p.name} ${k}`);
+    if (![16, 32].includes(p.index_bits)) fail(`${p.name}: invalid index width`);
+    if (p.color !== undefined && !(typeof p.color === 'string' && /^#[0-9a-f]{6}$/i.test(p.color))) fail(`Invalid color for ${p.name}`);
+    if (p.visible !== undefined && typeof p.visible !== 'boolean') fail(`Invalid visibility for ${p.name}`);
+    if (p.explode !== undefined && p.explode !== null) vec(p.explode, 'Explode direction', true);
+  }
+  return model;
+}
 /** Validate legacy manifests too; guide-bound manifests additionally require explicit frame and mesh hashes. */
 export function validateView(manifest, { guide = false } = {}) {
+  if (record(manifest) && manifest.schema === PACKED_SCHEMA) return validatePackedView(manifest);
   if (!record(manifest) || !Array.isArray(manifest.parts) || !manifest.parts.length || manifest.parts.length > 2000)
     fail('Model manifest needs 1..2000 parts');
   if ((guide || manifest.units !== undefined) && manifest.units !== 'mm') fail('Model units must be mm');
@@ -86,6 +117,8 @@ export function validateGuide(guide, manifest) {
   id(guide.snapshot.id, 'Snapshot'); text(guide.snapshot.revision, 'Revision', 200);
   if (!['released', 'wip'].includes(guide.snapshot.status) || !/^[0-9a-f]{40}$/.test(guide.snapshot.source_commit)) fail('Invalid snapshot status/source commit');
   if (guide.source !== undefined && !record(guide.source)) fail('Guide source metadata must be an object');
+  // The guide's own statement of what it is and is not (shown under the version line); optional, plain text.
+  if (guide.source?.qualification !== undefined) text(guide.source.qualification, 'Guide qualification', 2000);
   binding(guide.model, 'Model');
   if (guide.assembly_plan !== undefined) binding(guide.assembly_plan, 'Assembly plan');
   validateView(manifest, { guide: true });
@@ -171,10 +204,12 @@ export async function loadGuide(url, options = {}) {
   const manifest = parseJSON(await readAsset(manifestUrl, { ...options, redirect: 'error', expectedHash: guide.model.sha256, maxBytes: 2 * 1024 * 1024 }));
   validateGuide(guide, manifest);
   // Validate every referenced URL before the renderer starts fetching mesh data.
-  for (const part of manifest.parts) assetURL(part.file, manifestUrl, options.assetRoot);
+  if (manifest.schema === PACKED_SCHEMA) assetURL(manifest.bin, manifestUrl, options.assetRoot);
+  else for (const part of manifest.parts) assetURL(part.file, manifestUrl, options.assetRoot);
   for (const step of guide.steps) if (step.poster) assetURL(step.poster.file, guideURL, options.assetRoot);
   let plan;
   if (guide.assembly_plan !== undefined) {
+    if (manifest.schema === PACKED_SCHEMA) fail('An assembly plan needs per-part mesh hashes, which a packed model does not carry');
     binding(guide.assembly_plan, 'Assembly plan');
     plan = normalizePlan(parseJSON(await readAsset(assetURL(guide.assembly_plan.file, guideURL, options.assetRoot),
       { ...options, redirect: 'error', expectedHash: guide.assembly_plan.sha256, maxBytes: 2 * 1024 * 1024 })),
@@ -204,7 +239,7 @@ function validatePlanGuide(guide, plan) {
     fail('Guide must project the exact source and serial plan operations without authored offsets');
 }
 export function createGuideController(viewer, guide, { plan } = {}) {
-  validateGuide(guide, { units: 'mm', up: 'z', parts: viewer.parts.map(({ mesh, center, ...part }) => part) });
+  validateGuide(guide, viewer.manifest ?? { units: 'mm', up: 'z', parts: viewer.parts.map(({ mesh, center, ...part }) => part) });
   if (guide.assembly_plan) {
     if (!plan) fail('Bound assembly plan is required');
     plan = normalizePlan(plan, { meshHashes: Object.fromEntries(viewer.parts.map(p => [p.name, p.sha256])) });
@@ -268,14 +303,18 @@ export function validateState(state, partNames) {
 export async function mountGuide({ app, panel, title, guideUrl, expectedHash, signal, onProgress = () => {}, assetRoot }) {
   if (expectedHash !== undefined && !hashPattern.test(expectedHash)) fail('Invalid guide SHA-256');
   const loaded = await loadGuide(guideUrl, { expectedHash, signal, assetRoot });
-  const { createViewer } = await import('../viewer.js');
+  const { createViewer } = await import('../model/viewer.js');
   let controls, syncAppearance;
   const viewer = await createViewer({ app, panel, title, manifestUrl: loaded.manifestUrl, manifest: loaded.manifest, guideBound: true, assemblyPlan: loaded.plan, signal, onProgress, assetRoot, onStateChange: () => syncAppearance?.() });
   try {
     const controller = createGuideController(viewer, loaded.guide, { plan: loaded.plan }), guide = loaded.guide;
     controls = document.createElement('section'); controls.className = 'hud-section guide-controls';
-    controls.innerHTML = '<h2>Assembly instructions</h2><p class="guide-version"></p><label>Instruction <select aria-label="Instruction step"></select></label><p class="guide-text"></p><div class="hud-chips"><button type="button" class="hud-btn" data-action="previous">Previous</button><button type="button" class="hud-btn" data-action="next">Next</button><button type="button" class="hud-btn" data-action="reset">Assembled</button></div><label>Display <select aria-label="Instruction display"><option value="ghost">Ghost previous parts</option><option value="solid">Solid</option><option value="wireframe">Wireframe</option></select></label><label><input type="checkbox" checked class="guide-explode"> Show authored explosion</label><p>Selected: <output class="guide-selection">None</output></p><label>Selected part appearance <select aria-label="Selected part appearance" disabled><option value="">Use scene mode</option><option value="solid">Solid</option><option value="transparent">Transparent</option><option value="wireframe">Wireframe</option></select></label>';
-    controls.querySelector('.guide-version').textContent = `${guide.snapshot.revision} · ${guide.snapshot.status} · ${guide.snapshot.source_commit.slice(0, 10)}`;
+    controls.innerHTML = '<h2>Assembly instructions</h2><p class="guide-version"></p><label>Instruction <select aria-label="Instruction step"></select></label><div class="hud-chips"><button type="button" class="hud-btn" data-action="previous">Previous</button><button type="button" class="hud-btn" data-action="next">Next</button><button type="button" class="hud-btn" data-action="reset">Assembled</button></div><p class="guide-text"></p><label>Display <select aria-label="Instruction display"><option value="ghost">Ghost previous parts</option><option value="solid">Solid</option><option value="wireframe">Wireframe</option></select></label><label><input type="checkbox" checked class="guide-explode"> Show authored explosion</label><p>Selected: <output class="guide-selection">None</output></p><label>Selected part appearance <select aria-label="Selected part appearance" disabled><option value="">Use scene mode</option><option value="solid">Solid</option><option value="transparent">Transparent</option><option value="wireframe">Wireframe</option></select></label>';
+    controls.querySelector('.guide-version').textContent = `Guide ${guide.snapshot.revision} · ${guide.snapshot.status === 'wip' ? 'work in progress' : 'released'} · source commit ${guide.snapshot.source_commit.slice(0, 10)}`;
+    if (guide.source?.qualification) {
+      const note = document.createElement('p'); note.className = 'hud-note guide-qualification'; note.textContent = guide.source.qualification;
+      controls.querySelector('.guide-version').after(note);
+    }
     const select = controls.querySelector('select'), mode = controls.querySelector('[aria-label="Instruction display"]'), explode = controls.querySelector('.guide-explode');
     const overview = document.createElement('option'); overview.value = ''; overview.textContent = 'Assembled overview'; select.append(overview);
     for (const step of guide.steps) { const option = document.createElement('option'); option.value = step.id; option.textContent = step.title; select.append(option); }

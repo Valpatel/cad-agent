@@ -1,0 +1,3 @@
+/* Standalone page entry: full-page shell plus scoped viewer. */
+@import url('./page.css');
+@import url('./viewer.css');

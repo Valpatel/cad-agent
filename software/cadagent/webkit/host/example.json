@@ -1,0 +1,21 @@
+{
+  "title": "Contained viewer fixture",
+  "units": "mm",
+  "up": "z",
+  "parts": [
+    {
+      "name": "fixture_block",
+      "file": "example.stl",
+      "bounds_mm": [
+        0,
+        0,
+        0,
+        20,
+        32,
+        18
+      ],
+      "color": "#58cfdb",
+      "sha256": "6ebc1638b6e3839f620f0dc9e84f819c7dc15f66a9e27d14a72b48a749c60a7d"
+    }
+  ]
+}

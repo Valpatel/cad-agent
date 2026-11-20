@@ -21,7 +21,7 @@ Arrows follow the data and the imports:
 - `beams.py` calls `mechanical/compliant/snapfit.py`, so a snap arm here matches `cad-agent snapfit` exactly, and
   `torsion.py` takes its allowable shear strain from there too;
 - `tools/formula_vectors.py` generates cross-language fixtures from the browser-supported Python subset, and
-  `webkit/formulas.js` is tested against them (`--check` keeps the two in step). Generated parity fixtures alone
+  `webkit/calculators/formulas.js` is tested against them (`--check` keeps the two in step). Generated parity fixtures alone
   do not independently validate an equation;
 - [bearing-vectors.json](../../../tests/fixtures/bearing-vectors.json) records cited maker examples, tables and
   published cross-checks. [test_bearings.py](../../../tests/formulas/test_bearings.py) checks those expectations and
@@ -35,7 +35,7 @@ flowchart TD
     F["cadagent.formulas<br/>units · limits · source"]
     C["mechanical/compliant/<br/>snapfit.py"]
     V["tools/formula_vectors.py<br/>parity fixtures"]
-    W["webkit/formulas.js<br/>the site's demos"]
+    W["webkit/calculators/formulas.js<br/>the site's demos"]
     S --> F
     C -->|"snap arms, torsion allowable"| F
     F -->|"browser-supported subset"| V

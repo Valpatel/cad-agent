@@ -1,0 +1,80 @@
+/* Manufacturing artwork. Motion is presentation only; the host supplies state. */
+.scada-component .scada-industrial-art{--scada-industrial-cycle:2.4s;--scada-industrial-material:.65;--scada-industrial-heat:.12}
+.scada-component .scada-industrial-motion{animation-play-state:paused;transform-box:view-box}
+.scada-component .scada-industrial-rotate{animation:scada-industrial-spin var(--scada-industrial-cycle) linear infinite paused}
+.scada-component .scada-industrial-reverse{animation-direction:reverse}
+.scada-component .scada-industrial-belt{animation:scada-industrial-belt var(--scada-industrial-cycle) linear infinite paused}
+.scada-component .scada-industrial-products{animation:scada-industrial-products var(--scada-industrial-cycle) linear infinite paused}
+.scada-component .scada-industrial-jaw{animation:scada-industrial-jaw var(--scada-industrial-cycle) ease-in-out infinite paused;transform-origin:90px 80px}
+.scada-component .scada-industrial-vibrate{animation:scada-industrial-vibrate calc(var(--scada-industrial-cycle) * .36) ease-in-out infinite paused}
+.scada-component .scada-industrial-fall{animation:scada-industrial-fall var(--scada-industrial-cycle) linear infinite paused}
+.scada-component .scada-industrial-exhaust{animation:scada-industrial-exhaust 3.6s ease-in-out infinite paused}
+.scada-component .scada-industrial-air{animation:scada-industrial-air var(--scada-industrial-cycle) linear infinite paused}
+.scada-component .scada-industrial-extrusion{animation:scada-industrial-extrusion var(--scada-industrial-cycle) ease-in-out infinite paused}
+.scada-component .scada-industrial-index{animation:scada-industrial-index var(--scada-industrial-cycle) ease-in-out infinite paused}
+.scada-component .scada-industrial-press{animation:scada-industrial-press var(--scada-industrial-cycle) ease-in-out infinite paused}
+.scada-component .scada-industrial-nozzles{animation:scada-industrial-nozzles var(--scada-industrial-cycle) ease-in-out infinite paused}
+.scada-component .scada-industrial-drum{animation:scada-industrial-drum var(--scada-industrial-cycle) ease-in-out infinite paused;transform-origin:90px 70px}
+.scada-component .scada-industrial-gate{animation:scada-industrial-gate var(--scada-industrial-cycle) ease-in-out infinite paused}
+.scada-component .scada-industrial-screw{animation:scada-industrial-screw var(--scada-industrial-cycle) ease-in-out infinite paused}
+.scada-component .scada-crusher-moving-jaw{animation:scada-crusher-stroke var(--scada-industrial-cycle) ease-in-out infinite paused;transform-origin:112px 46px}
+.scada-component .scada-screen-stones{animation:scada-screen-travel var(--scada-industrial-cycle) linear infinite paused}
+.scada-component .scada-oven-trays{animation:scada-oven-travel calc(var(--scada-industrial-cycle) * 1.8) linear infinite paused}
+.scada-component .scada-oven-coil{animation:scada-oven-heat 3.5s ease-in-out infinite alternate paused}
+.scada-component .scada-tablet-turret{animation:scada-industrial-spin calc(var(--scada-industrial-cycle) * 2) linear infinite paused;transform-origin:0 0}
+.scada-component .scada-tablet-punches{animation:scada-tablet-compress var(--scada-industrial-cycle) ease-in-out infinite paused}
+.scada-component .scada-tablet-discharge{animation:scada-tablet-discharge var(--scada-industrial-cycle) linear infinite paused}
+.scada-component .scada-industrial-material{opacity:var(--scada-industrial-material)}
+.scada-component .scada-industrial-hot-window{opacity:var(--scada-industrial-heat)}
+.scada-component :is(.scada-industrial-wear,.scada-industrial-crack,.scada-industrial-jam,.scada-industrial-spill,.scada-industrial-fuel-leak,.scada-industrial-overheat,.scada-industrial-element-fault,.scada-industrial-door-leak){display:none}
+.scada-component[data-scada-host-state=false][data-active=true][data-running=true]:not([data-failed=true]):not([data-status=offline]) .scada-industrial-motion{animation-play-state:running}
+.scada-component .scada-industrial-art[data-industrial-damage=jammed] .scada-industrial-machine .scada-industrial-motion,
+.scada-component .scada-industrial-art[data-industrial-stopped=true] .scada-industrial-machine .scada-industrial-motion{animation-play-state:paused!important}
+.scada-component .scada-industrial-art:is([data-industrial-damage=worn],[data-industrial-damage=corroded]) .scada-industrial-wear,
+.scada-component .scada-industrial-art:is([data-industrial-damage=ruptured],[data-industrial-damage=refractory-damage]) .scada-industrial-crack,
+.scada-component .scada-industrial-art[data-industrial-damage=jammed] .scada-industrial-jam,
+.scada-component .scada-industrial-art:is([data-industrial-damage=leaking],[data-industrial-damage=ruptured]) .scada-industrial-spill,
+.scada-component .scada-industrial-art[data-industrial-damage=fuel-leak] .scada-industrial-fuel-leak,
+.scada-component .scada-industrial-art[data-industrial-damage=overheated] .scada-industrial-overheat{display:inline}
+.scada-component .scada-industrial-art[data-industrial-damage=element-fault] .scada-industrial-element-fault,
+.scada-component .scada-industrial-art[data-industrial-damage=door-seal-leak] .scada-industrial-door-leak{display:inline}
+.scada-component .scada-industrial-art[data-industrial-damage=element-fault] .scada-rack-oven-elements .scada-oven-coil{opacity:.15;animation-play-state:paused!important}
+.scada-component .scada-industrial-art[data-industrial-damage=overheated] .scada-industrial-hot-window{opacity:1;filter:drop-shadow(0 0 4px #ffb875)}
+.scada-component[data-status=warning] .scada-industrial-readout{stroke:#ffd38a}
+.scada-component[data-failed=true] .scada-industrial-readout{stroke:#ff9cbe}
+.scada-component[data-active=false] .scada-industrial-fill-stream{opacity:0}
+/* Damage can remain visible after the drive trips. Incident motion is separate
+   from production motion; operator pause/offline/reduced motion still win. */
+.scada-component[data-running=true]:not([data-status=offline]) .scada-industrial-art :is(.scada-industrial-spill,.scada-industrial-fuel-leak,.scada-industrial-overheat) .scada-industrial-motion{animation-play-state:running}
+.scada-component:is([data-active=false],[data-failed=true]) .scada-industrial-machine .scada-industrial-motion{animation-play-state:paused!important}
+.scada-component:is([data-running=false],[data-status=offline]) .scada-industrial-motion,
+html.motion-paused .scada-component .scada-industrial-motion,
+.is-paused .scada-component .scada-industrial-motion,
+.twin-document-hidden .scada-component .scada-industrial-motion{animation-play-state:paused!important}
+
+@keyframes scada-industrial-spin{to{transform:rotate(360deg)}}
+@keyframes scada-industrial-belt{to{stroke-dashoffset:-26}}
+@keyframes scada-industrial-products{0%{transform:translateX(-3px)}100%{transform:translateX(5px)}}
+@keyframes scada-industrial-jaw{0%,100%{transform:scaleX(1)}50%{transform:scaleX(.87)}}
+@keyframes scada-industrial-vibrate{0%,100%{transform:translate(0,0)}30%{transform:translate(1px,-.8px)}70%{transform:translate(-1px,.6px)}}
+@keyframes scada-industrial-fall{0%{transform:translateY(-3px);opacity:.35}40%,75%{opacity:1}100%{transform:translateY(4px);opacity:.2}}
+@keyframes scada-industrial-exhaust{0%,100%{transform:translateY(0);opacity:.35}50%{transform:translateY(-3px);opacity:.65}}
+@keyframes scada-industrial-air{to{stroke-dashoffset:-24}}
+@keyframes scada-industrial-extrusion{0%,100%{transform:translateX(0)}50%{transform:translateX(2px)}}
+@keyframes scada-industrial-index{0%,25%{transform:rotate(-4deg)}65%,100%{transform:rotate(4deg)}}
+@keyframes scada-industrial-press{0%,20%,100%{transform:translateY(-2px)}50%,70%{transform:translateY(3px)}}
+@keyframes scada-industrial-nozzles{0%,20%,100%{transform:translateY(0)}45%,75%{transform:translateY(3px)}}
+@keyframes scada-industrial-drum{0%,100%{transform:translateY(-2px) scaleY(.95)}50%{transform:translateY(2px) scaleY(1.03)}}
+@keyframes scada-industrial-gate{0%,30%,100%{transform:translateX(0)}50%,80%{transform:translateX(5px)}}
+@keyframes scada-industrial-screw{0%,100%{transform:translateX(-1px)}50%{transform:translateX(2px)}}
+@keyframes scada-crusher-stroke{0%,100%{transform:rotate(-2deg)}50%{transform:rotate(4deg)}}
+@keyframes scada-screen-travel{0%{transform:translate(-1.5px,-.2px)}100%{transform:translate(3px,.5px)}}
+@keyframes scada-oven-travel{from{transform:translateX(0)}to{transform:translateX(30px)}}
+@keyframes scada-oven-heat{from{filter:drop-shadow(0 0 1px #ff8e4a)}to{filter:drop-shadow(0 0 2.5px #ffd19a)}}
+@keyframes scada-tablet-compress{0%,20%,100%{transform:translateY(-3px)}45%,65%{transform:translateY(2px)}}
+@keyframes scada-tablet-discharge{from{transform:translate(-3px,-1.3px)}to{transform:translate(5px,2.2px)}}
+@media(prefers-reduced-motion:reduce){
+ .scada-component .scada-industrial-motion{animation:none!important;transform:none!important}
+ .scada-component .scada-industrial-material{opacity:var(--scada-industrial-material)}
+ .scada-component .scada-industrial-overheat .scada-industrial-exhaust{opacity:.7}
+}

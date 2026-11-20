@@ -60,7 +60,7 @@ for (const variant of ['serial', 'serial-wrong-axis', 'serial-wrong-order', 'ser
   routes.set(`/${variant}/mini.json`, (_, res) => res.end(encode(mini)));
   routes.set(`/${variant}/index.html`, (_, res) => {
     res.setHeader('Content-Type','text/html');
-    res.end(`<!doctype html><meta name="viewport" content="width=device-width"><link rel="stylesheet" href="/kit/model.css"><style>body{margin:0}cad-model{display:block;width:100%;height:44vh;min-height:230px}</style><script type="module" src="/kit/model.js"></script><cad-model src="/${variant}/mini.json" loading="eager" turn="0"></cad-model><cad-model src="/serial/mini.json" loading="eager" turn="0"></cad-model>`);
+    res.end(`<!doctype html><meta name="viewport" content="width=device-width"><link rel="stylesheet" href="/kit/model/model.css"><style>body{margin:0}cad-model{display:block;width:100%;height:44vh;min-height:230px}</style><script type="module" src="/kit/model/model.js"></script><cad-model src="/${variant}/mini.json" loading="eager" turn="0"></cad-model><cad-model src="/serial/mini.json" loading="eager" turn="0"></cad-model>`);
   });
 }
 const engine = process.env.PLAYWRIGHT_BROWSER === 'webkit' ? webkit : chromium;
@@ -69,6 +69,12 @@ const site = await serveWebkit(routes); let browser, cors;
 
 const cases = [], errors = [], consoleErrors = [];
 const near = (actual, expected, tolerance = 1e-6) => actual.forEach((n, i) => assert.ok(Math.abs(n - expected[i]) < tolerance, `${actual} != ${expected}`));
+function themeContrast(foreground, background, underlay='rgb(10, 10, 15)') {
+  const rgb=color=>color.match(/[\d.]+/g).map(Number), fg=rgb(foreground), bg=rgb(background), base=rgb(underlay);
+  const opaque=bg.slice(0,3).map((n,i)=>n*(bg[3]??1)+base[i]*(1-(bg[3]??1)));
+  const luminance=channels=>channels.map(n=>n/255).map(n=>n<=.04045?n/12.92:((n+.055)/1.055)**2.4).reduce((sum,n,i)=>sum+n*[.2126,.7152,.0722][i],0);
+  const a=luminance(fg.slice(0,3)),b=luminance(opaque);return(Math.max(a,b)+.05)/(Math.min(a,b)+.05);
+}
 // Four noncoplanar corners chosen from native source boxes, never from the motion plan.
 const serialBoxes = JSON.parse(serialFiles.get('fixture.json')).boxes;
 const serialCorners = Object.fromEntries(Object.entries(serialBoxes).map(([name, boxes]) => {
@@ -87,11 +93,11 @@ function checkSerial(actual, position, tolerance = .002) {
 async function serialBrowserChecks(page, browser) {
   const packet = { sourceRevision:process.env.TEST_SOURCE_REVISION || 'unrecorded', engine:engine.name(), browserVersion:browser.version(),
     sourcePlan:hash(serialFiles.get('plan.json')), fixtureMeshes:Object.fromEntries([...serialFiles].filter(([n])=>n.endsWith('.stl')).map(([n,b])=>[n,hash(b)])),
-    runtimeHashes:Object.fromEntries(await Promise.all(['assembly/playback.js','assembly/guide.js','viewer.js','model.js'].map(async n=>[n,hash(await readFile(new URL('../../../software/cadagent/webkit/'+n,import.meta.url)))]))),
+    runtimeHashes:Object.fromEntries(await Promise.all(['assembly/playback.js','assembly/guide.js','model/viewer.js','model/model.js'].map(async n=>[n,hash(await readFile(new URL('../../../software/cadagent/webkit/'+n,import.meta.url)))]))),
     harnessSha256:hash(await readFile(new URL(import.meta.url))), cases:[], samples:[], maxToleranceMm:.002 };
   for (const consumer of ['guide','mini']) {
     const open = async variant => {
-      await page.goto(consumer === 'guide' ? `${site.url}/kit/viewer.html?guide=/${variant}/guide.json` : `${site.url}/${variant}/index.html`);
+      await page.goto(consumer === 'guide' ? `${site.url}/kit/model/viewer.html?guide=/${variant}/guide.json` : `${site.url}/${variant}/index.html`);
       await page.waitForFunction(kind => kind === 'guide' ? document.body.dataset.ready === '1' : [...document.querySelectorAll('cad-model')].every(m => m.dataset.state === 'ready'), consumer);
       await page.evaluate(async ({ consumer, corners }) => {
         const THREE = await import('/kit/vendor/three/three.module.min.js');
@@ -104,7 +110,7 @@ async function serialBrowserChecks(page, browser) {
             throw new Error('Native source landmark missing');
           })]));
         } else {
-          const el = document.querySelector('cad-model'), {decodeModel,inflate} = await import('/kit/model.js');
+          const el = document.querySelector('cad-model'), {decodeModel,inflate} = await import('/kit/model/model.js');
           const model = await (await fetch(el.getAttribute('src'))).json(), bin = await (await fetch(new URL(model.bin,new URL(el.getAttribute('src'),location.href)))).arrayBuffer();
           const decoded = decodeModel(model,await inflate(bin));
           window.__serialIndices = Object.fromEntries(model.parts.map((p,i) => [p.name,corners[p.name].map(point => {
@@ -184,7 +190,7 @@ async function serialBrowserChecks(page, browser) {
       await open(variant);const mutant=await seek(position);assert.throws(()=>checkSerial(mutant,position),`${consumer} ${variant} must fail independent physical oracle`);
       packet.cases.push({consumer,case:variant,rejectedByIndependentOracle:true});
     }
-    await page.goto(consumer==='guide'?`${site.url}/kit/viewer.html?guide=/serial-stale/guide.json`:`${site.url}/serial-stale/index.html`);
+    await page.goto(consumer==='guide'?`${site.url}/kit/model/viewer.html?guide=/serial-stale/guide.json`:`${site.url}/serial-stale/index.html`);
     if(consumer==='guide'){await page.getByRole('button',{name:'Retry model',exact:true}).waitFor();assert.equal(await page.locator('#app canvas').count(),0);}
     else {await page.waitForFunction(()=>document.querySelector('cad-model').dataset.state==='error');assert.match(await page.locator('cad-model').first().getAttribute('data-error'),/SHA-256/);}
     packet.cases.push({consumer,case:'stale-plan-refused',radialFallback:false});
@@ -219,12 +225,13 @@ try {
   for (const [kind, file] of [['absolute', site.url + '/legacy/small%20part.stl'], ['root', '/legacy/small%20part.stl'], ['cors', cors.url + '/part.stl']]) routes.set(`/legacy/${kind}.json`, (_, res) => res.end(encode({ parts: [{ name: 'Published pan base fixture', file, color: 'steelblue', bounds_mm: legacyShape.bounds }] })));
 routes.set('/legacy/redirect.stl', (_, res) => { res.writeHead(302, { Location: '/legacy/small%20part.stl' }); res.end(); });
 routes.set('/legacy/redirect.json', (_, res) => res.end(encode({ parts: [{ name: 'redirect', file: '/legacy/redirect.stl', color: 'steelblue', bounds_mm: legacyShape.bounds }] })));
-  browser = await engine.launch(engine === chromium ? { channel: process.env.PLAYWRIGHT_CHANNEL === 'chromium' ? undefined : 'chrome', headless: true } : { headless: true });
+  // Full Chromium's headless mode supports native bfcache; the separate headless shell does not.
+  browser = await engine.launch(engine === chromium ? { channel: process.env.PLAYWRIGHT_CHANNEL === 'chromium' ? 'chromium' : 'chrome', executablePath: process.env.CHROMIUM_EXECUTABLE, headless: true, ignoreDefaultArgs: ['--disable-back-forward-cache'] } : { headless: true });
   const context = await browser.newContext({ viewport: { width: 1100, height: 800 } });
   const page = await context.newPage(); page.on('pageerror', error => errors.push(error.message)); page.on('console', message => {if(message.type()==='error')consoleErrors.push(message.text());});
   const visit = async (version, viewport = { width: 1100, height: 800 }) => {
     await page.setViewportSize(viewport);
-    await page.goto(`${site.url}/kit/viewer.html?guide=${encodeURIComponent(`/${version}/guide.json`)}`);
+    await page.goto(`${site.url}/kit/model/viewer.html?guide=${encodeURIComponent(`/${version}/guide.json`)}`);
     await page.waitForFunction(() => document.body.dataset.ready === '1', null, { timeout: 15000 });
   };
   const inspect = () => page.evaluate(async () => {
@@ -234,6 +241,114 @@ routes.set('/legacy/redirect.json', (_, res) => res.end(encode({ parts: [{ name:
   });
   await serialBrowserChecks(page, browser);
   if (!process.env.ASSEMBLY_PLAN_ONLY) {
+  const themeAppearance=()=>page.evaluate(()=>{
+    const paint=selector=>{const el=document.querySelector(selector),s=getComputedStyle(el);return{color:s.color,background:s.backgroundColor};};
+    const header=paint('#topbar'),panel=paint('#panel'),button=paint('#panel .hud-btn');
+    const headerBox=document.querySelector('#topbar').getBoundingClientRect(),hint=document.querySelector('.hud-hint').getBoundingClientRect();
+    return{mode:getComputedStyle(document.documentElement).colorScheme,header,panel,button,
+      title:paint('#title').color,tag:paint('#topbar .hud-tag').color,
+      instruction:document.querySelector('.guide-text')?paint('.guide-text').color:null,
+      pageWidth:document.documentElement.scrollWidth,viewport:innerWidth,headerBottom:headerBox.bottom,hint:{top:hint.top,bottom:hint.bottom,left:hint.left,right:hint.right}};
+  });
+  const readableTheme=palette=>{
+    assert.ok(themeContrast(palette.title,palette.header.background)>=4.5,JSON.stringify(palette));
+    assert.ok(themeContrast(palette.tag,palette.header.background)>=4.5,JSON.stringify(palette));
+    assert.ok(themeContrast(palette.button.color,palette.button.background)>=4.5,JSON.stringify(palette));
+    if(palette.instruction)assert.ok(themeContrast(palette.instruction,palette.panel.background)>=4.5,JSON.stringify(palette));
+    assert.ok(palette.pageWidth<=palette.viewport+1,JSON.stringify(palette));
+    assert.ok(palette.hint.top>=palette.headerBottom-1&&palette.hint.left>=0&&palette.hint.right<=palette.viewport+1,'Orbit/zoom instructions cannot overlap the header or leave the viewport: '+JSON.stringify(palette));
+  };
+  const themeScene=async()=>({parts:await inspect(),...await page.evaluate(()=>({
+    state:window.__viewer.getState(),camera:window.__viewer.stage.camera.position.toArray(),target:window.__viewer.stage.controls.target.toArray(),
+    step:document.querySelector('.guide-step')?.value??document.querySelector('[aria-label="Instruction step"]')?.value,
+    instructions:document.querySelector('.guide-text')?.textContent,
+  }))});
+  const sameThemeScene=(actual,expected)=>{
+    const {camera,target,...scene}=actual,{camera:oldCamera,target:oldTarget,...oldScene}=expected;
+    assert.deepEqual(scene,oldScene,'Native theme toggle cannot reset assembly state, materials or guide');
+    // OrbitControls recomputes spherical coordinates each frame, with sub-picometre rounding.
+    for(const [next,previous] of [[camera,oldCamera],[target,oldTarget]])assert.ok(next.every((n,i)=>Math.abs(n-previous[i])<1e-10),'Theme changes must preserve camera and target');
+  };
+  for(const viewport of [{width:1440,height:900},{width:320,height:568}]){
+    for(const [system,saved,expected] of [['light',null,'light'],['dark',null,'dark'],['light','dark','dark'],['dark','light','light']]){
+      await page.emulateMedia({colorScheme:system});
+      await page.evaluate(saved=>saved?localStorage.setItem('cad-theme',saved):localStorage.removeItem('cad-theme'),saved);
+      await visit('v1',viewport);await page.getByLabel('Instruction step',{exact:true}).selectOption('screws');
+      await page.getByLabel('Instruction display',{exact:true}).selectOption('wireframe');
+      await page.evaluate(()=>{window.__viewer.stage.controls.enableDamping=false;window.__viewer.stage.controls.update();window.__viewer.setSelection('screw#1');});
+      const before=await themeScene(),palette=await themeAppearance();readableTheme(palette);assert.equal(palette.mode,expected);
+      assert.equal(palette.panel.background,expected==='light'?'rgb(255, 255, 255)':'rgb(14, 14, 20)');
+      const toggle=page.getByRole('button',{name:'Toggle color theme',exact:true});assert.ok(await toggle.isVisible());
+      assert.equal(await toggle.getAttribute('aria-pressed'),String(expected==='dark'));
+      await toggle.click();const next=expected==='light'?'dark':'light';
+      await page.waitForFunction(mode=>getComputedStyle(document.documentElement).colorScheme===mode,next);
+      readableTheme(await themeAppearance());sameThemeScene(await themeScene(),before);
+      assert.equal(await toggle.getAttribute('aria-pressed'),String(next==='dark'));
+      assert.equal(await page.evaluate(()=>localStorage.getItem('cad-theme')),next===system?null:next);
+      const box=await toggle.boundingBox();assert.ok(box.x>=0&&box.x+box.width<=viewport.width&&box.y+box.height<=viewport.height);
+      await page.screenshot({path:`${out}/${engine.name()}-shared-theme-${system}-${saved||'system'}-${viewport.width}.png`});
+      cases.push({assemblyTheme:{system,saved,expected,next,viewport,preservesGuide:true}});
+    }
+  }
+  for(const theme of ['light','dark']){
+    await page.evaluate(theme=>localStorage.setItem('cad-theme',theme),theme);
+    let held,began;const requested=new Promise(resolve=>{began=resolve;});
+    await page.route('**/v1/view.json',route=>{held=route;began();});
+    try{
+      await page.goto(`${site.url}/kit/model/viewer.html?guide=/v1/guide.json`,{waitUntil:'domcontentloaded'});
+      await page.getByRole('status').waitFor();
+      await requested;
+      const loading=await page.locator('#panel').evaluate(el=>({text:getComputedStyle(el.querySelector('[role=status]')).color,surface:getComputedStyle(el).backgroundColor}));
+      assert.ok(themeContrast(loading.text,loading.surface)>=4.5,JSON.stringify(loading));
+    }finally{if(held)await held.abort();await page.unroute('**/v1/view.json');}
+    await page.getByRole('button',{name:'Retry model',exact:true}).waitFor();readableTheme(await themeAppearance());
+    const error=await page.getByRole('status').evaluate(el=>{const r=el.getBoundingClientRect();return{text:getComputedStyle(el).color,surface:getComputedStyle(el.parentElement).backgroundColor,width:r.width,left:r.left,right:r.right};});
+    assert.ok(themeContrast(error.text,error.surface)>=4.5,JSON.stringify(error));assert.ok(error.width>0&&error.left>=0&&error.right<=320);
+    await page.screenshot({path:`${out}/${engine.name()}-theme-error-${theme}-320.png`});
+    await page.getByRole('button',{name:'Retry model',exact:true}).click();await page.waitForFunction(()=>document.body.dataset.ready==='1');
+    cases.push({assemblyThemeFailure:{theme,loading:true,error:true,retry:true}});
+  }
+  await page.evaluate(()=>localStorage.removeItem('cad-theme'));await page.emulateMedia({colorScheme:'light'});await visit('v1');
+  const systemScene=await themeScene();
+  for(const mode of ['dark','light']){
+    await page.emulateMedia({colorScheme:mode});
+    await page.waitForFunction(mode=>getComputedStyle(document.documentElement).colorScheme===mode&&document.querySelector('.theme-toggle').getAttribute('aria-pressed')===String(mode==='dark'),mode);
+    readableTheme(await themeAppearance());sameThemeScene(await themeScene(),systemScene);
+    assert.equal(await page.getByRole('button',{name:'Toggle color theme',exact:true}).getAttribute('aria-pressed'),String(mode==='dark'));
+    assert.equal(await page.evaluate(()=>localStorage.getItem('cad-theme')),null);
+  }
+  cases.push({assemblyThemeFollowsLiveOS:true});
+  // Use a separately cacheable source server: no-store remains the default for all
+  // ordinary fixtures. Only a native persisted return can prove bfcache recovery.
+  const cacheRoutes=new Map(routes);
+  cacheRoutes.set('/theme-away.html',(_req,res)=>res.writeHead(200,{'Content-Type':'text/html','Cache-Control':'public,max-age=300'}).end('<!doctype html><title>Away</title><p>Return to the assembly</p>'));
+  const cacheSite=await serveWebkit(cacheRoutes,{cacheControl:'public,max-age=300'});
+  try{
+    await context.addInitScript(()=>{
+      window.__historyMount=crypto.randomUUID();window.__historyEvents=[];
+      for(const name of ['pageshow','pagehide'])addEventListener(name,event=>window.__historyEvents.push({type:event.type,persisted:event.persisted}));
+    });
+    await page.goto(cacheSite.url+'/kit/model/viewer.html?guide=/v1/guide.json');
+    await page.waitForFunction(()=>document.body.dataset.ready==='1');
+    await page.getByLabel('Instruction step',{exact:true}).selectOption('screws');
+    await page.getByLabel('Instruction display',{exact:true}).selectOption('wireframe');
+    await page.evaluate(()=>{window.__viewer.stage.controls.enableDamping=false;window.__viewer.stage.controls.update();window.__viewer.setSelection('screw#1');});
+    const before=await themeScene(),token=await page.evaluate(()=>window.__historyMount);
+    await page.goto(cacheSite.url+'/theme-away.html');await page.evaluate(()=>localStorage.setItem('cad-theme','dark'));
+    await page.goBack({waitUntil:'commit'});
+    await page.waitForFunction(()=>document.body.dataset.ready==='1'&&window.__viewer&&document.querySelectorAll('#app canvas').length===1);
+    await page.waitForFunction(()=>document.documentElement.dataset.theme==='dark');
+    const lifecycle=await page.evaluate(()=>({token:window.__historyMount,events:window.__historyEvents}));
+    const persisted=lifecycle.events.some(event=>event.type==='pageshow'&&event.persisted);
+    if(engine===chromium)assert.ok(persisted,'Chromium must actually restore bfcache, not reload: '+JSON.stringify(lifecycle));
+    if(persisted){assert.equal(lifecycle.token,token);sameThemeScene(await themeScene(),before);}
+    // WebKit may reload; readiness above is required before checking that fresh instance.
+    readableTheme(await themeAppearance());
+    await page.evaluate(()=>window.__viewer.setExplode(.1));
+    assert.equal(await page.locator('#app canvas').count(),1);
+    await page.screenshot({path:out+'/'+engine.name()+'-history-return.png'});
+    cases.push({assemblyHistory:{persisted,freshReload:!persisted,lifecycle,retainedScene:persisted,theme:'dark',usable:true}});
+  }finally{await cacheSite.close();}
   const v1UUIDs = [];
   for (const [index, version] of versions.entries()) {
     await visit(version);
@@ -401,7 +516,7 @@ routes.set('/legacy/redirect.json', (_, res) => res.end(encode({ parts: [{ name:
   cases.push({ actualOrthogonalClipping: sections });
   // Mount the same shared viewer with optional callbacks, then drive real pointer events over a hard-coded CAD face.
   await page.evaluate(async () => {
-    const { createViewer } = await import('/kit/viewer.js'); window.__viewer.dispose(); window.__hoverEvents = []; window.__selectEvents = [];
+    const { createViewer } = await import('/kit/model/viewer.js'); window.__viewer.dispose(); window.__hoverEvents = []; window.__selectEvents = [];
     window.__viewer = await createViewer({ app: document.querySelector('#app'), panel: document.querySelector('#panel'),
       manifestUrl: new URL('/v1/view.json', location.href).href, manifest: window.__guide.manifest, guideBound: true,
       onHover: (name, point) => window.__hoverEvents.push({ name, point }),
@@ -451,11 +566,11 @@ routes.set('/legacy/redirect.json', (_, res) => res.end(encode({ parts: [{ name:
   assert.deepEqual(disposedCallbacks.before, disposedCallbacks.after); cases.push({ actualHoverSelectionDragHiddenDispose: true });
   const touchContext = await browser.newContext({ viewport: { width: 1100, height: 800 }, hasTouch: true });
   const touchPage = await touchContext.newPage(); touchPage.on('pageerror', error => errors.push(error.message));
-  await touchPage.goto(`${site.url}/kit/viewer.html?guide=/v1/guide.json`);
+  await touchPage.goto(`${site.url}/kit/model/viewer.html?guide=/v1/guide.json`);
   await touchPage.waitForFunction(() => document.body?.dataset.ready === '1', null, { timeout: 15000 });
   const touchPoint = await touchPage.evaluate(async () => {
     const loaded = window.__guide; loaded.dispose();
-    const { createViewer } = await import('/kit/viewer.js'); window.__touchSelections = []; window.__touchHovers = [];
+    const { createViewer } = await import('/kit/model/viewer.js'); window.__touchSelections = []; window.__touchHovers = [];
     const v = window.__viewer = await createViewer({ app: document.querySelector('#app'), panel: document.querySelector('#panel'),
       manifestUrl: loaded.manifestUrl, manifest: loaded.manifest, guideBound: true,
       onSelect: (name, interaction) => window.__touchSelections.push({ name, interaction }), onHover: name => window.__touchHovers.push(name) });
@@ -468,7 +583,7 @@ routes.set('/legacy/redirect.json', (_, res) => res.end(encode({ parts: [{ name:
   assert.deepEqual(await touchPage.evaluate(() => window.__touchHovers), [], 'Touch selects without a synthetic hover tooltip');
   await touchPage.evaluate(() => window.__viewer.dispose()); await touchContext.close(); cases.push({ nativeTouchSelection: true });
   // Legacy manifest path and API remain usable.
-  await page.goto(`${site.url}/kit/viewer.html?manifest=/v1/view.json&explode=0.5&section=0.5`);
+  await page.goto(`${site.url}/kit/model/viewer.html?manifest=/v1/view.json&explode=0.5&section=0.5`);
   await page.waitForFunction(() => document.body.dataset.ready === '1');
   assert.equal(await page.locator('#panel input[type=range]').nth(0).inputValue(), '0.5');
   assert.equal(await page.locator('#panel input[type=range]').nth(1).inputValue(), '0.5');
@@ -489,10 +604,10 @@ routes.set('/legacy/redirect.json', (_, res) => res.end(encode({ parts: [{ name:
   assert.equal((await inspect())[0].color, 0xaa0011, 'Legacy colour choice survives explode');
   await page.evaluate(() => window.__viewer.reset()); assert.equal((await inspect())[0].color, 0x487ca8);
   cases.push({ legacy: true });
-  await page.goto(`${site.url}/kit/viewer.html?manifest=/legacy/view.json`); await page.waitForFunction(() => document.body.dataset.ready === '1');
+  await page.goto(`${site.url}/kit/model/viewer.html?manifest=/legacy/view.json`); await page.waitForFunction(() => document.body.dataset.ready === '1');
   assert.equal((await inspect())[0].color, 0x4682b4); cases.push({ legacySpacesAndCSSColor: true });
   for (const kind of ['absolute', 'root', 'cors', 'redirect']) {
-    await page.goto(`${site.url}/kit/viewer.html?manifest=/legacy/${kind}.json`); await page.waitForFunction(() => document.body.dataset.ready === '1');
+    await page.goto(`${site.url}/kit/model/viewer.html?manifest=/legacy/${kind}.json`); await page.waitForFunction(() => document.body.dataset.ready === '1');
     assert.equal((await inspect())[0].color, 0x4682b4); cases.push({ legacyURL: kind });
   }
   await visit('proto');
@@ -509,7 +624,7 @@ routes.set('/legacy/redirect.json', (_, res) => res.end(encode({ parts: [{ name:
   cases.push({ prototypePartName: true, prototypePlayback });
   // Corrupted mesh or cancelled/late load never mounts a partial scene.
   await page.route('**/v1/1.stl', route => route.fulfill({ body: Buffer.from('wrong bytes') }));
-  await page.goto(`${site.url}/kit/viewer.html?guide=/v1/guide.json`); await page.getByRole('button', { name: 'Retry model', exact: true }).waitFor();
+  await page.goto(`${site.url}/kit/model/viewer.html?guide=/v1/guide.json`); await page.getByRole('button', { name: 'Retry model', exact: true }).waitFor();
   assert.equal(await page.locator('#app canvas').count(), 0); assert.match(await page.locator('#panel').innerText(), /SHA-256/);
   await page.unroute('**/v1/1.stl'); await page.getByRole('button', { name: 'Retry model', exact: true }).click(); await page.waitForFunction(() => document.body.dataset.ready === '1');
   // Abort a held mesh, then release its late response: the retained scene cannot be replaced.
@@ -518,7 +633,7 @@ routes.set('/legacy/redirect.json', (_, res) => res.end(encode({ parts: [{ name:
   const downloading = new Promise(resolve => { began = resolve; });
   await page.route('**/late/0.stl', route => { began(); return new Promise(resolve => { releaseLate = async () => { try { await route.fulfill({ body: cube([0, 0, 0], [40, 30, 8]).bytes }); } catch {} resolve(); }; }); });
   await page.evaluate(async () => {
-    const { createViewer } = await import('/kit/viewer.js');
+    const { createViewer } = await import('/kit/model/viewer.js');
     window.__pendingApp = document.createElement('div'); window.__pendingPanel = document.createElement('div');
     document.body.append(window.__pendingApp, window.__pendingPanel); window.__pendingAbort = new AbortController();
     window.__pendingResult = 'loading';
@@ -536,7 +651,7 @@ routes.set('/legacy/redirect.json', (_, res) => res.end(encode({ parts: [{ name:
     const sentinel = document.createElement('p'); sentinel.textContent = 'Caller-owned controls'; document.querySelector('#panel').append(sentinel);
     for (const p of v.parts) { p.mesh.geometry.addEventListener('dispose', () => geometries++); p.mesh.material.addEventListener('dispose', () => materials++); }
     v.dispose(); v.dispose(); let rejected = false; try { v.reset(); } catch { rejected = true; }
-    const { createViewer } = await import('/kit/viewer.js'); const controller = new AbortController(); controller.abort();
+    const { createViewer } = await import('/kit/model/viewer.js'); const controller = new AbortController(); controller.abort();
     let cancelled = false; try { await createViewer({ app: document.querySelector('#app'), panel: document.querySelector('#panel'), manifestUrl: '/v1/view.json', signal: controller.signal }); } catch { cancelled = true; }
     return { geometries, materials, canvases: document.querySelectorAll('#app canvas').length, rejected, cancelled, callerControlsPreserved: sentinel.isConnected };
   }); assert.deepEqual(teardown, { geometries: 3, materials: 3, canvases: 0, rejected: true, cancelled: true, callerControlsPreserved: true }); cases.push({ teardown });
@@ -557,7 +672,7 @@ routes.set('/legacy/redirect.json', (_, res) => res.end(encode({ parts: [{ name:
   }
   }
   assert.deepEqual(errors, []);
-  await writeFile(`${out}/${engine.name()}-report.json`, JSON.stringify({ passed: true, cases, errors }, null, 2));
+  await writeFile(`${out}/${engine.name()}-report.json`, JSON.stringify({ passed: true, browser: await browser.version(), cases, errors }, null, 2));
   console.log(JSON.stringify({ passed: true, engine: engine.name(), cases: cases.length, out }));
 } catch (error) {
   for (const context of browser?.contexts() || []) for (const page of context.pages()) { try { await page.screenshot({ path: `${out}/${engine.name()}-failure.png` }); } catch {} }

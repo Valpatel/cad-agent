@@ -25,3 +25,6 @@ flowchart TD
 </details>
 
 [Repository](../README.md) · [Agent kit](../.agents/README.md). This map does not add a plugin hook or alter its declared roles.
+
+The canonical agent kit, including the SCADA skills, uses the repository’s
+[MIT license](../LICENSE). Third-party resources retain their own notices and terms.

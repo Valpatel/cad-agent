@@ -1,0 +1,31 @@
+{
+  "title": "Two-link arm · recorded simulation",
+  "duration_s": 10,
+  "timestep_s": 0.002,
+  "sample_hz": 50,
+  "gravity_m_s2": [0, 0, -9.81],
+  "base_radius_m": 0.13,
+  "base_height_m": 0.18,
+  "shoulder_height_m": 0.22,
+  "link_lengths_m": [0.38, 0.30],
+  "link_widths_m": [0.075, 0.06],
+  "link_depths_m": [0.09, 0.075],
+  "link_masses_kg": [1.2, 0.7],
+  "joint_damping_nms_rad": [0.08, 0.05],
+  "joint_range_rad": [-1.75, 1.75],
+  "initial_joint_rad": [-0.5, 0.9],
+  "target_offset_rad": [-0.35, 1.0],
+  "target_amplitude_rad": [0.55, 0.45],
+  "target_frequency_hz": [0.18, 0.27],
+  "target_phase_rad": [0, 1.2],
+  "kp_nm_rad": [70, 45],
+  "kd_nms_rad": [7, 4],
+  "torque_limit_nm": [22, 12],
+  "assumptions": [
+    "Original illustrative fixed-base two-link arm; dimensions, masses, friction and controls are editable estimates, not measurements.",
+    "Rigid links use uniform-box mass properties; decorative joint and tool shapes do not add payload inertia.",
+    "Ideal hinge joints and bounded torque motors; no backlash, flexibility, thermal limits, motor electrical model or collision-avoidance controller.",
+    "Joint PD torque follows sinusoidal targets without gravity compensation; recorded poses are solver output, not commanded targets.",
+    "The browser interpolates sampled poses only. This does not establish physical fit, strength, control safety or Gyropup performance."
+  ]
+}

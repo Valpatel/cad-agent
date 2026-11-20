@@ -1,0 +1,2543 @@
+{
+  "$schema": "../../../scada-ui/schema/scada-system.schema.json",
+  "format": "scada-system",
+  "version": 1,
+  "system": {
+    "id": "paint-blending",
+    "label": "Paint blending",
+    "description": "Separate pigment and binder feeds combine in dispersion, milling, filtration and tinting, with an explicitly illustrative recovery branch."
+  },
+  "components": [
+    {
+      "id": "pigment",
+      "type": "weigh-hopper",
+      "label": "Pigment feed hopper",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "level": 55,
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/pigment/active",
+        "running": "/components/pigment/running",
+        "fault": "/components/pigment/fault",
+        "status": "/components/pigment/status",
+        "level": "/components/pigment/level",
+        "load": "/components/pigment/load",
+        "damage": "/components/pigment/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "supply",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "binder",
+      "type": "tank",
+      "label": "Binder feed store",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "level": 55,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/binder/active",
+        "running": "/components/binder/running",
+        "fault": "/components/binder/fault",
+        "status": "/components/binder/status",
+        "level": "/components/binder/level",
+        "damage": "/components/binder/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "disperser",
+      "type": "mixing-tank",
+      "label": "Dispersion vessel",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "level": 55,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/disperser/active",
+        "running": "/components/disperser/running",
+        "fault": "/components/disperser/fault",
+        "status": "/components/disperser/status",
+        "level": "/components/disperser/level",
+        "damage": "/components/disperser/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "drive",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "mill",
+      "type": "grinding-mill",
+      "label": "Dispersion mill",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/mill/active",
+        "running": "/components/mill/running",
+        "fault": "/components/mill/fault",
+        "status": "/components/mill/status",
+        "load": "/components/mill/load",
+        "speed": "/components/mill/speed",
+        "damage": "/components/mill/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "supply",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "filter",
+      "type": "filter",
+      "label": "Product filter",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/filter/active",
+        "running": "/components/filter/running",
+        "fault": "/components/filter/fault",
+        "status": "/components/filter/status",
+        "load": "/components/filter/load",
+        "damage": "/components/filter/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "backwash",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "tint",
+      "type": "mixing-tank",
+      "label": "Tint blending vessel",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "level": 55,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/tint/active",
+        "running": "/components/tint/running",
+        "fault": "/components/tint/fault",
+        "status": "/components/tint/status",
+        "level": "/components/tint/level",
+        "damage": "/components/tint/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "drive",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "hold",
+      "type": "tank",
+      "label": "Finished-product hold",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "level": 55,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/hold/active",
+        "running": "/components/hold/running",
+        "fault": "/components/hold/fault",
+        "status": "/components/hold/status",
+        "level": "/components/hold/level",
+        "damage": "/components/hold/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "filler",
+      "type": "filling-line",
+      "label": "Can filling",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/filler/active",
+        "running": "/components/filler/running",
+        "fault": "/components/filler/fault",
+        "status": "/components/filler/status",
+        "load": "/components/filler/load",
+        "speed": "/components/filler/speed",
+        "damage": "/components/filler/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "supply",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "packer",
+      "type": "packaging-line",
+      "label": "Pack-out",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/packer/active",
+        "running": "/components/packer/running",
+        "fault": "/components/packer/fault",
+        "status": "/components/packer/status",
+        "load": "/components/packer/load",
+        "speed": "/components/packer/speed",
+        "damage": "/components/packer/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "supply",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "recovery",
+      "type": "distillation-column",
+      "label": "Illustrative recovery column",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "level": 55,
+        "load": 60,
+        "temperature": 120,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/recovery/active",
+        "running": "/components/recovery/running",
+        "fault": "/components/recovery/fault",
+        "status": "/components/recovery/status",
+        "level": "/components/recovery/level",
+        "load": "/components/recovery/load",
+        "temperature": "/components/recovery/temperature",
+        "damage": "/components/recovery/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "supply",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "vapor",
+          "side": "right",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "relief",
+      "type": "relief-valve",
+      "label": "Illustrative recovery relief path",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "open": true,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/relief/active",
+        "running": "/components/relief/running",
+        "fault": "/components/relief/fault",
+        "status": "/components/relief/status",
+        "open": "/components/relief/open",
+        "damage": "/components/relief/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "relief",
+          "side": "right",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "power",
+      "type": "generator",
+      "label": "Demonstration site power",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/power/active",
+        "running": "/components/power/running",
+        "fault": "/components/power/fault",
+        "status": "/components/power/status",
+        "load": "/components/power/load",
+        "speed": "/components/power/speed",
+        "damage": "/components/power/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "fuel",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "output",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "exhaust",
+          "side": "right",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "controller",
+      "type": "plc-rack",
+      "label": "Blending controller",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "connected": true,
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/controller/active",
+        "running": "/components/controller/running",
+        "fault": "/components/controller/fault",
+        "status": "/components/controller/status",
+        "connected": "/components/controller/connected",
+        "load": "/components/controller/load",
+        "damage": "/components/controller/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "power",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "temperature",
+      "type": "temperature-sensor",
+      "label": "Recovery display probe",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "value": 42,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/temperature/active",
+        "running": "/components/temperature/running",
+        "fault": "/components/temperature/fault",
+        "status": "/components/temperature/status",
+        "value": "/components/temperature/value",
+        "damage": "/components/temperature/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "process",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "signal",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "power",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "pigment-to-disperser",
+      "from": {
+        "component": "pigment",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "disperser",
+        "port": "inlet"
+      },
+      "medium": "solids",
+      "flowBinding": "/flows/pigment-to-disperser",
+      "label": "Pigment feed hopper \u2192 Dispersion vessel"
+    },
+    {
+      "id": "binder-to-disperser",
+      "from": {
+        "component": "binder",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "disperser",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "flowBinding": "/flows/binder-to-disperser",
+      "label": "Binder feed store \u2192 Dispersion vessel"
+    },
+    {
+      "id": "disperser-to-mill",
+      "from": {
+        "component": "disperser",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "mill",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "flowBinding": "/flows/disperser-to-mill",
+      "label": "Dispersion vessel \u2192 Dispersion mill"
+    },
+    {
+      "id": "mill-to-filter",
+      "from": {
+        "component": "mill",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "filter",
+        "port": "inlet"
+      },
+      "medium": "solids",
+      "flowBinding": "/flows/mill-to-filter",
+      "label": "Dispersion mill \u2192 Product filter"
+    },
+    {
+      "id": "filter-to-tint",
+      "from": {
+        "component": "filter",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "tint",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "flowBinding": "/flows/filter-to-tint",
+      "label": "Product filter \u2192 Tint blending vessel"
+    },
+    {
+      "id": "tint-to-hold",
+      "from": {
+        "component": "tint",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "hold",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "flowBinding": "/flows/tint-to-hold",
+      "label": "Tint blending vessel \u2192 Finished-product hold"
+    },
+    {
+      "id": "hold-to-filler",
+      "from": {
+        "component": "hold",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "filler",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "flowBinding": "/flows/hold-to-filler",
+      "label": "Finished-product hold \u2192 Can filling"
+    },
+    {
+      "id": "filler-to-packer",
+      "from": {
+        "component": "filler",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "packer",
+        "port": "inlet"
+      },
+      "medium": "product",
+      "flowBinding": "/flows/filler-to-packer",
+      "label": "Can filling \u2192 Pack-out"
+    },
+    {
+      "id": "filter-to-recovery",
+      "from": {
+        "component": "filter",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "recovery",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "flowBinding": "/flows/filter-to-recovery",
+      "label": "Product filter \u2192 Illustrative recovery column"
+    },
+    {
+      "id": "recovery-to-relief",
+      "from": {
+        "component": "recovery",
+        "port": "vapor"
+      },
+      "to": {
+        "component": "relief",
+        "port": "inlet"
+      },
+      "medium": "gas",
+      "flowBinding": "/flows/recovery-to-relief",
+      "label": "Illustrative recovery column \u2192 Illustrative recovery relief path"
+    },
+    {
+      "id": "power-to-pigment",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "pigment",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-pigment",
+      "label": "Demonstration site power \u2192 Pigment feed hopper"
+    },
+    {
+      "id": "power-to-disperser",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "disperser",
+        "port": "drive"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-disperser",
+      "label": "Demonstration site power \u2192 Dispersion vessel"
+    },
+    {
+      "id": "power-to-mill",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "mill",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-mill",
+      "label": "Demonstration site power \u2192 Dispersion mill"
+    },
+    {
+      "id": "power-to-tint",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "tint",
+        "port": "drive"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-tint",
+      "label": "Demonstration site power \u2192 Tint blending vessel"
+    },
+    {
+      "id": "power-to-filler",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "filler",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-filler",
+      "label": "Demonstration site power \u2192 Can filling"
+    },
+    {
+      "id": "power-to-packer",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "packer",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-packer",
+      "label": "Demonstration site power \u2192 Pack-out"
+    },
+    {
+      "id": "power-to-recovery",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "recovery",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-recovery",
+      "label": "Demonstration site power \u2192 Illustrative recovery column"
+    },
+    {
+      "id": "power-to-controller",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "controller",
+        "port": "power"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-controller",
+      "label": "Demonstration site power \u2192 Blending controller"
+    },
+    {
+      "id": "power-to-temperature",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "temperature",
+        "port": "power"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-temperature",
+      "label": "Demonstration site power \u2192 Recovery display probe"
+    },
+    {
+      "id": "recovery-to-temperature",
+      "from": {
+        "component": "recovery",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "temperature",
+        "port": "process"
+      },
+      "medium": "measurement",
+      "flowBinding": "/flows/recovery-to-temperature",
+      "label": "Illustrative recovery column \u2192 Recovery display probe"
+    },
+    {
+      "id": "temperature-to-controller",
+      "from": {
+        "component": "temperature",
+        "port": "signal"
+      },
+      "to": {
+        "component": "controller",
+        "port": "network"
+      },
+      "medium": "data",
+      "flowBinding": "/flows/temperature-to-controller",
+      "label": "Recovery display probe \u2192 Blending controller"
+    }
+  ],
+  "views": [
+    {
+      "id": "process",
+      "label": "Main process",
+      "canvas": {
+        "width": 1280,
+        "height": 940
+      },
+      "placements": [
+        {
+          "component": "pigment",
+          "x": 60,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "binder",
+          "x": 360,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "disperser",
+          "x": 660,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "mill",
+          "x": 960,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "filter",
+          "x": 960,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "tint",
+          "x": 660,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "hold",
+          "x": 360,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "filler",
+          "x": 60,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "packer",
+          "x": 60,
+          "y": 620,
+          "width": 200,
+          "height": 190
+        }
+      ],
+      "routes": [
+        {
+          "connection": "pigment-to-disperser",
+          "points": [
+            {
+              "x": 260,
+              "y": 155
+            },
+            {
+              "x": 336,
+              "y": 155
+            },
+            {
+              "x": 336,
+              "y": 36
+            },
+            {
+              "x": 636,
+              "y": 36
+            },
+            {
+              "x": 636,
+              "y": 155
+            },
+            {
+              "x": 660,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "binder-to-disperser",
+          "points": [
+            {
+              "x": 560,
+              "y": 155
+            },
+            {
+              "x": 660,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "disperser-to-mill",
+          "points": [
+            {
+              "x": 860,
+              "y": 155
+            },
+            {
+              "x": 960,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "mill-to-filter",
+          "points": [
+            {
+              "x": 1060,
+              "y": 250
+            },
+            {
+              "x": 1060,
+              "y": 340
+            }
+          ]
+        },
+        {
+          "connection": "filter-to-tint",
+          "points": [
+            {
+              "x": 960,
+              "y": 435
+            },
+            {
+              "x": 860,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "tint-to-hold",
+          "points": [
+            {
+              "x": 660,
+              "y": 435
+            },
+            {
+              "x": 560,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "hold-to-filler",
+          "points": [
+            {
+              "x": 360,
+              "y": 435
+            },
+            {
+              "x": 260,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "filler-to-packer",
+          "points": [
+            {
+              "x": 160,
+              "y": 530
+            },
+            {
+              "x": 160,
+              "y": 620
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "utilities",
+      "label": "Utilities & control",
+      "canvas": {
+        "width": 980,
+        "height": 940
+      },
+      "placements": [
+        {
+          "component": "recovery",
+          "x": 60,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "relief",
+          "x": 360,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "power",
+          "x": 660,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "controller",
+          "x": 660,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "temperature",
+          "x": 360,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "mill",
+          "x": 60,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "filler",
+          "x": 60,
+          "y": 620,
+          "width": 200,
+          "height": 190
+        }
+      ],
+      "routes": [
+        {
+          "connection": "recovery-to-relief",
+          "points": [
+            {
+              "x": 260,
+              "y": 155
+            },
+            {
+              "x": 360,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "power-to-mill",
+          "points": [
+            {
+              "x": 660,
+              "y": 155
+            },
+            {
+              "x": 636,
+              "y": 155
+            },
+            {
+              "x": 636,
+              "y": 316
+            },
+            {
+              "x": 284,
+              "y": 316
+            },
+            {
+              "x": 284,
+              "y": 435
+            },
+            {
+              "x": 260,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "power-to-filler",
+          "points": [
+            {
+              "x": 660,
+              "y": 155
+            },
+            {
+              "x": 636,
+              "y": 155
+            },
+            {
+              "x": 636,
+              "y": 596
+            },
+            {
+              "x": 284,
+              "y": 596
+            },
+            {
+              "x": 284,
+              "y": 715
+            },
+            {
+              "x": 260,
+              "y": 715
+            }
+          ]
+        },
+        {
+          "connection": "power-to-recovery",
+          "points": [
+            {
+              "x": 660,
+              "y": 155
+            },
+            {
+              "x": 584,
+              "y": 155
+            },
+            {
+              "x": 584,
+              "y": 36
+            },
+            {
+              "x": 284,
+              "y": 36
+            },
+            {
+              "x": 284,
+              "y": 155
+            },
+            {
+              "x": 260,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "power-to-controller",
+          "points": [
+            {
+              "x": 760,
+              "y": 250
+            },
+            {
+              "x": 760,
+              "y": 340
+            }
+          ]
+        },
+        {
+          "connection": "power-to-temperature",
+          "points": [
+            {
+              "x": 660,
+              "y": 155
+            },
+            {
+              "x": 636,
+              "y": 155
+            },
+            {
+              "x": 636,
+              "y": 316
+            },
+            {
+              "x": 584,
+              "y": 316
+            },
+            {
+              "x": 584,
+              "y": 435
+            },
+            {
+              "x": 560,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "recovery-to-temperature",
+          "points": [
+            {
+              "x": 260,
+              "y": 155
+            },
+            {
+              "x": 284,
+              "y": 155
+            },
+            {
+              "x": 284,
+              "y": 316
+            },
+            {
+              "x": 336,
+              "y": 316
+            },
+            {
+              "x": 336,
+              "y": 435
+            },
+            {
+              "x": 360,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "temperature-to-controller",
+          "points": [
+            {
+              "x": 560,
+              "y": 435
+            },
+            {
+              "x": 660,
+              "y": 435
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "finishing",
+      "label": "Finishing & storage",
+      "canvas": {
+        "width": 980,
+        "height": 940
+      },
+      "placements": [
+        {
+          "component": "filter",
+          "x": 60,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "tint",
+          "x": 360,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "hold",
+          "x": 660,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "filler",
+          "x": 660,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "packer",
+          "x": 360,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "controller",
+          "x": 60,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "temperature",
+          "x": 60,
+          "y": 620,
+          "width": 200,
+          "height": 190
+        }
+      ],
+      "routes": [
+        {
+          "connection": "filter-to-tint",
+          "points": [
+            {
+              "x": 260,
+              "y": 155
+            },
+            {
+              "x": 360,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "tint-to-hold",
+          "points": [
+            {
+              "x": 560,
+              "y": 155
+            },
+            {
+              "x": 660,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "hold-to-filler",
+          "points": [
+            {
+              "x": 760,
+              "y": 250
+            },
+            {
+              "x": 760,
+              "y": 340
+            }
+          ]
+        },
+        {
+          "connection": "filler-to-packer",
+          "points": [
+            {
+              "x": 660,
+              "y": 435
+            },
+            {
+              "x": 560,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "temperature-to-controller",
+          "points": [
+            {
+              "x": 160,
+              "y": 620
+            },
+            {
+              "x": 160,
+              "y": 530
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "commands": [
+    {
+      "id": "pigment-enabled",
+      "label": "Pigment feed hopper \u00b7 Enabled",
+      "component": "pigment",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "pigment"
+      }
+    },
+    {
+      "id": "pigment-load",
+      "label": "Pigment feed hopper \u00b7 Requested load",
+      "component": "pigment",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "pigment"
+      }
+    },
+    {
+      "id": "pigment-fault",
+      "label": "Pigment feed hopper \u00b7 Injected failure",
+      "component": "pigment",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "pigment"
+      }
+    },
+    {
+      "id": "pigment-repair",
+      "label": "Repair Pigment feed hopper",
+      "component": "pigment",
+      "action": "repair",
+      "arguments": {
+        "equipment": "pigment"
+      }
+    },
+    {
+      "id": "binder-enabled",
+      "label": "Binder feed store \u00b7 Enabled",
+      "component": "binder",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "binder"
+      }
+    },
+    {
+      "id": "binder-load",
+      "label": "Binder feed store \u00b7 Requested load",
+      "component": "binder",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "binder"
+      }
+    },
+    {
+      "id": "binder-fault",
+      "label": "Binder feed store \u00b7 Injected failure",
+      "component": "binder",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "binder"
+      }
+    },
+    {
+      "id": "binder-repair",
+      "label": "Repair Binder feed store",
+      "component": "binder",
+      "action": "repair",
+      "arguments": {
+        "equipment": "binder"
+      }
+    },
+    {
+      "id": "disperser-enabled",
+      "label": "Dispersion vessel \u00b7 Enabled",
+      "component": "disperser",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "disperser"
+      }
+    },
+    {
+      "id": "disperser-load",
+      "label": "Dispersion vessel \u00b7 Requested load",
+      "component": "disperser",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "disperser"
+      }
+    },
+    {
+      "id": "disperser-fault",
+      "label": "Dispersion vessel \u00b7 Injected failure",
+      "component": "disperser",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "disperser"
+      }
+    },
+    {
+      "id": "disperser-repair",
+      "label": "Repair Dispersion vessel",
+      "component": "disperser",
+      "action": "repair",
+      "arguments": {
+        "equipment": "disperser"
+      }
+    },
+    {
+      "id": "mill-enabled",
+      "label": "Dispersion mill \u00b7 Enabled",
+      "component": "mill",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "mill"
+      }
+    },
+    {
+      "id": "mill-load",
+      "label": "Dispersion mill \u00b7 Requested load",
+      "component": "mill",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "mill"
+      }
+    },
+    {
+      "id": "mill-fault",
+      "label": "Dispersion mill \u00b7 Injected failure",
+      "component": "mill",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "mill"
+      }
+    },
+    {
+      "id": "mill-repair",
+      "label": "Repair Dispersion mill",
+      "component": "mill",
+      "action": "repair",
+      "arguments": {
+        "equipment": "mill"
+      }
+    },
+    {
+      "id": "filter-enabled",
+      "label": "Product filter \u00b7 Enabled",
+      "component": "filter",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "filter"
+      }
+    },
+    {
+      "id": "filter-load",
+      "label": "Product filter \u00b7 Requested load",
+      "component": "filter",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "filter"
+      }
+    },
+    {
+      "id": "filter-fault",
+      "label": "Product filter \u00b7 Injected failure",
+      "component": "filter",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "filter"
+      }
+    },
+    {
+      "id": "filter-repair",
+      "label": "Repair Product filter",
+      "component": "filter",
+      "action": "repair",
+      "arguments": {
+        "equipment": "filter"
+      }
+    },
+    {
+      "id": "tint-enabled",
+      "label": "Tint blending vessel \u00b7 Enabled",
+      "component": "tint",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "tint"
+      }
+    },
+    {
+      "id": "tint-load",
+      "label": "Tint blending vessel \u00b7 Requested load",
+      "component": "tint",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "tint"
+      }
+    },
+    {
+      "id": "tint-fault",
+      "label": "Tint blending vessel \u00b7 Injected failure",
+      "component": "tint",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "tint"
+      }
+    },
+    {
+      "id": "tint-repair",
+      "label": "Repair Tint blending vessel",
+      "component": "tint",
+      "action": "repair",
+      "arguments": {
+        "equipment": "tint"
+      }
+    },
+    {
+      "id": "hold-enabled",
+      "label": "Finished-product hold \u00b7 Enabled",
+      "component": "hold",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "hold"
+      }
+    },
+    {
+      "id": "hold-load",
+      "label": "Finished-product hold \u00b7 Requested load",
+      "component": "hold",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "hold"
+      }
+    },
+    {
+      "id": "hold-fault",
+      "label": "Finished-product hold \u00b7 Injected failure",
+      "component": "hold",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "hold"
+      }
+    },
+    {
+      "id": "hold-repair",
+      "label": "Repair Finished-product hold",
+      "component": "hold",
+      "action": "repair",
+      "arguments": {
+        "equipment": "hold"
+      }
+    },
+    {
+      "id": "filler-enabled",
+      "label": "Can filling \u00b7 Enabled",
+      "component": "filler",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "filler"
+      }
+    },
+    {
+      "id": "filler-load",
+      "label": "Can filling \u00b7 Requested load",
+      "component": "filler",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "filler"
+      }
+    },
+    {
+      "id": "filler-fault",
+      "label": "Can filling \u00b7 Injected failure",
+      "component": "filler",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "filler"
+      }
+    },
+    {
+      "id": "filler-repair",
+      "label": "Repair Can filling",
+      "component": "filler",
+      "action": "repair",
+      "arguments": {
+        "equipment": "filler"
+      }
+    },
+    {
+      "id": "packer-enabled",
+      "label": "Pack-out \u00b7 Enabled",
+      "component": "packer",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "packer"
+      }
+    },
+    {
+      "id": "packer-load",
+      "label": "Pack-out \u00b7 Requested load",
+      "component": "packer",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "packer"
+      }
+    },
+    {
+      "id": "packer-fault",
+      "label": "Pack-out \u00b7 Injected failure",
+      "component": "packer",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "packer"
+      }
+    },
+    {
+      "id": "packer-repair",
+      "label": "Repair Pack-out",
+      "component": "packer",
+      "action": "repair",
+      "arguments": {
+        "equipment": "packer"
+      }
+    },
+    {
+      "id": "recovery-enabled",
+      "label": "Illustrative recovery column \u00b7 Enabled",
+      "component": "recovery",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "recovery"
+      }
+    },
+    {
+      "id": "recovery-load",
+      "label": "Illustrative recovery column \u00b7 Requested load",
+      "component": "recovery",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "recovery"
+      }
+    },
+    {
+      "id": "recovery-fault",
+      "label": "Illustrative recovery column \u00b7 Injected failure",
+      "component": "recovery",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "recovery"
+      }
+    },
+    {
+      "id": "recovery-repair",
+      "label": "Repair Illustrative recovery column",
+      "component": "recovery",
+      "action": "repair",
+      "arguments": {
+        "equipment": "recovery"
+      }
+    },
+    {
+      "id": "relief-enabled",
+      "label": "Illustrative recovery relief path \u00b7 Enabled",
+      "component": "relief",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "relief"
+      }
+    },
+    {
+      "id": "relief-load",
+      "label": "Illustrative recovery relief path \u00b7 Requested load",
+      "component": "relief",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "relief"
+      }
+    },
+    {
+      "id": "relief-fault",
+      "label": "Illustrative recovery relief path \u00b7 Injected failure",
+      "component": "relief",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "relief"
+      }
+    },
+    {
+      "id": "relief-open",
+      "label": "Illustrative recovery relief path \u00b7 Open path",
+      "component": "relief",
+      "action": "setOpen",
+      "arguments": {
+        "equipment": "relief"
+      }
+    },
+    {
+      "id": "relief-repair",
+      "label": "Repair Illustrative recovery relief path",
+      "component": "relief",
+      "action": "repair",
+      "arguments": {
+        "equipment": "relief"
+      }
+    },
+    {
+      "id": "power-enabled",
+      "label": "Demonstration site power \u00b7 Enabled",
+      "component": "power",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "power"
+      }
+    },
+    {
+      "id": "power-load",
+      "label": "Demonstration site power \u00b7 Requested load",
+      "component": "power",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "power"
+      }
+    },
+    {
+      "id": "power-fault",
+      "label": "Demonstration site power \u00b7 Injected failure",
+      "component": "power",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "power"
+      }
+    },
+    {
+      "id": "power-repair",
+      "label": "Repair Demonstration site power",
+      "component": "power",
+      "action": "repair",
+      "arguments": {
+        "equipment": "power"
+      }
+    },
+    {
+      "id": "controller-enabled",
+      "label": "Blending controller \u00b7 Enabled",
+      "component": "controller",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "controller"
+      }
+    },
+    {
+      "id": "controller-load",
+      "label": "Blending controller \u00b7 Requested load",
+      "component": "controller",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "controller"
+      }
+    },
+    {
+      "id": "controller-fault",
+      "label": "Blending controller \u00b7 Injected failure",
+      "component": "controller",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "controller"
+      }
+    },
+    {
+      "id": "controller-repair",
+      "label": "Repair Blending controller",
+      "component": "controller",
+      "action": "repair",
+      "arguments": {
+        "equipment": "controller"
+      }
+    },
+    {
+      "id": "temperature-enabled",
+      "label": "Recovery display probe \u00b7 Enabled",
+      "component": "temperature",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "temperature"
+      }
+    },
+    {
+      "id": "temperature-load",
+      "label": "Recovery display probe \u00b7 Requested load",
+      "component": "temperature",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "temperature"
+      }
+    },
+    {
+      "id": "temperature-fault",
+      "label": "Recovery display probe \u00b7 Injected failure",
+      "component": "temperature",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "temperature"
+      }
+    },
+    {
+      "id": "temperature-repair",
+      "label": "Repair Recovery display probe",
+      "component": "temperature",
+      "action": "repair",
+      "arguments": {
+        "equipment": "temperature"
+      }
+    },
+    {
+      "id": "plant-setRunning",
+      "label": "Run the shared plant",
+      "action": "setRunning",
+      "arguments": {}
+    },
+    {
+      "id": "plant-step",
+      "label": "Advance one model step",
+      "action": "step",
+      "arguments": {
+        "value": 1
+      }
+    },
+    {
+      "id": "plant-reset",
+      "label": "Reset dynamics \u00b7 keep edited parameters",
+      "action": "reset",
+      "arguments": {}
+    }
+  ],
+  "controls": [
+    {
+      "id": "pigment-enabled-control",
+      "label": "Enabled",
+      "component": "pigment",
+      "kind": "toggle",
+      "command": "pigment-enabled",
+      "binding": "/controls/pigment/enabled"
+    },
+    {
+      "id": "pigment-load-control",
+      "label": "Requested load",
+      "component": "pigment",
+      "kind": "range",
+      "command": "pigment-load",
+      "binding": "/controls/pigment/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "pigment-fault-control",
+      "label": "Injected failure",
+      "component": "pigment",
+      "kind": "toggle",
+      "command": "pigment-fault",
+      "binding": "/controls/pigment/fault"
+    },
+    {
+      "id": "pigment-repair-control",
+      "label": "Repair component",
+      "component": "pigment",
+      "kind": "button",
+      "command": "pigment-repair"
+    },
+    {
+      "id": "binder-enabled-control",
+      "label": "Enabled",
+      "component": "binder",
+      "kind": "toggle",
+      "command": "binder-enabled",
+      "binding": "/controls/binder/enabled"
+    },
+    {
+      "id": "binder-load-control",
+      "label": "Requested load",
+      "component": "binder",
+      "kind": "range",
+      "command": "binder-load",
+      "binding": "/controls/binder/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "binder-fault-control",
+      "label": "Injected failure",
+      "component": "binder",
+      "kind": "toggle",
+      "command": "binder-fault",
+      "binding": "/controls/binder/fault"
+    },
+    {
+      "id": "binder-repair-control",
+      "label": "Repair component",
+      "component": "binder",
+      "kind": "button",
+      "command": "binder-repair"
+    },
+    {
+      "id": "disperser-enabled-control",
+      "label": "Enabled",
+      "component": "disperser",
+      "kind": "toggle",
+      "command": "disperser-enabled",
+      "binding": "/controls/disperser/enabled"
+    },
+    {
+      "id": "disperser-load-control",
+      "label": "Requested load",
+      "component": "disperser",
+      "kind": "range",
+      "command": "disperser-load",
+      "binding": "/controls/disperser/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "disperser-fault-control",
+      "label": "Injected failure",
+      "component": "disperser",
+      "kind": "toggle",
+      "command": "disperser-fault",
+      "binding": "/controls/disperser/fault"
+    },
+    {
+      "id": "disperser-repair-control",
+      "label": "Repair component",
+      "component": "disperser",
+      "kind": "button",
+      "command": "disperser-repair"
+    },
+    {
+      "id": "mill-enabled-control",
+      "label": "Enabled",
+      "component": "mill",
+      "kind": "toggle",
+      "command": "mill-enabled",
+      "binding": "/controls/mill/enabled"
+    },
+    {
+      "id": "mill-load-control",
+      "label": "Requested load",
+      "component": "mill",
+      "kind": "range",
+      "command": "mill-load",
+      "binding": "/controls/mill/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "mill-fault-control",
+      "label": "Injected failure",
+      "component": "mill",
+      "kind": "toggle",
+      "command": "mill-fault",
+      "binding": "/controls/mill/fault"
+    },
+    {
+      "id": "mill-repair-control",
+      "label": "Repair component",
+      "component": "mill",
+      "kind": "button",
+      "command": "mill-repair"
+    },
+    {
+      "id": "filter-enabled-control",
+      "label": "Enabled",
+      "component": "filter",
+      "kind": "toggle",
+      "command": "filter-enabled",
+      "binding": "/controls/filter/enabled"
+    },
+    {
+      "id": "filter-load-control",
+      "label": "Requested load",
+      "component": "filter",
+      "kind": "range",
+      "command": "filter-load",
+      "binding": "/controls/filter/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "filter-fault-control",
+      "label": "Injected failure",
+      "component": "filter",
+      "kind": "toggle",
+      "command": "filter-fault",
+      "binding": "/controls/filter/fault"
+    },
+    {
+      "id": "filter-repair-control",
+      "label": "Repair component",
+      "component": "filter",
+      "kind": "button",
+      "command": "filter-repair"
+    },
+    {
+      "id": "tint-enabled-control",
+      "label": "Enabled",
+      "component": "tint",
+      "kind": "toggle",
+      "command": "tint-enabled",
+      "binding": "/controls/tint/enabled"
+    },
+    {
+      "id": "tint-load-control",
+      "label": "Requested load",
+      "component": "tint",
+      "kind": "range",
+      "command": "tint-load",
+      "binding": "/controls/tint/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "tint-fault-control",
+      "label": "Injected failure",
+      "component": "tint",
+      "kind": "toggle",
+      "command": "tint-fault",
+      "binding": "/controls/tint/fault"
+    },
+    {
+      "id": "tint-repair-control",
+      "label": "Repair component",
+      "component": "tint",
+      "kind": "button",
+      "command": "tint-repair"
+    },
+    {
+      "id": "hold-enabled-control",
+      "label": "Enabled",
+      "component": "hold",
+      "kind": "toggle",
+      "command": "hold-enabled",
+      "binding": "/controls/hold/enabled"
+    },
+    {
+      "id": "hold-load-control",
+      "label": "Requested load",
+      "component": "hold",
+      "kind": "range",
+      "command": "hold-load",
+      "binding": "/controls/hold/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "hold-fault-control",
+      "label": "Injected failure",
+      "component": "hold",
+      "kind": "toggle",
+      "command": "hold-fault",
+      "binding": "/controls/hold/fault"
+    },
+    {
+      "id": "hold-repair-control",
+      "label": "Repair component",
+      "component": "hold",
+      "kind": "button",
+      "command": "hold-repair"
+    },
+    {
+      "id": "filler-enabled-control",
+      "label": "Enabled",
+      "component": "filler",
+      "kind": "toggle",
+      "command": "filler-enabled",
+      "binding": "/controls/filler/enabled"
+    },
+    {
+      "id": "filler-load-control",
+      "label": "Requested load",
+      "component": "filler",
+      "kind": "range",
+      "command": "filler-load",
+      "binding": "/controls/filler/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "filler-fault-control",
+      "label": "Injected failure",
+      "component": "filler",
+      "kind": "toggle",
+      "command": "filler-fault",
+      "binding": "/controls/filler/fault"
+    },
+    {
+      "id": "filler-repair-control",
+      "label": "Repair component",
+      "component": "filler",
+      "kind": "button",
+      "command": "filler-repair"
+    },
+    {
+      "id": "packer-enabled-control",
+      "label": "Enabled",
+      "component": "packer",
+      "kind": "toggle",
+      "command": "packer-enabled",
+      "binding": "/controls/packer/enabled"
+    },
+    {
+      "id": "packer-load-control",
+      "label": "Requested load",
+      "component": "packer",
+      "kind": "range",
+      "command": "packer-load",
+      "binding": "/controls/packer/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "packer-fault-control",
+      "label": "Injected failure",
+      "component": "packer",
+      "kind": "toggle",
+      "command": "packer-fault",
+      "binding": "/controls/packer/fault"
+    },
+    {
+      "id": "packer-repair-control",
+      "label": "Repair component",
+      "component": "packer",
+      "kind": "button",
+      "command": "packer-repair"
+    },
+    {
+      "id": "recovery-enabled-control",
+      "label": "Enabled",
+      "component": "recovery",
+      "kind": "toggle",
+      "command": "recovery-enabled",
+      "binding": "/controls/recovery/enabled"
+    },
+    {
+      "id": "recovery-load-control",
+      "label": "Requested load",
+      "component": "recovery",
+      "kind": "range",
+      "command": "recovery-load",
+      "binding": "/controls/recovery/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "recovery-fault-control",
+      "label": "Injected failure",
+      "component": "recovery",
+      "kind": "toggle",
+      "command": "recovery-fault",
+      "binding": "/controls/recovery/fault"
+    },
+    {
+      "id": "recovery-repair-control",
+      "label": "Repair component",
+      "component": "recovery",
+      "kind": "button",
+      "command": "recovery-repair"
+    },
+    {
+      "id": "relief-enabled-control",
+      "label": "Enabled",
+      "component": "relief",
+      "kind": "toggle",
+      "command": "relief-enabled",
+      "binding": "/controls/relief/enabled"
+    },
+    {
+      "id": "relief-load-control",
+      "label": "Requested load",
+      "component": "relief",
+      "kind": "range",
+      "command": "relief-load",
+      "binding": "/controls/relief/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "relief-fault-control",
+      "label": "Injected failure",
+      "component": "relief",
+      "kind": "toggle",
+      "command": "relief-fault",
+      "binding": "/controls/relief/fault"
+    },
+    {
+      "id": "relief-open-control",
+      "label": "Open path",
+      "component": "relief",
+      "kind": "toggle",
+      "command": "relief-open",
+      "binding": "/controls/relief/open"
+    },
+    {
+      "id": "relief-repair-control",
+      "label": "Repair component",
+      "component": "relief",
+      "kind": "button",
+      "command": "relief-repair"
+    },
+    {
+      "id": "power-enabled-control",
+      "label": "Enabled",
+      "component": "power",
+      "kind": "toggle",
+      "command": "power-enabled",
+      "binding": "/controls/power/enabled"
+    },
+    {
+      "id": "power-load-control",
+      "label": "Requested load",
+      "component": "power",
+      "kind": "range",
+      "command": "power-load",
+      "binding": "/controls/power/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "power-fault-control",
+      "label": "Injected failure",
+      "component": "power",
+      "kind": "toggle",
+      "command": "power-fault",
+      "binding": "/controls/power/fault"
+    },
+    {
+      "id": "power-repair-control",
+      "label": "Repair component",
+      "component": "power",
+      "kind": "button",
+      "command": "power-repair"
+    },
+    {
+      "id": "controller-enabled-control",
+      "label": "Enabled",
+      "component": "controller",
+      "kind": "toggle",
+      "command": "controller-enabled",
+      "binding": "/controls/controller/enabled"
+    },
+    {
+      "id": "controller-load-control",
+      "label": "Requested load",
+      "component": "controller",
+      "kind": "range",
+      "command": "controller-load",
+      "binding": "/controls/controller/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "controller-fault-control",
+      "label": "Injected failure",
+      "component": "controller",
+      "kind": "toggle",
+      "command": "controller-fault",
+      "binding": "/controls/controller/fault"
+    },
+    {
+      "id": "controller-repair-control",
+      "label": "Repair component",
+      "component": "controller",
+      "kind": "button",
+      "command": "controller-repair"
+    },
+    {
+      "id": "temperature-enabled-control",
+      "label": "Enabled",
+      "component": "temperature",
+      "kind": "toggle",
+      "command": "temperature-enabled",
+      "binding": "/controls/temperature/enabled"
+    },
+    {
+      "id": "temperature-load-control",
+      "label": "Requested load",
+      "component": "temperature",
+      "kind": "range",
+      "command": "temperature-load",
+      "binding": "/controls/temperature/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "temperature-fault-control",
+      "label": "Injected failure",
+      "component": "temperature",
+      "kind": "toggle",
+      "command": "temperature-fault",
+      "binding": "/controls/temperature/fault"
+    },
+    {
+      "id": "temperature-repair-control",
+      "label": "Repair component",
+      "component": "temperature",
+      "kind": "button",
+      "command": "temperature-repair"
+    },
+    {
+      "id": "plant-setRunning-control",
+      "label": "Run the shared plant",
+      "kind": "toggle",
+      "command": "plant-setRunning",
+      "binding": "/running"
+    },
+    {
+      "id": "plant-step-control",
+      "label": "Advance one model step",
+      "kind": "button",
+      "command": "plant-step"
+    },
+    {
+      "id": "plant-reset-control",
+      "label": "Reset dynamics \u00b7 keep edited parameters",
+      "kind": "button",
+      "command": "plant-reset"
+    }
+  ],
+  "units": {
+    "flow": "normalized flow units",
+    "inventory": "normalized inventory units",
+    "load": "% requested demonstration load",
+    "pressure": "normalized pressure index",
+    "temperature": "normalized model thermal index; artwork displays an illustrative range"
+  },
+  "provenance": [
+    {
+      "id": "demo-model",
+      "label": "Editable placeholder model",
+      "kind": "assumed",
+      "description": "Family-level normalized behavior for UI experimentation; no calibrated industry process, safety envelope or recipe."
+    },
+    {
+      "id": "assumed-topology",
+      "label": "Illustrative editable routing",
+      "kind": "illustrative",
+      "description": "Industry-inspired stage names and interfaces. This is not a verified plant P&ID, wiring diagram or production design."
+    }
+  ],
+  "assumptions": [
+    {
+      "id": "nominalCapacity",
+      "label": "Default normalized stage capacity",
+      "value": 75,
+      "unit": "normalized units",
+      "provenance": "demo-model"
+    },
+    {
+      "id": "warningIndex",
+      "label": "Demonstration warning threshold",
+      "value": 78,
+      "unit": "normalized index",
+      "provenance": "demo-model"
+    },
+    {
+      "id": "optionalUtilities",
+      "label": "Utility equipment is illustrative and may be optional",
+      "value": true,
+      "provenance": "assumed-topology"
+    }
+  ]
+}

@@ -1,0 +1,7 @@
+**Fixed**
+- Replay viewer: the Play/Pause button is rewritten only when the playing state changes (and the custom speed option only when the speed does). It was rewritten every frame, and in WebKit (the engine Safari uses) a press that spans a frame then did not pause, most likely because WebKit drops a click whose pressed text node is replaced before the release. A proof run with the rewrite put back failed a 150 ms press in WebKit and passed it in Chromium (#809, #820).
+- Gyropup replay: the landing scenario shows its recorded largest fore-aft lean, 0.04°, instead of "0.0°". Every lean is shown to the two decimals Gyropup's summary records and labelled fore-aft (the pitch of the axle-to-centre-of-mass line, not sideways tilt); a run whose summary has none shows none. The receipt states how each shown figure is taken from the summary (#809).
+
+**Changed**
+- Replay viewer: Fit frames the points the robot's bodies reach rather than the corners of one box around the whole run, so the subject fills more of an oblique view. It projects at most 20,000 corners (a long recording merges consecutive frames): about 30 ms per Fit at 30,001 frames × 6 bodies in Chromium, against under 1 ms before, and none for a followed recording; the two-link arm's thumbnail and the Gyropup cards are recaptured (#809).
+- Gyropup replay: the camera follows the robot in every run that travels more than 0.1 m from its start, so the push run now follows its base like the kerb runs and the robot fills a phone's view in all four scenarios; the landing stays framed whole (#809).

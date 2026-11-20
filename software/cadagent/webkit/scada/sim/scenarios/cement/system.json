@@ -1,0 +1,2618 @@
+{
+  "$schema": "../../../scada-ui/schema/scada-system.schema.json",
+  "format": "scada-system",
+  "version": 1,
+  "system": {
+    "id": "cement",
+    "label": "Cement processing",
+    "description": "A generic solids and thermal sequence from feed preparation through kiln, finish grinding and dispatch. Kiln chemistry, fuel settings and product specifications are outside the model."
+  },
+  "components": [
+    {
+      "id": "feed",
+      "type": "weigh-hopper",
+      "label": "Raw-material receiving",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "level": 55,
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/feed/active",
+        "running": "/components/feed/running",
+        "fault": "/components/feed/fault",
+        "status": "/components/feed/status",
+        "level": "/components/feed/level",
+        "load": "/components/feed/load",
+        "damage": "/components/feed/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "supply",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "crusher",
+      "type": "crusher",
+      "label": "Raw-material crusher",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/crusher/active",
+        "running": "/components/crusher/running",
+        "fault": "/components/crusher/fault",
+        "status": "/components/crusher/status",
+        "load": "/components/crusher/load",
+        "speed": "/components/crusher/speed",
+        "damage": "/components/crusher/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "supply",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "rawMill",
+      "type": "grinding-mill",
+      "label": "Raw preparation mill",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/rawMill/active",
+        "running": "/components/rawMill/running",
+        "fault": "/components/rawMill/fault",
+        "status": "/components/rawMill/status",
+        "load": "/components/rawMill/load",
+        "speed": "/components/rawMill/speed",
+        "damage": "/components/rawMill/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "supply",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "preheater",
+      "type": "oven",
+      "label": "Illustrative preheating stage",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "temperature": 180,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/preheater/active",
+        "running": "/components/preheater/running",
+        "fault": "/components/preheater/fault",
+        "status": "/components/preheater/status",
+        "load": "/components/preheater/load",
+        "temperature": "/components/preheater/temperature",
+        "damage": "/components/preheater/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "supply",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "fuel",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "kiln",
+      "type": "rotary-kiln",
+      "label": "Rotary kiln",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "temperature": 500,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/kiln/active",
+        "running": "/components/kiln/running",
+        "fault": "/components/kiln/fault",
+        "status": "/components/kiln/status",
+        "load": "/components/kiln/load",
+        "speed": "/components/kiln/speed",
+        "temperature": "/components/kiln/temperature",
+        "damage": "/components/kiln/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "supply",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "fuel",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "coolingTransfer",
+      "type": "conveyor",
+      "label": "Cooling transfer section",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/coolingTransfer/active",
+        "running": "/components/coolingTransfer/running",
+        "fault": "/components/coolingTransfer/fault",
+        "status": "/components/coolingTransfer/status",
+        "load": "/components/coolingTransfer/load",
+        "speed": "/components/coolingTransfer/speed",
+        "damage": "/components/coolingTransfer/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "supply",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "finishMill",
+      "type": "grinding-mill",
+      "label": "Finish grinding",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/finishMill/active",
+        "running": "/components/finishMill/running",
+        "fault": "/components/finishMill/fault",
+        "status": "/components/finishMill/status",
+        "load": "/components/finishMill/load",
+        "speed": "/components/finishMill/speed",
+        "damage": "/components/finishMill/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "supply",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "silo",
+      "type": "silo",
+      "label": "Finished-product silo",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "level": 55,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/silo/active",
+        "running": "/components/silo/running",
+        "fault": "/components/silo/fault",
+        "status": "/components/silo/status",
+        "level": "/components/silo/level",
+        "damage": "/components/silo/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "fill",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "discharge",
+          "side": "right",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "packer",
+      "type": "packaging-line",
+      "label": "Dispatch packing",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/packer/active",
+        "running": "/components/packer/running",
+        "fault": "/components/packer/fault",
+        "status": "/components/packer/status",
+        "load": "/components/packer/load",
+        "speed": "/components/packer/speed",
+        "damage": "/components/packer/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "supply",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "dust",
+      "type": "cyclone",
+      "label": "Illustrative dust separator",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/dust/active",
+        "running": "/components/dust/running",
+        "fault": "/components/dust/fault",
+        "status": "/components/dust/status",
+        "load": "/components/dust/load",
+        "damage": "/components/dust/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "supply",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "solids",
+          "side": "right",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "power",
+      "type": "wind-turbine",
+      "label": "Optional renewable-supply demo",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/power/active",
+        "running": "/components/power/running",
+        "fault": "/components/power/fault",
+        "status": "/components/power/status",
+        "load": "/components/power/load",
+        "speed": "/components/power/speed",
+        "damage": "/components/power/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "output",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "control",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "controller",
+      "type": "plc-rack",
+      "label": "Solids-line controller",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "connected": true,
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/controller/active",
+        "running": "/components/controller/running",
+        "fault": "/components/controller/fault",
+        "status": "/components/controller/status",
+        "connected": "/components/controller/connected",
+        "load": "/components/controller/load",
+        "damage": "/components/controller/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "power",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "temperature",
+      "type": "temperature-sensor",
+      "label": "Kiln display probe",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "value": 42,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/temperature/active",
+        "running": "/components/temperature/running",
+        "fault": "/components/temperature/fault",
+        "status": "/components/temperature/status",
+        "value": "/components/temperature/value",
+        "damage": "/components/temperature/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "process",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "signal",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "power",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "fan",
+      "type": "fan",
+      "label": "Illustrative process ventilation",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/fan/active",
+        "running": "/components/fan/running",
+        "fault": "/components/fan/fault",
+        "status": "/components/fan/status",
+        "load": "/components/fan/load",
+        "speed": "/components/fan/speed",
+        "damage": "/components/fan/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "supply",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "control",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "feed-to-crusher",
+      "from": {
+        "component": "feed",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "crusher",
+        "port": "inlet"
+      },
+      "medium": "solids",
+      "flowBinding": "/flows/feed-to-crusher",
+      "label": "Raw-material receiving \u2192 Raw-material crusher"
+    },
+    {
+      "id": "crusher-to-rawMill",
+      "from": {
+        "component": "crusher",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "rawMill",
+        "port": "inlet"
+      },
+      "medium": "solids",
+      "flowBinding": "/flows/crusher-to-rawMill",
+      "label": "Raw-material crusher \u2192 Raw preparation mill"
+    },
+    {
+      "id": "rawMill-to-preheater",
+      "from": {
+        "component": "rawMill",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "preheater",
+        "port": "inlet"
+      },
+      "medium": "solids",
+      "flowBinding": "/flows/rawMill-to-preheater",
+      "label": "Raw preparation mill \u2192 Illustrative preheating stage"
+    },
+    {
+      "id": "preheater-to-kiln",
+      "from": {
+        "component": "preheater",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "kiln",
+        "port": "inlet"
+      },
+      "medium": "material",
+      "flowBinding": "/flows/preheater-to-kiln",
+      "label": "Illustrative preheating stage \u2192 Rotary kiln"
+    },
+    {
+      "id": "kiln-to-coolingTransfer",
+      "from": {
+        "component": "kiln",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "coolingTransfer",
+        "port": "inlet"
+      },
+      "medium": "material",
+      "flowBinding": "/flows/kiln-to-coolingTransfer",
+      "label": "Rotary kiln \u2192 Cooling transfer section"
+    },
+    {
+      "id": "coolingTransfer-to-finishMill",
+      "from": {
+        "component": "coolingTransfer",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "finishMill",
+        "port": "inlet"
+      },
+      "medium": "solids",
+      "flowBinding": "/flows/coolingTransfer-to-finishMill",
+      "label": "Cooling transfer section \u2192 Finish grinding"
+    },
+    {
+      "id": "finishMill-to-silo",
+      "from": {
+        "component": "finishMill",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "silo",
+        "port": "fill"
+      },
+      "medium": "solids",
+      "flowBinding": "/flows/finishMill-to-silo",
+      "label": "Finish grinding \u2192 Finished-product silo"
+    },
+    {
+      "id": "silo-to-packer",
+      "from": {
+        "component": "silo",
+        "port": "discharge"
+      },
+      "to": {
+        "component": "packer",
+        "port": "inlet"
+      },
+      "medium": "solids",
+      "flowBinding": "/flows/silo-to-packer",
+      "label": "Finished-product silo \u2192 Dispatch packing"
+    },
+    {
+      "id": "kiln-to-dust",
+      "from": {
+        "component": "kiln",
+        "port": "exhaust"
+      },
+      "to": {
+        "component": "dust",
+        "port": "inlet"
+      },
+      "medium": "gas",
+      "flowBinding": "/flows/kiln-to-dust",
+      "label": "Rotary kiln \u2192 Illustrative dust separator"
+    },
+    {
+      "id": "fan-to-preheater",
+      "from": {
+        "component": "fan",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "preheater",
+        "port": "air"
+      },
+      "medium": "air",
+      "flowBinding": "/flows/fan-to-preheater",
+      "label": "Illustrative process ventilation \u2192 Illustrative preheating stage"
+    },
+    {
+      "id": "power-to-feed",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "feed",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-feed",
+      "label": "Optional renewable-supply demo \u2192 Raw-material receiving"
+    },
+    {
+      "id": "power-to-crusher",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "crusher",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-crusher",
+      "label": "Optional renewable-supply demo \u2192 Raw-material crusher"
+    },
+    {
+      "id": "power-to-rawMill",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "rawMill",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-rawMill",
+      "label": "Optional renewable-supply demo \u2192 Raw preparation mill"
+    },
+    {
+      "id": "power-to-preheater",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "preheater",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-preheater",
+      "label": "Optional renewable-supply demo \u2192 Illustrative preheating stage"
+    },
+    {
+      "id": "power-to-kiln",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "kiln",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-kiln",
+      "label": "Optional renewable-supply demo \u2192 Rotary kiln"
+    },
+    {
+      "id": "power-to-coolingTransfer",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "coolingTransfer",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-coolingTransfer",
+      "label": "Optional renewable-supply demo \u2192 Cooling transfer section"
+    },
+    {
+      "id": "power-to-finishMill",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "finishMill",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-finishMill",
+      "label": "Optional renewable-supply demo \u2192 Finish grinding"
+    },
+    {
+      "id": "power-to-packer",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "packer",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-packer",
+      "label": "Optional renewable-supply demo \u2192 Dispatch packing"
+    },
+    {
+      "id": "power-to-dust",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "dust",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-dust",
+      "label": "Optional renewable-supply demo \u2192 Illustrative dust separator"
+    },
+    {
+      "id": "power-to-controller",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "controller",
+        "port": "power"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-controller",
+      "label": "Optional renewable-supply demo \u2192 Solids-line controller"
+    },
+    {
+      "id": "power-to-temperature",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "temperature",
+        "port": "power"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-temperature",
+      "label": "Optional renewable-supply demo \u2192 Kiln display probe"
+    },
+    {
+      "id": "power-to-fan",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "fan",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-fan",
+      "label": "Optional renewable-supply demo \u2192 Illustrative process ventilation"
+    },
+    {
+      "id": "kiln-to-temperature",
+      "from": {
+        "component": "kiln",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "temperature",
+        "port": "process"
+      },
+      "medium": "measurement",
+      "flowBinding": "/flows/kiln-to-temperature",
+      "label": "Rotary kiln \u2192 Kiln display probe"
+    },
+    {
+      "id": "temperature-to-controller",
+      "from": {
+        "component": "temperature",
+        "port": "signal"
+      },
+      "to": {
+        "component": "controller",
+        "port": "network"
+      },
+      "medium": "data",
+      "flowBinding": "/flows/temperature-to-controller",
+      "label": "Kiln display probe \u2192 Solids-line controller"
+    },
+    {
+      "id": "controller-to-power",
+      "from": {
+        "component": "controller",
+        "port": "network"
+      },
+      "to": {
+        "component": "power",
+        "port": "control"
+      },
+      "medium": "data",
+      "flowBinding": "/flows/controller-to-power",
+      "label": "Solids-line controller \u2192 Optional renewable-supply demo"
+    },
+    {
+      "id": "controller-to-fan",
+      "from": {
+        "component": "controller",
+        "port": "network"
+      },
+      "to": {
+        "component": "fan",
+        "port": "control"
+      },
+      "medium": "data",
+      "flowBinding": "/flows/controller-to-fan",
+      "label": "Solids-line controller \u2192 Illustrative process ventilation"
+    }
+  ],
+  "views": [
+    {
+      "id": "process",
+      "label": "Main process",
+      "canvas": {
+        "width": 1280,
+        "height": 940
+      },
+      "placements": [
+        {
+          "component": "feed",
+          "x": 60,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "crusher",
+          "x": 360,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "rawMill",
+          "x": 660,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "preheater",
+          "x": 960,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "kiln",
+          "x": 960,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "coolingTransfer",
+          "x": 660,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "finishMill",
+          "x": 360,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "silo",
+          "x": 60,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "packer",
+          "x": 60,
+          "y": 620,
+          "width": 200,
+          "height": 190
+        }
+      ],
+      "routes": [
+        {
+          "connection": "feed-to-crusher",
+          "points": [
+            {
+              "x": 260,
+              "y": 155
+            },
+            {
+              "x": 360,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "crusher-to-rawMill",
+          "points": [
+            {
+              "x": 560,
+              "y": 155
+            },
+            {
+              "x": 660,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "rawMill-to-preheater",
+          "points": [
+            {
+              "x": 860,
+              "y": 155
+            },
+            {
+              "x": 960,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "preheater-to-kiln",
+          "points": [
+            {
+              "x": 1060,
+              "y": 250
+            },
+            {
+              "x": 1060,
+              "y": 340
+            }
+          ]
+        },
+        {
+          "connection": "kiln-to-coolingTransfer",
+          "points": [
+            {
+              "x": 960,
+              "y": 435
+            },
+            {
+              "x": 860,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "coolingTransfer-to-finishMill",
+          "points": [
+            {
+              "x": 660,
+              "y": 435
+            },
+            {
+              "x": 560,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "finishMill-to-silo",
+          "points": [
+            {
+              "x": 360,
+              "y": 435
+            },
+            {
+              "x": 260,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "silo-to-packer",
+          "points": [
+            {
+              "x": 160,
+              "y": 530
+            },
+            {
+              "x": 160,
+              "y": 620
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "utilities",
+      "label": "Utilities & control",
+      "canvas": {
+        "width": 980,
+        "height": 940
+      },
+      "placements": [
+        {
+          "component": "dust",
+          "x": 60,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "power",
+          "x": 360,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "controller",
+          "x": 660,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "temperature",
+          "x": 660,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "fan",
+          "x": 360,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "preheater",
+          "x": 60,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "silo",
+          "x": 60,
+          "y": 620,
+          "width": 200,
+          "height": 190
+        }
+      ],
+      "routes": [
+        {
+          "connection": "fan-to-preheater",
+          "points": [
+            {
+              "x": 360,
+              "y": 435
+            },
+            {
+              "x": 260,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "power-to-preheater",
+          "points": [
+            {
+              "x": 360,
+              "y": 155
+            },
+            {
+              "x": 336,
+              "y": 155
+            },
+            {
+              "x": 336,
+              "y": 316
+            },
+            {
+              "x": 284,
+              "y": 316
+            },
+            {
+              "x": 284,
+              "y": 435
+            },
+            {
+              "x": 260,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "power-to-dust",
+          "points": [
+            {
+              "x": 360,
+              "y": 155
+            },
+            {
+              "x": 260,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "power-to-controller",
+          "points": [
+            {
+              "x": 560,
+              "y": 155
+            },
+            {
+              "x": 660,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "power-to-temperature",
+          "points": [
+            {
+              "x": 560,
+              "y": 155
+            },
+            {
+              "x": 584,
+              "y": 155
+            },
+            {
+              "x": 584,
+              "y": 316
+            },
+            {
+              "x": 636,
+              "y": 316
+            },
+            {
+              "x": 636,
+              "y": 435
+            },
+            {
+              "x": 660,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "power-to-fan",
+          "points": [
+            {
+              "x": 460,
+              "y": 250
+            },
+            {
+              "x": 460,
+              "y": 340
+            }
+          ]
+        },
+        {
+          "connection": "temperature-to-controller",
+          "points": [
+            {
+              "x": 760,
+              "y": 340
+            },
+            {
+              "x": 760,
+              "y": 250
+            }
+          ]
+        },
+        {
+          "connection": "controller-to-power",
+          "points": [
+            {
+              "x": 660,
+              "y": 155
+            },
+            {
+              "x": 560,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "controller-to-fan",
+          "points": [
+            {
+              "x": 660,
+              "y": 155
+            },
+            {
+              "x": 636,
+              "y": 155
+            },
+            {
+              "x": 636,
+              "y": 316
+            },
+            {
+              "x": 584,
+              "y": 316
+            },
+            {
+              "x": 584,
+              "y": 435
+            },
+            {
+              "x": 560,
+              "y": 435
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "finishing",
+      "label": "Finishing & storage",
+      "canvas": {
+        "width": 980,
+        "height": 940
+      },
+      "placements": [
+        {
+          "component": "kiln",
+          "x": 60,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "coolingTransfer",
+          "x": 360,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "finishMill",
+          "x": 660,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "silo",
+          "x": 660,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "packer",
+          "x": 360,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "controller",
+          "x": 60,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "temperature",
+          "x": 60,
+          "y": 620,
+          "width": 200,
+          "height": 190
+        }
+      ],
+      "routes": [
+        {
+          "connection": "kiln-to-coolingTransfer",
+          "points": [
+            {
+              "x": 260,
+              "y": 155
+            },
+            {
+              "x": 360,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "coolingTransfer-to-finishMill",
+          "points": [
+            {
+              "x": 560,
+              "y": 155
+            },
+            {
+              "x": 660,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "finishMill-to-silo",
+          "points": [
+            {
+              "x": 760,
+              "y": 250
+            },
+            {
+              "x": 760,
+              "y": 340
+            }
+          ]
+        },
+        {
+          "connection": "silo-to-packer",
+          "points": [
+            {
+              "x": 660,
+              "y": 435
+            },
+            {
+              "x": 560,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "kiln-to-temperature",
+          "points": [
+            {
+              "x": 160,
+              "y": 250
+            },
+            {
+              "x": 160,
+              "y": 316
+            },
+            {
+              "x": 36,
+              "y": 316
+            },
+            {
+              "x": 36,
+              "y": 596
+            },
+            {
+              "x": 160,
+              "y": 596
+            },
+            {
+              "x": 160,
+              "y": 620
+            }
+          ]
+        },
+        {
+          "connection": "temperature-to-controller",
+          "points": [
+            {
+              "x": 160,
+              "y": 620
+            },
+            {
+              "x": 160,
+              "y": 530
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "commands": [
+    {
+      "id": "feed-enabled",
+      "label": "Raw-material receiving \u00b7 Enabled",
+      "component": "feed",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "feed"
+      }
+    },
+    {
+      "id": "feed-load",
+      "label": "Raw-material receiving \u00b7 Requested load",
+      "component": "feed",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "feed"
+      }
+    },
+    {
+      "id": "feed-fault",
+      "label": "Raw-material receiving \u00b7 Injected failure",
+      "component": "feed",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "feed"
+      }
+    },
+    {
+      "id": "feed-repair",
+      "label": "Repair Raw-material receiving",
+      "component": "feed",
+      "action": "repair",
+      "arguments": {
+        "equipment": "feed"
+      }
+    },
+    {
+      "id": "crusher-enabled",
+      "label": "Raw-material crusher \u00b7 Enabled",
+      "component": "crusher",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "crusher"
+      }
+    },
+    {
+      "id": "crusher-load",
+      "label": "Raw-material crusher \u00b7 Requested load",
+      "component": "crusher",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "crusher"
+      }
+    },
+    {
+      "id": "crusher-fault",
+      "label": "Raw-material crusher \u00b7 Injected failure",
+      "component": "crusher",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "crusher"
+      }
+    },
+    {
+      "id": "crusher-repair",
+      "label": "Repair Raw-material crusher",
+      "component": "crusher",
+      "action": "repair",
+      "arguments": {
+        "equipment": "crusher"
+      }
+    },
+    {
+      "id": "rawMill-enabled",
+      "label": "Raw preparation mill \u00b7 Enabled",
+      "component": "rawMill",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "rawMill"
+      }
+    },
+    {
+      "id": "rawMill-load",
+      "label": "Raw preparation mill \u00b7 Requested load",
+      "component": "rawMill",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "rawMill"
+      }
+    },
+    {
+      "id": "rawMill-fault",
+      "label": "Raw preparation mill \u00b7 Injected failure",
+      "component": "rawMill",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "rawMill"
+      }
+    },
+    {
+      "id": "rawMill-repair",
+      "label": "Repair Raw preparation mill",
+      "component": "rawMill",
+      "action": "repair",
+      "arguments": {
+        "equipment": "rawMill"
+      }
+    },
+    {
+      "id": "preheater-enabled",
+      "label": "Illustrative preheating stage \u00b7 Enabled",
+      "component": "preheater",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "preheater"
+      }
+    },
+    {
+      "id": "preheater-load",
+      "label": "Illustrative preheating stage \u00b7 Requested load",
+      "component": "preheater",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "preheater"
+      }
+    },
+    {
+      "id": "preheater-fault",
+      "label": "Illustrative preheating stage \u00b7 Injected failure",
+      "component": "preheater",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "preheater"
+      }
+    },
+    {
+      "id": "preheater-repair",
+      "label": "Repair Illustrative preheating stage",
+      "component": "preheater",
+      "action": "repair",
+      "arguments": {
+        "equipment": "preheater"
+      }
+    },
+    {
+      "id": "kiln-enabled",
+      "label": "Rotary kiln \u00b7 Enabled",
+      "component": "kiln",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "kiln"
+      }
+    },
+    {
+      "id": "kiln-load",
+      "label": "Rotary kiln \u00b7 Requested load",
+      "component": "kiln",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "kiln"
+      }
+    },
+    {
+      "id": "kiln-fault",
+      "label": "Rotary kiln \u00b7 Injected failure",
+      "component": "kiln",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "kiln"
+      }
+    },
+    {
+      "id": "kiln-repair",
+      "label": "Repair Rotary kiln",
+      "component": "kiln",
+      "action": "repair",
+      "arguments": {
+        "equipment": "kiln"
+      }
+    },
+    {
+      "id": "coolingTransfer-enabled",
+      "label": "Cooling transfer section \u00b7 Enabled",
+      "component": "coolingTransfer",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "coolingTransfer"
+      }
+    },
+    {
+      "id": "coolingTransfer-load",
+      "label": "Cooling transfer section \u00b7 Requested load",
+      "component": "coolingTransfer",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "coolingTransfer"
+      }
+    },
+    {
+      "id": "coolingTransfer-fault",
+      "label": "Cooling transfer section \u00b7 Injected failure",
+      "component": "coolingTransfer",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "coolingTransfer"
+      }
+    },
+    {
+      "id": "coolingTransfer-repair",
+      "label": "Repair Cooling transfer section",
+      "component": "coolingTransfer",
+      "action": "repair",
+      "arguments": {
+        "equipment": "coolingTransfer"
+      }
+    },
+    {
+      "id": "finishMill-enabled",
+      "label": "Finish grinding \u00b7 Enabled",
+      "component": "finishMill",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "finishMill"
+      }
+    },
+    {
+      "id": "finishMill-load",
+      "label": "Finish grinding \u00b7 Requested load",
+      "component": "finishMill",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "finishMill"
+      }
+    },
+    {
+      "id": "finishMill-fault",
+      "label": "Finish grinding \u00b7 Injected failure",
+      "component": "finishMill",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "finishMill"
+      }
+    },
+    {
+      "id": "finishMill-repair",
+      "label": "Repair Finish grinding",
+      "component": "finishMill",
+      "action": "repair",
+      "arguments": {
+        "equipment": "finishMill"
+      }
+    },
+    {
+      "id": "silo-enabled",
+      "label": "Finished-product silo \u00b7 Enabled",
+      "component": "silo",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "silo"
+      }
+    },
+    {
+      "id": "silo-load",
+      "label": "Finished-product silo \u00b7 Requested load",
+      "component": "silo",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "silo"
+      }
+    },
+    {
+      "id": "silo-fault",
+      "label": "Finished-product silo \u00b7 Injected failure",
+      "component": "silo",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "silo"
+      }
+    },
+    {
+      "id": "silo-repair",
+      "label": "Repair Finished-product silo",
+      "component": "silo",
+      "action": "repair",
+      "arguments": {
+        "equipment": "silo"
+      }
+    },
+    {
+      "id": "packer-enabled",
+      "label": "Dispatch packing \u00b7 Enabled",
+      "component": "packer",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "packer"
+      }
+    },
+    {
+      "id": "packer-load",
+      "label": "Dispatch packing \u00b7 Requested load",
+      "component": "packer",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "packer"
+      }
+    },
+    {
+      "id": "packer-fault",
+      "label": "Dispatch packing \u00b7 Injected failure",
+      "component": "packer",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "packer"
+      }
+    },
+    {
+      "id": "packer-repair",
+      "label": "Repair Dispatch packing",
+      "component": "packer",
+      "action": "repair",
+      "arguments": {
+        "equipment": "packer"
+      }
+    },
+    {
+      "id": "dust-enabled",
+      "label": "Illustrative dust separator \u00b7 Enabled",
+      "component": "dust",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "dust"
+      }
+    },
+    {
+      "id": "dust-load",
+      "label": "Illustrative dust separator \u00b7 Requested load",
+      "component": "dust",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "dust"
+      }
+    },
+    {
+      "id": "dust-fault",
+      "label": "Illustrative dust separator \u00b7 Injected failure",
+      "component": "dust",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "dust"
+      }
+    },
+    {
+      "id": "dust-repair",
+      "label": "Repair Illustrative dust separator",
+      "component": "dust",
+      "action": "repair",
+      "arguments": {
+        "equipment": "dust"
+      }
+    },
+    {
+      "id": "power-enabled",
+      "label": "Optional renewable-supply demo \u00b7 Enabled",
+      "component": "power",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "power"
+      }
+    },
+    {
+      "id": "power-load",
+      "label": "Optional renewable-supply demo \u00b7 Requested load",
+      "component": "power",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "power"
+      }
+    },
+    {
+      "id": "power-fault",
+      "label": "Optional renewable-supply demo \u00b7 Injected failure",
+      "component": "power",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "power"
+      }
+    },
+    {
+      "id": "power-repair",
+      "label": "Repair Optional renewable-supply demo",
+      "component": "power",
+      "action": "repair",
+      "arguments": {
+        "equipment": "power"
+      }
+    },
+    {
+      "id": "controller-enabled",
+      "label": "Solids-line controller \u00b7 Enabled",
+      "component": "controller",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "controller"
+      }
+    },
+    {
+      "id": "controller-load",
+      "label": "Solids-line controller \u00b7 Requested load",
+      "component": "controller",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "controller"
+      }
+    },
+    {
+      "id": "controller-fault",
+      "label": "Solids-line controller \u00b7 Injected failure",
+      "component": "controller",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "controller"
+      }
+    },
+    {
+      "id": "controller-repair",
+      "label": "Repair Solids-line controller",
+      "component": "controller",
+      "action": "repair",
+      "arguments": {
+        "equipment": "controller"
+      }
+    },
+    {
+      "id": "temperature-enabled",
+      "label": "Kiln display probe \u00b7 Enabled",
+      "component": "temperature",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "temperature"
+      }
+    },
+    {
+      "id": "temperature-load",
+      "label": "Kiln display probe \u00b7 Requested load",
+      "component": "temperature",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "temperature"
+      }
+    },
+    {
+      "id": "temperature-fault",
+      "label": "Kiln display probe \u00b7 Injected failure",
+      "component": "temperature",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "temperature"
+      }
+    },
+    {
+      "id": "temperature-repair",
+      "label": "Repair Kiln display probe",
+      "component": "temperature",
+      "action": "repair",
+      "arguments": {
+        "equipment": "temperature"
+      }
+    },
+    {
+      "id": "fan-enabled",
+      "label": "Illustrative process ventilation \u00b7 Enabled",
+      "component": "fan",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "fan"
+      }
+    },
+    {
+      "id": "fan-load",
+      "label": "Illustrative process ventilation \u00b7 Requested load",
+      "component": "fan",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "fan"
+      }
+    },
+    {
+      "id": "fan-fault",
+      "label": "Illustrative process ventilation \u00b7 Injected failure",
+      "component": "fan",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "fan"
+      }
+    },
+    {
+      "id": "fan-repair",
+      "label": "Repair Illustrative process ventilation",
+      "component": "fan",
+      "action": "repair",
+      "arguments": {
+        "equipment": "fan"
+      }
+    },
+    {
+      "id": "plant-setRunning",
+      "label": "Run the shared plant",
+      "action": "setRunning",
+      "arguments": {}
+    },
+    {
+      "id": "plant-step",
+      "label": "Advance one model step",
+      "action": "step",
+      "arguments": {
+        "value": 1
+      }
+    },
+    {
+      "id": "plant-reset",
+      "label": "Reset dynamics \u00b7 keep edited parameters",
+      "action": "reset",
+      "arguments": {}
+    }
+  ],
+  "controls": [
+    {
+      "id": "feed-enabled-control",
+      "label": "Enabled",
+      "component": "feed",
+      "kind": "toggle",
+      "command": "feed-enabled",
+      "binding": "/controls/feed/enabled"
+    },
+    {
+      "id": "feed-load-control",
+      "label": "Requested load",
+      "component": "feed",
+      "kind": "range",
+      "command": "feed-load",
+      "binding": "/controls/feed/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "feed-fault-control",
+      "label": "Injected failure",
+      "component": "feed",
+      "kind": "toggle",
+      "command": "feed-fault",
+      "binding": "/controls/feed/fault"
+    },
+    {
+      "id": "feed-repair-control",
+      "label": "Repair component",
+      "component": "feed",
+      "kind": "button",
+      "command": "feed-repair"
+    },
+    {
+      "id": "crusher-enabled-control",
+      "label": "Enabled",
+      "component": "crusher",
+      "kind": "toggle",
+      "command": "crusher-enabled",
+      "binding": "/controls/crusher/enabled"
+    },
+    {
+      "id": "crusher-load-control",
+      "label": "Requested load",
+      "component": "crusher",
+      "kind": "range",
+      "command": "crusher-load",
+      "binding": "/controls/crusher/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "crusher-fault-control",
+      "label": "Injected failure",
+      "component": "crusher",
+      "kind": "toggle",
+      "command": "crusher-fault",
+      "binding": "/controls/crusher/fault"
+    },
+    {
+      "id": "crusher-repair-control",
+      "label": "Repair component",
+      "component": "crusher",
+      "kind": "button",
+      "command": "crusher-repair"
+    },
+    {
+      "id": "rawMill-enabled-control",
+      "label": "Enabled",
+      "component": "rawMill",
+      "kind": "toggle",
+      "command": "rawMill-enabled",
+      "binding": "/controls/rawMill/enabled"
+    },
+    {
+      "id": "rawMill-load-control",
+      "label": "Requested load",
+      "component": "rawMill",
+      "kind": "range",
+      "command": "rawMill-load",
+      "binding": "/controls/rawMill/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "rawMill-fault-control",
+      "label": "Injected failure",
+      "component": "rawMill",
+      "kind": "toggle",
+      "command": "rawMill-fault",
+      "binding": "/controls/rawMill/fault"
+    },
+    {
+      "id": "rawMill-repair-control",
+      "label": "Repair component",
+      "component": "rawMill",
+      "kind": "button",
+      "command": "rawMill-repair"
+    },
+    {
+      "id": "preheater-enabled-control",
+      "label": "Enabled",
+      "component": "preheater",
+      "kind": "toggle",
+      "command": "preheater-enabled",
+      "binding": "/controls/preheater/enabled"
+    },
+    {
+      "id": "preheater-load-control",
+      "label": "Requested load",
+      "component": "preheater",
+      "kind": "range",
+      "command": "preheater-load",
+      "binding": "/controls/preheater/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "preheater-fault-control",
+      "label": "Injected failure",
+      "component": "preheater",
+      "kind": "toggle",
+      "command": "preheater-fault",
+      "binding": "/controls/preheater/fault"
+    },
+    {
+      "id": "preheater-repair-control",
+      "label": "Repair component",
+      "component": "preheater",
+      "kind": "button",
+      "command": "preheater-repair"
+    },
+    {
+      "id": "kiln-enabled-control",
+      "label": "Enabled",
+      "component": "kiln",
+      "kind": "toggle",
+      "command": "kiln-enabled",
+      "binding": "/controls/kiln/enabled"
+    },
+    {
+      "id": "kiln-load-control",
+      "label": "Requested load",
+      "component": "kiln",
+      "kind": "range",
+      "command": "kiln-load",
+      "binding": "/controls/kiln/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "kiln-fault-control",
+      "label": "Injected failure",
+      "component": "kiln",
+      "kind": "toggle",
+      "command": "kiln-fault",
+      "binding": "/controls/kiln/fault"
+    },
+    {
+      "id": "kiln-repair-control",
+      "label": "Repair component",
+      "component": "kiln",
+      "kind": "button",
+      "command": "kiln-repair"
+    },
+    {
+      "id": "coolingTransfer-enabled-control",
+      "label": "Enabled",
+      "component": "coolingTransfer",
+      "kind": "toggle",
+      "command": "coolingTransfer-enabled",
+      "binding": "/controls/coolingTransfer/enabled"
+    },
+    {
+      "id": "coolingTransfer-load-control",
+      "label": "Requested load",
+      "component": "coolingTransfer",
+      "kind": "range",
+      "command": "coolingTransfer-load",
+      "binding": "/controls/coolingTransfer/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "coolingTransfer-fault-control",
+      "label": "Injected failure",
+      "component": "coolingTransfer",
+      "kind": "toggle",
+      "command": "coolingTransfer-fault",
+      "binding": "/controls/coolingTransfer/fault"
+    },
+    {
+      "id": "coolingTransfer-repair-control",
+      "label": "Repair component",
+      "component": "coolingTransfer",
+      "kind": "button",
+      "command": "coolingTransfer-repair"
+    },
+    {
+      "id": "finishMill-enabled-control",
+      "label": "Enabled",
+      "component": "finishMill",
+      "kind": "toggle",
+      "command": "finishMill-enabled",
+      "binding": "/controls/finishMill/enabled"
+    },
+    {
+      "id": "finishMill-load-control",
+      "label": "Requested load",
+      "component": "finishMill",
+      "kind": "range",
+      "command": "finishMill-load",
+      "binding": "/controls/finishMill/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "finishMill-fault-control",
+      "label": "Injected failure",
+      "component": "finishMill",
+      "kind": "toggle",
+      "command": "finishMill-fault",
+      "binding": "/controls/finishMill/fault"
+    },
+    {
+      "id": "finishMill-repair-control",
+      "label": "Repair component",
+      "component": "finishMill",
+      "kind": "button",
+      "command": "finishMill-repair"
+    },
+    {
+      "id": "silo-enabled-control",
+      "label": "Enabled",
+      "component": "silo",
+      "kind": "toggle",
+      "command": "silo-enabled",
+      "binding": "/controls/silo/enabled"
+    },
+    {
+      "id": "silo-load-control",
+      "label": "Requested load",
+      "component": "silo",
+      "kind": "range",
+      "command": "silo-load",
+      "binding": "/controls/silo/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "silo-fault-control",
+      "label": "Injected failure",
+      "component": "silo",
+      "kind": "toggle",
+      "command": "silo-fault",
+      "binding": "/controls/silo/fault"
+    },
+    {
+      "id": "silo-repair-control",
+      "label": "Repair component",
+      "component": "silo",
+      "kind": "button",
+      "command": "silo-repair"
+    },
+    {
+      "id": "packer-enabled-control",
+      "label": "Enabled",
+      "component": "packer",
+      "kind": "toggle",
+      "command": "packer-enabled",
+      "binding": "/controls/packer/enabled"
+    },
+    {
+      "id": "packer-load-control",
+      "label": "Requested load",
+      "component": "packer",
+      "kind": "range",
+      "command": "packer-load",
+      "binding": "/controls/packer/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "packer-fault-control",
+      "label": "Injected failure",
+      "component": "packer",
+      "kind": "toggle",
+      "command": "packer-fault",
+      "binding": "/controls/packer/fault"
+    },
+    {
+      "id": "packer-repair-control",
+      "label": "Repair component",
+      "component": "packer",
+      "kind": "button",
+      "command": "packer-repair"
+    },
+    {
+      "id": "dust-enabled-control",
+      "label": "Enabled",
+      "component": "dust",
+      "kind": "toggle",
+      "command": "dust-enabled",
+      "binding": "/controls/dust/enabled"
+    },
+    {
+      "id": "dust-load-control",
+      "label": "Requested load",
+      "component": "dust",
+      "kind": "range",
+      "command": "dust-load",
+      "binding": "/controls/dust/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "dust-fault-control",
+      "label": "Injected failure",
+      "component": "dust",
+      "kind": "toggle",
+      "command": "dust-fault",
+      "binding": "/controls/dust/fault"
+    },
+    {
+      "id": "dust-repair-control",
+      "label": "Repair component",
+      "component": "dust",
+      "kind": "button",
+      "command": "dust-repair"
+    },
+    {
+      "id": "power-enabled-control",
+      "label": "Enabled",
+      "component": "power",
+      "kind": "toggle",
+      "command": "power-enabled",
+      "binding": "/controls/power/enabled"
+    },
+    {
+      "id": "power-load-control",
+      "label": "Requested load",
+      "component": "power",
+      "kind": "range",
+      "command": "power-load",
+      "binding": "/controls/power/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "power-fault-control",
+      "label": "Injected failure",
+      "component": "power",
+      "kind": "toggle",
+      "command": "power-fault",
+      "binding": "/controls/power/fault"
+    },
+    {
+      "id": "power-repair-control",
+      "label": "Repair component",
+      "component": "power",
+      "kind": "button",
+      "command": "power-repair"
+    },
+    {
+      "id": "controller-enabled-control",
+      "label": "Enabled",
+      "component": "controller",
+      "kind": "toggle",
+      "command": "controller-enabled",
+      "binding": "/controls/controller/enabled"
+    },
+    {
+      "id": "controller-load-control",
+      "label": "Requested load",
+      "component": "controller",
+      "kind": "range",
+      "command": "controller-load",
+      "binding": "/controls/controller/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "controller-fault-control",
+      "label": "Injected failure",
+      "component": "controller",
+      "kind": "toggle",
+      "command": "controller-fault",
+      "binding": "/controls/controller/fault"
+    },
+    {
+      "id": "controller-repair-control",
+      "label": "Repair component",
+      "component": "controller",
+      "kind": "button",
+      "command": "controller-repair"
+    },
+    {
+      "id": "temperature-enabled-control",
+      "label": "Enabled",
+      "component": "temperature",
+      "kind": "toggle",
+      "command": "temperature-enabled",
+      "binding": "/controls/temperature/enabled"
+    },
+    {
+      "id": "temperature-load-control",
+      "label": "Requested load",
+      "component": "temperature",
+      "kind": "range",
+      "command": "temperature-load",
+      "binding": "/controls/temperature/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "temperature-fault-control",
+      "label": "Injected failure",
+      "component": "temperature",
+      "kind": "toggle",
+      "command": "temperature-fault",
+      "binding": "/controls/temperature/fault"
+    },
+    {
+      "id": "temperature-repair-control",
+      "label": "Repair component",
+      "component": "temperature",
+      "kind": "button",
+      "command": "temperature-repair"
+    },
+    {
+      "id": "fan-enabled-control",
+      "label": "Enabled",
+      "component": "fan",
+      "kind": "toggle",
+      "command": "fan-enabled",
+      "binding": "/controls/fan/enabled"
+    },
+    {
+      "id": "fan-load-control",
+      "label": "Requested load",
+      "component": "fan",
+      "kind": "range",
+      "command": "fan-load",
+      "binding": "/controls/fan/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "fan-fault-control",
+      "label": "Injected failure",
+      "component": "fan",
+      "kind": "toggle",
+      "command": "fan-fault",
+      "binding": "/controls/fan/fault"
+    },
+    {
+      "id": "fan-repair-control",
+      "label": "Repair component",
+      "component": "fan",
+      "kind": "button",
+      "command": "fan-repair"
+    },
+    {
+      "id": "plant-setRunning-control",
+      "label": "Run the shared plant",
+      "kind": "toggle",
+      "command": "plant-setRunning",
+      "binding": "/running"
+    },
+    {
+      "id": "plant-step-control",
+      "label": "Advance one model step",
+      "kind": "button",
+      "command": "plant-step"
+    },
+    {
+      "id": "plant-reset-control",
+      "label": "Reset dynamics \u00b7 keep edited parameters",
+      "kind": "button",
+      "command": "plant-reset"
+    }
+  ],
+  "units": {
+    "flow": "normalized flow units",
+    "inventory": "normalized inventory units",
+    "load": "% requested demonstration load",
+    "pressure": "normalized pressure index",
+    "temperature": "normalized model thermal index; artwork displays an illustrative range"
+  },
+  "provenance": [
+    {
+      "id": "demo-model",
+      "label": "Editable placeholder model",
+      "kind": "assumed",
+      "description": "Family-level normalized behavior for UI experimentation; no calibrated industry process, safety envelope or recipe."
+    },
+    {
+      "id": "assumed-topology",
+      "label": "Illustrative editable routing",
+      "kind": "illustrative",
+      "description": "Industry-inspired stage names and interfaces. This is not a verified plant P&ID, wiring diagram or production design."
+    }
+  ],
+  "assumptions": [
+    {
+      "id": "nominalCapacity",
+      "label": "Default normalized stage capacity",
+      "value": 75,
+      "unit": "normalized units",
+      "provenance": "demo-model"
+    },
+    {
+      "id": "warningIndex",
+      "label": "Demonstration warning threshold",
+      "value": 78,
+      "unit": "normalized index",
+      "provenance": "demo-model"
+    },
+    {
+      "id": "optionalUtilities",
+      "label": "Utility equipment is illustrative and may be optional",
+      "value": true,
+      "provenance": "assumed-topology"
+    }
+  ]
+}

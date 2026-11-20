@@ -27,6 +27,12 @@ flowchart TD
 | Keep maintainer work recoverable | [cad-work-tracking](cad-work-tracking/README.md) · [Instructions](cad-work-tracking/SKILL.md) |
 | Obtain independent review and answer findings | [cad-pr-review](cad-pr-review/README.md) · [Instructions](cad-pr-review/SKILL.md) |
 | Run sustained engineering jobs on compute hosts | [cad-remote-runs](cad-remote-runs/README.md) · [Instructions](cad-remote-runs/SKILL.md) |
+| Author equipment artwork, metadata, states and generated previews | [scada-component-authoring](scada-component-authoring/README.md) · [Instructions](scada-component-authoring/SKILL.md) |
+| Describe one system with shared model state and multiple views | [scada-system-authoring](scada-system-authoring/README.md) · [Instructions](scada-system-authoring/SKILL.md) |
+| Replace equations or connect an external model with explicit units and evidence | [scada-model-adaptation](scada-model-adaptation/README.md) · [Instructions](scada-model-adaptation/SKILL.md) |
+| Inspect diagram controls, camera, lifecycle, states and accessibility in a browser | [scada-viewer-review](scada-viewer-review/README.md) · [Instructions](scada-viewer-review/SKILL.md) |
+| Verify self-contained SCADA runtime and source distributions | [scada-distribution-review](scada-distribution-review/README.md) · [Instructions](scada-distribution-review/SKILL.md) |
+| Maintain source-owned folder maps, galleries and agent documentation | [repository-documentation](repository-documentation/README.md) · [Instructions](repository-documentation/SKILL.md) |
 
 `cad-agent agents install` links the kit into your harness and reports missing requirements; see [the workflow guide](../../docs/practice/agent-workflow.md) before applying maintainer workflows to a project. Skills stay in this folder so harness installation can discover them. New engineering techniques belong in the existing domain code and its tests, with a short skill only when a repeatable workflow needs one.
 

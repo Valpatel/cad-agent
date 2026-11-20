@@ -26,6 +26,7 @@ flowchart TD
 | [test_homepage_art.py](test_homepage_art.py) | Recorded homepage sample values, failed solver criteria and conceptual hero still-state contract |
 | `test_htmlreport.py` | `canonical_status` never upgrades to pass; `render_page` shows every row |
 | `test_readme_anim.py` | The animated README figures are what their scenes render to, and safe to embed |
+| [test_runtime.py](test_runtime.py) | Explicit runtime graph, immutable capture, changed/missing dependencies and publication rollback |
 | `test_release.py` | The print release page: parts, slicer settings and slice state, pick-one groups, totals |
 | `test_release_guides.py` | Guide dependency identity, hash binding, immutable preflight bytes and refusal of unsafe or stale inputs |
 | `assembly_release_fixture.py` | Builds real synthetic guide geometry/releases and extracts a portable ZIP for the persistent browser suite, then removes its source |

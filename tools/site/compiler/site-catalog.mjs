@@ -8,7 +8,7 @@
  *   entries take an `areas:` list of their own; until they have one they are listed as not yet placed.
  * Agents first: an agent reads catalog/index.json (areas with counts and links), then one area file, then the entry.
  * The page is plain semantic HTML that shows every entry, grouped by kind, without script; the kit's <cad-gallery>
- * adds the kind tabs, the area tree, filters, sorting and the URL state (kit/gallery.js).
+ * adds the kind tabs, the area tree, filters, sorting and the URL state (kit/ui/gallery.js).
  */
 import { GLYPHS, DOMAIN_GLYPH, TINT, STATUS_STYLE, FAMILIES, glyphSprite, outsideCover, pageCover, toolCover, chartCover, familyFor, shortNumber, stillFrame, isAnimated } from './catalog-art.mjs';
 
@@ -188,7 +188,7 @@ const CATALOG_FIELDS = {
     'benchmark; new: demo), status, name, url (tools: the toolkit page, as before), summary (outside entries: our notes first, as before), ' +
     'how (tools: the call), policy, license (null when not recorded), stars, last_push, markdown (the Markdown twin), source (the file on GitHub). ' +
     'A field schema 1 left out is still left out, with three additions: tools have markdown, benchmarks have stars where recorded, ' +
-    'and our own entries (tools, guides, lessons, research, skills and agents; demos too) have license "MIT". A null is still null.',
+    'and our own entries (tools, guides, lessons, research, skills and agents; demos too) have license "MIT" by default. Explicit per-demo or source-prefix licence records retain separate package terms. A null is still null.',
   id: 'stable slug, unique: tool-<command>, project-<owner-repo>, library-…, benchmark-…, guide-…, lesson-…, research-…, skill-…, agent-…, demo-…',
   kind: 'demo, tool, project, library, benchmark, guide, lesson, research, skill or agent (the page\'s tabs)',
   areas: 'slugs from docs/areas.yaml (areas or domains; cross-cutting for pages about the whole project; unplaced for an outside entry without areas yet)',
@@ -220,9 +220,24 @@ const AREA_FIELDS = {
   items: 'every entry placed here (a domain holds its areas\' entries): the fields of catalog.json without summary and related',
 };
 
+/** Package terms are source-owned; transfer does not silently apply the repository's default. */
+export function sourceLicenseResolver(records = []) {
+  if (!Array.isArray(records)) throw new Error('docs/catalog.yaml: license_overrides must be a list');
+  const seen = new Set();
+  const overrides = records.map(record => {
+    const prefix = record?.prefix;
+    if (typeof prefix !== 'string' || !/^(?:\.?[a-zA-Z0-9_-]+\/)+$/.test(prefix) || seen.has(prefix) ||
+        typeof record.license !== 'string' || !record.license.trim()) throw new Error('docs/catalog.yaml: invalid or duplicate source licence override');
+    seen.add(prefix);
+    return {prefix, license:record.license};
+  }).sort((a,b)=>b.prefix.length-a.prefix.length);
+  return file => overrides.find(record=>file.startsWith(record.prefix))?.license || 'MIT';
+}
+
 export async function buildCatalog(ctx) {
   const { ORIGIN, REPO, pageURL, tracked } = ctx;
   const publicPath = ctx.publicPath || (file => file);
+  const sourceLicense = sourceLicenseResolver(ctx.data.license_overrides);
   const LEVELS = levelsOf(ctx.areas);
   const has = new Set(tracked);
   const files = new Map();
@@ -271,14 +286,15 @@ export async function buildCatalog(ctx) {
     if (!has.has(file)) return null;
     const key = `${file}@${still}`;
     if (covers.has(key)) return covers.get(key);
-    let c = { src: '/' + file, anim: null, fit: /\.svg$/i.test(file) ? 'contain' : 'cover', figure: true };
+    const figureURL = file.startsWith('software/cadagent/webkit/') ? '/kit/'+file.slice('software/cadagent/webkit/'.length) : '/'+file;
+    let c = { src: figureURL, anim: null, fit: /\.svg$/i.test(file) ? 'contain' : 'cover', figure: true };
     if (/\.svg$/i.test(file)) {
       const svg = (await ctx.read(file)).toString('utf8');
       // The first still of a figure keeps the plain name; another moment of it (a tool's result) gets its own file.
       const plain = `still/${file.replace(/^docs\/img\//, '').replace(/\//g, '-')}`;
       const name = stills.has(plain) ? plain.replace(/\.svg$/, `-at-${Math.round(still * 100)}.svg`) : plain;
       stills.add(name);
-      if (isAnimated(svg)) c = { ...c, src: coverFile(name, stillFrame(svg, still)), anim: '/' + file };
+      if (isAnimated(svg)) c = { ...c, src: coverFile(name, stillFrame(svg, still)), anim: figureURL };
     }
     covers.set(key, c);
     return c;
@@ -311,6 +327,10 @@ export async function buildCatalog(ctx) {
   const headingIds = html => new Set([...html.matchAll(/<h[1-6] id="([^"]+)"/g)].map(m => m[1]));
   /** A repo path with an optional #anchor → a site URL, checked: the page exists and so does the anchor. */
   const pageLink = (ref, where) => {
+    if (String(ref).startsWith('/')) {
+      if (!(ctx.generatedRoutes || []).includes(ref)) throw new Error(`${where}: unknown generated route ${ref}`);
+      return ref;
+    }
     const [file, hash] = String(ref).split('#');
     const p = pageBy.get(file);
     if (!p) return null;
@@ -354,7 +374,7 @@ export async function buildCatalog(ctx) {
     const where = place(slugs, p.file);
     const it = { type: p.section === 'docs' ? 'doc' : p.section.replace(/s$/, ''), status: 'ours', name: p.title, summary: p.summary,
       url: ORIGIN + pageURL(p.file), markdown: `${ORIGIN}/${publicPath(p.file)}`, source: `${REPO}/blob/dev/${p.file}`,
-      id: pageItemId(p, kind), kind, ...where, what: oneLine(p.summary), notes: null, license: 'MIT', updated: p.updated?.slice(0, 10) || null,
+      id: pageItemId(p, kind), kind, ...where, what: oneLine(p.summary), notes: null, license: sourceLicense(p.file), updated: p.updated?.slice(0, 10) || null,
       page: p };
     const figs = figuresOf(p);
     const demoEl = p.html.match(/<cad-(?!copy|nav)[a-z][a-z0-9-]*[\s>]/);
@@ -376,6 +396,7 @@ export async function buildCatalog(ctx) {
   for (const it of pageItems.values()) for (const f of it.figures) if (!shownFigures.has(f.src)) shownFigures.set(f.src, { it, ...f });
   const addDemo = async (d, where) => {
     if (!d.id || !d.title || !d.cover || !MODE_LABEL[d.mode]) throw new Error(`${where}: a demo needs id, title, cover and mode (${Object.keys(MODE_LABEL).join(', ')})`);
+    if (d.license !== undefined && (typeof d.license !== 'string' || !d.license.trim())) throw new Error(`${where}: invalid explicit demo licence`);
     let cover;
     if (d.cover === 'snap-demo') {
       const svg = ctx.snap.svg.replace('<svg ', '<svg xmlns="http://www.w3.org/2000/svg" ').replace(/<\/svg>\s*$/, `<style>${ctx.snap.css}</style></svg>\n`);
@@ -389,7 +410,7 @@ export async function buildCatalog(ctx) {
     const where2 = d.areas ? place(d.areas, `docs/catalog.yaml demo ${d.id}`) : { ...pick(pageItems.get(pageFile)) };
     const what = d.what || oneLine(shown?.alt || '');
     demos.push({ type: 'demo', status: 'ours', name: d.title, summary: what, url: ORIGIN + url, markdown: pageItems.has(pageFile) ? `${ORIGIN}/${publicPath(pageFile)}` : undefined,
-      id: `demo-${slugify(d.id)}`, kind: 'demo', mode: d.mode, ...where2, what, notes: null, license: 'MIT', cover, demo: ORIGIN + url,
+      id: `demo-${slugify(d.id)}`, kind: 'demo', mode: d.mode, ...where2, what, notes: null, license: d.license || sourceLicense(d.cover), cover, demo: ORIGIN + url,
       updated: pageItems.get(pageFile)?.updated || null, tools: d.tools || [], figure: d.cover, still: d.still ?? 0.5 });
   };
   const pick = it => ({ areas: it?.areas || [], domains: it?.domains || [], maturity: it?.maturity || null });
@@ -691,7 +712,7 @@ ${it.what ? `<p class="card-what">${esc(it.what)}</p>` : ''}${facts}${meta}${cal
   const glyphUse = slug => `<svg class="glyph" viewBox="0 0 100 100" aria-hidden="true" focusable="false"><use href="#g-${esc(GLYPHS[slug] ? slug : DOMAIN_GLYPH[slug] || 'unplaced')}"/></svg>`;
   const count = slug => items.filter(it => it.areas.includes(slug) || it.domains.includes(slug)).length;
   // Domains with entries start open: on a wide screen the tree is the page's map. (The sheet on small screens folds
-  // them again, except the chosen one: kit/gallery.js.)
+  // them again, except the chosen one: kit/ui/gallery.js.)
   // The key: each level's bar and word, lowest first; hovering or focusing a word shows what the level means.
   const key = `<div class="tree-key"><p class="key-head"><span id="key-title">Maturity</span> <a href="${esc(levelsHref)}">What the levels mean</a></p>
 <ol class="key-scale" aria-labelledby="key-title">${areas.maturity.map(({ level, means }) => `<li tabindex="0">${bar(level, false)}<span class="key-word">${esc(level)}</span><span class="key-means"><span class="sr">: </span>${esc(means)}</span></li>`).join('')}</ol></div>`;
@@ -762,5 +783,5 @@ ${panels}
 <p class="cat-empty" data-gallery-empty-scope hidden>Nothing in <b data-gallery-scope-name></b> yet. No tool, guide or outside project is placed here so far; the panel above says what it covers and how far it has come.</p>
 <p class="cat-empty" data-gallery-empty-kind hidden>No <span data-gallery-kind-name></span> in <b data-gallery-scope-name></b> yet. <a href="/catalog?kind=" data-gallery-link>Show every kind in it</a></p>
 ${sections}</div></div>
-</cad-gallery><script type="module" src="/kit/gallery.js"></script>`;
+</cad-gallery><script type="module" src="/kit/ui/gallery.js"></script>`;
 }

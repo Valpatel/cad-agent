@@ -5,7 +5,7 @@ The rules (AGENTS.md "Repo structure and where files go", CONTRIBUTING.md "Where
 
 * no test file sits directly in ``tests/``: it goes in ``tests/<domain>/``, the folder named after the
   ``software/cadagent/<domain>/`` package its subject lives in, or in one of the few areas that are not packages;
-* each ``tests/`` folder is a package or such an area, and has a README and an ``__init__.py``;
+* each ``tests/`` folder is a package or such an area, with a README and Python package markers where needed;
 * no new top-level folder in the repo;
 * no new file at the top of ``software/`` or ``software/cadagent/`` (``tests/repo/test_package_layout.py`` keeps its modules);
 * a folder that grows past ``CLUTTER_LIMIT`` files is split, by the growth rule; the folders over it today are listed in
@@ -54,10 +54,7 @@ CLUTTER_LIMIT = 20
 NOT_COUNTED = re.compile(r"^software/vendor/|/vendor/|^tests/fixtures/|^docs/img/")
 # Folders over the limit today. Each one is split in a PR that touches it, and comes off this list. The list may only
 # shrink: a folder newly over the limit is split in the PR that takes it over, not added here.
-OVER_LIMIT = {
-    "software/cadagent/webkit": "browser modules served as one folder (pyproject package-data webkit/*); a split moves "
-                           "their URLs",
-}
+OVER_LIMIT = {}
 
 IMPORT = re.compile(r"^\s*(?:from|import)\s+cadagent\.([a-z_.]+)", re.M)     # cadagent.<pkg>[.<sub>...]
 FROM_TOP = re.compile(r"^\s*from\s+cadagent\s+import\s+(\([^)]*\)|[^\n]+)", re.M)  # from cadagent import a, b as c
@@ -183,7 +180,7 @@ def flat_test_problems(files: list[str], read=lambda p: (ROOT / p).read_text(enc
 
 def folder_problems(files: list[str]):
     """Each folder under tests/ is a package of software/cadagent/ (a nested one mirrors a subpackage) or a listed area, and
-    has its README.md and __init__.py."""
+    has its README.md; Python test trees also have package markers to avoid duplicate module names."""
     out = []
     dirs = {str(Path(p).parent) for p in files if p.startswith("tests/") and not p.startswith("tests/fixtures/")}
     dirs = {d for d in dirs if d != "tests"}
@@ -199,9 +196,10 @@ def folder_problems(files: list[str]):
         if top in PACKAGES and len(parts) > 1 and not (ROOT / "software" / "cadagent" / Path(*parts)).is_dir():
             out.append(f"{d}/: a nested test folder mirrors a subpackage, and software/cadagent/{'/'.join(parts)}/ does "
                        f"not exist; name it after one (as tests/review/gates/ would mirror software/cadagent/review/gates/)")
-        for need in ("README.md", "__init__.py"):
+        python_tree = any(p.startswith(d + "/") and p.endswith(".py") for p in files)
+        for need in (("README.md", "__init__.py") if python_tree else ("README.md",)):
             if f"{d}/{need}" not in files:
-                why = ("a README with a Mermaid map (docs/practice/style-guide.md)" if need == "README.md"
+                why = ("a README with a Mermaid or SVG map (docs/practice/style-guide.md)" if need == "README.md"
                        else "an empty __init__.py, so two folders may hold test files of the same name")
                 out.append(f"{d}/: add {d}/{need}: {why}")
     return out
@@ -391,6 +389,13 @@ def test_a_new_top_level_folder_is_refused(files):
     got = top_dir_problems(_plant(["scripts/run.sh", "evals/job.yaml"], files))
     assert [g.split(":")[0] for g in got] == ["evals/", "scripts/"]
     assert "software/cadagent/<domain>/" in got[0] and "tests/<domain>/" in got[0]
+
+
+def test_javascript_only_test_areas_need_maps_but_not_python_package_markers():
+    files = ["tests/site/toolkit/README.md", "tests/site/toolkit/gallery.test.mjs"]
+    assert folder_problems(files) == []
+    assert "__init__.py" in "\n".join(folder_problems(files + ["tests/site/toolkit/test_gallery.py"]))
+    assert "README.md" in "\n".join(folder_problems([files[1]]))
 
 
 def test_a_new_file_at_the_top_of_src_is_refused(files):

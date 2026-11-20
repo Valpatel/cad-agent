@@ -32,3 +32,4 @@ flowchart TD
 | [assembly-guide.md](assembly-guide.md) | Optional version-bound assembly instructions over the shared viewer |
 | [assembly-guide-testing.md](assembly-guide-testing.md) | Requirement-to-test matrix and pending/verified acceptance |
 | [standard-evaluation.md](standard-evaluation.md) | Fresh-agent analytical jobs, independent graders, runtime controls and recorded attempts |
+| [scada/](scada/README.md) | SCADA ownership, local operation, agent workflows and physical resources |

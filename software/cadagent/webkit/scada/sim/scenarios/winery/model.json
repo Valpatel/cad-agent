@@ -1,0 +1,648 @@
+{
+  "format": "scada-placeholder-model",
+  "version": 1,
+  "scenarioId": "winery",
+  "seed": 4100,
+  "components": {
+    "grapeIntake": {
+      "kind": "source",
+      "parameters": {
+        "capacity": 90,
+        "response": 0.3,
+        "demand": 1,
+        "loss": 0.03,
+        "pressureGain": 4,
+        "heatGain": 0,
+        "warningAt": 78,
+        "damageRate": 0.4
+      },
+      "initial": {
+        "enabled": true,
+        "level": 80,
+        "open": true,
+        "load": 55,
+        "inventory": 80,
+        "temperature": 30,
+        "pressure": 15,
+        "failed": false
+      },
+      "assumptions": [
+        "Grape receiving belt uses normalized demonstration parameters, not a manufacturer curve or industry operating recipe.",
+        "Nominal electrical demand is intentionally small relative to the demonstration supply so a healthy plant starts with headroom.",
+        "This explicit source is externally replenished at the model boundary. Its visual starting level is maintained; it is not a finite intermediate inventory."
+      ]
+    },
+    "crusher": {
+      "kind": "processor",
+      "parameters": {
+        "capacity": 75,
+        "response": 0.3,
+        "demand": 4,
+        "loss": 0.03,
+        "pressureGain": 4,
+        "heatGain": 0,
+        "warningAt": 78,
+        "damageRate": 0.4
+      },
+      "initial": {
+        "enabled": true,
+        "level": 45,
+        "open": true,
+        "load": 55,
+        "inventory": 45,
+        "temperature": 30,
+        "pressure": 15,
+        "failed": false
+      },
+      "assumptions": [
+        "Grape crusher uses normalized demonstration parameters, not a manufacturer curve or industry operating recipe.",
+        "Nominal electrical demand is intentionally small relative to the demonstration supply so a healthy plant starts with headroom."
+      ]
+    },
+    "extraction": {
+      "kind": "processor",
+      "parameters": {
+        "capacity": 75,
+        "response": 0.3,
+        "demand": 4,
+        "loss": 0.03,
+        "pressureGain": 4,
+        "heatGain": 0,
+        "warningAt": 78,
+        "damageRate": 0.4
+      },
+      "initial": {
+        "enabled": true,
+        "level": 45,
+        "open": true,
+        "load": 55,
+        "inventory": 45,
+        "temperature": 30,
+        "pressure": 15,
+        "failed": false
+      },
+      "assumptions": [
+        "Juice extraction separator uses normalized demonstration parameters, not a manufacturer curve or industry operating recipe.",
+        "Nominal electrical demand is intentionally small relative to the demonstration supply so a healthy plant starts with headroom."
+      ]
+    },
+    "mustTransfer": {
+      "kind": "pump",
+      "parameters": {
+        "capacity": 75,
+        "response": 0.3,
+        "demand": 3,
+        "loss": 0.03,
+        "pressureGain": 12,
+        "heatGain": 0,
+        "warningAt": 78,
+        "damageRate": 0.4
+      },
+      "initial": {
+        "enabled": true,
+        "level": 45,
+        "open": true,
+        "load": 55,
+        "inventory": 45,
+        "temperature": 30,
+        "pressure": 15,
+        "failed": false
+      },
+      "assumptions": [
+        "Must transfer pump uses normalized demonstration parameters, not a manufacturer curve or industry operating recipe.",
+        "Nominal electrical demand is intentionally small relative to the demonstration supply so a healthy plant starts with headroom."
+      ]
+    },
+    "fermenter": {
+      "kind": "processor",
+      "parameters": {
+        "capacity": 75,
+        "response": 0.3,
+        "demand": 4,
+        "loss": 0.03,
+        "pressureGain": 4,
+        "heatGain": 0,
+        "warningAt": 78,
+        "damageRate": 0.4
+      },
+      "initial": {
+        "enabled": true,
+        "level": 45,
+        "open": true,
+        "load": 55,
+        "inventory": 45,
+        "temperature": 30,
+        "pressure": 15,
+        "failed": false
+      },
+      "assumptions": [
+        "Fermentation vessel uses normalized demonstration parameters, not a manufacturer curve or industry operating recipe.",
+        "Nominal electrical demand is intentionally small relative to the demonstration supply so a healthy plant starts with headroom."
+      ]
+    },
+    "aging": {
+      "kind": "storage",
+      "parameters": {
+        "capacity": 75,
+        "response": 0.3,
+        "demand": 1,
+        "loss": 0.03,
+        "pressureGain": 4,
+        "heatGain": 0,
+        "warningAt": 78,
+        "damageRate": 0.4
+      },
+      "initial": {
+        "enabled": true,
+        "level": 45,
+        "open": true,
+        "load": 55,
+        "inventory": 45,
+        "temperature": 30,
+        "pressure": 15,
+        "failed": false
+      },
+      "assumptions": [
+        "Aging buffer uses normalized demonstration parameters, not a manufacturer curve or industry operating recipe.",
+        "Nominal electrical demand is intentionally small relative to the demonstration supply so a healthy plant starts with headroom."
+      ]
+    },
+    "transferValve": {
+      "kind": "valve",
+      "parameters": {
+        "capacity": 75,
+        "response": 0.3,
+        "demand": 0.5,
+        "loss": 0.03,
+        "pressureGain": 4,
+        "heatGain": 0,
+        "warningAt": 78,
+        "damageRate": 0.4
+      },
+      "initial": {
+        "enabled": true,
+        "level": 45,
+        "open": true,
+        "load": 55,
+        "inventory": 45,
+        "temperature": 30,
+        "pressure": 15,
+        "failed": false
+      },
+      "assumptions": [
+        "Cellar transfer valve uses normalized demonstration parameters, not a manufacturer curve or industry operating recipe.",
+        "Nominal electrical demand is intentionally small relative to the demonstration supply so a healthy plant starts with headroom."
+      ]
+    },
+    "polishing": {
+      "kind": "processor",
+      "parameters": {
+        "capacity": 75,
+        "response": 0.3,
+        "demand": 4,
+        "loss": 0.03,
+        "pressureGain": 4,
+        "heatGain": 0,
+        "warningAt": 78,
+        "damageRate": 0.4
+      },
+      "initial": {
+        "enabled": true,
+        "level": 45,
+        "open": true,
+        "load": 55,
+        "inventory": 45,
+        "temperature": 30,
+        "pressure": 15,
+        "failed": false
+      },
+      "assumptions": [
+        "Polishing filter uses normalized demonstration parameters, not a manufacturer curve or industry operating recipe.",
+        "Nominal electrical demand is intentionally small relative to the demonstration supply so a healthy plant starts with headroom."
+      ]
+    },
+    "bottler": {
+      "kind": "processor",
+      "parameters": {
+        "capacity": 75,
+        "response": 0.3,
+        "demand": 4,
+        "loss": 0.03,
+        "pressureGain": 4,
+        "heatGain": 0,
+        "warningAt": 78,
+        "damageRate": 0.4
+      },
+      "initial": {
+        "enabled": true,
+        "level": 45,
+        "open": true,
+        "load": 55,
+        "inventory": 45,
+        "temperature": 30,
+        "pressure": 15,
+        "failed": false
+      },
+      "assumptions": [
+        "Bottle filling uses normalized demonstration parameters, not a manufacturer curve or industry operating recipe.",
+        "Nominal electrical demand is intentionally small relative to the demonstration supply so a healthy plant starts with headroom."
+      ]
+    },
+    "packer": {
+      "kind": "sink",
+      "parameters": {
+        "capacity": 75,
+        "response": 0.3,
+        "demand": 3,
+        "loss": 0.03,
+        "pressureGain": 4,
+        "heatGain": 0,
+        "warningAt": 78,
+        "damageRate": 0.4
+      },
+      "initial": {
+        "enabled": true,
+        "level": 45,
+        "open": true,
+        "load": 55,
+        "inventory": 45,
+        "temperature": 30,
+        "pressure": 15,
+        "failed": false
+      },
+      "assumptions": [
+        "Bottle packing uses normalized demonstration parameters, not a manufacturer curve or industry operating recipe.",
+        "Nominal electrical demand is intentionally small relative to the demonstration supply so a healthy plant starts with headroom.",
+        "This explicit sink transfers product out of the model boundary; it does not accumulate a hidden storage inventory."
+      ]
+    },
+    "effluent": {
+      "kind": "processor",
+      "parameters": {
+        "capacity": 75,
+        "response": 0.3,
+        "demand": 4,
+        "loss": 0.03,
+        "pressureGain": 4,
+        "heatGain": 0,
+        "warningAt": 78,
+        "damageRate": 0.4
+      },
+      "initial": {
+        "enabled": true,
+        "level": 45,
+        "open": true,
+        "load": 55,
+        "inventory": 45,
+        "temperature": 30,
+        "pressure": 15,
+        "failed": false
+      },
+      "assumptions": [
+        "Illustrative effluent digester uses normalized demonstration parameters, not a manufacturer curve or industry operating recipe.",
+        "Nominal electrical demand is intentionally small relative to the demonstration supply so a healthy plant starts with headroom."
+      ]
+    },
+    "biogasFlare": {
+      "kind": "heater",
+      "parameters": {
+        "capacity": 75,
+        "response": 0.3,
+        "demand": 5,
+        "loss": 0.03,
+        "pressureGain": 4,
+        "heatGain": 15,
+        "warningAt": 78,
+        "damageRate": 0.4
+      },
+      "initial": {
+        "enabled": true,
+        "level": 45,
+        "open": true,
+        "load": 55,
+        "inventory": 45,
+        "temperature": 30,
+        "pressure": 15,
+        "failed": false
+      },
+      "assumptions": [
+        "Illustrative biogas flare uses normalized demonstration parameters, not a manufacturer curve or industry operating recipe.",
+        "Nominal electrical demand is intentionally small relative to the demonstration supply so a healthy plant starts with headroom."
+      ]
+    },
+    "power": {
+      "kind": "generator",
+      "parameters": {
+        "capacity": 100,
+        "response": 0.3,
+        "demand": 0,
+        "loss": 0.03,
+        "pressureGain": 4,
+        "heatGain": 0,
+        "warningAt": 90,
+        "damageRate": 0.4
+      },
+      "initial": {
+        "enabled": true,
+        "level": 80,
+        "open": true,
+        "load": 75,
+        "inventory": 80,
+        "temperature": 30,
+        "pressure": 15,
+        "failed": false
+      },
+      "assumptions": [
+        "Demonstration site power uses normalized demonstration parameters, not a manufacturer curve or industry operating recipe.",
+        "Nominal electrical demand is intentionally small relative to the demonstration supply so a healthy plant starts with headroom."
+      ]
+    },
+    "controller": {
+      "kind": "controller",
+      "parameters": {
+        "capacity": 75,
+        "response": 0.3,
+        "demand": 1,
+        "loss": 0.03,
+        "pressureGain": 4,
+        "heatGain": 0,
+        "warningAt": 100,
+        "damageRate": 0.4
+      },
+      "initial": {
+        "enabled": true,
+        "level": 45,
+        "open": true,
+        "load": 75,
+        "inventory": 45,
+        "temperature": 30,
+        "pressure": 15,
+        "failed": false
+      },
+      "assumptions": [
+        "Cellar controller uses normalized demonstration parameters, not a manufacturer curve or industry operating recipe.",
+        "Nominal electrical demand is intentionally small relative to the demonstration supply so a healthy plant starts with headroom."
+      ]
+    },
+    "pressure": {
+      "kind": "sensor",
+      "parameters": {
+        "capacity": 75,
+        "response": 0.3,
+        "demand": 0.5,
+        "loss": 0.03,
+        "pressureGain": 4,
+        "heatGain": 0,
+        "warningAt": 78,
+        "damageRate": 0.4
+      },
+      "initial": {
+        "enabled": true,
+        "level": 45,
+        "open": true,
+        "load": 20,
+        "inventory": 45,
+        "temperature": 30,
+        "pressure": 15,
+        "failed": false
+      },
+      "assumptions": [
+        "Transfer pressure monitor uses normalized demonstration parameters, not a manufacturer curve or industry operating recipe.",
+        "Nominal electrical demand is intentionally small relative to the demonstration supply so a healthy plant starts with headroom."
+      ]
+    },
+    "mustValve": {
+      "kind": "valve",
+      "parameters": {
+        "capacity": 100,
+        "response": 1,
+        "demand": 1,
+        "loss": 0,
+        "pressureGain": 0,
+        "heatGain": 0,
+        "warningAt": 95,
+        "damageRate": 0.4
+      },
+      "initial": {
+        "enabled": true,
+        "open": true,
+        "load": 85,
+        "level": 60,
+        "inventory": 60,
+        "temperature": 20,
+        "pressure": 15,
+        "failed": false,
+        "damage": 0
+      },
+      "assumptions": [
+        "FCV-101 Must feed: editable normalized demonstration values; no measured hardware curve or calibrated instrument range."
+      ]
+    },
+    "cellarValve": {
+      "kind": "valve",
+      "parameters": {
+        "capacity": 100,
+        "response": 1,
+        "demand": 1,
+        "loss": 0,
+        "pressureGain": 0,
+        "heatGain": 0,
+        "warningAt": 95,
+        "damageRate": 0.4
+      },
+      "initial": {
+        "enabled": true,
+        "open": true,
+        "load": 85,
+        "level": 60,
+        "inventory": 60,
+        "temperature": 20,
+        "pressure": 15,
+        "failed": false,
+        "damage": 0
+      },
+      "assumptions": [
+        "FCV-201 Cellar feed: editable normalized demonstration values; no measured hardware curve or calibrated instrument range."
+      ]
+    },
+    "fillValve": {
+      "kind": "valve",
+      "parameters": {
+        "capacity": 100,
+        "response": 1,
+        "demand": 1,
+        "loss": 0,
+        "pressureGain": 0,
+        "heatGain": 0,
+        "warningAt": 95,
+        "damageRate": 0.4
+      },
+      "initial": {
+        "enabled": true,
+        "open": true,
+        "load": 85,
+        "level": 60,
+        "inventory": 60,
+        "temperature": 20,
+        "pressure": 15,
+        "failed": false,
+        "damage": 0
+      },
+      "assumptions": [
+        "FCV-301 Bottling feed: editable normalized demonstration values; no measured hardware curve or calibrated instrument range."
+      ]
+    },
+    "mustFlow": {
+      "kind": "sensor",
+      "parameters": {
+        "capacity": 100,
+        "response": 0.9,
+        "demand": 0.5,
+        "loss": 0,
+        "pressureGain": 0,
+        "heatGain": 2,
+        "warningAt": 95,
+        "damageRate": 0.4
+      },
+      "initial": {
+        "enabled": true,
+        "open": true,
+        "load": 60,
+        "level": 60,
+        "inventory": 60,
+        "temperature": 20,
+        "pressure": 15,
+        "failed": false,
+        "damage": 0
+      },
+      "assumptions": [
+        "FT-101 Must flow: editable normalized demonstration values; no measured hardware curve or calibrated instrument range.",
+        "Instruments use explicit measurement taps on equipment outlet or vessel readings; they do not create a material sink or claim physical inline pressure loss. All displayed measurements remain normalized estimates."
+      ]
+    },
+    "fermenterTemperature": {
+      "kind": "sensor",
+      "parameters": {
+        "capacity": 100,
+        "response": 0.9,
+        "demand": 0.5,
+        "loss": 0,
+        "pressureGain": 0,
+        "heatGain": 2,
+        "warningAt": 95,
+        "damageRate": 0.4
+      },
+      "initial": {
+        "enabled": true,
+        "open": true,
+        "load": 60,
+        "level": 60,
+        "inventory": 60,
+        "temperature": 20,
+        "pressure": 15,
+        "failed": false,
+        "damage": 0
+      },
+      "assumptions": [
+        "TT-201 Fermenter temp: editable normalized demonstration values; no measured hardware curve or calibrated instrument range.",
+        "Instruments use explicit measurement taps on equipment outlet or vessel readings; they do not create a material sink or claim physical inline pressure loss. All displayed measurements remain normalized estimates."
+      ]
+    },
+    "fermenterLevel": {
+      "kind": "sensor",
+      "parameters": {
+        "capacity": 100,
+        "response": 0.9,
+        "demand": 0.5,
+        "loss": 0,
+        "pressureGain": 0,
+        "heatGain": 2,
+        "warningAt": 95,
+        "damageRate": 0.4
+      },
+      "initial": {
+        "enabled": true,
+        "open": true,
+        "load": 60,
+        "level": 60,
+        "inventory": 60,
+        "temperature": 20,
+        "pressure": 15,
+        "failed": false,
+        "damage": 0
+      },
+      "assumptions": [
+        "LT-201 Fermenter level: editable normalized demonstration values; no measured hardware curve or calibrated instrument range.",
+        "Instruments use explicit measurement taps on equipment outlet or vessel readings; they do not create a material sink or claim physical inline pressure loss. All displayed measurements remain normalized estimates."
+      ]
+    },
+    "cellarLevel": {
+      "kind": "sensor",
+      "parameters": {
+        "capacity": 100,
+        "response": 0.9,
+        "demand": 0.5,
+        "loss": 0,
+        "pressureGain": 0,
+        "heatGain": 2,
+        "warningAt": 95,
+        "damageRate": 0.4
+      },
+      "initial": {
+        "enabled": true,
+        "open": true,
+        "load": 60,
+        "level": 60,
+        "inventory": 60,
+        "temperature": 20,
+        "pressure": 15,
+        "failed": false,
+        "damage": 0
+      },
+      "assumptions": [
+        "LT-202 Cellar level: editable normalized demonstration values; no measured hardware curve or calibrated instrument range.",
+        "Instruments use explicit measurement taps on equipment outlet or vessel readings; they do not create a material sink or claim physical inline pressure loss. All displayed measurements remain normalized estimates."
+      ]
+    },
+    "remoteIO": {
+      "kind": "controller",
+      "parameters": {
+        "capacity": 100,
+        "response": 0.8,
+        "demand": 1,
+        "loss": 0,
+        "pressureGain": 0,
+        "heatGain": 8,
+        "warningAt": 100,
+        "damageRate": 0.4
+      },
+      "initial": {
+        "enabled": true,
+        "open": true,
+        "load": 100,
+        "level": 60,
+        "inventory": 60,
+        "temperature": 20,
+        "pressure": 15,
+        "failed": false,
+        "damage": 0
+      },
+      "assumptions": [
+        "RIO-01 Field I/O: editable normalized demonstration values; no measured hardware curve or calibrated instrument range.",
+        "PLC and remote-I/O data links drive the registered control-valve control inputs. Loss of PLC or I/O communication removes their modeled throughput. This is an illustrative availability gate, not a safety PLC program or validated control loop.",
+        "The generic I/O family response is held at a high normalized demand so a healthy upstream PLC leaves positive valve capacity; this is not a real I/O transfer function."
+      ]
+    }
+  },
+  "assumptions": [
+    "Follow grape handling, extraction, fermentation vessels and bottling, with a separately labeled illustrative effluent-energy branch.",
+    "All quantities are editable normalized placeholders. Stage names do not supply a production recipe, validated quality criterion or real protection setting.",
+    "Material, electrical, thermal, data and measurement connections have separate roles. The external model owns one shared state and clock for every view.",
+    "Repair clears component damage; it does not undo intentionally changed load, valves, capacity or other operating inputs.",
+    "Optional utility skids illustrate dependency plumbing and are not claims about standard industry equipment or energy performance.",
+    "Instruments use explicit measurement taps on equipment outlet or vessel readings; they do not create a material sink or claim physical inline pressure loss. All displayed measurements remain normalized estimates.",
+    "PLC and remote-I/O data links drive the registered control-valve control inputs. Loss of PLC or I/O communication removes their modeled throughput. This is an illustrative availability gate, not a safety PLC program or validated control loop.",
+    "Pumps and generators retain local operator enable commands. Their electrical drive ports are not misrepresented as PLC data inputs; no automatic start, transfer or synchronization is implemented.",
+    "The auxiliary generator is a continuously enabled independent supply with assumed fuel. It is not an automatic standby-transfer system."
+  ]
+}

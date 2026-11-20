@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="480" height="360" viewBox="0 0 480 360" role="img" aria-labelledby="gallery-protection-relay-base-active-title gallery-protection-relay-base-active-desc"><title id="gallery-protection-relay-base-active-title">Protection relay</title><desc id="gallery-protection-relay-base-active-desc">Protection relay. Active, illustrative value 42index. Standalone illustrative gallery preview; not a running model.</desc><style>:is(.twin-root.is-paused,.twin-document-hidden,html.motion-paused) .twin-equipment-art *,
+:is(.twin-root.is-paused,.twin-document-hidden,html.motion-paused) .twin-equipment-art *::before,
+:is(.twin-root.is-paused,.twin-document-hidden,html.motion-paused) .twin-equipment-art *::after{animation-play-state:paused!important;transition:none!important}
+@media (prefers-reduced-motion:reduce){.twin-equipment-art *,.twin-equipment-art *::before,.twin-equipment-art *::after{animation:none!important;transition:none!important}}
+.scada-component .scada-power-art{--scada-power-cycle:2.4s}
+.scada-component .scada-power-motion{animation-play-state:paused;transform-box:view-box}
+.scada-component :is(.scada-power-monitor,.scada-power-charge,.scada-power-convert-pulse,.scada-power-field-pulse,.scada-power-protection-pulse,.scada-power-signal){animation:scada-power-pulse var(--scada-power-cycle) ease-in-out infinite paused}
+.scada-component[data-scada-host-state=false][data-active=true][data-running=true]:not([data-failed=true]):not([data-status=offline]) .scada-power-art :is(.scada-power-motion,.scada-power-monitor){animation-play-state:running}
+@keyframes scada-power-pulse{0%,100%{opacity:.55}50%{opacity:1}}
+@media (prefers-reduced-motion:reduce){.scada-component .scada-power-art :is(.scada-power-motion,.scada-power-monitor,.scada-power-arc){animation:none!important;transform:none!important}}
+.scada-component .scada-power-detail-label{fill:#b7cfda;font:600 7px ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.2px}
+.scada-component .scada-relay-function{fill:#c4f5e7;font:700 15px ui-monospace,SFMono-Regular,Consolas,monospace}
+.scada-component .scada-relay-reading{fill:#a9eddc;font:600 11px ui-monospace,SFMono-Regular,Consolas,monospace}
+.scada-component{display:inline-flex;position:relative;align-items:center;justify-content:center;width:210px;height:160px;max-width:100%;vertical-align:middle;isolation:isolate;color:#c4ebf1;--scada-accent:#62ffbc;--scada-activity-duration:2.4s}
+.scada-component.scada-component-with-gauges{box-sizing:border-box;height:calc(136px + var(--scada-gauge-height,22px));padding-bottom:var(--scada-gauge-height,22px)}
+.scada-component&gt;.scada-component-svg{display:block;width:100%;height:100%;overflow:visible;pointer-events:none}
+.scada-component[data-scada-host-state=false][data-running=false] *,.scada-component[data-scada-host-state=false][data-running=false] *::before,.scada-component[data-scada-host-state=false][data-running=false] *::after{animation-play-state:paused!important;transition:none!important}
+html.motion-paused .scada-component *,html.motion-paused .scada-component *::before,html.motion-paused .scada-component *::after{animation-play-state:paused!important;transition:none!important}
+@media (prefers-reduced-motion:reduce){.scada-component *,.scada-component *::before,.scada-component *::after{animation:none!important;transition:none!important}}
+
+.gallery-label{font-family:Arial,sans-serif;fill:#dcecf1}
+.gallery-code{font-family:monospace;fill:#8fbac9}
+.gallery-symbol.scada-component{display:block;width:auto;height:auto;padding:0;max-width:none;overflow:visible}
+.gallery-symbol&gt;.twin-equipment-art{display:block;width:auto;height:auto;max-width:none}
+.gallery-symbol&gt;svg,.gallery-symbol&gt;.twin-equipment-art&gt;svg{display:block;width:280px!important;height:194px!important;max-width:none!important;max-height:none!important;overflow:visible}
+.gallery-condition svg{width:24px;height:24px}
+</style><defs><linearGradient id="gallery-protection-relay-base-active-card" x2="1" y2="1"><stop offset="0" stop-color="#102635"/><stop offset="1" stop-color="#0b1724"/></linearGradient></defs><rect x="0.5" y="0.5" width="479" height="359" rx="14" fill="url(#gallery-protection-relay-base-active-card)" stroke="#355665"/><text class="gallery-label" x="20" y="28" font-size="11" letter-spacing="1" style="fill:#7acfc9">POWER &amp; ENERGY</text><text class="gallery-label" x="20" y="55" font-size="21" font-weight="600">Protection relay</text><g transform="translate(100 79)"><g class="scada-component scada-component-with-gauges gallery-symbol" data-scada-type="protection-relay" data-scada-instance="scada-gallery-protection-relay-base-active" data-scada-host-state="false" data-active="true" data-failed="false" data-running="true" data-status="normal" data-flow="true" data-damage="none" data-speed-zero="false" data-reading-valid="true" data-connected="true" style="--scada-level:55;--scada-load:60;--scada-flow-opacity:0.95;--scada-gauge-height:17px;--scada-activity-duration:2.2s;--activity-speed:2.2s;--buffer-fraction:0.55;--scada-level-offset:0px;--flame-scale:0.9750000000000001" aria-hidden="true"><svg class="scada-component-svg" viewBox="0 0 180 136" aria-hidden="true" focusable="false" x="0" y="0" width="280" height="194" preserveAspectRatio="xMidYMid meet"><defs>
+ <linearGradient id="scada-gallery-protection-relay-base-active-steel"><stop stop-color="#16374a"/><stop offset=".3" stop-color="#659bae"/><stop offset=".5" stop-color="#acd5de"/><stop offset=".72" stop-color="#396a81"/><stop offset="1" stop-color="#122e42"/></linearGradient>
+ <linearGradient id="scada-gallery-protection-relay-base-active-glass" x2=".8" y2="1"><stop stop-color="#69eff1" stop-opacity=".18"/><stop offset="1" stop-color="#081827" stop-opacity=".65"/></linearGradient>
+ <linearGradient id="scada-gallery-protection-relay-base-active-liquid" x2="0" y2="1"><stop stop-color="#57ffd0" stop-opacity=".85"/><stop offset="1" stop-color="#087a92" stop-opacity=".55"/></linearGradient>
+ <radialGradient id="scada-gallery-protection-relay-base-active-glow"><stop stop-color="#00e5e9" stop-opacity=".18"/><stop offset="1" stop-color="#00e5e9" stop-opacity="0"/></radialGradient>
+ </defs><ellipse cx="90" cy="75" rx="83" ry="59" fill="url(#scada-gallery-protection-relay-base-active-glow)"/><ellipse cx="90" cy="128" rx="67" ry="5" fill="#030d19" opacity=".65"/><g class="scada-drawing"><g class="scada-power-art scada-electrical-art" data-power-type="protection-relay" style="--scada-power-cycle:2.30s;--scada-power-current-opacity:0.6799999999999999">
+    <ellipse cx="90" cy="125" rx="64" ry="4.5" fill="#020d18" opacity=".72"/>
+    <path d="M29 22L38 15H145L153 22V116H29Z" fill="url(#scada-gallery-protection-relay-base-active-steel)" stroke="#afcfda" stroke-width="1.6"/>
+    <rect x="35" y="23" width="112" height="87" rx="3" fill="#102a3d" stroke="#6e9aaf"/>
+    <path d="M42 29H140" stroke="#678ca1" stroke-width="1"/>
+    <g class="scada-relay-display scada-power-sensing" data-connected="true">
+      <rect x="43" y="36" width="71" height="37" rx="3" fill="#07343c" stroke="#80adba"/>
+      <text class="scada-relay-function" x="50" y="54">I&gt;</text>
+      <text class="scada-relay-reading" x="105" y="54" text-anchor="end">42</text>
+      <path d="M50 65H106" stroke="#2c6570" stroke-width="1"/>
+      <path class="scada-power-motion scada-power-signal" d="M50 64h8l6-4.4 7 7.0 7-5.2 7 2h21" fill="none" stroke="#81e9d5" stroke-width="1.5"/>
+    </g>
+    <g class="scada-relay-targets"><circle cx="128" cy="42" r="3" fill="#7defcf"/><circle cx="128" cy="56" r="3" fill="#465266"/><circle cx="128" cy="70" r="3" fill="#485d6d"/>
+      <path d="M135 42h5m-5 14h5m-5 14h5" stroke="#99b8c8" stroke-width="1.5"/></g>
+    <path class="scada-relay-shield" d="M44 84l12-5 12 5v10q-2 9-12 13q-10-4-12-13Z" fill="#153f50" stroke="#8cd7d2" stroke-width="1.5"/>
+    <path d="M57 84l-7 10h6l-1 9 8-12h-7Z" fill="#b6efe0"/>
+    <g class="scada-relay-trip-contact" data-tripped="false" data-output-asserted="false" fill="none" stroke="#465266" stroke-width="2.2"><path d="M75 92h7m11 0h7"/><path d="M82 92l10-9"/><circle cx="82" cy="92" r="1.8"/><circle cx="93" cy="92" r="1.8"/></g>
+    <rect class="scada-relay-trip-target" x="104" y="83" width="39" height="17" rx="3" fill="#20394b" stroke="#465266"/>
+    <text class="scada-power-detail-label" x="123.5" y="94.5" text-anchor="middle" fill="#b1c6d1">TRIP OUT</text>
+    <path d="M46 117v6m14-6v6m14-6v6m28-6v6m14-6v6m14-6v6" stroke="#9dbfcd" stroke-width="3"/>
+    <g class="scada-power-sensing" data-connected="true"><path d="M9 54H29" fill="none" stroke="#8d9eaa" stroke-width="3" stroke-linejoin="round"/>
+    <path class="scada-power-motion scada-power-signal" d="M9 54H29" stroke="#83e9d8" stroke-width="1.6" stroke-dasharray="3 4"/></g>
+    <g class="scada-relay-output" data-output-asserted="false"><path d="M153 92h18" stroke="#465266" stroke-width="2"/><circle cx="171" cy="92" r="4" fill="#465266" stroke="#c5d7dd" stroke-width="1.5"/></g>
+    
+  </g></g></svg></g></g><g data-scada-gauge="value"><text class="gallery-code" x="90" y="288" font-size="10">VALUE</text><rect x="155" y="282" width="145" height="5" rx="2.5" fill="#153c50" stroke="#537d90" stroke-width="0.6"/><rect x="155" y="282" width="60.9" height="5" rx="2.5" fill="#63e6d9"/><text class="gallery-code" x="385" y="288" font-size="10" text-anchor="end">42 idx</text></g><text class="gallery-label" x="20" y="328" font-size="12" style="fill:#bdeee6">Active illustrative preview</text><text class="gallery-code" x="20" y="346" font-size="10">protection-relay</text></svg>

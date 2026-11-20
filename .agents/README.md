@@ -2,6 +2,11 @@
 
 Canonical workflow skills and independent reviewer/resume prompts live here. `cad-agent agents install` links or copies them into each harness's user directories; the repository-root plugin manifest points at the same files.
 
+<picture>
+  <source media="(prefers-reduced-motion: reduce)" srcset="../docs/img/architecture/agent-workflow-still.svg">
+  <img src="../docs/img/architecture/agent-workflow.svg" alt="Skills guide tools, tests and independent review." width="480">
+</picture>
+
 ```mermaid
 flowchart TD
     S["skills/<br/>repeatable workflow"] --> C["../software/cadagent/<br/>tested tools"]

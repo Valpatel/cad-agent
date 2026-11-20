@@ -1,4 +1,5 @@
 import json
+import pytest
 from cadagent.electrical.pcb import kicad_report,evidence_bundle,evidence_is_current,check_jlc_files
 
 def test_missing_and_empty_reports_fail_closed(tmp_path):
@@ -82,12 +83,31 @@ def test_clean_full_severity_reports_pass(tmp_path):
 def test_filtered_severities_fail(tmp_path):
     # kicad-cli --severity-error writes included_severities ["error"]; the default run omits exclusions
     p = tmp_path/'drc.json'
-    for severities in (['error'], ['error', 'warning'], None):
+    for severities in ([], ['error'], ['error', 'warning']):
         p.write_text(json.dumps(dict(CLEAN_DRC, included_severities=severities)))
         r = kicad_report(p, 'drc')
         assert not r['pass'] and 'filtered severities' in r['reason']
-    p.write_text(json.dumps({k: v for k, v in CLEAN_DRC.items() if k != 'included_severities'}))
-    assert not kicad_report(p, 'drc')['pass']
+        assert '--severity-all' in r['reason']
+
+
+@pytest.mark.parametrize('kind,clean', [('erc', CLEAN_ERC), ('drc', CLEAN_DRC)])
+@pytest.mark.parametrize('version', [None, '9.0.2', '10.0.0'])
+@pytest.mark.parametrize('metadata', ['missing', None, 'error,warning,exclusion', {'error': True}])
+def test_missing_or_invalid_severity_metadata_requires_supported_report(tmp_path, kind, clean, version, metadata):
+    # KiCad 9.0.2 --severity-all reports omit included_severities. Even a claimed newer version cannot
+    # establish coverage without the field, and a string/dict cannot stand in for the required list.
+    data = {k: v for k, v in clean.items() if k != 'included_severities'}
+    if version is not None:
+        data['kicad_version'] = version
+    if metadata != 'missing':
+        data['included_severities'] = metadata
+    p = tmp_path/f'{kind}.json'
+    p.write_text(json.dumps(data))
+    r = kicad_report(p, kind)
+    assert not r['pass']
+    assert 'missing or invalid severity metadata' in r['reason']
+    assert 'kicad-cli 10 or newer' in r['reason'] and '--severity-all' in r['reason']
+    assert 'filtered severities' not in r['reason']
 
 
 def test_ignored_and_excluded_checks_fail_unless_waived_by_name(tmp_path):

@@ -92,6 +92,61 @@ def test_cli_requests_new_conversation_without_permission_bypass(harness):
         assert '--safe-mode' in args and '--no-session-persistence' in args
 
 
+@pytest.mark.parametrize('harness', ['codex', 'claude'])
+@pytest.mark.parametrize('effort', ['low', 'medium', 'high'])
+def test_cli_effort_changes_only_the_requested_option(harness, effort):
+    default = runner.command(harness, '/bin/example', 'requested-model', Path('/tmp/example'))
+    args = runner.command(harness, '/bin/example', 'requested-model', Path('/tmp/example'), effort)
+    old = 'model_reasoning_effort="medium"' if harness == 'codex' else 'medium'
+    new = f'model_reasoning_effort="{effort}"' if harness == 'codex' else effort
+    assert default.count(old) == 1
+    expected = default.copy()
+    expected[expected.index(old)] = new
+    assert args == expected
+
+
+@pytest.mark.parametrize('effort', ['', 'default', 'HIGH', None, 'high"; echo invalid'])
+def test_invalid_effort_cannot_create_or_launch_trial(tmp_path, monkeypatch, effort):
+    def forbidden(*args, **kwargs):
+        pytest.fail('invalid request must fail before environment lookup/preparation')
+    monkeypatch.setattr(runner.shutil, 'which', forbidden)
+    work = tmp_path / 'run'
+    with pytest.raises(ValueError, match='reasoning effort'):
+        runner.collect('snapfit-sizing', 'bare', work, 'codex', 'fake', reasoning_effort=effort)
+    assert not work.exists()
+
+
+def test_inert_process_records_requested_effort_without_claiming_effective(tmp_path, monkeypatch):
+    executable = fake_harness(tmp_path, 'sys.stdin.read()\n'
+        'assert \'model_reasoning_effort="high"\' in sys.argv\n'
+        'print(json.dumps({"type":"thread.started","thread_id":"control"}))\n'
+        'print(json.dumps({"type":"turn.completed","usage":{"input_tokens":1,"output_tokens":2}}))\n')
+    monkeypatch.setattr(runner.shutil, 'which', lambda harness: str(executable))
+    work = tmp_path / 'run'
+    result = collected_result(monkeypatch, 'snapfit-sizing', 'bare', work, 'codex', 'fake',
+                              reasoning_effort='high')
+    invocation = json.loads((work / 'invocation.json').read_text())
+    assert invocation['reasoning_effort_requested'] == 'high'
+    assert result['collector']['reasoning_effort_requested'] == 'high'
+    assert result['collector']['reasoning_effort_effective'] is None
+
+
+def test_historical_collection_does_not_infer_medium_effort(tmp_path, monkeypatch):
+    executable = fake_harness(tmp_path, 'sys.stdin.read()\n')
+    monkeypatch.setattr(runner.shutil, 'which', lambda harness: str(executable))
+    work = tmp_path / 'run'
+    runner.collect('snapfit-sizing', 'bare', work, 'codex', 'fake')
+    path = work / 'collection.json'
+    record = json.loads(path.read_text())
+    assert record.pop('reasoning_effort_requested') == 'medium'
+    record.pop('reasoning_effort_effective')
+    path.write_text(json.dumps(record))
+    mock_terminal_unit(monkeypatch)
+    result = runner.finalize(work, 'cad-eval-test.service')
+    assert result['collector']['reasoning_effort_requested'] is None
+    assert result['collector']['reasoning_effort_effective'] is None
+
+
 def fake_harness(tmp_path, body):
     executable = tmp_path / 'fake-cli'
     executable.write_text('#!/usr/bin/python3\nimport json, sys, time\n'

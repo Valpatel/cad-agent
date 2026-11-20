@@ -1,0 +1,2455 @@
+{
+  "$schema": "../../../scada-ui/schema/scada-system.schema.json",
+  "format": "scada-system",
+  "version": 1,
+  "system": {
+    "id": "fruit-juice",
+    "label": "Fruit-juice line",
+    "description": "Receive and extract fruit, clarify the juice, optionally concentrate, blend and package. A separate solar/battery utility illustrates power availability."
+  },
+  "components": [
+    {
+      "id": "intake",
+      "type": "conveyor",
+      "label": "Fruit receiving belt",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/intake/active",
+        "running": "/components/intake/running",
+        "fault": "/components/intake/fault",
+        "status": "/components/intake/status",
+        "load": "/components/intake/load",
+        "speed": "/components/intake/speed",
+        "damage": "/components/intake/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "supply",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "crusher",
+      "type": "crusher",
+      "label": "Fruit extraction crusher",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/crusher/active",
+        "running": "/components/crusher/running",
+        "fault": "/components/crusher/fault",
+        "status": "/components/crusher/status",
+        "load": "/components/crusher/load",
+        "speed": "/components/crusher/speed",
+        "damage": "/components/crusher/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "supply",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "clarifier",
+      "type": "centrifuge",
+      "label": "Juice clarification",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/clarifier/active",
+        "running": "/components/clarifier/running",
+        "fault": "/components/clarifier/fault",
+        "status": "/components/clarifier/status",
+        "load": "/components/clarifier/load",
+        "speed": "/components/clarifier/speed",
+        "damage": "/components/clarifier/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "supply",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "reject",
+          "side": "right",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "concentrator",
+      "type": "evaporator",
+      "label": "Illustrative concentration stage",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "level": 55,
+        "load": 60,
+        "temperature": 85,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/concentrator/active",
+        "running": "/components/concentrator/running",
+        "fault": "/components/concentrator/fault",
+        "status": "/components/concentrator/status",
+        "level": "/components/concentrator/level",
+        "load": "/components/concentrator/load",
+        "temperature": "/components/concentrator/temperature",
+        "damage": "/components/concentrator/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "supply",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "vapor",
+          "side": "right",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "blend",
+      "type": "mixing-tank",
+      "label": "Juice blending vessel",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "level": 55,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/blend/active",
+        "running": "/components/blend/running",
+        "fault": "/components/blend/fault",
+        "status": "/components/blend/status",
+        "level": "/components/blend/level",
+        "damage": "/components/blend/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "drive",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "exchanger",
+      "type": "heat-exchanger",
+      "label": "Product thermal exchanger",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "temperature": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/exchanger/active",
+        "running": "/components/exchanger/running",
+        "fault": "/components/exchanger/fault",
+        "status": "/components/exchanger/status",
+        "load": "/components/exchanger/load",
+        "temperature": "/components/exchanger/temperature",
+        "damage": "/components/exchanger/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "hot-in",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "hot-out",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "cold-in",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "cold-out",
+          "side": "right",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "hold",
+      "type": "reactor",
+      "label": "Product holding vessel",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "level": 55,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/hold/active",
+        "running": "/components/hold/running",
+        "fault": "/components/hold/fault",
+        "status": "/components/hold/status",
+        "level": "/components/hold/level",
+        "damage": "/components/hold/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "vent",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "gas-inlet",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "polish",
+      "type": "filter",
+      "label": "Final polishing",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/polish/active",
+        "running": "/components/polish/running",
+        "fault": "/components/polish/fault",
+        "status": "/components/polish/status",
+        "load": "/components/polish/load",
+        "damage": "/components/polish/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "backwash",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "filler",
+      "type": "filling-line",
+      "label": "Juice filling",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/filler/active",
+        "running": "/components/filler/running",
+        "fault": "/components/filler/fault",
+        "status": "/components/filler/status",
+        "load": "/components/filler/load",
+        "speed": "/components/filler/speed",
+        "damage": "/components/filler/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "supply",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "packer",
+      "type": "packaging-line",
+      "label": "Case packing",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/packer/active",
+        "running": "/components/packer/running",
+        "fault": "/components/packer/fault",
+        "status": "/components/packer/status",
+        "load": "/components/packer/load",
+        "speed": "/components/packer/speed",
+        "damage": "/components/packer/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "supply",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "power",
+      "type": "solar-panel",
+      "label": "Illustrative solar supply",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/power/active",
+        "running": "/components/power/running",
+        "fault": "/components/power/fault",
+        "status": "/components/power/status",
+        "load": "/components/power/load",
+        "damage": "/components/power/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "dc",
+          "side": "right",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "battery",
+      "type": "battery",
+      "label": "Demonstration battery buffer",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "level": 55,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/battery/active",
+        "running": "/components/battery/running",
+        "fault": "/components/battery/fault",
+        "status": "/components/battery/status",
+        "level": "/components/battery/level",
+        "damage": "/components/battery/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": []
+    },
+    {
+      "id": "controller",
+      "type": "hmi",
+      "label": "Juice-line operator panel",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "connected": true,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/controller/active",
+        "running": "/components/controller/running",
+        "fault": "/components/controller/fault",
+        "status": "/components/controller/status",
+        "connected": "/components/controller/connected",
+        "damage": "/components/controller/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "power",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "level",
+      "type": "level-sensor",
+      "label": "Blend inventory monitor",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "level": 55,
+        "value": 42,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/level/active",
+        "running": "/components/level/running",
+        "fault": "/components/level/fault",
+        "status": "/components/level/status",
+        "level": "/components/level/level",
+        "value": "/components/level/value",
+        "damage": "/components/level/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "process",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "signal",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "power",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "intake-to-crusher",
+      "from": {
+        "component": "intake",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "crusher",
+        "port": "inlet"
+      },
+      "medium": "solids",
+      "flowBinding": "/flows/intake-to-crusher",
+      "label": "Fruit receiving belt \u2192 Fruit extraction crusher"
+    },
+    {
+      "id": "crusher-to-clarifier",
+      "from": {
+        "component": "crusher",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "clarifier",
+        "port": "inlet"
+      },
+      "medium": "solids",
+      "flowBinding": "/flows/crusher-to-clarifier",
+      "label": "Fruit extraction crusher \u2192 Juice clarification"
+    },
+    {
+      "id": "clarifier-to-concentrator",
+      "from": {
+        "component": "clarifier",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "concentrator",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "flowBinding": "/flows/clarifier-to-concentrator",
+      "label": "Juice clarification \u2192 Illustrative concentration stage"
+    },
+    {
+      "id": "concentrator-to-blend",
+      "from": {
+        "component": "concentrator",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "blend",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "flowBinding": "/flows/concentrator-to-blend",
+      "label": "Illustrative concentration stage \u2192 Juice blending vessel"
+    },
+    {
+      "id": "blend-to-exchanger",
+      "from": {
+        "component": "blend",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "exchanger",
+        "port": "hot-in"
+      },
+      "medium": "liquid",
+      "flowBinding": "/flows/blend-to-exchanger",
+      "label": "Juice blending vessel \u2192 Product thermal exchanger"
+    },
+    {
+      "id": "exchanger-to-hold",
+      "from": {
+        "component": "exchanger",
+        "port": "hot-out"
+      },
+      "to": {
+        "component": "hold",
+        "port": "inlet"
+      },
+      "medium": "thermal-fluid",
+      "flowBinding": "/flows/exchanger-to-hold",
+      "label": "Product thermal exchanger \u2192 Product holding vessel"
+    },
+    {
+      "id": "hold-to-polish",
+      "from": {
+        "component": "hold",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "polish",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "flowBinding": "/flows/hold-to-polish",
+      "label": "Product holding vessel \u2192 Final polishing"
+    },
+    {
+      "id": "polish-to-filler",
+      "from": {
+        "component": "polish",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "filler",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "flowBinding": "/flows/polish-to-filler",
+      "label": "Final polishing \u2192 Juice filling"
+    },
+    {
+      "id": "filler-to-packer",
+      "from": {
+        "component": "filler",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "packer",
+        "port": "inlet"
+      },
+      "medium": "product",
+      "flowBinding": "/flows/filler-to-packer",
+      "label": "Juice filling \u2192 Case packing"
+    },
+    {
+      "id": "power-to-battery",
+      "from": {
+        "component": "power",
+        "port": "dc"
+      },
+      "to": {
+        "component": "battery",
+        "port": "dc"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-battery",
+      "label": "Illustrative solar supply \u2192 Demonstration battery buffer"
+    },
+    {
+      "id": "battery-to-intake",
+      "from": {
+        "component": "battery",
+        "port": "dc"
+      },
+      "to": {
+        "component": "intake",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/battery-to-intake",
+      "label": "Demonstration battery buffer \u2192 Fruit receiving belt"
+    },
+    {
+      "id": "battery-to-crusher",
+      "from": {
+        "component": "battery",
+        "port": "dc"
+      },
+      "to": {
+        "component": "crusher",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/battery-to-crusher",
+      "label": "Demonstration battery buffer \u2192 Fruit extraction crusher"
+    },
+    {
+      "id": "battery-to-clarifier",
+      "from": {
+        "component": "battery",
+        "port": "dc"
+      },
+      "to": {
+        "component": "clarifier",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/battery-to-clarifier",
+      "label": "Demonstration battery buffer \u2192 Juice clarification"
+    },
+    {
+      "id": "battery-to-concentrator",
+      "from": {
+        "component": "battery",
+        "port": "dc"
+      },
+      "to": {
+        "component": "concentrator",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/battery-to-concentrator",
+      "label": "Demonstration battery buffer \u2192 Illustrative concentration stage"
+    },
+    {
+      "id": "battery-to-blend",
+      "from": {
+        "component": "battery",
+        "port": "dc"
+      },
+      "to": {
+        "component": "blend",
+        "port": "drive"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/battery-to-blend",
+      "label": "Demonstration battery buffer \u2192 Juice blending vessel"
+    },
+    {
+      "id": "battery-to-filler",
+      "from": {
+        "component": "battery",
+        "port": "dc"
+      },
+      "to": {
+        "component": "filler",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/battery-to-filler",
+      "label": "Demonstration battery buffer \u2192 Juice filling"
+    },
+    {
+      "id": "battery-to-packer",
+      "from": {
+        "component": "battery",
+        "port": "dc"
+      },
+      "to": {
+        "component": "packer",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/battery-to-packer",
+      "label": "Demonstration battery buffer \u2192 Case packing"
+    },
+    {
+      "id": "battery-to-controller",
+      "from": {
+        "component": "battery",
+        "port": "dc"
+      },
+      "to": {
+        "component": "controller",
+        "port": "power"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/battery-to-controller",
+      "label": "Demonstration battery buffer \u2192 Juice-line operator panel"
+    },
+    {
+      "id": "battery-to-level",
+      "from": {
+        "component": "battery",
+        "port": "dc"
+      },
+      "to": {
+        "component": "level",
+        "port": "power"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/battery-to-level",
+      "label": "Demonstration battery buffer \u2192 Blend inventory monitor"
+    },
+    {
+      "id": "blend-to-level",
+      "from": {
+        "component": "blend",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "level",
+        "port": "process"
+      },
+      "medium": "measurement",
+      "flowBinding": "/flows/blend-to-level",
+      "label": "Juice blending vessel \u2192 Blend inventory monitor"
+    },
+    {
+      "id": "level-to-controller",
+      "from": {
+        "component": "level",
+        "port": "signal"
+      },
+      "to": {
+        "component": "controller",
+        "port": "network"
+      },
+      "medium": "data",
+      "flowBinding": "/flows/level-to-controller",
+      "label": "Blend inventory monitor \u2192 Juice-line operator panel"
+    }
+  ],
+  "views": [
+    {
+      "id": "process",
+      "label": "Main process",
+      "canvas": {
+        "width": 1280,
+        "height": 940
+      },
+      "placements": [
+        {
+          "component": "intake",
+          "x": 60,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "crusher",
+          "x": 360,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "clarifier",
+          "x": 660,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "concentrator",
+          "x": 960,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "blend",
+          "x": 960,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "exchanger",
+          "x": 660,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "hold",
+          "x": 360,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "polish",
+          "x": 60,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "filler",
+          "x": 60,
+          "y": 620,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "packer",
+          "x": 360,
+          "y": 620,
+          "width": 200,
+          "height": 190
+        }
+      ],
+      "routes": [
+        {
+          "connection": "intake-to-crusher",
+          "points": [
+            {
+              "x": 260,
+              "y": 155
+            },
+            {
+              "x": 360,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "crusher-to-clarifier",
+          "points": [
+            {
+              "x": 560,
+              "y": 155
+            },
+            {
+              "x": 660,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "clarifier-to-concentrator",
+          "points": [
+            {
+              "x": 860,
+              "y": 155
+            },
+            {
+              "x": 960,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "concentrator-to-blend",
+          "points": [
+            {
+              "x": 1060,
+              "y": 250
+            },
+            {
+              "x": 1060,
+              "y": 340
+            }
+          ]
+        },
+        {
+          "connection": "blend-to-exchanger",
+          "points": [
+            {
+              "x": 960,
+              "y": 435
+            },
+            {
+              "x": 860,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "exchanger-to-hold",
+          "points": [
+            {
+              "x": 660,
+              "y": 435
+            },
+            {
+              "x": 560,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "hold-to-polish",
+          "points": [
+            {
+              "x": 360,
+              "y": 435
+            },
+            {
+              "x": 260,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "polish-to-filler",
+          "points": [
+            {
+              "x": 160,
+              "y": 530
+            },
+            {
+              "x": 160,
+              "y": 620
+            }
+          ]
+        },
+        {
+          "connection": "filler-to-packer",
+          "points": [
+            {
+              "x": 260,
+              "y": 715
+            },
+            {
+              "x": 360,
+              "y": 715
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "utilities",
+      "label": "Utilities & control",
+      "canvas": {
+        "width": 980,
+        "height": 660
+      },
+      "placements": [
+        {
+          "component": "power",
+          "x": 60,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "battery",
+          "x": 360,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "controller",
+          "x": 660,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "level",
+          "x": 660,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "concentrator",
+          "x": 360,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "filler",
+          "x": 60,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        }
+      ],
+      "routes": [
+        {
+          "connection": "power-to-battery",
+          "points": [
+            {
+              "x": 260,
+              "y": 155
+            },
+            {
+              "x": 360,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "battery-to-concentrator",
+          "points": [
+            {
+              "x": 460,
+              "y": 250
+            },
+            {
+              "x": 460,
+              "y": 340
+            }
+          ]
+        },
+        {
+          "connection": "battery-to-filler",
+          "points": [
+            {
+              "x": 360,
+              "y": 155
+            },
+            {
+              "x": 336,
+              "y": 155
+            },
+            {
+              "x": 336,
+              "y": 316
+            },
+            {
+              "x": 284,
+              "y": 316
+            },
+            {
+              "x": 284,
+              "y": 435
+            },
+            {
+              "x": 260,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "battery-to-controller",
+          "points": [
+            {
+              "x": 560,
+              "y": 155
+            },
+            {
+              "x": 660,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "battery-to-level",
+          "points": [
+            {
+              "x": 560,
+              "y": 155
+            },
+            {
+              "x": 584,
+              "y": 155
+            },
+            {
+              "x": 584,
+              "y": 316
+            },
+            {
+              "x": 636,
+              "y": 316
+            },
+            {
+              "x": 636,
+              "y": 435
+            },
+            {
+              "x": 660,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "level-to-controller",
+          "points": [
+            {
+              "x": 760,
+              "y": 340
+            },
+            {
+              "x": 760,
+              "y": 250
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "finishing",
+      "label": "Finishing & storage",
+      "canvas": {
+        "width": 980,
+        "height": 940
+      },
+      "placements": [
+        {
+          "component": "exchanger",
+          "x": 60,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "hold",
+          "x": 360,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "polish",
+          "x": 660,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "filler",
+          "x": 660,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "packer",
+          "x": 360,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "controller",
+          "x": 60,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "level",
+          "x": 60,
+          "y": 620,
+          "width": 200,
+          "height": 190
+        }
+      ],
+      "routes": [
+        {
+          "connection": "exchanger-to-hold",
+          "points": [
+            {
+              "x": 260,
+              "y": 155
+            },
+            {
+              "x": 360,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "hold-to-polish",
+          "points": [
+            {
+              "x": 560,
+              "y": 155
+            },
+            {
+              "x": 660,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "polish-to-filler",
+          "points": [
+            {
+              "x": 760,
+              "y": 250
+            },
+            {
+              "x": 760,
+              "y": 340
+            }
+          ]
+        },
+        {
+          "connection": "filler-to-packer",
+          "points": [
+            {
+              "x": 660,
+              "y": 435
+            },
+            {
+              "x": 560,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "level-to-controller",
+          "points": [
+            {
+              "x": 160,
+              "y": 620
+            },
+            {
+              "x": 160,
+              "y": 530
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "commands": [
+    {
+      "id": "intake-enabled",
+      "label": "Fruit receiving belt \u00b7 Enabled",
+      "component": "intake",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "intake"
+      }
+    },
+    {
+      "id": "intake-load",
+      "label": "Fruit receiving belt \u00b7 Requested load",
+      "component": "intake",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "intake"
+      }
+    },
+    {
+      "id": "intake-fault",
+      "label": "Fruit receiving belt \u00b7 Injected failure",
+      "component": "intake",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "intake"
+      }
+    },
+    {
+      "id": "intake-repair",
+      "label": "Repair Fruit receiving belt",
+      "component": "intake",
+      "action": "repair",
+      "arguments": {
+        "equipment": "intake"
+      }
+    },
+    {
+      "id": "crusher-enabled",
+      "label": "Fruit extraction crusher \u00b7 Enabled",
+      "component": "crusher",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "crusher"
+      }
+    },
+    {
+      "id": "crusher-load",
+      "label": "Fruit extraction crusher \u00b7 Requested load",
+      "component": "crusher",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "crusher"
+      }
+    },
+    {
+      "id": "crusher-fault",
+      "label": "Fruit extraction crusher \u00b7 Injected failure",
+      "component": "crusher",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "crusher"
+      }
+    },
+    {
+      "id": "crusher-repair",
+      "label": "Repair Fruit extraction crusher",
+      "component": "crusher",
+      "action": "repair",
+      "arguments": {
+        "equipment": "crusher"
+      }
+    },
+    {
+      "id": "clarifier-enabled",
+      "label": "Juice clarification \u00b7 Enabled",
+      "component": "clarifier",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "clarifier"
+      }
+    },
+    {
+      "id": "clarifier-load",
+      "label": "Juice clarification \u00b7 Requested load",
+      "component": "clarifier",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "clarifier"
+      }
+    },
+    {
+      "id": "clarifier-fault",
+      "label": "Juice clarification \u00b7 Injected failure",
+      "component": "clarifier",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "clarifier"
+      }
+    },
+    {
+      "id": "clarifier-repair",
+      "label": "Repair Juice clarification",
+      "component": "clarifier",
+      "action": "repair",
+      "arguments": {
+        "equipment": "clarifier"
+      }
+    },
+    {
+      "id": "concentrator-enabled",
+      "label": "Illustrative concentration stage \u00b7 Enabled",
+      "component": "concentrator",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "concentrator"
+      }
+    },
+    {
+      "id": "concentrator-load",
+      "label": "Illustrative concentration stage \u00b7 Requested load",
+      "component": "concentrator",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "concentrator"
+      }
+    },
+    {
+      "id": "concentrator-fault",
+      "label": "Illustrative concentration stage \u00b7 Injected failure",
+      "component": "concentrator",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "concentrator"
+      }
+    },
+    {
+      "id": "concentrator-repair",
+      "label": "Repair Illustrative concentration stage",
+      "component": "concentrator",
+      "action": "repair",
+      "arguments": {
+        "equipment": "concentrator"
+      }
+    },
+    {
+      "id": "blend-enabled",
+      "label": "Juice blending vessel \u00b7 Enabled",
+      "component": "blend",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "blend"
+      }
+    },
+    {
+      "id": "blend-load",
+      "label": "Juice blending vessel \u00b7 Requested load",
+      "component": "blend",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "blend"
+      }
+    },
+    {
+      "id": "blend-fault",
+      "label": "Juice blending vessel \u00b7 Injected failure",
+      "component": "blend",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "blend"
+      }
+    },
+    {
+      "id": "blend-repair",
+      "label": "Repair Juice blending vessel",
+      "component": "blend",
+      "action": "repair",
+      "arguments": {
+        "equipment": "blend"
+      }
+    },
+    {
+      "id": "exchanger-enabled",
+      "label": "Product thermal exchanger \u00b7 Enabled",
+      "component": "exchanger",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "exchanger"
+      }
+    },
+    {
+      "id": "exchanger-load",
+      "label": "Product thermal exchanger \u00b7 Requested load",
+      "component": "exchanger",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "exchanger"
+      }
+    },
+    {
+      "id": "exchanger-fault",
+      "label": "Product thermal exchanger \u00b7 Injected failure",
+      "component": "exchanger",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "exchanger"
+      }
+    },
+    {
+      "id": "exchanger-repair",
+      "label": "Repair Product thermal exchanger",
+      "component": "exchanger",
+      "action": "repair",
+      "arguments": {
+        "equipment": "exchanger"
+      }
+    },
+    {
+      "id": "hold-enabled",
+      "label": "Product holding vessel \u00b7 Enabled",
+      "component": "hold",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "hold"
+      }
+    },
+    {
+      "id": "hold-load",
+      "label": "Product holding vessel \u00b7 Requested load",
+      "component": "hold",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "hold"
+      }
+    },
+    {
+      "id": "hold-fault",
+      "label": "Product holding vessel \u00b7 Injected failure",
+      "component": "hold",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "hold"
+      }
+    },
+    {
+      "id": "hold-repair",
+      "label": "Repair Product holding vessel",
+      "component": "hold",
+      "action": "repair",
+      "arguments": {
+        "equipment": "hold"
+      }
+    },
+    {
+      "id": "polish-enabled",
+      "label": "Final polishing \u00b7 Enabled",
+      "component": "polish",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "polish"
+      }
+    },
+    {
+      "id": "polish-load",
+      "label": "Final polishing \u00b7 Requested load",
+      "component": "polish",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "polish"
+      }
+    },
+    {
+      "id": "polish-fault",
+      "label": "Final polishing \u00b7 Injected failure",
+      "component": "polish",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "polish"
+      }
+    },
+    {
+      "id": "polish-repair",
+      "label": "Repair Final polishing",
+      "component": "polish",
+      "action": "repair",
+      "arguments": {
+        "equipment": "polish"
+      }
+    },
+    {
+      "id": "filler-enabled",
+      "label": "Juice filling \u00b7 Enabled",
+      "component": "filler",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "filler"
+      }
+    },
+    {
+      "id": "filler-load",
+      "label": "Juice filling \u00b7 Requested load",
+      "component": "filler",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "filler"
+      }
+    },
+    {
+      "id": "filler-fault",
+      "label": "Juice filling \u00b7 Injected failure",
+      "component": "filler",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "filler"
+      }
+    },
+    {
+      "id": "filler-repair",
+      "label": "Repair Juice filling",
+      "component": "filler",
+      "action": "repair",
+      "arguments": {
+        "equipment": "filler"
+      }
+    },
+    {
+      "id": "packer-enabled",
+      "label": "Case packing \u00b7 Enabled",
+      "component": "packer",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "packer"
+      }
+    },
+    {
+      "id": "packer-load",
+      "label": "Case packing \u00b7 Requested load",
+      "component": "packer",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "packer"
+      }
+    },
+    {
+      "id": "packer-fault",
+      "label": "Case packing \u00b7 Injected failure",
+      "component": "packer",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "packer"
+      }
+    },
+    {
+      "id": "packer-repair",
+      "label": "Repair Case packing",
+      "component": "packer",
+      "action": "repair",
+      "arguments": {
+        "equipment": "packer"
+      }
+    },
+    {
+      "id": "power-enabled",
+      "label": "Illustrative solar supply \u00b7 Enabled",
+      "component": "power",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "power"
+      }
+    },
+    {
+      "id": "power-load",
+      "label": "Illustrative solar supply \u00b7 Requested load",
+      "component": "power",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "power"
+      }
+    },
+    {
+      "id": "power-fault",
+      "label": "Illustrative solar supply \u00b7 Injected failure",
+      "component": "power",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "power"
+      }
+    },
+    {
+      "id": "power-repair",
+      "label": "Repair Illustrative solar supply",
+      "component": "power",
+      "action": "repair",
+      "arguments": {
+        "equipment": "power"
+      }
+    },
+    {
+      "id": "battery-enabled",
+      "label": "Demonstration battery buffer \u00b7 Enabled",
+      "component": "battery",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "battery"
+      }
+    },
+    {
+      "id": "battery-load",
+      "label": "Demonstration battery buffer \u00b7 Requested load",
+      "component": "battery",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "battery"
+      }
+    },
+    {
+      "id": "battery-fault",
+      "label": "Demonstration battery buffer \u00b7 Injected failure",
+      "component": "battery",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "battery"
+      }
+    },
+    {
+      "id": "battery-repair",
+      "label": "Repair Demonstration battery buffer",
+      "component": "battery",
+      "action": "repair",
+      "arguments": {
+        "equipment": "battery"
+      }
+    },
+    {
+      "id": "controller-enabled",
+      "label": "Juice-line operator panel \u00b7 Enabled",
+      "component": "controller",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "controller"
+      }
+    },
+    {
+      "id": "controller-load",
+      "label": "Juice-line operator panel \u00b7 Requested load",
+      "component": "controller",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "controller"
+      }
+    },
+    {
+      "id": "controller-fault",
+      "label": "Juice-line operator panel \u00b7 Injected failure",
+      "component": "controller",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "controller"
+      }
+    },
+    {
+      "id": "controller-repair",
+      "label": "Repair Juice-line operator panel",
+      "component": "controller",
+      "action": "repair",
+      "arguments": {
+        "equipment": "controller"
+      }
+    },
+    {
+      "id": "level-enabled",
+      "label": "Blend inventory monitor \u00b7 Enabled",
+      "component": "level",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "level"
+      }
+    },
+    {
+      "id": "level-load",
+      "label": "Blend inventory monitor \u00b7 Requested load",
+      "component": "level",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "level"
+      }
+    },
+    {
+      "id": "level-fault",
+      "label": "Blend inventory monitor \u00b7 Injected failure",
+      "component": "level",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "level"
+      }
+    },
+    {
+      "id": "level-repair",
+      "label": "Repair Blend inventory monitor",
+      "component": "level",
+      "action": "repair",
+      "arguments": {
+        "equipment": "level"
+      }
+    },
+    {
+      "id": "plant-setRunning",
+      "label": "Run the shared plant",
+      "action": "setRunning",
+      "arguments": {}
+    },
+    {
+      "id": "plant-step",
+      "label": "Advance one model step",
+      "action": "step",
+      "arguments": {
+        "value": 1
+      }
+    },
+    {
+      "id": "plant-reset",
+      "label": "Reset dynamics \u00b7 keep edited parameters",
+      "action": "reset",
+      "arguments": {}
+    }
+  ],
+  "controls": [
+    {
+      "id": "intake-enabled-control",
+      "label": "Enabled",
+      "component": "intake",
+      "kind": "toggle",
+      "command": "intake-enabled",
+      "binding": "/controls/intake/enabled"
+    },
+    {
+      "id": "intake-load-control",
+      "label": "Requested load",
+      "component": "intake",
+      "kind": "range",
+      "command": "intake-load",
+      "binding": "/controls/intake/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "intake-fault-control",
+      "label": "Injected failure",
+      "component": "intake",
+      "kind": "toggle",
+      "command": "intake-fault",
+      "binding": "/controls/intake/fault"
+    },
+    {
+      "id": "intake-repair-control",
+      "label": "Repair component",
+      "component": "intake",
+      "kind": "button",
+      "command": "intake-repair"
+    },
+    {
+      "id": "crusher-enabled-control",
+      "label": "Enabled",
+      "component": "crusher",
+      "kind": "toggle",
+      "command": "crusher-enabled",
+      "binding": "/controls/crusher/enabled"
+    },
+    {
+      "id": "crusher-load-control",
+      "label": "Requested load",
+      "component": "crusher",
+      "kind": "range",
+      "command": "crusher-load",
+      "binding": "/controls/crusher/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "crusher-fault-control",
+      "label": "Injected failure",
+      "component": "crusher",
+      "kind": "toggle",
+      "command": "crusher-fault",
+      "binding": "/controls/crusher/fault"
+    },
+    {
+      "id": "crusher-repair-control",
+      "label": "Repair component",
+      "component": "crusher",
+      "kind": "button",
+      "command": "crusher-repair"
+    },
+    {
+      "id": "clarifier-enabled-control",
+      "label": "Enabled",
+      "component": "clarifier",
+      "kind": "toggle",
+      "command": "clarifier-enabled",
+      "binding": "/controls/clarifier/enabled"
+    },
+    {
+      "id": "clarifier-load-control",
+      "label": "Requested load",
+      "component": "clarifier",
+      "kind": "range",
+      "command": "clarifier-load",
+      "binding": "/controls/clarifier/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "clarifier-fault-control",
+      "label": "Injected failure",
+      "component": "clarifier",
+      "kind": "toggle",
+      "command": "clarifier-fault",
+      "binding": "/controls/clarifier/fault"
+    },
+    {
+      "id": "clarifier-repair-control",
+      "label": "Repair component",
+      "component": "clarifier",
+      "kind": "button",
+      "command": "clarifier-repair"
+    },
+    {
+      "id": "concentrator-enabled-control",
+      "label": "Enabled",
+      "component": "concentrator",
+      "kind": "toggle",
+      "command": "concentrator-enabled",
+      "binding": "/controls/concentrator/enabled"
+    },
+    {
+      "id": "concentrator-load-control",
+      "label": "Requested load",
+      "component": "concentrator",
+      "kind": "range",
+      "command": "concentrator-load",
+      "binding": "/controls/concentrator/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "concentrator-fault-control",
+      "label": "Injected failure",
+      "component": "concentrator",
+      "kind": "toggle",
+      "command": "concentrator-fault",
+      "binding": "/controls/concentrator/fault"
+    },
+    {
+      "id": "concentrator-repair-control",
+      "label": "Repair component",
+      "component": "concentrator",
+      "kind": "button",
+      "command": "concentrator-repair"
+    },
+    {
+      "id": "blend-enabled-control",
+      "label": "Enabled",
+      "component": "blend",
+      "kind": "toggle",
+      "command": "blend-enabled",
+      "binding": "/controls/blend/enabled"
+    },
+    {
+      "id": "blend-load-control",
+      "label": "Requested load",
+      "component": "blend",
+      "kind": "range",
+      "command": "blend-load",
+      "binding": "/controls/blend/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "blend-fault-control",
+      "label": "Injected failure",
+      "component": "blend",
+      "kind": "toggle",
+      "command": "blend-fault",
+      "binding": "/controls/blend/fault"
+    },
+    {
+      "id": "blend-repair-control",
+      "label": "Repair component",
+      "component": "blend",
+      "kind": "button",
+      "command": "blend-repair"
+    },
+    {
+      "id": "exchanger-enabled-control",
+      "label": "Enabled",
+      "component": "exchanger",
+      "kind": "toggle",
+      "command": "exchanger-enabled",
+      "binding": "/controls/exchanger/enabled"
+    },
+    {
+      "id": "exchanger-load-control",
+      "label": "Requested load",
+      "component": "exchanger",
+      "kind": "range",
+      "command": "exchanger-load",
+      "binding": "/controls/exchanger/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "exchanger-fault-control",
+      "label": "Injected failure",
+      "component": "exchanger",
+      "kind": "toggle",
+      "command": "exchanger-fault",
+      "binding": "/controls/exchanger/fault"
+    },
+    {
+      "id": "exchanger-repair-control",
+      "label": "Repair component",
+      "component": "exchanger",
+      "kind": "button",
+      "command": "exchanger-repair"
+    },
+    {
+      "id": "hold-enabled-control",
+      "label": "Enabled",
+      "component": "hold",
+      "kind": "toggle",
+      "command": "hold-enabled",
+      "binding": "/controls/hold/enabled"
+    },
+    {
+      "id": "hold-load-control",
+      "label": "Requested load",
+      "component": "hold",
+      "kind": "range",
+      "command": "hold-load",
+      "binding": "/controls/hold/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "hold-fault-control",
+      "label": "Injected failure",
+      "component": "hold",
+      "kind": "toggle",
+      "command": "hold-fault",
+      "binding": "/controls/hold/fault"
+    },
+    {
+      "id": "hold-repair-control",
+      "label": "Repair component",
+      "component": "hold",
+      "kind": "button",
+      "command": "hold-repair"
+    },
+    {
+      "id": "polish-enabled-control",
+      "label": "Enabled",
+      "component": "polish",
+      "kind": "toggle",
+      "command": "polish-enabled",
+      "binding": "/controls/polish/enabled"
+    },
+    {
+      "id": "polish-load-control",
+      "label": "Requested load",
+      "component": "polish",
+      "kind": "range",
+      "command": "polish-load",
+      "binding": "/controls/polish/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "polish-fault-control",
+      "label": "Injected failure",
+      "component": "polish",
+      "kind": "toggle",
+      "command": "polish-fault",
+      "binding": "/controls/polish/fault"
+    },
+    {
+      "id": "polish-repair-control",
+      "label": "Repair component",
+      "component": "polish",
+      "kind": "button",
+      "command": "polish-repair"
+    },
+    {
+      "id": "filler-enabled-control",
+      "label": "Enabled",
+      "component": "filler",
+      "kind": "toggle",
+      "command": "filler-enabled",
+      "binding": "/controls/filler/enabled"
+    },
+    {
+      "id": "filler-load-control",
+      "label": "Requested load",
+      "component": "filler",
+      "kind": "range",
+      "command": "filler-load",
+      "binding": "/controls/filler/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "filler-fault-control",
+      "label": "Injected failure",
+      "component": "filler",
+      "kind": "toggle",
+      "command": "filler-fault",
+      "binding": "/controls/filler/fault"
+    },
+    {
+      "id": "filler-repair-control",
+      "label": "Repair component",
+      "component": "filler",
+      "kind": "button",
+      "command": "filler-repair"
+    },
+    {
+      "id": "packer-enabled-control",
+      "label": "Enabled",
+      "component": "packer",
+      "kind": "toggle",
+      "command": "packer-enabled",
+      "binding": "/controls/packer/enabled"
+    },
+    {
+      "id": "packer-load-control",
+      "label": "Requested load",
+      "component": "packer",
+      "kind": "range",
+      "command": "packer-load",
+      "binding": "/controls/packer/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "packer-fault-control",
+      "label": "Injected failure",
+      "component": "packer",
+      "kind": "toggle",
+      "command": "packer-fault",
+      "binding": "/controls/packer/fault"
+    },
+    {
+      "id": "packer-repair-control",
+      "label": "Repair component",
+      "component": "packer",
+      "kind": "button",
+      "command": "packer-repair"
+    },
+    {
+      "id": "power-enabled-control",
+      "label": "Enabled",
+      "component": "power",
+      "kind": "toggle",
+      "command": "power-enabled",
+      "binding": "/controls/power/enabled"
+    },
+    {
+      "id": "power-load-control",
+      "label": "Requested load",
+      "component": "power",
+      "kind": "range",
+      "command": "power-load",
+      "binding": "/controls/power/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "power-fault-control",
+      "label": "Injected failure",
+      "component": "power",
+      "kind": "toggle",
+      "command": "power-fault",
+      "binding": "/controls/power/fault"
+    },
+    {
+      "id": "power-repair-control",
+      "label": "Repair component",
+      "component": "power",
+      "kind": "button",
+      "command": "power-repair"
+    },
+    {
+      "id": "battery-enabled-control",
+      "label": "Enabled",
+      "component": "battery",
+      "kind": "toggle",
+      "command": "battery-enabled",
+      "binding": "/controls/battery/enabled"
+    },
+    {
+      "id": "battery-load-control",
+      "label": "Requested load",
+      "component": "battery",
+      "kind": "range",
+      "command": "battery-load",
+      "binding": "/controls/battery/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "battery-fault-control",
+      "label": "Injected failure",
+      "component": "battery",
+      "kind": "toggle",
+      "command": "battery-fault",
+      "binding": "/controls/battery/fault"
+    },
+    {
+      "id": "battery-repair-control",
+      "label": "Repair component",
+      "component": "battery",
+      "kind": "button",
+      "command": "battery-repair"
+    },
+    {
+      "id": "controller-enabled-control",
+      "label": "Enabled",
+      "component": "controller",
+      "kind": "toggle",
+      "command": "controller-enabled",
+      "binding": "/controls/controller/enabled"
+    },
+    {
+      "id": "controller-load-control",
+      "label": "Requested load",
+      "component": "controller",
+      "kind": "range",
+      "command": "controller-load",
+      "binding": "/controls/controller/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "controller-fault-control",
+      "label": "Injected failure",
+      "component": "controller",
+      "kind": "toggle",
+      "command": "controller-fault",
+      "binding": "/controls/controller/fault"
+    },
+    {
+      "id": "controller-repair-control",
+      "label": "Repair component",
+      "component": "controller",
+      "kind": "button",
+      "command": "controller-repair"
+    },
+    {
+      "id": "level-enabled-control",
+      "label": "Enabled",
+      "component": "level",
+      "kind": "toggle",
+      "command": "level-enabled",
+      "binding": "/controls/level/enabled"
+    },
+    {
+      "id": "level-load-control",
+      "label": "Requested load",
+      "component": "level",
+      "kind": "range",
+      "command": "level-load",
+      "binding": "/controls/level/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "level-fault-control",
+      "label": "Injected failure",
+      "component": "level",
+      "kind": "toggle",
+      "command": "level-fault",
+      "binding": "/controls/level/fault"
+    },
+    {
+      "id": "level-repair-control",
+      "label": "Repair component",
+      "component": "level",
+      "kind": "button",
+      "command": "level-repair"
+    },
+    {
+      "id": "plant-setRunning-control",
+      "label": "Run the shared plant",
+      "kind": "toggle",
+      "command": "plant-setRunning",
+      "binding": "/running"
+    },
+    {
+      "id": "plant-step-control",
+      "label": "Advance one model step",
+      "kind": "button",
+      "command": "plant-step"
+    },
+    {
+      "id": "plant-reset-control",
+      "label": "Reset dynamics \u00b7 keep edited parameters",
+      "kind": "button",
+      "command": "plant-reset"
+    }
+  ],
+  "units": {
+    "flow": "normalized flow units",
+    "inventory": "normalized inventory units",
+    "load": "% requested demonstration load",
+    "pressure": "normalized pressure index",
+    "temperature": "normalized model thermal index; artwork displays an illustrative range"
+  },
+  "provenance": [
+    {
+      "id": "demo-model",
+      "label": "Editable placeholder model",
+      "kind": "assumed",
+      "description": "Family-level normalized behavior for UI experimentation; no calibrated industry process, safety envelope or recipe."
+    },
+    {
+      "id": "assumed-topology",
+      "label": "Illustrative editable routing",
+      "kind": "illustrative",
+      "description": "Industry-inspired stage names and interfaces. This is not a verified plant P&ID, wiring diagram or production design."
+    }
+  ],
+  "assumptions": [
+    {
+      "id": "nominalCapacity",
+      "label": "Default normalized stage capacity",
+      "value": 75,
+      "unit": "normalized units",
+      "provenance": "demo-model"
+    },
+    {
+      "id": "warningIndex",
+      "label": "Demonstration warning threshold",
+      "value": 78,
+      "unit": "normalized index",
+      "provenance": "demo-model"
+    },
+    {
+      "id": "optionalUtilities",
+      "label": "Utility equipment is illustrative and may be optional",
+      "value": true,
+      "provenance": "assumed-topology"
+    }
+  ]
+}

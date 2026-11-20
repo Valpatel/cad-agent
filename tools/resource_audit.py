@@ -655,10 +655,14 @@ def spec_floor(spec):
     return None
 
 
-def python_packages(text):
+PYTHON_MAINTAINER_REQUIREMENTS = ('tools/webkit/scada/ui/requirements.txt',)
+
+
+def python_packages(text, additional_groups=None):
     proj = (load_toml(text) or {}).get('project', {})
     groups = {'required': proj.get('dependencies') or []}
     groups.update(proj.get('optional-dependencies') or {})
+    groups.update(additional_groups or {})
     pkgs, bad = {}, []
     for group, reqs in groups.items():
         for raw in reqs:
@@ -670,6 +674,24 @@ def python_packages(text):
             p['groups'].append(group)
             p['specs'][group] = r['spec']
     return groups, pkgs, bad
+
+
+def python_context_packages(tree):
+    """The package's extras and explicit, pinned maintainer-only capture tools."""
+    additional = {}
+    for source in PYTHON_MAINTAINER_REQUIREMENTS:
+        if not any(f.startswith(str(Path(source).parent) + '/') for f in tree.files):
+            continue
+        text = tree.read(source)
+        if text is None:
+            raise FileNotFoundError(f'required current Python requirements {source} is missing')
+        requirements = [line.split('#', 1)[0].strip() for line in text.splitlines()]
+        additional[source] = [raw for raw in requirements if raw]
+        for raw in additional[source]:
+            parsed = parse_req(raw)
+            if not parsed or not re.fullmatch(r'==\d+\.\d+\.\d+', parsed['spec']) or parsed['marker']:
+                raise ValueError(f'{source}: capture dependencies must use exact name==X.Y.Z pins: {raw!r}')
+    return python_packages(tree.read('pyproject.toml') or '', additional)
 
 
 def lowest_release(releases, floor):
@@ -693,7 +715,7 @@ def check_python(rep, net, installed=False):
     text = read_text(rep.root / 'pyproject.toml')
     if text is None:
         return
-    groups, pkgs, bad = python_packages(text)
+    groups, pkgs, bad = python_context_packages(WorkTree(rep.root))
     notices = (read_text(rep.root / 'software' / 'vendor' / 'THIRD_PARTY_NOTICES.md') or '').lower()
     for group, raw in bad:
         rep.add('py-unparsed', 'low', f'pypi:{raw}', 'a requirement this report cannot read', f'{group}: {raw!r}',
@@ -702,6 +724,7 @@ def check_python(rep, net, installed=False):
         floors = {g: spec_floor(s) for g, s in p['specs'].items()}
         row = rep.item('python', id=p['id'], name=name, groups=sorted(set(p['groups'])),
                        range={g: s or 'any' for g, s in sorted(p['specs'].items())})
+        row['pins'] = sorted({s[2:] for s in p['specs'].values() if re.fullmatch(r'==\d+\.\d+\.\d+', s)})
         nofloor = sorted(g for g, f in floors.items() if f is None)
         if nofloor:
             sev = 'info' if set(nofloor) <= {'dev'} else 'low'
@@ -757,14 +780,20 @@ def check_python(rep, net, installed=False):
             if ver and not (ctx != 'latest' and ver == latest):
                 asks.append(dict(q={'package': {'ecosystem': 'PyPI', 'name': row['name']}, 'version': ver}, row=row, ctx=ctx,
                                  ver=ver, subject=row['id']))
+        for ver in row['pins']:
+            if ver != latest:
+                asks.append(dict(q={'package': {'ecosystem': 'PyPI', 'name': row['name']}, 'version': ver}, row=row,
+                                 ctx='locked', ver=ver, subject=row['id']))
     for a in osv_lookup(rep, net, asks):
         if a.get('vulns') is None:
             continue
-        a['row'].setdefault('advisories', {})[a['ctx']] = sorted(v['id'] for v in a['vulns'])
+        advisories = a['row'].setdefault('advisories', {})
+        advisories[a['ctx']] = sorted(set(advisories.get(a['ctx'], [])) | {v['id'] for v in a['vulns']})
         scope = ' (dev extra only)' if set(a['row']['groups']) <= {'dev'} else ''
         advisory_finding(rep, a['row']['id'], a['row']['name'], a['ver'], a['vulns'], a['ctx'],
                          {'floor': 'Raise the floor to >={target} in pyproject.toml.',
                           'latest': 'Upgrade to >={target} when it is released.',
+                          'locked': 'Update the exact pin to >={target} in its owning requirements file.',
                           'installed': 'Upgrade this environment to >={target}.'}[a['ctx']], scope)
     # deps.dev: the resolved graph of each newest release, for "direct plus transitive" per extra.
     rep.sources['deps.dev'] = 'api.deps.dev v3 dependency graphs (newest releases)'
@@ -812,6 +841,8 @@ NPM_PACKAGE = 'tools/site/package.json'
 NPM_LOCK = 'tools/site/package-lock.json'
 NPM_DIR = 'tools/site'
 NPM_REBUILD_DIR = 'tools/mermaid'
+NPM_SCADA_DIR = 'tools/webkit/scada'
+NPM_MAINTAINER_DIRS = (NPM_REBUILD_DIR, NPM_SCADA_DIR)
 EXACT = re.compile(r'^\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$')
 
 
@@ -826,10 +857,9 @@ def npm_packages(lock):
 
 
 def check_npm(rep, net, npm_audit=True):
-    # The site and the maintainer-only renderer rebuild have separate dependency/install contexts.
+    # Site, renderer rebuild and SCADA maintenance have independent locked install contexts.
     directories = [NPM_DIR]
-    if (rep.root / NPM_REBUILD_DIR).exists():
-        directories.append(NPM_REBUILD_DIR)
+    directories.extend(directory for directory in NPM_MAINTAINER_DIRS if (rep.root / directory).exists())
     for directory in directories:
         check_npm_context(rep, net, npm_audit, directory)
 
@@ -846,7 +876,7 @@ def check_npm_context(rep, net, npm_audit, directory):
         direct.update(pj.get(field) or {})
     lock_subject = 'npm:package-lock.json' if directory == NPM_DIR else f'npm:{lockfile}'
     if lock_text is None:
-        if direct or directory == NPM_REBUILD_DIR:
+        if direct or directory in NPM_MAINTAINER_DIRS:
             rep.add('npm-no-lockfile', 'high', lock_subject, 'package.json has dependencies but no lockfile',
                     f'{lockfile} is missing', 'Commit package-lock.json so installs are reproducible and auditable.')
         return
@@ -2994,27 +3024,28 @@ class WorkTree:
         return read_text(self.root / path)
 
 
-def item_ids(tree):
-    """The report items a tree has, without any check: the units a PR must show a row for."""
-    ids = set()
-    py = tree.read('pyproject.toml')
-    if py:
-        ids |= {p['id'] for p in python_packages(py)[1].values()}
-    lock = tree.read(NPM_LOCK)
-    if lock is None:
-        raise FileNotFoundError(f'required current npm lockfile {NPM_LOCK} is missing')
-    if lock:
-        ids |= {f'npm:{n}' for n in npm_packages(json.loads(lock))}
-    # No legacy-root alias exists for the new maintainer-only producer context.
-    if any(f.startswith(NPM_REBUILD_DIR + '/') for f in tree.files):
-        package = f'{NPM_REBUILD_DIR}/package.json'
-        rebuild_lock = f'{NPM_REBUILD_DIR}/package-lock.json'
+def npm_context_items(tree):
+    """Lock identities include their owner, so an existing name cannot hide a new context or pin."""
+    entries = {}
+    directories = [NPM_DIR, *(d for d in NPM_MAINTAINER_DIRS if any(f.startswith(d + '/') for f in tree.files))]
+    for directory in directories:
+        package = f'{directory}/package.json'
+        lockfile = f'{directory}/package-lock.json'
         if tree.read(package) is None:
             raise FileNotFoundError(f'required current npm manifest {package} is missing')
-        rebuild = tree.read(rebuild_lock)
-        if rebuild is None:
-            raise FileNotFoundError(f'required current npm lockfile {rebuild_lock} is missing')
-        ids |= {f'npm:{n}' for n in npm_packages(json.loads(rebuild))}
+        locked = tree.read(lockfile)
+        if locked is None:
+            raise FileNotFoundError(f'required current npm lockfile {lockfile} is missing')
+        for name, rows in npm_packages(json.loads(locked)).items():
+            for row in rows:
+                entries[(package, name, json.dumps(row, sort_keys=True))] = f'npm:{name}'
+    return entries
+
+
+def item_ids(tree):
+    """The report items a tree has, without any check: the units a PR must show a row for."""
+    ids = set(npm_context_items(tree).values())
+    ids |= {p['id'] for p in python_context_packages(tree)[1].values()}
     man = tree.read('software/vendor/manifest.json')
     if man:
         ids |= {f"vendor:{e['name']}" for e in json.loads(man).get('projects') or []}
@@ -3038,6 +3069,11 @@ def item_ids(tree):
 def added_items(root, base):
     b, h = GitTree(root, base), WorkTree(root)
     ids = item_ids(h) - item_ids(b)
+    before, after = npm_context_items(b), npm_context_items(h)
+    ids.update(after[key] for key in after.keys() - before.keys())
+    old_python, new_python = python_context_packages(b)[1], python_context_packages(h)[1]
+    ids.update(row['id'] for name, row in new_python.items()
+               if row['specs'] != old_python.get(name, {}).get('specs'))
     old = set(b.files)
     new_files = [f for f in h.files if f not in old and (f.startswith('software/vendor/') or f.startswith(KIT + '/'))]
     for f in new_files:
@@ -3076,6 +3112,12 @@ def rows_markdown(r, ids):
     for sid in ids:
         section, row = item_row(r, sid)
         what, ver, lic = describe(section, row) if row else ('removed or unknown', '', None)
+        if section == 'npm':
+            contexts = [item for item in r['inventory']['npm'] if item.get('id') == sid]
+            # One required PR row per package name, but every installed owner/pin
+            # stays visible; the first context must not stand in for the others.
+            ver = '; '.join(sorted({f"{item['version']} ({item['manifest']})" for item in contexts}))
+            lic = ', '.join(sorted({item['licence'] for item in contexts if item.get('licence')}))
         fs = [f for f in r['findings'] if f['subject'] == sid and not f.get('accepted')]
         rep = '; '.join(f"{f['severity']}: {f['title']}" for f in sorted(fs, key=lambda f: RANK[f['severity']])) or \
               f"no findings ({r['mode']} checks)"

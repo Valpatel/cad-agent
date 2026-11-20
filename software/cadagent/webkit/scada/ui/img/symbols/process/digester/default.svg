@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="480" height="360" viewBox="0 0 480 360" role="img" aria-labelledby="gallery-digester-base-active-title gallery-digester-base-active-desc"><title id="gallery-digester-base-active-title">Anaerobic digester</title><desc id="gallery-digester-base-active-desc">Anaerobic digester. Active, illustrative level 55%. Standalone illustrative gallery preview; not a running model.</desc><style>.twin-equipment-art{display:block;position:relative;flex:none;width:116px;max-width:90%;height:48px;pointer-events:none;isolation:isolate}
+.twin-equipment-art&gt;svg{display:block;width:100%;height:100%;overflow:visible}
+.twin-equipment-art-digester{width:130px;height:86px}
+.twin-art-wave{transform-box:view-box;animation:twin-art-wave-drift 5s linear infinite;animation-play-state:paused}
+.twin-art-wave-back{animation-duration:7s;animation-direction:reverse}
+.twin-art-mixer{transform-box:fill-box;transform-origin:center;animation:twin-art-mix 1.4s ease-in-out infinite;animation-play-state:paused}
+.twin-art-bubble{opacity:0;animation:twin-art-bubble-rise var(--bubble-duration,4s) linear var(--bubble-delay,0s) infinite;animation-play-state:paused}
+.twin-art-needle{transform-box:fill-box;transform-origin:left bottom}
+.twin-art-pressure-effects{opacity:0;transition:opacity .7s;pointer-events:none}
+.twin-art-pressure-ring,.twin-art-pressure-wave{stroke:#ffbc67}
+.twin-art-pressure-glow{opacity:.25}
+@keyframes twin-art-wave-drift{from{transform:translateX(0)}to{transform:translateX(-80px)}}
+@keyframes twin-art-mix{0%,100%{transform:scaleX(1)}50%{transform:scaleX(-1)}}
+@keyframes twin-art-bubble-rise{0%{transform:translateY(0) translateX(0);opacity:0}12%{opacity:.72}70%{opacity:.48}100%{transform:translateY(-62px) translateX(5px);opacity:0}}
+:is(.twin-root.is-paused,.twin-document-hidden,html.motion-paused) .twin-equipment-art *,
+:is(.twin-root.is-paused,.twin-document-hidden,html.motion-paused) .twin-equipment-art *::before,
+:is(.twin-root.is-paused,.twin-document-hidden,html.motion-paused) .twin-equipment-art *::after{animation-play-state:paused!important;transition:none!important}
+@media (prefers-reduced-motion:reduce){.twin-equipment-art *,.twin-equipment-art *::before,.twin-equipment-art *::after{animation:none!important;transition:none!important}
+.twin-equipment-art .twin-art-vessel{animation:none!important;transform:none!important}}
+.scada-component{display:inline-flex;position:relative;align-items:center;justify-content:center;width:210px;height:160px;max-width:100%;vertical-align:middle;isolation:isolate;color:#c4ebf1;--scada-accent:#62ffbc;--scada-activity-duration:2.4s}
+.scada-component.scada-component-with-gauges{box-sizing:border-box;height:calc(136px + var(--scada-gauge-height,22px));padding-bottom:var(--scada-gauge-height,22px)}
+.scada-component[data-scada-host-state=false]&gt;.twin-equipment-art{width:180px;max-width:100%;height:100%;max-height:100%;flex:none}
+.scada-component[data-scada-host-state=false][data-scada-type=digester] .twin-art-wave{translate:0 var(--scada-level-offset)}
+.scada-component[data-scada-host-state=false][data-active=true][data-running=true] :is(.twin-art-rotor,.twin-art-wave,.twin-art-mixer,.twin-art-bubble,.twin-art-stream,.twin-art-filter-stream,.twin-art-charge-orbit,.twin-art-flame-outer,.twin-art-flame-middle,.twin-art-flame-core,.twin-art-fire-halo,.twin-art-ember,.twin-art-generator-current,.twin-art-generator-heat){animation-play-state:running}
+.scada-component[data-scada-host-state=false][data-running=false] *,.scada-component[data-scada-host-state=false][data-running=false] *::before,.scada-component[data-scada-host-state=false][data-running=false] *::after{animation-play-state:paused!important;transition:none!important}
+html.motion-paused .scada-component *,html.motion-paused .scada-component *::before,html.motion-paused .scada-component *::after{animation-play-state:paused!important;transition:none!important}
+@media (prefers-reduced-motion:reduce){.scada-component *,.scada-component *::before,.scada-component *::after{animation:none!important;transition:none!important}
+.scada-component[data-scada-host-state=false][data-active=true] .twin-art-bubble{opacity:.45}}
+
+.gallery-label{font-family:Arial,sans-serif;fill:#dcecf1}
+.gallery-code{font-family:monospace;fill:#8fbac9}
+.gallery-symbol.scada-component{display:block;width:auto;height:auto;padding:0;max-width:none;overflow:visible}
+.gallery-symbol&gt;.twin-equipment-art{display:block;width:auto;height:auto;max-width:none}
+.gallery-symbol&gt;svg,.gallery-symbol&gt;.twin-equipment-art&gt;svg{display:block;width:280px!important;height:194px!important;max-width:none!important;max-height:none!important;overflow:visible}
+.gallery-condition svg{width:24px;height:24px}
+</style><defs><linearGradient id="gallery-digester-base-active-card" x2="1" y2="1"><stop offset="0" stop-color="#102635"/><stop offset="1" stop-color="#0b1724"/></linearGradient></defs><rect x="0.5" y="0.5" width="479" height="359" rx="14" fill="url(#gallery-digester-base-active-card)" stroke="#355665"/><text class="gallery-label" x="20" y="28" font-size="11" letter-spacing="1" style="fill:#7acfc9">PROCESS VESSELS</text><text class="gallery-label" x="20" y="55" font-size="21" font-weight="600">Anaerobic digester</text><g transform="translate(100 79)"><g class="scada-component scada-component-with-gauges gallery-symbol" data-scada-type="digester" data-scada-instance="scada-gallery-digester-base-active" data-scada-host-state="false" data-active="true" data-failed="false" data-running="true" data-status="normal" data-flow="true" data-damage="none" data-speed-zero="false" style="--scada-level:55;--scada-load:60;--scada-flow-opacity:0.95;--scada-gauge-height:17px;--scada-activity-duration:2.2s;--activity-speed:2.2s;--buffer-fraction:0.55;--scada-level-offset:0px;--flame-scale:0.9750000000000001" aria-hidden="true"><g class="twin-equipment-art twin-equipment-art-digester" aria-hidden="true"><svg viewBox="0 0 180 136" focusable="false" aria-hidden="true" x="0" y="0" width="280" height="194" preserveAspectRatio="xMidYMid meet"><defs>
+ <linearGradient id="twin-art-scada-gallery-digester-base-active-steel" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#112d3c"/><stop offset=".25" stop-color="#548d9f"/><stop offset=".46" stop-color="#b1dce8"/><stop offset=".7" stop-color="#3b6a7f"/><stop offset="1" stop-color="#102b39"/></linearGradient>
+ <linearGradient id="twin-art-scada-gallery-digester-base-active-glass" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#00f0ff" stop-opacity=".15"/><stop offset=".3" stop-color="#c5f4ff" stop-opacity=".1"/><stop offset=".7" stop-color="#4eb0c8" stop-opacity=".04"/><stop offset="1" stop-color="#080e19" stop-opacity=".5"/></linearGradient>
+ <linearGradient id="twin-art-scada-gallery-digester-base-active-liquid" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#05ffa1" stop-opacity=".82"/><stop offset=".35" stop-color="#1ba894" stop-opacity=".66"/><stop offset="1" stop-color="#15546b" stop-opacity=".6"/></linearGradient>
+ <linearGradient id="twin-art-scada-gallery-digester-base-active-dome" x1="0" y1="0" x2=".8" y2="1"><stop stop-color="#b3e3eb"/><stop offset=".4" stop-color="#568fa4"/><stop offset="1" stop-color="#213b51"/></linearGradient>
+ <linearGradient id="twin-art-scada-gallery-digester-base-active-fire" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#ffe6a2"/><stop offset=".3" stop-color="#ffbe57"/><stop offset=".72" stop-color="#ff7b37"/><stop offset="1" stop-color="#d6462c"/></linearGradient>
+ <radialGradient id="twin-art-scada-gallery-digester-base-active-warm"><stop stop-color="#ffac45" stop-opacity=".42"/><stop offset=".5" stop-color="#ff7d37" stop-opacity=".14"/><stop offset="1" stop-color="#ff7933" stop-opacity="0"/></radialGradient>
+ <radialGradient id="twin-art-scada-gallery-digester-base-active-cool"><stop stop-color="#00f0ff" stop-opacity=".23"/><stop offset="1" stop-color="#00f0ff" stop-opacity="0"/></radialGradient>
+ <radialGradient id="twin-art-scada-gallery-digester-base-active-fault"><stop stop-color="#ff2a6d" stop-opacity=".42"/><stop offset=".5" stop-color="#ff2a6d" stop-opacity=".15"/><stop offset="1" stop-color="#ff2a6d" stop-opacity="0"/></radialGradient>
+ <radialGradient id="twin-art-scada-gallery-digester-base-active-blast"><stop stop-color="#fff9d8"/><stop offset=".24" stop-color="#ffd379" stop-opacity=".95"/><stop offset=".56" stop-color="#ff7e38" stop-opacity=".65"/><stop offset="1" stop-color="#ff2a6d" stop-opacity="0"/></radialGradient>
+ </defs><g class="twin-art-pressure-effects">
+ <ellipse class="twin-art-pressure-glow" cx="90" cy="70" rx="73" ry="65" fill="url(#twin-art-scada-gallery-digester-base-active-fault)"/>
+ <ellipse class="twin-art-pressure-ring" cx="90" cy="70" rx="61" ry="57" fill="none" stroke-width="1.5" stroke-dasharray="17 5 3 5"/>
+ <path class="twin-art-pressure-wave" d="M23 54Q15 70 23 86M157 54Q165 70 157 86" fill="none" stroke-width="2.3" stroke-linecap="round"/>
+ </g><g class="twin-art-vessel"><ellipse cx="90" cy="126" rx="59" ry="8" fill="#05050d" opacity=".65"/>
+ <defs><clipPath id="twin-art-scada-gallery-digester-base-active-vessel"><path d="M41 39V108C41 129 139 129 139 108V39Z"/></clipPath></defs>
+ <path d="M41 39V108C41 129 139 129 139 108V39Z" fill="#0d2435" stroke="#75b7cb" stroke-width="1.5"/>
+ <g clip-path="url(#twin-art-scada-gallery-digester-base-active-vessel)">
+  <path class="twin-art-wave twin-art-wave-back" d="M-30 72Q-10 62 10 72T50 72T90 72T130 72T170 72T210 72T250 72V145H-30Z" fill="#05ffa1" opacity=".32"/>
+  <path class="twin-art-wave" d="M-30 80Q-10 70 10 80T50 80T90 80T130 80T170 80T210 80T250 80V145H-30Z" fill="url(#twin-art-scada-gallery-digester-base-active-liquid)"/>
+  <path d="M90 44V112" stroke="#c2e8ee" stroke-width="2.4" opacity=".55"/>
+  <g class="twin-art-mixer" fill="#bbf0f0" opacity=".78"><ellipse cx="90" cy="96" rx="25" ry="4"/><path d="M72 96l-7-7 16 3M108 96l7 7-16-3"/></g>
+  <g fill="#a7ffdf"><circle class="twin-art-bubble" cx="67" cy="108" r="3.2" style="--bubble-delay:-0.4s;--bubble-duration:3.2s"/><circle class="twin-art-bubble" cx="83" cy="119" r="2.2" style="--bubble-delay:-2.8s;--bubble-duration:3.5s"/><circle class="twin-art-bubble" cx="107" cy="115" r="3" style="--bubble-delay:-1.6s;--bubble-duration:3.8000000000000003s"/><circle class="twin-art-bubble" cx="119" cy="105" r="1.8" style="--bubble-delay:-3.7s;--bubble-duration:4.1s"/><circle class="twin-art-bubble" cx="94" cy="103" r="2.6" style="--bubble-delay:-0.9s;--bubble-duration:4.4s"/><circle class="twin-art-bubble" cx="60" cy="121" r="1.7" style="--bubble-delay:-2s;--bubble-duration:4.7s"/></g>
+  <path d="M41 39V108C41 129 139 129 139 108V39Z" fill="url(#twin-art-scada-gallery-digester-base-active-glass)"/>
+  <path d="M51 48V108" stroke="#d0f7ff" stroke-width="3" opacity=".22"/>
+  <path d="M129 46V108" stroke="#75dae6" opacity=".17"/>
+ </g>
+ <path d="M41 39C41 6 139 6 139 39Q90 62 41 39Z" fill="url(#twin-art-scada-gallery-digester-base-active-dome)" stroke="#73becd" stroke-width="1.3"/>
+ <ellipse cx="90" cy="39" rx="49" ry="14" fill="none" stroke="#9edee5" stroke-width="1.2" opacity=".7"/>
+ <path d="M54 28Q66 16 84 16" fill="none" stroke="#d2faff" stroke-width="2.5" stroke-linecap="round" opacity=".38"/>
+ <path d="M84 15V5H96V15" fill="#477b91" stroke="#a4d1df"/><ellipse cx="90" cy="5" rx="6" ry="2" fill="#9dd1e3"/>
+ <path d="M41 106Q90 130 139 106" fill="none" stroke="#73bdc7" stroke-width="1.2" opacity=".66"/>
+ <path d="M142 42V118M150 42V115M142 52H150M142 63H150M142 74H150M142 85H150M142 96H150M142 107H150" fill="none" stroke="#4f98ac" stroke-width="1.4"/>
+ <circle cx="120" cy="58" r="8" fill="#091522" stroke="#75c7d2"/><path class="twin-art-needle" d="M120 58l4-4" stroke="#05ffa1" stroke-width="1.6"/>
+ <path d="M24 90H41M139 88H158" stroke="url(#twin-art-scada-gallery-digester-base-active-steel)" stroke-width="8"/><path d="M26 86V94M156 84V92" stroke="#a7d3e0" stroke-width="2"/></g></svg></g></g></g><g data-scada-gauge="level"><text class="gallery-code" x="90" y="288" font-size="10">LEVEL</text><rect x="155" y="282" width="145" height="5" rx="2.5" fill="#153c50" stroke="#537d90" stroke-width="0.6"/><rect x="155" y="282" width="79.75" height="5" rx="2.5" fill="#63e6d9"/><text class="gallery-code" x="385" y="288" font-size="10" text-anchor="end">55%</text></g><text class="gallery-label" x="20" y="328" font-size="12" style="fill:#bdeee6">Active illustrative preview</text><text class="gallery-code" x="20" y="346" font-size="10">digester</text></svg>

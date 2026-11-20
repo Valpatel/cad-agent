@@ -1,0 +1,73 @@
+/* Shared control-room shell. Domain-specific SVG geometry belongs to the host.
+   Class-only scopes keep standalone consumer overrides predictable. */
+.scada-workspace{--scada-line:var(--sim-border,#344459);--scada-surface:#101722;--scada-raised:#172231;--scada-ink:var(--sim-heading,#e8edf5);--scada-muted:#a9bfd0;--scada-accent:var(--sim-cyan,#00f0ff);display:grid;gap:12px;min-width:0;color:var(--scada-ink)}
+.scada-workspace *{box-sizing:border-box}
+.scada-workspace .scada-toolbar{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px 14px;min-width:0;padding:10px 12px;border:1px solid var(--scada-line);border-radius:12px;background:linear-gradient(105deg,#142330,#12141f);box-shadow:0 7px 25px #0000001a}
+.scada-workspace .scada-toolbar-group{display:flex;align-items:center;gap:6px;min-width:0;flex-wrap:wrap}
+.scada-workspace .scada-toolbar-group+.scada-toolbar-group{border-left:1px solid #364558;padding-left:12px}
+.scada-workspace .scada-toolbutton{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;min-width:44px;padding:10px 13px;border:1px solid #3c5065;border-radius:8px;background:#14202e;color:#d4e6f3;font:inherit;font-size:14px;line-height:1.4;font-weight:550;text-decoration:none;cursor:pointer;white-space:normal}
+.scada-workspace .scada-toolbutton:hover:not(:disabled){background:#173744;border-color:#54cad8;color:#efffff}
+.scada-workspace .scada-toolbutton[aria-expanded=true],.scada-workspace .scada-toolbutton[aria-pressed=true]{background:#073a44;border-color:#00d7e4;color:#a7f7ff;box-shadow:inset 0 -2px #00d7e4,0 0 20px #00e2ed0a}
+.scada-workspace .scada-toolbutton.is-primary{background:#00e5ef;border-color:#00e5ef;color:#062029;font-weight:700}
+.scada-workspace .scada-toolbutton.is-danger{background:#331b29;border-color:#8b3b5e;color:#ffc3d6}
+.scada-workspace .scada-toolbutton:disabled{opacity:.5;cursor:default}
+.scada-toolbutton svg{width:19px;height:19px;flex:none;stroke:currentColor;fill:none}
+.scada-workspace .scada-toolbadge{display:inline-flex;align-items:center;justify-content:center;min-width:22px;min-height:22px;padding:2px 6px;border-radius:12px;background:#27505b;color:#c9fbff;font:600 12px/1.3 var(--sim-mono,monospace);font-variant-numeric:tabular-nums}
+.scada-workspace .scada-toolbadge[data-severity=critical]{background:#732842;color:#ffe5ed}
+.scada-workspace .scada-toolbadge[data-severity=warning]{background:#60461f;color:#ffe3ad}
+.scada-stage{position:relative;min-width:0;min-height:0;overflow:hidden;border:1px solid var(--scada-line);border-radius:13px;background:radial-gradient(ellipse at 35% 30%,#16394b28,transparent 60%),#0b131e;box-shadow:0 14px 42px #00000025}
+.scada-stage-scroll{min-width:0;min-height:0;height:100%;overflow:auto;overscroll-behavior:contain;scrollbar-color:#55768d #0b1522}
+.scada-workspace .scada-statusbar{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px 18px;padding:10px 13px;border:1px solid #2b4257;border-radius:8px;background:#0e1825;color:#b8cedd;font-size:13px;line-height:1.5}
+.scada-workspace .scada-statusbar strong{color:#def1fb;font-weight:550}
+
+/* Native top-layer dialogs: fixed header and footer, one scrolling body. */
+dialog.scada-dialog{position:fixed;inset:0;box-sizing:border-box;width:min(720px,calc(100vw - 32px));max-width:none;max-height:88vh;max-height:min(88dvh,960px);margin:auto;padding:0;overflow:hidden;border:1px solid #49647c;border-radius:16px;background:linear-gradient(145deg,#142031,#0e1421 65%);color:#d8e6f2;box-shadow:0 30px 120px #000b,0 0 0 1px #00d7e40a}
+dialog.scada-dialog:not([open]){display:none}
+dialog.scada-dialog[open]{display:flex;flex-direction:column}
+dialog.scada-dialog-equipment{width:min(640px,calc(100vw - 32px))}
+dialog.scada-dialog-wide{width:min(980px,calc(100vw - 32px))}
+dialog.scada-dialog::backdrop{background:#030913b8;backdrop-filter:blur(5px)}
+dialog.scada-dialog[data-scada-fallback=true]{z-index:1000}
+.scada-fallback-backdrop{position:fixed;inset:0;z-index:999;background:#030913b8;backdrop-filter:blur(5px)}
+.scada-workspace .scada-dialog-header,.scada-dialog .scada-dialog-header{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;flex:none;padding:21px 24px 18px;border-bottom:1px solid #35495e;background:linear-gradient(110deg,#16334499,#131b2a)}
+.scada-dialog-heading{min-width:0}
+.scada-workspace .scada-dialog .scada-dialog-heading h2,.scada-dialog .scada-dialog-heading h2{margin:0;color:#e8f7ff;font-size:24px;line-height:1.25;letter-spacing:-.4px;font-weight:650}
+.scada-workspace .scada-dialog .scada-dialog-heading p,.scada-dialog .scada-dialog-heading p{margin:8px 0 0;color:#aac3d5;font-size:14px;line-height:1.6;max-width:68ch}
+.scada-workspace .scada-dialog .scada-dialog-close,.scada-dialog .scada-dialog-close{display:inline-flex;align-items:center;justify-content:center;width:44px;min-width:44px;height:44px;min-height:44px;padding:0;flex:none;border:1px solid #4b687f;border-radius:8px;background:#152c3c;color:#dbf6ff;font:400 29px/1 system-ui;cursor:pointer}
+.scada-workspace .scada-dialog .scada-dialog-close:hover,.scada-dialog .scada-dialog-close:hover{border-color:#00d7e4;background:#194657}
+.scada-dialog .scada-dialog-close>span[aria-hidden=true]{font-size:26px;line-height:1}
+.scada-dialog-body{min-height:0;overflow:auto;overscroll-behavior:contain;padding:22px 24px;scrollbar-color:#54758e #101b2a}
+.scada-dialog-footer{flex:none;display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:10px;padding:14px 24px;border-top:1px solid #35495e;background:#101b2a}
+.scada-workspace .scada-dialog :is(input,select,textarea){min-width:0;font-size:15px;line-height:1.5}
+.scada-workspace .scada-dialog input:not([type=checkbox],[type=radio],[type=range]),.scada-workspace .scada-dialog select{min-height:44px}
+.scada-workspace .scada-dialog :is(button,.button){min-height:44px;font-size:14px;line-height:1.45}
+.scada-workspace .scada-dialog :is(button,a,input,select,textarea):focus-visible{outline:2px solid #73eff6;outline-offset:3px}
+.scada-dialog [hidden]{display:none!important}
+.scada-sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0}
+
+/* Optional, domain-neutral panel primitives. */
+.scada-panel-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;min-width:0}
+.scada-panel-section{min-width:0;margin:0;padding:16px;border:1px solid #354b60;border-radius:10px;background:#111f2e}
+.scada-panel-section+.scada-panel-section{margin-top:14px}
+.scada-panel-grid>.scada-panel-section+.scada-panel-section{margin-top:0}
+.scada-workspace .scada-panel-section :is(h3,h4){margin:0 0 10px;color:#e0eef8;font-size:17px;line-height:1.4}
+.scada-workspace .scada-panel-note{margin:10px 0;color:#b3c8d8;font-size:14px;line-height:1.65}
+.scada-actions{display:flex;align-items:center;flex-wrap:wrap;gap:8px}
+.scada-workspace .scada-actions :is(button,.button){min-height:44px}
+.scada-metric-strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;min-width:0}
+.scada-metric-strip>div{padding:12px;border:1px solid #33495f;border-radius:8px;background:#0f1b2a}
+.scada-metric-strip strong{display:block;font-variant-numeric:tabular-nums;color:#e5f5ff;font-size:24px;line-height:1.35}
+
+@media(max-width:700px){
+ .scada-workspace .scada-toolbar{padding:9px;gap:8px}
+ .scada-workspace .scada-toolbar-group{gap:5px}
+ .scada-workspace .scada-toolbar-group+.scada-toolbar-group{border-left:0;padding-left:0}
+ .scada-workspace .scada-toolbutton{padding:9px 11px;font-size:14px}
+ dialog.scada-dialog,dialog.scada-dialog-equipment,dialog.scada-dialog-wide{width:calc(100vw - 16px);max-height:calc(100vh - 24px);max-height:calc(100dvh - 24px);border-radius:14px;margin:auto 8px 8px}
+ .scada-workspace .scada-dialog-header,.scada-dialog .scada-dialog-header{padding:17px 16px 14px;gap:12px}
+ .scada-workspace .scada-dialog .scada-dialog-heading h2,.scada-dialog .scada-dialog-heading h2{font-size:22px}
+ .scada-dialog-body{padding:17px 16px}
+ .scada-dialog-footer{padding:12px 16px}
+ .scada-panel-grid{grid-template-columns:1fr}
+}
+@media(prefers-reduced-motion:reduce){.scada-dialog,.scada-toolbutton{scroll-behavior:auto;transition:none}}

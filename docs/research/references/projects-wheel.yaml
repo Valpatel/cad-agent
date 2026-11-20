@@ -1088,6 +1088,11 @@ sources:
   imported: 848ced91992f2862
   verified: '2026-11-10: read arXiv v1 (2020-05-23), sections II-VII, pp. 2-6: mechanism, assumptions, control, experiments
     and experimental-feature limits. No controller reproduction, physical test or cited-source audit.'
+  archive:
+    sha256: cedc9aa427609a759816e1e17aef78ab3f5bc24de5a796b4bf45f158432feeff
+    kind: pdf
+    fetched: '2026-11-14'
+    redistribute: false
   claims:
   - text: Upright balance uses active control; sideways fall recovery is excluded.
     status: unconfirmed
@@ -1122,6 +1127,11 @@ sources:
     estimate: 0.4
     sources: 1
   summary: Build log with cost estimate. Not opened.
+  archive:
+    sha256: 8c5411732fc682fe8aa3def2258c8ec5da06fbcc49c3ec11ba2e49fe71482ded
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: ea916c85e2f874a9
 - id: fosdem-lessons-from-upkie-wheeled-bipeds
@@ -1186,6 +1196,11 @@ sources:
     estimate: 0.4
     sources: 1
   summary: Hybrid LQR-PD with height control.
+  archive:
+    sha256: 0d2d41c87c172e923c4ec9c34853a856673ac8c238857ed1bd7c52b66b76fbda
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: 2dd3e77f7c664f72
 - id: wheel-legged-robot-with-lqr-and-adrc
@@ -1218,6 +1233,11 @@ sources:
     estimate: 0.4
     sources: 1
   summary: Cites the five-bar decoupling.
+  archive:
+    sha256: 8cc049f92a7879620c0ef2adf664279d41345fbd9b00b83746d1e8a2cdf25726
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: 5a347eaa8b3ea19c
 - id: ctu-thesis-two-legged-wheeled-robot
@@ -1250,6 +1270,11 @@ sources:
     estimate: 0.4
     sources: 1
   summary: LQR plus PD in Gazebo and on hardware.
+  archive:
+    sha256: 03e404688d06f43c9cfc6959cf1ebf3e9ef4198c5b37ba789a449353c1a2f66b
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: ffaca96069a61179
 - id: mushibo-micro-wheeled-leg-robot

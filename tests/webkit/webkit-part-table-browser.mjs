@@ -2,13 +2,13 @@ import assert from 'node:assert/strict';
 import { readFile, mkdir, writeFile } from 'node:fs/promises';
 import { chromium, webkit } from '../site/npm-context.mjs';
 import { serveWebkit } from './webkit-server.mjs';
-const html = `<!doctype html><html lang="en"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/kit/part-table.css"><style>body{margin:16px;background:#fffaf2;color:#243f3a;font-family:system-ui}main{max-width:900px;margin:auto}table{min-width:640px}h1{font-size:24px}</style><main><h1>Fixture parts</h1><div id="progress"></div><div class="cad-table-scroll"><table id="parts"><caption>Assembly parts</caption><thead><tr><th data-sort="text">Part</th><th data-sort="number">Quantity</th><th data-sort="number">Cost</th></tr></thead><tbody>
+const html = `<!doctype html><html lang="en"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/kit/assembly/part-table.css"><style>body{margin:16px;background:#fffaf2;color:#243f3a;font-family:system-ui}main{max-width:900px;margin:auto}table{min-width:640px}h1{font-size:24px}</style><main><h1>Fixture parts</h1><div id="progress"></div><div class="cad-table-scroll"><table id="parts"><caption>Assembly parts</caption><thead><tr><th data-sort="text">Part</th><th data-sort="number">Quantity</th><th data-sort="number">Cost</th></tr></thead><tbody>
 <tr data-part-key="a" data-part-label="Bolt 10"><td>Bolt 10</td><td data-sort-value="2">2 pieces</td><td data-sort-value="10">$10.00</td></tr>
 <tr data-part-key="b" data-part-label="Bolt 2"><td>Bolt 2</td><td data-sort-value="10">10 pieces</td><td data-sort-value="2">$2.00</td></tr>
 <tr data-part-key="c" data-part-label="Plate"><td>Plate</td><td data-sort-value="">Not specified</td><td data-sort-value="">Not priced</td></tr>
 <tr data-part-key="d" data-part-label="Rod"><td>Rod</td><td data-sort-value="1">1 piece<small>buy one length<br>cut 4 per length</small></td><td data-sort-value="2">$2.00<small>per piece</small></td></tr>
 </tbody><tfoot><tr><td>Total</td><td>13 known pieces</td><td>$14 known</td></tr></tfoot></table></div></main><script type="module">
-import {createPartTracker} from '/kit/part-tracker.js';import {enhancePartTable,mountProgressTools} from '/kit/part-table.js';
+import {createPartTracker} from '/kit/assembly/part-tracker.js';import {enhancePartTable,mountProgressTools} from '/kit/assembly/part-table.js';
 window.tracker=createPartTracker({project:'fixture'});window.progressTools=mountProgressTools(document.getElementById('progress'),tracker);
 window.tableAPI=enhancePartTable(document.getElementById('parts'),{printable:{project:'Fixture project',revision:'fixture-v1',notice:'Unqualified fixture'},pageSize:location.search?'2':0,tracker,statuses:[{id:'ordered',label:'Ordered'},{id:'inHand',label:'In hand'}]});document.body.dataset.ready='true';
 </script></html>`;
@@ -39,7 +39,7 @@ try {
     const {renderPartChecklist}=await import(url);
     data.rows=Array.from({length:75},(_,i)=>[`part-${String(i+1).padStart(3,'0')}`,`Long assembly component ${i+1} with source-specific description`,String(i+1),'$2.00','☑','☐']);data.total=75;
     renderPartChecklist(document,data);
-  }, {url:site.url+'/kit/part-table.js',data:await snap('all')});
+  }, {url:site.url+'/kit/assembly/part-table.js',data:await snap('all')});
   await printed.emulateMedia({media:'print'});
   for (const format of ['A4','Letter']) {
     const landscape=await printed.evaluate(()=>document.body.dataset.printOrientation==='landscape');
@@ -58,7 +58,7 @@ try {
     columns:['Part ID','Part','Supplier part number','Quantity needed','Unit price','Order cost','Alternates','Ordered','In hand'],
     columnTypes:['text','text','text','number','number','number','text','status','status'],
     rows:Array.from({length:40},(_,i)=>[`rich-${String(i+1).padStart(3,'0')}`,'Tapped linear shaft with threaded ends and full source-specific assembly description — Model export pending','6649K433 — primary supplier', '12 — buy 2 packs of 10, cut 4 per length','$9.60 — $0.096 per piece','$19.20 — used $11.52',`Sourcing record ${String(i+1).padStart(3,'0')} — `+'Source alternative retains the recorded procurement limits. '.repeat(15),'☑','☐'])};
-  await printed.evaluate(async({url,data})=>{const {renderPartChecklist}=await import(url);renderPartChecklist(document,data);},{url:site.url+'/kit/part-table.js',data:rich});
+  await printed.evaluate(async({url,data})=>{const {renderPartChecklist}=await import(url);renderPartChecklist(document,data);},{url:site.url+'/kit/assembly/part-table.js',data:rich});
   for(const format of ['A4','Letter']){
     const width=(format==='A4'?297:279.4)-24,height=(format==='A4'?210:215.9)-24;
     await printed.setViewportSize({width:Math.floor(width/25.4*96),height:900});

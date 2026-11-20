@@ -1297,6 +1297,11 @@ sources:
     estimate: 0.4
     sources: 1
   summary: Cut vibration at the source; software filters last.
+  archive:
+    sha256: 3f6e01badc78a0c0fddec98cb08f5ac1ead46cf868fc45bc1af9780cd83ee794
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: 2529c7e78e623f0e
 - id: ardupilot-vibration-damping
@@ -1329,6 +1334,11 @@ sources:
     estimate: 0.4
     sources: 1
   summary: Too much damping is as bad as too little; arm flex is a main cause.
+  archive:
+    sha256: 8cd749fc057d5722dab83c0a7c62414d5a389f5ab012d55385521c8dfc77a8a9
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: 07d1d8376f8623c4
 - id: siraya-tech-3d-printed-drone
@@ -1361,6 +1371,11 @@ sources:
     estimate: 0.4
     sources: 1
   summary: 4 to 6 mm arms, 4 to 6 wall loops, TPU for camera mounts.
+  archive:
+    sha256: 3874295ad5568f90ce035212caa921b1e13f712a79a4ea962db09d1ba19ae764
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: 6422f3b5772e7dc9
 - id: intofpv-printed-arm-stiffness-thread
@@ -1425,6 +1440,11 @@ sources:
     estimate: 0.4
     sources: 1
   summary: Guards and legs break away on impact to protect the arms.
+  archive:
+    sha256: 2cb302999bf9bb74e2cfaddab5d5d7cc83285e99120ce244a41254a3b9292e64
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: ed8b302e7c48ec39
 - id: patent-il294087b2-recoil-through-centre-of-mass
@@ -1457,5 +1477,10 @@ sources:
     estimate: 0.4
     sources: 1
   summary: Put the recoil line through the centre of mass.
+  archive:
+    sha256: 1339d8aefbe6731be1e44ede89328dc5ae69c55cb57ac92303503fe647109cd9
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: 096e729014649645

@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-const source = await readFile(new URL('../../software/cadagent/webkit/part-tracker.js', import.meta.url), 'utf8');
+const source = await readFile(new URL('../../software/cadagent/webkit/assembly/part-tracker.js', import.meta.url), 'utf8');
 const { createPartTracker } = await import('data:text/javascript;base64,' + Buffer.from(source).toString('base64'));
 const memory = () => { const values = new Map(); return { getItem: key => values.get(key) ?? null, setItem: (key, value) => values.set(key, value) }; };
 

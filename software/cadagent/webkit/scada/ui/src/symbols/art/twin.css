@@ -1,0 +1,163 @@
+/* Equipment motion belongs to the simulated state. Typography remains outside
+   the drawing so moving details cannot obscure the value or equipment name. */
+.twin-equipment-art{display:block;position:relative;flex:none;width:116px;max-width:90%;height:48px;pointer-events:none;isolation:isolate}
+.twin-equipment-art>svg{display:block;width:100%;height:100%;overflow:visible}
+.twin-equipment-art-digester{width:130px;height:86px}
+.twin-equipment-art-storage{width:113px;height:48px}
+.twin-equipment-art-flare{width:128px;height:48px}
+.twin-equipment-art-net{width:112px;height:48px}
+.twin-equipment-art-turbine{width:130px;height:62px}
+#main .twin-root .twin-node-turbine .twin-equipment-art{width:130px;height:62px;max-width:100%}
+.twin-equipment-art .twin-art-rotor{transform-box:view-box;animation:twin-art-spin var(--activity-speed,2.4s) linear infinite;animation-play-state:paused}
+.twin-node[data-active=true] .twin-art-rotor{animation-play-state:running}
+.twin-art-wave{transform-box:view-box;animation:twin-art-wave-drift 5s linear infinite;animation-play-state:paused}
+.twin-art-wave-back{animation-duration:7s;animation-direction:reverse}
+.twin-node[data-mixing=true] .twin-art-wave{animation-play-state:running}
+.twin-art-mixer{transform-box:fill-box;transform-origin:center;animation:twin-art-mix 1.4s ease-in-out infinite;animation-play-state:paused}
+.twin-node[data-mixing=true] .twin-art-mixer{animation-play-state:running}
+.twin-art-bubble{opacity:0;animation:twin-art-bubble-rise var(--bubble-duration,4s) linear var(--bubble-delay,0s) infinite;animation-play-state:paused}
+.twin-node[data-active=true] .twin-art-bubble{animation-play-state:running}
+.twin-node[data-active=false] .twin-art-bubble{visibility:hidden}
+.twin-art-buffer-fill{transform-box:fill-box;transform-origin:center bottom;transform:scaleY(var(--buffer-fraction,0));transition:transform .85s ease}
+.twin-art-stream{stroke-dasharray:5 12;stroke-linecap:round;animation:twin-art-stream 1.2s linear infinite;animation-play-state:paused;opacity:.18}
+.twin-node[data-active=true] .twin-art-stream{animation-play-state:running;opacity:1}
+.twin-art-filter-stream{stroke-dasharray:5 8;animation:twin-art-filter 1s linear infinite;animation-play-state:paused;opacity:.2}
+.twin-node[data-active=true] .twin-art-filter-stream{animation-play-state:running;opacity:1}
+.twin-art-status-light{fill:#526474}
+.twin-node[data-active=true] .twin-art-status-light{fill:#05ffa1;filter:drop-shadow(0 0 3px #05ffa1);animation:twin-art-light 2.6s ease-in-out infinite}
+.twin-art-needle{transform-box:fill-box;transform-origin:left bottom}
+.twin-node[data-active=true] .twin-art-needle{animation:twin-art-gauge 3.2s ease-in-out infinite}
+.twin-art-fire{opacity:0;visibility:hidden;transition:opacity .35s}
+.twin-node[data-active=true] .twin-art-fire{opacity:1;visibility:visible}
+.twin-art-fire-size{transform-box:view-box;transform-origin:90px 75px;transform:scale(var(--flame-scale,1));transition:transform 1s ease}
+.twin-art-flame-outer,.twin-art-flame-middle,.twin-art-flame-core{transform-box:view-box;transform-origin:90px 75px;animation:twin-art-flame .8s ease-in-out infinite alternate;animation-play-state:paused}
+.twin-art-flame-middle{animation-name:twin-art-flame-core;animation-duration:.55s;animation-delay:-.3s}
+.twin-art-flame-core{animation-name:twin-art-flame-core;animation-duration:.38s;animation-delay:-.17s}
+.twin-art-fire-halo{animation:twin-art-warmth 1.4s ease-in-out infinite alternate;animation-play-state:paused;transform-box:fill-box;transform-origin:center}
+.twin-art-ember{animation:twin-art-ember 1.7s ease-out var(--ember-delay,0s) infinite;animation-play-state:paused;opacity:0}
+.twin-node[data-active=true] :is(.twin-art-flame-outer,.twin-art-flame-middle,.twin-art-flame-core,.twin-art-fire-halo,.twin-art-ember){animation-play-state:running}
+.twin-art-charge-orbit{transform-box:fill-box;transform-origin:center;animation:twin-art-spin 6s linear infinite;animation-play-state:paused;opacity:.45}
+.twin-node[data-active=true] .twin-art-charge-orbit{animation-play-state:running;opacity:1}
+.twin-node[data-active=true] .twin-art-bolt{animation:twin-art-light 2s ease-in-out infinite}
+
+/* Generator output is electric: a louvered cabinet and small cooling fan,
+   rather than the pump's exposed circular volute and fluid pipes. */
+.twin-art-generator-meter{opacity:.35}
+.twin-art-generator-electric{opacity:.6}
+.twin-art-generator-current{stroke-dasharray:4 8;stroke-linecap:round;opacity:.2;animation:twin-art-stream 1.2s linear infinite;animation-play-state:paused}
+.twin-art-generator-heat{opacity:0;animation:twin-art-generator-heat 2.8s ease-out infinite;animation-play-state:paused}
+.twin-node[data-active=true]:not([data-failed=true]) .twin-art-generator-meter{opacity:1}
+.twin-node[data-active=true]:not([data-failed=true]) .twin-art-generator-electric{opacity:1;filter:drop-shadow(0 0 3px #ffd18670);animation:twin-art-light 2.4s ease-in-out infinite}
+.twin-node[data-active=true]:not([data-failed=true]) :is(.twin-art-generator-current,.twin-art-generator-heat){animation-play-state:running}
+.twin-node[data-active=true]:not([data-failed=true]) .twin-art-generator-current{opacity:1}
+.twin-node[data-failed=true] :is(.twin-art-generator-electric,.twin-art-generator-current,.twin-art-generator-heat){animation-play-state:paused!important;filter:none}
+.twin-node[data-failed=true] .twin-art-generator-electric{fill:#e3a4ba;opacity:.45}
+.twin-node[data-failed=true] .twin-art-generator-meter{opacity:.16}
+.twin-node[data-active=false] .twin-art-generator-heat,.twin-node[data-failed=true] .twin-art-generator-heat{visibility:hidden}
+.twin-node[data-failed=true] .twin-art-generator-current{opacity:.15}
+
+/* Scenario conditions are independent of production activity. A broken rotor
+   stays stopped even if the host briefly retains data-active during a tick. */
+.twin-art-fault-effects,.twin-art-overload-effects,.twin-art-incident-fire{display:none}
+.twin-node[data-failed=true] .twin-art-fault-effects{display:inline}
+.twin-node[data-overloaded=true]:not([data-failed=true]) .twin-art-overload-effects{display:inline}
+.twin-node[data-failed=true] :is(.twin-art-rotor,.twin-art-stream,.twin-art-filter-stream,.twin-art-needle,.twin-art-charge-orbit,.twin-art-bolt){animation-play-state:paused!important}
+.twin-node[data-failed=true] :is(.twin-art-stream,.twin-art-filter-stream){opacity:.16}
+.twin-node[data-failed=true] .twin-art-status-light{fill:#ff2a6d;filter:drop-shadow(0 0 3px #ff2a6d);animation:none}
+.twin-node[data-failed=true] .twin-art-body{opacity:.72}
+.twin-art-fault-halo{animation:twin-art-fault-breathe 3.1s ease-in-out infinite}
+.twin-art-fault-sparks{transform-box:view-box;transform-origin:112px 28px;animation:twin-art-sparks 2.5s ease-in-out infinite}
+.twin-art-smoke{opacity:.55;animation:twin-art-smoke-drift 3.2s ease-out infinite}
+.twin-art-smoke-two{animation-delay:-1.6s;stroke:#756880;stroke-width:3}
+.twin-art-fracture{filter:drop-shadow(0 0 2px #ff2a6d70)}
+.twin-art-overload-effects{opacity:.8;animation:twin-art-overload-breathe 2.5s ease-in-out infinite}
+.twin-art-pressure-effects{opacity:0;transition:opacity .7s;pointer-events:none}
+.twin-art-pressure-ring,.twin-art-pressure-wave{stroke:#ffbc67}
+.twin-art-pressure-glow{opacity:.25}
+.twin-node:is([data-pressure=warning],[data-pressure=critical]) .twin-art-pressure-effects{opacity:1}
+.twin-node[data-pressure=warning] .twin-art-pressure-wave{animation:twin-art-pressure-breathe 3s ease-in-out infinite}
+.twin-node[data-pressure=critical] :is(.twin-art-pressure-ring,.twin-art-pressure-wave){stroke:#ff2a6d}
+.twin-node[data-pressure=critical] .twin-art-pressure-glow{opacity:.8;animation:twin-art-pressure-breathe 2.7s ease-in-out infinite}
+.twin-node[data-pressure=critical] .twin-art-vessel{transform-box:fill-box;transform-origin:center bottom;animation:twin-art-pressure-shudder 3.6s ease-in-out infinite}
+.twin-node[data-fire=true] .twin-art-incident-fire{display:inline}
+.twin-node[data-fire=true] .twin-art-incident-fire .twin-art-fire{opacity:1;visibility:visible}
+.twin-node[data-fire=true] .twin-art-incident-fire :is(.twin-art-flame-outer,.twin-art-flame-middle,.twin-art-flame-core,.twin-art-fire-halo,.twin-art-ember){animation-play-state:running}
+
+/* A damaged buffer develops visibly before any fictional ignition/burst.
+   The host supplies the leak fraction and creates each burst class once. */
+.twin-art-buffer-damage,.twin-art-leak-effects,.twin-art-after-smoke{display:none}
+.twin-node[data-failed=true] .twin-art-buffer-damage{display:inline}
+.twin-art-buffer-scar{opacity:0}
+.twin-node[data-accident-phase=burst] .twin-art-buffer-scar{opacity:.85}
+.twin-node[data-leaking=true] .twin-art-leak-effects{display:inline}
+.twin-art-leak-size{transform-box:view-box;transform-origin:132px 73px;transform:scale(calc(.26 + var(--leak-intensity,0) * .74));transition:transform 1s ease}
+.twin-art-leak-jets{stroke:#caf9f6;stroke-width:1.7;stroke-dasharray:3 6;animation:twin-art-leak-jet .7s linear infinite;opacity:.76}
+.twin-art-leak-jets path:nth-child(2){stroke-width:1;opacity:.65}
+.twin-art-leak-jets path:nth-child(3){stroke-width:1.1;opacity:.45}
+.twin-art-vapor{transform-box:view-box;transform-origin:143px 66px;opacity:0;animation:twin-art-vapor-rise 2.4s ease-out var(--vapor-delay,0s) infinite}
+.twin-art-leak-flame-size{transform-box:view-box;transform-origin:148px 80px;transform:scale(calc(.48 + var(--leak-intensity,1) * .52));transition:transform 1s ease}
+.twin-node[data-accident-phase=burst][data-fire=true] .twin-art-leak-flame-size{transform:scale(calc(.7 + var(--leak-intensity,1) * .65))}
+.twin-node[data-fire=true] .twin-art-leak-haze{fill:#ffaf6f;opacity:.2}
+.twin-node[data-fire=true] .twin-art-leak-jets{stroke:#ffcfa0}
+.twin-node[data-fire=true] .twin-art-vapor-clouds{fill:#85778c}
+.twin-node[data-fire=true] .twin-art-after-smoke,.twin-node[data-accident-phase=burst][data-leaking=true] .twin-art-after-smoke{display:inline;opacity:.55}
+.twin-art-after-smoke .twin-art-smoke{transform-box:view-box;transform-origin:110px 40px;animation:twin-art-after-smoke 3.8s ease-out infinite}
+.twin-art-after-smoke .twin-art-smoke-two{animation-delay:-1.9s;fill:#625c74;stroke:none}
+.twin-art-burst-effects{display:none;pointer-events:none;transform-box:view-box;transform-origin:103px 58px;transform:scale(1.4)}
+.twin-node.is-bursting .twin-art-burst-effects{display:inline}
+.twin-art-burst-flash,.twin-art-burst-ring,.twin-art-burst-rays,.twin-art-burst-debris{opacity:0;transform-box:view-box;transform-origin:103px 58px}
+.twin-node.is-bursting .twin-art-burst-flash{animation:twin-art-rupture-flash 1.5s ease-out 1 both}
+.twin-node.is-bursting .twin-art-burst-ring{animation:twin-art-rupture-ring 1.15s ease-out 1 both}
+.twin-node.is-bursting .twin-art-burst-ring-two{animation-duration:1.3s;animation-delay:.09s}
+.twin-node.is-bursting .twin-art-burst-rays{animation:twin-art-rupture-rays .9s ease-out 1 both}
+.twin-node.is-bursting .twin-art-burst-debris{animation:twin-art-rupture-debris 1.2s cubic-bezier(.15,.65,.35,1) var(--debris-delay,0s) 1 both}
+.twin-node.is-bursting .twin-art-vessel{transform-box:view-box;transform-origin:90px 84px;animation:twin-art-rupture-shake .65s ease-out 1 both}
+
+@keyframes twin-art-spin{to{transform:rotate(360deg)}}
+@keyframes twin-art-wave-drift{from{transform:translateX(0)}to{transform:translateX(-80px)}}
+@keyframes twin-art-mix{0%,100%{transform:scaleX(1)}50%{transform:scaleX(-1)}}
+@keyframes twin-art-bubble-rise{0%{transform:translateY(0) translateX(0);opacity:0}12%{opacity:.72}70%{opacity:.48}100%{transform:translateY(-62px) translateX(5px);opacity:0}}
+@keyframes twin-art-stream{to{stroke-dashoffset:-34}}
+@keyframes twin-art-filter{to{stroke-dashoffset:-26}}
+@keyframes twin-art-light{0%,100%{opacity:.65}50%{opacity:1}}
+@keyframes twin-art-gauge{0%,100%{transform:rotate(-5deg)}50%{transform:rotate(6deg)}}
+@keyframes twin-art-generator-heat{0%,100%{transform:translateY(0);opacity:0}25%{opacity:.48}80%{transform:translateY(-3px);opacity:.12}}
+@keyframes twin-art-flame{0%{transform:scale(.94,1) rotate(-3deg)}30%{transform:scale(1.03,.93) rotate(2deg)}65%{transform:scale(.91,1.1) rotate(-1deg)}100%{transform:scale(1,1.04) rotate(3deg)}}
+@keyframes twin-art-flame-core{0%{transform:scale(1,.88) rotate(3deg)}50%{transform:scale(.85,1.08) rotate(-4deg)}100%{transform:scale(1.08,.95) rotate(1deg)}}
+@keyframes twin-art-warmth{from{opacity:.55;transform:scale(.93)}to{opacity:1;transform:scale(1.08)}}
+@keyframes twin-art-ember{0%{transform:translate(0,6px);opacity:0}20%{opacity:.9}100%{transform:translate(8px,-23px);opacity:0}}
+@keyframes twin-art-fault-breathe{0%,100%{opacity:.55}50%{opacity:.9}}
+@keyframes twin-art-sparks{0%,65%,100%{opacity:.25;transform:scale(.88)}25%,40%{opacity:.95;transform:scale(1.08)}}
+@keyframes twin-art-smoke-drift{0%{opacity:.12;transform:translate(0,3px)}35%{opacity:.6}100%{opacity:.12;transform:translate(5px,-6px)}}
+@keyframes twin-art-overload-breathe{0%,100%{opacity:.45}50%{opacity:1}}
+@keyframes twin-art-pressure-breathe{0%,100%{opacity:.4}50%{opacity:.85}}
+@keyframes twin-art-pressure-shudder{0%,70%,100%{transform:translateX(0) rotate(0)}76%,88%{transform:translateX(.6px) rotate(.35deg)}82%,94%{transform:translateX(-.6px) rotate(-.35deg)}}
+@keyframes twin-art-leak-jet{to{stroke-dashoffset:-18}}
+@keyframes twin-art-vapor-rise{0%{transform:translate(-5px,8px) scale(.45);opacity:0}18%{opacity:.45}75%{opacity:.16}100%{transform:translate(9px,-20px) scale(1.16);opacity:0}}
+@keyframes twin-art-after-smoke{0%{transform:translate(-2px,9px) scale(.65);opacity:.08}22%{opacity:.5}100%{transform:translate(9px,-10px) scale(1.15);opacity:0}}
+@keyframes twin-art-rupture-flash{0%{transform:scale(.2);opacity:0}7%{transform:scale(.65);opacity:.95}25%{transform:scale(1);opacity:.45}48%,100%{transform:scale(1.1);opacity:0}}
+@keyframes twin-art-rupture-ring{0%{transform:scale(.12);opacity:0;stroke-width:5}12%{opacity:.95}100%{transform:scale(1.5);opacity:0;stroke-width:.6}}
+@keyframes twin-art-rupture-rays{0%{transform:scale(.25);opacity:0}15%{opacity:1}100%{transform:scale(1.8);opacity:0}}
+@keyframes twin-art-rupture-debris{0%{transform:translate(0,0) rotate(0);opacity:0}10%{opacity:1}80%{opacity:.8}100%{transform:translate(var(--debris-x),var(--debris-y)) rotate(var(--debris-turn));opacity:0}}
+@keyframes twin-art-rupture-shake{0%,100%{transform:translate(0,0) rotate(0)}12%{transform:translate(-3px,1px) rotate(-2deg)}27%{transform:translate(2px,-1px) rotate(1.5deg)}45%{transform:translate(-1.5px,0) rotate(-1deg)}70%{transform:translate(.7px,0) rotate(.4deg)}}
+
+/* Freeze the existing frame for user pauses, rather than resetting flame,
+   rotor, or bubble positions on every simulation control interaction. */
+:is(.twin-root.is-paused,.twin-document-hidden,html.motion-paused) .twin-equipment-art *,
+:is(.twin-root.is-paused,.twin-document-hidden,html.motion-paused) .twin-equipment-art *::before,
+:is(.twin-root.is-paused,.twin-document-hidden,html.motion-paused) .twin-equipment-art *::after{animation-play-state:paused!important;transition:none!important}
+html.motion-paused .twin-node .twin-art-burst-effects{display:none!important}
+html.motion-paused .twin-art-burst-effects *{animation:none!important}
+html.motion-paused .twin-equipment-art .twin-art-vessel{animation:none!important;transform:none!important}
+html.motion-paused .twin-node[data-failed=true] .twin-art-buffer-scar{opacity:.85}
+:is(.twin-root.is-paused,html.motion-paused) .twin-node[data-leaking=true] .twin-art-vapor:first-child{animation:none!important;opacity:.24;transform:translate(-2px,-2px) scale(.8)}
+@media(prefers-reduced-motion:reduce){
+ .twin-equipment-art *,.twin-equipment-art *::before,.twin-equipment-art *::after{animation:none!important;transition:none!important}
+ .twin-node[data-active=true] .twin-art-bubble{opacity:.45}
+ .twin-art-ember{opacity:0}
+ .twin-art-burst-effects{display:none!important}
+ .twin-equipment-art .twin-art-vessel{animation:none!important;transform:none!important}
+ .twin-node[data-failed=true] .twin-art-buffer-scar{opacity:.85}
+ .twin-node[data-leaking=true] .twin-art-vapor:first-child{opacity:.2;transform:translate(0,-5px)}
+ .twin-art-after-smoke .twin-art-smoke{opacity:.25}
+}

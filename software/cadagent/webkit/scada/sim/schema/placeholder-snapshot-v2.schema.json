@@ -1,0 +1,521 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:valpatel:scada-placeholder-snapshot:2",
+  "title": "SCADA circuit snapshot, version 2",
+  "description": "Complete deterministic circuit-model continuation state, including the seed state, physical stocks, retained heat, tracer amounts, finite energy stores, environment-zone state, event history, and boundary ledgers.",
+  "$comment": "Load the companion model schema under urn:valpatel:scada-placeholder-model:2. Runtime import recomputes the exact topology signature and checks the system identity, exact component/circuit/store/zone coverage, registered fault and operating modes, irrigation phase duration, stockScale-derived inventory bounds, heat and tracer bounds derived from current resource amount, thermal/energy store capacities, strictly increasing event IDs below nextEventId, valid event equipment, and event times no later than state.minutes. Runtime import rejects atomically and does not create a clock. The schema represents absolute numeric bounds; capacity- and topology-dependent constraints require the runtime validator.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "format",
+    "version",
+    "system",
+    "model",
+    "state"
+  ],
+  "properties": {
+    "format": {
+      "const": "scada-placeholder-snapshot"
+    },
+    "version": {
+      "const": 2
+    },
+    "system": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "signature"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/text"
+        },
+        "signature": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2097152
+        }
+      }
+    },
+    "model": {
+      "$ref": "urn:valpatel:scada-placeholder-model:2"
+    },
+    "state": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "minutes",
+        "running",
+        "randomState",
+        "nextEventId",
+        "components",
+        "circuits",
+        "thermalStores",
+        "energyStores",
+        "zones",
+        "events",
+        "ledger"
+      ],
+      "properties": {
+        "minutes": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1000000000
+        },
+        "running": {
+          "type": "boolean"
+        },
+        "randomState": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4294967295
+        },
+        "nextEventId": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1000000000
+        },
+        "components": {
+          "type": "object",
+          "propertyNames": {
+            "$ref": "#/$defs/name"
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/component"
+          }
+        },
+        "circuits": {
+          "type": "object",
+          "propertyNames": {
+            "$ref": "#/$defs/name"
+          },
+          "additionalProperties": {
+            "type": "object",
+            "propertyNames": {
+              "$ref": "#/$defs/name"
+            },
+            "additionalProperties": {
+              "$ref": "#/$defs/circuit"
+            }
+          }
+        },
+        "thermalStores": {
+          "type": "object",
+          "propertyNames": {
+            "$ref": "#/$defs/name"
+          },
+          "additionalProperties": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1000
+          }
+        },
+        "energyStores": {
+          "type": "object",
+          "propertyNames": {
+            "$ref": "#/$defs/name"
+          },
+          "additionalProperties": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1000
+          }
+        },
+        "zones": {
+          "type": "object",
+          "propertyNames": {
+            "$ref": "#/$defs/name"
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/zone"
+          }
+        },
+        "events": {
+          "type": "array",
+          "maxItems": 100,
+          "items": {
+            "$ref": "#/$defs/event"
+          }
+        },
+        "ledger": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "resourceBoundaryIn",
+            "resourceBoundaryOut",
+            "resourceLeak",
+            "energyBoundaryIn",
+            "energyBoundaryOut",
+            "energyLoss",
+            "heatBoundaryIn",
+            "heatBoundaryOut"
+          ],
+          "properties": {
+            "resourceBoundaryIn": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "resourceBoundaryOut": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "resourceLeak": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "energyBoundaryIn": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "energyBoundaryOut": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "energyLoss": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "heatBoundaryIn": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "heatBoundaryOut": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            }
+          }
+        }
+      }
+    },
+    "equationState": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "version",
+        "components"
+      ],
+      "properties": {
+        "version": {
+          "const": 1
+        },
+        "components": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "version",
+              "stateVersion",
+              "units",
+              "parameters",
+              "schemaSignature",
+              "state"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@+-]{0,127}$"
+              },
+              "version": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@+-]{0,127}$"
+              },
+              "stateVersion": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 1000000
+              },
+              "state": {
+                "type": "object"
+              },
+              "units": {
+                "const": "scada-index-v1"
+              },
+              "parameters": {
+                "type": "object"
+              },
+              "schemaSignature": {
+                "type": "string",
+                "maxLength": 16384
+              }
+            }
+          }
+        }
+      },
+      "description": "Optional owned provider state. Required for selected custom equations; omitted for the built-in path. Runtime checks exact bound component coverage, registered identity/version/stateVersion and each provider state schema before committing."
+    }
+  },
+  "$defs": {
+    "text": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "not": {
+        "anyOf": [
+          {
+            "enum": [
+              "__proto__",
+              "prototype",
+              "constructor"
+            ]
+          },
+          {
+            "pattern": "^([Pp][Aa][Ss][Ss][Ww][Oo][Rr][Dd]|[Ss][Ee][Cc][Rr][Ee][Tt]|[Tt][Oo][Kk][Ee][Nn]|[Aa][Pp][Ii][Kk][Ee][Yy]|[Cc][Rr][Ee][Dd][Ee][Nn][Tt][Ii][Aa][Ll][Ss]|[Aa][Uu][Tt][Hh][Oo][Rr][Ii][Zz][Aa][Tt][Ii][Oo][Nn]|[Pp][Rr][Ii][Vv][Aa][Tt][Ee][Kk][Ee][Yy])$"
+          }
+        ]
+      }
+    },
+    "index": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 100
+    },
+    "component": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "enabled",
+        "open",
+        "load",
+        "damage",
+        "mode",
+        "rodPosition",
+        "operating",
+        "faultMode",
+        "signal",
+        "valid",
+        "phase",
+        "phaseElapsed",
+        "moisture"
+      ],
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "open": {
+          "type": "boolean"
+        },
+        "load": {
+          "$ref": "#/$defs/index"
+        },
+        "damage": {
+          "$ref": "#/$defs/index"
+        },
+        "mode": {
+          "$ref": "#/$defs/text"
+        },
+        "rodPosition": {
+          "$ref": "#/$defs/index"
+        },
+        "operating": {
+          "$ref": "#/$defs/index"
+        },
+        "faultMode": {
+          "$ref": "#/$defs/text"
+        },
+        "signal": {
+          "$ref": "#/$defs/index"
+        },
+        "valid": {
+          "type": "boolean"
+        },
+        "phase": {
+          "enum": [
+            "idle",
+            "filling",
+            "holding",
+            "draining"
+          ]
+        },
+        "phaseElapsed": {
+          "type": "number",
+          "minimum": 0,
+          "exclusiveMaximum": 1000
+        },
+        "moisture": {
+          "$ref": "#/$defs/index"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "phase": {
+                "const": "idle"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "phaseElapsed": {
+                "const": 0
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "damage": {
+                "const": 100
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "faultMode": {
+                "not": {
+                  "const": "none"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "circuit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "amount",
+        "heat",
+        "pressure",
+        "tracers"
+      ],
+      "properties": {
+        "amount": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100000
+        },
+        "heat": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 10000000.0000001
+        },
+        "pressure": {
+          "$ref": "#/$defs/index"
+        },
+        "tracers": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "oxygen",
+            "nutrient",
+            "solids",
+            "ph",
+            "ec"
+          ],
+          "properties": {
+            "oxygen": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100000.0000001
+            },
+            "nutrient": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100000.0000001
+            },
+            "solids": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100000.0000001
+            },
+            "ph": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100000.0000001
+            },
+            "ec": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100000.0000001
+            }
+          }
+        }
+      }
+    },
+    "zone": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "temperature",
+        "humidity",
+        "light",
+        "oxygen"
+      ],
+      "properties": {
+        "temperature": {
+          "$ref": "#/$defs/index"
+        },
+        "humidity": {
+          "$ref": "#/$defs/index"
+        },
+        "light": {
+          "$ref": "#/$defs/index"
+        },
+        "oxygen": {
+          "$ref": "#/$defs/index"
+        }
+      }
+    },
+    "event": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "minutes",
+        "type",
+        "equipment",
+        "severity",
+        "message"
+      ],
+      "properties": {
+        "id": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 999999999
+        },
+        "minutes": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1000000000
+        },
+        "type": {
+          "type": "string",
+          "maxLength": 80
+        },
+        "equipment": {
+          "$ref": "#/$defs/text"
+        },
+        "severity": {
+          "enum": [
+            "info",
+            "warning",
+            "critical"
+          ]
+        },
+        "message": {
+          "type": "string",
+          "maxLength": 1000
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,116 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="480" height="360" viewBox="0 0 480 360" role="img" aria-labelledby="gallery-gas-holder-base-active-title gallery-gas-holder-base-active-desc"><title id="gallery-gas-holder-base-active-title">Gas holder</title><desc id="gallery-gas-holder-base-active-desc">Gas holder. Active, illustrative level 55%. Standalone illustrative gallery preview; not a running model.</desc><style>.twin-equipment-art{display:block;position:relative;flex:none;width:116px;max-width:90%;height:48px;pointer-events:none;isolation:isolate}
+.twin-equipment-art&gt;svg{display:block;width:100%;height:100%;overflow:visible}
+.twin-equipment-art-storage{width:113px;height:48px}
+.twin-art-buffer-fill{transform-box:fill-box;transform-origin:center bottom;transform:scaleY(var(--buffer-fraction,0));transition:transform .85s ease}
+.twin-art-fire{opacity:0;visibility:hidden;transition:opacity .35s}
+.twin-art-fire-size{transform-box:view-box;transform-origin:90px 75px;transform:scale(var(--flame-scale,1));transition:transform 1s ease}
+.twin-art-flame-outer,.twin-art-flame-middle,.twin-art-flame-core{transform-box:view-box;transform-origin:90px 75px;animation:twin-art-flame .8s ease-in-out infinite alternate;animation-play-state:paused}
+.twin-art-flame-middle{animation-name:twin-art-flame-core;animation-duration:.55s;animation-delay:-.3s}
+.twin-art-flame-core{animation-name:twin-art-flame-core;animation-duration:.38s;animation-delay:-.17s}
+.twin-art-fire-halo{animation:twin-art-warmth 1.4s ease-in-out infinite alternate;animation-play-state:paused;transform-box:fill-box;transform-origin:center}
+.twin-art-ember{animation:twin-art-ember 1.7s ease-out var(--ember-delay,0s) infinite;animation-play-state:paused;opacity:0}
+.twin-art-fault-effects,.twin-art-overload-effects,.twin-art-incident-fire{display:none}
+.twin-art-smoke{opacity:.55;animation:twin-art-smoke-drift 3.2s ease-out infinite}
+.twin-art-smoke-two{animation-delay:-1.6s;stroke:#756880;stroke-width:3}
+.twin-art-pressure-effects{opacity:0;transition:opacity .7s;pointer-events:none}
+.twin-art-pressure-ring,.twin-art-pressure-wave{stroke:#ffbc67}
+.twin-art-pressure-glow{opacity:.25}
+.twin-art-buffer-damage,.twin-art-leak-effects,.twin-art-after-smoke{display:none}
+.twin-art-buffer-scar{opacity:0}
+.twin-art-leak-size{transform-box:view-box;transform-origin:132px 73px;transform:scale(calc(.26 + var(--leak-intensity,0) * .74));transition:transform 1s ease}
+.twin-art-leak-jets{stroke:#caf9f6;stroke-width:1.7;stroke-dasharray:3 6;animation:twin-art-leak-jet .7s linear infinite;opacity:.76}
+.twin-art-leak-jets path:nth-child(2){stroke-width:1;opacity:.65}
+.twin-art-leak-jets path:nth-child(3){stroke-width:1.1;opacity:.45}
+.twin-art-vapor{transform-box:view-box;transform-origin:143px 66px;opacity:0;animation:twin-art-vapor-rise 2.4s ease-out var(--vapor-delay,0s) infinite}
+.twin-art-leak-flame-size{transform-box:view-box;transform-origin:148px 80px;transform:scale(calc(.48 + var(--leak-intensity,1) * .52));transition:transform 1s ease}
+.twin-art-after-smoke .twin-art-smoke{transform-box:view-box;transform-origin:110px 40px;animation:twin-art-after-smoke 3.8s ease-out infinite}
+.twin-art-after-smoke .twin-art-smoke-two{animation-delay:-1.9s;fill:#625c74;stroke:none}
+.twin-art-burst-effects{display:none;pointer-events:none;transform-box:view-box;transform-origin:103px 58px;transform:scale(1.4)}
+.twin-art-burst-flash,.twin-art-burst-ring,.twin-art-burst-rays,.twin-art-burst-debris{opacity:0;transform-box:view-box;transform-origin:103px 58px}
+@keyframes twin-art-flame{0%{transform:scale(.94,1) rotate(-3deg)}30%{transform:scale(1.03,.93) rotate(2deg)}65%{transform:scale(.91,1.1) rotate(-1deg)}100%{transform:scale(1,1.04) rotate(3deg)}}
+@keyframes twin-art-flame-core{0%{transform:scale(1,.88) rotate(3deg)}50%{transform:scale(.85,1.08) rotate(-4deg)}100%{transform:scale(1.08,.95) rotate(1deg)}}
+@keyframes twin-art-warmth{from{opacity:.55;transform:scale(.93)}to{opacity:1;transform:scale(1.08)}}
+@keyframes twin-art-ember{0%{transform:translate(0,6px);opacity:0}20%{opacity:.9}100%{transform:translate(8px,-23px);opacity:0}}
+@keyframes twin-art-leak-jet{to{stroke-dashoffset:-18}}
+@keyframes twin-art-vapor-rise{0%{transform:translate(-5px,8px) scale(.45);opacity:0}18%{opacity:.45}75%{opacity:.16}100%{transform:translate(9px,-20px) scale(1.16);opacity:0}}
+@keyframes twin-art-after-smoke{0%{transform:translate(-2px,9px) scale(.65);opacity:.08}22%{opacity:.5}100%{transform:translate(9px,-10px) scale(1.15);opacity:0}}
+:is(.twin-root.is-paused,.twin-document-hidden,html.motion-paused) .twin-equipment-art *,
+:is(.twin-root.is-paused,.twin-document-hidden,html.motion-paused) .twin-equipment-art *::before,
+:is(.twin-root.is-paused,.twin-document-hidden,html.motion-paused) .twin-equipment-art *::after{animation-play-state:paused!important;transition:none!important}
+@media (prefers-reduced-motion:reduce){.twin-equipment-art *,.twin-equipment-art *::before,.twin-equipment-art *::after{animation:none!important;transition:none!important}
+.twin-art-ember{opacity:0}
+.twin-art-burst-effects{display:none!important}
+.twin-equipment-art .twin-art-vessel{animation:none!important;transform:none!important}
+.twin-art-after-smoke .twin-art-smoke{opacity:.25}}
+.scada-component{display:inline-flex;position:relative;align-items:center;justify-content:center;width:210px;height:160px;max-width:100%;vertical-align:middle;isolation:isolate;color:#c4ebf1;--scada-accent:#62ffbc;--scada-activity-duration:2.4s}
+.scada-component.scada-component-with-gauges{box-sizing:border-box;height:calc(136px + var(--scada-gauge-height,22px));padding-bottom:var(--scada-gauge-height,22px)}
+.scada-component[data-scada-host-state=false]&gt;.twin-equipment-art{width:180px;max-width:100%;height:100%;max-height:100%;flex:none}
+.scada-component[data-scada-host-state=false] .scada-charge-fill,.scada-component[data-scada-host-state=false][data-scada-type=gas-holder] .twin-art-buffer-fill{animation:scada-inventory 3.6s ease-in-out infinite;animation-play-state:paused}
+.scada-component[data-scada-host-state=false][data-active=true][data-running=true] .scada-charge-fill,.scada-component[data-scada-host-state=false][data-scada-type=gas-holder][data-active=true][data-running=true] .twin-art-buffer-fill{animation-play-state:running}
+.scada-component[data-scada-host-state=false][data-active=true] .twin-art-fire{opacity:1;visibility:visible}
+.scada-component[data-scada-host-state=false][data-active=true][data-running=true] :is(.twin-art-rotor,.twin-art-wave,.twin-art-mixer,.twin-art-bubble,.twin-art-stream,.twin-art-filter-stream,.twin-art-charge-orbit,.twin-art-flame-outer,.twin-art-flame-middle,.twin-art-flame-core,.twin-art-fire-halo,.twin-art-ember,.twin-art-generator-current,.twin-art-generator-heat){animation-play-state:running}
+.scada-component[data-scada-host-state=false][data-running=false] *,.scada-component[data-scada-host-state=false][data-running=false] *::before,.scada-component[data-scada-host-state=false][data-running=false] *::after{animation-play-state:paused!important;transition:none!important}
+html.motion-paused .scada-component *,html.motion-paused .scada-component *::before,html.motion-paused .scada-component *::after{animation-play-state:paused!important;transition:none!important}
+@keyframes scada-inventory{0%,100%{filter:brightness(.9)}50%{filter:brightness(1.2)}}
+@media (prefers-reduced-motion:reduce){.scada-component *,.scada-component *::before,.scada-component *::after{animation:none!important;transition:none!important}}
+
+.gallery-label{font-family:Arial,sans-serif;fill:#dcecf1}
+.gallery-code{font-family:monospace;fill:#8fbac9}
+.gallery-symbol.scada-component{display:block;width:auto;height:auto;padding:0;max-width:none;overflow:visible}
+.gallery-symbol&gt;.twin-equipment-art{display:block;width:auto;height:auto;max-width:none}
+.gallery-symbol&gt;svg,.gallery-symbol&gt;.twin-equipment-art&gt;svg{display:block;width:280px!important;height:194px!important;max-width:none!important;max-height:none!important;overflow:visible}
+.gallery-condition svg{width:24px;height:24px}
+</style><defs><linearGradient id="gallery-gas-holder-base-active-card" x2="1" y2="1"><stop offset="0" stop-color="#102635"/><stop offset="1" stop-color="#0b1724"/></linearGradient></defs><rect x="0.5" y="0.5" width="479" height="359" rx="14" fill="url(#gallery-gas-holder-base-active-card)" stroke="#355665"/><text class="gallery-label" x="20" y="28" font-size="11" letter-spacing="1" style="fill:#7acfc9">PROCESS VESSELS</text><text class="gallery-label" x="20" y="55" font-size="21" font-weight="600">Gas holder</text><g transform="translate(100 79)"><g class="scada-component scada-component-with-gauges gallery-symbol" data-scada-type="gas-holder" data-scada-instance="scada-gallery-gas-holder-base-active" data-scada-host-state="false" data-active="true" data-failed="false" data-running="true" data-status="normal" data-flow="true" data-damage="none" data-speed-zero="false" style="--scada-level:55;--scada-load:60;--scada-flow-opacity:0.95;--scada-gauge-height:17px;--scada-activity-duration:2.2s;--activity-speed:2.2s;--buffer-fraction:0.55;--scada-level-offset:0px;--flame-scale:0.9750000000000001" aria-hidden="true"><g class="twin-equipment-art twin-equipment-art-storage" aria-hidden="true"><svg viewBox="0 0 180 112" focusable="false" aria-hidden="true" x="0" y="0" width="280" height="194" preserveAspectRatio="xMidYMid meet"><defs>
+ <linearGradient id="twin-art-scada-gallery-gas-holder-base-active-steel" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#112d3c"/><stop offset=".25" stop-color="#548d9f"/><stop offset=".46" stop-color="#b1dce8"/><stop offset=".7" stop-color="#3b6a7f"/><stop offset="1" stop-color="#102b39"/></linearGradient>
+ <linearGradient id="twin-art-scada-gallery-gas-holder-base-active-glass" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#00f0ff" stop-opacity=".15"/><stop offset=".3" stop-color="#c5f4ff" stop-opacity=".1"/><stop offset=".7" stop-color="#4eb0c8" stop-opacity=".04"/><stop offset="1" stop-color="#080e19" stop-opacity=".5"/></linearGradient>
+ <linearGradient id="twin-art-scada-gallery-gas-holder-base-active-liquid" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#05ffa1" stop-opacity=".82"/><stop offset=".35" stop-color="#1ba894" stop-opacity=".66"/><stop offset="1" stop-color="#15546b" stop-opacity=".6"/></linearGradient>
+ <linearGradient id="twin-art-scada-gallery-gas-holder-base-active-dome" x1="0" y1="0" x2=".8" y2="1"><stop stop-color="#b3e3eb"/><stop offset=".4" stop-color="#568fa4"/><stop offset="1" stop-color="#213b51"/></linearGradient>
+ <linearGradient id="twin-art-scada-gallery-gas-holder-base-active-fire" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#ffe6a2"/><stop offset=".3" stop-color="#ffbe57"/><stop offset=".72" stop-color="#ff7b37"/><stop offset="1" stop-color="#d6462c"/></linearGradient>
+ <radialGradient id="twin-art-scada-gallery-gas-holder-base-active-warm"><stop stop-color="#ffac45" stop-opacity=".42"/><stop offset=".5" stop-color="#ff7d37" stop-opacity=".14"/><stop offset="1" stop-color="#ff7933" stop-opacity="0"/></radialGradient>
+ <radialGradient id="twin-art-scada-gallery-gas-holder-base-active-cool"><stop stop-color="#00f0ff" stop-opacity=".23"/><stop offset="1" stop-color="#00f0ff" stop-opacity="0"/></radialGradient>
+ <radialGradient id="twin-art-scada-gallery-gas-holder-base-active-fault"><stop stop-color="#ff2a6d" stop-opacity=".42"/><stop offset=".5" stop-color="#ff2a6d" stop-opacity=".15"/><stop offset="1" stop-color="#ff2a6d" stop-opacity="0"/></radialGradient>
+ <radialGradient id="twin-art-scada-gallery-gas-holder-base-active-blast"><stop stop-color="#fff9d8"/><stop offset=".24" stop-color="#ffd379" stop-opacity=".95"/><stop offset=".56" stop-color="#ff7e38" stop-opacity=".65"/><stop offset="1" stop-color="#ff2a6d" stop-opacity="0"/></radialGradient>
+ </defs><g class="twin-art-pressure-effects">
+ <ellipse class="twin-art-pressure-glow" cx="90" cy="57" rx="73" ry="54" fill="url(#twin-art-scada-gallery-gas-holder-base-active-fault)"/>
+ <ellipse class="twin-art-pressure-ring" cx="90" cy="57" rx="61" ry="46" fill="none" stroke-width="1.5" stroke-dasharray="17 5 3 5"/>
+ <path class="twin-art-pressure-wave" d="M23 41Q15 57 23 73M157 41Q165 57 157 73" fill="none" stroke-width="2.3" stroke-linecap="round"/>
+ </g><g class="twin-art-vessel"><ellipse cx="90" cy="102" rx="50" ry="7" fill="#05050d" opacity=".65"/>
+ <defs><clipPath id="twin-art-scada-gallery-gas-holder-base-active-buffer"><path d="M48 24V84C48 105 132 105 132 84V24Z"/></clipPath></defs>
+ <path d="M48 24V84C48 105 132 105 132 84V24Z" fill="#0b2032" stroke="#78bfc9" stroke-width="1.4"/>
+ <g clip-path="url(#twin-art-scada-gallery-gas-holder-base-active-buffer)"><rect class="twin-art-buffer-fill" data-twin-buffer-liquid="" x="48" y="28" width="84" height="70" fill="url(#twin-art-scada-gallery-gas-holder-base-active-liquid)"/><path d="M48 24V84C48 105 132 105 132 84V24Z" fill="url(#twin-art-scada-gallery-gas-holder-base-active-glass)"/><path d="M58 34V84" stroke="#b2f5ff" stroke-width="3" opacity=".25"/></g>
+ <ellipse cx="90" cy="24" rx="42" ry="13" fill="url(#twin-art-scada-gallery-gas-holder-base-active-dome)" stroke="#9ad5df"/>
+ <path d="M48 84Q90 108 132 84M48 63Q90 84 132 63M48 43Q90 66 132 43" fill="none" stroke="#6cc5d0" opacity=".32"/>
+ <path d="M86 11V4H94V11" fill="#549eb1"/>
+ <path d="M140 33h8M140 46h5M140 59h8M140 72h5M140 85h8" stroke="#70d0df" stroke-width="1.6"/>
+ <path d="M31 73H48M132 73H148" stroke="url(#twin-art-scada-gallery-gas-holder-base-active-steel)" stroke-width="7"/></g><g class="twin-art-buffer-damage">
+ <path d="M123 51l-7 11 11 5-8 14 13-8 2-10-8-4Z" fill="#07101b" stroke="#db8e80" stroke-width="1.3" stroke-linejoin="round"/>
+ <path class="twin-art-buffer-scar" d="M107 31l-7 13 12 10-5 19 13 10M69 28l5 13-8 12" fill="none" stroke="#e58c68" stroke-width="1.5" stroke-linecap="round"/>
+ </g>
+ <g class="twin-art-leak-effects"><g class="twin-art-leak-size">
+  <path class="twin-art-leak-haze" d="M129 72C141 67 143 48 166 34C170 49 162 67 133 77Z" fill="#a3e7f0" opacity=".15"/>
+  <g class="twin-art-leak-jets" fill="none" stroke-linecap="round"><path d="M130 72Q147 69 163 43"/><path d="M131 74Q151 75 172 62"/><path d="M132 70Q141 62 147 44"/></g>
+  <g class="twin-art-vapor-clouds" fill="#aedfe8">
+   <path class="twin-art-vapor" style="--vapor-delay:0s" d="M139 65c-8-4-3-13 4-12-3-9 12-14 15-5 10-1 14 12 5 16-6 6-17 8-24 1Z"/>
+   <path class="twin-art-vapor" style="--vapor-delay:-.8s" d="M139 65c-8-4-3-13 4-12-3-9 12-14 15-5 10-1 14 12 5 16-6 6-17 8-24 1Z"/>
+   <path class="twin-art-vapor" style="--vapor-delay:-1.6s" d="M139 65c-8-4-3-13 4-12-3-9 12-14 15-5 10-1 14 12 5 16-6 6-17 8-24 1Z"/>
+  </g>
+ </g></g>
+ <g class="twin-art-incident-fire">
+ <path class="twin-art-incident-pipe" d="M132 73h13l5 7" fill="none" stroke="#ff2a6d" stroke-width="4" stroke-linecap="round"/>
+ <g class="twin-art-leak-flame-size"><g transform="translate(90 31) scale(.65)"><g class="twin-art-fire">
+ <ellipse class="twin-art-fire-halo" cx="90" cy="48" rx="53" ry="49" fill="url(#twin-art-scada-gallery-gas-holder-base-active-warm)"/>
+ <g class="twin-art-fire-size"><path class="twin-art-flame-outer" d="M90 75C63 63 71 43 83 29C83 44 96 38 94 9C121 33 123 61 90 75Z" fill="url(#twin-art-scada-gallery-gas-holder-base-active-fire)"/>
+ <path class="twin-art-flame-middle" d="M91 74C74 64 80 49 89 40C89 52 100 44 99 31C114 49 111 65 91 74Z" fill="#ffd279"/>
+ <path class="twin-art-flame-core" d="M90 74C82 66 85 60 91 53C92 62 99 59 99 55C105 66 97 71 90 74Z" fill="#fff4c1"/>
+ </g>
+ <g fill="#ffd99a"><circle class="twin-art-ember" cx="75" cy="40" r="1.5" style="--ember-delay:-.2s"/><circle class="twin-art-ember" cx="106" cy="28" r="1.2" style="--ember-delay:-1.2s"/><circle class="twin-art-ember" cx="92" cy="20" r="1.1" style="--ember-delay:-.7s"/></g>
+ </g></g></g>
+ </g>
+ <g class="twin-art-after-smoke" fill="#857d95"><path class="twin-art-smoke" d="M101 36c-16-4-20-15-9-22-6-10 8-17 17-10 13-7 27 7 17 17 12 12-6 21-25 15Z"/><path class="twin-art-smoke twin-art-smoke-two" d="M105 38c-9-6-2-16 7-13-1-11 17-14 20-2 14 4 5 19-8 16Z"/></g>
+ <g class="twin-art-burst-effects">
+  <ellipse class="twin-art-burst-flash" cx="103" cy="58" rx="72" ry="50" fill="url(#twin-art-scada-gallery-gas-holder-base-active-blast)"/>
+  <ellipse class="twin-art-burst-ring" cx="103" cy="58" rx="45" ry="29" fill="none" stroke="#ffe4a0" stroke-width="2.4"/>
+  <ellipse class="twin-art-burst-ring twin-art-burst-ring-two" cx="103" cy="58" rx="37" ry="24" fill="none" stroke="#ff8c54" stroke-width="1.3"/>
+  <g class="twin-art-burst-rays" fill="none" stroke="#ffc66d" stroke-width="2" stroke-linecap="round"><path d="M91 44l-8-12M113 43l7-14M123 53l17-6M122 65l17 8M108 72l5 16M92 70l-9 13M82 57H64"/></g>
+  <path class="twin-art-burst-debris" style="--debris-x:-43px;--debris-y:-21px;--debris-turn:-100deg;--debris-delay:0s" d="M99 54l7-2 2 4-6 3Z" fill="#ffc188" stroke="#fff1c7" stroke-width=".6"/><path class="twin-art-burst-debris" style="--debris-x:39px;--debris-y:21px;--debris-turn:130deg;--debris-delay:0.025s" d="M102 58l7-2 2 4-6 3Z" fill="#a7c0c9" stroke="#fff1c7" stroke-width=".6"/><path class="twin-art-burst-debris" style="--debris-x:-26px;--debris-y:28px;--debris-turn:-140deg;--debris-delay:0.05s" d="M97 55l7-2 2 4-6 3Z" fill="#ffc188" stroke="#fff1c7" stroke-width=".6"/><path class="twin-art-burst-debris" style="--debris-x:31px;--debris-y:-29px;--debris-turn:170deg;--debris-delay:0.07500000000000001s" d="M104 52l7-2 2 4-6 3Z" fill="#a7c0c9" stroke="#fff1c7" stroke-width=".6"/><path class="twin-art-burst-debris" style="--debris-x:-9px;--debris-y:-37px;--debris-turn:-70deg;--debris-delay:0.1s" d="M97 51l7-2 2 4-6 3Z" fill="#ffc188" stroke="#fff1c7" stroke-width=".6"/>
+ </g></svg></g></g></g><g data-scada-gauge="level"><text class="gallery-code" x="90" y="288" font-size="10">LEVEL</text><rect x="155" y="282" width="145" height="5" rx="2.5" fill="#153c50" stroke="#537d90" stroke-width="0.6"/><rect x="155" y="282" width="79.75" height="5" rx="2.5" fill="#63e6d9"/><text class="gallery-code" x="385" y="288" font-size="10" text-anchor="end">55%</text></g><text class="gallery-label" x="20" y="328" font-size="12" style="fill:#bdeee6">Active illustrative preview</text><text class="gallery-code" x="20" y="346" font-size="10">gas-holder</text></svg>

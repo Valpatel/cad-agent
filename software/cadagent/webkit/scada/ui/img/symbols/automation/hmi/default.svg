@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="480" height="360" viewBox="0 0 480 360" role="img" aria-labelledby="gallery-hmi-base-active-title gallery-hmi-base-active-desc"><title id="gallery-hmi-base-active-title">Operator HMI</title><desc id="gallery-hmi-base-active-desc">Operator HMI. Active. Standalone illustrative gallery preview; not a running model.</desc><style>:is(.twin-root.is-paused,.twin-document-hidden,html.motion-paused) .twin-equipment-art *,
+:is(.twin-root.is-paused,.twin-document-hidden,html.motion-paused) .twin-equipment-art *::before,
+:is(.twin-root.is-paused,.twin-document-hidden,html.motion-paused) .twin-equipment-art *::after{animation-play-state:paused!important;transition:none!important}
+@media (prefers-reduced-motion:reduce){.twin-equipment-art *,.twin-equipment-art *::before,.twin-equipment-art *::after{animation:none!important;transition:none!important}}
+.scada-component{display:inline-flex;position:relative;align-items:center;justify-content:center;width:210px;height:160px;max-width:100%;vertical-align:middle;isolation:isolate;color:#c4ebf1;--scada-accent:#62ffbc;--scada-activity-duration:2.4s}
+.scada-component&gt;.scada-component-svg{display:block;width:100%;height:100%;overflow:visible;pointer-events:none}
+.scada-component .scada-led{fill:#557080;transition:fill .25s,filter .25s}
+.scada-component .scada-traffic{opacity:.18;stroke-dasharray:4 8;animation:scada-traffic 1.8s linear var(--scada-phase,0s) infinite;animation-play-state:paused}
+.scada-component .scada-screen-pulse{opacity:.55;animation:scada-screen 3s ease-in-out var(--scada-phase,0s) infinite;animation-play-state:paused}
+.scada-component .scada-load-bar,.scada-component .scada-ups-charge{transition:width .5s ease}
+.scada-component[data-scada-host-state=false][data-active=true] .scada-led{fill:#62ffbc;filter:drop-shadow(0 0 2px #62ffbc80)}
+.scada-component[data-scada-host-state=false][data-active=true][data-running=true] :is(.scada-rotor,.scada-piston,.scada-wave,.scada-mixer,.scada-scraper,.scada-shaft,.scada-solar-cell,.scada-sensor-pulse,.scada-trace,.scada-scan,.scada-traffic,.scada-screen-pulse,.scada-electric){animation-play-state:running}
+.scada-component[data-scada-host-state=false][data-active=true] :is(.scada-electric,.scada-traffic){opacity:1}
+.scada-component[data-scada-host-state=false][data-running=false] *,.scada-component[data-scada-host-state=false][data-running=false] *::before,.scada-component[data-scada-host-state=false][data-running=false] *::after{animation-play-state:paused!important;transition:none!important}
+html.motion-paused .scada-component *,html.motion-paused .scada-component *::before,html.motion-paused .scada-component *::after{animation-play-state:paused!important;transition:none!important}
+@keyframes scada-traffic{0%{stroke-dashoffset:0;opacity:.3}50%{opacity:1}100%{stroke-dashoffset:-24;opacity:.3}}
+@keyframes scada-screen{0%,100%{opacity:.5}50%{opacity:.95}}
+@media (prefers-reduced-motion:reduce){.scada-component *,.scada-component *::before,.scada-component *::after{animation:none!important;transition:none!important}
+.scada-component[data-active=true] :is(.scada-scan,.scada-traffic,.scada-sensor-pulse){opacity:.65}}
+
+.gallery-label{font-family:Arial,sans-serif;fill:#dcecf1}
+.gallery-code{font-family:monospace;fill:#8fbac9}
+.gallery-symbol.scada-component{display:block;width:auto;height:auto;padding:0;max-width:none;overflow:visible}
+.gallery-symbol&gt;.twin-equipment-art{display:block;width:auto;height:auto;max-width:none}
+.gallery-symbol&gt;svg,.gallery-symbol&gt;.twin-equipment-art&gt;svg{display:block;width:280px!important;height:194px!important;max-width:none!important;max-height:none!important;overflow:visible}
+.gallery-condition svg{width:24px;height:24px}
+</style><defs><linearGradient id="gallery-hmi-base-active-card" x2="1" y2="1"><stop offset="0" stop-color="#102635"/><stop offset="1" stop-color="#0b1724"/></linearGradient></defs><rect x="0.5" y="0.5" width="479" height="359" rx="14" fill="url(#gallery-hmi-base-active-card)" stroke="#355665"/><text class="gallery-label" x="20" y="28" font-size="11" letter-spacing="1" style="fill:#7acfc9">PLC &amp; NETWORKS</text><text class="gallery-label" x="20" y="55" font-size="21" font-weight="600">Operator HMI</text><g transform="translate(100 79)"><g class="scada-component gallery-symbol" data-scada-type="hmi" data-scada-instance="scada-gallery-hmi-base-active" data-scada-host-state="false" data-active="true" data-failed="false" data-running="true" data-status="normal" data-flow="true" data-damage="none" data-speed-zero="false" data-connected="true" style="--scada-level:55;--scada-load:60;--scada-flow-opacity:0.95;--scada-gauge-height:4px;--scada-activity-duration:2.2s;--activity-speed:2.2s;--buffer-fraction:0.55;--scada-level-offset:0px;--flame-scale:0.9750000000000001" aria-hidden="true"><svg class="scada-component-svg" viewBox="0 0 180 136" aria-hidden="true" focusable="false" x="0" y="0" width="280" height="194" preserveAspectRatio="xMidYMid meet"><defs>
+ <linearGradient id="scada-gallery-hmi-base-active-steel"><stop stop-color="#16374a"/><stop offset=".3" stop-color="#659bae"/><stop offset=".5" stop-color="#acd5de"/><stop offset=".72" stop-color="#396a81"/><stop offset="1" stop-color="#122e42"/></linearGradient>
+ <linearGradient id="scada-gallery-hmi-base-active-glass" x2=".8" y2="1"><stop stop-color="#69eff1" stop-opacity=".18"/><stop offset="1" stop-color="#081827" stop-opacity=".65"/></linearGradient>
+ <linearGradient id="scada-gallery-hmi-base-active-liquid" x2="0" y2="1"><stop stop-color="#57ffd0" stop-opacity=".85"/><stop offset="1" stop-color="#087a92" stop-opacity=".55"/></linearGradient>
+ <radialGradient id="scada-gallery-hmi-base-active-glow"><stop stop-color="#00e5e9" stop-opacity=".18"/><stop offset="1" stop-color="#00e5e9" stop-opacity="0"/></radialGradient>
+ </defs><ellipse cx="90" cy="75" rx="83" ry="59" fill="url(#scada-gallery-hmi-base-active-glow)"/><ellipse cx="90" cy="128" rx="67" ry="5" fill="#030d19" opacity=".65"/><g class="scada-drawing"><g class="scada-control-art scada-control-hmi"><ellipse cx="90" cy="126" rx="66" ry="7" fill="#030c16" opacity=".6"/>
+ <path d="M79 108V119H65V125H116V119H102V108" fill="#2d5369" stroke="#81b3c6" stroke-width="1.2"/>
+ <path d="M25 20L32 14H159L165 21V103L158 110H25Z" fill="#16394f" stroke="#76aec2" stroke-width="1.2"/>
+ <rect x="19" y="20" width="139" height="90" rx="6" fill="url(#scada-gallery-hmi-base-active-steel)" stroke="#a8d3df" stroke-width="1.6"/>
+ <rect x="28" y="29" width="119" height="66" rx="3" fill="#071a2a" stroke="#385e76" stroke-width="1.2"/>
+ <path d="M33 35H142" stroke="#27506a" stroke-width="1"/><rect x="34" y="39" width="33" height="43" rx="2" fill="#102c3c"/>
+ <path d="M42 48V72Q49 77 57 72V48Z" fill="#164e59" stroke="#7dd3d7"/><ellipse cx="49.5" cy="48" rx="7.5" ry="3" fill="#6c9ba9"/><path class="scada-screen-pulse" d="M43 63Q49 59 56 63V71Q49 75 43 71Z" fill="#62ffbc" opacity=".65"/>
+ <path d="M57 66H76V55H100" fill="none" stroke="#376b80" stroke-width="3"/><path class="scada-traffic" d="M57 66H76V55H100" fill="none" stroke="#62ffbc" stroke-width="1.5" stroke-dasharray="3 5"/>
+ <circle cx="109" cy="55" r="10" fill="#183d54" stroke="#65c4d1"/><path d="M110 47l-6 9h6l-2 7 8-12h-6Z" fill="#ffd38a"/>
+ <rect x="78" y="74" width="61" height="11" rx="2" fill="#163447"/><path class="scada-screen-pulse" d="M81 81h7l5-5 7 7 5-5 7 2 5-4 5 5h14" fill="none" stroke="#00e5e9" stroke-width="1.5"/>
+ <rect x="34" y="88" width="105" height="2" fill="#244a5f"/><rect class="scada-load-bar" x="34" y="88" width="0" height="2" fill="#00e5e9"/>
+ <circle class="scada-led" cx="89" cy="102" r="2.3" fill="#456575" style="--scada-phase:-0.2s"/><circle cx="24" cy="25" r="1.4" fill="#a9cbd6"/><path d="M23 25h2" stroke="#234456" stroke-width=".7"/><circle cx="152" cy="25" r="1.4" fill="#a9cbd6"/><path d="M151 25h2" stroke="#234456" stroke-width=".7"/><circle cx="24" cy="104" r="1.4" fill="#a9cbd6"/><path d="M23 104h2" stroke="#234456" stroke-width=".7"/><circle cx="152" cy="104" r="1.4" fill="#a9cbd6"/><path d="M151 104h2" stroke="#234456" stroke-width=".7"/></g></g></svg></g></g><text class="gallery-label" x="20" y="328" font-size="12" style="fill:#bdeee6">Active illustrative preview</text><text class="gallery-code" x="20" y="346" font-size="10">hmi</text></svg>

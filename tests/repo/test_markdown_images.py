@@ -159,3 +159,9 @@ def test_good_remote_and_hidden_images_pass():
     )
     assert problems("docs/a.md", text, set(data), read=lambda p: data[p]) == []
     assert problems("docs/examples/x/README.md", "![e](../e.png)", set(data), read=lambda p: data[p]) == []
+
+
+def test_documentation_workflow_figures_are_fresh():
+    """Committed explanatory art must match its source owner and still variant."""
+    import sys
+    subprocess.run([sys.executable, str(ROOT / 'tools/anim/documentation_flows.py'), '--check'], cwd=ROOT, check=True)

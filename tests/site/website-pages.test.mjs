@@ -8,7 +8,7 @@ import { CARDS_MIN, FOLD_LINES, FOLD_ROWS, fold, pagePlacer, sectionCards } from
 const PNG = Buffer.from('89504e470d0a1a0a0000000d49484452000002800000019008060000', 'hex');   // 640 x 400
 const base = {
   pageFiles: new Set(['docs/a.md', 'docs/b.md']),
-  tracked: ['docs/img/out.png', 'docs/img/two.png', 'software/cadagent/review/gates/motion.py', 'software/cadagent/simulation/fea/__init__.py', 'tools/draw.py', 'software/cadagent/webkit/part-table.js'],
+  tracked: ['docs/img/out.png', 'docs/img/two.png', 'software/cadagent/review/gates/motion.py', 'software/cadagent/simulation/fea/__init__.py', 'tools/draw.py', 'software/cadagent/webkit/assembly/part-table.js'],
   commandNames: new Set(['gates', 'site']), readBuf: async () => PNG, pageURL: f => '/' + f.replace(/\.md$/, ''),
 };
 const out = (o = {}) => ({ img: 'docs/img/out.png', shows: 'output', tool: 'cad-agent site', on: 'fixture', caption: 'Six gates pass.', alt: 'A table', ...o });
@@ -28,8 +28,8 @@ test('a band (hero and tiles) goes under the title and its first paragraph, each
   const colon = await place('docs/a.md', '<h1 id="a">A</h1><p>Every review walks this list:</p><ol><li>x</li></ol>' + PAGE.slice(PAGE.indexOf('<h2')));
   assert.match(colon, /^<h1 id="a">A<\/h1><section class="page-band"[^]*?<\/section><p>Every review walks this list:<\/p><ol>/);
   assert.equal(await place('docs/b.md', PAGE), PAGE, 'a page without an entry or pictures is untouched');
-  const kit = await pagePlacer({ ...base, spec: { 'docs/b.md': { hero: out({ tool: 'kit/part-table.js' }) } } })('docs/b.md', PAGE);
-  assert.match(kit, /<b class="shows-output">Real output<\/b> of <code>kit\/part-table\.js<\/code>/, 'a web kit file is a tool, as the site publishes it');
+  const kit = await pagePlacer({ ...base, spec: { 'docs/b.md': { hero: out({ tool: 'kit/assembly/part-table.js' }) } } })('docs/b.md', PAGE);
+  assert.match(kit, /<b class="shows-output">Real output<\/b> of <code>kit\/assembly\/part-table\.js<\/code>/, 'a web kit file is a tool, as the site publishes it');
   // A tile is one link: the Gyropup credit's own link would nest in it and split the tile (#217 review). The hero keeps it.
   const gyropup = await pagePlacer({ ...base, spec: { 'docs/a.md': { hero: out({ on: 'gyropup' }), band: [tile({ on: 'gyropup' }), tile()] } } })('docs/a.md', PAGE);
   for (const li of gyropup.match(/<li>[^]*?<\/li>/g)) assert.equal(li.match(/<a\b/g).length, 1, li);
@@ -142,6 +142,21 @@ test('long tables and code blocks fold, with a summary of what is inside; short 
   assert.equal(fold(diagram), diagram, 'a diagram source is a picture, not reference text');
 });
 
+test('authored references open with one action and automatic folding is idempotent', () => {
+  const table = '<div class="table-scroll"><table><tbody>' + '<tr><td>Equipment</td></tr>'.repeat(FOLD_ROWS + 1) + '</tbody></table></div>';
+  const code = '<cad-copy><pre><code>' + 'parameter = 1\n'.repeat(FOLD_LINES + 1) + '</code></pre></cad-copy>';
+  const nested = '<details><summary>Units</summary>' + code + '</details>';
+  const authored = '<DETAILS data-label="A > B"><summary>Equipment and units</summary>' + table + nested + '</DETAILS>';
+  assert.equal(fold(authored), authored, 'keep the authored title, table and intentional nested reference intact');
+  const comment = '<!-- <details><summary>Example only</summary> -->';
+  assert.equal(fold(comment + authored + table + code), comment + authored + fold(table) + fold(code),
+    'comment markup does not hide the subsequent ordinary references from automatic folding');
+  assert.equal(fold('<details-card>' + table + '</details-card>'), '<details-card>' + fold(table) + '</details-card>',
+    'a similarly named custom element is not a native disclosure');
+  const once = fold(table + code);
+  assert.equal(fold(once), once, 'a second compiler pass must not introduce another click');
+});
+
 
 test('the real source selector keeps moved identities and rejects missing current sources', () => {
   const extras = ['THIRD_PARTY_NOTICES.md', 'CONTRIBUTING.md', '.github/SECURITY.md', 'SECURITY.md', 'docs/a b.md', 'docs/a\tb.md', 'docs/AGENTS.md'];
@@ -203,7 +218,7 @@ import { EventEmitter } from 'node:events';
 import { mkdtemp, readFile, readdir, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { readerBoundaryGoto, readerBoundaryProblems } from './site-outline.mjs';
+import { readerBoundaryGoto, readerBoundaryProblems } from './layout/outline.mjs';
 
 class ReaderProbePage extends EventEmitter {
   calls = [];
@@ -276,7 +291,7 @@ test('reader capture errors and oversized screenshot do not replace the navigati
   const receipt = JSON.parse(await readFile(path.join(context.evidence, 'receipt.json'), 'utf8'));
   assert.match(receipt.states.at(-1).navigationFailure.captureErrors.join(' '), /DOM: execution context destroyed.*exceeded 2 MiB/);
   assert.equal(receipt.states.at(-1).navigationFailure.screenshot, undefined);
-  assert.deepEqual(await readdir(context.evidence), ['receipt.json']); noProbeListeners(page);
+  assert.deepEqual((await readdir(context.evidence)).sort(), ['navigation-failure.json', 'receipt.json']); noProbeListeners(page);
 });
 
 test('a stalled diagnostic DOM read is bounded while the original navigation error remains authoritative', { timeout: 5000 }, async t => {
@@ -313,8 +328,310 @@ test('a disconnected page and unavailable receipt directory never mask the origi
   assert.equal(errors.length, 1); assert.match(errors[0], /partial receipt unavailable/); noProbeListeners(page);
 });
 
+// #686: the suite's one navigation function and the part boundary that turns its failure into a finding.
+import { configureNavigation, fetchThrough, inLanes, navigate, navigationFailure, ownContexts, partHandler, runPart, watchRoutes, watchTarget } from './navigation.mjs';
+
+test('shared navigation passes the call site\'s exact arguments and does nothing else on success', async t => {
+  const page = new ReaderProbePage(), response = {}, args = [];
+  page.goto = async (...given) => { args.push(given); return response; };
+  t.mock.method(console, 'log', () => assert.fail('a passing navigation printed evidence'));
+  assert.equal(await navigate(page, 'http://localhost/a'), response);
+  assert.equal(await navigate(page, 'http://localhost/b', { waitUntil: 'load', timeout: 30000 }), response);
+  assert.deepEqual(args, [['http://localhost/a'], ['http://localhost/b', { waitUntil: 'load', timeout: 30000 }]]);
+  assert.equal(page.domCalls, undefined); assert.equal(page.imageOptions, undefined); noProbeListeners(page);
+});
+
+test('a fault in the navigation evidence is recorded and the original error is rethrown unchanged', async t => {
+  const context = await probeContext(t), page = new ReaderProbePage(), original = new Error('page.goto: Timeout 30000ms exceeded.');
+  page.navigate = () => { throw original; };
+  const lines = []; t.mock.method(console, 'log', text => lines.push(text));
+  await assert.rejects(navigate(page, 'http://localhost/docs/toolkit', undefined, { evidence: context.evidence, plantEvidenceFault: true }), error => error === original);
+  const kept = navigationFailure(original);
+  assert.equal(kept.error, original); assert.match(kept.evidence.evidenceError, /planted evidence-collection fault/);
+  assert.equal(kept.evidence.error.message, original.message);
+  assert.equal(JSON.parse(await readFile(path.join(context.evidence, 'navigation-failure.json'), 'utf8')).evidenceError, kept.evidence.evidenceError);
+  assert.equal(lines.filter(line => line.startsWith('Navigation failure evidence: ')).length, 1); noProbeListeners(page);
+});
+
+test('evidence code that throws outright still leaves the original error, known as a failed navigation', async t => {
+  const page = new ReaderProbePage(), original = new Error('page.goto: Timeout 30000ms exceeded.');
+  page.navigate = () => { throw original; };
+  const lines = []; t.mock.method(console, 'log', text => lines.push(text));
+  const broken = { get where() { throw new Error('evidence code broken on purpose'); } };
+  const findings = await runPart('broken evidence', () => navigate(page, 'http://localhost/docs/toolkit', undefined, broken));
+  assert.equal(navigationFailure(original).error, original); assert.match(navigationFailure(original).evidenceError, /broken on purpose/);
+  assert.match(findings[0], /^broken evidence: a navigation failed, so this part stopped there: page\.goto: Timeout 30000ms exceeded\./);
+  assert.match(findings[0], /no receipt \(evidence collection failed: Error: evidence code broken on purpose\)/);
+  assert.match(lines.join('\n'), /Navigation failure evidence unavailable: Error: evidence code broken on purpose/); noProbeListeners(page);
+});
+
+test('a part stopped by a failed navigation reports it, closes only its own contexts, and other errors still throw', async t => {
+  const open = new Set(), browser = { contexts: () => [...open], newContext: async () => {
+    const context = { browser: () => browser, close: async () => { open.delete(context); } };
+    open.add(context); return context;
+  } };
+  ownContexts(browser);
+  const other = await browser.newContext();   // another lane's, opened outside the part
+  const original = new Error('page.goto: Timeout 30000ms exceeded.\nCall log:\n  - navigating to "http://localhost/docs/toolkit", waiting until "load"');
+  const page = new ReaderProbePage(); page.navigate = () => { throw original; };
+  const lines = []; t.mock.method(console, 'log', text => lines.push(text));
+  const findings = await runPart('fold', async () => {
+    await browser.newContext();
+    // raised through a caller's wrapper, as withDiagramPage does when its cleanup fails too
+    try { await navigate(page, 'http://localhost/docs/toolkit'); }
+    catch (error) { throw new AggregateError([error, new Error('close failed')], 'Diagram iteration failed', { cause: error }); }
+  });
+  t.after(() => rm(navigationFailure(original).receipt, { recursive: true, force: true }));
+  assert.equal(findings.length, 1);
+  assert.ok(findings[0].startsWith('fold: a navigation failed, so this part stopped there: page.goto: Timeout 30000ms exceeded.'));
+  assert.match(findings[0], /navigating to "http:\/\/localhost\/docs\/toolkit"/); assert.match(findings[0], /raised as AggregateError: Diagram iteration failed/);
+  assert.match(findings[0], /navigation evidence: \S*cad-agent-navigation-/); assert.match(findings[0], /closed 1 of 1 browser context/);
+  assert.deepEqual(browser.contexts(), [other], 'only the part\'s own context is closed');
+  assert.equal(navigationFailure(original).evidence.part, 'fold');
+  const unrelated = new Error('an assertion in the part');
+  await assert.rejects(runPart('theme', async () => { throw unrelated; }), error => error === unrelated);
+});
+
+test('a test-side fetch that fails in a route handler is its part\'s finding, its route aborted, and never retried', async t => {
+  const original = new Error('route.fetch: socket hang up\n  - → GET http://localhost/docs/img/still.svg?broken-motion-control');
+  let fetches = 0, aborted = null, handler;
+  const route = { fetch: async () => { fetches++; throw original; }, abort: async code => { aborted = code; },
+    request: () => ({ url: () => 'http://localhost/docs/img/still.svg?broken-motion-control', method: () => 'GET' }) };
+  const lines = []; t.mock.method(console, 'log', text => lines.push(text));
+  const findings = await runPart('README image motion', async () => {
+    handler = partHandler(async r => { await fetchThrough(r); });
+    await handler(route);   // as Playwright calls it: nothing the part awaits sees the rejection
+    return ['an earlier finding'];
+  });
+  t.after(() => rm(navigationFailure(original).receipt, { recursive: true, force: true }));
+  assert.equal(fetches, 1); assert.equal(aborted, 'failed');
+  assert.equal(findings[0], 'an earlier finding');
+  assert.ok(findings[1].startsWith('README image motion: a test-side fetch failed (the part went on): route.fetch: socket hang up'));
+  assert.match(findings[1], /fetch evidence: \S*cad-agent-navigation-/);
+  const receipt = JSON.parse(await readFile(path.join(navigationFailure(original).receipt, 'fetch-failure.json'), 'utf8'));
+  assert.equal(receipt.part, 'README image motion'); assert.equal(receipt.url, 'http://localhost/docs/img/still.svg');
+  assert.equal(lines.filter(line => line.startsWith('Fetch failure evidence: ')).length, 1);
+  const other = new Error('a handler bug');
+  await assert.rejects(partHandler(async () => { throw other; })(route), error => error === other);
+  // Made outside any part, nothing records the failure: the handler must not swallow it.
+  const unowned = new Error('route.fetch: socket hang up');
+  const lost = { ...route, fetch: async () => { throw unowned; } };
+  await assert.rejects(partHandler(async r => { await fetchThrough(r); })(lost), error => error === unowned);
+  t.after(() => rm(navigationFailure(unowned)?.receipt ?? path.join(tmpdir(), 'none'), { recursive: true, force: true }));
+});
+
+test('a stall in one part is still printed when another part throws an ordinary error', async t => {
+  const lines = []; t.mock.method(console, 'log', text => lines.push(String(text)));
+  const page = new ReaderProbePage(), stalled = new Error('page.goto: Timeout 30000ms exceeded.\nCall log:\n  - navigating to "http://localhost/docs/toolkit", waiting until "load"');
+  page.navigate = () => { throw stalled; };
+  const ordinary = new Error('an assertion in another part');
+  await assert.rejects(inLanes([
+    ['fold', () => navigate(page, 'http://localhost/docs/toolkit')],
+    ['theme', async () => { await new Promise(r => setTimeout(r, 50)); throw ordinary; }],
+  ], { lanes: 2, label: 'test' }), error => error === ordinary);
+  t.after(() => rm(navigationFailure(stalled).receipt, { recursive: true, force: true }));
+  const log = lines.join('\n');
+  assert.match(log, /Navigation failure evidence: .*"error":"page\.goto: Timeout 30000ms exceeded\."/);
+  assert.match(log, /a part threw, so the run stops; 1 finding\(s\)[^]*- fold: a navigation failed, so this part stopped there: page\.goto: Timeout 30000ms exceeded\./);
+});
+
+test('after the run\'s first failures, a failed navigation keeps only its evidence line', async t => {
+  t.after(() => configureNavigation());
+  configureNavigation({ fullEvidenceLimit: 1 });
+  t.mock.method(console, 'log', () => {});
+  const failing = () => { const page = new ReaderProbePage(), error = new Error('page.goto: Timeout 30000ms exceeded.'); page.navigate = () => { throw error; }; return [page, error]; };
+  const [first, firstError] = failing(), [second, secondError] = failing(), [planted, plantedError] = failing();
+  for (const [page, error, diag] of [[first, firstError, {}], [second, secondError, {}], [planted, plantedError, { planted: true }]])
+    await assert.rejects(navigate(page, 'http://localhost/docs/toolkit', undefined, diag), e => e === error);
+  t.after(() => Promise.all([firstError, plantedError].map(e => rm(navigationFailure(e).receipt, { recursive: true, force: true }))));
+  assert.ok(navigationFailure(firstError).receipt); assert.equal(first.imageOptions?.type, 'png');
+  assert.equal(navigationFailure(secondError).receipt, null); assert.equal(second.domCalls, undefined); assert.equal(second.imageOptions, undefined);
+  assert.match(navigationFailure(secondError).evidence.fullEvidence, /^skipped: the first 1 failures/);
+  assert.ok(navigationFailure(plantedError).receipt, 'a planted control always keeps its evidence');
+});
+
+// #686: the route hop record. A planted handler that never answers and one that fulfils late run in a real browser
+// (routeHopControls in website-browser.mjs); these pin that recording never changes what a handler or route does.
+const routeTarget = () => {
+  const target = { handlers: [], unrouted: [],
+    route: async (url, handler) => { target.handlers.push({ url, handler }); },
+    unroute: async (url, handler) => { target.unrouted.push({ url, handler }); target.handlers = target.handlers.filter(h => h.url !== url || (handler && h.handler !== handler)); },
+    unrouteAll: async () => { target.handlers = []; } };
+  return watchTarget(target);
+};
+/** A probe page whose route, unroute and unrouteAll are watched (and record what reached Playwright). */
+const watchProbe = page => watchTarget(Object.assign(page, { unrouted: [], route: async () => {}, unroute: async (url, handler) => { page.unrouted.push({ url, handler }); }, unrouteAll: async () => {} }));
+const hopRoute = ({ navigation = true, fetch, fulfill } = {}) => {
+  const page = {}, request = { isNavigationRequest: () => navigation, url: () => 'http://user:pw@localhost/docs/toolkit?q#f', frame: () => ({ page: () => page }) };
+  return { page, request, route: { request: () => request, fetch: fetch ?? (async () => ({ status: () => 200, body: async () => Buffer.from('four') })),
+    fulfill: fulfill ?? (async () => 'fulfilled'), continue: async () => 'continued', abort: async () => 'aborted', fallback: async () => 'fell back' } };
+};
+
+test('a watched route handler and its route methods return and throw exactly what they would unwatched', async () => {
+  const target = routeTarget(), seen = [], handlerError = new Error('handler bug'), fulfilError = new Error('route.fulfill: Target closed');
+  const handler = async (route, request) => { seen.push([route, request]); const r = await route.fetch(); assert.equal(r.status(), 200); return route.fulfill({ response: r }); };
+  await target.route('**/docs/*', handler);
+  const wrapped = target.handlers[0].handler;
+  assert.notEqual(wrapped, handler);
+  // a request that is not a navigation goes straight to the handler: the same arguments, the same route methods
+  const plain = hopRoute({ navigation: false }), plainFetch = plain.route.fetch;
+  assert.equal(await wrapped(plain.route, plain.request), 'fulfilled');
+  assert.deepEqual(seen[0], [plain.route, plain.request]); assert.equal(plain.route.fetch, plainFetch);
+  // a navigation request: recorded, with the same result and the same errors
+  const nav = hopRoute();
+  assert.equal(await wrapped(nav.route, nav.request), 'fulfilled');
+  const failing = hopRoute({ fulfill: async () => { throw fulfilError; } });
+  await assert.rejects(wrapped(failing.route, failing.request), error => error === fulfilError);
+  await target.route('**/throws', async () => { throw handlerError; });
+  const thrown = hopRoute();
+  await assert.rejects(target.handlers[1].handler(thrown.route, thrown.request), error => error === handlerError);
+  const sync = new Error('sync'), syncRoute = hopRoute({ fetch: () => { throw sync; } });
+  await assert.rejects(wrapped(syncRoute.route, syncRoute.request), error => error === sync);
+  // unroute with the caller's own handler removes the wrapper Playwright was given
+  await target.unroute('**/docs/*', handler);
+  assert.deepEqual(target.unrouted, [{ url: '**/docs/*', handler: wrapped }]);
+  assert.deepEqual(target.handlers.map(h => h.url), ['**/throws']);
+});
+
+test('the route hop of a stalled document is in its receipt, bounded, and a page without routes says so', async t => {
+  t.mock.method(console, 'log', () => {});
+  const stall = () => new Error('page.goto: Timeout 30000ms exceeded.');
+  // routes watched, none registered: the document passed through no route handler
+  const frame = {}, bareContext = routeTarget(), bare = watchProbe(Object.assign(new ReaderProbePage(), { context: () => bareContext, mainFrame: () => frame }));
+  const document = { url: () => 'http://localhost/docs/toolkit', method: () => 'GET', resourceType: () => 'document', isNavigationRequest: () => true,
+    frame: () => frame, timing: () => ({ startTime: 1, responseStart: -1 }) };
+  const first = stall();
+  bare.navigate = () => { bare.emit('request', document); throw first; };
+  await assert.rejects(navigate(bare, 'http://localhost/docs/toolkit', undefined, { planted: true }), error => error === first);
+  const one = navigationFailure(first);
+  t.after(() => rm(one.receipt, { recursive: true, force: true }));
+  assert.deepEqual(one.evidence.routing, { watched: true, page: [], context: [] });
+  assert.equal(one.evidence.documents.length, 1);
+  assert.deepEqual(one.evidence.documents[0].events, { request: true, response: false, requestfinished: false, requestfailed: false });
+  assert.deepEqual(one.evidence.documents[0].timing, { startTime: 1, responseStart: -1 });
+  assert.match(one.evidence.documents[0].route, /^no route on the page or its context/);
+  assert.deepEqual(one.evidence.routeHops, []);
+  // a context route took the document: its handler still running, its fetch resolved with the body size, at most 8 calls
+  const context = routeTarget(), page = watchProbe(Object.assign(new ReaderProbePage(), { context: () => context }));
+  const nav = hopRoute(), pageFrame = { page: () => page };
+  Object.assign(nav.request, { frame: () => pageFrame, method: () => 'GET', resourceType: () => 'document', timing: () => ({}) });
+  page.mainFrame = () => pageFrame;
+  await context.route('**/docs/toolkit', async route => { await route.fetch(); for (let i = 0; i < 12; i++) await route.continue(); await new Promise(() => {}); });
+  const second = stall();
+  page.navigate = async () => {
+    page.emit('request', nav.request);
+    context.handlers[0].handler(nav.route, nav.request);
+    await new Promise(ok => setImmediate(ok));
+    throw second;
+  };
+  await assert.rejects(navigate(page, 'http://localhost/docs/toolkit', undefined, { planted: true }), error => error === second);
+  const two = navigationFailure(second);
+  t.after(() => rm(two.receipt, { recursive: true, force: true }));
+  assert.deepEqual(two.evidence.routing, { watched: true, page: [], context: ['**/docs/toolkit'] });
+  const hop = two.evidence.documents[0].route;
+  assert.equal(hop.url, 'http://localhost/docs/toolkit');
+  assert.equal(hop.handlers[0].pattern, '**/docs/toolkit'); assert.equal(hop.handlers[0].outcome, 'running'); assert.equal(hop.handlers[0].endedAtMs, null);
+  assert.equal(hop.calls.length, 8); assert.equal(hop.callsDropped, 5);
+  assert.deepEqual({ ...hop.calls[0], calledAtMs: 0, settledAtMs: 0 }, { method: 'fetch', calledAtMs: 0, settledAtMs: 0, outcome: 'resolved', status: 200, bodyBytes: 4 });
+  assert.deepEqual(hop.calls.slice(1).map(c => [c.method, c.outcome]), Array(7).fill(['continue', 'resolved']));
+  assert.deepEqual(two.evidence.routeHops, [], 'the hop is shown with its document, not twice');
+  const written = JSON.parse(await readFile(path.join(two.receipt, 'navigation-failure.json'), 'utf8'));
+  assert.deepEqual(written.documents[0].route, hop);
+});
+
+test('a watched unroute matches a regular expression by source and flags, as Playwright does, on a page and a context', async t => {
+  t.mock.method(console, 'log', () => {});
+  const context = routeTarget(), frame = {}, page = watchProbe(Object.assign(new ReaderProbePage(), { context: () => context, mainFrame: () => frame }));
+  const handler = async route => route.continue(), other = async route => route.continue();
+  await page.route(/\/docs\/a$/, handler); await page.route(/\/docs\/a$/i, handler); await context.route(/\/docs\/a$/, handler);
+  // an equal RegExp object (not the same one) with the caller's own handler removes the wrapper Playwright holds
+  await page.unroute(new RegExp('\\/docs\\/a$'), handler);
+  await context.unroute(new RegExp('\\/docs\\/a$'), handler);
+  assert.equal(page.unrouted.length, 1); assert.notEqual(page.unrouted[0].handler, handler, 'Playwright is given the wrapper it holds');
+  assert.equal(String(page.unrouted[0].url), '/\\/docs\\/a$/');
+  assert.equal(context.unrouted.length, 1); assert.equal(context.unrouted[0].handler, context.handlers[0].handler);
+  // other flags, or another handler, are not the same route: passed on as given, and the record keeps the route
+  await page.unroute(/\/docs\/a$/, other);
+  assert.equal(page.unrouted[1].handler, other);
+  const failed = new Error('page.goto: Timeout 30000ms exceeded.');
+  page.navigate = () => { throw failed; };
+  await assert.rejects(navigate(page, 'http://localhost/docs/a', undefined, { planted: true }), error => error === failed);
+  t.after(() => rm(navigationFailure(failed).receipt, { recursive: true, force: true }));
+  assert.deepEqual(navigationFailure(failed).evidence.routing, { watched: true, page: ['/\\/docs\\/a$/i'], context: [] });
+});
+
+test('a page whose routes are not watched is reported as not known, and a popup of a watched context is watched', async t => {
+  t.mock.method(console, 'log', () => {});
+  // watchRoutes: a context's pages, including one it opens by itself (a popup), are watched
+  const contexts = [], browser = { newContext: async () => {
+    const context = Object.assign(new EventEmitter(), { route: async () => {}, unroute: async () => {}, unrouteAll: async () => {},
+      newPage: async () => Object.assign(new ReaderProbePage(), { context: () => context, route: async () => {}, unroute: async () => {}, unrouteAll: async () => {} }) });
+    contexts.push(context); return context;
+  } };
+  watchRoutes(browser);
+  const context = await browser.newContext(), frame = {};
+  const popup = Object.assign(new ReaderProbePage(), { context: () => context, mainFrame: () => frame, route: async () => {}, unroute: async () => {}, unrouteAll: async () => {} });
+  context.emit('page', popup);
+  await popup.route('**/held*', async route => route.continue());
+  const document = { url: () => 'http://localhost/held', method: () => 'GET', resourceType: () => 'document', isNavigationRequest: () => true, frame: () => frame, timing: () => ({}) };
+  const one = new Error('page.goto: Timeout 30000ms exceeded.');
+  popup.navigate = () => { popup.emit('request', document); throw one; };
+  await assert.rejects(navigate(popup, 'http://localhost/held', undefined, { planted: true }), error => error === one);
+  t.after(() => rm(navigationFailure(one).receipt, { recursive: true, force: true }));
+  assert.deepEqual(navigationFailure(one).evidence.routing, { watched: true, page: ['**/held*'], context: [] });
+  assert.match(navigationFailure(one).evidence.documents[0].route, /^no handler of the test process ran for it/);
+  // a page nobody wrapped, on a watched context: "not known", never "no route"
+  const stray = Object.assign(new ReaderProbePage(), { context: () => context, mainFrame: () => frame });
+  const two = new Error('page.goto: Timeout 30000ms exceeded.');
+  stray.navigate = () => { stray.emit('request', document); throw two; };
+  await assert.rejects(navigate(stray, 'http://localhost/held', undefined, { planted: true }), error => error === two);
+  t.after(() => rm(navigationFailure(two).receipt, { recursive: true, force: true }));
+  const { routing, documents } = navigationFailure(two).evidence;
+  assert.equal(routing.watched, false); assert.equal(routing.page, 'not known'); assert.deepEqual(routing.context, []);
+  assert.match(routing.note, /not watched for this page/);
+  assert.match(documents[0].route, /^not known: routes are not watched/);
+});
+
+test('the receipt keeps the events a document did get, and a handler that returned or threw before the failure', async t => {
+  t.mock.method(console, 'log', () => {});
+  const context = routeTarget(), page = watchProbe(Object.assign(new ReaderProbePage(), { context: () => context }));
+  const pageFrame = { page: () => page };
+  page.mainFrame = () => pageFrame;
+  const nav = hopRoute();
+  Object.assign(nav.request, { frame: () => pageFrame, method: () => 'GET', resourceType: () => 'document', timing: () => ({ responseStart: 3.4 }) });
+  const redirected = { url: () => 'http://localhost/docs/other', method: () => 'GET', resourceType: () => 'document', isNavigationRequest: () => true,
+    frame: () => pageFrame, timing: () => ({}), failure: () => ({ errorText: 'net::ERR_ABORTED' }) };
+  await context.route('**/docs/toolkit', async route => { await route.continue(); });
+  await context.route('**/docs/*', async () => { throw new Error('handler broke\nCall log:\n  - more'); });
+  const failed = new Error('page.goto: Timeout 30000ms exceeded.');
+  page.navigate = async () => {
+    page.emit('request', nav.request);
+    await context.handlers[0].handler(nav.route, nav.request);
+    await context.handlers[1].handler(nav.route, nav.request).catch(() => {});
+    page.emit('response', { url: () => 'http://localhost/docs/toolkit', status: () => 200, request: () => nav.request });
+    page.emit('requestfinished', nav.request);
+    page.emit('request', redirected); page.emit('requestfailed', redirected);
+    throw failed;
+  };
+  await assert.rejects(navigate(page, 'http://localhost/docs/toolkit', undefined, { planted: true }), error => error === failed);
+  t.after(() => rm(navigationFailure(failed).receipt, { recursive: true, force: true }));
+  const [done, aborted] = navigationFailure(failed).evidence.documents;
+  assert.deepEqual(done.events, { request: true, response: true, requestfinished: true, requestfailed: false });
+  assert.equal(done.status, 200); assert.equal(done.timing.responseStart, 3);
+  for (const key of ['requestAtMs', 'responseAtMs', 'finishedAtMs']) assert.ok(done[key] >= 0, `${key}: ${done[key]}`);
+  assert.ok(done.responseAtMs >= done.requestAtMs && done.finishedAtMs >= done.responseAtMs);
+  assert.equal(done.failedAtMs, null);
+  assert.deepEqual(aborted.events, { request: true, response: false, requestfinished: false, requestfailed: true });
+  assert.ok(aborted.failedAtMs >= 0); assert.equal(aborted.failure, 'net::ERR_ABORTED');
+  const [returned, threw] = done.route.handlers;
+  assert.deepEqual([returned.pattern, returned.outcome, threw.pattern, threw.outcome], ['**/docs/toolkit', 'returned', '**/docs/*', 'threw']);
+  assert.ok(returned.endedAtMs >= returned.ranAtMs && threw.endedAtMs >= threw.ranAtMs);
+  assert.equal(threw.error, 'handler broke'); assert.equal(returned.error, undefined);
+  assert.deepEqual(done.route.calls.map(c => [c.method, c.outcome]), [['continue', 'resolved']]);
+});
+
 // #663: the prior filtered sample was internally consistent before the resized layout arrived.
-import { readerOverflowSnapshot } from './site-outline.mjs';
+import { readerOverflowSnapshot } from './layout/outline.mjs';
 test('reader overflow readiness rejects stale viewport/layout/containment and captures the passing sample', t => {
   const mockGlobal=(name,value)=>{const old=Object.getOwnPropertyDescriptor(globalThis,name);Object.defineProperty(globalThis,name,{value,configurable:true});t.after(()=>old?Object.defineProperty(globalThis,name,old):delete globalThis[name]);};
   const panel = { clientHeight:345, scrollHeight:345, hasAttribute:()=>false };
@@ -335,4 +652,43 @@ test('reader overflow readiness rejects stale viewport/layout/containment and ca
   assert.equal(sample.content,1429);assert.equal(sample.contain,'contain');assert.equal(sample.fits,false);
   panel.clientHeight=345;panel.scrollHeight=345;
   assert.equal(sample.height,488,'returned value is the captured sample, not a second layout read');
+});
+
+
+import { wideGeometryProblems } from './layout/wide.mjs';
+
+// Fixed presentation examples, not CSS-derived expected values: a broad healthy layout and independent defects.
+const wideFixture = (route, extra = {}) => ({
+  route, viewport: { width: 3440, height: 1440 }, overflow: 0,
+  shells: { header: { width: 3200 }, main: { width: 3200 } },
+  ...extra,
+});
+test('wide geometry accepts a flexible shell with readable cards, bounded prose and a broad visual column', () => {
+  for (const m of [
+    wideFixture('/', { hero: { width: 1560, height: 780, loaded: true } }),
+    wideFixture('/toolkit/scada/elements', { cards: Array.from({ length: 7 }, (_, i) => ({ x: i * 450, y: 400, width: 430 })) }),
+    wideFixture('/docs/toolkit', { document: { width: 2600 }, paragraphs: [{ width: 760 }, { width: 120 }], table: { width: 2600 } }),
+    wideFixture('/explore', { groupArea: { width: 3000 }, groups: Array.from({ length: 4 }, (_, i) => ({ x: i * 750, y: 400, width: 730 })) }),
+  ]) assert.deepEqual(wideGeometryProblems(m), [], m.route);
+});
+test('wide geometry rejects the old narrow shell, three giant cards and a vertically stretched hero', () => {
+  assert.match(wideGeometryProblems(wideFixture('/explore', { shells: { header: { width: 1240 }, main: { width: 1240 } } })).join(';'), /shell uses/);
+  const cards = Array.from({ length: 3 }, (_, i) => ({ x: i * 1066, y: 400, width: 1040 }));
+  const gallery = wideGeometryProblems(wideFixture('/toolkit/scada/elements', { cards })).join(';');
+  assert.match(gallery, /gallery has 3 columns/);
+  assert.match(gallery, /card widths/);
+  assert.match(wideGeometryProblems(wideFixture('/', { hero: { width: 3344, height: 1672, loaded: true } })).join(';'), /artwork is/);
+});
+test('wide geometry rejects stretched prose, capped document visuals, overflow and missing measurements', () => {
+  const doc = { document: { width: 2600 }, paragraphs: [{ width: 2600 }], table: { width: 880 } };
+  const problems = wideGeometryProblems(wideFixture('/docs/toolkit', doc)).join(';');
+  assert.match(problems, /narrative paragraphs/);
+  assert.match(problems, /table frame/);
+  assert.match(wideGeometryProblems(wideFixture('/docs/toolkit', { ...doc, document: { width: 880 } })).join(';'), /visual column/);
+  assert.match(wideGeometryProblems(wideFixture('/explore', { overflow: 48 })).join(';'), /horizontal overflow/);
+  assert.match(wideGeometryProblems(wideFixture('/', { shells: {}, hero: null })).join(';'), /missing main shell/);
+  assert.match(wideGeometryProblems(wideFixture('/toolkit/scada/elements', { cards: [] })).join(';'), /gallery has 0 columns/);
+  assert.match(wideGeometryProblems(wideFixture('/docs/toolkit', { document: { width: 2600 }, paragraphs: [], table: { width: 2600 } })).join(';'), /missing substantial/);
+  const groups = Array.from({ length: 4 }, (_, i) => ({ x: i * 375, y: 400, width: 350 }));
+  assert.match(wideGeometryProblems(wideFixture('/explore', { groups, groupArea: { width: 3000 } })).join(';'), /group row leaves/);
 });

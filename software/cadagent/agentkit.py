@@ -84,13 +84,89 @@ CHROME_APPS = ("/Applications/Google Chrome.app", "/opt/google/chrome/chrome",
                r"%LOCALAPPDATA%\Google\Chrome\Application\chrome.exe")
 
 
+def add_packages_command(*packages: str, requirements: Optional[Path] = None) -> str:
+    """The command that adds ``packages`` (or a requirements file) to the Python this cad-agent runs in, for a person
+    to run. A uv tool environment has no pip and uv rebuilds it on every reinstall, so there it is uv's own
+    ``tool install --with``, keeping the extras and earlier ``--with`` packages; elsewhere pip in this Python."""
+    adds = list(packages) if requirements is None else [str(requirements)]
+    if _uv_tool_env():
+        try:
+            root: Optional[Path] = kit_root()
+        except FileNotFoundError:
+            root = None
+        if root is not None:
+            cmd = _uv_tool_install(root, _receipt_extras() or [], _uv() or "uv")
+            cmd.remove("--quiet")
+            for add in adds:
+                cmd += ["--with-requirements" if requirements is not None else "--with", add]
+            return _shell_line(cmd)
+    return _shell_line([sys.executable, "-m", "pip", "install", *(["-r"] if requirements is not None else []), *adds])
+
+
+def _shell_line(cmd: List[str], windows: Optional[bool] = None) -> str:
+    """``cmd`` as one line to paste into this platform's shell: POSIX sh (``shlex``), or PowerShell on Windows, where
+    every word that is not plainly safe is single-quoted (``'`` doubled inside, so ``$``, ``>``, ``|``, ``%`` and the
+    rest stay literal) and a quoted program is called with ``&``, as install.ps1 prints it. The PowerShell form is
+    checked on the produced text, not run on Windows here."""
+    if not (os.name == "nt" if windows is None else windows):
+        import shlex
+        return shlex.join(cmd)
+    quote = lambda a: a if re.fullmatch(r"[A-Za-z0-9_./:\\=+-]+", a) and not a.startswith("-") or \
+        re.fullmatch(r"--?[A-Za-z0-9][A-Za-z0-9-]*", a) else "'" + a.replace("'", "''") + "'"
+    words = [quote(a) for a in cmd]
+    return ("& " if words and words[0].startswith("'") else "") + " ".join(words)
+
+
 def _playwright() -> Optional[str]:
     missing = []
     if importlib.util.find_spec("playwright") is None:
-        missing.append(f"Playwright is not installed in this Python (`\"{sys.executable}\" -m pip install playwright`)")
+        missing.append(f"Playwright is not installed in this Python (`{add_packages_command('playwright')}`)")
     if not (_on_path(*CHROME) or any(Path(os.path.expandvars(p)).expanduser().exists() for p in CHROME_APPS)):
         missing.append("Google Chrome was not found")
     return "; ".join(missing) or None
+
+
+def _node() -> Optional[str]:
+    """Check the existing site/SCADA toolchain floor without fetching packages."""
+    required = "Node.js 22.22.2+, 24.15.0+, or 26+ is required by SCADA maintenance tools"
+    if not _on_path("node"):
+        return "`node` is not on PATH: " + required
+    try:
+        result = subprocess.run(["node", "--version"], capture_output=True, text=True, timeout=5)
+    except (OSError, subprocess.SubprocessError):
+        return "`node --version` failed: " + required
+    version = re.fullmatch(r"v(\d+)\.(\d+)\.(\d+)\s*", result.stdout)
+    parsed = tuple(map(int, version.groups())) if version else (0, 0, 0)
+    supported = (parsed[0] == 22 and parsed >= (22, 22, 2)) or (parsed[0] == 24 and parsed >= (24, 15, 0)) or parsed[0] >= 26
+    if result.returncode or not supported:
+        return required
+    return None
+
+
+def _scada_browser() -> Optional[str]:
+    """Find the Python capture dependency and a local Chromium; do not launch or download it.
+
+    The capture tools default to ``chromium`` on PATH, else Playwright's own
+    installed Chromium. This checks that same choice. A successful browser test
+    is still needed to establish OS libraries, permissions and rendering behavior.
+    """
+    if importlib.util.find_spec("playwright") is None:
+        req = Path(__file__).resolve().parents[2] / "tools" / "webkit" / "scada" / "ui" / "requirements.txt"
+        return (f"Python Playwright is missing: `{add_packages_command(requirements=req)}`" if req.is_file() else
+                f"Python Playwright is missing: `{add_packages_command('playwright')}`")
+    if shutil.which("chromium"):
+        return None
+    code = ("from playwright.sync_api import sync_playwright\n"
+            "with sync_playwright() as p: print(p.chromium.executable_path)\n")
+    try:
+        result = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, timeout=10)
+        executable = result.stdout.strip()
+        if result.returncode == 0 and executable and len(executable) < 4096 and Path(executable).is_file():
+            return None
+    except (OSError, subprocess.SubprocessError):
+        pass
+    return ("Chromium was not found: install a local chromium binary or run "
+            f"`{_shell_line([sys.executable, '-m', 'playwright', 'install', 'chromium'])}`")
 
 
 @dataclass(frozen=True)
@@ -102,9 +178,14 @@ class Requirement:
 REQUIREMENTS: Dict[str, Requirement] = {
     "git": Requirement("`git`", lambda: None if _on_path("git") else "`git` is not on PATH"),
     "gh": Requirement("`gh` logged in", _gh_logged_in),
+    # Either route works; the GitHub MCP tools belong to the agent's harness, so cad-agent cannot see them from here.
+    "github": Requirement("GitHub access (`gh` logged in, or the GitHub MCP tools)", None),
     "ssh": Requirement("`ssh`", lambda: None if _on_path("ssh") else "`ssh` is not on PATH"),
     "rsync": Requirement("`rsync`", lambda: None if _on_path("rsync") else "`rsync` is not on PATH"),
     "playwright": Requirement("Playwright and Google Chrome", _playwright),
+    "node": Requirement("`node` 22.22.2+, 24.15.0+, or 26+", _node),
+    "npm": Requirement("`npm`", lambda: None if _on_path("npm") else "`npm` is not on PATH"),
+    "scada-browser": Requirement("Python Playwright and local Chromium", _scada_browser),
     "write-access": Requirement("write access to the repository it works in", None),
     "compute-host": Requirement("a compute host you can reach over `ssh`", None),
 }
@@ -428,10 +509,12 @@ def prune(home: Path, root: Path, targets=TARGETS, dry_run: bool = False) -> Lis
 
 
 def install(home: Path, root: Path, targets=TARGETS, copy: bool = False, dry_run: bool = False) -> dict:
-    """Install the kit. Returns {'done': [...], 'conflicts': [...], 'removed': [...]}. Only what this module made is
-    replaced or removed; anything else at a destination is a conflict and left untouched. A link that cannot be made
-    (Windows without Developer Mode) becomes a copy."""
-    done, conflicts = [], []
+    """Install the kit. Returns {'done': [...], 'conflicts': [...], 'removed': [...], 'unchanged': [...]}. Only what
+    this module made is replaced or removed; anything else at a destination is a conflict and left untouched. A link
+    that already points at the item, or a generated skill that is already current, is left as it is (``unchanged``),
+    so an update lists only what changed. A link that
+    cannot be made (Windows without Developer Mode) becomes a copy."""
+    done, conflicts, unchanged = [], [], []
     plan = _plan(home, root, targets)              # checks the folders first, before anything is removed
     removed = migrate(home, dry_run) + prune(home, root, targets, dry_run)
     for item, dest, how in plan:
@@ -439,6 +522,10 @@ def install(home: Path, root: Path, targets=TARGETS, copy: bool = False, dry_run
             conflicts.append(str(dest))
             continue
         mode = "generate" if how == "generate" else "copy" if copy else "link"
+        if ((mode == "link" and dest.is_symlink() and Path(os.readlink(dest)) == item.path.resolve()) or
+                (mode == "generate" and not dest.is_symlink() and _text(dest / "SKILL.md") == codex_agent_skill(item))):
+            unchanged.append(str(dest))
+            continue
         if dry_run:
             done.append(f"{mode} {dest}")
             continue
@@ -458,7 +545,7 @@ def install(home: Path, root: Path, targets=TARGETS, copy: bool = False, dry_run
         elif mode == "copy":
             dest.write_text(item.path.read_text() + f"\n<!-- {COPY_MARK}: copied from {item.path} -->\n")
         done.append(f"{mode} {dest}")
-    return {"done": done, "conflicts": conflicts, "removed": removed}
+    return {"done": done, "conflicts": conflicts, "removed": removed, "unchanged": unchanged}
 
 
 def uninstall(home: Path, dry_run: bool = False) -> List[str]:
@@ -575,23 +662,152 @@ def pull(root: Path, ref: Optional[str] = None) -> dict:
             "at": ref or "main", "dependencies_changed": any(f in DEPENDENCY_FILES for f in changed)}
 
 
+_RECEIPT_STRING = r'"(?:[^"\\]|\\.)*"|\'[^\']*\''          # TOML basic or literal string
+_RECEIPT_VALUE = re.compile(r'([A-Za-z0-9_-]+)\s*=\s*(' + _RECEIPT_STRING + r'|\[\s*(?:(?:' + _RECEIPT_STRING +
+                            r')\s*,?\s*)*\])')
+
+
+def _receipt_string(value: str) -> str:
+    return json.loads(value) if value.startswith('"') else value[1:-1]
+
+
+class ReceiptUnreadable(ValueError):
+    """uv's receipt is there but this Python cannot read it with certainty (no tomllib, and a form uv does not write)."""
+
+
+def _receipt_requirements(text: str) -> List[dict]:
+    """The ``[tool] requirements`` inline tables of uv's ``uv-receipt.toml``. tomllib where Python has it (3.11+).
+    On 3.10, a reader for exactly the form uv writes: ``requirements = [`` then inline tables of ``key = "string"`` and
+    ``key = ["strings"]``, separated by commas, then ``]``. Anything else (a comment, a nested table, an array of
+    tables, a ``{`` or ``]`` inside a string, more text before the closing bracket) raises ReceiptUnreadable rather
+    than be guessed at (#799)."""
+    try:
+        import tomllib
+    except ImportError:
+        tomllib = None
+    if tomllib is not None:
+        try:
+            reqs = tomllib.loads(text).get("tool", {}).get("requirements", [])
+        except ValueError as exc:
+            raise ReceiptUnreadable(str(exc)) from None
+        return [r for r in reqs if isinstance(r, dict)] if isinstance(reqs, list) else []
+    head = re.search(r"^requirements\s*=\s*\[", text, re.M)
+    if head is None:
+        if re.search(r"requirements", text):
+            raise ReceiptUnreadable("requirements in a form other than uv's")
+        return []
+    body, out, rest = text[head.end():], [], ""
+    pos = 0
+    while True:
+        m = re.compile(r"\s*,?\s*(\{)").match(body, pos)
+        if not m:
+            break
+        close = body.find("}", m.end())
+        table = body[m.end():close] if close >= 0 else ""
+        req: dict = {}
+        leftover = _RECEIPT_VALUE.sub("", table)
+        if close < 0 or leftover.replace(",", "").strip():
+            raise ReceiptUnreadable("a requirement table this reader does not understand")
+        for key, value in _RECEIPT_VALUE.findall(table):
+            req[key] = (_receipt_string(value) if value[0] in "\"'" else
+                        [_receipt_string(v) for v in re.findall(_RECEIPT_STRING, value)])
+        out.append(req)
+        pos = close + 1
+    rest = body[pos:]
+    if not re.match(r"\s*,?\s*\]\s*(?:\n|$)", rest):
+        raise ReceiptUnreadable("text this reader does not understand in the requirements list")
+    return out
+
+
+def _receipt_text() -> str:
+    return _text(Path(sys.prefix) / "uv-receipt.toml")
+
+
 def _receipt_extras() -> Optional[List[str]]:
     """The extras uv recorded when it installed this cad-agent (``uv-receipt.toml`` in the tool environment), or None
-    for an install uv did not make."""
-    text = _text(Path(sys.prefix) / "uv-receipt.toml")
+    for an install uv did not make, or a receipt this Python cannot read (then the installed packages decide)."""
+    text = _receipt_text()
     if not text:
         return None
     try:
-        import tomllib
-        reqs = tomllib.loads(text).get("tool", {}).get("requirements", [])
-        for req in reqs if isinstance(reqs, list) else []:
-            if isinstance(req, dict) and req.get("name") == "cad-agent":
-                return sorted(str(e) for e in req.get("extras", []))
-    except (ImportError, ValueError):
-        m = re.search(r'name\s*=\s*"cad-agent"[^}]*?extras\s*=\s*\[([^\]]*)\]', text)
-        if m:
-            return sorted(re.findall(r'"([^"]+)"', m.group(1)))
+        reqs = _receipt_requirements(text)
+    except ReceiptUnreadable:
+        return None
+    for req in reqs:
+        if req.get("name") == "cad-agent":
+            return sorted(str(e) for e in req.get("extras") or [])
     return None
+
+
+_GIT_REFS = ("rev", "tag", "branch")
+
+
+def _with_args(req: dict) -> Optional[List[str]]:
+    """The ``uv tool install`` arguments that add one receipt row again from the same source, or None when uv's command
+    line cannot say it exactly. Never a bare name for a package that came from a folder, file, URL or Git: the index
+    could hold another package of that name (#799)."""
+    name, extras, marker = req.get("name"), req.get("extras") or [], req.get("marker")
+    known = {"name", "extras", "specifier", "marker", "directory", "editable", "path", "url", "git"}
+    if (set(req) - known or not isinstance(name, str) or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]*", name)
+            or not isinstance(extras, list) or not all(isinstance(e, str) for e in extras)
+            or not isinstance(marker, (str, type(None))) or not isinstance(req.get("specifier", ""), str)):
+        return None
+    spec = name + (f"[{','.join(extras)}]" if extras else "")
+    sources = [k for k in ("directory", "editable", "path", "url", "git") if k in req]
+    if not sources:
+        return ["--with", spec + req.get("specifier", "") + (f"; {marker}" if marker else "")]
+    value = req[sources[0]]
+    if len(sources) > 1 or req.get("specifier") or not isinstance(value, str):
+        return None
+    tail = f" ; {marker}" if marker else ""
+    from urllib.parse import parse_qsl, urlsplit
+    if sources[0] == "editable":
+        return ["--with-editable", value] if Path(value).is_absolute() and not extras and not marker else None
+    if sources[0] in ("directory", "path"):
+        return ["--with", f"{spec} @ {Path(value).as_uri()}{tail}"] if Path(value).is_absolute() else None
+    url = urlsplit(value)
+    if sources[0] == "url":
+        return ["--with", f"{spec} @ {value}{tail}"] if url.scheme in ("https", "http", "file") and \
+            not url.query and not url.fragment else None
+    query = parse_qsl(url.query, keep_blank_values=True)
+    keys = [k for k, _ in query]
+    if url.fragment or len(set(keys)) != len(keys) or set(keys) - {*_GIT_REFS, "subdirectory"} or \
+            sum(k in _GIT_REFS for k in keys) > 1:
+        return None
+    q = dict(query)
+    ref = next((q[k] for k in _GIT_REFS if k in q), "")
+    base = url._replace(query="").geturl()
+    target = (base if base.startswith("git+") else "git+" + base) + (f"@{ref}" if ref else "") + \
+        (f"#subdirectory={q['subdirectory']}" if q.get("subdirectory") else "")
+    return ["--with", f"{spec} @ {target}{tail}"]
+
+
+def _receipt_with() -> Tuple[List[str], List[str]]:
+    """The packages uv recorded beside cad-agent (``uv tool install --with`` and ``--with-editable``) as arguments that
+    add each one again from its recorded source, so a reinstall keeps them (uv rebuilds the environment from exactly
+    the requirements it is given); and the names of the ones it cannot add again exactly, which the person must add
+    again themselves. A receipt this Python cannot read gives no arguments and ``["(unreadable receipt)"]``."""
+    try:
+        reqs = _receipt_requirements(_receipt_text())
+    except ReceiptUnreadable:
+        return [], ["(the packages added with --with: uv's receipt could not be read here)"]
+    args: List[str] = []
+    dropped: List[str] = []
+    for req in reqs:
+        if req.get("name") == "cad-agent":
+            continue
+        again = _with_args(req)
+        if again is None:
+            dropped.append(str(req.get("name") or req))
+        else:
+            args += again
+    return args, dropped
+
+
+def _warn_dropped(dropped: List[str]) -> None:
+    if dropped:
+        print("cad-agent: not carried over by the reinstall (add them again yourself, from where they came): "
+              + ", ".join(dropped), file=sys.stderr)
 
 
 def installed_extras(root: Path) -> List[str]:
@@ -635,13 +851,31 @@ def _uv_tool_env() -> bool:
     return (Path(sys.prefix) / "uv-receipt.toml").is_file()
 
 
-def reinstall_command(root: Path, extras: List[str]) -> List[str]:
-    """How to reinstall this cad-agent with ``extras``: uv's tool install when that is how it was installed, else
-    pip into the running environment (an older, venv install)."""
+def _uv() -> Optional[str]:
+    """uv: on PATH, else where the installer puts it (~/.local/bin, or $XDG_BIN_HOME), which may not be on PATH yet."""
+    found = shutil.which("uv")
+    if found:
+        return found
+    bin_dir = Path(os.environ.get("XDG_BIN_HOME") or Path.home() / ".local" / "bin")
+    return shutil.which("uv", path=str(bin_dir))
+
+
+def _uv_tool_install(root: Path, extras: List[str], uv: str) -> List[str]:
     spec = f"{root}[{','.join(extras)}]" if extras else str(root)
-    if _uv_tool_env() and shutil.which("uv"):
-        return ["uv", "tool", "install", "--quiet", "--force", "--editable", "--python",
-                f"{sys.version_info.major}.{sys.version_info.minor}", spec]
+    again, dropped = _receipt_with()
+    _warn_dropped(dropped)
+    return [uv, "tool", "install", "--quiet", "--force", "--editable", "--python",
+            f"{sys.version_info.major}.{sys.version_info.minor}", spec, *again]
+
+
+def reinstall_command(root: Path, extras: List[str]) -> List[str]:
+    """How to reinstall this cad-agent with ``extras``: uv's tool install when that is how it was installed (keeping
+    the packages added with ``--with``; uv found on PATH or in the installer's folder, which may not be on PATH), else
+    pip into the running environment (an older, venv install)."""
+    uv = _uv()
+    if _uv_tool_env() and uv:
+        return _uv_tool_install(root, extras, uv)
+    spec = f"{root}[{','.join(extras)}]" if extras else str(root)
     return [sys.executable, "-m", "pip", "install", "--quiet", "-e", spec]
 
 

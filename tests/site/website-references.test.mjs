@@ -291,12 +291,15 @@ test('charts are drawn as links that filter, with what they show spoken', () => 
   assert.equal((svg.match(/class="refs-chart-bar/g) || []).length, 1, 'an empty row draws no bar');
 });
 
-test('the reference pages\' stylesheet sets colours only through the site\'s tokens', async () => {
+test('the reference pages\' stylesheet uses the shared theme and site-local tokens', async () => {
   const css = (await show('tools/site/assets/references.css')).replace(/\/\*[\s\S]*?\*\//g, '');
-  assert.deepEqual(css.match(/#[0-9a-f]{3,8}\b|rgba?\(|hsla?\(/gi) || [], [], 'use var(--token) from web/site.css, so both themes apply');
-  const tokens = new Set([...(await show('tools/site/assets/site.css')).matchAll(/--([\w-]+):/g)].map(m => m[1]));
+  assert.deepEqual(css.match(/#[0-9a-f]{3,8}\b|rgba?\(|hsla?\(/gi) || [], [], 'use var(--token) from the shared theme or site-local styles, so both themes apply');
+  const siteCss = await show('tools/site/assets/site.css');
+  const themeCss = await show('software/cadagent/webkit/ui/theme.css');
+  assert.match(siteCss, /@import\s+url\(["']?\/kit\/ui\/theme\.css["']?\)/, 'the site loads the canonical shared theme');
+  const tokens = new Set([...`${themeCss}\n${siteCss}`.matchAll(/--([\w-]+):/g)].map(m => m[1]));
   const used = [...css.matchAll(/var\(--([\w-]+)/g)].map(m => m[1]);
-  assert.deepEqual([...new Set(used.filter(t => !tokens.has(t)))], [], 'every token exists in web/site.css');
+  assert.deepEqual([...new Set(used.filter(t => !tokens.has(t)))], [], 'every token exists in kit/ui/theme.css or web/site.css');
 });
 
 

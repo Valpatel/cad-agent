@@ -13,7 +13,7 @@ flowchart TD
     P["part or assembly<br/>STEP · CadQuery"] --> FEA["fea.py<br/>stiffness, strength"]
     P --> CFD["cfd.py<br/>air and heat"]
     CFD -->|"mesher"| T["topopt.py<br/>material layout"]
-    FEA -->|"export_viewer"| W["webkit/fea.html<br/>FEA viewer"]
+    FEA -->|"export_viewer"| W["webkit/fea/fea.html<br/>FEA viewer"]
     FEA & T & CFD --> V["simviz.py<br/>pictures, videos"]
     V -->|"PNG · MP4"| SR["simreport.py<br/>results page"]
     SR ~~~ E["explore/<br/>pick, evaluate, rank"]

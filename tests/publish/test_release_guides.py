@@ -153,7 +153,7 @@ def test_symlink_dependency_is_rejected_even_inside_project(tmp_path):
 def runtime(monkeypatch):
     # Packaging fixture, deliberately not a claim that a browser can run these
     # stub bytes. The actual pinned runtime/extracted-ZIP browser check is separate.
-    files = {"viewer.html": b"<title>Reader fixture</title>", "viewer.js": b"// viewer fixture",
+    files = {"model/viewer.html": b"<title>Reader fixture</title>", "model/viewer.js": b"// viewer fixture",
              "assembly/guide.js": b"// guide fixture", "vendor/three/three.module.min.js": b"// engine fixture"}
     monkeypatch.setattr(release, "_guide_runtime", lambda: dict(files))
     return files
@@ -190,7 +190,7 @@ def test_release_contains_distinct_snapshots_runtime_and_static_fallback(tmp_pat
         import html
         link = html.unescape(re.search(r'href="([^\"]+)">Open interactive', static).group(1))
         viewer = (result.folder / entry["href"]).parent / unquote(urlsplit(link).path)
-        assert viewer.resolve() == (result.folder / "guides/_cadagent/viewer.html").resolve()
+        assert viewer.resolve() == (result.folder / "guides/_cadagent/model/viewer.html").resolve()
         selected = parse_qs(urlsplit(link).query)["guide"][0]
         assert (viewer.parent / selected).resolve() == (result.folder / entry["guide"]).resolve()
         back = parse_qs(urlsplit(link).query)["back"][0]
@@ -258,24 +258,24 @@ def test_model_cannot_silently_skip_an_instance(tmp_path):
         collect(tmp_path, path)
 
 
-def test_runtime_copies_resources_and_refuses_missing_reader_or_symlinks(tmp_path, monkeypatch):
+def test_runtime_copies_checked_resources_and_refuses_missing_reader_or_symlinks(tmp_path, monkeypatch):
     from cadagent.publish import site
     kit = tmp_path / "kit"
-    files = ["viewer.html", "viewer.js", "stage.js", "assembly/guide.js", "vendor/three/three.module.min.js",
-             "hud.css", "vendor/NOTICE.txt", "__pycache__/unused.pyc"]
-    for name in files:
+    expected = REAL_GUIDE_RUNTIME()
+    for name, data in expected.items():
         path = kit / name
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(name)
+        path.write_bytes(data)
+    (kit / "unrelated.js").write_text("not a reader dependency")
     monkeypatch.setattr(site, "KIT_DIR", kit)
     captured = REAL_GUIDE_RUNTIME()
-    assert set(captured) == set(files) - {"__pycache__/unused.pyc"}
-    (kit / "assembly/guide.js").unlink()
+    assert dict(captured) == dict(expected)
+    target = kit / "assembly/guide.js"
+    target.unlink()
     with pytest.raises(CadConfigError, match="runtime"):
         REAL_GUIDE_RUNTIME()
-    (kit / "assembly/guide.js").write_text("guide")
-    (kit / "leak.txt").symlink_to(kit / "hud.css")
-    with pytest.raises(CadConfigError, match="symlinks"):
+    target.symlink_to(kit / "model/viewer.js")
+    with pytest.raises(CadConfigError, match="symlink"):
         REAL_GUIDE_RUNTIME()
 
 
@@ -352,3 +352,61 @@ def test_plan_bytes_are_collected_once_and_stale_bindings_fail(tmp_path):
     (tmp_path / "plan.json").write_bytes(bundle.files["plan.json"] + b" ")
     with pytest.raises(CadConfigError, match="hash mismatch"):
         collect_guides(tmp_path, ["guide.json"])
+
+
+@pytest.mark.parametrize("value, ok", [("An example sequence, not a verified build procedure.", True),
+                                       ("", False), ("   ", False), (5, False), ("x" * 2001, False)])
+def test_source_qualification_is_plain_text_as_the_reader_shows_it(tmp_path, value, ok):
+    """#811: the reader shows `source.qualification` under its version line; both validators hold it to text."""
+    path, guide = fixture(tmp_path)
+    guide["source"] = {"qualification": value}
+    path.write_text(json.dumps(guide))
+    if ok:
+        assert collect(tmp_path, path)
+    else:
+        with pytest.raises(CadConfigError, match="qualification"):
+            collect(tmp_path, path)
+
+
+def test_packed_model_guide_binds_its_one_binary(tmp_path):
+    """#811: a guide may bind a pack_view model (cad-agent-model/1); its binary's hash binds every mesh."""
+    example = Path(__file__).resolve().parents[2] / "software/cadagent/webkit/assembly/examples/gyropup-turret"
+    root = tmp_path / "project"
+    shutil.copytree(example, root / "guide")
+    bundle, = collect(root, root / "guide/guide.json")
+    assert set(bundle.files) == {"guide/guide.json", "guide/model.json", "guide/model.bin"}
+    # Planted: a changed binary, and a plan beside a packed model, are refused.
+    (root / "guide/model.bin").write_bytes(b"\x1f\x8b planted")
+    with pytest.raises(CadConfigError, match="hash mismatch"):
+        collect(root, root / "guide/guide.json")
+    shutil.copy(example / "model.bin", root / "guide/model.bin")
+    guide = json.loads((root / "guide/guide.json").read_text())
+    guide["assembly_plan"] = {"file": "plan.json", "sha256": "0" * 64}
+    (root / "guide/guide.json").write_text(json.dumps(guide))
+    with pytest.raises(CadConfigError, match="per-part mesh hashes"):
+        collect(root, root / "guide/guide.json")
+
+
+@pytest.mark.parametrize("plant, message", [
+    (lambda m: m.pop("quant"), "invalid quantisation"),
+    (lambda m: m.pop("box_mm"), "invalid box_mm"),
+    (lambda m: m["parts"][0].__setitem__("index_bits", 8), "invalid index width"),
+    (lambda m: m["parts"][-1].__setitem__("offset", 10 ** 9), "shorter than the model says"),
+    (lambda m: m["parts"][0].__setitem__("color", 0x336699), "invalid colour"),
+    (lambda m: m.__setitem__("encoding", "brotli"), "unknown encoding"),
+    (lambda m: m["parts"][0].__setitem__("vertices", 1), "names a vertex that does not exist"),
+])
+def test_release_refuses_every_packed_model_the_reader_refuses(tmp_path, plant, message):
+    """Review of #812: each field the reader's validatePackedView and decodeModel refuse is refused here too."""
+    example = Path(__file__).resolve().parents[2] / "software/cadagent/webkit/assembly/examples/gyropup-turret"
+    root = tmp_path / "project"
+    shutil.copytree(example, root / "guide")
+    model = json.loads((root / "guide/model.json").read_text())
+    plant(model)
+    data = (json.dumps(model, indent=1) + "\n").encode()
+    (root / "guide/model.json").write_bytes(data)
+    guide = json.loads((root / "guide/guide.json").read_text())
+    guide["model"]["sha256"] = digest(data)
+    (root / "guide/guide.json").write_text(json.dumps(guide))
+    with pytest.raises(CadConfigError, match=message):
+        collect(root, root / "guide/guide.json")

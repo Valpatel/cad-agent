@@ -9,7 +9,7 @@
  */
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
 import path from 'node:path';
-import { readState, compute, drawTorsionSnap, summary, pct } from '../../../software/cadagent/webkit/torsion-snap.js';
+import { readState, compute, drawTorsionSnap, summary, pct } from '../../../software/cadagent/webkit/calculators/torsion-snap.js';
 
 const root = path.resolve(import.meta.dirname, '../../..');
 export const PAGES = ['docs/mechanical/compliant.md'];

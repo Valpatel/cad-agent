@@ -20,9 +20,9 @@ separate from the download; a failed download or mismatch stops before installat
   installer=$(mktemp)
   trap 'rm -f "$installer"' EXIT HUP INT TERM
   curl -fsSL --proto '=https' --tlsv1.2 \
-    https://raw.githubusercontent.com/Valpatel/cad-agent/da3bc637349159e87ddf9e28bfc9f18192d57841/tools/site/assets/install.sh \
+    https://raw.githubusercontent.com/Valpatel/cad-agent/f1529bd1f2388f7530cd46dc49051b2e67524378/tools/site/assets/install.sh \
     -o "$installer"
-  expected=5154f86280c9ae282c47e05f98c97cb67c9f3b77d75ecc27b727a945515a4868
+  expected=52321a6a0b1d051dbf367fff4adcc4654e8704d94a4b099212dec87e143dda8f
   if command -v sha256sum >/dev/null 2>&1; then
     actual=$(sha256sum "$installer")
   else
@@ -43,8 +43,8 @@ separate from the download; a failed download or mismatch stops before installat
 $installer = Join-Path ([IO.Path]::GetTempPath()) ("cad-agent-" + [guid]::NewGuid() + ".ps1")
 try {
   Invoke-WebRequest -UseBasicParsing -ErrorAction Stop -OutFile $installer -Uri `
-    'https://raw.githubusercontent.com/Valpatel/cad-agent/da3bc637349159e87ddf9e28bfc9f18192d57841/tools/site/assets/install.ps1'
-  $expected = '6c55e1065392db7ccd9467a3d007c3537415f097cd2d900b612244f4768be20c'
+    'https://raw.githubusercontent.com/Valpatel/cad-agent/f1529bd1f2388f7530cd46dc49051b2e67524378/tools/site/assets/install.ps1'
+  $expected = '506a391db666b00f300ab7f5d046f8a152f65b5e908d524d383b4cb653baf499'
   if ((Get-FileHash -Algorithm SHA256 -LiteralPath $installer -ErrorAction Stop).Hash.ToLowerInvariant() -ne $expected) {
     throw 'Installer checksum mismatch'
   }
@@ -65,19 +65,33 @@ These checks verify the installer snapshot, not every later download. Installati
 to a release tag before running a block if you want the checkout pinned; `cad-agent update` without `--ref`
 returns to the released `main` channel. No background update is installed.
 
-The scripts are [`web/install.sh`](../../tools/site/assets/install.sh) and [`web/install.ps1`](../../tools/site/assets/install.ps1). They:
+The scripts are [`tools/site/assets/install.sh`](../../tools/site/assets/install.sh) and [`tools/site/assets/install.ps1`](../../tools/site/assets/install.ps1). They:
 
 1. need git, and install [uv](https://docs.astral.sh/uv/) (a pinned version, from astral.sh) into `~/.local/bin` if it
-   is missing, without editing your shell profile;
+   is missing, without editing your shell profile (uv's installer also writes its receipt to `~/.config/uv`);
 2. clone `main` into `~/cad-agent`, or update the checkout that is there;
 3. run `uv tool install --editable ~/cad-agent[cad]`: the `cad-agent` command goes in `~/.local/bin`, with a
    Python 3.12 of its own that uv manages, and runs the checkout's code, so the skills and the code stay in step;
 4. run `cad-agent agents install` (below), which says which skills this computer can't use yet.
 
+The first install downloads Python packages (CadQuery, VTK and their libraries) into uv's cache, `~/.cache/uv`: about
+1.7 GB on Linux x86-64, with a checkout of about 200 MB (v0.46.0, measured 2026-11-16); other platforms and releases
+differ, and the installers say "about 2 GB". Later updates download only what changed. If `~/.local/bin` is not
+on your PATH, the installer says how to use `cad-agent` in that terminal and the full path of the `uv` that adds it for
+new ones.
+
 Options: set `CAD_AGENT_EXTRAS=fea,sim` (see [Extras](#extras)), `CAD_AGENT_REF` to a release tag,
-`CAD_AGENT_DIR` to another folder or `CAD_AGENT_UNINSTALL=1` before running the block. On macOS/Linux export
-these environment variables; in PowerShell use `$env:CAD_AGENT_EXTRAS`, `$env:CAD_AGENT_REF`,
-`$env:CAD_AGENT_DIR` or `$env:CAD_AGENT_UNINSTALL`. Uninstall removes the command and skills, keeping the checkout. They turn usage reporting off for everything they start; cad-agent itself sends nothing.
+`CAD_AGENT_DIR` to another folder or `CAD_AGENT_UNINSTALL=1` before running the block (`1`, `true` or `yes`
+uninstall; empty, `0`, `false` or `no` install; any other value stops before changing anything). On macOS/Linux export
+these environment variables (`export CAD_AGENT_UNINSTALL=1`, then the block); in PowerShell use
+`$env:CAD_AGENT_EXTRAS`, `$env:CAD_AGENT_REF`, `$env:CAD_AGENT_DIR` or `$env:CAD_AGENT_UNINSTALL`. They turn usage
+reporting off for everything they start; cad-agent itself sends nothing.
+
+**Uninstall** removes the `cad-agent` command and the skills and subagents it linked. It leaves the checkout
+(`~/cad-agent`: delete it yourself), and uv: `uv` and `uvx` in `~/.local/bin`, its cache (`~/.cache/uv`), its Pythons
+and tool folders (`~/.local/share/uv`) and its receipt (`~/.config/uv`); on Windows `%APPDATA%\uv` and
+`%LOCALAPPDATA%\uv`. Remove uv with [uv's own steps](https://docs.astral.sh/uv/getting-started/installation/#uninstallation)
+if nothing else uses it.
 
 **Update** by running the command again, or `cad-agent update`; both do the same. `update` refuses a checkout with
 changes or on another branch (use a fork for your own work), then:
@@ -172,19 +186,27 @@ this computer without any network call, and what they cannot check from here.
 
 ```text
 agents: you can use these, but some of their steps can't run yet:
-  skill mcmaster-parts: Playwright is not installed in this Python (`"…/python" -m pip install playwright`)
+  skill mcmaster-parts: Playwright is not installed in this Python (`/home/you/.local/bin/uv tool install --force --editable --python 3.12 '/home/you/cad-agent[cad]' --with playwright`)
 agents: these also need what cad-agent can't check from here:
+  GitHub access (`gh` logged in, or the GitHub MCP tools): cad-pr-review, cad-pr-reviewer
   write access to the repository it works in: cad-pr-review, cad-work-tracking
   a compute host you can reach over `ssh`: cad-remote-runs
 ```
 
+The commands fit how this cad-agent was installed. The installer's uv tool environment has no pip, so the notice names
+uv's `tool install --with`, which `cad-agent update` keeps on later reinstalls; an install in your own venv gets pip.
+
 | Needs | Checked how | Who needs it |
 |---|---|---|
 | `git` | on PATH | `cad-remote-runs`, `cad-work-tracking`, `cad-resume` |
-| `gh` logged in | on PATH, and gh's own stored login answers (`gh auth token`, its output discarded; nothing is sent) | `cad-pr-review`, `cad-remote-runs`, `cad-work-tracking`, `cad-pr-reviewer`, `cad-resume` |
+| `gh` logged in | on PATH, and gh's own stored login answers (`gh auth token`, its output discarded; nothing is sent) | `cad-remote-runs`, `cad-work-tracking`, `cad-resume` |
+| GitHub access (`gh` logged in, or the GitHub MCP tools) | not checkable here: the MCP tools belong to your agent's harness | `cad-pr-review`, `cad-pr-reviewer` |
 | `ssh` | on PATH | `cad-remote-runs` |
 | `rsync` | on PATH; only to copy files that are not in git | `cad-remote-runs` |
 | Playwright and Google Chrome | the module in cad-agent's Python, and Chrome itself (not Chromium) on PATH or in its usual place; only to download a new part | `mcmaster-parts` |
+| `node` 22.22.2+, 24.15.0+, or 26+ | local `node --version`, no network | `scada-component-authoring`, `scada-system-authoring`, `scada-model-adaptation`, `scada-viewer-review`, `scada-distribution-review`, `repository-documentation` |
+| `npm` | on PATH | `scada-component-authoring`, `scada-system-authoring`, `scada-model-adaptation`, `scada-viewer-review`, `scada-distribution-review`, `repository-documentation` |
+| Python Playwright and local Chromium | Python module plus PATH Chromium or Playwright’s installed executable; launch and OS libraries are verified by the browser checks | `scada-component-authoring`, `scada-system-authoring`, `scada-model-adaptation`, `scada-viewer-review`, `scada-distribution-review`, `repository-documentation` |
 | write access to the repository it works in | not checkable here: you know whether you can push, open and merge PRs there | `cad-pr-review`, `cad-work-tracking` |
 | a compute host you can reach over `ssh` | not checkable here | `cad-remote-runs` |
 
@@ -198,13 +220,19 @@ your own repositories, or where you have been given write access; an agent shoul
 | | Name | Use it |
 |---|---|---|
 | Skill | [`cad-work-tracking`](../../.agents/skills/cad-work-tracking/SKILL.md) | At the start of any multi-step change and every ~30 minutes: issue, branch, early draft PR, push as you go, checkpoints, resume |
-| Skill | [`cad-pr-review`](../../.agents/skills/cad-pr-review/SKILL.md) | When a PR is ready: independent review, answer and resolve every thread, merge rules |
+| Skill | [`cad-pr-review`](../../.agents/skills/cad-pr-review/SKILL.md) | When a PR is ready: independent review, answer and resolve every thread, merge rules, what an agent may merge without the owner; `gh` or GitHub MCP |
 | Skill | [`cad-remote-runs`](../../.agents/skills/cad-remote-runs/SKILL.md) | Before any long run: compute host, detached, recorded in the issue, results pulled back |
 | Skill | [`design-process`](../../.agents/skills/design-process/SKILL.md) | Building or changing a design: section by section, with requirements, gates and a reviewer sign-off ([design-process-plan.md](design-process-plan.md)) |
 | Skill | [`cad-motion-validation`](../../.agents/skills/cad-motion-validation/SKILL.md) | Rendered mechanisms: independent joint frames, actual mesh captures, pivot/ownership regression checks |
 | Skill | [`mcmaster-parts`](../../.agents/skills/mcmaster-parts/SKILL.md) | Bought hardware: real part numbers and manufacturer models |
 | Skill | [`sheet-metal-hardware`](../../.agents/skills/sheet-metal-hardware/SKILL.md) | Bent sheet parts with clinch nuts, studs or rivets: bends, placement, seams and price, checked in order ([page](../sheet-metal-hardware.md)) |
 | Skill | [`cad-supply-chain`](../../.agents/skills/cad-supply-chain/SKILL.md) | Before adding a dependency, vendored file, catalogue entry or link, or recommending a tool: the supply-chain report, its rows in the PR, what blocks a merge or an adoption |
+| Skill | [`scada-component-authoring`](../../.agents/skills/scada-component-authoring/SKILL.md) | Author equipment artwork, metadata, states and generated previews |
+| Skill | [`scada-system-authoring`](../../.agents/skills/scada-system-authoring/SKILL.md) | Describe one system with shared model state and multiple views |
+| Skill | [`scada-model-adaptation`](../../.agents/skills/scada-model-adaptation/SKILL.md) | Replace equations or connect an external model with explicit units and evidence |
+| Skill | [`scada-viewer-review`](../../.agents/skills/scada-viewer-review/SKILL.md) | Inspect diagram controls, camera, lifecycle, states and accessibility in a browser |
+| Skill | [`scada-distribution-review`](../../.agents/skills/scada-distribution-review/SKILL.md) | Verify self-contained SCADA runtime and source distributions |
+| Skill | [`repository-documentation`](../../.agents/skills/repository-documentation/SKILL.md) | Maintain source-owned folder maps, galleries and agent documentation |
 | Subagent | [`cad-pr-reviewer`](../../.agents/agents/cad-pr-reviewer.md) | Reviews a PR it did not write: verifies, posts inline comments and a summary, never merges |
 | Subagent | [`cad-resume`](../../.agents/agents/cad-resume.md) | After a session ended: rebuilds the state from GitHub, checkouts and run logs; reports next steps |
 
@@ -277,7 +305,9 @@ flowchart TD
    what is running (host, command, log, done marker) and the exact next step.
 6. **Heavy runs on a compute host**, detached, recorded in the issue, results pulled back and committed.
 7. **Independent review** by `cad-pr-reviewer` (or a separate Codex session); answer and resolve every thread.
-8. **Merge under the repo's rules**, then check the issues closed and tick the tracking issue.
+8. **Merge under the repo's rules**, then check the issues closed and tick the tracking issue. In cad-agent, agents
+   merge as [Merging without the owner](../../.agents/skills/cad-pr-review/SKILL.md#merging-without-the-owner)
+   says, some PRs only after the owner's recorded go-ahead; reviews check the [review criteria](../../.agents/skills/cad-pr-review/review-criteria.md).
 
 ### Goals and issues
 

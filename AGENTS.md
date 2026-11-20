@@ -5,6 +5,13 @@ install it with `cad-agent agents install`): the `cad-work-tracking`, `cad-pr-re
 `cad-pr-reviewer` and `cad-resume` subagents. Assume the session can end at any time: every piece of work has a
 GitHub issue, is pushed in clean commits as it goes and has an early draft PR, so another computer can pick it up.
 
+In a cloud container (no `gh`, GitHub through MCP tools), read [Working from a cloud container](.agents/skills/cad-remote-runs/SKILL.md#working-from-a-cloud-container) first.
+
+**Classify tracked issues with the canonical [issue labels](.agents/skills/cad-work-tracking/issue-labels.md).**
+Use exactly one `scope:` label; `stage:design-review` independently marks a pending design decision. Read the latest
+comments before classifying or resuming, keep unrelated labels, and write outcome/evidence/acceptance rather than
+conversation history. The bundled guide defines transitions and the additional requirements for design proposals.
+
 Other agent sessions use and change this repo at the same time, so:
 
 - **Never push to `main` or `dev`**, and never force-push a branch you did not create. Both are protected.
@@ -20,6 +27,7 @@ Other agent sessions use and change this repo at the same time, so:
   `cad-gates/<base>/review` with an independent reviewer's pass verdict, and `cad-gates/main/release` for `dev` →
   `main`), and `python3 tools/ci_gates.py all --repo Valpatel/cad-agent --pr <n>`, run from an up-to-date `dev`
   checkout, exits 0 just before you merge (it reads the reviews live). Never write a review verdict on your own PR, and never merge around a failing gate.
+  Agents merge; what needs the owner's recorded go-ahead first, and the substitute for the local `ci_gates.py` run in a session without `gh`: [Merging without the owner](.agents/skills/cad-pr-review/SKILL.md#merging-without-the-owner); what a review checks: [review criteria](.agents/skills/cad-pr-review/review-criteria.md).
 - **Ship to `main` as part of the loop.** Every merged change adds its CHANGELOG lines as a fragment in
   [`docs/changelog.d/`](docs/changelog.d/README.md), not by editing `CHANGELOG.md` (parallel PRs would conflict). When `dev`
   has user-visible work that `main` lacks, cut a release with `tools/cut_release.py` and merge it through the release
@@ -61,7 +69,8 @@ Other agent sessions use and change this repo at the same time, so:
   code in `software/cadagent/<domain>/`, tests in `tests/<domain>/`, never a new top-level folder.
 - **Keep cad-agent generic** (housings, robots, boards, any 3D model). Product-specific code stays in the product repo.
 - **Design to the rule cards.** Before drawing a feature, run `cad-agent rules <feature>` or `cad-agent choose
-  joining` and design to the card ([skills/design-process](.agents/skills/design-process/SKILL.md)); never copy rules into
+  joining --load <N> --material <name>` and design to the card
+  ([skills/design-process](.agents/skills/design-process/SKILL.md)); never copy rules into
   Markdown, since they live in `docs/research/process-profiles.yaml`.
 - **State limits honestly** in code and reports: what a check or simulation assumes, and that CAD and simulation do
   not prove physical fit or strength.
@@ -103,7 +112,9 @@ its failures says where the file goes.
   package). ✓ `test_layout.py` fails a folder newly over 20 files; the folders over it today are on a list that may
   only shrink, and each is split in the next PR that touches it.
 - **Don't pre-create folders** for one or two files, and never create an empty one.
-- **Every new folder gets a `README.md`** with a short Mermaid map ([style guide](docs/practice/style-guide.md), #113), and
+- **Every new folder gets a `README.md`** with a compact Mermaid or owned SVG map ([style guide](docs/practice/style-guide.md), #113), and
   the parent README's table links it.
 - **Move with `git mv`** so history follows, update every reference (code, tests, docs, skills, agents, workflows,
-  `docs/areas.yaml`), and leave stubs or redirects where #145 says (published pages).
+  `docs/areas.yaml`). Repair consumers directly; do not add compatibility facades, generated aliases or migration
+  ledgers. Track any unresolved path repair in a bounded issue with a completion check. Maintained docs describe
+  the current structure; completed moves remain in Git history and closed issues.

@@ -72,9 +72,47 @@ try {
         control: el.getRootNode().activeElement?.textContent,
       }));
       assert.deepEqual(focus, {state:'ready', tabindex:null, control:'Explode'});
-      console.log('ok Tab hands focus to Explode inside a shadow tree');
+      console.log('ok Tab hands focus to Explode inside a shadow tree'); passed++;
     } finally { await page.close(); }
   }
+  // #806: use the visible controls and their accessible state on a phone-sized touch screen.
+  {
+    const page = await browser.newPage({ viewport: { width:390, height:844 }, hasTouch:true, isMobile:true });
+    try {
+      await page.goto(site.url + '/index.html?turn');
+      const model = page.locator('cad-model[data-state=ready]');
+      await model.waitFor();
+      const pause = model.getByRole('button', { name:'Pause turning', exact:true, pressed:false });
+      await pause.tap();
+      const resume = model.getByRole('button', { name:'Resume turning', exact:true, pressed:true });
+      await resume.tap();
+      assert.ok(await pause.isVisible());
+      const explode = model.getByRole('button', { name:'Explode', exact:true });
+      const paint = () => explode.evaluate(b => getComputedStyle(b).backgroundColor);
+      const initialPaint = await paint();
+      await explode.tap();
+      assert.equal(await explode.getAttribute('aria-pressed'), 'true');
+      assert.notEqual(await paint(), initialPaint);
+      await explode.tap();
+      assert.equal(await explode.getAttribute('aria-pressed'), 'false');
+      assert.equal(await paint(), initialPaint);
+      assert.match(await model.getByRole('status').innerText(), /parts ready/);
+      assert.ok(await model.locator('.cad-model-label').isHidden(), 'Default phone hint should leave the model clear');
+      const status = model.getByRole('status');
+      const coverage = await status.evaluate(s => {
+        // Enable hit-testing just for this probe. A clipped live region still announces readiness.
+        s.style.pointerEvents = 'auto';
+        const r = s.getBoundingClientRect();
+        const coversModel = () => s.contains(document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2));
+        const ready = coversModel();
+        s.style.clipPath = 'none';  // planted control restores the old status chip
+        return { ready, visibleChip:coversModel() };
+      });
+      assert.deepEqual(coverage, { ready:false, visibleChip:true });
+      console.log('ok phone reader can pause, resume and explode with a visible state'); passed++;
+    } finally { await page.close(); }
+  }
+
   for (const input of ['pointer', 'keyboard']) for (const motion of ['no-preference', 'reduce']) {
     const name = `${input}/${motion}`, errors = [];
     const context = await browser.newContext({ viewport: { width: 900, height: 700 }, reducedMotion: motion });
@@ -211,4 +249,4 @@ try {
     } finally { await context.close(); }
   }
 } finally { await browser.close(); await site.close(); }
-console.log(`model explode first frame: ${passed}/5 cases passed in ${engine.name()}`);
+console.log(`model controls and first frame: ${passed} cases passed in ${engine.name()}`);

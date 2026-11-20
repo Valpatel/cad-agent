@@ -9,6 +9,26 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
 
 ## Unreleased
 
+## v0.50.3 (2026-11-20)
+
+**Fixed**
+- The SCADA thumbnail recapture job preserves its existing empty output directory if publishing the staged artifact fails (#762).
+- The SCADA Explorer keeps an open equipment panel in place during live updates without rewriting its position on every tick (#785).
+- The offline archive-pointer tool now accepts only calendar dates in YYYY-MM-DD form, reports unsafe core-file insertions without interrupting independent shard updates, and lists distinct manifest URLs sharing the same SHA-256 for review (#796).
+- The Toolkit browser test reports the original STEP file, its SHA-256, and the expected and measured values when the pump manifold's geometry differs.
+
+## v0.50.2 (2026-11-20)
+
+**Fixed**
+- The inline model viewer names its pause and resume actions and keeps phone controls clear of the model. The assembly reader shows touch gestures below the canvas on phones (#806).
+
+## v0.50.1 (2026-11-20)
+
+**Fixed**
+- The Explore gallery finishes revealing filtered results immediately, so the filter chip stays under the pointer when the reader changes the sort.
+- The SCADA component tests now check each equipment state without creating a browser window for every case. Contributors can run the suite with a smaller Node.js heap (#787).
+- When keyboard focus starts a homepage 3D viewer, focus moves to its first control and the viewer stops adding an extra tab stop. An explicit tabindex on the viewer is preserved (#794).
+
 ## v0.50.0 (2026-11-20)
 
 **New**

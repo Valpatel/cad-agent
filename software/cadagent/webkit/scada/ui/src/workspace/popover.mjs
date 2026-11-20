@@ -129,7 +129,9 @@ export class ScadaPopover {
     if (!panel) return false;
     if (!panel.isConnected || !this.#root.contains(panel)) { this.close({restoreFocus:false, reason:'removed'}); return false; }
     const bounds = viewport(this.#window), inset = Math.min(12, bounds.width / 4, bounds.height / 4);
-    panel.style.position = 'fixed'; panel.style.margin = '0'; panel.style.inset = 'auto';
+    panel.style.position = 'fixed'; panel.style.margin = '0';
+    // Leave the computed left and top in place while measuring an open panel.
+    panel.style.right = 'auto'; panel.style.bottom = 'auto';
     panel.style.maxWidth = `${Math.max(1, bounds.width - 2 * inset)}px`;
     panel.style.maxHeight = `${Math.max(1, Math.min(440, bounds.height - 2 * inset))}px`;
     const measured = panel.getBoundingClientRect();

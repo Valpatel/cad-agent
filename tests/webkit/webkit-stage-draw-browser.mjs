@@ -228,6 +228,13 @@ try {
     await check(page, S, 'texture arrival', async () => {
       await page.evaluate(() => new Promise(done => { box.material.map = new THREE.TextureLoader().load('/red.png', () => done()); box.material.needsUpdate = true; }));
     });
+    await check(page, S, 'empty draw range', () => page.evaluate(() => box.geometry.setDrawRange(0, 0)));
+    await check(page, S, 'restore unlimited draw range', () => page.evaluate(() => box.geometry.setDrawRange(0, Infinity)));
+    await check(page, S, 'replace position buffer', () => page.evaluate(() => {
+      const positions = box.geometry.getAttribute('position').clone();
+      for (let i = 0; i < positions.count; i++) positions.setX(i, positions.getX(i) * 1.5);
+      box.geometry.setAttribute('position', positions);
+    }));
     // Off screen: a change draws nothing; coming back draws once, and shows the change.
     await settle(page, S);
     await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));

@@ -81,7 +81,7 @@ function floorGrid(accent, color) {
  */
 export const stageDiagnostics = { live: new Set(), alwaysDraw: false };
 
-// Everything three.js reads when it draws, flattened to numbers: renderer size and output settings, the camera, and
+// Everything three.js reads when it draws, captured as values and buffer identities: renderer size and output settings, the camera, and
 // for each visible object its world matrix, flags, geometry versions, material values and textures. Strings,
 // functions and userData are skipped; three.js only re-reads changed shader text after `needsUpdate`, which bumps
 // `material.version`, so the version stands for them.
@@ -121,10 +121,10 @@ function pushMaterial(out, material, seen) {
   }
 }
 function pushGeometry(out, geometry) {
-  out.push(geometry.id, geometry.index ? geometry.index.version : -1, geometry.drawRange.start, geometry.drawRange.count, geometry.groups.length);
+  out.push(geometry.id, geometry.index, geometry.index ? geometry.index.version : -1, geometry.drawRange.start, geometry.drawRange.count, geometry.groups.length);
   for (const name in geometry.attributes) {
     const attribute = geometry.attributes[name];
-    out.push(attribute.isInterleavedBufferAttribute ? attribute.data.version : attribute.version, attribute.count);
+    out.push(name, attribute, attribute.isInterleavedBufferAttribute ? attribute.data.version : attribute.version, attribute.count);
   }
 }
 function pushObject(out, object, seen) {
@@ -152,7 +152,7 @@ function pushObject(out, object, seen) {
   out.push(object.children.length);
   for (const child of object.children) pushObject(out, child, seen);
 }
-/** Fill `out` with the numbers that decide the next picture (see above). */
+/** Fill `out` with the values that decide the next picture (see above). */
 export function sceneSignature(renderer, scene, camera, out = []) {
   out.length = 0;
   if (scene.matrixWorldAutoUpdate) scene.updateMatrixWorld();
@@ -185,6 +185,7 @@ export function sameSignature(a, b) {
   for (let i = 0; i < a.length; i++) {
     const x = a[i], y = b[i];
     if (x === y || (x !== x && y !== y)) continue;
+    if (!Number.isFinite(x) || !Number.isFinite(y)) return false;
     if (!(Math.abs(x - y) <= 1e-9 * Math.max(1, Math.abs(x), Math.abs(y)))) return false;
   }
   return true;

@@ -9,6 +9,14 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
 
 ## Unreleased
 
+## v0.50.3 (2026-11-20)
+
+**Fixed**
+- The SCADA thumbnail recapture job preserves its existing empty output directory if publishing the staged artifact fails (#762).
+- The SCADA Explorer keeps an open equipment panel in place during live updates without rewriting its position on every tick (#785).
+- The offline archive-pointer tool now accepts only calendar dates in YYYY-MM-DD form, reports unsafe core-file insertions without interrupting independent shard updates, and lists distinct manifest URLs sharing the same SHA-256 for review (#796).
+- The Toolkit browser test reports the original STEP file, its SHA-256, and the expected and measured values when the pump manifold's geometry differs.
+
 ## v0.50.2 (2026-11-20)
 
 **Fixed**

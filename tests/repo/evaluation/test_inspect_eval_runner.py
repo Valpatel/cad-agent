@@ -233,6 +233,7 @@ def test_finalize_accepts_only_settled_correct_cleaned_bytes(tmp_path, monkeypat
     monkeypatch.setattr(adapter, 'Docker', lambda: docker)
     result = adapter.finalize(work, 'cad-eval-test.service')
     assert result['passed'] is expected
+    assert result['artifact_matches'] is ((payload == b'qualified') if unit_success and not remaining else None)
     assert adapter.verify_snapshot(work)['artifacts'][0]['sha256'] == adapter.sha256(payload)
     assert any(c[0] == 'compose' for c in docker.calls)
 
@@ -273,6 +274,35 @@ def test_actual_archive_subprocess_is_killed_on_excess_output(tmp_path):
         docker.archive('c' * 64)
     with pytest.raises(ProcessLookupError):
         os.kill(int(pid.read_text()), 0)
+
+
+@pytest.mark.parametrize('unit_success,artifact_matches', [(False, False), (True, None), (True, False)])
+def test_retained_wrong_control_requires_grading_and_keeps_lifecycle_qualification_open(tmp_path, monkeypatch,
+                                                                                       unit_success, artifact_matches):
+    work = adapter.private_root(tmp_path / 'suite', fresh=True)
+    case = adapter.private_root(work / 'wrong', fresh=True)
+    adapter.runner.write_json(case / 'attempt.json', dict(case='wrong', runtime=dict(revision=adapter.INSPECT_REVISION),
+                              controller_sha256=adapter.controller_hashes(), image='fixture', daemon='fixture'))
+    adapter.runner.write_json(case / 'unit-receipt.json', dict(unit_success=unit_success))
+    adapter.runner.write_json(case / 'sandbox-cleanup.json', dict(resources_absent=True))
+    adapter.runner.write_json(case / 'result.json', dict(passed=False, artifact_matches=artifact_matches))
+    (case / 'sealed').mkdir()
+    (case / 'sealed/result.txt').write_bytes(b'wrong')
+    monkeypatch.setattr(adapter, 'CASES', ('wrong',))
+    monkeypatch.setattr(adapter, 'runtime', lambda source: None)
+    monkeypatch.setattr(adapter, 'verify_snapshot', lambda directory: None)
+    monkeypatch.setattr(adapter, 'wire_qualification', lambda: {'passed': True})
+    if not unit_success or artifact_matches is None:
+        with pytest.raises(ValueError, match='measured artifact mismatch'):
+            adapter.qualify(work, tmp_path)
+    else:
+        result = adapter.qualify(work, tmp_path)
+        assert result['controls'] == {'wrong': False}
+        assert result['passed'] is False
+        assert set(result['missing_controls']) == {'failed_cleanup', 'unrelated_resource_preservation'}
+        monkeypatch.setattr(sys, 'argv', ['inspect_runner.py', 'qualify', '--work', str(work),
+                                         '--inspect-source', str(tmp_path)])
+        assert adapter.main() == 1
 
 
 def test_explicit_qualification_fails_missing_prerequisites(tmp_path):

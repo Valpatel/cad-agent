@@ -510,13 +510,15 @@ def finalize(work, unit):
               and oom_observed is False and collection.get('status') == 'success' and attempt['case'] in ('normal', 'detached', 'wrong'))
     tool_events = collection.get('tool_events', [])
     passed = passed and len(tool_events) == 1 and tool_events[0].get('completed') is not None and tool_events[0].get('error') is None
+    artifact_matches = None
     if passed:
         verify_snapshot(work)
-        passed = (work / 'sealed/result.txt').read_bytes() == b'qualified'
+        artifact_matches = (work / 'sealed/result.txt').read_bytes() == b'qualified'
+        passed = artifact_matches
         if attempt['case'] == 'detached':
             passed = passed and receipt['live_processes_before_stop'] is not None and receipt['live_processes_before_stop'] > 1 and not (work / 'sealed/late.txt').exists()
     result = dict(schema=attempt['schema'], passed=passed, startup_recovered=recovered, errors=errors,
-                  exec_oom_kill_observed=oom_observed,
+                  exec_oom_kill_observed=oom_observed, artifact_matches=artifact_matches,
                   physical_fit_verified=False, model_usefulness_measured=False)
     runner.write_json(work / 'result.json', result)
     return result
@@ -561,13 +563,17 @@ def qualify(work, source):
             if (directory / 'seal.json').exists() or not any('nonregular' in error for error in result.get('errors', [])):
                 raise ValueError('symlink: unsafe output rejection not established')
         elif case == 'wrong':
+            if unit.get('unit_success') is not True or result.get('artifact_matches') is not False:
+                raise ValueError('wrong: successful execution and a measured artifact mismatch are required')
             verify_snapshot(directory)
             if (directory / 'sealed/result.txt').read_bytes() != b'wrong':
                 raise ValueError('wrong: no actual incorrect artifact retained')
         controls[case] = result['passed']
     if len(identities) != 1:
         raise ValueError('control suite used different image/daemon identities')
-    return dict(passed=True, controls=controls, provider=wire_qualification(),
+    # The retained driver has no producer for these two lifecycle controls yet.
+    return dict(passed=False, controls=controls, provider=wire_qualification(),
+                missing_controls=['failed_cleanup', 'unrelated_resource_preservation'],
                 real_model_called=False, native_cad_qualified=False)
 
 
@@ -726,6 +732,8 @@ def main():
             else:
                 result = qualify(args.work, args.inspect_source)
         print(json.dumps(result, allow_nan=False))
+        if args.action == 'qualify' and result.get('passed') is not True:
+            return 1
     except (OSError, ValueError, subprocess.SubprocessError, ImportError) as exc:
         print(json.dumps(dict(passed=False, error=str(exc))))
         return 1

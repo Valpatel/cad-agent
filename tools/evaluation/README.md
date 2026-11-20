@@ -21,7 +21,7 @@ execution host before the retained suite; direct subprocess or mocked runs canno
 
 Full qualification still requires the real-case driver, retained positive/negative evidence,
 failed-cleanup controls and preservation of an unrelated resource. The current eight case definitions
-alone do not establish all of those boundaries.
+alone do not establish all of those boundaries. After checking the available cases, `qualify` reports the two missing lifecycle controls and returns a nonzero exit status.
 
 ```mermaid
 flowchart TD

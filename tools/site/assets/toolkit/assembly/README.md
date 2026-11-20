@@ -1,6 +1,7 @@
 # Synthetic assembly guide
 
-The existing five-part clearance fixture, copied unchanged for the website's working build-guide example.
+The existing five-part clearance fixture, copied unchanged. It is kept at its published URL so existing links keep
+working; no card links it. The featured build guide is Gyropup's turret ([#811](https://github.com/Valpatel/cad-agent/issues/811)).
 
 The guide binds its model and serial plan by SHA-256; the model binds every mesh. No additional assets are fetched.
 

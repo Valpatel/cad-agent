@@ -47,6 +47,11 @@ sources:
     sources: 1
   summary: 'Blog on minimum wall thickness across printing processes; only title seen in results. Note: Only title and URL
     appeared; content not shown.'
+  archive:
+    sha256: 0fe98e39b1d68a063d62eed00638495774a8e0de11019ca38c95dbbb218ba05a
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: 3cf6d79b6c7889e6
 - id: protolabs-understanding-3d-printing-tolerances
@@ -92,6 +97,11 @@ sources:
     sources: 1
   summary: 'Protolabs design tip on 3D printing tolerances by process; only title appeared in results. Note: No numbers visible
     in snippet.'
+  archive:
+    sha256: e9696cfc3f05d3cab5336b0216216296d085944f40850e092dbdff47ee205f1b
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: 23d66bbfbb352efd
 - id: protolabs-7-mistakes-to-avoid-when-designing-3d-printed
@@ -129,6 +139,11 @@ sources:
     sources: 1
   summary: 'Design mistakes list; notes warpage risk rises as thickness nears minimum feature size. Note: Cost content not
     confirmed from snippet.'
+  archive:
+    sha256: 2bdf1720fc3a041a8ea18e8188933703b0c38a1271bcd5f67fa07b1534c00bc0
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: 1335fecaee787e3e
 - id: protolabs-3d-printing-cost
@@ -166,6 +181,11 @@ sources:
     sources: 1
   summary: 'Explains cost drivers of 3D printing; advice includes adding material only where critical. Note: Page text mostly
     not visible.'
+  archive:
+    sha256: d7807277864c7152a35a241dee1a25b3f1748673da45dccde11126739f13b430
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: af6af0a96a709fb9
 - id: protolabs-6-ways-to-cut-costs-with-industrial-3d-printing
@@ -209,6 +229,11 @@ sources:
     sources: 1
   summary: 'Cost-cutting design tips; orientation changes can shorten builds, less material means lower cost. Note: Qualitative
     advice only.'
+  archive:
+    sha256: 6f40542d2203a3254833ddd82eb8e1863e0520c63b210e8746da34e6f82f25b1
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: b335c7b2cdb1f06d
 - id: xometry-5-easy-ways-to-reduce-3d-printing-costs-xometry
@@ -246,6 +271,11 @@ sources:
     sources: 1
   summary: 'Cost levers: machine time and material; smaller size, FDM infill, fewer supports, self-supporting angles near
     45 degrees. Note: Qualitative; angle rule from combined search summary.'
+  archive:
+    sha256: b1ff5f7f0f816f6c13f70931fbdf4de882a3d5040a02bb5ed2e987dcd9e861ec
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: 429c48a78ff701a5
 - id: ssab-hardox-plasma-cutting-guide-ssab
@@ -323,6 +353,11 @@ sources:
     estimate: 0.4
     sources: 1
   summary: 'SAE training course on Y14.5-2018 GD&T basics; paid course listing. Note: Course listing, not a free guide'
+  archive:
+    sha256: 7b650920b263cfbf7d50bdb4f7a280182b1325d37ef2109298ccf3cf94d3ed4f
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: eca330bb01b54d32
 - id: wikipedia-geometric-dimensioning-and-tolerancing-wikipedia
@@ -359,6 +394,11 @@ sources:
     estimate: 0.4
     sources: 1
   summary: 'Defines datum features, position, form controls at overview level. Note: Encyclopedic overview'
+  archive:
+    sha256: 8f454782cfba73d9e5d6250103ac2ac4aa2ee4a75c32551b612cb2731fe16c7f
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: 378f4d05659a9a86
 - id: nsk-shaft-and-housing-fits-nsk-technical-report-3
@@ -443,6 +483,11 @@ sources:
     Redirect to www.nsk.com preserves the exact path. No publication date inferred from PDF metadata; no dimensional fit table,
     assembly test or physical life validation. The imported maximum-interference 7/10000 claim was attributed to a different
     Americas article and is not corroborated by this exact document; no claim about historical content is made.'
+  archive:
+    sha256: 483ccd47d9861016207a1724ddbf02fd7018cc14a0590388bcd8fdc231da78f8
+    kind: pdf
+    fetched: '2026-11-14'
+    redistribute: false
   aliases:
   - nsk-ti-0001
 - id: skf-shaft-and-housing-fits-skf-catalog-excerpt
@@ -490,6 +535,11 @@ sources:
     loads and radial clearance. Visually checked PDF pp.2–4 (printed pp.32–34), including mixed-unit captions and footnotes.
     Shaft table attributes ABMA1995; no current revision or publication date inferred from metadata. SHA256 922639535be9b33e16d1554ad38640217b55d717f517ed2c52b48b0786e5aa39.
     Host is SKF media; document names General Bearing. No assembly, current applicability or physical life validation.'
+  archive:
+    sha256: 922639535be9b33e16d1554ad38640217b55d717f517ed2c52b48b0786e5aa39
+    kind: pdf
+    fetched: '2026-11-14'
+    redistribute: false
   aliases:
   - general-bearing-fits
 - id: boothroyd-dewhurst-inc-boothroyd-dewhurst-dfma-presentation
@@ -579,6 +629,11 @@ sources:
     evidence: No second source checked.
   summary: 'DFMA overview: theoretical minimum part count Nmin, 2.93 s ideal assembly time per part, typical savings. Note:
     Secondary figures; primary source not found'
+  archive:
+    sha256: 719fe8d9ede3f5b85fccca23701a3eaf6f9ebbe671b728a670f80a1ac0b5a97f
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: ef3eda4e98856fee
 - id: wevolver-tolerance-stack-up-analysis-worst-case-vs-rss
@@ -621,6 +676,11 @@ sources:
       from their formulas,
   summary: 'Worst-case versus RSS stack-up methods and when to use each. Note: Search summary flagged an arithmetic slip in
     a related example'
+  archive:
+    sha256: e788898acb1721c4f20ab21562262fcbd09e2175c336e5a97850e63ca93c9eb8
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: befd537349fe17ed
 - id: university-of-washington-scholz-tolerance-stack-up-analysis
@@ -716,6 +776,11 @@ sources:
     evidence: No second source checked.
   summary: 'Break-even of printing versus molding by volume; sources quote 250-2000 parts but vary widely. Note: Vendor snippet;
     break-even range differs by source'
+  archive:
+    sha256: e2734a3c2005148682433f3de1193e3409926c63089bd1a38a4be75005d7e8ed
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: 320e10ca22b2b9f8
 - id: sfs-standards-store-asme-y14-5-2018-dimensioning-and
@@ -756,6 +821,11 @@ sources:
     sources: 1
   summary: 'US GD&T standard covering datums, form, orientation, position, profile and runout. Note: Store listing; full text
     paid'
+  archive:
+    sha256: 894de23801575eb8bc686ce7005f872d98b0f8624bd00e72e7a59d0e165c7e01
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: 626a2f60894481d2
 - id: batterydesign-net-iec-62133-2-safety-of-portable-sealed
@@ -830,6 +900,11 @@ sources:
     sources: 1
   summary: 'Ashby charts: modulus vs density, strength vs density, and performance indices for light stiff design. Note: Lecture
     notes; CES EduPack and Ashby''s book are primary'
+  archive:
+    sha256: a930bd62c87b423b93cc8f951079076a406b9519d3e768321b95453f2fd2b36c
+    kind: pdf
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: f1b06b274240af04
 - id: slehmann1-tol-ninja

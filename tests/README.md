@@ -103,7 +103,7 @@ actual browser acceptance. Required CI composes the complete release checks.
 PYTHONPATH=software python -m pytest -q                    # everything Python; or one folder: pytest tests/review
 npm --prefix tools/site run test:webkit-unit              # shared browser modules, including recorded replay
 npm --prefix tools/webkit/scada test                       # SCADA UI, models and Explorer units
-npm --prefix tools/site run test:site && npm --prefix tools/site run test:part-table && npm --prefix tools/site run test:file-viewer && npm --prefix tools/site run test:diagrams
+npm --prefix tools/site run test:site && npm --prefix tools/site run test:part-table && npm --prefix tools/site run test:model-explode && npm --prefix tools/site run test:model-touch && npm --prefix tools/site run test:file-viewer && npm --prefix tools/site run test:diagrams
 ```
 
 Related: [repository README](../README.md) · [CONTRIBUTING: where files go](../.github/CONTRIBUTING.md#where-files-go) ·

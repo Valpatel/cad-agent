@@ -10,7 +10,7 @@
     "damage": "none",
     "unspecified_fields": "Canonical UI descriptor defaults; illustrative appearance only."
   },
-  "browser": "156.0.8078.79",
+  "browser": "151.0.7922.34",
   "source_hashes": {
     "software/cadagent/webkit/scada/sim/scenarios/aquaponics-dwc/system.json": "1babc5c7cc9d25a969175820c20ef24e4bba815365a8611401a145b59f1c190d",
     "software/cadagent/webkit/scada/sim/scenarios/aquaponics-media-bed/system.json": "78f503b0baead3ff4c3a8eb1f3b868b156fab74a0589e21eb883d226b5852642",
@@ -107,10 +107,10 @@
     "software/cadagent/webkit/scada/ui/src/symbols/power/power.css": "61ef55ffc564a2cb9b6f7b1b96e7b3b938131ff4d811fa6a0b143b0e52accabf",
     "software/cadagent/webkit/scada/ui/src/symbols/power/primitives.mjs": "fda1571381fc728b315cc09701ef76be5c921f8eb12670c54614019c3a4a4f79",
     "software/cadagent/webkit/scada/ui/src/symbols/valve-position.mjs": "f72f818fded726024ebd87f0c5eeaf6632308bfb328d9a1e994e51e385ce6382",
-    "software/cadagent/webkit/scada/ui/src/viewer/camera.mjs": "cafafc6b51100907108cd9c8e4cd85d8620769ca0c13b90f7959ba7cb0916273",
+    "software/cadagent/webkit/scada/ui/src/viewer/camera.mjs": "1cd0f8175b700204268c48aea2fc638920d84a42d1c92cb133ae358e2823f4ef",
     "software/cadagent/webkit/scada/ui/src/viewer/process-layout.mjs": "f19c06cc6d086d63f880f9dfbe4db41c5a2143ab4b169bb63a06f000ebfc292d",
     "software/cadagent/webkit/scada/ui/src/viewer/viewer.css": "658e5ae5555c3e38c4a139e9462e638620c19178bdf9de9d0e7af125262a85c6",
-    "software/cadagent/webkit/scada/ui/src/viewer/viewer.mjs": "cf48bc2f75c0a88a807d865bfd011b4c47319774bb66d2fa414f0c03bd4e368b",
+    "software/cadagent/webkit/scada/ui/src/viewer/viewer.mjs": "fb8e33c4eb234ed3ecf3c273bfeafaebfc5dbc032423a600f0032d4fa1f0b1c9",
     "software/cadagent/webkit/scada/ui/src/workspace/popover.css": "7192413b02f647ac2b21960ab35cfc5ec3e7a0232568816c574d0862cbc937fc",
     "software/cadagent/webkit/scada/ui/src/workspace/popover.mjs": "4fdd4689d24712ca312aeaa9444d46140fa26300a6bb822d63326ba0d50606d5",
     "software/cadagent/webkit/scada/ui/src/workspace/workspace.css": "ab34edc9ab0e19d181b50a7cb33c8f33f406113d195dd367728f16688e05fafd",

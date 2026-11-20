@@ -26,6 +26,22 @@ try{
     const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));
     await page.goto(base+'/kit/simulation/viewer.html');await page.waitForFunction(()=>document.body.dataset.ready==='1');
     await page.waitForFunction(()=>document.fonts.status==='loaded');
+    // Identity (moved here from the toolkit launch check, which now opens the featured Gyropup example, #798): the
+    // two-link page plays its own MuJoCo recording, bound by hash to its producer and configuration.
+    const identity=await page.evaluate(async()=>{
+      const base=new URL('./examples/two-link-arm/',location.href);
+      const bytes=await (await fetch(new URL('recording.json',base))).arrayBuffer(),recording=JSON.parse(new TextDecoder().decode(bytes));
+      const receipt=await (await fetch(new URL('receipt.json',base))).json();
+      const hash=[...new Uint8Array(await crypto.subtle.digest('SHA-256',bytes))].map(n=>n.toString(16).padStart(2,'0')).join('');
+      return {schema:recording.schema,title:recording.title,frames:recording.frames.length,bodyIds:recording.bodies.map(body=>body.id),
+        loadedIds:__replay.scene.groups.map(group=>group.name),duration:__replay.playback.state().duration,
+        engine:receipt.engine,verified:hash===receipt.artifacts['recording.json'],sources:receipt.sources,
+        status:document.querySelector('#receipt-status').textContent};
+    });
+    assert.ok(identity.schema==='cad-agent.pose-recording/1'&&identity.title==='Two-link arm · recorded simulation'&&identity.frames===501&&identity.duration===10
+      &&JSON.stringify(identity.bodyIds)===JSON.stringify(['base','upper','forearm'])&&JSON.stringify(identity.loadedIds)===JSON.stringify(identity.bodyIds),`wrong default recording or rendered body identity: ${JSON.stringify(identity)}`);
+    assert.ok(identity.engine?.name==='MuJoCo'&&identity.engine?.version==='3.3.7'&&identity.verified&&/hash verified/.test(identity.status)
+      &&['docs/examples/robot-replay/produce.py','docs/examples/robot-replay/config.json'].every(name=>/^[0-9a-f]{64}$/.test(identity.sources?.[name])),`recording is not bound to its actual solver/source receipt: ${JSON.stringify(identity)}`);
     const geom=await page.evaluate(()=>{
       const root=document.querySelector('.cad-replay-host'),canvas=root.querySelector('canvas'),viewport=canvas.parentElement;
       const rect=canvas.getBoundingClientRect();return {root:{width:root.clientWidth,scrollWidth:root.scrollWidth},viewport:{width:viewport.clientWidth,height:viewport.clientHeight,scrollWidth:viewport.scrollWidth,scrollHeight:viewport.scrollHeight},canvas:{width:rect.width,height:rect.height},page:{width:document.documentElement.clientWidth,scrollWidth:document.documentElement.scrollWidth},state:__replay.playback.state(),background:__replay.stage.scene.background.getHexString(),theme:getComputedStyle(root).getPropertyValue('--viewer-bg').trim()};
@@ -57,6 +73,12 @@ try{
     await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
     await page.keyboard.press('End');await page.waitForFunction(()=>__replay.playback.state().time===10);
     await page.keyboard.press('Home');await page.waitForFunction(()=>__replay.playback.state().time===0);
+    // 10 s is a whole number of the slider's 1 ms steps, so End above would pass without the viewer's end rule. Planted
+    // step (#809), as on the Gyropup page: with 3 ms steps the slider tops out at 9.999 s, and End must still reach 10 s.
+    await page.evaluate(()=>{document.querySelector('.replay-time input').step='0.003';});await page.keyboard.press('End');
+    await page.waitForFunction(()=>__replay.playback.state().time===10);
+    const top=await page.evaluate(()=>+document.querySelector('.replay-time input').value);assert.ok(top<10,`the planted 3 ms step leaves the slider at ${top}, not short of 10 s`);
+    await page.evaluate(()=>{document.querySelector('.replay-time input').step='.001';});await page.keyboard.press('Home');await page.waitForFunction(()=>__replay.playback.state().time===0);
     const initial=await page.evaluate(()=>__replay.getViewState().camera);await page.locator('.cad-viewer-viewport').focus();await page.keyboard.press('ArrowRight');
     const turned=await page.evaluate(()=>__replay.getViewState().camera);assert.notDeepEqual(turned,initial);
     await page.getByRole('button',{name:'Zoom to fit',exact:true}).click();const fitted=await page.evaluate(()=>__replay.getViewState().camera);
@@ -113,7 +135,38 @@ try{
     }
     viewer.dispose();container.remove();return peaks;
   });
-  assert.ok(sparse.every(p=>p.max<1),JSON.stringify(sparse));cases.push({name:'Fit contains sparse180-degree rotation between endpoints',sparse});await boundaryContext.close();
+  assert.ok(sparse.every(p=>p.max<1),JSON.stringify(sparse));cases.push({name:'Fit contains sparse180-degree rotation between endpoints',sparse});
+  // Fit frames what the bodies reach (#809): a cube driven 2.8 m along a diagonal, seen from above at an angle, fills
+  // the view's height at least FIT_FILL (0.307 measured) and never leaves it. Fitting the corners of the run's whole box,
+  // as before #809, leaves it 0.108: the planted control, which must fall short of the bound. A recording framed whole
+  // projects at most 20,000 corners (scene.js's FIT_POINTS) however long it is (30,001 frames x 6 bodies here); a followed one builds none.
+  const fitted=await boundary.evaluate(async()=>{
+    const THREE=await import('three'),{createReplayViewer}=await import('./viewer.js');
+    const convention={length:'m',up:'z',handedness:'right',quaternion:'xyzw'},cube={shape:'box',size:[.2,.2,.2],position:[0,0,0],quaternion:[0,0,0,1],color:'#00aabb'};
+    const source={schema:'cad-agent.pose-recording/1',title:'Oblique run',convention,view:{direction:[1,-1,1]},bodies:[{id:'cube',label:'Cube',geometry:[cube]}],
+      frames:[0,1,2].map(t=>({time_s:t,poses:[{position:[t,t,0.1],quaternion:[0,0,0,1]}]}))};
+    const mount=async recording=>{const container=document.createElement('div');container.style.cssText='width:600px;height:400px';document.body.append(container);
+      const viewer=createReplayViewer(container,{recording});await viewer.ready;return {viewer,done:()=>{viewer.dispose();container.remove();}};};
+    const {viewer,done}=await mount(source);
+    const measure=()=>{let size=0,inside=true;for(const t of [0,.5,1,1.5,2]){viewer.playback.seek(t);viewer.stage.camera.updateMatrixWorld(true);
+      const mesh=viewer.scene.groups[0].children[0],b=mesh.geometry.boundingBox;let y0=9,y1=-9;
+      for(let i=0;i<8;i++){const p=new THREE.Vector3(i&1?b.max.x:b.min.x,i&2?b.max.y:b.min.y,i&4?b.max.z:b.min.z).applyMatrix4(mesh.matrixWorld).project(viewer.stage.camera);
+        y0=Math.min(y0,p.y);y1=Math.max(y1,p.y);inside&&=Math.abs(p.x)<=1&&Math.abs(p.y)<=1;}size=Math.max(size,(y1-y0)/2);}return {size,inside};};
+    viewer.fit();const fit=measure();
+    const stage=viewer.stage;stage.fitView(viewer.scene.bounds,{margin:1.12,direction:stage.camera.position.clone().sub(stage.controls.target)});const whole=measure();done();
+    const bodies=Array.from({length:6},(_,i)=>({id:`b${i}`,label:`Body ${i}`,geometry:[cube]}));
+    const long=follow=>({schema:'cad-agent.pose-recording/1',title:'Long run',convention,...(follow?{view:{follow:'b0'}}:{}),bodies,
+      frames:Array.from({length:30001},(_,f)=>({time_s:f*0.01,poses:bodies.map((_,i)=>({position:[Math.cos(f*.002+i),Math.sin(f*.002+i),.3+.1*i],quaternion:[0,0,0,1]}))}))});
+    const counts=[];for(const follow of [false,true]){const run=await mount(long(follow));counts.push(run.viewer.scene.fitPoints);run.done();}
+    return {fit,whole,counts};
+  });
+  const FIT_FILL=0.2;
+  assert.ok(fitted.fit.inside&&fitted.fit.size>=FIT_FILL,`oblique run: Fit fills ${fitted.fit.size} of the view's height (needs ${FIT_FILL}), inside ${fitted.fit.inside}`);
+  assert.ok(fitted.whole.size<FIT_FILL,`planted control: the run's whole box fills ${fitted.whole.size}, so the fill bound tells the two Fits apart from nothing`);
+  // A literal, not scene.js's FIT_POINTS: raising the cap (and Fit's cost on long recordings) has to change this test.
+  const FIT_POINT_CAP=20000;
+  assert.ok(fitted.counts[0]>0&&fitted.counts[0]<=FIT_POINT_CAP&&fitted.counts[1]===0,`Fit points at 30,001 x 6: ${fitted.counts[0]} framed whole (cap ${FIT_POINT_CAP}), ${fitted.counts[1]} followed`);
+  cases.push({name:'Fit frames what the bodies reach (planted: whole-run box), and its points are capped on a 30,001-frame run',fitted});await boundaryContext.close();
   if(site){
     const historyBrowser=engine===chromium?await chromium.launch({headless:true,ignoreDefaultArgs:['--disable-back-forward-cache'],...(process.env.CHROMIUM_EXECUTABLE?{executablePath:process.env.CHROMIUM_EXECUTABLE}:{channel:'chromium'})}):browser;
     try{

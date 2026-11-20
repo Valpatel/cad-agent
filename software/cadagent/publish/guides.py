@@ -12,7 +12,7 @@ import math
 import re
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Optional, Any, Dict, List
 from urllib.parse import quote, unquote, urlsplit
 
 from cadagent.project import CadConfigError
@@ -36,6 +36,46 @@ def _fields(value: Any, allowed, where: str) -> None:
 
 def _text(value: Any, limit: int = 4000) -> bool:
     return isinstance(value, str) and bool(value.strip()) and len(value) <= limit
+
+
+def _packed_model_problem(model: dict, packed: bytes) -> Optional[str]:
+    """What the reader would refuse in a pack_view model (webkit/assembly/guide.js validatePackedView, then
+    webkit/model/model.js decodeModel), or None: the same field checks, then every part's span and corner codes."""
+    import gzip
+    import numpy as np
+    if model.get("encoding") not in (None, "gzip"):
+        return "unknown encoding"
+    quant, box = model.get("quant"), model.get("box_mm")
+    if type(quant) is not int or not 1 <= quant <= 65535:
+        return "invalid quantisation"
+    if (not isinstance(box, list) or len(box) != 6 or not all(_finite(n) and abs(n) <= 1e9 for n in box)
+            or any(box[i] > box[i + 3] for i in range(3))):
+        return "invalid box_mm"
+    try:
+        raw = gzip.decompress(packed) if packed[:2] == b"\x1f\x8b" else packed
+    except (OSError, EOFError, ValueError):
+        return "the binary does not inflate"
+    data = np.frombuffer(raw, dtype=np.uint8)
+    for part in model["parts"]:
+        name = part.get("name")
+        counts = [part.get(k) for k in ("vertices", "triangles", "offset")]
+        if not all(type(n) is int and n >= 0 for n in counts):
+            return f"{name}: invalid vertex, triangle or offset count"
+        if part.get("index_bits") not in (16, 32):
+            return f"{name}: invalid index width"
+        if "color" in part and not (isinstance(part["color"], str) and re.fullmatch(r"#[0-9a-fA-F]{6}", part["color"])):
+            return f"{name}: invalid colour"
+        n, triangles, at = counts
+        m, width = 3 * triangles, part["index_bits"] // 8
+        if at + 6 * n + width * m > len(raw):
+            return f"{name}: the binary is shorter than the model says"
+        start = at + 6 * n
+        codes = sum(data[start + m * b: start + m * (b + 1)].astype(np.int64) << (8 * b) for b in range(width)) if m \
+            else np.zeros(0, np.int64)
+        fresh = np.concatenate([[0], np.cumsum(codes == 0)[:-1]]) if m else codes
+        if m and (np.any(codes > fresh) or int(np.sum(codes == 0)) > n):
+            return f"{name}: a corner names a vertex that does not exist"
+    return None
 
 
 def _vector(value: Any, nonzero: bool = False) -> bool:
@@ -139,6 +179,8 @@ def collect_guides(root: Path, paths: List[str]) -> List[GuideBundle]:
         identifiers.add(snapshot["id"])
         if "source" in guide and not isinstance(guide["source"], dict):
             raise CadConfigError("assembly guide source metadata must be an object")
+        if "qualification" in guide.get("source", {}) and not _text(guide["source"]["qualification"], 2000):
+            raise CadConfigError("assembly guide source.qualification must be nonempty text of at most 2000 characters")
         model = guide.get("model")
         _fields(model, ("file", "sha256"), "model binding")
         if not isinstance(model, dict) or not isinstance(model.get("sha256"), str):
@@ -150,10 +192,21 @@ def collect_guides(root: Path, paths: List[str]) -> List[GuideBundle]:
             raise CadConfigError("assembly guide model must declare mm/z-up and contain 1..2000 parts")
         if view.get("skipped"):
             raise CadConfigError("assembly guide model must not silently skip geometry")
+        # A packed model (pack_view's cad-agent-model/1) binds every mesh through one hashed binary.
+        packed = view.get("schema") == "cad-agent-model/1"
+        if packed:
+            if not isinstance(view.get("sha256"), str) or not _HASH.fullmatch(view["sha256"]):
+                raise CadConfigError("packed assembly guide model needs its binary's sha256")
+            if "assembly_plan" in guide:
+                raise CadConfigError("an assembly plan needs per-part mesh hashes, which a packed model does not carry")
+            _, packed_bytes = capture(model_path.parent, view.get("bin"), view["sha256"])
+            problem = _packed_model_problem(view, packed_bytes)
+            if problem:
+                raise CadConfigError(f"packed assembly guide model: {problem}")
         names = set()
         for part in parts:
             if (not isinstance(part, dict) or not _text(part.get("name"), 200)
-                    or part["name"] in names or not isinstance(part.get("sha256"), str)):
+                    or part["name"] in names or (not packed and not isinstance(part.get("sha256"), str))):
                 raise CadConfigError("assembly guide model needs unique named instances with sha256")
             bounds = part.get("bounds_mm")
             color = part.get("color")
@@ -166,7 +219,8 @@ def collect_guides(root: Path, paths: List[str]) -> List[GuideBundle]:
                     or (part.get("explode") is not None and not _vector(part["explode"], True))):
                 raise CadConfigError("assembly guide model has invalid bounds or presentation fields")
             names.add(part["name"])
-            capture(model_path.parent, part.get("file"), part["sha256"])
+            if not packed:
+                capture(model_path.parent, part.get("file"), part["sha256"])
         if "assembly_plan" in guide:
             from cadagent.review.dossier.plan import normalize_plan
             plan_binding = guide["assembly_plan"]

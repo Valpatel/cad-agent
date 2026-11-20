@@ -10,14 +10,18 @@
  * The poster shows first and keeps the box's size (give the element an aspect-ratio, or let the poster set it), so
  * nothing moves when the 3D view arrives. three.js and the model load only after the page has loaded, when the
  * element is near the screen and the browser is idle; with Save-Data on, a button loads them instead. The model
- * turns slowly (not with reduced motion; a button pauses it), turns under a drag (vertical swipes still scroll the
- * page on touch screens), names the part under the pointer or a tap, and comes apart with "Explode". No wheel zoom,
- * so the page scrolls normally. Rendering stops while the element is off screen or the tab is hidden. Without WebGL
- * or DecompressionStream the poster stays (data-state="error").
+ * turns slowly (not with reduced motion; a button pauses it), turns under a drag (on touch screens one finger turns it
+ * and two zoom the page; a viewer more than half as tall as the space that scrolls past it leaves vertical swipes to
+ * that space), names the part under the pointer or a tap, and comes apart with "Explode". No wheel zoom, so the page scrolls normally. Rendering stops
+ * while the element is off screen or the tab is hidden. Without WebGL or DecompressionStream the poster stays
+ * (data-state="error").
  *
  * Attributes: src (required), label, azimuth and elevation (the opening view in degrees; default the model's own
  * `view`, else 35 and 18; azimuth 0 looks from the CAD -y side, 90 from +x), turn
- * (degrees per second, default 10; 0 for none), loading="eager" (start without waiting for the page to load).
+ * (degrees per second, default 10; 0 for none), loading="eager" (start without waiting for the page to load),
+ * loading="scroll" (as the default, but also wait until the reader scrolls the page, or focuses or presses inside the
+ * element: a viewer that sits just below the first screen then costs nothing to a reader who does not scroll; a page
+ * opened already scrolled counts as scrolled; the element is focusable, so the keyboard can start it too).
  * Properties: ready (a promise), frames (how many the loop has drawn), snapshot(width, height, type, quality) (a data: URL of one frame at that size;
  * tools/site-model-poster.mjs makes the poster with it), setExplode(0..1), view(azimuth, elevation).
  * three.js is imported from ./vendor/three/ next to this file, without an import map, so pages with a strict
@@ -163,10 +167,11 @@ class CadModel extends (typeof HTMLElement === 'undefined' ? class {} : HTMLElem
   #meter;
   #message;
   #cleanup = null;
+  #arbitrate = null;                   // re-decides touch arbitration (#769) once the 3D view is built
   ready = new Promise(r => { this.#resolve = r; });
 
   connectedCallback() {
-    if (this.#started) return;
+    if (this.#started) { this.#arbitrate?.(); return; }
     this.dataset.state ||= 'poster';
     const go = () => this.#start();
     if (this.getAttribute('loading') === 'eager') return go();
@@ -178,7 +183,21 @@ class CadModel extends (typeof HTMLElement === 'undefined' ? class {} : HTMLElem
       return;
     }
     const whenLoaded = document.readyState === 'complete' ? Promise.resolve() : new Promise(r => addEventListener('load', r, { once: true }));
-    whenLoaded.then(() => {
+    // loading="scroll": nothing starts until the reader scrolls the page or reaches the element (focus, pointer). The
+    // element joins the tab order, so a keyboard reader can start a viewer that is already on screen without scrolling.
+    if (this.getAttribute('loading') === 'scroll') {
+      if (!this.hasAttribute('tabindex')) this.tabIndex = 0;
+      if (!this.hasAttribute('role')) this.setAttribute('role', 'group');
+      if (!this.hasAttribute('aria-label')) this.setAttribute('aria-label', `${this.getAttribute('label') || 'Model'}, 3D view`);
+    }
+    const whenReader = this.getAttribute('loading') !== 'scroll' || scrollY > 0 ? Promise.resolve() : new Promise(r => {
+      const done = () => {
+        removeEventListener('scroll', done); this.removeEventListener('focusin', done); this.removeEventListener('pointerdown', done);
+        r();
+      };
+      addEventListener('scroll', done, { passive: true }); this.addEventListener('focusin', done); this.addEventListener('pointerdown', done);
+    });
+    Promise.all([whenLoaded, whenReader]).then(() => {
       const io = new IntersectionObserver(entries => {
         if (!entries.some(e => e.isIntersecting)) return;
         io.disconnect();
@@ -389,11 +408,51 @@ class CadModel extends (typeof HTMLElement === 'undefined' ? class {} : HTMLElem
       label.textContent = mesh ? partLabel(mesh.userData.part.name) : 'Drag to turn';
       request();
     };
-    canvas.style.touchAction = 'pan-y';
+    // Touch (#650, #769): one finger turns the model both ways without scrolling the page; two fingers still zoom the page.
+    // Taking vertical drags could trap scrolling, so the viewer takes them only while it is at most half as tall as the
+    // space that scrolls past it: the visible viewport, or the shortest ancestor box that can scroll vertically (a
+    // scrolling overflow-y and content taller than the box) when that is shorter. Height alone decides, since what lies
+    // beside a viewer may be another viewer rather than page: a row of viewers then leaves at least half of that space's
+    // height free for vertical swipes wherever it sits. A taller viewer leaves vertical swipes to the page (or the box)
+    // and still turns under sideways drags. It is decided again, never per frame, when the viewer, the viewport or one of
+    // those boxes changes size and when the viewer is connected again; not when an ancestor's overflow changes or its
+    // content starts to overflow without a resize.
+    let ports = [];                      // the ancestors that can scroll vertically, watched for size changes
+    const scrollers = () => {
+      const found = [];
+      for (let el = this.assignedSlot ?? this.parentElement ?? this.getRootNode().host; el && el !== document.body && el !== document.documentElement;
+        el = el.assignedSlot ?? el.parentElement ?? el.getRootNode().host)
+        if (/^(auto|scroll|overlay)$/.test(getComputedStyle(el).overflowY) && el.scrollHeight > el.clientHeight) found.push(el);
+      return found;
+    };
+    const portObserver = new ResizeObserver(() => arbitrate());
+    disposers.push(() => portObserver.disconnect());
+    const arbitrate = () => {
+      if (disposed) return;
+      const found = scrollers();
+      if (found.length !== ports.length || found.some((el, i) => el !== ports[i])) {
+        portObserver.disconnect();
+        for (const el of found) portObserver.observe(el);
+        ports = found;
+      }
+      const vv = window.visualViewport, h = Math.min(vv?.height ?? innerHeight, ...ports.map(el => el.clientHeight));
+      canvas.style.touchAction = this.clientHeight <= h / 2 ? 'pinch-zoom' : 'pan-y pinch-zoom';
+    };
+    this.#arbitrate = arbitrate;
+    for (const target of [window, window.visualViewport].filter(Boolean)) {
+      target.addEventListener('resize', arbitrate);
+      disposers.push(() => target.removeEventListener('resize', arbitrate));
+    }
+    // Pointers down on the canvas. A second one is a pinch, which belongs to the page: it ends the turn without inertia
+    // and is itself ignored, so the view stays as it is until every finger lifts.
+    const down = new Set();
     canvas.addEventListener('pointerdown', e => {
+      if (e.isPrimary) down.clear();   // a new gesture: no pointer is down any more, even if a lift went unseen
+      down.add(e.pointerId);
+      if (down.size > 1) { if (drag) { drag = null; spin = 0; lastInput = performance.now(); } return; }
       drag = { id: e.pointerId, x: e.clientX, y: e.clientY, moved: 0, t: performance.now() };
       spin = 0; lastInput = performance.now();
-      canvas.setPointerCapture?.(e.pointerId);
+      try { canvas.setPointerCapture?.(e.pointerId); } catch { /* a pointer the browser no longer tracks */ }
     });
     canvas.addEventListener('pointermove', e => {
       if (drag && e.pointerId === drag.id) {
@@ -408,6 +467,7 @@ class CadModel extends (typeof HTMLElement === 'undefined' ? class {} : HTMLElem
       } else if (e.pointerType === 'mouse') highlight(pick(e.clientX, e.clientY));
     });
     const release = e => {
+      down.delete(e.pointerId);
       if (!drag || e.pointerId !== drag.id) return;
       if (drag.moved < 6) highlight(pick(e.clientX, e.clientY));   // a tap or click names the part
       if (performance.now() - drag.t > 80) spin = 0;
@@ -416,7 +476,7 @@ class CadModel extends (typeof HTMLElement === 'undefined' ? class {} : HTMLElem
       request();
     };
     canvas.addEventListener('pointerup', release);
-    canvas.addEventListener('pointercancel', e => { if (drag && e.pointerId === drag.id) { drag = null; spin = 0; } });
+    canvas.addEventListener('pointercancel', e => { down.delete(e.pointerId); if (drag && e.pointerId === drag.id) { drag = null; spin = 0; } });
     canvas.addEventListener('pointerleave', e => { if (e.pointerType === 'mouse' && !drag) highlight(null); });
     pause.addEventListener('click', () => {
       paused = !paused;
@@ -436,6 +496,7 @@ class CadModel extends (typeof HTMLElement === 'undefined' ? class {} : HTMLElem
       if (disposed) return;
       const w = this.clientWidth || 1, h = this.clientHeight || 1;
       renderer.setSize(w, h, false);
+      arbitrate();
       camera.aspect = w / h;
       camera.updateProjectionMatrix();
       fit();
@@ -448,11 +509,12 @@ class CadModel extends (typeof HTMLElement === 'undefined' ? class {} : HTMLElem
       if (disposed) return;
       frame = 0;
       this.frames++;
-      const dt = Math.min(0.05, (now - last) / 1000);
+      const dt = Math.max(0, Math.min(0.05, (now - last) / 1000));
       last = now;
       let more = false;
       if (anim) {
-        const k = Math.min(1, (now - anim.t0) / 900), ease = k < 0.5 ? 4 * k ** 3 : 1 - (-2 * k + 2) ** 3 / 2;
+        // Clamp both ends: the first frame's timestamp can precede the event's performance.now() by a fraction of a ms (#680).
+        const k = Math.max(0, Math.min(1, (now - anim.t0) / 900)), ease = k < 0.5 ? 4 * k ** 3 : 1 - (-2 * k + 2) ** 3 / 2;
         setExplode(anim.from + (anim.to - anim.from) * ease);
         if (k >= 1) anim = null; else more = true;
       }

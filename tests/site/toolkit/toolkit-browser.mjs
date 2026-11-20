@@ -92,15 +92,13 @@ async function previewReopenCheck(open) {
     const tank = page.locator('#equipment--tank').getByRole('button', {name:'Try states'});
     const pump = page.locator('#equipment--pump').getByRole('button', {name:'Try states'});
     await Promise.all([page.waitForRequest(metadata), tank.click()]);
-    const reopened = await pump.evaluate(async button => {
+    await pump.evaluate(button => {
       const dialog = document.querySelector('.toolkit-preview');
-      const closed = new Promise(resolve => dialog.addEventListener('close', resolve, {once:true}));
+      dialog.addEventListener('close', () => { dialog.openAtCloseEvent = dialog.open; }, {once:true});
       dialog.querySelector('[data-scada-close]').click();
       button.click();
-      await closed;
-      return dialog.open;
     });
-    if (!reopened) throw new Error('The second preview closed when the first close event arrived.');
+    await expect(page.locator('.toolkit-preview')).toHaveJSProperty('openAtCloseEvent', true);
     releaseMetadata();
     const art = page.locator('[data-scada-preview-art]');
     const symbol = art.locator('[data-scada-type="pump"]');

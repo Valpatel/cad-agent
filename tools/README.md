@@ -72,6 +72,7 @@ flowchart TD
 | Supply-chain maintenance | [resource_audit.py](resource_audit.py), [vendor_sync.py](vendor_sync.py), [weekly procedure](../docs/practice/weekly-upstream-update.md) |
 | Fixed-dependency Mermaid rebuild | [mermaid/](mermaid/README.md): isolated maintainer dependencies, derived browser bytes, input provenance and notices |
 | CI runner provisioning | [ci/](ci/README.md): narrow hosted-runner corrections with fail-closed guards |
+| Local preflight | [ci/preflight.py](ci/preflight.py): from a branch's changed files, list and run the checks CI runs on them ([mapping](../.github/ci-checks.json)) |
 | Release and review gates | [cut_release.py](cut_release.py), [ci_gates.py](ci_gates.py); [contributor workflow](../.github/CONTRIBUTING.md) |
 | Quickstart evaluation | [quickstart_eval.py](quickstart_eval.py); grades transcript/file evidence, not physical quality |
 
@@ -88,6 +89,7 @@ card. Model updates leave historical FEA pictures and their evidence untouched.
 
 | File or folder | Purpose |
 |---|---|
+| [archive_pointers.py](archive_pointers.py) | Add offline-mirror archive pointers to the reference registry from a mirror manifest. |
 | [cfd_fan_figure.py](cfd_fan_figure.py) | Draw recorded fan/CFD study data. |
 | [evaluation/](evaluation/README.md) | Prepare analytical jobs, run fresh CLI subjects and independently grade recorded artifacts. |
 | [explore_charts.py](explore_charts.py) | Draw exploration comparison charts. |
@@ -97,7 +99,6 @@ card. Model updates leave historical FEA pictures and their evidence untouched.
 | [gate_timing.py](gate_timing.py) | Measure existing gate execution timings. |
 | [gyropup_showcase.py](gyropup_showcase.py) | Collect pinned product showcase artifacts. |
 | [insert_coupons.py](insert_coupons.py) | Generate insert fit coupon artifacts. |
-| [plates_figure.py](plates_figure.py) | Draw plate model evidence. |
 | [references_health_apply.py](references_health_apply.py) | Apply reviewed source-health metadata updates. |
 | [research_figures.py](research_figures.py) | Draw source-bound research survey figures. |
 | [security_scan.py](security_scan.py) | Repository security scanning entry point. |

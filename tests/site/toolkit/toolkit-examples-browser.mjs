@@ -1,4 +1,21 @@
 /** Real capability cards and their existing viewer/calculator consumers; reuse the suite's error recorder. */
+/** The featured build guide (#811) on step 11: Gyropup's turret under a real source revision, every part its packed
+ * model binds, the barrel drawn back along its way in, earlier parts ghosted and the step's new parts solid. */
+const featuredGuideProblems=page=>page.evaluate(async()=>{
+  const problems=[],g=window.__guide.guide,v=window.__viewer,state=v.getState();
+  const model=await (await fetch(new URL(g.model.file,window.__guide.guideUrl))).json();
+  if(!/^gyropup-turret-/.test(g.snapshot.id)||!/^[0-9a-f]{40}$/.test(g.snapshot.source_commit)||g.snapshot.source_commit==='1'.repeat(40))problems.push('the reader shows something that is not the featured Gyropup turret guide');
+  if(JSON.stringify(v.parts.map(p=>p.name).sort())!==JSON.stringify(model.parts.map(p=>p.name).sort()))problems.push('the reader did not load every part the model binds');
+  if(!(state.offsets_mm.barrel||[0,0,0]).some(n=>n!==0))problems.push('step 11 does not draw the barrel back along its way in');
+  const step=g.steps.find(s=>s.id==='step-11'),ghost=p=>p.mesh.material.transparent&&p.mesh.material.opacity<1;
+  for(const p of v.parts.filter(p=>p.mesh.visible)){
+    const isNew=step.highlight.includes(p.name);
+    if(isNew&&ghost(p))problems.push(`new part ${p.name} is ghosted`);
+    if(!isNew&&!ghost(p)){problems.push(`earlier part ${p.name} is not ghosted`);break;}
+  }
+  return problems;
+});
+
 export async function toolkitExampleChecks({open,fail}) {
   const ids=['scada-elements','scada-simulations','models','robot-replay','files','assembly','mechanisms','calculators'];
   for(const width of [320,1366,1920,3440]) for(const color of ['light','dark']) for(const js of [true,false]) {
@@ -65,20 +82,21 @@ export async function toolkitExampleChecks({open,fail}) {
         if(await explode.getAttribute('aria-pressed')!=='false')fail(where,'Explode could not return to the assembly');
       } else if(id==='robot-replay') {
         await page.waitForFunction(()=>document.body.dataset.ready==='1'&&window.__replay?.stage.renderer.info.render.triangles>0);
+        // The featured example is Gyropup's recorded snapshot (#798); the reduced-motion page waits for Play.
         const identity=await page.evaluate(async()=>{
-          const base=new URL('./examples/two-link-arm/',location.href);
-          const bytes=await (await fetch(new URL('recording.json',base))).arrayBuffer(),recording=JSON.parse(new TextDecoder().decode(bytes));
-          const receipt=await (await fetch(new URL('receipt.json',base))).json();
+          const base=new URL('./',location.href),index=await (await fetch(new URL('index.json',base))).json();
+          const receipt=await (await fetch(new URL('receipt.json',base))).json(),active=index.scenarios.find(s=>s.id===window.__replay.scenario);
+          const bytes=await (await fetch(new URL(active.file,base))).arrayBuffer(),recording=JSON.parse(new TextDecoder().decode(bytes));
           const hash=[...new Uint8Array(await crypto.subtle.digest('SHA-256',bytes))].map(n=>n.toString(16).padStart(2,'0')).join('');
-          return {schema:recording.schema,title:recording.title,frames:recording.frames.length,bodyIds:recording.bodies.map(body=>body.id),
-            loadedIds:window.__replay.scene.groups.map(group=>group.name),duration:window.__replay.playback.state().duration,
-            engine:receipt.engine,verified:hash===receipt.artifacts['recording.json'],sources:receipt.sources,
-            status:document.querySelector('#receipt-status').textContent};
+          return {schema:recording.schema,scenario:active.id,scenarios:index.scenarios.length,bodyIds:recording.bodies.map(body=>body.id),
+            loadedIds:window.__replay.scene.groups.map(group=>group.name),playing:window.__replay.playback.state().playing,
+            verified:hash===active.sha256&&hash===receipt.artifacts[active.file],project:receipt.project,revision:receipt.revision,
+            summary:document.querySelector('.replay-summary')?.textContent,status:document.querySelector('#receipt-status').textContent};
         });
-        if(identity.schema!=='cad-agent.pose-recording/1'||identity.title!=='Two-link arm · recorded simulation'||identity.frames!==501||identity.duration!==10
-          ||JSON.stringify(identity.bodyIds)!==JSON.stringify(['base','upper','forearm'])||JSON.stringify(identity.loadedIds)!==JSON.stringify(identity.bodyIds))fail(where,`wrong default recording or rendered body identity: ${JSON.stringify(identity)}`);
-        if(identity.engine?.name!=='MuJoCo'||identity.engine?.version!=='3.3.7'||!identity.verified||!/hash verified/.test(identity.status)
-          ||!['docs/examples/robot-replay/produce.py','docs/examples/robot-replay/config.json'].every(name=>/^[0-9a-f]{64}$/.test(identity.sources?.[name])))fail(where,'recording is not bound to its actual solver/source receipt');
+        if(identity.schema!=='cad-agent.pose-recording/1'||identity.scenario!=='kerb_drop'||identity.scenarios<3||identity.bodyIds.length!==13
+          ||JSON.stringify(identity.loadedIds)!==JSON.stringify(identity.bodyIds)||identity.playing)fail(where,`wrong default recording or rendered body identity: ${JSON.stringify(identity)}`);
+        if(identity.project!=='Valpatel/gyropup'||!/^[0-9a-f]{40}$/.test(identity.revision||'')||!identity.verified||!/verified by SHA-256/.test(identity.status)
+          ||!/snapshot's own summary/.test(identity.summary||'')||!/peak-torque limit/.test(identity.summary||''))fail(where,'recording is not bound to its Gyropup source receipt and summary');
         await page.getByRole('button',{name:'Play recording',exact:true}).click();
         await page.waitForFunction(()=>window.__replay.playback.state().time>.1);
         await page.getByRole('button',{name:'Pause recording',exact:true}).click();
@@ -93,14 +111,14 @@ export async function toolkitExampleChecks({open,fail}) {
         await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
         if(!await slider.evaluate(input=>input===document.activeElement))fail(where,'recording time could not receive keyboard focus');
         await slider.press('Home');await page.waitForFunction(()=>window.__replay.playback.state().time===0);
-        const before=await page.evaluate(()=>({matrix:window.__replay.scene.groups.find(group=>group.name==='forearm').matrixWorld.toArray(),frame:window.__replay.stage.renderer.info.render.frame}));
+        const before=await page.evaluate(()=>({matrix:window.__replay.scene.groups.find(group=>group.name==='base').matrixWorld.toArray(),frame:window.__replay.stage.renderer.info.render.frame}));
         await page.waitForFunction(frame=>window.__replay.stage.renderer.info.render.frame>frame+1,before.frame);
         const canvas=page.locator('#replay canvas'),image=await canvas.screenshot();
         await slider.scrollIntoViewIfNeeded();await slider.focus();await slider.press('End');
-        await page.waitForFunction(()=>window.__replay.playback.state().time===10);
-        const after=await page.evaluate(()=>({matrix:window.__replay.scene.groups.find(group=>group.name==='forearm').matrixWorld.toArray(),frame:window.__replay.stage.renderer.info.render.frame}));
+        await page.waitForFunction(()=>window.__replay.playback.state().time===window.__replay.playback.state().duration);
+        const after=await page.evaluate(()=>({matrix:window.__replay.scene.groups.find(group=>group.name==='base').matrixWorld.toArray(),frame:window.__replay.stage.renderer.info.render.frame}));
         await page.waitForFunction(frame=>window.__replay.stage.renderer.info.render.frame>frame+1,after.frame);
-        if(JSON.stringify(after.matrix)===JSON.stringify(before.matrix)||image.equals(await canvas.screenshot()))fail(where,'scrubbing changed time without changing the actual rendered arm');
+        if(JSON.stringify(after.matrix)===JSON.stringify(before.matrix)||image.equals(await canvas.screenshot()))fail(where,'scrubbing changed time without changing the actual rendered robot');
         // Fonts can reflow the phone controls after mount; Fit is defined for the current viewport.
         await page.evaluate(()=>document.fonts.ready);
         await page.getByRole('button',{name:'Zoom to fit',exact:true}).click();
@@ -121,12 +139,19 @@ export async function toolkitExampleChecks({open,fail}) {
         if(!await page.getByRole('combobox',{name:'STL units',exact:true}).isVisible())fail(where,'STL units control is missing');
       } else if(id==='assembly') {
         await page.waitForFunction(()=>document.body.dataset.ready==='1'&&window.__viewer?.stage.renderer.info.render.triangles>0);
-        const before=await page.evaluate(()=>({parts:window.__viewer.parts.map(p=>p.name).sort(),plate:window.__viewer.parts.find(p=>p.name==='plate').mesh.position.toArray(),revision:window.__guide.guide.snapshot.source_commit}));
-        if(JSON.stringify(before.parts)!==JSON.stringify(['base','fastener','lid','plate','rail'])||before.revision!=='1'.repeat(40))fail(where,'synthetic fixture identity or mesh closure changed');
-        await page.getByRole('combobox',{name:'Instruction step',exact:true}).selectOption('lid');
-        await page.waitForFunction(()=>window.__guide.controller.current==='lid');
-        const after=await page.evaluate(()=>window.__viewer.parts.find(p=>p.name==='plate').mesh.position.toArray());
-        if(JSON.stringify(after)===JSON.stringify(before.plate))fail(where,'instruction changed without moving the source-bound plate');
+        await page.getByRole('combobox',{name:'Instruction step',exact:true}).selectOption('step-11');
+        await page.waitForFunction(()=>window.__guide.controller.current==='step-11');
+        for(const problem of await featuredGuideProblems(page))fail(where,problem);
+        // Planted controls, once: a wrong guide identity and a scene without ghosting must each be reported.
+        if(width===1366&&color==='light') {
+          const planted=async(label,plant,undo,pattern)=>{await page.evaluate(plant);const found=await featuredGuideProblems(page);await page.evaluate(undo);
+            if(!found.some(p=>pattern.test(p)))fail(where,`planted ${label} was not caught (${found.join('; ')||'no problems'})`);};
+          await planted('wrong guide id',()=>{window.__planted=window.__guide.guide.snapshot.id;window.__guide.guide.snapshot.id='serial-bench';},
+            ()=>{window.__guide.guide.snapshot.id=window.__planted;},/not the featured Gyropup turret guide/);
+          await planted('missing ghosting',()=>window.__viewer.applyState({...window.__viewer.getState(),mode:'solid'}),
+            ()=>window.__viewer.applyState({...window.__viewer.getState(),mode:'ghost'}),/not ghosted/);
+          if((await featuredGuideProblems(page)).length)fail(where,'the planted faults were not undone');
+        }
         await page.getByRole('button',{name:'Assembled',exact:true}).click();
         if(await page.evaluate(()=>window.__guide.controller.current!==null||Object.values(window.__viewer.getState().offsets_mm).some(v=>v.some(n=>n!==0))))fail(where,'Assembled did not reset the authored motion');
       } else if(id==='mechanisms') {
@@ -150,6 +175,22 @@ export async function toolkitExampleChecks({open,fail}) {
         if(await demo.locator('[data-part=beam]').getAttribute('points')===before.beam||await demo.locator('b[data-out=force]').textContent()===before.force)fail(where,'thickness input did not update both geometry and equation result');
         if(!/not proof of strength/i.test(await demo.locator('.cc-note').textContent()))fail(where,'calculator assumptions are missing');
       }
+    } finally {await done();}
+  }
+  // The synthetic rail bench stays published, unlinked (#811): its existing demo URL keeps working, checked as before.
+  for(const width of [320,1366]) for(const color of ['light','dark']) {
+    const {page,done}=await open('/kit/model/viewer.html?guide=/web/toolkit/assembly/guide.json&nav=1',{width,color,motion:'reduce'});
+    const where=`Rail bench demo URL @${width} ${color}`;
+    try {
+        await page.waitForFunction(()=>document.body.dataset.ready==='1'&&window.__viewer?.stage.renderer.info.render.triangles>0);
+        const before=await page.evaluate(()=>({parts:window.__viewer.parts.map(p=>p.name).sort(),plate:window.__viewer.parts.find(p=>p.name==='plate').mesh.position.toArray(),revision:window.__guide.guide.snapshot.source_commit}));
+        if(JSON.stringify(before.parts)!==JSON.stringify(['base','fastener','lid','plate','rail'])||before.revision!=='1'.repeat(40))fail(where,'synthetic fixture identity or mesh closure changed');
+        await page.getByRole('combobox',{name:'Instruction step',exact:true}).selectOption('lid');
+        await page.waitForFunction(()=>window.__guide.controller.current==='lid');
+        const after=await page.evaluate(()=>window.__viewer.parts.find(p=>p.name==='plate').mesh.position.toArray());
+        if(JSON.stringify(after)===JSON.stringify(before.plate))fail(where,'instruction changed without moving the source-bound plate');
+        await page.getByRole('button',{name:'Assembled',exact:true}).click();
+        if(await page.evaluate(()=>window.__guide.controller.current!==null||Object.values(window.__viewer.getState().offsets_mm).some(v=>v.some(n=>n!==0))))fail(where,'Assembled did not reset the authored motion');
     } finally {await done();}
   }
 }

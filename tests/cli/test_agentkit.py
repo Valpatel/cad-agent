@@ -44,8 +44,12 @@ def test_install_links_and_generates_then_reinstalls(tmp_path):
     assert {row['state'] for row in agentkit.status(home, root)} == {'installed'}
     (root / '.agents/agents/reviewer.md').write_text((root / '.agents/agents/reviewer.md').read_text() + 'More.\n')
     assert 'out of date' in {row['state'] for row in agentkit.status(home, root)}
-    assert not agentkit.install(home, root)['conflicts']          # links and generated files are replaced
+    again = agentkit.install(home, root)
+    assert not again['conflicts']                                  # generated files are replaced
     assert 'More.' in (home / '.agents/skills/reviewer/SKILL.md').read_text()
+    # links already in place are left as they are, so an update lists only what changed (#799)
+    assert again['done'] == [f"generate {home / '.agents/skills/reviewer'}"] and len(again['unchanged']) == 3
+    assert agentkit.install(home, root)['done'] == [], "nothing changed, nothing listed"
 
 
 def test_foreign_files_are_conflicts_and_left_alone(tmp_path):
@@ -264,9 +268,9 @@ def test_codex_home(tmp_path, monkeypatch):
 
 # What each item needs that a person may lack (#282): everything is installed, and install says what can't be used yet.
 # name: (needs, needed only by some steps)
-NEEDS = {'cad-pr-review': (('gh', 'write-access'), ()), 'cad-work-tracking': (('git', 'gh', 'write-access'), ()),
+NEEDS = {'cad-pr-review': (('github', 'write-access'), ()), 'cad-work-tracking': (('git', 'gh', 'write-access'), ()),
          'cad-remote-runs': (('git', 'gh', 'ssh', 'compute-host'), ('rsync',)), 'mcmaster-parts': ((), ('playwright',)),
-         'cad-pr-reviewer': (('gh',), ()), 'cad-resume': (('git', 'gh'), ())}
+         'cad-pr-reviewer': (('github',), ()), 'cad-resume': (('git', 'gh'), ())}
 NEEDS.update({name: (('node', 'npm'), ('scada-browser',)) for name in (
     'scada-component-authoring', 'scada-system-authoring', 'scada-model-adaptation',
     'repository-documentation', 'scada-distribution-review')})

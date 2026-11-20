@@ -1,7 +1,12 @@
 // The app-wide top bar for a project's own pages: reads site/nav.json (written by `cad-agent site`) and renders the
 // same tabs as the project site, so every page of the app shares one navigation.
 //   mountAppNav({ root: '../', current: 'simulate' })   // root: path from this page to the project root
-// `cad-agent site --serve` adds `mountAppNav({ root: '/', injected: true })` to every project page it sends. An injected
+// The web kit's standalone viewers (model/viewer.html, files/file-viewer.html) mount it only when their address
+// carries `nav=1`, so a host without site/nav.json gets no request and no console line from them; a host that has one
+// links its viewers with nav=1. (A host that opts in without the file gets one 404 for it, and no bar.)
+// `cad-agent site --serve` adds `mountAppNav({ root: '/', current, injected: true })` to every project page it sends
+// whose markup has no bar (the kit's viewers included), and its nav.json says `"live": true`, which turns on live
+// reload (below); a static copy of the site does not. An injected
 // bar pads the body by its height (pages laid out for the bar, like the web kit's, use body.has-appnav and
 // --appnav-h instead), and steps aside for a bar the page mounts itself, whichever comes first, even from an older
 // copy of this file.
@@ -13,7 +18,10 @@ background:rgba(6,6,9,.94);backdrop-filter:blur(10px);border-bottom:1px solid #2
 .appnav a.tab{font:500 12px 'JetBrains Mono',ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:#8892a4;
 text-decoration:none;padding:6px 10px;border-radius:6px;white-space:nowrap}
 .appnav a.tab:hover{color:#00f0ff}.appnav a.tab.on{color:#00f0ff;background:rgba(0,240,255,.06);box-shadow:inset 0 -2px 0 #00f0ff}
-body.has-appnav{--appnav-h:46px}`;
+body.has-appnav{--appnav-h:46px}
+@media(max-width:600px){.appnav{padding:0 8px;gap:2px}.appnav .brand{margin-right:4px;font-size:14px}
+.appnav .brand,.appnav a.tab{min-height:44px;min-width:44px;box-sizing:border-box;display:inline-flex;align-items:center}
+.appnav a.tab{padding:0 7px;font-size:11px;letter-spacing:.04em}}`;
 const NAV_H = 46;
 
 // root must be a plain relative path (../../, ./, designer/) or the site root "/" (the server-injected bar):
@@ -67,7 +75,9 @@ export async function mountAppNav({ root = '../', current = '', injected = false
       if (!hadClass && !document.querySelector('nav.appnav')) body.classList.remove('has-appnav');
     };
   }
-  liveReload();
+  // Only the server that answers the change poll (`cad-agent site --serve`) offers it: any other local server would
+  // answer each poll with a 404 (#804: the kit's viewers on a static preview of a site).
+  if (cfg.live === true) liveReload();
   return nav;
 }
 

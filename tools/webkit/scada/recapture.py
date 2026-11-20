@@ -209,8 +209,7 @@ def main(argv=None):
         target = partial / MANIFEST
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(json.dumps(manifest, indent=2) + '\n')
-        if out.exists():
-            out.rmdir()  # checked empty above
+        # On the Linux CI runner rename replaces an empty directory in one operation.
         partial.rename(out)
     except BaseException:
         shutil.rmtree(partial, ignore_errors=True)

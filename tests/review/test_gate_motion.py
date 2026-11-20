@@ -1656,3 +1656,15 @@ def test_each_volume_test_refuses_alone_when_the_other_boolean_is_wrong(monkeypa
     monkeypatch.setattr(symmetry, "_boolean", boolean)
     found = symmetry.measure_symmetry(wheel, *z, orders=[12])
     assert found.order == 1 and not found.refused
+
+
+def test_half_turn_checks_real_pose_at_the_collision_threshold():
+    from cadagent.review.gates import Assembly
+    cq = _cq()
+    asm = Assembly()
+    asm.add("bar", _bar(cq, extra=0.0004, side=0.3))
+    asm.add("pad", cq.Workplane("XY").box(2, 2, 2).translate((-11 + 0.0109, 0, 0)).val())
+    joints = {"J": turn("bar", "pad", (0, 360))}
+    result, full = _same_checks(asm, joints, samples={"J": 5})
+    assert result["stats"]["symmetric_joints"] == 1
+    assert not full["pass"] and any(c["id"] == "collision:bar|pad" for c in result["checks"])

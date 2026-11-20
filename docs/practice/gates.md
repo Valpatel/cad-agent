@@ -786,8 +786,9 @@ Refused, with the reason in the `motion:<group>` message and `density[].symmetry
 - a kernel failure while measuring. It is not written to the pair cache, so the next run measures again.
 
 Limits. This is a measurement, not a proof: the boundary is compared at sample points and the booleans and
-integrals are OCCT's. An asymmetry under the limits above is not seen. A pair whose gap sits within `touch_mm / 10`
-of `touch_mm`, or whose shared volume sits within `overlap_mm3 / 2` of `overlap_mm3`, can read either way. The verdict
+integrals are OCCT's. A feature smaller than those limits can leave a part with a measured order of symmetry even when it has only one such feature.
+The gate queries the actual sampled pose when the gap is within `touch_mm / 10` of the contact threshold, or shared or
+outside volume is within `overlap_mm3 / 2` of its threshold. Collision-onset bisection also uses actual poses. The verdict
 carries the assumption line for the shortcut only when a joint's poses were queried once. `symmetry=False` (`cad:
 gates: motion: {symmetry: false}`) queries every sample.
 

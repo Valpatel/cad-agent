@@ -97,8 +97,8 @@ SYMMETRY_ASSUMPTION = (       # stated only in a verdict where a joint's repeati
     "changes place, kernel integration error included, so a pair's gap differs by no more than touch_mm/10 and its "
     "shared volume by no more than overlap_mm3/2 from full sampling, also when both of its parts are symmetric "
     "bodies; a solid that cannot be measured that closely (a free-form face, a work limit, an integration error "
-    "over the limit) is refused and queried at every sample. An asymmetry under those limits is not seen, and a gap "
-    "within touch_mm/10 of touch_mm, or a shared volume within overlap_mm3/2 of overlap_mm3, can read either way; "
+    "over the limit) is refused and queried at every sample. Pairs within the measurement band of a contact, "
+    "overlap or containment threshold are queried at the sampled pose; "
     "symmetry=False queries every sample")
 
 ASSUMPTIONS = [
@@ -1050,7 +1050,10 @@ def run_motion(world: World, joints: Mapping[str, Any], *, tol: Tolerances = Tol
         for pi, pair in candidates:
             if last[0] != pi:       # the same place for every part of a repeating body; fewer distinct poses
                 last = (pi, kernel_mats(vmaps[pi]) if turns else world_mats(vmaps[pi]))
-            pair_rows.setdefault(pair, []).append((pi, world.relate(last[1], pair[0], pair[1])))
+            relation = world.relate(last[1], *pair)
+            if turns and _near_symmetry_threshold(relation, tol):
+                relation = world.relate(world_mats(vmaps[pi]), *pair)
+            pair_rows.setdefault(pair, []).append((pi, relation))
 
         # -- classify
         collisions, contacts, unknown, touched = [], [], [], {}
@@ -1076,7 +1079,7 @@ def run_motion(world: World, joints: Mapping[str, Any], *, tol: Tolerances = Tol
                                     {"pose": _label(g, poses[pi]), "poses": len(bad), "relation": r.to_dict()}))
             if hits and not is_overlap_ok:
                 collisions.append(pair)
-                checks.append(_collision_check(world, g, grid, poses, values_of, kernel_mats, pair, rows, hits,
+                checks.append(_collision_check(world, g, grid, poses, values_of, world_mats, pair, rows, hits,
                                                is_intended, refine_steps, tol))
             if touch and is_intended:
                 touched[_pair_id(a, b)] = {"poses": len(touch), "first": _label(g, poses[touch[0][0]]),
@@ -1364,6 +1367,17 @@ def _radius(box: Sequence[float], origin: Sequence[float], direction: Sequence[f
                 t = sum(v[i] * d[i] for i in range(3))
                 best = max(best, math.sqrt(max(0.0, sum(c * c for c in v) - t * t)))
     return best
+
+
+def _near_symmetry_threshold(relation: Relation, tol: Tolerances) -> bool:
+    """A measured change of pose can cross one of these classification thresholds."""
+    # Relation measurements are rounded to six decimal places.
+    bounds = ((relation.gap_mm, tol.touch_mm, tol.touch_mm / 10),
+              (relation.overlap_mm3, tol.overlap_mm3, tol.overlap_mm3 / 2),
+              (relation.a_outside_b_mm3, tol.contain_mm3, tol.overlap_mm3 / 2),
+              (relation.b_outside_a_mm3, tol.contain_mm3, tol.overlap_mm3 / 2))
+    return any(value is not None and abs(value - threshold) <= band + 0.5e-6
+               for value, threshold, band in bounds)
 
 
 def _collision_check(world: World, g: _Group, grid, poses, values_of, world_mats, pair, rows, hits,

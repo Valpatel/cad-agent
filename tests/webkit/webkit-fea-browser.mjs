@@ -26,11 +26,62 @@ async function rethrowWithScreenshot(original, label, takeScreenshot) {
   throw original;
 }
 
+// Stream milestones from Node so a stuck renderer or a cancelled job still leaves a partial log.
+const engine=process.env.PLAYWRIGHT_BROWSER==='webkit'?webkit:chromium;
+function progress(theme, step, detail) {
+  console.log('FEA progress', JSON.stringify({ engine: engine.name(), theme, step, detail }));
+}
+
+async function openFixture(page, siteUrl, file, mark) {
+  const url = new URL(file, siteUrl).href;
+  page.on('request', request => {
+    if (request.url() === url) mark('fixture requested', file);
+  });
+  page.on('response', response => {
+    if (response.url() === url) mark('fixture response', response.status());
+  });
+  page.on('requestfailed', request => {
+    if (request.url() === url) mark('fixture request failed', request.failure()?.errorText);
+  });
+  page.on('pageerror', error => mark('page error', error.message));
+  page.on('crash', () => mark('page crashed'));
+  mark('navigating', file);
+  await page.goto(siteUrl+'/kit/fea/fea.html?case='+file+'&nav=0&title=FEA%20fixture');
+  mark('waiting for ready');
+  await page.waitForFunction(() => {
+    const message = document.querySelector('#stage-overlay .hud-card .hud-note')?.textContent;
+    if (message?.startsWith('Could not load ')) throw new Error(message);
+    return document.body.dataset.ready === '1';
+  });
+  mark('ready');
+}
+
+async function checkFailedInitialization(browser, siteUrl) {
+  const page = await browser.newPage();
+  const events = [];
+  const captureError = new Error('planted screenshot failure');
+  try {
+    await assert.rejects(async () => {
+      try {
+        await openFixture(page, siteUrl, '/missing-fixture.json', (step, detail) => events.push([step, detail]));
+      } catch (error) {
+        await rethrowWithScreenshot(error, 'missing fixture', async () => { throw captureError; });
+      }
+    }, error => error instanceof AggregateError && error.cause === error.errors[0] &&
+      error.cause.message.includes('Could not load /missing-fixture.json: 404') && error.errors[1] === captureError);
+    assert.ok(events.some(([step, file]) => step === 'fixture requested' && file === '/missing-fixture.json'));
+    assert.ok(events.some(([step, status]) => step === 'fixture response' && status === 404));
+  } finally {
+    await page.close();
+  }
+}
+
+progress(null, 'starting fixture server');
 const site=await serveWebkit(new Map([
   ['/fixture.json',(_req,res)=>res.writeHead(200,{'Content-Type':'application/json'}).end(JSON.stringify(fixture))],
   ['/favicon.ico',(_req,res)=>res.writeHead(204).end()],
 ]));
-const engine=process.env.PLAYWRIGHT_BROWSER==='webkit'?webkit:chromium;
+progress(null, 'launching browser');
 const browser=await engine.launch(engine===chromium?{headless:true,channel:process.env.PLAYWRIGHT_CHANNEL==='chromium'?'chromium':'chrome',executablePath:process.env.CHROMIUM_EXECUTABLE}:{headless:true});
 const out=process.env.TEST_OUTPUT||'/tmp/cad-agent-fea';await mkdir(out,{recursive:true});
 const cases=[],errors=[];
@@ -42,11 +93,14 @@ try{
       error.errors[0] === primary && error.errors[1] === secondary);
   cases.push({ failureEvidence: 'original preserved with a successful or failed screenshot' });
   for(const theme of ['light','dark']){
-    const context=await browser.newContext({viewport:{width:1366,height:900},colorScheme:theme}),page=await context.newPage();
+    const mark = (step, detail) => progress(theme, step, detail);
+    mark('creating context');
+    const context=await browser.newContext({viewport:{width:1366,height:900},colorScheme:theme});
+    mark('creating page');
+    const page=await context.newPage();
     page.on('pageerror',error=>errors.push(error.message));
     try{
-      await page.goto(site.url+'/kit/fea/fea.html?case=/fixture.json&nav=0&title=FEA%20fixture');
-      await page.waitForFunction(()=>document.body.dataset.ready==='1');
+      await openFixture(page, site.url, '/fixture.json', mark);
       await page.evaluate(()=>window.__fea.fit('top'));
       // Finish a real paint before the native pointer enters the projected surface.
       await page.screenshot({path:out+'/'+engine.name()+'-'+theme+'-ready.png'});
@@ -72,6 +126,7 @@ try{
       const header=await paint('#topbar h1','#topbar'),panel=await paint('#panel');readable(header);
       assert.equal(panel.background,theme==='light'?'rgb(255, 255, 255)':'rgb(14, 14, 20)');
       for(const state of ['design','overload']){
+        mark('checking surface', state);
         if(state==='overload'){
           await page.getByRole('button',{name:'Max',exact:true}).click();
           await page.waitForFunction(()=>document.querySelector('.fea-status').classList.contains('over'));
@@ -98,9 +153,21 @@ try{
       console.error(`FEA ${label} failed`, error);
       await rethrowWithScreenshot(error, label, () => page.screenshot({ path: `${out}/${engine.name()}-${theme}-failure.png` }));
     }
-    finally{await context.close();}
+    finally{
+      mark('closing context');
+      await context.close();
+    }
   }
   assert.deepEqual(errors,[]);
+  progress(null, 'checking failed initialization');
+  await checkFailedInitialization(browser, site.url);
+  cases.push({ failedInitialization: 'actual missing fixture retained before screenshot error' });
   await writeFile(out+'/'+engine.name()+'-report.json',JSON.stringify({passed:true,browser:await browser.version(),cases,errors},null,2));
   console.log(JSON.stringify({passed:true,engine:engine.name(),cases:cases.length,out}));
-}finally{await browser.close();await site.close();}
+}finally{
+  progress(null, 'closing browser');
+  try { await browser.close(); } finally {
+    progress(null, 'closing fixture server');
+    await site.close();
+  }
+}

@@ -126,6 +126,13 @@ export async function wideLayoutProblems(browser, base, { onMeasurement = () => 
             if (route === '/') {
               seen.push(...await defectControl(page, route, 'shell', /shell uses/));
               seen.push(...await defectControl(page, route, 'hero', /artwork is/));
+              // A zoomed-out 2560px screen and a shallow ultrawide exercise the two artwork height limits.
+              for (const size of [{ width: 5120, height: 1440 }, { width: 3440, height: 720 }]) {
+                await page.setViewportSize(size);
+                await settled(page);
+                const snapshot = await page.evaluate(wideGeometrySnapshot, route);
+                seen.push(...wideGeometryProblems(snapshot).map(problem => `${size.width}×${size.height}: ${problem}`));
+              }
             }
             if (route === '/toolkit/scada/elements') seen.push(...await defectControl(page, route, 'gallery', /gallery has 3 columns/));
             if (route === '/explore') seen.push(...await defectControl(page, route, 'groups', /Explore group row leaves/));

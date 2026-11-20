@@ -5,4 +5,3 @@
 **Changed**
 - Replay viewer: Fit frames the points the robot's bodies reach rather than the corners of one box around the whole run, so the subject fills more of an oblique view. It projects at most 20,000 corners (a long recording merges consecutive frames): about 30 ms per Fit at 30,001 frames × 6 bodies in Chromium, against under 1 ms before, and none for a followed recording; the two-link arm's thumbnail and the Gyropup cards are recaptured (#809).
 - Gyropup replay: the camera follows the robot in every run that travels more than 0.1 m from its start, so the push run now follows its base like the kerb runs and the robot fills a phone's view in all four scenarios; the landing stays framed whole (#809).
-- The home and toolkit "Robot simulation replay" cards carry one recorded figure, generated from the replay index for the run they play: the snapshot's verdict and its highest motor torque as a share of that motor's peak-torque limit (#809).

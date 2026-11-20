@@ -1,0 +1,1 @@
+- The home and Toolkit robot replay cards show the selected snapshot's verdict and the largest share of a motor's own peak-torque limit reached during that run (#809).

@@ -133,15 +133,15 @@ export const BUILD_GUIDE_PHRASES = ['example sequence', 'work-in-progress', 'not
 export const buildGuideCaptionMissing = caption => BUILD_GUIDE_PHRASES.filter(p => !String(caption || '').toLowerCase().includes(p.toLowerCase()));
 
 /** One recorded figure for the robot-replay cards (#809), generated from the replay index the viewer shows and the
- * card's capture record (which run the card plays), never typed: that run's verdict and its highest motor torque as a
- * share of that motor's peak-torque limit, said to be the snapshot's own record. Throws when either is missing. */
+ * card's capture record (which run the card plays), never typed: that run's verdict and the largest share of a motor's own
+ * peak-torque limit across all its motors. Throws when either is missing. */
 export function replayCardFigure(index, card) {
   const run = index?.scenarios?.find(s => s.id === card?.scenario);
   if (!run) throw new Error(`Toolkit: the replay card plays ${card?.scenario}, which the replay index does not list`);
   const verdict = run.summary?.verdict?.label, torque = run.summary?.metrics?.find(m => m.label === 'Peak motor torque')?.value;
   const share = /: (\d{1,3})% of its peak-torque limit$/.exec(torque || '')?.[1];
   if (!['pass', 'fail'].includes(verdict) || !share) throw new Error(`Toolkit: the replay index records no verdict or peak-torque share for ${run.id}`);
-  return `For the run shown, the snapshot records a ${verdict}, with its highest motor torque at ${share}% of that motor's peak-torque limit.`;
+  return `The snapshot records a ${verdict} for this run. The highest torque relative to a motor's own peak-torque limit was ${share}%.`;
 }
 
 /** Capability cards are a presentation index of existing, locally owned examples. `replayFigure`
@@ -167,7 +167,7 @@ export function toolkitCapabilities(m, {catalog = [], has, replayFigure} = {}) {
       image:'/web/models/gyropup.webp', alt:'Gyropup wheel-legged robot, captured from the owned 3D CAD model',
       href:'/toolkit/models', action:'Open 3D model', docs:'/docs/web-parts', fit:'contain'},
     {id:'robot-replay', title:'Robot simulation replay', kind:'Recorded dynamics',
-      description:'Gyropup, a work-in-progress wheel-legged robot, in recorded MuJoCo runs from its dated snapshot: drive off a kerb, ride a plank, take a push, land a drop, each with the snapshot\'s own pass verdict and peak motor torque. Recorded solver output, replayed, not recomputed, and not a validation of hardware. A small two-link arm stays as the editable example.'+(replayFigure ? ' '+replayFigure : ''),
+      description:'Gyropup, a work-in-progress wheel-legged robot, in recorded MuJoCo runs from its dated snapshot: drive off a kerb, ride a plank, take a push, land a drop, each with the snapshot\'s own verdict and motor torque measurements. Recorded solver output, replayed, not recomputed, and not a validation of hardware. A small two-link arm stays as the editable example.'+(replayFigure ? ' '+replayFigure : ''),
       image:'/kit/simulation/examples/gyropup-v2/card-still.webp', motion:'/kit/simulation/examples/gyropup-v2/card.webp',
       alt:'Gyropup, a wheel-legged robot, driving off a kerb in the recorded-simulation viewer',
       href:'/kit/simulation/examples/gyropup-v2/viewer.html?nav=1', action:'Play robot recording', docs:'/'+folderMapPath('docs/examples/robot-replay/README.md').replace(/\.md$/,'')},

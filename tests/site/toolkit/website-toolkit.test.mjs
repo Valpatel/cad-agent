@@ -237,10 +237,11 @@ test('the robot-replay card figure is generated from the replay index for the ru
   const bundle='software/cadagent/webkit/simulation/examples/gyropup-v2/',index=read(bundle+'index.json'),card=read(bundle+'card.json');
   const figure=replayCardFigure(index,card),run=index.scenarios.find(s=>s.id===card.scenario);
   assert.equal(card.scenario,'kerb_drop');
-  assert.equal(figure,"For the run shown, the snapshot records a pass, with its highest motor torque at 29% of that motor's peak-torque limit.");
+  assert.equal(figure,"The snapshot records a pass for this run. The highest torque relative to a motor's own peak-torque limit was 29%.");
   assert.ok(run.summary.metrics[0].value.endsWith(': 29% of its peak-torque limit'),'the share is the index\'s own');
   // Planted controls: another run's record changes the figure, and a summary without the share stops the build.
-  assert.match(replayCardFigure(index,{scenario:'side_kerb'}),/ at 56% of /);
+  assert.equal(replayCardFigure(index, {scenario: 'side_kerb'}),
+    "The snapshot records a pass for this run. The highest torque relative to a motor's own peak-torque limit was 56%.");
   const stripped=structuredClone(index);stripped.scenarios.find(s=>s.id==='kerb_drop').summary.metrics[0].value='34.3 N·m';
   assert.throws(()=>replayCardFigure(stripped,card),/no verdict or peak-torque share/);
   assert.throws(()=>replayCardFigure(index,{scenario:'missing'}),/does not list/);
@@ -248,4 +249,14 @@ test('the robot-replay card figure is generated from the replay index for the ru
   const has=file=>existsSync(path.join(root,file)),model=scadaToolkitModel({...inputs,has});
   const replay=toolkitCapabilities(model,{has,replayFigure:figure}).find(c=>c.id==='robot-replay');
   assert.ok(replay.description.endsWith(figure)&&replay.description.includes('not a validation of hardware'),replay.description);
+
+  const altered = structuredClone(index);
+  const summary = altered.scenarios.find(scenario => scenario.id === card.scenario).summary;
+  summary.verdict = {pass: false, label: 'fail'};
+  const failedFigure = replayCardFigure(altered, card);
+  const failedCard = toolkitCapabilities(model, {has, replayFigure: failedFigure}).find(c => c.id === 'robot-replay');
+  assert.match(failedCard.description, /snapshot records a fail for this run/);
+  assert.doesNotMatch(failedCard.description, /\bpass(?:ed)?\b/i);
+  delete summary.verdict;
+  assert.throws(() => replayCardFigure(altered, card), /no verdict or peak-torque share/);
 });

@@ -27,6 +27,9 @@ check, subscribes to the selected printer, then sends exactly one `pushall` and 
 retained heartbeat or unmatched firmware reply cannot complete the observation. Output is local account data;
 do not paste device identifiers into public issues.
 
+<details>
+<summary>Session file, transport and timeouts</summary>
+
 The adapter reads the existing owner-only POSIX session at
 `$XDG_STATE_HOME/cad-agent/manufacturing/bambu/session.json` (default `~/.local/state/...`), or `--session`.
 It requires the `cad-agent.bambu-session/1` format with the genuine access-token expiry, global-cloud origin,
@@ -39,6 +42,8 @@ MQTT requires the optional `bambu` extra (Paho MQTT 2.1 or newer). HTTPS listing
 Imports do not connect, install dependencies, or load credentials. Both transports verify TLS. The default
 MQTT response wait is 30 seconds after connection; socket connections/HTTP have separate timeouts and OS DNS
 resolution is outside that wait. Use a supervising process if a hard overall deadline is required.
+
+</details>
 
 The [dated connection evidence](../../../../../docs/research/manufacturing/bambu-cloud.md) distinguishes
 the earlier actual printer observations from this adapter's tests. State/firmware do not establish a clean
@@ -59,12 +64,17 @@ cad-agent bambu-frame --device DEVICE_ID \
   --output ~/cad-agent-frames/p1s.jpg
 ```
 
+<details>
+<summary>Runtime requirements and output checks</summary>
+
 This draft integration requires Python 3.11+ on Linux x86_64, Pillow 13+ from the `bambu-camera` extra and the exact installed-library
 digest declared in `camera.py`. An unsupported library fails before the account/device queries. Existing
 output files and nonprivate output directories are refused. The image is fully decoded, checked against the
 reader's dimensions/byte count, then published as a new mode-0600 file. Grant secrets travel on a private,
 unlinked input file descriptor, not in the command line or logs. The external process group has a 45-second
 deadline and is killed/reaped on completion, error or interruption; HTTP/MQTT have the separate bounds above.
+
+</details>
 
 The earlier prototype's P1S frame is not acceptance of this new implementation. Independent source review passed,
 but both actual native trials in [PR494](https://github.com/Valpatel/cad-agent/pull/494) failed without a frame.

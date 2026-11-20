@@ -3,7 +3,7 @@
 This optional **external program is under development** to read one P1S JPEG through the owner's already installed Bambu media library. It is AGPL-3.0-only and is not imported by, linked into or included in the cad-agent Python package. No proprietary binary is distributed.
 
 ```mermaid
-flowchart LR
+flowchart TD
     G["Short-lived camera grant"] --> H["Bounded external reader"]
     L["Installed media library"] --> H
     H --> J["One private JPEG"]

@@ -79,8 +79,8 @@ flowchart TD
   and no cad-agent skill was linked into the harness, so no skill loaded. The session's first directory survey
   named a cad-agent checkout; it was not opened until the user asked, five days later, whether the skills had been
   used. That checkout already had `prusa3mf.write_project`, `cad-agent slice` with PrusaSlicer, `cad-agent
-  prusa-view` and `gcode.bridge_report`. The hand-written path met the wipe-tower conflict the toolkit's writer
-  avoids ([multi-colour lessons](../mechanical/printing-without-supports.md#several-colours-on-a-tool-changer)). #824 changed the `design-process`
+  prusa-view` and `gcode.bridge_report`. The hand-written project produced a wipe-tower conflict. The toolkit writer records the requested tower
+  position. Slice the project and check for a path conflict to verify clearance ([multi-colour lessons](../mechanical/printing-without-supports.md#several-colours-on-a-tool-changer)). #824 changed the `design-process`
   description to match a plain print request and pointed it at those tools.
 - **Check:** before the first tool file is written, the session record names the toolkit looked for, where (PATH,
   skills folder, checkouts) and what was found. A new tool's first commit says which existing owner was ruled out.

@@ -550,7 +550,7 @@ def inject_nav(page: bytes, request_path: str, nav: List[Dict[str, str]]) -> byt
     is asked for with nav=0 in its address (the kit's pages read it so, e.g. fea/fea.html); a bar a page mounts from its
     own script replaces the injected one in the browser (webkit/ui/appnav.js)."""
     query = request_path.split("#")[0].partition("?")[2]
-    if parse_qs(query).get("nav", [""])[0] == "0":                # the first nav=, as URLSearchParams.get reads it
+    if parse_qs(query, keep_blank_values=True).get("nav", [""])[0] == "0":                # the first nav=, as URLSearchParams.get reads it
         return page
     # a bar in the markup, not the word: the kit's viewers mention appnav.js (an opt-in import) and still get the bar
     if not nav or re.search(rb'class=["\']appnav\b', page) or _OPT_OUT.search(page):

@@ -9,6 +9,20 @@ import {YAML} from '../npm-context.mjs';
 import {matchesToolkitCard} from '../../../tools/site/assets/toolkit.js';
 import {sourceLicenseResolver} from '../../../tools/site/compiler/site-catalog.mjs';
 
+import {manifoldGeometryMismatches} from './toolkit-examples-browser.mjs';
+
+test('original STEP reports the failed measurements independently', () => {
+  const reference = { format: 'STEP', triangles: 9518, bounds: [114.300003, 114.197014, 83.184998] };
+  assert.deepEqual(manifoldGeometryMismatches(reference), []);
+  assert.deepEqual(manifoldGeometryMismatches({ ...reference, triangles: 8305 }),
+    [{ field: 'triangles', expected: 9518, actual: 8305 }]);
+  const wrongBounds = [114.302, 114.197, 83.185];
+  assert.deepEqual(manifoldGeometryMismatches({ ...reference, format: 'STL', bounds: wrongBounds }), [
+    { field: 'format', expected: 'STEP', actual: 'STL' },
+    { field: 'boundsMm', expected: [114.300, 114.197, 83.185], actual: wrongBounds },
+  ]);
+});
+
 const root = path.resolve(import.meta.dirname,'../../..');
 const read = file => JSON.parse(readFileSync(path.join(root,file),'utf8'));
 const fixture = () => {

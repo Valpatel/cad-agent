@@ -20,6 +20,19 @@ const featuredGuideProblems=page=>page.evaluate(async()=>{
   return problems;
 });
 
+// Reference values measured with occt-import-js 0.0.23 and the checked-in original STEP.
+export function manifoldGeometryMismatches({ format, triangles, bounds }) {
+  const expectedBounds = [114.300, 114.197, 83.185];
+  const differences = [];
+  if (format !== 'STEP') differences.push({ field: 'format', expected: 'STEP', actual: format });
+  if (triangles !== 9518) differences.push({ field: 'triangles', expected: 9518, actual: triangles });
+  if (!Array.isArray(bounds) || bounds.length !== 3 ||
+      !bounds.every((value, axis) => Number.isFinite(value) && Math.abs(value - expectedBounds[axis]) < 0.001)) {
+    differences.push({ field: 'boundsMm', expected: expectedBounds, actual: bounds });
+  }
+  return differences;
+}
+
 /** Open the Toolkit's original STEP under the same headers as a Pages deployment. */
 async function hostedStepCheck(open, fail) {
   const where = 'Original STEP under the published site policy';
@@ -43,10 +56,16 @@ async function hostedStepCheck(open, fail) {
       fail(where, model.message || 'STEP parser failed');
       return;
     }
-    // These mesh dimensions and triangle count were measured with the upstream 0.0.23 reader.
-    const expected = [114.300, 114.197, 83.185];
-    if (model.format !== 'STEP' || model.triangles !== 9518 || model.bounds?.length !== 3 ||
-        !model.bounds.every((size, i) => Math.abs(size - expected[i]) < .001)) fail(where, 'unexpected manifold geometry');
+    const original = await page.getByRole('link', { name: 'Download original', exact: true }).getAttribute('href');
+    const download = await page.request.get(new URL(original, page.url()).href);
+    const sha256 = createHash('sha256').update(await download.body()).digest('hex');
+    if (!download.ok() || sha256 !== fileHash('software/vendor/agentcad/tests/fixtures/real_world/pump_manifold.step')) {
+      fail(where, `original STEP bytes changed: ${JSON.stringify({ original, status: download.status(), sha256 })}`);
+    }
+    const differences = manifoldGeometryMismatches(model);
+    if (differences.length) {
+      fail(where, `unexpected manifold geometry: ${JSON.stringify({ original, sha256, differences })}`);
+    }
     const picture = await page.evaluate(async () => {
       const { model, stage } = window.__fileViewer;
       const painted = () => new Promise(done => requestAnimationFrame(() => requestAnimationFrame(done)));
@@ -66,10 +85,6 @@ async function hostedStepCheck(open, fail) {
     if (picture.shown - picture.hidden !== model.triangles || picture.restored !== picture.shown) {
       fail(where, `expected the manifold's ${model.triangles} triangles to disappear and return: ${JSON.stringify(picture)}`);
     }
-    const original = await page.getByRole('link', { name: 'Download original', exact: true }).getAttribute('href');
-    const download = await page.request.get(new URL(original, page.url()).href);
-    if (!download.ok() || createHash('sha256').update(await download.body()).digest('hex') !==
-        fileHash('software/vendor/agentcad/tests/fixtures/real_world/pump_manifold.step')) fail(where, 'original STEP bytes changed');
   } finally { await done(); }
 }
 

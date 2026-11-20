@@ -101,8 +101,10 @@ domains:
       - slug: gears
         title: Gears
         scope: Spur, helical, planetary and printed gear trains.
-        maturity: idea
+        maturity: tooling
         priority: [demo]
+        topics:
+          - {slug: gear-solids, title: Gear solids, scope: "Involute spur, ring and straight bevel gear solids as the rack cuts them, undercut reported, and the centre distance of a pair; no helical, internal or planetary gears yet.", maturity: tooling, pages: [docs/mechanical/gears.md], api: [cadagent.mechanical.gears], issues: [723]}
       - slug: belt-and-chain-drives
         title: Belt and chain drives
         scope: Timing belts, chains, pulleys, sprockets and tensioning.

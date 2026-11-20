@@ -78,6 +78,41 @@ export async function toolkitBrowserChecks({open,fail}) {
     await button.click();await retry.page.locator('[data-scada-preview-art] [data-scada-type="pump"]').waitFor();
     await retry.page.keyboard.press('Escape');
   } finally {await retry.done();}
+  await previewReopenCheck(open);
+}
+
+/** Delay the first selection's metadata until its close event has reached the reopened dialog. */
+async function previewReopenCheck(open) {
+  const {page, done} = await open('/toolkit/scada/elements', {width:1366, color:'light'});
+  let releaseMetadata;
+  const held = new Promise(resolve => { releaseMetadata = resolve; });
+  try {
+    const metadata = '**/toolkit/scada/catalog.json';
+    await page.route(metadata, async route => { await held; await route.continue(); });
+    const tank = page.locator('#equipment--tank').getByRole('button', {name:'Try states'});
+    const pump = page.locator('#equipment--pump').getByRole('button', {name:'Try states'});
+    await Promise.all([page.waitForRequest(metadata), tank.click()]);
+    await pump.evaluate(button => {
+      const dialog = document.querySelector('.toolkit-preview');
+      dialog.addEventListener('close', () => { dialog.openAtCloseEvent = dialog.open; }, {once:true});
+      dialog.querySelector('[data-scada-close]').click();
+      button.click();
+    });
+    await expect(page.locator('.toolkit-preview')).toHaveJSProperty('openAtCloseEvent', true);
+    releaseMetadata();
+    const art = page.locator('[data-scada-preview-art]');
+    const symbol = art.locator('[data-scada-type="pump"]');
+    await expect(symbol).toBeVisible();
+    await expect(art.locator('[data-scada-type="tank"]')).toHaveCount(0);
+    await page.locator('[data-scada-state-fields] [name="running"]').uncheck();
+    await expect(symbol).toHaveAttribute('data-running', 'false');
+    await page.keyboard.press('Escape');
+    await expect(symbol).toHaveCount(0);
+    await expect(pump).toBeFocused();
+  } finally {
+    releaseMetadata();
+    await done();
+  }
 }
 
 /** Human documentation shares the existing frame; raw assets remain direct downloads. */

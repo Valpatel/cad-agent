@@ -28,7 +28,7 @@ flowchart TD
 | [host/](host/README.md) | Two real viewers, scoped interaction, cancellation and independent teardown |
 | `__init__.py` | Empty: makes the folder a package, so a test here may share a file name with one in another folder |
 | `webkit-diagrams-browser.mjs` | Real diagram lifecycle/themes/math, hostile labels, and advisory boundaries on hash-bound emitted sanitizer/math inputs |
-| `webkit-fea-browser.mjs` | Actual projected-surface hover, shared tooltip/marker/readout contrast, normal and overload states, and a rejected mixed-palette control in both engines |
+| `webkit-fea-browser.mjs` | Actual projected-surface hover, shared tooltip/marker/readout contrast, normal and overload states, a rejected mixed-palette control in both engines, and preservation of the first failure when a diagnostic screenshot fails |
 | `webkit-fan-curve.test.mjs` | `<cad-fan-curve>` without a browser: every setting gives a point on both curves |
 | `webkit-formulas.test.mjs` | `formulas.js` against the golden vectors the Python writes |
 | `webkit-fourbar.test.mjs` | `<cad-fourbar>`'s pure parts in Node |
@@ -41,6 +41,7 @@ flowchart TD
 | `webkit-printed-boss.test.mjs` | `<cad-printed-boss>` without a browser, against `cadagent.mechanical.bosses` |
 | `webkit-server.mjs` | Helper: serves `software/cadagent/webkit/`; no-store by default, with an explicit cacheable mode for native history tests |
 | `webkit-stage-browser.mjs` | Actual floor-grid pixels against projected mathematical lines, filled-floor negative control, themes, shadows, dimming, camera changes and cleanup |
+| `webkit-stage-draw-browser.mjs` | Draw on demand (#822): zero idle draws in each stage viewer, no stale picture after each picture-changing interaction (compared with the same state drawn afresh), off-screen stages, planted missed-draw and always-draw controls |
 | `webkit-torsion-snap.test.mjs` | `<cad-torsion-snap>` without a browser: the port's numbers, Saint-Venant scaling |
 | `webkit-vendor.test.mjs` | The kit's vendored libraries match their receipts |
 

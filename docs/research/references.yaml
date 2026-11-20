@@ -2114,6 +2114,7 @@ sources:
     aliases: [shigley-shear, shigley-beam, shigley-torque]
     used_for:
       - software/cadagent/formulas/_registry.py
+      - software/cadagent/formulas/gears.py
       - software/cadagent/formulas/inserts.py
       - software/cadagent/formulas/limiters.py
       - software/cadagent/formulas/screws.py
@@ -2130,6 +2131,10 @@ sources:
       by title and its Tables 9-1 and 9-2 and Examples 9-1, 9-2 and 9-4 as two opened sources give them: the
       publisher's slides for the 9th edition (shigley-9e-welding-slides) and class notes on the 10th
       (hijazi-shigley-ch9).
+      2026-11-14 (#721): Chapters 13, 14 and 15 (gears) were not opened in the book either.
+      cadagent.formulas.gears cites their sections by title, and their equations, tables and examples by the
+      numbers the publisher's slides for the 9th edition print (shigley-9e-gear-slides-ch13, -ch14 and -ch15); the
+      10th edition's numbering was not checked against them.
 
   - id: shigley-8e
     title: Shigley's Mechanical Engineering Design, 8th edition
@@ -4083,6 +4088,102 @@ sources:
       kind: pdf
       fetched: '2026-11-14'
       redistribute: false
+
+  # Three PDFs, one entry each: every entry's url is the file that entry's reading came from.
+  - id: shigley-9e-gear-slides-ch13
+    title: "Lecture Slides: Gears - General (Shigley's Mechanical Engineering Design, 9th edition, Chapter 13)"
+    authors: []
+    org: The McGraw-Hill Companies
+    year: 2012
+    url: https://www.philadelphia.edu.jo/academics/mgogazeh/uploads/DESIGN2%20CH13.pdf
+    access: free
+    terms: cited and summarised with attribution, never copied; the worked examples' inputs and answers are used as test vectors
+    areas: [gears, formulas]
+    used_for:
+      - tests/formulas/test_gear_formulas.py
+    verified: >-
+      2026-11-14: opened the 105-page PDF (the publisher's slides, copyright 2012, as a course at Philadelphia
+      University, Jordan, hosts them; the url answered with the PDF again later that day). Equations, tables and
+      examples are images, read by eye. Table 13-1 (full depth: addendum 1 m, dedendum 1.25 m or 1.35 m; 20, 22.5
+      and 25 degrees); Example 13-1 (16 and 40 teeth, P = 2: p = 1.57 in, dP = 8 in, dG = 20 in, C = 14 in, rb =
+      3.76 and 9.40 in); Eq. (13-9), mc = Lab / (p cos phi), "should be at least 1.2"; Eqs. (13-10) to (13-13) on
+      interference, and the table for 20 degrees (minimum NP 13, 14, 15, 16, 17 with max NG 16.45, 26.12, 45.49,
+      101.07, 1309.86); Eq. (13-14), tan gamma = NP / NG and tan Gamma = NG / NP; Eq. (13-15), N' = 2 pi rb / p;
+      the face-width rule 3p to 5p; Eqs. (13-37) and (13-38), Wt = T / rav, Wr = Wt tan phi cos gamma, Wa = Wt
+      tan phi sin gamma; Example 13-8 (15 and 45 teeth, P = 5, 600 rev/min, 5 hp, average pitch radii 1.293 and
+      3.88 in: gamma = 18.4 deg, Gamma = 71.6 deg, V = 406 ft/min, Wt = 406 lbf, Wr = 46.6 lbf, Wa = 140 lbf on
+      the gear). These are the 9th edition's numbers; cadagent.formulas cites the 10th edition (the entry
+      shigley) by section title and adds that the numbers are the 9th's. Chapters 14 and 15 are the entries
+      shigley-9e-gear-slides-ch14 and shigley-9e-gear-slides-ch15.
+
+  - id: shigley-9e-gear-slides-ch14
+    title: "Lecture Slides: Spur and Helical Gears (Shigley's Mechanical Engineering Design, 9th edition, Chapter 14)"
+    authors: []
+    org: The McGraw-Hill Companies
+    year: 2012
+    url: https://www.philadelphia.edu.jo/academics/mgogazeh/uploads/DESIGN2%20CH14.pdf
+    access: free
+    terms: cited and summarised with attribution, never copied; the worked examples' inputs and answers and the tabulated form factors are used as test vectors
+    areas: [gears, formulas]
+    used_for:
+      - tests/formulas/test_gear_formulas.py
+    verified: >-
+      2026-11-14: opened the 92-page PDF (the publisher's slides, copyright 2012, on the same course page as
+      shigley-9e-gear-slides-ch13). Equations, tables and examples are images, read by eye. Eqs. (14-1) to (14-3);
+      Table 14-2 (slide 5), all 26 rows, as cadagent.formulas.gears ships them (12: 0.245 ... 400: 0.480, rack
+      0.485); Eqs. (14-4a) to (14-6d), the velocity factors in ft/min and m/s; Eqs. (14-7) and (14-8); Example
+      14-1 (P = 8, F = 1.5 in, 16 teeth, 10 kpsi, 1200 rev/min: V = 628 ft/min, Kv = 1.52, Y = 0.296, Wt = 365
+      lbf, 6.95 hp), with its remark that the approach is a rough estimate. The slide of Table 14-2 does not
+      print the table's note (a normal pressure angle of 20 degrees, full-depth teeth), so that was not read; the
+      table agrees within 0.003 with the 20 degree full-depth column of Boston Gear's Table I (boston-gear-spur)
+      at each of the 23 tooth counts both tabulate. Table 14-2 was read a second time the same day, from the
+      slide rendered as an image, and typed into tests/formulas/test_gear_formulas.py separately from the
+      implementation's table; the two agree on all 26 rows. These are the 9th edition's numbers, as for
+      shigley-9e-gear-slides-ch13.
+
+  - id: shigley-9e-gear-slides-ch15
+    title: "Lecture Slides: Bevel and Worm Gears (Shigley's Mechanical Engineering Design, 9th edition, Chapter 15)"
+    authors: []
+    org: The McGraw-Hill Companies
+    year: 2012
+    url: https://www.philadelphia.edu.jo/academics/mgogazeh/uploads/DESIGN2%20CH15.pdf
+    access: free
+    terms: cited and summarised with attribution, never copied
+    areas: [gears, formulas]
+    used_for:
+      - tests/formulas/test_gear_formulas.py
+    verified: >-
+      2026-11-14: opened the 93-page PDF (the publisher's slides, copyright 2012, on the same course page as
+      shigley-9e-gear-slides-ch13). Equations are images, read by eye. Eq. (15-24), F = min(0.3 A0, 10 / Pd), and
+      Eq. (15-25), A0 = dP / (2 sin gamma). Nothing else of the chapter (the AGMA bevel rating, worm gears) is
+      used. These are the 9th edition's numbers, as for shigley-9e-gear-slides-ch13.
+
+  - id: boston-gear-spur
+    title: "Engineering Information: Spur Gears (Boston Gear catalogue P-1930-BG, pp. 306-311)"
+    authors: []
+    org: Boston Gear (Altra Industrial Motion)
+    year: 2019
+    url: https://d2t1xqejof9utc.cloudfront.net/files/173527/p-1930-bg_engineering-info-spur-gears.pdf?1573372093
+    access: free
+    terms: cited by page and table; the catalogue is Boston Gear's copyright and is never copied; its tabulated form factors are used as data
+    areas: [gears, formulas]
+    used_for:
+      - software/cadagent/formulas/_registry.py
+      - software/cadagent/formulas/gears.py
+      - docs/formulas.md
+    verified: >-
+      2026-11-14: opened the 6-page PDF (footer "P-1930-BG 4/19", pages 306 to 311 of the catalogue) from a copy
+      on a file host; bostongear.com refused this client (HTTP 403), so the maker's own URL is not recorded.
+      Page 311, "Lewis Formula (Barth Revision)": W = S F Y / P x 600 / (600 + V), "satisfactory for commercial
+      gears at pitch circle velocities of up to 1500 FPM", considering "beam strength but not wear"; Table I,
+      Tooth Form Factor (Y), 35 rows from 10 teeth to a rack in two columns, 14-1/2 degree full depth involute
+      (0.176 ... 0.390) and 20 degree full depth involute (0.201 ... 0.484), all as cadagent.formulas.gears
+      ships them (read as text from the PDF and compared row by row; read again the same day and typed into
+      tests/formulas/test_gear_formulas.py separately from the implementation's table: all 35 rows of both
+      columns agree); Table II, safe static stresses, which
+      cad-agent does not use. The companion sheet on miter and bevel gears (P-1930-BG 6/18, pp. 315-317) was
+      opened too: it rates straight bevels with the same formula times 0.75 and a table for long-addendum
+      pinions, which cadagent.formulas.gears does not use.
 
   - id: packer-sun-2015-hss-fillet
     title: Design of Fillet Welds to Rectangular HSS

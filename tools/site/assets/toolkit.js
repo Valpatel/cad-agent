@@ -63,7 +63,14 @@ export function enhanceComponentPreviews(documentRoot = document) {
   };
   const close = () => dialog.close();
   const submit = event => event.preventDefault();
-  const onClose = () => { task++; art.replaceChildren(); form.replaceChildren(); if(opener?.isConnected) opener.focus(); };
+  const onClose = () => {
+    // Native close events are queued. A previous preview can finish closing after the next one opens.
+    if (dialog.open) return;
+    task++;
+    art.replaceChildren();
+    form.replaceChildren();
+    if (opener?.isConnected) opener.focus();
+  };
   const click = async event => {
     const button = event.currentTarget, serial = ++task; opener = button;
     title.textContent = button.closest('article').querySelector('h2').textContent;

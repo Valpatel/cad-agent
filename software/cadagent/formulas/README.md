@@ -9,6 +9,7 @@ stops being valid, and its source by author, title, edition and section:
 - heat-set inserts (pull-out, torque-out, the clamp path, the most to tighten) and compression limiters (proof load,
   stack, press fit, a clamped member's stiffness, the preload kept);
 - riveted lap joints (shear, bearing, tearing, efficiency) and fillet welds under static load;
+- spur and straight bevel gears: tooth geometry, tooth forces and the Lewis bending stress as a first check;
 - four-bar and five-bar linkages;
 - rolling bearings: rating life, equivalent loads, static safety, duty cycles and oscillation limits;
 - conduction, film resistance, fans in series and parallel, fan operating points and the stall region.
@@ -81,6 +82,7 @@ flowchart TD
 | `limiters.py` | Proof load, stress on an annulus, a limiter's stack against the plastic, the plastic's share when it is short, a clamped member's frustum stiffness, press-fit pressure and force, and the preload a joint keeps when its plastic relaxes |
 | `rivets.py` | A riveted lap joint per pitch: rivet shear, bearing, tearing between holes, the solid sheet, and the joint's strength and efficiency |
 | `welds.py` | Fillet welds, static only: throat stress of a weld group as a line, against AISC 360-16; [not proof a weld is sound](../../../docs/formulas.md#fillet-welds) |
+| `gears.py` | Involute spur gears and straight bevel gears on 90° shafts: pitch, tip, root and base diameters, contact ratio, least tooth counts, cone geometry and virtual teeth, tooth forces, and the Lewis bending stress with the bevel cone factor; [a static first check, not a rating](../../../docs/formulas.md#gears) |
 | `linkages.py` | Grashof class and inversion, four-bar angles from the input angle, transmission angle, the input's limits; a five-bar's tip, crank angles and singularities |
 | [`bearings.py`](bearings.py) | Rolling-bearing rating life, equivalent loads, static safety, duty cycles, oscillation factors and Hertz contact; source-worked examples above and [model limits](../../../docs/mechanical/bearings.md#limits) |
 | `thermal.py` | Wall and film resistance, wall heat flow, straight-line fan curve, system coefficient, fans in series and parallel, fan operating point, stall flow |

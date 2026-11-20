@@ -20,7 +20,61 @@ const featuredGuideProblems=page=>page.evaluate(async()=>{
   return problems;
 });
 
+/** Open the Toolkit's original STEP under the same headers as a Pages deployment. */
+async function hostedStepCheck(open, fail) {
+  const where = 'Original STEP under the published site policy';
+  const { page, done } = await open('/toolkit', { width: 1366, color: 'light' });
+  try {
+    const card = page.locator('#files');
+    const file = await card.getByRole('link', { name: 'Download STEP', exact: true }).getAttribute('href');
+    const viewer = new URL(await card.locator('[data-toolkit-launch]').getAttribute('href'), page.url());
+    viewer.searchParams.set('file', file);
+    const response = await page.goto(viewer.href);
+    const policy = await response.headerValue('content-security-policy') || '';
+    if (!policy.includes("'wasm-unsafe-eval'") || policy.includes("'unsafe-eval'")) fail(where, 'unexpected script policy');
+
+    await page.waitForFunction(() => ['ready', 'error'].includes(window.__fileViewer?.root.dataset.state));
+    const model = await page.evaluate(() => {
+      const viewer = window.__fileViewer;
+      return { state: viewer.root.dataset.state, message: viewer.root.querySelector('.file-status')?.innerText,
+        format: viewer.info?.format, bounds: viewer.info?.boundsMm, triangles: viewer.info?.triangles };
+    });
+    if (model.state !== 'ready') {
+      fail(where, model.message || 'STEP parser failed');
+      return;
+    }
+    // These mesh dimensions and triangle count were measured with the upstream 0.0.23 reader.
+    const expected = [114.300, 114.197, 83.185];
+    if (model.format !== 'STEP' || model.triangles !== 9518 || model.bounds?.length !== 3 ||
+        !model.bounds.every((size, i) => Math.abs(size - expected[i]) < .001)) fail(where, 'unexpected manifold geometry');
+    const picture = await page.evaluate(async () => {
+      const { model, stage } = window.__fileViewer;
+      const painted = () => new Promise(done => requestAnimationFrame(() => requestAnimationFrame(done)));
+      await painted();
+      const shown = stage.renderer.info.render.triangles, wasVisible = model.visible;
+      let hidden;
+      try {
+        model.visible = false;
+        await painted();
+        hidden = stage.renderer.info.render.triangles;
+      } finally {
+        model.visible = wasVisible;
+        await painted();
+      }
+      return { shown, hidden, restored: stage.renderer.info.render.triangles };
+    });
+    if (picture.shown - picture.hidden !== model.triangles || picture.restored !== picture.shown) {
+      fail(where, `expected the manifold's ${model.triangles} triangles to disappear and return: ${JSON.stringify(picture)}`);
+    }
+    const original = await page.getByRole('link', { name: 'Download original', exact: true }).getAttribute('href');
+    const download = await page.request.get(new URL(original, page.url()).href);
+    if (!download.ok() || createHash('sha256').update(await download.body()).digest('hex') !==
+        fileHash('software/vendor/agentcad/tests/fixtures/real_world/pump_manifold.step')) fail(where, 'original STEP bytes changed');
+  } finally { await done(); }
+}
+
 export async function toolkitExampleChecks({open,fail}) {
+  await hostedStepCheck(open, fail);
   const ids=['scada-elements','scada-simulations','models','robot-replay','files','assembly','mechanisms','calculators'];
   for(const width of [320,1366,1920,3440]) for(const color of ['light','dark']) for(const js of [true,false]) {
     const {page,done}=await open('/toolkit',{width,color,js,motion:'reduce'});
@@ -112,8 +166,8 @@ export async function toolkitExampleChecks({open,fail}) {
         await page.waitForFunction(()=>window.__replay.playback.state().time>.1);
         await page.getByRole('button',{name:'Pause recording',exact:true}).click();
         await page.waitForFunction(()=>!window.__replay.playback.state().playing);
-        const paused=await page.evaluate(()=>({time:window.__replay.playback.state().time,frame:window.__replay.stage.renderer.info.render.frame}));
-        await page.waitForFunction(frame=>window.__replay.stage.renderer.info.render.frame>frame+1,paused.frame);
+        const paused=await page.evaluate(()=>({time:window.__replay.playback.state().time,frame:window.__replay.stage.frames}));
+        await page.waitForFunction(frame=>window.__replay.stage.frames>frame+1,paused.frame);
         if(await page.evaluate(()=>window.__replay.playback.state().time)!==paused.time)fail(where,'paused recording advanced while the stage rendered');
         await page.getByRole('combobox',{name:'Playback speed',exact:true}).selectOption('2');
         if(await page.evaluate(()=>window.__replay.playback.state().speed)!==2)fail(where,'speed control did not update the playback clock');
@@ -122,13 +176,13 @@ export async function toolkitExampleChecks({open,fail}) {
         await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
         if(!await slider.evaluate(input=>input===document.activeElement))fail(where,'recording time could not receive keyboard focus');
         await slider.press('Home');await page.waitForFunction(()=>window.__replay.playback.state().time===0);
-        const before=await page.evaluate(()=>({matrix:window.__replay.scene.groups.find(group=>group.name==='base').matrixWorld.toArray(),frame:window.__replay.stage.renderer.info.render.frame}));
-        await page.waitForFunction(frame=>window.__replay.stage.renderer.info.render.frame>frame+1,before.frame);
+        const before=await page.evaluate(()=>({matrix:window.__replay.scene.groups.find(group=>group.name==='base').matrixWorld.toArray(),frame:window.__replay.stage.frames}));
+        await page.waitForFunction(frame=>window.__replay.stage.frames>frame+1,before.frame);
         const canvas=page.locator('#replay canvas'),image=await canvas.screenshot();
         await slider.scrollIntoViewIfNeeded();await slider.focus();await slider.press('End');
         await page.waitForFunction(()=>window.__replay.playback.state().time===window.__replay.playback.state().duration);
-        const after=await page.evaluate(()=>({matrix:window.__replay.scene.groups.find(group=>group.name==='base').matrixWorld.toArray(),frame:window.__replay.stage.renderer.info.render.frame}));
-        await page.waitForFunction(frame=>window.__replay.stage.renderer.info.render.frame>frame+1,after.frame);
+        const after=await page.evaluate(()=>({matrix:window.__replay.scene.groups.find(group=>group.name==='base').matrixWorld.toArray(),frame:window.__replay.stage.frames}));
+        await page.waitForFunction(frame=>window.__replay.stage.frames>frame+1,after.frame);
         if(JSON.stringify(after.matrix)===JSON.stringify(before.matrix)||image.equals(await canvas.screenshot()))fail(where,'scrubbing changed time without changing the actual rendered robot');
         // Fonts can reflow the phone controls after mount; Fit is defined for the current viewport.
         await page.evaluate(()=>document.fonts.ready);

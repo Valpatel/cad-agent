@@ -154,7 +154,7 @@ async function scenario(name, viewport) {
     await p.touchscreen.tap(b.x + b.w / 2, b.y + b.h / 2);
     await frames(p);
     const label = await p.locator('#gyropup .cad-model-label').textContent();
-    check(label !== 'Drag to turn', `${name} gyropup: a tap on the model must name a part, label still "${label}"`);
+    check(label !== 'Drag to turn' && await p.locator('#gyropup .cad-model-label').isVisible(), `${name} gyropup: a tap on the model must name a part, label still "${label}"`);
     console.log(`${name}: WebKit touch drag arbitration NOT injected (Playwright has no WebKit touch-drag input); physical Safari check remains`);
     await context.close();
     return;
@@ -230,7 +230,7 @@ async function scenario(name, viewport) {
       await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
       await frames(p);
       const label = await p.locator(`#${id} .cad-model-label`).textContent();
-      check(label !== 'Drag to turn', `${tag} a tap on the model centre must name a part, label "${label}"`);
+      check(label !== 'Drag to turn' && await p.locator(`#${id} .cad-model-label`).isVisible(), `${tag} a tap on the model centre must name a part, label "${label}"`);
     }
   }
   // Too big to scroll past: vertical swipes scroll the page, sideways drags still turn.

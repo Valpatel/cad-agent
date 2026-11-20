@@ -9,6 +9,7 @@ import warnings
 
 import pytest
 
+from cadagent.formulas import gears as formulas
 from cadagent.mechanical import gears
 from cadagent.mechanical.gears import (bevel_gear, bevel_gear_dimensions, external_ring_gear, gear_pair_dimensions,
                                        spur_gear, spur_gear_dimensions)
@@ -29,6 +30,24 @@ def involute_thickness(module, teeth, pressure_angle, radius, backlash=0.0, shif
 
 
 # ---- dimensions (no CAD kernel) ------------------------------------------------------------------------------------
+
+@pytest.mark.parametrize('module_mm,pinion,wheel,pressure_deg', [(1.25, 40, 55, 14.5), (2, 24, 48, 20), (3, 30, 42, 25)])
+def test_dimension_formulas_agree_with_the_solids(module_mm, pinion, wheel, pressure_deg):
+    module_m = module_mm / 1000
+    pressure_rad = math.radians(pressure_deg)
+    pair = gear_pair_dimensions(module_mm, pinion, wheel, pressure_angle=pressure_deg)
+    # Both models use the full involute contact path for these non-interfering pairs.
+    assert not pair['a']['undercut'] and not pair['b']['undercut'] and not pair['tip_past_involute']
+    assert pair['a']['min_teeth_without_undercut'] == formulas.gear_min_teeth(pressure_rad)['teeth']
+    assert pair['contact_ratio'] == pytest.approx(formulas.gear_contact_ratio(module_m, pinion, wheel, pressure_rad))
+    assert pair['centre_distance_mm'] == pytest.approx(1000 * formulas.gear_centre_distance(module_m, pinion, wheel))
+
+    bevel = bevel_gear_dimensions(module_mm, pinion, wheel, 2 * module_mm, pressure_angle=pressure_deg)
+    pitch = formulas.bevel_pitch_angles(pinion, wheel)['pinion']
+    assert bevel['cone_distance_mm'] == pytest.approx(1000 * formulas.bevel_cone_distance(module_m, pinion, wheel))
+    assert bevel['pitch_angle_deg'] == pytest.approx(math.degrees(pitch))
+    assert bevel['virtual_teeth'] == pytest.approx(formulas.bevel_virtual_teeth(pinion, pitch))
+
 
 def test_reference_dimensions_of_a_standard_gear():
     d = spur_gear_dimensions(2, 40)

@@ -1,4 +1,4 @@
-// A dedicated classic worker allows OCCT's unmodified LGPL build to be replaced.
+// A dedicated classic worker allows the LGPL OCCT build to be replaced.
 // Terminating this worker cancels parsing and releases its WASM memory.
 onmessage=async({data})=>{
   try{

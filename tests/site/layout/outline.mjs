@@ -2,6 +2,7 @@
 import { mkdtemp, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
+import { cleanText, navigate, navigationFailure } from '../navigation.mjs';
 
 export function outlineEntryState(panel) {
   const a = panel.querySelector('.cad-nav-outline a[aria-current=location]');
@@ -39,7 +40,7 @@ export async function sameSectionOutlineProblems(browser, base) {
   page.on('pageerror', e => errors.push(e.message));
   page.on('console', m => { if (m.type() === 'error') errors.push(m.text()); });
   try {
-    await page.goto(base + '/docs/toolkit', { waitUntil: 'networkidle' });
+    await readerBoundaryGoto(page, base + '/docs/toolkit', { viewport: { width: 1366, height: 800 }, evidence, states, problems, probe: 'Outline control' });
     await page.waitForFunction(() => customElements.get('cad-nav'), null, { timeout: 2000 });
     // Assemble a detached fixture before connecting it, so the real component sees its complete article and children.
     await page.evaluate(() => {
@@ -74,8 +75,9 @@ export async function sameSectionOutlineProblems(browser, base) {
     if (hidden.inView) problems.push('outline control accepted a hidden marked entry');
   } catch (e) { problems.push('outline control: ' + e.message); }
   finally {
-    await writeFile(path.join(evidence, 'states.json'), JSON.stringify({ states, errors, problems }, null, 2) + '\n');
-    await page.close();
+    try { await writeFile(path.join(evidence, 'states.json'), JSON.stringify({ states, errors, problems }, null, 2) + '\n'); }
+    catch (error) { console.error('Outline control receipt unavailable: ' + readerText(error.message)); }
+    await readerClose(page, states);
   }
   return [...problems, ...errors.map(e => 'outline control runtime: ' + e)];
 }
@@ -131,76 +133,34 @@ export const lowContrast = (page, only = null) => page.evaluate(only => {
     return [...new Set(low)];
   }, only);
 
-// Test-only navigation evidence. Success keeps the existing navigation and reader predicates unchanged.
-const readerURL = value => {
-  if (value === 'about:blank') return value;
-  try { const u = new URL(value); return /^https?:$/.test(u.protocol) ? (u.origin + u.pathname).slice(0, 300) : u.protocol; }
-  catch { return '[unavailable URL]'; }
+// Test-only navigation evidence lives in ../navigation.mjs; these probes add their own receipt around it.
+const readerText = cleanText;
+
+/** For a probe's `finally`: close its page and write its receipt without throwing over the error that got there. */
+const readerClose = async (page, states) => {
+  try { await page.close(); } catch (error) { states.push({ closeFailure: readerText(error.message) }); }
 };
-const readerText = value => String(value).replace(/https?:\/\/[^\s"'<>]+/g, readerURL).slice(0, 300);
-const readerCapture = async action => {
-  let timer;
-  try { return await Promise.race([Promise.resolve().then(action), new Promise((_, reject) => {
-    timer = setTimeout(() => reject(new Error('diagnostic capture exceeded 1000 ms')), 1000);
-  })]); } finally { clearTimeout(timer); }
+const readerReceipt = async (evidence, states, problems) => {
+  try { await writeFile(path.join(evidence, 'receipt.json'), JSON.stringify({ states, problems }, null, 2) + '\n'); }
+  catch (error) { console.error('Reader receipt unavailable: ' + readerText(error.message)); }
 };
 
-/** Observe only this probe's navigation. On failure preserve partial evidence BEFORE its caller closes the page,
- * then rethrow the exact original error. These observations never turn a failed navigation into a pass. */
-export async function readerBoundaryGoto(page, target, { viewport, javaScriptEnabled = true, evidence, states, problems }) {
-  const start = Date.now(), pending = new Map(), active = new WeakSet(), listeners = [];
-  const events = { responses: [], failed: [], console: [], pageerror: [], lifecycle: [], observerErrors: [] };
-  const counts = Object.fromEntries(Object.keys(events).map(k => [k, 0]));
-  let pendingCount = 0;
-  const record = (kind, row) => { counts[kind]++; if (events[kind].length < 24) events[kind].push({ atMs: Date.now() - start, ...row() }); };
-  const watch = (name, callback) => {
-    const guarded = value => { try { callback(value); } catch (error) { record('observerErrors', () => ({ message: readerText(error.message) })); } };
-    listeners.push([name, guarded]); page.on(name, guarded);
-  };
-  const requestInfo = request => ({ url: readerURL(request.url()), method: readerText(request.method()), type: readerText(request.resourceType()) });
-  const finish = request => { if (active.delete(request)) pendingCount--; pending.delete(request); };
-  watch('request', request => { if (!active.has(request)) { active.add(request); pendingCount++; } if (pending.size < 24) pending.set(request, requestInfo(request)); });
-  watch('requestfinished', finish);
-  watch('requestfailed', request => { finish(request); record('failed', () => ({ ...requestInfo(request), error: readerText(request.failure()?.errorText || 'unknown') })); });
-  watch('response', response => record('responses', () => ({ url: readerURL(response.url()), status: response.status(), navigation: response.request().isNavigationRequest() })));
-  watch('console', message => record('console', () => ({ type: readerText(message.type()), text: readerText(message.text()) })));
-  watch('pageerror', error => record('pageerror', () => ({ message: readerText(error.message) })));
-  for (const name of ['domcontentloaded', 'load', 'crash', 'close']) watch(name, () => record('lifecycle', () => ({ name })));
+/** This probe's navigation, through the suite's shared one (../navigation.mjs): on failure its evidence (the browser's
+ * and the preview server's record, the DOM and a screenshot, in this probe's evidence folder) is added to the
+ * probe's receipt BEFORE its caller closes the page, then the exact original error is rethrown. These observations
+ * never turn a failed navigation into a pass. */
+export async function readerBoundaryGoto(page, target, { viewport, javaScriptEnabled = true, evidence, states, problems, probe = 'Reader boundary' }) {
   try {
-    return await page.goto(target, { waitUntil: 'networkidle' });
+    return await navigate(page, target, { waitUntil: 'networkidle' }, { evidence, viewport, javaScriptEnabled,
+      where: `${probe} ${viewport ? `${viewport.width}x${viewport.height}` : ''}${javaScriptEnabled ? '' : ', JavaScript disabled'}` });
   } catch (error) {
-    let currentURL = '[unavailable URL]';
-    try { currentURL = readerURL(page.url()); } catch { /* a disconnected page must not replace the navigation error */ }
-    const failure = { viewport, javaScriptEnabled, target: readerURL(target), currentURL,
-      waitUntil: 'networkidle', elapsedMs: Date.now() - start, error: { name: readerText(error.name), message: readerText(error.message) },
-      pendingCount, pending: [...pending.values()], counts: { ...counts }, events, captureErrors: [] };
-    try {
-      failure.dom = await readerCapture(() => page.evaluate(() => {
-        const nav = document.querySelector('cad-nav'), panel = document.querySelector('.cad-nav-panel');
-        const css = node => node ? { display: getComputedStyle(node).display, position: getComputedStyle(node).position, overflowY: getComputedStyle(node).overflowY } : null;
-        return { readyState: document.readyState, body: !!document.body, navPresent: !!nav,
-          navReady: nav?.hasAttribute('data-ready') || false, navStyle: css(nav), panelStyle: css(panel),
-          fonts: document.fonts?.status || 'unavailable', styleCount: document.styleSheets.length,
-          styles: [...document.styleSheets].slice(0, 12).map(sheet => ({ href: sheet.href, disabled: sheet.disabled })) };
-      }));
-      failure.dom.styles = failure.dom.styles.map(sheet => ({ ...sheet, href: sheet.href ? readerURL(sheet.href) : null }));
-    } catch (captureError) { failure.captureErrors.push('DOM: ' + readerText(captureError.message)); }
-    try {
-      const png = await readerCapture(() => page.screenshot({ type: 'png', fullPage: false, timeout: 1000 }));
-      if (png.length <= 2 * 1024 * 1024) {
-        await writeFile(path.join(evidence, 'navigation-failure.png'), png); failure.screenshot = 'navigation-failure.png';
-      } else failure.captureErrors.push('screenshot exceeded 2 MiB; not retained');
-    } catch (captureError) { failure.captureErrors.push('screenshot: ' + readerText(captureError.message)); }
-    // Refresh the bounded observations after capture; the navigation's original elapsed/error stay unchanged.
-    failure.pendingCount = pendingCount; failure.pending = [...pending.values()]; failure.counts = { ...counts };
-    states.push({ navigationFailure: failure });
+    states.push({ navigationFailure: navigationFailure(error)?.evidence ??
+      { viewport, javaScriptEnabled, error: { name: readerText(error?.name), message: readerText(error?.message) }, captureErrors: ['no navigation evidence was kept'] } });
     try {
       await writeFile(path.join(evidence, 'receipt.json'), JSON.stringify({ states, problems }, null, 2) + '\n');
     } catch (captureError) { console.error('Reader boundary partial receipt unavailable: ' + readerText(captureError.message)); }
-    console.log('Reader boundary failure evidence: ' + evidence);
+    console.log(`${probe} failure evidence: ${evidence}`);
     throw error;
-  } finally {
-    for (const [name, callback] of listeners) page.off(name, callback);
   }
 }
 
@@ -253,7 +213,7 @@ export async function readerBoundaryProblems(browser, base) {
       await scrollOutline(page,await page.evaluate(()=>document.documentElement.scrollHeight));await quiet(page);
       const bottom=await page.evaluate(()=>{const rect=e=>{const r=e.getBoundingClientRect();return {top:r.top,bottom:r.bottom,height:r.height};};return {host:rect(document.querySelector('cad-nav')),panel:rect(document.querySelector('.cad-nav-panel')),controls:rect(document.querySelector('[data-nav-controls]')),header:rect(document.querySelector('.site-header'))};});states.push({viewport,bottom});
       if(bottom.controls.top<bottom.header.bottom||bottom.controls.bottom>viewport.height||bottom.panel.height<bottom.controls.height+44)problems.push('reader boundary: footer leaves controls or links without room '+JSON.stringify(bottom));
-    }catch(error){await readerProbeFailure(error,{viewport,evidence,states,problems});throw error;}finally{await page.close();}
+    }catch(error){await readerProbeFailure(error,{viewport,evidence,states,problems});throw error;}finally{await readerClose(page,states);}
   }
   for(const javaScriptEnabled of [true,false]){
     const page=await browser.newPage({viewport:{width:390,height:844},javaScriptEnabled});
@@ -261,7 +221,7 @@ export async function readerBoundaryProblems(browser, base) {
       await readerBoundaryGoto(page,base+'/docs/toolkit',{viewport:{width:390,height:844},javaScriptEnabled,evidence,states,problems});await page.locator('.cad-nav-toggle').click();
       const mode=await page.locator('.cad-nav-panel').evaluate(p=>({position:getComputedStyle(p).position,overflow:getComputedStyle(p).overflowY,contain:getComputedStyle(p).overscrollBehaviorY}));states.push({mobile:javaScriptEnabled,mode});
       if(mode.position!=='static'||mode.overflow!=='visible'||mode.contain!=='auto')problems.push('reader boundary: mobile native page scrolling changed');
-    }catch(error){await readerProbeFailure(error,{viewport:{width:390,height:844},javaScriptEnabled,evidence,states,problems});throw error;}finally{await page.close();}
+    }catch(error){await readerProbeFailure(error,{viewport:{width:390,height:844},javaScriptEnabled,evidence,states,problems});throw error;}finally{await readerClose(page,states);}
   }
   await writeFile(path.join(evidence,'receipt.json'),JSON.stringify({states,problems},null,2));
   console.log('Reader boundary evidence: '+evidence);return problems;
@@ -284,7 +244,7 @@ export async function readerOutlineClickProblems(browser, base) {
     return {target:a.hash,article:scrollY,panel:p.scrollTop,padding:getComputedStyle(p).scrollPaddingTop,controlsHeight:c.height,top:r.top,bottom:r.bottom,controlsBottom:c.bottom,hit:a.contains(document.elementFromPoint(r.x+r.width/2,r.y+r.height/2))};
   },alignment);
   try{
-    await page.goto(base+'/docs/toolkit',{waitUntil:'networkidle'});await page.waitForSelector('cad-nav[data-ready]');
+    await readerBoundaryGoto(page,base+'/docs/toolkit',{viewport:{width:1366,height:800},evidence,states,problems,probe:'Reader click'});await page.waitForSelector('cad-nav[data-ready]');
     await scrollOutline(page,await page.evaluate(()=>document.body.scrollHeight/2));await page.locator('.cad-nav-panel').evaluate(p=>p.scrollTop=0);
     await scrollOutline(page,await page.evaluate(()=>document.body.scrollHeight*.85));
     await page.evaluate(()=>{document.documentElement.style.scrollBehavior='';scrollTo({top:0,behavior:'instant'});});
@@ -300,8 +260,10 @@ export async function readerOutlineClickProblems(browser, base) {
     const corrected=await state(middle,'restored');states.push({corrected});if(!corrected.hit||parseFloat(corrected.padding)<corrected.controlsHeight)problems.push('reader click: link remains beneath sticky controls');
     await middle.click();await settle();
   }finally{
-    await page.screenshot({path:path.join(evidence,'final.png')});await page.close();
-    await writeFile(path.join(evidence,'receipt.json'),JSON.stringify({states,problems},null,2));console.log('Reader click evidence: '+evidence);
+    // Never throws over the error that got here: no final screenshot of a page that never loaded, a bounded one
+    // otherwise, and the page closed and the receipt written either way.
+    if(!states.at(-1)?.navigationFailure){try{await page.screenshot({path:path.join(evidence,'final.png'),timeout:1000});}catch(error){states.push({finalScreenshotFailure:readerText(error.message)});}}
+    await readerClose(page,states);await readerReceipt(evidence,states,problems);console.log('Reader click evidence: '+evidence);
   }
   return problems;
 }
@@ -336,7 +298,7 @@ export async function readerOverflowProblems(browser, base) {
     }
   };
   try{
-    await page.goto(base+'/docs/toolkit',{waitUntil:'networkidle'});await page.waitForSelector('cad-nav[data-ready]');
+    await readerBoundaryGoto(page,base+'/docs/toolkit',{viewport:{width:1920,height:1080},evidence,states,problems,probe:'Reader overflow'});await page.waitForSelector('cad-nav[data-ready]');
     const panel=page.locator('.cad-nav-panel');await panel.evaluate(p=>{for(const group of p.querySelectorAll('details'))group.open=false;});const folded=await current({width:1920,height:1080,overflow:false,position:'sticky'});
     states.push({folded});if(!folded.fits||folded.contain!=='auto')problems.push('reader overflow: folded fitting tree traps wheel input');
     const old=await page.addStyleTag({content:'cad-nav .cad-nav-panel{overscroll-behavior-y:contain!important}'});const planted=await state();states.push({blanketContainRejected:planted.fits&&planted.contain!=='auto'});if(!(planted.fits&&planted.contain!=='auto'))problems.push('reader overflow: old blanket-contain control not rejected');await old.evaluate(el=>el.remove());
@@ -350,6 +312,6 @@ export async function readerOverflowProblems(browser, base) {
     await page.getByRole('searchbox',{name:'Filter topic pages'}).fill('zzzz-no-such-page');const filtered=await current({width:1920,height:1080,overflow:false,position:'sticky'});states.push({filtered});if(!filtered.fits||filtered.contain!=='auto')problems.push('reader overflow: filtering leaves stale containment');
     await page.setViewportSize({width:1440,height:600});const short=await current({width:1440,height:600,overflow:true,position:'sticky'});states.push({short});if(short.fits||short.contain!=='contain')problems.push('reader overflow: short left-outline layout does not regain containment');
     await page.setViewportSize({width:390,height:844});const mobile=await current({width:390,height:844,overflow:false,position:'static'});states.push({mobile});if(mobile.position!=='static'||mobile.contain!=='auto')problems.push('reader overflow: mobile retains containment');
-  }finally{await page.close();await writeFile(path.join(evidence,'receipt.json'),JSON.stringify({states,problems},null,2));console.log('Reader overflow evidence: '+evidence);}
+  }finally{await readerClose(page,states);await readerReceipt(evidence,states,problems);console.log('Reader overflow evidence: '+evidence);}
   return problems;
 }

@@ -1,4 +1,248 @@
-# Every visible example has a real animated figure, source and limits. See docs/img/hero/README.md (#605).
+# The home page (#748): what runs, what is in cad-agent (a layer cake), install, the checks, then where it is headed.
+# Every visible example has a real committed figure, source and limits. See docs/img/hero/README.md (#605).
+# The build (tools/site/build-site.mjs) fails when a link is not a published page, a picture is not committed, an area
+# is not in docs/areas.yaml or a /toolkit anchor is not one of its examples.
+# What is in cad-agent: a layer cake, top layer first. A block is in the repo today unless it says `planned:` with an
+# open issue; then it is drawn dashed and links to that issue. A block links the section its label names where the page
+# has one (`page.md#section`; the build checks the section exists). `count:` names a number the build computes from the repo.
+# `until:` names the file a planned block awaits; once it exists the build asks for a solid block.
+stack:
+- layer: Agent kit
+  caption: How agents find and use it
+  blocks:
+  - label: Skills
+    count: skills
+    href: .agents/skills/README.md
+  - label: Subagents
+    count: agents
+    href: .agents/agents/README.md
+  - label: Eval jobs
+    count: eval-jobs
+    href: docs/practice/standard-evaluation.md#jobs-and-what-they-prove
+  - label: Candidate eval tasks
+    count: eval-tasks
+    href: docs/practice/standard-evaluation.md#candidate-task-catalog
+  - label: Local and lower-cost model evals
+    planned: 142
+- layer: Knowledge
+  caption: Guides, lessons and a reference register
+  blocks:
+  - label: Guides
+    count: guides
+    href: docs/README.md
+  - label: Lessons
+    count: lessons
+    href: docs/lessons/README.md
+  - label: Reference records
+    count: references
+    href: /references
+  - label: Sources read
+    count: sources-read
+    href: /references
+  - label: Catalogue entries
+    count: catalogue
+    href: /catalog
+  - label: Confidence on every rule
+    planned: 143
+- layer: Command-line tools
+  caption: One cad-agent command
+  blocks:
+  - label: Commands
+    count: commands
+    href: docs/toolkit.md#commands
+  - label: Build and export
+    commands: [build, export-3mf, package, release]
+    href: docs/toolkit.md#commands
+  - label: Check
+    commands: [check, all, holes, overhangs, gates, motion-trace, pcb-check]
+    href: docs/toolkit.md#commands
+  - label: Design rules
+    commands: [rules, choose, snapfit, inserts, bearings]
+    href: docs/toolkit.md#commands
+  - label: Reports and reviews
+    commands: [report, dossier, review-packet, review-section]
+    href: docs/toolkit.md#commands
+  - label: Print
+    commands: [slice, prusa-view, bambu-status]
+    href: docs/toolkit.md#commands
+  - label: Explore designs
+    commands: [compare, optimise]
+    href: docs/toolkit.md#commands
+  - label: Print list and drawings package
+    planned: 302
+- layer: Web widgets
+  caption: cadagent.webkit, in any page
+  blocks:
+  - label: 3D model viewer
+    href: software/cadagent/webkit/model/README.md
+  - label: CAD file viewer
+    href: software/cadagent/webkit/files/README.md
+  - label: Assembly guides and part tables
+    href: software/cadagent/webkit/assembly/README.md
+  - label: FEA result viewer
+    href: software/cadagent/webkit/fea/README.md
+  - label: Simulation replay
+    href: software/cadagent/webkit/simulation/README.md
+  - label: SCADA diagrams and simulator
+    href: software/cadagent/webkit/scada/README.md
+  - label: Calculators
+    href: software/cadagent/webkit/calculators/README.md
+  - label: Diagrams and documents
+    href: software/cadagent/webkit/documents/README.md
+  - label: Authored explode paths
+    planned: 542
+- layer: Checks and tests
+  caption: Deterministic, with known answers
+  blocks:
+  - label: Cited formulas
+    count: formulas
+    href: software/cadagent/formulas/README.md
+  - label: Process rules
+    count: process-rules
+    href: docs/process-checks.md
+  - label: Integrity gates
+    href: docs/practice/gates.md
+  - label: Pitfall checks
+    href: docs/practice/common-issues.md
+  - label: Tests
+    count: tests
+    href: tests/README.md
+  - label: Tested code behind every lesson
+    planned: 180
+  - label: Tolerance stacks and DFMEA
+    planned: 40
+- layer: Simulators
+  caption: Each states its assumptions
+  blocks:
+  - label: FEA
+    href: docs/toolkit.md#stiffness-and-strength-cadagentsimulationfea
+  - label: CFD and thermal
+    href: docs/research/simulation-tools.md
+  - label: Motion and clearance
+    href: docs/practice/gates.md#motion-range-interference-cadagentreviewgatesmotion
+  - label: Robot dynamics replay
+    href: docs/examples/robot-replay/README.md
+  - label: SCADA process models
+    href: docs/practice/scada/README.md
+  - label: Topology optimisation
+    href: docs/toolkit.md#topology-optimisation-cadagentsimulationtopopt
+  - label: Fluid and thermal engines for SCADA
+    planned: 733
+  - label: Electrical and PLC simulation
+    planned: 732
+- layer: Libraries
+  caption: The cadagent Python package
+  blocks:
+  - label: geometry
+    note: shared CAD helpers
+    href: software/cadagent/geometry/README.md
+  - label: mechanical
+    note: features and fit
+    href: software/cadagent/mechanical/README.md
+  - label: electrical
+    note: board readiness
+    href: software/cadagent/electrical/README.md
+  - label: thermal
+    note: heat and airflow
+    href: software/cadagent/thermal/README.md
+  - label: manufacturing
+    note: print files, processes
+    href: software/cadagent/manufacturing/README.md
+  - label: formulas
+    note: closed-form equations
+    href: software/cadagent/formulas/README.md
+  - label: simulation
+    note: solvers and search
+    href: software/cadagent/simulation/README.md
+  - label: library
+    note: parts and footprints
+    href: software/cadagent/library/README.md
+  - label: review
+    note: gates, dossier, packets
+    href: software/cadagent/review/README.md
+  - label: publish
+    note: reports, renders, sites
+    href: software/cadagent/publish/README.md
+  - label: Involute gears
+    planned: 723
+    until: software/cadagent/mechanical/gears.py
+- layer: Built on
+  caption: Open source underneath
+  blocks:
+  - label: CadQuery and OCP
+    href: docs/research/agent-workflow/landscape.md
+  - label: trimesh
+    href: software/cadagent/geometry/README.md
+  - label: PyVista
+    href: software/cadagent/simulation/README.md
+  - label: text-to-cad (vendored)
+    href: software/vendor/README.md
+  - label: kicad-mcp-pro (vendored)
+    href: software/vendor/README.md
+  - label: Gmsh and scikit-fem
+    href: docs/research/fea-and-process-tools.md
+  - label: OpenFOAM
+    href: docs/research/simulation-tools.md
+  - label: MuJoCo
+    href: docs/examples/robot-replay/README.md
+  - label: pyMOTO
+    href: docs/research/simulation-tools.md
+  - label: Optuna
+    href: docs/explore.md
+  - label: Bambu Studio and PrusaSlicer (external)
+    href: docs/toolkit.md#real-grams-cadagentmanufacturingslicer-cad-agent-slice
+  - label: three.js
+    href: software/cadagent/webkit/vendor/README.md
+# The turret recording sits in the hero beside the headline (#748). See it run: the two viewers are written by the build
+# from their model sources; these are the cards below them.
+showcase:
+  turret:
+    img: docs/img/gyropup/turret-playground.webp
+    still: docs/img/gyropup/turret-playground-still.webp
+    title: Gyropup's turret playground
+    caption: Gyropup's browser playground, model "Turret on the Orin AGX box", armed and firing foam balls at
+      targets. Recorded from Gyropup {revision} by tools/site/figures/gyropup-turret.mjs. An unqualified
+      work-in-progress prototype; the ball flight is the playground's simplified model, not physics validation.
+    # The hero's one line beside the recording (#748); the full caption above goes to index.md and llms.txt.
+    hero_caption: A work-in-progress prototype in Gyropup's browser playground, firing foam balls at targets. The
+      ball flight is the playground's simplified model, not physics validation.
+    alt: A foam-ball turret on a compute box fires a stream of balls at targets in a 3D yard
+    # The recorded model, so the playground opens on it, not on its default robot (#804); the build checks it is the
+    # recording record's address.
+    href: https://gyropup.com/designer/sim?design=turret-box
+  cards:
+  - toolkit: robot-replay
+    caption: Gyropup, a wheel-legged robot, driving off a kerb. This is recorded solver output from Gyropup's dated
+      October 2026 snapshot of a work-in-progress prototype, replayed, not recomputed, and not a validation of hardware.
+  - toolkit: scada-simulations
+    caption: A wastewater digester and other connected processes. Operate equipment and inject faults; the models
+      are illustrative and editable.
+  - toolkit: assembly
+    caption: Gyropup's turret in its own authored assembly order, part by part. An example sequence from a
+      work-in-progress prototype, not a verified build procedure; a CAD step order does not prove the parts can
+      physically go together.
+# From frontier to local: the arc, each step with what holds today and what is next.
+arc:
+- title: Use it on real projects
+  today: People and agents on frontier models use cad-agent on real builds such as Gyropup and the J501 enclosure.
+  next: More outside projects, so gaps show up beyond our own.
+  href: docs/vision.md
+- title: Improve it
+  today: A gap becomes a reviewed PR with tests, sources and stated limits, merged under gates.
+  next: Skills for triaging and integrating outside contributions.
+  href: .github/CONTRIBUTING.md
+- title: Gather the best
+  today: '{catalog} catalogue entries (outside tools, guides, lessons and skills) and {references} reference records,
+    {sources-read} of them read at source; each area states its maturity.'
+  next: A confidence level on every rule and tool.
+  href: docs/research/README.md
+- title: Measure smaller models
+  today: Three analytical jobs with independent graders. Three recorded attempts passed, all on one hosted frontier
+    model; two CLI attempts produced no artifact. No baseline without cad-agent.
+  next: Paired trials with and without cad-agent on a local model first, then a lower-cost hosted one. No local or
+    open model has been measured yet.
+  href: docs/practice/standard-evaluation.md
+# The checks reel: animated, source-bound results; three more stay one click away as text links.
 reel:
 - img: docs/img/fea/mesh-convergence.svg
   still: docs/img/hero/result-stills/mesh-convergence-still.svg
@@ -29,26 +273,6 @@ reel:
     by 10.9 percent; that failure stays visible. Not a cooling qualification.'
   alt: Two recorded cases showing mass flow and heat balance, including the failed ducted case
   href: docs/research/simulation-tools.md
-- img: docs/img/motion/rib-in-counterbore.svg
-  still: docs/img/hero/result-stills/rib-in-counterbore-still.svg
-  'on': fixture-2d
-  tool: cad-agent holes
-  title: A rib that refills a counterbore
-  caption: Two build orders of the same part. A rib added after the holes were cut fills both; the hole check finds
-    it.
-  alt: Section through a screw hole in two build orders; a rib unioned after the hole and counterbore were cut refills
-    both
-  href: docs/practice/common-issues.md
-- img: docs/img/motion/connector-window.svg
-  still: docs/img/hero/result-stills/connector-window-still.svg
-  'on': fixture
-  tool: cadagent.mechanical.connectors
-  title: A port window sized from the mating plug
-  caption: An RJ45 plug pushed in. Through a window sized from the jack's box its latch hits the wall; through one
-    derived from the plug it clears by 0.5 mm.
-  alt: An RJ45 plug pushed along its mating axis through two panel windows; only the window derived from the plug
-    clears the latch
-  href: docs/practice/common-issues.md
 - img: docs/img/motion/hinge-sweep.svg
   still: docs/img/hero/result-stills/hinge-sweep-still.svg
   'on': fixture-2d
@@ -59,15 +283,6 @@ reel:
   alt: A seeded fault, an arm swept from 0 to 60 degrees; it first shares volume with the frame beam between 44.89
     and 44.91 degrees
   href: docs/practice/gates.md
-- img: docs/img/motion/module-insertion.svg
-  still: docs/img/hero/result-stills/module-insertion-still.svg
-  'on': fixture
-  tool: cad-agent gates
-  title: A module that slides in as one piece
-  caption: A carrier and its board checked on their own bench, then inserted into the parent as one rigid body and
-    withdrawn again.
-  alt: A preassembled module inserted into its parent as one rigid body, then withdrawn
-  href: docs/mechanical/subassembly-insertion.md
 - img: docs/img/motion/search-front.svg
   still: docs/img/hero/result-stills/search-front-still.svg
   'on': example
@@ -76,39 +291,16 @@ reel:
   caption: Sixty seeded trials as they arrive. Four are feasible, and trials 1 and 47 form the Pareto front.
   alt: Sixty seeded random design trials plotted by cost and mass as they arrive, with the Pareto front marked
   href: docs/explore.md
-fits:
-  make:
-  - name: text-to-cad
-    upstream: earthtojake/text-to-cad
-    does: build123d models, STEP and 3MF, drawings, DfAM checks, print handoff
-    note: vendored in software/vendor/, pinned, telemetry and update check removed by patch
-    href: https://github.com/Valpatel/cad-agent/tree/dev/vendor/text-to-cad
-  - name: build123d and CadQuery
-    does: The code-CAD kernels (both on OCP); our own tools and projects are CadQuery
-    href: docs/research/agent-workflow/landscape.md
-  - name: KiCad MCP servers
-    does: Schematics and boards; kicad-mcp-pro and kicad-happy are vendored, pinned and in trial
-    href: docs/research/agent-workflow/landscape.md
-  ours:
-  - title: Fit and access before fabrication
-    does: 'Follow computed geometry through real checks: an arm sweeps until it touches the frame. Fixture evidence,
-      not a physical qualification.'
-    areas:
-    - design-process
-    - review-and-evidence
-    href: docs/practice/gates.md
-    img: docs/img/motion/hinge-sweep.svg
-  - title: Numerical evidence with limits
-    does: A recorded mesh study separates a singular peak from a converging filleted result. The load, mesh and
-      assumptions remain available.
-    areas:
-    - structural-fea
-    href: docs/toolkit.md
-    img: docs/img/fea/mesh-convergence.svg
-  - title: Thermal and airflow diagnosis
-    does: Inspect recorded solver traces and energy checks, including a case that did not settle. A moving picture
-      never substitutes for a balance check.
-    areas:
-    - cfd
-    href: docs/research/simulation-tools.md
-    img: docs/img/hero/airflow-balance.svg
+more_checks:
+- title: A rib that refills a counterbore
+  caption: "Two build orders of the same part. A rib added after the holes were cut fills both; the hole check finds it."
+  tool: cad-agent holes
+  href: docs/practice/common-issues.md
+- title: A port window sized from the mating plug
+  caption: "An RJ45 plug pushed in. Through a window sized from the jack's box its latch hits the wall; through one derived from the plug it clears by 0.5 mm."
+  tool: cadagent.mechanical.connectors
+  href: docs/practice/common-issues.md
+- title: A module that slides in as one piece
+  caption: "A carrier and its board checked on their own bench, then inserted into the parent as one rigid body and withdrawn again."
+  tool: cad-agent gates
+  href: docs/mechanical/subassembly-insertion.md

@@ -51,6 +51,11 @@ HONESTY_NOTE = (
     "output, fastener engagement, thermal behaviour or load capacity."
 )
 
+# Why a part has no thumbnail: nothing wrote it. The starter project has no render step; cadagent.publish.render (the
+# cad extra: VTK and Pillow) renders one from a project step.
+_NO_RENDER = ("no preview/part-{part}.png yet: a render step in cad-agent.yaml writes it "
+              "(cadagent.publish.render, docs/toolkit.md)")
+
 def _rel(path: Path, base: Path) -> str:
     return Path(os.path.relpath(Path(path).resolve(), Path(base).resolve())).as_posix()
 
@@ -492,7 +497,8 @@ def downloads_snippet(
         image = project.preview_dir / f"part-{part}.png"
         thumb = (
             f'<a href="{esc(_rel(image, page_dir))}"><img loading="lazy" src="{esc(_rel(image, page_dir))}" '
-            f'alt="{esc(part)}"></a>' if image.is_file() else '<span class="vcad-missing">no render</span>'
+            f'alt="{esc(part)}"></a>' if image.is_file() else
+            f'<span class="vcad-missing" title="{esc(_NO_RENDER.format(part=part))}">no render</span>'
         )
         cells = []
         for ext in PRINT_FORMATS:

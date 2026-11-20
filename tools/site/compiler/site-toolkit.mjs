@@ -121,6 +121,12 @@ export function toolkitFullText(pages, origin) {
   }).join('');
 }
 
+/** What a build-guide caption must say (#811): its guide is an example sequence of a work-in-progress prototype,
+ * not a verified build procedure, and a CAD step order does not prove the parts can physically go together. Returns
+ * the phrases a caption lacks (case-insensitive); the toolkit card and the home card are both held to it. */
+export const BUILD_GUIDE_PHRASES = ['example sequence', 'work-in-progress', 'not a verified build procedure', 'CAD step order does not prove'];
+export const buildGuideCaptionMissing = caption => BUILD_GUIDE_PHRASES.filter(p => !String(caption || '').toLowerCase().includes(p.toLowerCase()));
+
 /** Capability cards are a presentation index of existing, locally owned examples. */
 export function toolkitCapabilities(m, {catalog = [], has} = {}) {
   const scenario = m.simulations.find(s=>s.id==='wastewater-digester') || m.simulations[0];
@@ -143,17 +149,18 @@ export function toolkitCapabilities(m, {catalog = [], has} = {}) {
       image:'/web/models/gyropup.webp', alt:'Gyropup wheel-legged robot, captured from the owned 3D CAD model',
       href:'/toolkit/models', action:'Open 3D model', docs:'/docs/web-parts', fit:'contain'},
     {id:'robot-replay', title:'Robot simulation replay', kind:'Recorded dynamics',
-      description:'Replay a real MuJoCo run of an illustrative two-link arm. Orbit, scrub time and change playback speed; source inputs are editable.',
-      image:'/kit/simulation/examples/two-link-arm/preview.webp', alt:'Two-link robot arm rendered from an actual MuJoCo recording at 3.2 seconds',
-      href:'/kit/simulation/viewer.html', action:'Play robot recording', docs:'/'+folderMapPath('docs/examples/robot-replay/README.md').replace(/\.md$/,'')},
+      description:'Gyropup, a work-in-progress wheel-legged robot, in recorded MuJoCo runs from its dated snapshot: drive off a kerb, ride a plank, take a push, land a drop, each with the snapshot\'s own pass verdict and peak motor torque. Recorded solver output, replayed, not recomputed, and not a validation of hardware. A small two-link arm stays as the editable example.',
+      image:'/kit/simulation/examples/gyropup-v2/card-still.webp', motion:'/kit/simulation/examples/gyropup-v2/card.webp',
+      alt:'Gyropup, a wheel-legged robot, driving off a kerb in the recorded-simulation viewer',
+      href:'/kit/simulation/examples/gyropup-v2/viewer.html?nav=1', action:'Play robot recording', docs:'/'+folderMapPath('docs/examples/robot-replay/README.md').replace(/\.md$/,'')},
     {id:'files', title:'Original CAD files', kind:'File viewer',
       description:'Inspect an original STL with the shared camera and display tools. The viewer also supports STEP and other CAD formats.',
       image:'/web/toolkit/file-review.webp', alt:'The original-file viewer displaying the example fixture STL',
-      href:'/kit/files/file-viewer.html?file=/kit/host/example.stl', action:'Open file example', docs:'/docs/file-viewer'},
+      href:'/kit/files/file-viewer.html?file=/kit/host/example.stl&nav=1', action:'Open file example', docs:'/docs/file-viewer'},
     {id:'assembly', title:'Assembly & build guides', kind:'Step-by-step instructions',
-      description:'Inspect a synthetic rail assembly and step through its declared insertion sequence.',
-      image:'/web/toolkit/assembly.webp', alt:'The build-guide viewer displaying the synthetic rail assembly and its instruction controls',
-      href:'/kit/model/viewer.html?guide=/web/toolkit/assembly/guide.json', action:'Follow the build', docs:'/docs/practice/assembly-guide'},
+      description:'Step through Gyropup\'s turret, a work-in-progress prototype, in its own authored assembly order: twelve steps, each step\'s new parts highlighted and drawn back along the way they go in, earlier parts ghosted. An example sequence, not a verified build procedure; a CAD step order does not prove the parts can physically go together.',
+      image:'/web/toolkit/assembly.webp', alt:'The build-guide viewer on step 11 of Gyropup\'s turret: the barrel, hopper and lid arrive over the ghosted turret, beside the step\'s instructions',
+      href:'/kit/model/viewer.html?guide=/kit/assembly/examples/gyropup-turret/guide.json&nav=1', action:'Follow the build', docs:'/docs/practice/assembly-guide'},
     {id:'mechanisms', title:'Mechanism motion', kind:'Interactive kinematics',
       description:'Change a four-bar linkage’s dimensions and drive its motion. See reachable positions and geometric limits.',
       image:'/docs/img/formulas/fourbar-animator.svg', alt:'Four-bar linkage with a driven crank and moving coupler',
@@ -163,8 +170,10 @@ export function toolkitCapabilities(m, {catalog = [], has} = {}) {
       image:'/docs/img/compliant/cantilever-explorer.svg', alt:'Cantilever snap-arm explorer showing geometry, load and deflection',
       href:demo('demo-snap-arm-explorer','/docs/compliant#try-it-the-snap-arm-explorer'), action:'Try the snap arm', docs:'/docs/compliant', fit:'contain'},
   ];
+  const guideCard = cards.find(c => c.id === 'assembly'), missing = buildGuideCaptionMissing(guideCard.description);
+  if (missing.length) throw new Error(`Toolkit: the build-guide card's description says "${missing.join('", "')}"`);
   if (has) for (const card of cards) {
-    for (const asset of [card.image, card.href]) {
+    for (const asset of [card.image, card.motion, card.href].filter(Boolean)) {
       const pathname = new URL(asset, 'https://cad.example').pathname;
       const source = pathname.startsWith('/kit/') ? 'software/cadagent/webkit/' + pathname.slice(5)
         : pathname.startsWith('/web/') ? 'tools/site/assets/' + pathname.slice(5)
@@ -175,7 +184,7 @@ export function toolkitCapabilities(m, {catalog = [], has} = {}) {
   return cards;
 }
 
-const capabilityCard = c => `<article class="toolkit-card toolkit-capability" data-toolkit-capability="${esc(c.id)}"><a class="toolkit-image-link" href="${esc(c.href)}" tabindex="-1"><img src="${esc(c.image)}" alt="${esc(c.alt)}" width="800" height="500" loading="lazy"${c.fit==='contain'?' class="toolkit-contain"':''}></a><div class="toolkit-card-body"><p class="toolkit-card-kicker">${esc(c.kind)}</p><h2>${esc(c.title)}</h2><p>${esc(c.description)}</p><div class="toolkit-card-actions"><a class="button" data-toolkit-launch href="${esc(c.href)}">${esc(c.action)}</a><a href="${esc(c.docs)}">${c.id==='scada-simulations'?'All simulations':'Guide'}</a></div></div></article>`;
+const capabilityCard = c => `<article class="toolkit-card toolkit-capability" id="${esc(c.id)}" data-toolkit-capability="${esc(c.id)}"><a class="toolkit-image-link" href="${esc(c.href)}" tabindex="-1"><img src="${esc(c.image)}" alt="${esc(c.alt)}" width="800" height="500" loading="lazy"${c.motion?` data-motion-src="${esc(c.motion)}"`:''}${c.fit==='contain'?' class="toolkit-contain"':''}></a><div class="toolkit-card-body"><p class="toolkit-card-kicker">${esc(c.kind)}</p><h2>${esc(c.title)}</h2><p>${esc(c.description)}</p><div class="toolkit-card-actions"><a class="button" data-toolkit-launch href="${esc(c.href)}">${esc(c.action)}</a><a href="${esc(c.docs)}">${c.id==='scada-simulations'?'All simulations':'Guide'}</a></div></div></article>`;
 
 /** Generated routes remain in the existing site frame, with Markdown twins and a machine-readable index. */
 export function toolkitPages(m, {catalog = [], has} = {}) {

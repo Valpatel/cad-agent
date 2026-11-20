@@ -499,6 +499,11 @@ sources:
     estimate: 0.4
     sources: 1
   summary: 'Student build log: flywheel blaster turret from scratch. Snippet only.'
+  archive:
+    sha256: 5f2f95ab96b57fa01b4b7c7c25078059b0940c2a075a6366483f7152db62a414
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   assessment:
     cad:
       seen: U
@@ -534,6 +539,11 @@ sources:
     estimate: 0.4
     sources: 1
   summary: Turret build write-up. Snippet only.
+  archive:
+    sha256: 289baa37d7b4165540d6a045bce784b10785b8a998c2d6b8395b88813fad6059
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   assessment:
     cad:
       seen: U
@@ -1353,6 +1363,11 @@ sources:
     estimate: 0.4
     sources: 1
   summary: Onshape robot CAD with a ball shooter. Document not opened.
+  archive:
+    sha256: 590ef7e5bce1ecba80601996c83631cb37ce805af980c75d39f4471a67ff8907
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   assessment:
     cad:
       seen: U
@@ -1388,6 +1403,11 @@ sources:
     estimate: 0.4
     sources: 1
   summary: Onshape CAD.
+  archive:
+    sha256: a6bd1934409c676a549dd2845041cfc1c7b3eb3dab986be5f8aa735ab97aded3
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   assessment:
     cad:
       seen: U
@@ -1423,6 +1443,11 @@ sources:
     estimate: 0.4
     sources: 1
   summary: Notes a move from 4 inch to 3 inch shooter wheels.
+  archive:
+    sha256: 330d8f88ac1d16c09e61a6a6fc5d8c39f08b58c8a50cbb02383c02f097dfcbd5
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   assessment:
     cad:
       seen: U
@@ -1458,6 +1483,11 @@ sources:
     estimate: 0.4
     sources: 1
   summary: Shooter and spindexer prototypes.
+  archive:
+    sha256: 717295a468fcf5ff6c23a05f42fb310f4528eb51ef8013ed2b1bbff74c739a9d
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   assessment:
     cad:
       seen: U
@@ -1493,6 +1523,11 @@ sources:
     estimate: 0.4
     sources: 1
   summary: Onshape CAD.
+  archive:
+    sha256: d07596bc7ac5b243d57498e30a4577f1c1fcadd9f12e9c724f62bec36bb36f9b
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   assessment:
     cad:
       seen: U
@@ -1528,6 +1563,11 @@ sources:
     estimate: 0.4
     sources: 1
   summary: Double-flywheel momentum model; assumes no slip.
+  archive:
+    sha256: 3d3454597074761c22670f4bb35d8787f10f40a97f1a0d1a7e11429b460d31d6
+    kind: pdf
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: ec64f8982fd1b465
 - id: double-flywheel-launcher-arxiv-2105-12833
@@ -1592,6 +1632,11 @@ sources:
     estimate: 0.4
     sources: 1
   summary: Hood wrap against trajectory.
+  archive:
+    sha256: 49b40c4423871acec58d01b20bb9546d41fcc22f9c5b76b0766f9f516b43cc7f
+    kind: pdf
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: ff94050aa1030114
 - id: team-254-build-blogs
@@ -1624,6 +1669,11 @@ sources:
     estimate: 0.4
     sources: 1
   summary: Compression in CAD differed from real; side plates recut.
+  archive:
+    sha256: 30eed65e24d853668acb6bbcaba18161116e19868b8291b2f8a74013112de995
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: 9dcc19246149b213
 - id: out-of-darts-rival-perses-mod-guide
@@ -1656,6 +1706,11 @@ sources:
     estimate: 0.4
     sources: 1
   summary: Rival blaster modification.
+  archive:
+    sha256: 23563f7539e038cb39a14004894fd1dce236b14f1edc8dff254cdc67cc50a17a
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: 591e9492918a432f
 - id: nsp-1k-build-guide
@@ -1688,5 +1743,10 @@ sources:
     estimate: 0.4
     sources: 1
   summary: Heat-set inserts, flywheel cage, matched wheel heights.
+  archive:
+    sha256: 7e333db0ece90b3a4eeadeda3ef145954c9063b1d33c9f995274440d225788d0
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: 3d96e225ab23c1a1

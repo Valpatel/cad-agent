@@ -8,6 +8,9 @@ const positive = (value, name) => {
   if (finite(value, name) <= 0) throw new RangeError(`${name} must be positive.`);
   return value;
 };
+// Write only what changed: a same-value text write replaces the text node, and the zoom readout is
+// a click target that the host re-applies on every live tick (#745, #761).
+const setAttribute = (element, name, value) => { if (element.getAttribute(name) !== value) element.setAttribute(name, value); };
 const center = points => ({x:(points[0].x + points[1].x) / 2, y:(points[0].y + points[1].y) / 2});
 const distance = points => Math.hypot(points[1].x - points[0].x, points[1].y - points[0].y);
 
@@ -119,12 +122,13 @@ export class ScadaCamera {
     if (this.#destroyed) return this;
     const {x,y,zoom,fitted} = this.#state, viewport = this.#viewport;
     Object.assign(viewport.style, {overflow:'clip', position:'relative', touchAction:'none', userSelect:'none', cursor:this.#dragging ? 'grabbing' : 'grab'});
-    viewport.setAttribute('data-scada-camera', '');
+    setAttribute(viewport, 'data-scada-camera', '');
     if (this.#controls.parentElement !== viewport) viewport.append(this.#controls);
-    this.#zoomButton.textContent = `${Math.round(zoom * 100)}%`;
-    this.#zoomButton.setAttribute('aria-label', `Zoom ${Math.round(zoom * 100)} percent; reset to 100 percent`);
-    this.#zoomButton.title = `Current zoom ${Math.round(zoom * 100)}%; return to 100% scale`;
-    for (const [name, value] of Object.entries({x,y,zoom,fitted,dragging:this.#dragging})) viewport.setAttribute(`data-camera-${name}`, String(value));
+    const percent = Math.round(zoom * 100);
+    if (this.#zoomButton.textContent !== `${percent}%`) this.#zoomButton.textContent = `${percent}%`;
+    setAttribute(this.#zoomButton, 'aria-label', `Zoom ${percent} percent; reset to 100 percent`);
+    setAttribute(this.#zoomButton, 'title', `Current zoom ${percent}%; return to 100% scale`);
+    for (const [name, value] of Object.entries({x,y,zoom,fitted,dragging:this.#dragging})) setAttribute(viewport, `data-camera-${name}`, String(value));
     if (this.#stage) Object.assign(this.#stage.style, {position:'relative', width:'100%', height:'100%', minWidth:'0', minHeight:'0', overflow:'visible'});
     Object.assign(this.#canvas.style, {position:'absolute', left:'0', top:'0', width:`${this.#width}px`, minWidth:`${this.#width}px`, height:`${this.#height}px`, margin:'0', transform:`translate(${x}px, ${y}px) scale(${zoom})`, transformOrigin:'top left'});
     viewport.scrollLeft = 0; viewport.scrollTop = 0;

@@ -16,6 +16,7 @@
 :where(cad-model) .cad-model-btn:hover{border-color:currentColor}
 :where(cad-model) .cad-model-btn[aria-pressed=true]{background:var(--cad-model-fg,#173d3c);color:var(--cad-model-chip-on,#fffdf5);border-color:var(--cad-model-fg,#173d3c)}
 :where(cad-model) .cad-model-btn:focus-visible{outline:2px solid var(--cad-model-focus,#bd3a12);outline-offset:2px}
+:where(cad-model[loading=scroll]):focus-visible{outline:2px solid var(--cad-model-focus,#bd3a12);outline-offset:3px}
 :where(cad-model) .cad-model-load{position:absolute;left:50%;bottom:16px;transform:translateX(-50%)}
 :where(cad-model) [hidden]{display:none}
 @media(pointer:coarse){:where(cad-model) .cad-model-btn{min-height:44px}}

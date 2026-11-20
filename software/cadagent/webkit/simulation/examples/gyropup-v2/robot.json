@@ -1,0 +1,238 @@
+{
+ "schema": "cad-agent-model/1",
+ "title": "Gyropup v2 rig (recorded snapshot)",
+ "units": "mm",
+ "up": "z",
+ "box_mm": [
+  -141.0,
+  -180.8,
+  -85.65,
+  295.0,
+  180.8,
+  287.7
+ ],
+ "quant": 65535,
+ "bin": "robot.bin",
+ "encoding": "gzip",
+ "bytes": 321851,
+ "raw_bytes": 849642,
+ "sha256": "45c516c47b12bffd6235e721ee86704661d668a196fb7c52a1837b1435837951",
+ "triangles": 95030,
+ "source": {
+  "project": "Valpatel/gyropup",
+  "revision": "41c5c266569d6141ecda28711188343b54ab43d8",
+  "license": "MIT",
+  "files": "hardware/exports/sim/v2/rig/manifest.json and the STL meshes it names",
+  "frames": "each part in its own body's frame (mm)"
+ },
+ "parts": [
+  {
+   "name": "base_0",
+   "color": "#2a2d33",
+   "vertices": 1010,
+   "triangles": 1976,
+   "offset": 0,
+   "index_bits": 16
+  },
+  {
+   "name": "base_1",
+   "color": "#2b6cb0",
+   "vertices": 24,
+   "triangles": 36,
+   "offset": 17916,
+   "index_bits": 16
+  },
+  {
+   "name": "base_2",
+   "color": "#3a3f47",
+   "vertices": 16,
+   "triangles": 24,
+   "offset": 18276,
+   "index_bits": 16
+  },
+  {
+   "name": "base_3",
+   "color": "#4a5058",
+   "vertices": 4880,
+   "triangles": 9900,
+   "offset": 18516,
+   "index_bits": 16
+  },
+  {
+   "name": "base_4",
+   "color": "#5a6b7c",
+   "vertices": 8,
+   "triangles": 12,
+   "offset": 107196,
+   "index_bits": 16
+  },
+  {
+   "name": "base_5",
+   "color": "#5f6670",
+   "vertices": 9916,
+   "triangles": 20768,
+   "offset": 107316,
+   "index_bits": 16
+  },
+  {
+   "name": "base_6",
+   "color": "#8f9aa7",
+   "vertices": 40,
+   "triangles": 60,
+   "offset": 291420,
+   "index_bits": 16
+  },
+  {
+   "name": "base_7",
+   "color": "#9fb4c7",
+   "vertices": 624,
+   "triangles": 1224,
+   "offset": 292020,
+   "index_bits": 16
+  },
+  {
+   "name": "base_8",
+   "color": "#c9ced6",
+   "vertices": 9044,
+   "triangles": 18216,
+   "offset": 303108,
+   "index_bits": 16
+  },
+  {
+   "name": "base_9",
+   "color": "#fdb913",
+   "vertices": 8,
+   "triangles": 12,
+   "offset": 466668,
+   "index_bits": 16
+  },
+  {
+   "name": "turret_pan_0",
+   "color": "#2a2d33",
+   "vertices": 224,
+   "triangles": 444,
+   "offset": 466788,
+   "index_bits": 16
+  },
+  {
+   "name": "turret_pan_1",
+   "color": "#4a5058",
+   "vertices": 4052,
+   "triangles": 8160,
+   "offset": 470796,
+   "index_bits": 16
+  },
+  {
+   "name": "turret_tilt_0",
+   "color": "#2a2d33",
+   "vertices": 660,
+   "triangles": 1292,
+   "offset": 544068,
+   "index_bits": 16
+  },
+  {
+   "name": "turret_tilt_1",
+   "color": "#4a5058",
+   "vertices": 7545,
+   "triangles": 15634,
+   "offset": 555780,
+   "index_bits": 16
+  },
+  {
+   "name": "turret_tilt_2",
+   "color": "#9cc7e8",
+   "vertices": 1414,
+   "triangles": 2928,
+   "offset": 694854,
+   "index_bits": 16
+  },
+  {
+   "name": "turret_tilt_3",
+   "color": "#ff6a13",
+   "vertices": 838,
+   "triangles": 1692,
+   "offset": 720906,
+   "index_bits": 16
+  },
+  {
+   "name": "upper_0",
+   "color": "#f5b82e",
+   "vertices": 849,
+   "triangles": 1730,
+   "offset": 736086,
+   "index_bits": 16
+  },
+  {
+   "name": "front_0",
+   "color": "#f5b82e",
+   "vertices": 745,
+   "triangles": 1494,
+   "offset": 751560,
+   "index_bits": 16
+  },
+  {
+   "name": "wheel_link_0",
+   "color": "#e9a21f",
+   "vertices": 1183,
+   "triangles": 2386,
+   "offset": 764994,
+   "index_bits": 16
+  },
+  {
+   "name": "wheel_0",
+   "color": "#1b1d21",
+   "vertices": 144,
+   "triangles": 288,
+   "offset": 786408,
+   "index_bits": 16
+  },
+  {
+   "name": "wheel_1",
+   "color": "#4a5058",
+   "vertices": 216,
+   "triangles": 428,
+   "offset": 789000,
+   "index_bits": 16
+  },
+  {
+   "name": "upper_m_0",
+   "color": "#f5b82e",
+   "vertices": 849,
+   "triangles": 1730,
+   "offset": 792864,
+   "index_bits": 16
+  },
+  {
+   "name": "front_m_0",
+   "color": "#f5b82e",
+   "vertices": 745,
+   "triangles": 1494,
+   "offset": 808338,
+   "index_bits": 16
+  },
+  {
+   "name": "wheel_link_m_0",
+   "color": "#e9a21f",
+   "vertices": 1183,
+   "triangles": 2386,
+   "offset": 821772,
+   "index_bits": 16
+  },
+  {
+   "name": "wheel_m_0",
+   "color": "#1b1d21",
+   "vertices": 144,
+   "triangles": 288,
+   "offset": 843186,
+   "index_bits": 16
+  },
+  {
+   "name": "wheel_m_1",
+   "color": "#4a5058",
+   "vertices": 216,
+   "triangles": 428,
+   "offset": 845778,
+   "index_bits": 16
+  }
+ ]
+}

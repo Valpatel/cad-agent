@@ -124,6 +124,11 @@ sources:
   verified: '2026-11-04: opened the article (updated 2023-04-12, first 2016-02-03); read its hole-size advice: follow the
     rivet maker''s hole closely for strength, pull-up and hole fill.'
   summary: 'Machine Design on blind rivets: follow the rivet maker''s hole size closely, for strength, pull-up and hole fill.'
+  archive:
+    sha256: c56245c1473deb3c4131c8a4c9b261a6a34ad44238640eaf6b61d30e5beba92f
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
 - id: plastics-technology-brass-insert-installation-comparing-heat
   kind: guide
@@ -171,6 +176,11 @@ sources:
       SPIROL''s larger hole for filled plastics'
   summary: 'Compares heat, ultrasonic and press-fit installation of brass inserts in moulded plastic: heat takes the widest
     range of resins, ultrasonic is fastest, press-fit weakest and riskiest in filled resins.'
+  archive:
+    sha256: beb21d0229facf7654ea266b520254a95178c8e6baf68cdc6b0a14b3f7f2cfa1
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
 - id: spirol-how-to-design-the-proper-hole-for-heat-ultrasonic
   kind: guide
@@ -236,6 +246,11 @@ sources:
   summary: 'SPIROL''s white paper on holes for heat and ultrasonic inserts: straight and tapered holes, depth the insert''s
     length plus two pitches, counterbores, a larger hole in filled plastics (+0.08 mm at 15 % filler, +0.15 mm at 35 %) and
     a boss 2-3 times the insert''s diameter.'
+  archive:
+    sha256: 7382573c2cf2a4599daafcf6a048135087f08c22ed94adcae9b708da3d298a05
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   rules:
   - fdm-insert-hole-filler-spirol
   checks:
@@ -292,6 +307,11 @@ sources:
       so not a second source'
   summary: 'Compression limiters in bolted plastic joints: the limiter slightly shorter than the host, the bolt at 25-75 %
     of its proof load, 3-5 % compression a safe limit; size tables.'
+  archive:
+    sha256: 94f6b1d190c84fec15b72a58264c7dd68a5577e59bd56720fa0220394080ceae
+    kind: pdf
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
 - id: ejot-delta-pt-flyer
   kind: guide
@@ -389,6 +409,11 @@ sources:
     date. HTML SHA-256 b5b250c9101e26eec7852dfe0e8603ba3c6ed9f894b6374dbf2b86410b8b3871. The imported 1.8–2.5 mm wall assertion
     was not corroborated in this current article snapshot; this does not establish whether it appeared historically. No coupon,
     FDM validation, performance verification or licence review.'
+  archive:
+    sha256: 791d129250483eb2bd2ea0d604fabb64f1be652af66252c38451bb12130395c2
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
 - id: e-z-lok-brochure-2026
   kind: guide
   category: manufacturing-guides
@@ -434,6 +459,11 @@ sources:
     - cnckitchen-heat-set-hole-size
   summary: 'E-Z LOK''s 2026 brochure: press-in, ultrasonic and heat-stake inserts for plastics and threaded inserts for metal,
     each table with its hole size; hole sizes vary with material and tools, so test the application.'
+  archive:
+    sha256: b6916d58e643bcedcf1eaccddd16e56c24e1afeb2bf906189cb7164628b33c33
+    kind: pdf
+    fetched: '2026-11-14'
+    redistribute: false
   used_for:
   - docs/mechanical/inserts.md
 - id: albany-county-fasteners-helicoil-install-guide-albany-county
@@ -480,6 +510,11 @@ sources:
     evidence: '2026-11-04: read in the PDF. No second source checked.'
   summary: 'Helical coil insert installation by insert type: drill, tap with an STI tap (not a standard one), install, break
     the tang, and seat the coil 1/4 to 1/2 turn below the surface.'
+  archive:
+    sha256: 1bf44fbcab636fd5e429250d8c8b03e1040cecb75327fee1be27c67f8de1c884
+    kind: pdf
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
 - id: mcmaster-carr-how-to-install-key-locking-inserts
   kind: guide
@@ -519,6 +554,11 @@ sources:
     sources: 1
   summary: 'Key-locking insert install notes; tap size can differ from insert thread; comparable to Keensert. Note: Snippet
     had no figures'
+  archive:
+    sha256: 146585a9294a7ed450e691dafc66fefebd2e16db7829c7b6cda9ae83741d5750
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: 10df785e1caac2e9
 - id: hex-technology-k-factor-finding-torque-values-for-bolted
@@ -563,6 +603,11 @@ sources:
       text'
   summary: 'Hex Technology on the nut-factor method: T = K D F / 12 (ft-lb, in, lb), with K found by test (lower for PTFE-coated
     bolts), and the ASME PCC-1 (2019) Target Torque Index.'
+  archive:
+    sha256: 948eb11d59aec12b5e1b1d0096e3837d32df89326233a1c57ef20285814bf08f
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
 - id: henkel-loctite-design-guide-bonding-plastics
   kind: guide
@@ -601,6 +646,11 @@ sources:
     tables, one chapter per plastic.'
   summary: 'Henkel''s Loctite Design Guide for Bonding Plastics (Volume 5, 11/2008): how to use it, and adhesive shear-strength
     tables, one chapter per plastic.'
+  archive:
+    sha256: c0aa3217670b447e1f05e2cec786e20af941a179cd02caae249efec6db92ed75
+    kind: pdf
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
 - id: 3m-scotch-weld-structural-adhesive-selection-guide
   kind: guide
@@ -803,3 +853,8 @@ sources:
     https://cnckitchenus.store/products/insert-removal-tool-for-m2-m2-5-m3 ; HTML 257766 bytes, SHA-256 7cd1d0e561eb639a8b65a73ad892c69133731411108e47bdd4b55c837e6961f7.
     V2 product links the original V1 video; no revision-specific performance comparison, video viewing, tool/iron compatibility
     or physical extraction tested. Product page is not independent corroboration or a second registry identity.'
+  archive:
+    sha256: 921cf2f55cc93168b415efee21326df7c207189cc54d4badce4773155e804a02
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false

@@ -41,6 +41,11 @@ sources:
     sources: 1
   summary: 'Protolabs mouldability guide covering wall thickness, draft, ribs and bosses; snippet showed only the title and
     surrounding topic list. Note: Snippet-only; title and topic inferred from result listing.'
+  archive:
+    sha256: 4eb433adc17a5a159a4027291accd0a17f4c59376d907527563f87e5973c3dae
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: e13d24306e37b886
 - id: protolabs-injection-molding-wall-thickness-guidelines
@@ -87,6 +92,11 @@ sources:
     figure at source resolution. HTML SHA256 eee820adb5c02c9f4beadc7c54b80a1dd9fd8fd8818b19b11c0869fc6e706f49. Material-specific
     ABS/PC ranges replace the unsupported imported universal range. Metadata dated2017-04-14; linked guides/material datasheets
     not claimed read.'
+  archive:
+    sha256: fb5c5bfcc29fa00312287b6bb67412faaf3125cc99ddecec3d505682747dc8d8
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
 - id: protolabs-designing-for-overmolding-design-tip
   kind: guide
   category: manufacturing-guides
@@ -131,6 +141,11 @@ sources:
     table/legend at source resolution. HTML SHA256 db025432acae71b6f6e2652f63e89335fd1b2ad9d2ef042390d8e75dcff0cc3e. Overlay<=substrate
     guidance is present; no measured peel benefit inferred. Metadata dated2017-07-25; material datasheets/actual process qualification
     not checked.'
+  archive:
+    sha256: fd466b49a06ad56ff75cb320e9f30f58b38ea982b67a0bfe7724de1d525d467c
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
 - id: xometry-design-guide-injection-molding
   kind: guide
   category: manufacturing-guides
@@ -166,6 +181,11 @@ sources:
     sources: 1
   summary: 'Guide with sections on draft angles, wall thickness, ribs, gates and parting lines; no figures visible in snippet.
     Note: Only table of contents seen; values not shown.'
+  archive:
+    sha256: 7b600ef8c5ece59e8212a2dfc597a0b2d367af4f10c9b229c84b1dd877a03b21
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: 4339aff7f0353ce6
 - id: xometry-design-guide-urethane-casting
@@ -205,6 +225,11 @@ sources:
     sources: 1
   summary: 'Urethane casting guide: even wall thickness lets urethane flow into silicone mold and cure uniformly. Note: Specific
     numbers not seen in snippet.'
+  archive:
+    sha256: cacb93466024b09f966dda49eefe44dc494d66425407bdfb05c15a27f18f2a78
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: d5b108fa9e456480
 - id: stratasys-direct-design-guidelines-urethane-casting-2019
@@ -286,6 +311,11 @@ sources:
     estimate: 0.4
     sources: 1
   summary: 'Fictiv ebook on designing urethane-cast parts; only the title appeared in results. Note: Title only; content unseen.'
+  archive:
+    sha256: af9beafbf014715b4c563b7f606da5b1afd915b83215747e1002fc89a9e4c2a4
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: 7b40eb378b454869
 - id: fictiv-injection-molding-undercuts
@@ -332,6 +362,11 @@ sources:
   verified: '2026-11-11: read complete accessible article through concluding DFM section and visually inspected all four source-resolution
     part photographs. HTML SHA256 b87dd3e88726bdca3e1bbc8a3a65f2c1973f508ee9f626f474788f8839959d8d. Author Steve Melito; publication
     metadata2022-12-08. Photos supply no dimensions; linked articles and strain/ejection qualification not checked.'
+  archive:
+    sha256: dd50ebff60b51fc0649dc70e7f4430a0c43e10f99f26d8aca86b4db4a0923070
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
 - id: fictiv-injection-molding-design-guide
   kind: guide
   category: manufacturing-guides
@@ -367,6 +402,11 @@ sources:
     sources: 1
   summary: 'Fictiv''s design guide page appeared for wall-thickness queries; a copy was said to include a gating section.
     Note: Content not shown; gating section claim came from a third-party copy.'
+  archive:
+    sha256: 829f7ae786c6e11522b41791a80521034d2567564169ff55a55c9c0cd0978cfe
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: 9dc1004287b95e4b
 - id: fictiv-how-to-design-snap-fit-components
@@ -415,6 +455,11 @@ sources:
     modes and process DFM. Inspected beam drawing and thickness-taper chart. Primary web text readable; raw-page fetch returned
     403 and rendered math was not verified. Extracted force/symbol discrepancies are cross-checked against original BASF Figure
     IV-3; no vendor numerical table adopted. Linked calculators, manuals and other figures not fully audited.'
+  archive:
+    sha256: 6dc9767cf8b7fd6c0d6bdb76e982e6c9ca6d10b1c6cb13e5b76f59ff3040c7f7
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
 - id: bayer-materialscience-snap-fit-joints-for-plastics-a-design
   kind: guide
   category: manufacturing-guides
@@ -455,6 +500,11 @@ sources:
       only.
   summary: 'Classic cantilever, torsion and annular snap-fit guide; beam strain formula and optimal tapered arm comparison.
     Note: Third-party mirror; authorship per Wikipedia reference, not verified.'
+  archive:
+    sha256: a7021e8782cb141e5f58f1be8b66df84d83e7ce2803c8e8126ff6862f17a28b0
+    kind: pdf
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: 7e539e08efd41e44
 - id: basf-snap-fit-design-guide-scribd-copy
@@ -492,6 +542,11 @@ sources:
     sources: 1
   summary: 'BASF manual: classical beam theory, improved cantilever with magnification factor, U- and L-shaped snaps; allowable-strain
     tables for eight materials. Note: Scribd upload, not BASF-hosted; Ultramid values not shown.'
+  archive:
+    sha256: 37a4677c1eb61d7f6e8d7b24f675ba89ac4e3eeef37849decbe25db84b489f18
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: 8369af034f02466c
 - id: basf-snapfit-online-tool-and-blog
@@ -529,6 +584,11 @@ sources:
     sources: 1
   summary: 'BASF Snapfit app compares operating strain with allowable strain and returns a suitability verdict; worked examples
     use PBT and POM. Note: Only an intro blog title seen; details from related result summaries.'
+  archive:
+    sha256: cc06a559252dcea02ccf3a0be721b67ca8bf87aa05c3bfb26cb98c0eac942c26
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: bc8e8743185f2482
 - id: machine-design-fundamentals-of-annular-snap-fit-joints
@@ -571,6 +631,11 @@ sources:
       for reinforced). Not independently confirmed.
   summary: 'Annular snap-fit first-order calculation; permissible strain tied to proportional limit; amorphous resins tolerate
     higher share of yield for brief snaps. Note: Figures from search summary, not seen verbatim.'
+  archive:
+    sha256: 7dab50c9881cf99a0be0b787e97dde8f8af83d4d8b0b0c2f2050ff5dcd9db01b
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: 5df60a7f3037d795
 - id: plasticstoday-injection-molding-design-fundamentals-snap
@@ -666,6 +731,11 @@ sources:
     printing, comparison, lifetime and FAQs; inspected polypropylene hinge drawing. Primary web retrieval, not a whole-page
     byte archive. Linked resin data and other figures not fully audited; no reported test protocol reproduced. Moulded lifetime
     and printed-cycle assurances are not physical qualification.'
+  archive:
+    sha256: 9ada5398b11c1a8b9a0667be7a61b9d8c85461ae9a124c96d20a0d700723f535
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
 - id: plasticstoday-by-design-polypropylene-part-design-part-2
   kind: guide
   category: manufacturing-guides
@@ -753,6 +823,11 @@ sources:
       thumb; scenario-specific, no match to 13,050 apart from Formlabs.'
   summary: 'Worked cost model: one part with a $3,600 tool, breakeven versus printing, with resin purchase sensitivity. Note:
     Vendor selling printers; single-part case.'
+  archive:
+    sha256: be4be710539ea3d780ffd4bf36e6ad852e6b939f297a51f69be93ed61d67c5e8
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: 75cb697afd24ea44
 - id: xometry-3d-printing-vs-injection-molding-breakeven-xometry
@@ -793,6 +868,11 @@ sources:
     sources: 1
   summary: 'Breakeven comparison of printing against moulding by volume; only title seen in results. Note: Content unseen;
     sibling sources put breakeven at 200-2,000 units.'
+  archive:
+    sha256: e2734a3c2005148682433f3de1193e3409926c63089bd1a38a4be75005d7e8ed
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: 88683a7b649aadea
 - id: formlabs-low-volume-rapid-injection-molding-with-3d-printed
@@ -837,6 +917,11 @@ sources:
     evidence: No second source checked.
   summary: 'Printed moulds in Rigid 10K Resin; five case studies, design guidelines and failure modes. Note: Rule is from
     FAQ summary; molds last hundreds to thousands of shots.'
+  archive:
+    sha256: e7ac26561d084178e50a9f9fa5a446a99f632c2ccc6349ec8ff36a543ea12b91
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: cfa3060cfd30994e
 - id: stratasys-polyjet-for-injection-molding-stratasys-resource
@@ -874,6 +959,11 @@ sources:
     sources: 1
   summary: 'Covers printed mould design, file prep and assembly; PolyJet moulds cannot withstand extreme pressure so easy-flow
     polymers recommended. Note: PDF is gated; PolyJet moulds.'
+  archive:
+    sha256: 67a48683b0821c33d070d94d52e6b8074055b420c573866991053b9895f55cb2
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: 3137ce04daa6d6fa
 - id: xometry-overmolding-xometry-capability-page
@@ -915,6 +1005,11 @@ sources:
     evidence: 'Protolabs: 1.5-3 mm good bonding; Fast Radius and Texas Injection Molding give the same 1.5-3 mm range.'
   summary: 'Overmold wall guidance and gradual transitions; TPE/TPV overmolds thinner than substrate to limit warpage. Note:
     Capability page more than a design guide.'
+  archive:
+    sha256: 92a954650cbb5167b96f63bc3d4badb2cb20739028e45ba9af9b9441880afc18
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: e87e46c39dd46e90
 - id: dupont-via-formerra-molding-guide-for-zytel-and-minlon
@@ -952,6 +1047,11 @@ sources:
     sources: 1
   summary: 'DuPont nylon design module on value engineering and designing with nylon resins; only a table of contents appeared.
     Note: Highly relevant to PA66; content unseen.'
+  archive:
+    sha256: 6dce2ddaa6d694fffc1479a4cc2f6662218c42b7e0a4683e8c640e1cb23b95bb
+    kind: pdf
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: 949f6e94ecb82a32
 - id: dupont-general-design-principles-for-engineering-polymers
@@ -992,6 +1092,11 @@ sources:
     sources: 1
   summary: 'DuPont general design principles for engineering polymers; only the title appeared in results. Note: Third-party
     hosted; content unseen.'
+  archive:
+    sha256: 3be18d2c0ba4318724b9c04c529cf99e389eea42de7d344a892f5217ca3ad5a0
+    kind: pdf
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: 7cf6e51ed12b67b8
 - id: moldex3d-webinar-eliminating-sink-mark-and-voids-in
@@ -1029,6 +1134,11 @@ sources:
     sources: 1
   summary: 'Webinar page naming thickness variation and uneven shrinkage as sink and void drivers; rib, wall, cooling and
     gate changes as levers. Note: Marketing event page, simulation software vendor.'
+  archive:
+    sha256: eed690f8212c3a35f182e17869346b64581b48cae044e3b369ef67ab4e43e978
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: e04bfd32ab2c6611
 - id: pmc-mdpi-mechanical-properties-of-weld-lines-in-injection
@@ -1070,6 +1180,11 @@ sources:
     evidence: No second source checked.
   summary: 'Weld lines are the weak regions in 30 wt% CF nylon 66; tensile and flexural properties rose with fibre content
     without weld lines. Note: Nylon 66 CF, not PA6-CF; drying value is the study''s own.'
+  archive:
+    sha256: b1c331a5368b2df49397afe2398d8afda0ad45759fd2a2d6b0a59a489ab7524b
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: e5670df355468435
 - id: protolabs-threaded-inserts-with-heat-staking-and-ultrasonic
@@ -1112,6 +1227,11 @@ sources:
     Protolabs needs. No numbers.'
   summary: Protolabs on putting threaded inserts into moulded parts by heat staking or ultrasonic insertion, and what it needs
     from the designer; no numbers.
+  archive:
+    sha256: d7ddaa3a6ea488f9bff08cc430055e15145bd7ef2dd7afb15856ba1adf14e182
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
 - id: rapiddirect-screw-boss-design-injection-molding
   kind: guide
@@ -1161,6 +1281,11 @@ sources:
     - protolabs-im-bosses
   summary: 'RapidDirect''s screw-boss rules for moulded parts: a boss wall about 60 % of the nominal wall (against sink),
     height under 3 times its outside diameter, and bosses at least 2 walls apart.'
+  archive:
+    sha256: 83b3bae531785a18af1bd13faef327179fd868f9b459448528f8273a7a31db2e
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
 - id: protolabs-im-bosses
   extends: true
@@ -1274,6 +1399,11 @@ sources:
   verified: '2026-11-10 Pacific (2026-11-11 UTC): Read estimator labels, units, disclaimer and waste note; did not execute
     or validate interactive calculator code or its product dataset. HTML SHA-256 ea6336156fde47af9204c1789725209c0e3ae39a2eef2a1f51d453e855b019b0.
     No revision displayed.'
+  archive:
+    sha256: dbc3a44bb08ac15390bf0ef68b060762f6e678a0a94d5bfcaf0364323cf1a856
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
 - id: smoothon-reference-guides
   kind: guide
   category: manufacturing-guides
@@ -1315,6 +1445,11 @@ sources:
   verified: '2026-11-10 Pacific (2026-11-11 UTC): Read hub headings/descriptions only; subsequent reading limited to the separately
     registered sealers/releases guide. Other linked guides remain inventoried for future reading in issue 552. HTML SHA-256
     d1684c0f5a4e5d5b8cc9257ae20c8a2ef47e05f9a815f54571449a83993740dc. No revision displayed.'
+  archive:
+    sha256: d1684c0f5a4e5d5b8cc9257ae20c8a2ef47e05f9a815f54571449a83993740dc
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
 - id: smoothon-sealers-releases
   kind: guide
   category: manufacturing-guides
@@ -1360,6 +1495,11 @@ sources:
   - docs/research/manufacturing/process-profiles.md
   verified: '2026-11-10 Pacific (2026-11-11 UTC): Read both HTML tables, footnotes and general-information sections. PDF companion
     not read. HTML SHA-256 a8b08cf2b62e35cef8e5493b0e7c6cf62a2c865f473151f9ec0aeca5c5033eb0. No revision displayed.'
+  archive:
+    sha256: a8b08cf2b62e35cef8e5493b0e7c6cf62a2c865f473151f9ec0aeca5c5033eb0
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
 - id: smoothon-quantity-faq
   kind: guide
   category: manufacturing-guides
@@ -1411,6 +1551,11 @@ sources:
   - docs/research/manufacturing/process-profiles.md
   verified: '2026-11-10 Pacific (2026-11-11 UTC): Read poured, shell and brush-on sections plus disclaimer. HTML SHA-256 d217326ee73e16d5dcb37fe3cb901c06c7682af3e544cb06d1c37500faed2ffe.
     No revision displayed. Independent arithmetic in issue 552; no live estimator validation.'
+  archive:
+    sha256: d217326ee73e16d5dcb37fe3cb901c06c7682af3e544cb06d1c37500faed2ffe
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
 - id: smoothon-sla-inhibition-faq
   kind: guide
   category: manufacturing-guides
@@ -1464,6 +1609,11 @@ sources:
   verified: '2026-11-10 Pacific (2026-11-11 UTC): Read platinum preparation, entire compatibility table, tin section and disclaimer.
     Named guide developer Phil Avery. HTML SHA-256 02b875b0ccdafa25ded94f01035d5891e615257bbb0d06528e0d82dc3486bc6f. No revision
     or particular SLA resin/UV irradiance supplied; its exposure duration is not adopted as a universal cure schedule.'
+  archive:
+    sha256: 02b875b0ccdafa25ded94f01035d5891e615257bbb0d06528e0d82dc3486bc6f
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
 - id: smoothon-oomoo-bulletin
   kind: datasheet
   category: manufacturing-guides
@@ -1517,6 +1667,11 @@ sources:
   verified: '2026-11-10 Pacific (2026-11-11 UTC): Read both PDF pages, technical table and processing sections; printed code
     120823DH retained without interpreting date format. PDF SHA-256 6ebb58816b22bd44e0187637796253d6587164858525e988e0fa8577f03c7d50.
     SDS and physical trial not performed.'
+  archive:
+    sha256: 6ebb58816b22bd44e0187637796253d6587164858525e988e0fa8577f03c7d50
+    kind: pdf
+    fetched: '2026-11-14'
+    redistribute: false
 - id: smoothon-mold-star-bulletin
   kind: datasheet
   category: manufacturing-guides
@@ -1569,6 +1724,11 @@ sources:
   verified: '2026-11-10 Pacific (2026-11-11 UTC): Read both PDF pages and table; printed code 011024DH retained without interpreting
     date format. Quantitative capture limited to Mold Star 30, other grades not adopted. PDF SHA-256 d74fa585f9b48229fb72aaa9e92c09d809caacd5401bb6257bff469ea6a09bbf.
     SDS, additives and physical trial not performed.'
+  archive:
+    sha256: d74fa585f9b48229fb72aaa9e92c09d809caacd5401bb6257bff469ea6a09bbf
+    kind: pdf
+    fetched: '2026-11-14'
+    redistribute: false
 - id: smoothon-hollow-model-tutorial
   kind: guide
   category: manufacturing-guides
@@ -1621,6 +1781,11 @@ sources:
   verified: '2026-11-10 Pacific (2026-11-11 UTC): Read overview and steps 1-13 text. Only step-6 photo dscn3673.jpg and step-11
     photo dsc_0058.jpg inspected; other frames remain unexamined. HTML SHA-256 7439841c0daf1b5f6307c85ea617e23c015d266fc4f0663acd0193f9a02f1cb6.
     No displayed revision. Source pins and limits in issue 552 checkpoint 6787097539; no printed-master trial.'
+  archive:
+    sha256: 7439841c0daf1b5f6307c85ea617e23c015d266fc4f0663acd0193f9a02f1cb6
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
 - id: smoothon-mould-architecture-booklet
   kind: guide
   category: manufacturing-guides
@@ -1671,6 +1836,11 @@ sources:
   verified: '2026-11-10 Pacific (2026-11-11 UTC): Ingested reading scope only printed pp.8-10 and 13-14 (PDF pages 9-11 and
     14-15); printed p.8 diagram inspected. Other chapters and historical recipes are not adopted. PDF SHA-256 aa451174b661f35c9c67912b4da99754b6afa71099bbd1c0355076a3926fea4d.
     No revision inferred from PDF title. Later p.3 study remains queued separately in issue 552.'
+  archive:
+    sha256: aa451174b661f35c9c67912b4da99754b6afa71099bbd1c0355076a3926fea4d
+    kind: pdf
+    fetched: '2026-11-14'
+    redistribute: false
 - id: smoothon-silicone-release-faq
   kind: guide
   category: manufacturing-guides
@@ -1717,6 +1887,11 @@ sources:
   - docs/research/manufacturing/process-profiles.md
   verified: '2026-11-10 Pacific (2026-11-11 UTC): Read all article text and disclaimer. HTML SHA-256 1bd05cc1c78a73ff8d2e673b79506cae0e02870206e70d687bcdc6994bad9260.
     No displayed revision. No silicone combination, substitute release or coating-detail effect reproduced.'
+  archive:
+    sha256: 1bd05cc1c78a73ff8d2e673b79506cae0e02870206e70d687bcdc6994bad9260
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
 - id: smoothon-ease-release-bulletin
   kind: datasheet
   category: manufacturing-guides
@@ -1764,6 +1939,11 @@ sources:
   verified: '2026-11-10 Pacific (2026-11-11 UTC): Read both pages; printed code 121423DH. PDF SHA-256 89af7557c31dcefffd2fc1f3f2611bf16312690648fef64fd47be72d71312ce5.
     This batch adopts only qualitative interface/application distinctions; no universal coat amount or drying interval. SDS
     and physical trial not performed.'
+  archive:
+    sha256: 89af7557c31dcefffd2fc1f3f2611bf16312690648fef64fd47be72d71312ce5
+    kind: pdf
+    fetched: '2026-11-14'
+    redistribute: false
 - id: smoothon-plasti-paste-bulletin
   kind: datasheet
   category: manufacturing-guides
@@ -1813,6 +1993,11 @@ sources:
   verified: '2026-11-10 Pacific (2026-11-11 UTC): Read both pages; printed code 122823DH. PDF SHA-256 e706590fc95642d54ee67ff165e447b0698d83d494b63357c4f55707ee90cfe9.
     Selected scope is shim/release/removal and reassembly planning. Ratio recorded only to resolve the hollow-model tutorial
     conflict, not as an engineering rule. SDS and physical trial not performed.'
+  archive:
+    sha256: e706590fc95642d54ee67ff165e447b0698d83d494b63357c4f55707ee90cfe9
+    kind: pdf
+    fetched: '2026-11-14'
+    redistribute: false
 - id: smoothon-plasti-paste-ii-bulletin
   kind: datasheet
   category: manufacturing-guides
@@ -1860,6 +2045,11 @@ sources:
   verified: '2026-11-10 Pacific (2026-11-11 UTC): Read both pages; printed code 122823DH. PDF SHA-256 ae2ba57b3cc2ab01c975a179b8519f7b79e4f5aa85306bc563822b08ad3e877b.
     Selected scope is shim/release/removal and reassembly planning. No numerical shell, cure or thermal claim adopted; ratio
     retained solely for source reconciliation. SDS and physical trial not performed.'
+  archive:
+    sha256: ae2ba57b3cc2ab01c975a179b8519f7b79e4f5aa85306bc563822b08ad3e877b
+    kind: pdf
+    fetched: '2026-11-14'
+    redistribute: false
 - id: smoothon-cup-test-faq
   kind: guide
   category: manufacturing-guides
@@ -1909,6 +2099,11 @@ sources:
   verified: '2026-11-10 Pacific (2026-11-11 UTC): Read entire article and disclaimer; source bytes rechecked against study
     checkpoint 6787139471. HTML SHA-256 3903d2fa4ea3b6bc5b716cde657a057089c48ec77f9aeb6a1a87a26e178c02bd. No displayed revision.
     No cup test or interface trial performed.'
+  archive:
+    sha256: 3903d2fa4ea3b6bc5b716cde657a057089c48ec77f9aeb6a1a87a26e178c02bd
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
 - id: smoothon-no-cure-faq
   kind: guide
   category: manufacturing-guides
@@ -1957,6 +2152,11 @@ sources:
   verified: '2026-11-10 Pacific (2026-11-11 UTC): Read all main sections and disclaimer; linked mixing/cold-weather articles
     not read in this batch. HTML SHA-256 cd07c472b739ace9ae3673c4a473c1422d93c3c088f2856edeaaaaa6663c9c21 matches study checkpoint
     6787139471. No displayed revision; no physical trial.'
+  archive:
+    sha256: cd07c472b739ace9ae3673c4a473c1422d93c3c088f2856edeaaaaa6663c9c21
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
 - id: smoothon-cure-inhibition-faq
   kind: guide
   category: manufacturing-guides
@@ -2005,6 +2205,11 @@ sources:
   verified: '2026-11-10 Pacific (2026-11-11 UTC): Read all three article sections and disclaimer; embedded video unviewed.
     HTML SHA-256 d71090043897aa6769117a4549a7ff672010f33b1ccef052f0eeb415dbc01422 matches study checkpoint 6787139471. No
     displayed revision; generic chemistry/solvent-delay claims not adopted across products.'
+  archive:
+    sha256: d71090043897aa6769117a4549a7ff672010f33b1ccef052f0eeb415dbc01422
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
 - id: smoothon-inhibit-x-bulletin
   kind: datasheet
   category: manufacturing-guides
@@ -2053,6 +2258,11 @@ sources:
   verified: '2026-11-10 Pacific (2026-11-11 UTC): Read complete one-page bulletin; printed code 030724DH. PDF SHA-256 d586d76977c997cbca89ae7195b9bf1951277ba76252668143855e9b19b8f593
     rechecked against study checkpoint 6787139471. Selected qualitative treatment/release distinction only; no coat-count
     recipe adopted. SDS and physical trial not performed.'
+  archive:
+    sha256: d586d76977c997cbca89ae7195b9bf1951277ba76252668143855e9b19b8f593
+    kind: pdf
+    fetched: '2026-11-14'
+    redistribute: false
 - id: smoothon-xtc3d-bulletin
   kind: datasheet
   category: manufacturing-guides
@@ -2105,6 +2315,11 @@ sources:
   verified: '2026-11-10 Pacific (2026-11-11 UTC): Read both pages; code 091724PA. PDF SHA-256 955f9a0dcfa83a194e4e6b8baa09bd155dbec1b3dfc2efbb4336e3d02cc5a3cf
     rechecked against study checkpoint 6787139471. Scope is endpoints, coating/release and source limits; no mix, solvent,
     thickness or heating recipe adopted. SDS and physical trial not performed.'
+  archive:
+    sha256: 955f9a0dcfa83a194e4e6b8baa09bd155dbec1b3dfc2efbb4336e3d02cc5a3cf
+    kind: pdf
+    fetched: '2026-11-14'
+    redistribute: false
 - id: smoothon-shore-hardness-guide
   kind: guide
   category: manufacturing-guides
@@ -2154,6 +2369,11 @@ sources:
     (SHA-256 cdc0ad24862fb116ca2887fa92c7fb15409c96853c40f480fafad2bcc7a5a4ab). No displayed revision; linked printable PDF
     not read. HTML SHA-256 b7f60665b8026a455e77ad7d0b78ed9e3afdeb1ff977edc6e7949aa478d6cc29. Source rechecked against queued
     study; no physical trial or equipment inspection.'
+  archive:
+    sha256: b7f60665b8026a455e77ad7d0b78ed9e3afdeb1ff977edc6e7949aa478d6cc29
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
 - id: smoothon-viscosity-guide
   kind: guide
   category: manufacturing-guides
@@ -2208,6 +2428,11 @@ sources:
   verified: '2026-11-10 Pacific (2026-11-11 UTC): Read all main article sections, tables and FAQ text. No displayed revision.
     Linked printable chart, selection tools and videos not read; generic additive recipes not adopted. HTML SHA-256 82f901a89870da78301bd28d1f6417df26206bb57bbb56a1015a2f04726342bd.
     Source rechecked against queued study; no physical trial or equipment inspection.'
+  archive:
+    sha256: 82f901a89870da78301bd28d1f6417df26206bb57bbb56a1015a2f04726342bd
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
 - id: smoothon-technical-charts
   kind: guide
   category: manufacturing-guides
@@ -2256,6 +2481,11 @@ sources:
   verified: '2026-11-10 Pacific (2026-11-11 UTC): Read chart headers/disclaimer and only Mold Max 10 and Dragon Skin 10 NV
     rows; other product rows and printable PDFs remain unstudied. No displayed revision. HTML SHA-256 96224cf9cd72338f7803d8aa2aeed2f960c6183f5ede83b919c40991f048ef4a.
     Source rechecked against queued study; no physical trial or equipment inspection.'
+  archive:
+    sha256: ca63ec58715bf25ab70755919c3b0b5f33e0dca075e813212463a792ada3ca7e
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
 - id: smoothon-mold-max-bulletin
   kind: datasheet
   category: manufacturing-guides
@@ -2314,6 +2544,11 @@ sources:
     sections; visually checked p.1 table. Printed code 120723DH. Other-grade properties, additive/thermal recipes and linked
     bulletins not promoted; SDS unread. PDF SHA-256 b6709ac04a2359ec4336b6cb1f533cadeae8482f7e24901bf6a496b14998492c. Source
     rechecked against queued study; no physical trial or equipment inspection.'
+  archive:
+    sha256: b6709ac04a2359ec4336b6cb1f533cadeae8482f7e24901bf6a496b14998492c
+    kind: pdf
+    fetched: '2026-11-14'
+    redistribute: false
 - id: smoothon-dragon-skin-nv-bulletin
   kind: datasheet
   category: manufacturing-guides
@@ -2370,6 +2605,11 @@ sources:
     capture limited to 10 NV; other NV grades, skin/food certifications, SDS and linked resources not examined or qualified.
     PDF SHA-256 f56ed934c433f7e3dbd66a93eee098b672560e888e21c0a01b7d9862b79b3554. Source rechecked against queued study; no
     physical trial or equipment inspection.'
+  archive:
+    sha256: f56ed934c433f7e3dbd66a93eee098b672560e888e21c0a01b7d9862b79b3554
+    kind: pdf
+    fetched: '2026-11-14'
+    redistribute: false
 - id: smoothon-silicone-vacuum-faq
   kind: guide
   category: manufacturing-guides
@@ -2418,6 +2658,11 @@ sources:
   verified: '2026-11-10 Pacific (2026-11-11 UTC): Read complete answer, options and disclaimer. No displayed revision. Linked
     FAQs, videos, product bulletins and SDS not read through this page. HTML SHA-256 8fd0e512a8939b969b5735fca361459927880005dbbb595b0ada9ed4ad5be49b.
     Source rechecked against queued study; no physical trial or equipment inspection.'
+  archive:
+    sha256: 8fd0e512a8939b969b5735fca361459927880005dbbb595b0ada9ed4ad5be49b
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
 - id: smoothon-slow-deair-faq
   kind: guide
   category: manufacturing-guides
@@ -2466,6 +2711,11 @@ sources:
   verified: '2026-11-10 Pacific (2026-11-11 UTC): Read entire short answer and disclaimer. No displayed revision. Vacuum level,
     elapsed time and equipment performance not measured. HTML SHA-256 77b9a87a54229571fc15db16280cb39dfb962e15a1c6f7cec56a587bfedd69bf.
     Source rechecked against queued study; no physical trial or equipment inspection.'
+  archive:
+    sha256: 77b9a87a54229571fc15db16280cb39dfb962e15a1c6f7cec56a587bfedd69bf
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
 - id: smoothon-rubber-bubbles-faq
   kind: guide
   category: manufacturing-guides
@@ -2515,6 +2765,11 @@ sources:
   verified: '2026-11-10 Pacific (2026-11-11 UTC): Read all main question/answer sections and disclaimer. No displayed revision.
     Linked resources and product-specific coat/additive procedures not adopted. HTML SHA-256 d65198ea0078ed4e90288b3fdb5a67eb0a458c23dffea62e1cbf9ca07584de09.
     Source rechecked against queued study; no physical trial or equipment inspection.'
+  archive:
+    sha256: d65198ea0078ed4e90288b3fdb5a67eb0a458c23dffea62e1cbf9ca07584de09
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
 - id: smoothon-resin-bubbles-faq
   kind: guide
   category: manufacturing-guides
@@ -2567,6 +2822,11 @@ sources:
   verified: '2026-11-10 Pacific (2026-11-11 UTC): Read whole article and disclaimer. No displayed revision. Linked cup test
     already has its own earlier record; filler products, gas blanket and SDS not read here. HTML SHA-256 75dc3302147726b8bf8d9cec719bb3df3ce271ce80472076054dd72f10ef98d8.
     Source rechecked against queued study; no physical trial or equipment inspection.'
+  archive:
+    sha256: 75dc3302147726b8bf8d9cec719bb3df3ce271ce80472076054dd72f10ef98d8
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
 - id: smoothon-pressure-casting-faq
   kind: guide
   category: manufacturing-guides
@@ -2619,6 +2879,11 @@ sources:
   verified: '2026-11-10 Pacific (2026-11-11 UTC): Read entire article, Important Notices and disclaimer. No displayed revision.
     No pressure/vacuum run, internal-void inspection or equipment certification. HTML SHA-256 e164d057b39d3b4dd7e5f1ea76720689033dd646628ad7fd735a55b286a83579.
     Source rechecked against queued study; no physical trial or equipment inspection.'
+  archive:
+    sha256: e164d057b39d3b4dd7e5f1ea76720689033dd646628ad7fd735a55b286a83579
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
 - id: smoothon-pressure-hold-faq
   kind: guide
   category: manufacturing-guides
@@ -2668,6 +2933,11 @@ sources:
   verified: '2026-11-10 Pacific (2026-11-11 UTC): Read complete short answer, pro tip and disclaimer. No displayed revision.
     No endpoint or chamber behaviour physically verified. HTML SHA-256 ed75099662488a2c520c135e01f89c5d47579d76fd9452bb1e7541afb73973f7.
     Source rechecked against queued study; no physical trial or equipment inspection.'
+  archive:
+    sha256: ed75099662488a2c520c135e01f89c5d47579d76fd9452bb1e7541afb73973f7
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
 - id: smoothon-smooth-cast-300-bulletin
   kind: datasheet
   category: manufacturing-guides
@@ -2722,6 +2992,11 @@ sources:
     capture limited to 300; 300Q/305/310 properties, post-cure recipe, SDS and linked 65D bulletin not promoted. PDF SHA-256
     c9e5013db0f3fd27571f597a58b946440db7de1e19cbaa198f02e537db7c6e30. Source rechecked against queued study; no physical trial
     or equipment inspection.'
+  archive:
+    sha256: c9e5013db0f3fd27571f597a58b946440db7de1e19cbaa198f02e537db7c6e30
+    kind: pdf
+    fetched: '2026-11-14'
+    redistribute: false
 - id: smoothon-blue-pressure-chamber-guide
   kind: guide
   category: manufacturing-guides
@@ -2777,6 +3052,11 @@ sources:
     p.1 warning/gauge diagrams in prior study. Filename says 2021; no separate printed revision found. Other photos not examined
     for assembly details; no hardware inspection. PDF SHA-256 f2a610e1514f59ebe66527622c54e3cb0cd12940b8d42d2748282c7650552a67.
     Source rechecked against queued study; no physical trial or equipment inspection.'
+  archive:
+    sha256: f2a610e1514f59ebe66527622c54e3cb0cd12940b8d42d2748282c7650552a67
+    kind: pdf
+    fetched: '2026-11-14'
+    redistribute: false
 - id: smoothon-pressure-chamber-overview
   kind: guide
   category: manufacturing-guides
@@ -2826,3 +3106,8 @@ sources:
     Gallery, video/how-to article, SDS and certifications unviewed; dimensions and advertised bubble-free outcome not qualified.
     HTML SHA-256 1d2a29ccfda89632664a92651ada0e7b4329bb5ed1c8a07677fa7cdaf60a8fc2. Source rechecked against queued study;
     no physical trial or equipment inspection.'
+  archive:
+    sha256: 1d2a29ccfda89632664a92651ada0e7b4329bb5ed1c8a07677fa7cdaf60a8fc2
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false

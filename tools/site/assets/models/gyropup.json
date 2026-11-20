@@ -4,50 +4,50 @@
  "units": "mm",
  "up": "z",
  "box_mm": [
-  -196.849,
+  -286.775,
   -249.5498,
   -426.9605,
-  196.849,
+  286.775,
   249.5498,
   480.0
  ],
  "quant": 65535,
  "bin": "gyropup.bin",
  "encoding": "gzip",
- "bytes": 390485,
- "raw_bytes": 1042608,
- "sha256": "b7297636dd11edb61bc56190b1bc45c4bb05dce6b789f981655d248749edd0c3",
- "triangles": 116672,
+ "bytes": 375219,
+ "raw_bytes": 999216,
+ "sha256": "4d244cb77ee7b6ed5d9749dfe32c8a45182c335459c787dca667652e8acfa5e4",
+ "triangles": 111880,
  "source": {
   "project": "Valpatel/gyropup",
   "url": "https://gyropup.com",
   "repo": "https://github.com/Valpatel/gyropup",
   "license": "MIT",
-  "revision": "01d5823062ace26eddd7d13428cbbfeec9e0105d",
-  "committed": "2026-11-07",
-  "hardware_tree": "d9e2577430dd831bc70cb7a43f24b56f63df7bee",
+  "revision": "3a40891962b0b0a04625e070700f1d130bea3c7b",
+  "committed": "2026-11-10",
+  "hardware_tree": "346f5a5623560177390ad8cf207e5b8331ab5bae",
   "files": {
    "hardware/__init__.py": "d6ddd9ce4ef273b82f43f315f09d11db1224f2b8298c9b0b3ea7dafb97280ba0",
    "hardware/cad/__init__.py": "d6ddd9ce4ef273b82f43f315f09d11db1224f2b8298c9b0b3ea7dafb97280ba0",
    "hardware/cad/analysis/studies.py": "41d2807c06b54abfa69c966fb274eaa0933e080ee642f977bae8e1aa1900d349",
-   "hardware/cad/body/body_battery.py": "3f491f0e4ccafa2e985fd1f0b20ef886c7b53f059593b354817e17a47b65fa71",
-   "hardware/cad/body/body_bom.py": "aab4d9612ef7176fe74b511be838ad2bb3695a61a81d233ab788cca5650098c0",
-   "hardware/cad/body/body_frame.py": "0dbff64156008827de6e7841e0e310d1741739de93623d23390fa8fe773f7c32",
+   "hardware/cad/body/body_battery.py": "d9c7362a77d397e0e71ce8b11702507baeb54b06bdc909b3098764487e7d5089",
+   "hardware/cad/body/body_bom.py": "416fcf51147ebd87ae8badccfa5bd6c336deeda38e12c16ec330de628ca5c68b",
+   "hardware/cad/body/body_frame.py": "5fae785664c469c9b0e366fb81ac3d69467702df4cf1e65cd3f0a7507898c0c6",
    "hardware/cad/body/body_fuse_board.py": "5dcb993962fdcfc0a18cea93c43dec7bb04f0ce3f2174228465f2a73e76d20de",
    "hardware/cad/body/body_guards.py": "488427babff18f5503df518831dcf68f8ce71573c2fd3d517cedf70af116ff57",
-   "hardware/cad/body/body_joints.py": "696ada09b51da53b01c930ab274f171bf86f8e9f19e1eeb942a8d48345358ee6",
-   "hardware/cad/body/body_layout.py": "2d4514ca185c983caa290ab2c2cc6b167894c9fc473e9b15bf284cb3878e324a",
+   "hardware/cad/body/body_joints.py": "3269a2bbd5eeb69364a51d20f9cb4499ad19dcf6146d07a5da4244169d252f09",
+   "hardware/cad/body/body_layout.py": "5363ddd056e6ae1df7b3ceebf3799078106867d9ce0b6d51fa70def86f775241",
    "hardware/cad/body/body_legloads.py": "3a5726ef7c7adf58d2183dd2c55156e1a9f6a55e1c181b3344c777b10d2ce136",
    "hardware/cad/body/body_params.py": "a68737201e93af4ce8f00f675fbe3c235453b8bb0e19440fe3062635737a2247",
-   "hardware/cad/body/body_sections.py": "1592a87f99a3428761432a4231a9931c2bbddeddbbf20449005aaf3b46710515",
+   "hardware/cad/body/body_sections.py": "da0fcc91fd2417817413b4dcfd5624d9d763569dbcd526152957d56c5c35af4c",
    "hardware/cad/body/body_sheet.py": "d695fa0d8f3cf1d8c0f9b71fe08a52cb6e701f4d0ed895bf3053cd2325f56459",
-   "hardware/cad/body/body_shell.py": "a5e8f050988b12b1cd7f69e247314eb01ec4b08eed9e4911d7fde5578e780296",
+   "hardware/cad/body/body_shell.py": "2f984f05bacb1ccc3d356e5a1686a1433a5326b05ef40195f297dc16ef530188",
    "hardware/cad/body/body_studies.py": "e496e35481580e4d1c1c635da5434a300ee63d5140662c5b25a95130375cab0c",
    "hardware/cad/body/body_thermal.py": "d0aa1a5e8fc31cd9e4fa8ac1bf1600b374611546233cab1db9fe8f884f32b104",
-   "hardware/cad/body/body_views.py": "d6a59be073b020537d55448be63dc89a7867f1118c6e0bf36290482f5518fc0e",
+   "hardware/cad/body/body_views.py": "a609dc09d960cafc4155bc4a0364bf312432a2c664aef573509a72008a062ceb",
    "hardware/cad/body/body_wiring.py": "7ae4a6e9684fe852cc22f5efe6cef377be53da3cd1a9dd28b6b1a6a8c69fb1d9",
    "hardware/cad/builders/build.py": "83b7342f3e1b6fba2555649668d51814ec814258b2e018372b127ef046d0fcec",
-   "hardware/cad/builders/build_body.py": "218b22c53eac82d94a0f4e6014f4c6f7d833be9c10cffbc062f6ffa4b64fa087",
+   "hardware/cad/builders/build_body.py": "41c3409b7e59de6d921dbf8068be4807d0abaea98267f62eeb3e1721dbd415e2",
    "hardware/cad/builders/build_leg.py": "b2ed60b0da4f38390f8798124e01b0f64c1005fd860204beb944cb17ae80c1ed",
    "hardware/cad/builders/build_rig.py": "619c6cfd0ad666dbe52fe75e732515bfeefa14a2ab6694c29f91aec4c9ea8779",
    "hardware/cad/builders/build_turret.py": "1ff62e01fb86b8de8159c7e75dbec2c502aebde457d528f53dedcda4b7a15915",
@@ -98,7 +98,7 @@
    "hardware/cad/turret/turret_studies.py": "faf8a0900752a39fdd38fdb8cccc20dc3cdd1ff82679d93d47886680ba9701ac",
    "hardware/cad/turret/turret_tilt_range.py": "1852dedd5edb5a67b8198dc2bac888d10f505e96c399769f7a9e0aac84a94885",
    "hardware/catalog/alternates.json": "9d5da650878fefa12654cdedae841d2daf22c1101c7f038018a75b8921d5ee3b",
-   "hardware/catalog/body.json": "91a27038348a4e8e4beb3ede92c5c84a073d4728cd73e14f66d3e3226ab9b52b",
+   "hardware/catalog/body.json": "2b0f3a5ef9313bead13b9bfdb1de4b15a7159bccfd1910b029608bceb8c4616f",
    "hardware/catalog/designed-media-validation.json": "b31f669c36e93dc2d5e701f161fbd74374688688b21a8bacf6f93227e808a435",
    "hardware/catalog/hardware.json": "af0f7f3bdce4ee93649e278106d00a93fe2ebea3569c057f1d2a04fe4b360015",
    "hardware/catalog/images.json": "918f8c682e95ae0210f732197c0d9bd58d27c066a9cffc0037bee4284b795e73",
@@ -116,15 +116,15 @@
    "hardware/catalog/vendor-media-verification.json": "3025ca6b68918b33986078c8a8087f036a653f17c230accf665127fa3d72d733",
    "hardware/catalog/wheel_motors.json": "e92baa60e433e177d87450145943c32bd6b60bebb97e1c1746354aa00f2dbc99",
    "hardware/designs/default.json": "3dc7d04d0d6eeec81decefa360f3904b093f19515d6944910c2cb20c976db211",
-   "tests/hardware/body/test_body.py": "1f99193493bd0512cbbcef0f771f1e0585dd1a820ea159719bd828a54f564d64",
+   "tests/hardware/body/test_body.py": "5fbb0b43a87dd24d0ea5b66502c9fb4a8f38514b10983feaf208d47c9a580062",
    "tests/hardware/legs/test_leg_loads.py": "f05c09f4719541fa8880dbee28ce01e4314ae5dba7a599e7eecb6240d94341a4",
    "tests/hardware/turret/test_turret_gate_sources.py": "fb85a82ab0a322debc60b6b93a3b8018227949e80fb7d5bcc453171b0f397732",
    "tests/hardware/turret/test_turret_snaps.py": "96afedabae5991a7d99eab3af5f324ae901589d7e92e45b2a36f32bc7a709fd6",
    "tests/hardware/turret/test_turret_solids.py": "d03677019224ad4e95f8775f374010c450299daf67fd729f546a1ea458e87a31",
-   "tools/engineering/robot/robot_view.py": "e655d2c00c6d8d752ac941d2327d4b6faa673d8941567894f7792c92839ada37"
+   "tools/engineering/robot/robot_view.py": "2008d1b935203110c5218bb1fa8e660a94c7100ee3ef4a20622d6fc23920e40f"
   },
   "collector": "tools/engineering/robot/robot_view.py",
-  "collector_sha256": "e655d2c00c6d8d752ac941d2327d4b6faa673d8941567894f7792c92839ada37",
+  "collector_sha256": "2008d1b935203110c5218bb1fa8e660a94c7100ee3ef4a20622d6fc23920e40f",
   "source_guard_sha256": "8c653277d2aee9fbfd08acb07c23c6542cdd04930804180a111352666110499e",
   "runtime": {
    "cadquery": "2.8.0",
@@ -133,7 +133,7 @@
    "vtk": "9.6.2",
    "cad_agent_revision": "e662a1ce79b4f63f7352b9d065c5027f77d53a81"
   },
-  "producer_revision": "41417abedd8cb933b86fb98e95e36b14db4e93b3",
+  "producer_revision": "b33efacc628488d10a387d071f607b18f9ae0161",
   "producer_sha256": "30bf6063cd0ac21eaa194ad4c7ba827f3f4193f75ab3cfecd763eae6b54c29e1",
   "export": "Fresh robot_view.collect() shapes, STL 0.8 mm/0.8 rad; tyre_l, tyre_r, hub_l, hub_r, lidar, lidar_housing, turret_hopper at 0.3 mm/0.2 rad",
   "pack": "cadagent.publish.view.pack_view",
@@ -154,10 +154,6 @@
     "item.battery_front",
     "item.battery_rear"
    ],
-   "bay_doors": [
-    "bay_door_front",
-    "bay_door_rear"
-   ],
    "brackets": [
     "post_1",
     "post_2",
@@ -169,10 +165,6 @@
     "plate_post_3",
     "plate_post_4",
     "dcdc_bracket",
-    "bay_rail_l",
-    "bay_rail_r",
-    "adapter_plate_front",
-    "adapter_plate_rear",
     "ear_bracket_l",
     "ear_bracket_r",
     "d435_cradle_front",
@@ -226,9 +218,10 @@
     "cheek_left",
     "cheek_right",
     "belly_plate",
-    "bay_floor",
-    "bay_side_l",
-    "bay_side_r"
+    "end_pack_holder_front",
+    "end_foot_front",
+    "end_pack_holder_rear",
+    "end_foot_rear"
    ],
    "frame_inner": [
     "floor_tray",
@@ -248,10 +241,6 @@
     "isolator_2",
     "isolator_3",
     "isolator_4",
-    "bay_skid_1",
-    "bay_skid_2",
-    "bay_skid_3",
-    "bay_skid_4",
     "spacers",
     "spacer_screws",
     "frame_screws_left",
@@ -477,12 +466,12 @@
    "name": "battery",
    "visible": true,
    "bounds_mm": [
-    -153.0,
-    -43.5,
-    -219.04,
-    153.0,
-    43.5,
-    -122.04
+    -286.77,
+    -48.5,
+    -87.04,
+    286.77,
+    48.5,
+    49.96
    ],
    "color": "#fdb913",
    "vertices": 16,
@@ -491,54 +480,37 @@
    "index_bits": 16
   },
   {
-   "name": "bay_doors",
-   "visible": true,
-   "bounds_mm": [
-    -159.0,
-    -51.2,
-    -221.64,
-    159.0,
-    51.2,
-    -93.54
-   ],
-   "color": "#d98c26",
-   "vertices": 208,
-   "triangles": 424,
-   "offset": 240,
-   "index_bits": 16
-  },
-  {
    "name": "brackets",
    "visible": true,
    "bounds_mm": [
-    -160.6,
+    -171.1,
     -171.0,
-    -103.04,
-    160.6,
+    85.0,
+    171.1,
     171.0,
     246.0
    ],
    "color": "#454a52",
-   "vertices": 5248,
-   "triangles": 10708,
-   "offset": 4032,
+   "vertices": 3812,
+   "triangles": 7772,
+   "offset": 240,
    "index_bits": 16
   },
   {
    "name": "cameras",
    "visible": true,
    "bounds_mm": [
-    -162.6,
+    -192.6,
     -45.0,
-    40.0,
-    162.6,
+    130.0,
+    192.6,
     45.0,
     192.0
    ],
    "color": "#2a2d33",
    "vertices": 24,
    "triangles": 36,
-   "offset": 99768,
+   "offset": 69744,
    "index_bits": 16
   },
   {
@@ -555,7 +527,7 @@
    "color": "#33383f",
    "vertices": 1884,
    "triangles": 3948,
-   "offset": 100128,
+   "offset": 70104,
    "index_bits": 16
   },
   {
@@ -572,24 +544,24 @@
    "color": "#3b4049",
    "vertices": 16,
    "triangles": 24,
-   "offset": 135120,
+   "offset": 105096,
    "index_bits": 16
   },
   {
    "name": "frame",
    "visible": true,
    "bounds_mm": [
-    -160.0,
+    -170.78,
     -58.0,
-    -221.64,
-    160.0,
+    -228.5,
+    170.78,
     58.0,
     90.5
    ],
    "color": "#b4bac4",
-   "vertices": 4040,
-   "triangles": 8496,
-   "offset": 135360,
+   "vertices": 3284,
+   "triangles": 7144,
+   "offset": 105336,
    "index_bits": 16
   },
   {
@@ -606,7 +578,7 @@
    "color": "#f5b82e",
    "vertices": 456,
    "triangles": 916,
-   "offset": 210576,
+   "offset": 167904,
    "index_bits": 16
   },
   {
@@ -623,7 +595,7 @@
    "color": "#f5b82e",
    "vertices": 456,
    "triangles": 916,
-   "offset": 218808,
+   "offset": 176136,
    "index_bits": 16
   },
   {
@@ -640,7 +612,7 @@
    "color": "#5f6670",
    "vertices": 3198,
    "triangles": 6484,
-   "offset": 227040,
+   "offset": 184368,
    "index_bits": 16
   },
   {
@@ -657,7 +629,7 @@
    "color": "#5f6670",
    "vertices": 3198,
    "triangles": 6484,
-   "offset": 285132,
+   "offset": 242460,
    "index_bits": 16
   },
   {
@@ -674,7 +646,7 @@
    "color": "#4a5058",
    "vertices": 252,
    "triangles": 500,
-   "offset": 343224,
+   "offset": 300552,
    "index_bits": 16
   },
   {
@@ -691,7 +663,7 @@
    "color": "#4a5058",
    "vertices": 252,
    "triangles": 500,
-   "offset": 347736,
+   "offset": 305064,
    "index_bits": 16
   },
   {
@@ -708,7 +680,7 @@
    "color": "#15171b",
    "vertices": 126,
    "triangles": 248,
-   "offset": 352248,
+   "offset": 309576,
    "index_bits": 16
   },
   {
@@ -725,7 +697,7 @@
    "color": "#9aa1aa",
    "vertices": 1156,
    "triangles": 2304,
-   "offset": 354492,
+   "offset": 311820,
    "index_bits": 16
   },
   {
@@ -742,7 +714,7 @@
    "color": "#2a2d33",
    "vertices": 128,
    "triangles": 248,
-   "offset": 375252,
+   "offset": 332580,
    "index_bits": 16
   },
   {
@@ -759,7 +731,7 @@
    "color": "#2a2d33",
    "vertices": 128,
    "triangles": 248,
-   "offset": 377508,
+   "offset": 334836,
    "index_bits": 16
   },
   {
@@ -776,7 +748,7 @@
    "color": "#c9ced6",
    "vertices": 2290,
    "triangles": 4644,
-   "offset": 379764,
+   "offset": 337092,
    "index_bits": 16
   },
   {
@@ -793,7 +765,7 @@
    "color": "#c9ced6",
    "vertices": 2290,
    "triangles": 4644,
-   "offset": 421368,
+   "offset": 378696,
    "index_bits": 16
   },
   {
@@ -808,9 +780,9 @@
     216.0
    ],
    "color": "#cdd1db",
-   "vertices": 4886,
-   "triangles": 10460,
-   "offset": 462972,
+   "vertices": 4846,
+   "triangles": 10380,
+   "offset": 420300,
    "index_bits": 16
   },
   {
@@ -827,7 +799,7 @@
    "color": "#c8382f",
    "vertices": 256,
    "triangles": 496,
-   "offset": 555048,
+   "offset": 511656,
    "index_bits": 16
   },
   {
@@ -844,7 +816,7 @@
    "color": "#c8382f",
    "vertices": 256,
    "triangles": 496,
-   "offset": 559560,
+   "offset": 516168,
    "index_bits": 16
   },
   {
@@ -861,7 +833,7 @@
    "color": "#e8892b",
    "vertices": 504,
    "triangles": 1024,
-   "offset": 564072,
+   "offset": 520680,
    "index_bits": 16
   },
   {
@@ -878,7 +850,7 @@
    "color": "#3a3f47",
    "vertices": 2556,
    "triangles": 5152,
-   "offset": 573240,
+   "offset": 529848,
    "index_bits": 16
   },
   {
@@ -895,7 +867,7 @@
    "color": "#3b3f46",
    "vertices": 1314,
    "triangles": 2656,
-   "offset": 619488,
+   "offset": 576096,
    "index_bits": 16
   },
   {
@@ -912,7 +884,7 @@
    "color": "#b8bec7",
    "vertices": 13740,
    "triangles": 27928,
-   "offset": 643308,
+   "offset": 599916,
    "index_bits": 16
   },
   {
@@ -929,7 +901,7 @@
    "color": "#9cc9e8",
    "vertices": 2626,
    "triangles": 5280,
-   "offset": 893316,
+   "offset": 849924,
    "index_bits": 16
   },
   {
@@ -946,7 +918,7 @@
    "color": "#1b1d21",
    "vertices": 252,
    "triangles": 504,
-   "offset": 940752,
+   "offset": 897360,
    "index_bits": 16
   },
   {
@@ -963,7 +935,7 @@
    "color": "#1b1d21",
    "vertices": 252,
    "triangles": 504,
-   "offset": 945288,
+   "offset": 901896,
    "index_bits": 16
   },
   {
@@ -980,7 +952,7 @@
    "color": "#f5b82e",
    "vertices": 1910,
    "triangles": 3900,
-   "offset": 949824,
+   "offset": 906432,
    "index_bits": 16
   },
   {
@@ -997,7 +969,7 @@
    "color": "#f5b82e",
    "vertices": 1910,
    "triangles": 3900,
-   "offset": 984684,
+   "offset": 941292,
    "index_bits": 16
   },
   {
@@ -1014,7 +986,7 @@
    "color": "#e9a21f",
    "vertices": 634,
    "triangles": 1288,
-   "offset": 1019544,
+   "offset": 976152,
    "index_bits": 16
   },
   {
@@ -1031,7 +1003,7 @@
    "color": "#e9a21f",
    "vertices": 634,
    "triangles": 1288,
-   "offset": 1031076,
+   "offset": 987684,
    "index_bits": 16
   }
  ]

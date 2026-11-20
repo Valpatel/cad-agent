@@ -16,12 +16,13 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 import re
 import shutil
 import subprocess
 import zipfile
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 
 PRINTER = 'Bambu Lab P1S 0.4 nozzle'
 _MARK = '.cadagent-slicer'
@@ -224,6 +225,10 @@ def slice_part(model, workdir=None, printer: Optional[str] = None, process: Opti
              profile_sources={kind: p['files'] for kind, p in profiles.items()},
              settings_sha256=settings_hashes,
              slicer=Path(exe).name, minutes=round(r.get('seconds', 0) / 60, 1) if r.get('seconds') else None)
+    # Bambu writes "Success." in error_string on success; the integer codes decide status.
+    # A fresh result with no valid return_code cannot establish success (unlike historical report rows).
+    r['ok'] = (_nonnegative_number(r.get('grams')) and r['grams'] > 0 and p.returncode == 0
+               and type(r.get('return_code')) is int and r['return_code'] == 0)
     if not r.get('grams'):
         r['log_tail'] = (p.stdout + p.stderr)[-2000:]
     (work / 'result-summary.json').write_text(json.dumps(r, indent=2) + '\n')
@@ -395,20 +400,51 @@ def _row_current(project, name: str, row) -> bool:
     """A report row is current while its part's 3MF has the sha256 recorded and its part overrides are the ones
     ``cad.slicer.parts`` names now."""
     f = project.exports_dir / f'{name}.3mf'
-    return (isinstance(row, dict) and bool(row.get('grams')) and f.is_file() and _sha(f) == row.get('sha256')
+    return (isinstance(row, dict) and _nonnegative_number(row.get('grams')) and row['grams'] > 0
+            and (row.get('minutes') is None or _nonnegative_number(row['minutes']))
+            and f.is_file() and _sha(f) == row.get('sha256')
             and (row.get('part_overrides') or {}) == part_overrides(project, name))
 
 
+def _nonnegative_number(value) -> bool:
+    return type(value) in (int, float) and math.isfinite(value) and value >= 0
+
+
+class NothingToSlice(ValueError):
+    """No part was named and the project has no printed part (#577)."""
+
+
 def _expected_parts(project) -> List[str]:
+    """``cad.slicer.parts`` when given, else every printed part (``manufacturing.process.printed_parts``, #577)."""
+    from cadagent.manufacturing.process import printed_parts
     from cadagent.publish.report import load_parts
     cfg = dict(project.slicer or {})
     known, _ = load_parts(project)
-    return list(cfg.get('parts') or known)
+    return list(cfg.get('parts') or printed_parts(project, known))
 
 
-def _row_ok(row: dict) -> bool:
-    """A report row's ``ok``; a row without one (Bambu Studio, a missing 3MF) is ok when it has grams."""
-    return bool(row.get('ok')) if 'ok' in row else bool(row.get('grams'))
+def _bambu_status_errors(row: dict) -> List[str]:
+    """Only genuine historical rows lack both explicit status and retained codes."""
+    if not any(key in row for key in ('ok', 'exit_code', 'return_code')):
+        return []
+    errors = []
+    if row.get('ok') is not True:
+        errors.append('ok is not true')
+    for key in ('exit_code', 'return_code'):
+        if key not in row:
+            errors.append(f'{key} is missing (expected integer zero)')
+        elif type(row[key]) is not int or row[key] != 0:
+            errors.append(f'{key} {row[key]!r} (expected integer zero)')
+    return errors
+
+
+def _row_ok(row: dict, engine: str = 'bambu') -> bool:
+    """New Bambu rows need consistent status/codes; genuine old rows retain the grams fallback.
+
+    Prusa's explicit ``ok`` has its own producer contract, without Bambu's two-code requirement."""
+    if engine == 'bambu':
+        return bool(row.get('grams')) and not _bambu_status_errors(row)
+    return row['ok'] is True if 'ok' in row else bool(row.get('grams'))
 
 
 def slice_project(project, parts=None) -> dict:
@@ -417,12 +453,16 @@ def slice_project(project, parts=None) -> dict:
     report can tell a stale result from a current one.
 
     ``cad.slicer`` keys (all optional): engine, printer, process, filament (``pla``, ``petg`` or a profile name),
-    overrides (process settings, e.g. ``{wall_loops: "3"}``), parts (the parts to slice; default all): a list of
+    overrides (process settings, e.g. ``{wall_loops: "3"}``), parts (the parts to slice; default every printed
+    part, so one a dossier card or ``cad: part_process:`` says is made another way is left out): a list of
     names, or a mapping of name to ``{overrides: {...}}``, the part's own settings on top of ``overrides``.
 
     A PrusaSlicer row also carries what PrusaSlicer's log said (``warnings``, ``errors``, ``stability_issues``,
-    ``benign_log_lines``, ``log``) and ``ok``: exit code 0, G-code written and no error or stability issue. The
-    report passes only when every row is ok; a Bambu Studio row is ok when it has grams. Slicing some parts keeps only
+    ``benign_log_lines``, ``log``) and ``ok``: exit code 0, G-code written and no error or stability issue, with
+    ``stability_checked``: false when supports were on, so PrusaSlicer did not look for stability issues
+    (``slicer_prusa.stability_setup``; ``stability_note`` says why, ``supports`` what was sliced with). The
+    report passes only when every row is ok; a new Bambu Studio row needs grams and zero exit/return codes.
+    Slicing some parts keeps only
     the old rows that are still current (``_row_current``), so ``pass`` is about the rows in the report: a part left
     out of it is not sliced, and ``current_report`` is None until every expected part is in."""
     from cadagent.publish.report import load_parts
@@ -431,7 +471,10 @@ def slice_project(project, parts=None) -> dict:
     known, error = load_parts(project)
     if error:
         raise FileNotFoundError(error)
-    names = list(parts or cfg.get('parts') or known)
+    names = list(parts or _expected_parts(project))
+    if not names:       # every part is made another way: an empty report would read as a failed slice
+        raise NothingToSlice("no printed part to slice: every part is made another way (a dossier card's "
+                             "material.process or cad.part_process); name a part to slice it anyway")
     st, engine = _settings(project), engine_of(project)
     work = project.root / 'build' / 'slicer'
     path = project.exports_dir / 'slice-report.json'
@@ -454,10 +497,16 @@ def slice_project(project, parts=None) -> dict:
                        filament=st['filament'], overrides={**st['overrides'], **own} or None, engine=engine)
         r['sha256'] = _sha(model)
         rows[name] = {k: r.get(k) for k in ('grams', 'minutes', 'filament_m', 'error', 'sha256')}
+        if engine == 'bambu':
+            rows[name].update({k: r.get(k) for k in ('exit_code', 'return_code')})
+            rows[name]['ok'] = r.get('ok') is True
         if own:
             rows[name]['part_overrides'] = own
         if engine == 'prusa':
             rows[name].update({k: r.get(k) for k in ('warnings', 'errors', 'stability_issues', 'benign_log_lines')})
+            # whether PrusaSlicer looked for stability issues at all (it does not with supports on): an older
+            # report has no such keys
+            rows[name].update({k: r[k] for k in ('supports', 'stability_checked', 'stability_note') if k in r})
             log = r.get('log')
             if log and Path(log).resolve().is_relative_to(project.root.resolve()):
                 log = str(Path(log).resolve().relative_to(project.root.resolve()))
@@ -470,29 +519,55 @@ def slice_project(project, parts=None) -> dict:
         exe = str(Path(exe).resolve())
     out = {'slicer': f"{ENGINE_NAMES[engine]} (command line)", **st, 'slicer_executable': exe,
            'parts': rows, 'total_grams': round(total_g, 1), 'total_hours': round(total_min / 60, 2),
-           'pass': bool(rows) and all(_row_ok(v) for v in rows.values()),
+           'pass': bool(rows) and all(_row_ok(v, engine) for v in rows.values()),
            'note': 'Slicer estimates for one copy of each part with the stated profile; supports off unless the profile turns them on.'}
     path.write_text(json.dumps(out, indent=2) + '\n')
     out['path'] = str(path)
     return out
 
 
-def current_report(project) -> Optional[dict]:
-    """The slice report only when it is complete and current: every expected part (``cad.slicer.parts``, else every
-    part) sliced, with the settings ``cad.slicer`` names now (each part's own overrides too), from 3MF files unchanged
-    since (sha256). Else None."""
+def report_status(project) -> Tuple[Optional[dict], Optional[str]]:
+    """Return (current report, problem). Both are None only when no report exists.
+
+    A persisted but stale, incomplete or unreadable report returns a problem, so verification cannot mistake
+    prior slicing for never sliced. ``current_report`` keeps the current-only API used by release consumers."""
     path = project.exports_dir / 'slice-report.json'
-    if not path.exists():
-        return None
     try:
         rep = json.loads(path.read_text())
-    except json.JSONDecodeError:
-        return None
-    if not rep.get('parts') or set(rep['parts']) != set(_expected_parts(project)):
-        return None
-    if settings_differ(rep, project):
-        return None
-    for name, row in rep.get('parts', {}).items():
-        if not _row_current(project, name, row):
-            return None
-    return rep
+    except FileNotFoundError:
+        return (None, 'slice report is unreadable') if path.is_symlink() else (None, None)
+    except (OSError, ValueError):
+        return None, 'slice report is unreadable or invalid JSON'
+    if not isinstance(rep, dict) or not isinstance(rep.get('parts'), dict):
+        return None, 'slice report has invalid parts data'
+    if not isinstance(rep.get('slicer'), str) or not rep['slicer'].strip():
+        return None, 'slice report has invalid slicer metadata'
+    expected = _expected_parts(project)
+    if not expected:
+        from cadagent.publish.report import load_parts
+        if load_parts(project)[0]:      # parts, none of them printed (#577): a report from when one was does not apply
+            return None, None
+    if not rep['parts'] or set(rep['parts']) != set(expected):
+        return None, 'slice report is incomplete or its expected parts changed'
+    different = settings_differ(rep, project)
+    if different:
+        return None, 'slice report settings changed: ' + ', '.join(different)
+    if not all(_nonnegative_number(rep.get(k)) for k in ('total_grams', 'total_hours')):
+        return None, 'slice report has invalid totals'
+    try:
+        outdated = [name for name, row in rep['parts'].items() if not _row_current(project, name, row)]
+    except OSError:
+        return None, 'slice report source files are unreadable'
+    if outdated:
+        return None, 'slice report is stale or incomplete for: ' + ', '.join(sorted(outdated))
+    for name, row in rep['parts'].items():
+        for key in ('warnings', 'errors', 'stability_issues'):
+            value = row.get(key)
+            if value is not None and (not isinstance(value, list) or not all(isinstance(v, str) for v in value)):
+                return None, f'slice report has invalid {key} for: {name} (expected a list of strings)'
+    return rep, None
+
+
+def current_report(project) -> Optional[dict]:
+    """The complete source/settings-current report, else None; ``report_status`` distinguishes absent from stale."""
+    return report_status(project)[0]

@@ -1,4 +1,5 @@
-"""Beams: the rectangular section, cantilever deflection and its curve, beam stiffness by support, and the snap-fit arm.
+"""Beams: the rectangular section, hollow rectangular and round tube sections, cantilever deflection and its curve,
+beam stiffness by support, and the snap-fit arm.
 
 SI units: metres, newtons, pascals, so strain is a fraction (0.02 = 2 %) and stiffness is in N/m.
 
@@ -12,7 +13,7 @@ guide's 0.67, 1.09 and 0.86.
 from __future__ import annotations
 
 import math
-from typing import Any, Dict
+from typing import Any, Dict, Tuple
 
 from cadagent.mechanical.compliant import snapfit
 from cadagent.formulas._registry import cite, formula
@@ -45,6 +46,76 @@ def _design(design: int) -> int:
 def rect_second_moment(width: float, thickness: float) -> float:
     """Second moment of area of a solid rectangle about its centroidal axis along the width: I = b h^3 / 12."""
     return width * thickness ** 3 / 12.0
+
+
+def _positive(name: str, v: Any) -> float:
+    if isinstance(v, bool) or not isinstance(v, (int, float)) or not math.isfinite(v) or v <= 0:
+        raise ValueError(f"{name} must be a finite number above 0, not {v!r}")
+    return float(v)
+
+
+def _hollow_rect(width: float, depth: float, wall: float) -> Tuple[float, float, float]:
+    b, h, t = _positive("width", width), _positive("depth", depth), _positive("wall", wall)
+    if 2.0 * t >= min(b, h):
+        raise ValueError(f"wall {wall!r} must be under half of the smaller side {min(b, h)!r}: at half there is no "
+                         "hole (use rect_second_moment)")
+    return b, h, t
+
+
+def _round_tube(diameter: float, wall: float) -> Tuple[float, float]:
+    d, t = _positive("diameter", diameter), _positive("wall", wall)
+    if 2.0 * t >= d:
+        raise ValueError(f"wall {wall!r} must be under half of the outside diameter {diameter!r}")
+    return d, t
+
+
+_SHARP = ("sharp corners and one wall thickness all round: a rolled or formed tube has rounded corners and often a "
+          "design wall under its nominal, so its handbook value is lower; use the maker's table for a bought section")
+_TUBE = ("a plain concentric tube of one wall thickness (use the wall as made: a welded tube's design wall is thinner "
+         "than its nominal)")
+_NO_BUCKLE = ("the section's shape is taken to hold: no local buckling or crushing of a thin wall, which governs before "
+              "yield in a thin tube")
+
+
+@formula(units={"width": "m (outside, parallel to the bending axis)", "depth": "m (outside, across the bending axis)",
+                "wall": "m"},
+         returns="second moment of area I, m^4", limits=(_SHARP, "wall under half of the smaller side"),
+         source=cite("roark", "Table A.1 (properties of sections), hollow rectangle: the outer rectangle less the "
+                     "inner one about their common centroidal axis"))
+def hollow_rect_second_moment(width: float, depth: float, wall: float) -> float:
+    """Second moment of area of a hollow rectangle (a box tube) about its centroidal axis along the width:
+    I = (b h^3 - (b - 2t)(h - 2t)^3) / 12."""
+    b, h, t = _hollow_rect(width, depth, wall)
+    return (b * h ** 3 - (b - 2.0 * t) * (h - 2.0 * t) ** 3) / 12.0
+
+
+@formula(units={"width": "m (outside, parallel to the bending axis)", "depth": "m (outside, across the bending axis)",
+                "wall": "m"},
+         returns="elastic section modulus S = I / (h / 2), m^3",
+         limits=(_SHARP, _NO_BUCKLE, "elastic bending: the outer fibre's stress is M / S up to yield"),
+         source=cite("roark", "Table A.1 (properties of sections), hollow rectangle, with Section 8.1 (sigma = M c / "
+                     "I)"))
+def hollow_rect_section_modulus(width: float, depth: float, wall: float) -> float:
+    """Elastic section modulus of a hollow rectangle about its centroidal axis along the width: S = I / (h / 2), so the
+    outer fibre's bending stress is M / S."""
+    return hollow_rect_second_moment(width, depth, wall) / (depth / 2.0)
+
+
+@formula(units={"diameter": "m (outside)", "wall": "m"}, returns="second moment of area I, m^4",
+         limits=(_TUBE, "wall under half of the outside diameter"),
+         source=cite("roark", "Table A.1 (properties of sections), hollow circle"))
+def round_tube_second_moment(diameter: float, wall: float) -> float:
+    """Second moment of area of a round tube about a diameter: I = pi (D^4 - d^4) / 64, with d = D - 2t."""
+    d, t = _round_tube(diameter, wall)
+    return math.pi * (d ** 4 - (d - 2.0 * t) ** 4) / 64.0
+
+
+@formula(units={"diameter": "m (outside)", "wall": "m"}, returns="elastic section modulus S = I / (D / 2), m^3",
+         limits=(_TUBE, _NO_BUCKLE, "elastic bending: the outer fibre's stress is M / S up to yield"),
+         source=cite("roark", "Table A.1 (properties of sections), hollow circle, with Section 8.1 (sigma = M c / I)"))
+def round_tube_section_modulus(diameter: float, wall: float) -> float:
+    """Elastic section modulus of a round tube: S = I / (D / 2), so the outer fibre's bending stress is M / S."""
+    return round_tube_second_moment(diameter, wall) / (diameter / 2.0)
 
 
 @formula(units={"force": "N", "modulus": "Pa", "inertia": "m^4", "length": "m"}, returns="tip deflection, m",

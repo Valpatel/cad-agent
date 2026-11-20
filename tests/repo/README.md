@@ -53,6 +53,7 @@ flowchart TD
 | `test_agent_prompt.py` | What people paste and agents read (`docs/agent-prompt.txt`): the README opens with the install commands and the paste-in line, in about 125 words; its commands and report fields hold, and `tools/quickstart_eval.py` grades runs honestly |
 | `test_fetch_user_agent.py` | Every Python fetch in `src/` and `tools/` sends its own User-Agent (the site's CDN blocks urllib's default), and agents are told the same |
 | `test_areas.py` | `docs/areas.yaml`, the topic tree: it parses, and everything it names exists and is placed |
+| [`ci/`](ci/README.md) | The CI support tools in `tools/ci/`: the runner apt-mirror correction and the local preflight with its drift guard over `.github/ci-checks.json` |
 | `test_ci_gates.py` | The merge gates in `tools/ci_gates.py`: branch flow, review verdicts, release versions |
 | `test_cut_release.py` | `tools/cut_release.py`: the release-branch edits, checked against CI's release gate |
 | `test_layout.py` | Where files go: no flat tests, no new top-level folders, folders split as they grow |
@@ -71,7 +72,11 @@ Related: [tests](../README.md) · [where files go](../../.github/CONTRIBUTING.md
 
 | File or folder | Purpose |
 |---|---|
+| [test_archive_pointers.py](test_archive_pointers.py) | Offline-mirror archive pointers from a manifest: layout kept, idempotent, never overwritten. |
 | [test_import_refmap.py](test_import_refmap.py) | Reference importer canonical output and split records. |
 | [test_markdown_images.py](test_markdown_images.py) | Committed Markdown image destinations. |
 | [test_references_health.py](test_references_health.py) | Reference registry health and maintenance layout. |
 | [test_references_health_apply.py](test_references_health_apply.py) | Reference-health patch application controls. |
+| [test_eval_candidates.py](test_eval_candidates.py) | Candidate YAML integrity, source references, topic vocabulary and unchanged v1 job boundaries. |
+| [test_standard_eval.py](test_standard_eval.py) | Versioned analytical manifests, references, defect controls, artifact boundaries and run-record ingestion. |
+| [test_standard_eval_runner.py](test_standard_eval_runner.py) | CLI adapter flags, observed metrics, normal completion, launch errors, timeouts and owned-group settlement using inert processes. |

@@ -135,6 +135,19 @@ springs, hinges) lies in the build plate's plane, and bending across the layers 
 
 *A still of the [screw-boss explorer](../../mechanical/screw-bosses.md), a kit demo, drawn by `tools/site/figures/printed-boss-still.mjs` from the demo's own code (`cadagent.formulas`), on a worked example: a self-tapping DELTA PT 30 screw in a printed PLA boss. The page's explorer changes the screw, the boss and the filament.*
 
+### Select the screw family before sizing the boss
+
+Bossard’s [plastic-screw article][ref:bossard-fastening-technology-self-tapping-screws-for-plastic] is qualitative guidance;
+its current reading does not supply the imported wall-thickness assertion. See the record for snapshot and historical limits.
+Use the existing `choose joining` card for the decision and preserve its missing-capacity or proxy warnings.
+The family distinction lives in the card data, not a new dimensional rule.
+
+For a **10 N, one-assembly** screening example, `injection-moulding` with `abs` or `thermoset` stays **not decided**:
+there is no calibrated capacity model. `sla` keeps the glued-insert choice and its unchecked-load gap; the general
+thermoset discussion does not authorize cutting threads in a brittle SLA part. `fdm` with `pla` returns a forming
+screw with an explicit insert-capacity proxy warning, not a screw pull-out rating. None of these outcomes establishes
+fit, strength or repeated-assembly life. Follow the [boss test plan](../../mechanical/screw-bosses.md) for that joint.
+
 ### Where the FDM sources disagree
 
 - **Minimum wall: 0.45 to 1.5 mm.** Prusa's 0.45 mm is one perimeter, the physical floor; Protolabs Network's 0.8 mm
@@ -155,6 +168,42 @@ springs, hinges) lies in the build plate's plane, and bending across the layers 
 <img src="../../img/research/process-fdm-tolerance.svg" alt="Chart of the tolerance each FDM source gives on a 50 mm dimension: 0.127 mm from Xometry's US service, 0.2 mm industrial, 0.5 mm desktop and at Xometry Europe" width="680">
 
 *Diagram drawn by `tools/figures/process_profile_figures.py` from the FDM `compare: tolerance` rules in [`process-profiles.yaml`](../process-profiles.yaml), on published sources read 2026-10-31, each evaluated at 50 mm. A test redraws it and fails if the committed chart differs.*
+
+### Stratasys FDM table and clearance review
+
+Use the supplier's layer row rather than a universal multiplier. Its assembly-clearance wording remains unresolved; the examples below do not replace the other suppliers' profiles. [ref:sd-fdm-2025]
+
+<details>
+<summary>Layer-table exception, printed clearance and bounded FDM examples</summary>
+
+The July 2025 guide's p.5 generally recommends a wall four times the slice thickness, but its 0.020-inch layer row gives a 0.100-inch wall: five times, not four. A selected 0.010-inch row gives a 0.040-inch wall. That converts exactly to 1.016 mm, while the PDF prints rounded 1.00 mm. Retain both presentations and the footnote's case-by-case exception; do not extrapolate to an unlisted setting. [ref:sd-fdm-2025]
+
+On p.8, 0.013-inch layers visibly pair with **0.13-inch clearance**. This is a source observation requiring supplier confirmation, not permission to silently change it to 0.013 inch or adopt it as a universal moving gap. Heated chambers, soluble supports and supplier programming constrain the guide. It gives no fixed hole-compensation offset; critical holes need agreed drawing/post-processing requirements. The p.9 insert-wall wording needs a defined datum before a radial or diametral calculation. No hinge-cycle or strength qualification follows. [ref:sd-fdm-2025]
+
+These original, self-contained review illustrations are tested by the existing process-profile harness, not installed as toolkit APIs or manufacturing checks:
+
+```python
+from decimal import Decimal as D
+
+
+def selected_fdm_wall_in(layer_in):
+    examples = {D("0.010"): D("0.040"), D("0.020"): D("0.100")}
+    key = D(str(layer_in))
+    if not key.is_finite() or key not in examples:
+        raise ValueError("unlisted example: consult the source and supplier")
+    return examples[key]
+
+
+def fdm_clearance_observation(layer_in):
+    key = D(str(layer_in))
+    if not key.is_finite() or key != D("0.013"):
+        raise ValueError("not the selected unresolved source observation")
+    return {"state": "unresolved-confirm-supplier", "as_printed_in": D("0.13")}
+```
+
+A lookup of the two selected rows is not the complete supplier table. The unresolved observation grants no clearance acceptance.
+
+</details>
 
 ## 3. SLA and MSLA (resin)
 
@@ -229,6 +278,11 @@ From Protolabs Network's [SLA guide][hubs-sla-design]:
 
 ### Where the resin sources disagree
 
+Keep the printer, resin and test conditions with each comparison; matching the process name alone does not resolve conflicting values.
+
+<details>
+<summary>Resin source differences: printers, drainage, walls, overhangs and tolerance</summary>
+
 - **Protolabs Network's numbers are Formlabs' Form 2 numbers.** Its 19° overhang, 21 mm bridge, 0.4 mm engraving and
   0.8 mm hole all match the Form 2 sheet (and so do its 3.5 mm drain hole and 0.4 mm supported wall); Form 3 and
   Form 4 are finer on almost every line. That may also explain its own 0.5 against 0.8 mm hole. A profile should
@@ -247,6 +301,8 @@ From Protolabs Network's [SLA guide][hubs-sla-design]:
   100 µm against Grey at 50 µm); the YAML keeps both, each with its test.
 - **Protolabs' high-resolution X-Y feature** prints 0.005 in beside 0.1016 mm; 0.005 in is 0.127 mm. The YAML uses
   the normal-resolution row only.
+
+</details>
 
 ## 4. SLS (polymer powder bed)
 
@@ -323,6 +379,62 @@ From Protolabs Network:
 <img src="../../img/research/process-powder-tolerance.svg" alt="Chart of the tolerance each SLS and MJF source gives on a 25 mm dimension: 0.2 to 0.42 mm, with HP's own Z figure the widest" width="680">
 
 *Diagram drawn by `tools/figures/process_profile_figures.py` from the SLS and MJF `compare: tolerance` rules in [`process-profiles.yaml`](../process-profiles.yaml), on published sources read 2026-10-31, each evaluated at 25 mm. A test redraws it and fails if the committed chart differs.*
+
+### Stratasys SLS source conflicts and lap joints
+
+Keep this nylon-service guidance separate from MJF. Its tolerance conflict must remain visible even where two formulas happen to produce the same small-part value. [ref:sd-sls-2023]
+
+```mermaid
+flowchart TD
+    A["SLS tolerance question<br/>p.3 versus p.10"] --> B["0.002 versus 0.003 inch/inch<br/>Unresolved: ask the supplier"]
+    B ~~~ C["Separate bonded-lap example"]
+    C --> D["Overlap and adhesive gap only<br/>No motion or load prediction"]
+```
+
+*Original source-review diagram: keep the two printed tolerance observations unresolved, and keep bonded-lap arithmetic separate from moving clearance or load capacity.*
+
+<details>
+<summary>Conflicting tolerance slopes, lap-joint scope and SLS examples</summary>
+
+The 2023 guide's p.3 gives a tolerance floor of ±0.015 inch with a proportional term of ±0.002 inch/inch; p.10 instead prints ±0.003 inch/inch and a dimensionally inconsistent 0.1 mm/mm. At 10 inches the two inch expressions give ±0.020 and ±0.030 inch, respectively: derived 0.508 and 0.762 mm. Preserve the unresolved conflict and obtain the applicable supplier specification; neither expression becomes a definitive profile rule here. [ref:sd-sls-2023]
+
+The inherited 1–3 mm wall guidance is present on pp.5/10, scoped to this service's nylon production and hoop-shrink concerns. For a **derived 2 mm wall example**, p.8's 3–5-times lap overlap gives 6–10 mm. Its adhesive gap is 0.010 inch, exactly 0.254 mm, printed rounded 0.3 mm. This is a bonded lap, not a moving-part clearance. Resin, adhesive, preparation, temperature and prototypes still govern. Tank-only cleanout, wall and radius values on p.11 are not generic SLS-hole limits or a fuel/seal qualification. [ref:sd-sls-2023]
+
+```python
+from decimal import Decimal as D
+
+
+def sls_tolerance_observations_in(length_in):
+    length = D(str(length_in))
+    if not length.is_finite() or length <= 0:
+        raise ValueError("positive finite inch length required")
+    return {
+        "state": "unresolved-conflicting-source",
+        "page_3": max(D("0.015"), D("0.002") * length),
+        "page_10": max(D("0.015"), D("0.003") * length),
+    }
+
+
+def selected_sls_lap_example():
+    wall_mm = D("2")
+    return {
+        "state": "unqualified-SLS-bonded-lap-example",
+        "overlap_mm": (3 * wall_mm, 5 * wall_mm),
+        "adhesive_gap_exact_mm": D("0.010") * D("25.4"),
+        "as_printed_gap_mm": D("0.3"),
+    }
+```
+
+A matching floor at one length does not resolve the conflicting slopes, and the lap arithmetic predicts no joint load capacity.
+
+**Full-reading receipt, 2026-11-11.** All 10 FDM and 12 SLS pages were read, including closing qualifications. Visual checks covered FDM pp.3,5–9 and SLS pp.3–5,7–11, with numerical tables, diagrams and footnotes. The printed document codes are `DG_SDM_FDM_0725` and `DG_LS_Stratasys_Direct_04192023`. Exact PDF hashes:
+
+- FDM: `4c92aa8d7d3f51383bd8d8d5ac6aa5463b5aa7eb6ed59663073eefa85b96a495`
+- SLS: `e0278ce3f12d17400e41f8320384d7cabd4b0b0c2c33c4cea3f78bb3df27ddcb`
+
+The [dated full-source handoff](https://github.com/Valpatel/cad-agent/issues/323#issuecomment-6807874352) preserves URLs, edition scope and inherited-claim audit. No linked data sheets, manufactured specimens or application qualifications were checked. Manufacturer artwork stays outside the repository. These are two existing records promoted to read/primary/low, with no new identity or encoded/measured evidence.
+
+</details>
 
 ## 5. HP Multi Jet Fusion
 
@@ -637,6 +749,8 @@ rules below, divided by the rivet diameter. A test redraws it and fails if the c
 
 ## 8. CNC machining
 
+For a sourced bracket-to-plate workflow, supplier envelope ambiguities, model-hole conventions and independent export checks, use the [manufacturing service review](sheet-metal-file-and-hole-review.md#a-simple-cnc-plate-needs-a-machining-service-contract). It preserves the difference between a service contract and the generic rules below.
+
 D below is the tool or hole diameter. Two pages here are by named engineers at Xometry: Joel Schadegg and Greg Paulsen
 ([10 tips][xometry-cnc-10-tips]) and Dean McClements and Aaron Lichtig ([internal corner radii][xometry-cnc-corner-radii]).
 
@@ -730,6 +844,118 @@ D below is the tool or hole diameter. Two pages here are by named engineers at X
   micro tools in another. That 0.05 mm is printed beside 0.005 in, which is 0.127 mm, so one of the two is a slip;
   the YAML keeps the mm value and says so.
 - **Standards.** Protolabs names ISO 2768-1 (general tolerances) as its default. It is paid and was not read.
+
+## Shop-made silicone moulds: plan the batch and test the interface
+
+<details>
+<summary>Material quantities, mix basis and prepared-master compatibility</summary>
+
+Before preparing a mould, record the exact rubber and casting material, master printing process/resin, surface
+finish, sealer and release agent in the design dossier. Separate the volume to fill from the combined mixed mass,
+then split that mass using the selected product's **weight** ratio. A volume ratio is a different instruction.
+Use the current technical bulletin for the product's yield, mix basis and working/cure conditions; the calculator
+hub supplies estimates and a separate waste allowance, not a mould-performance qualification.
+[ref:smoothon-mold-calculators] [ref:smoothon-quantity-faq] [ref:smoothon-oomoo-bulletin]
+[ref:smoothon-mold-star-bulletin]
+
+Treat sealing, release and cure compatibility as separate questions. A sealer fills or isolates a surface; a release
+agent helps separate it. A generic material chart does not establish compatibility for an SLA resin. Run a small
+test on the actual prepared master, including its recesses and coating, and inspect the rubber/master interface
+after the product's specified cure. Record tackiness, uncured material, release damage and surface-detail changes
+before committing a full batch. A release coating alone does not demonstrate that cure inhibition is solved.
+[ref:smoothon-sealers-releases] [ref:smoothon-sla-inhibition-faq] [ref:smoothon-mold-star-bulletin]
+
+Resolve general-guide conflicts with the product bulletin and a representative trial. Smooth-On's SLA FAQ
+generalises that tin silicones need weighing and vacuum degassing; its OOMOO bulletin describes a tin silicone
+measured by volume without required degassing. The quantity FAQ also has arithmetic/unit inconsistencies, recorded
+in its registry entry; recompute dimensions and conversions rather than copying its worked answers.
+These are planning and experiment prompts. No casting calculator, profile limit, physical fit/strength result,
+mould life, or safety certification is added by this reading batch. Remaining source coverage is tracked in #552.
+[ref:smoothon-sla-inhibition-faq] [ref:smoothon-oomoo-bulletin] [ref:smoothon-quantity-faq]
+
+</details>
+
+<details>
+<summary>Plan removable moulds, cores and support shells</summary>
+
+Before choosing a parting line, describe how to remove the master, each core or plug, the flexible mould and
+every rigid support-shell segment, then how to reassemble them for casting. Check undercuts and through-openings
+for mechanical lock. A flexible glove mould and its rigid shell can need different separations; a seam hidden on
+the back is an appearance choice, not evidence of easy removal.
+[ref:smoothon-hollow-model-tutorial] [ref:smoothon-mould-architecture-booklet]
+
+Distinguish containment from registration and support. Record which features locate the rubber, shell and core;
+which seams must retain liquid; and how the assembly remains aligned while closing. In a trial, inspect leakage,
+flash, core movement, shell distortion and damage during removal separately. The booklet's air bleeders for filling
+rubber beneath a prebuilt shell are not a validated resin-casting vent design.
+[ref:smoothon-hollow-model-tutorial] [ref:smoothon-mould-architecture-booklet]
+
+Name each release interface: master/rubber, new silicone/cured silicone, shell/rubber or shell/shell. Use the exact
+material bulletin for that interface and test the prepared combination; a release suitable for one interface does
+not establish another. Preserve detail and dryness observations. Original Plasti-Paste and Plasti-Paste II are
+different products; the hollow-model tutorial mixes recipe values, so do not transfer its recipe between them.
+[ref:smoothon-silicone-release-faq] [ref:smoothon-ease-release-bulletin]
+[ref:smoothon-plasti-paste-bulletin] [ref:smoothon-plasti-paste-ii-bulletin] [ref:smoothon-hollow-model-tutorial]
+
+These are planning prompts from bounded readings, not an automated parting-line, vent or shell design, or a tested
+printed-mould procedure. Exact source coverage and queued studies remain in #552.
+
+</details>
+
+<details>
+<summary>Compare batch cure with the prepared-master interface</summary>
+
+When investigating a cure problem, keep a batch control and a coupon of the actual prepared master as separate
+observations. Follow the selected material's mixing, container and cure instructions. Label the product/lot,
+mixed mass and container geometry, mixing history, material/master/ambient temperatures, surface preparation,
+elapsed time and failure location. Inspect bulk cure and the rubber/master interface at the specified endpoint.
+[ref:smoothon-cup-test-faq] [ref:smoothon-no-cure-faq]
+
+A control that cures while the interface remains uncured supports investigating the application; it does not
+identify one contaminant. Differences in mass, temperature, mix distribution and exposure still need checking.
+Uniformly uncured material, interface-only tackiness and cured material that sticks during removal are different
+observations, not interchangeable diagnoses.
+[ref:smoothon-cup-test-faq] [ref:smoothon-no-cure-faq] [ref:smoothon-cure-inhibition-faq]
+
+Include coatings and inhibition treatments in the material chain. Drying, chemical cure and release are separate:
+Inhibit X can itself promote adhesion without its specified release treatment; cured XTC-3D coating also needs
+the bulletin's release preparation before mould rubber is applied. Check changed detail and dimensions rather than
+assuming the coated master still matches its nominal CAD surface. A generic mitigation does not override the
+chosen rubber's exclusions. These are observation prompts, not a proven cause, universal recipe or cure schedule;
+the unresolved temperature wording and remaining coverage stay in the source records and #552.
+[ref:smoothon-cure-inhibition-faq] [ref:smoothon-inhibit-x-bulletin] [ref:smoothon-xtc3d-bulletin]
+
+</details>
+
+<details>
+<summary>Select material and investigate trapped air separately</summary>
+
+For a printed compliant-part master, distinguish the master, mould rubber and casting material. Record Shore
+scale and value, viscosity, working time and removal path separately. Equal hardness does not imply equal flow,
+tear behaviour or cast-latch function. Compare exact grades in their bulletins; generic viscosity bands do not
+override a product's no-vacuum guidance or casting-material exclusions.
+[ref:smoothon-shore-hardness-guide] [ref:smoothon-viscosity-guide] [ref:smoothon-technical-charts]
+[ref:smoothon-mold-max-bulletin] [ref:smoothon-dragon-skin-nv-bulletin]
+
+Record bubble location and mixing, master/base, porosity, moisture and release history. Entrapped mixing air,
+air displaced from beneath a master and moisture-related urethane foaming need different investigations.
+A low-viscosity or no-vacuum label does not establish a void-free part. Generic vacuum notation and cure/demould
+endpoints remain source-specific; they are not equipment-sizing or cure rules.
+[ref:smoothon-rubber-bubbles-faq] [ref:smoothon-resin-bubbles-faq]
+[ref:smoothon-silicone-vacuum-faq] [ref:smoothon-slow-deair-faq] [ref:smoothon-smooth-cast-300-bulletin]
+
+Vacuum preparation and pressure during cure are different interventions. Pressure can distort voids in the rubber
+or collapse a hollow master; it does not remove urethane moisture sensitivity. Use only the actual commercial
+chamber's instructions and limits. The overview/manual pressure conflict needs manufacturer clarification, and a
+marketing capability is no permission to exceed the manual. Improvised vessels are excluded. Gel, handling strength
+and full cure are distinct endpoints; generic compressor tips do not override chamber instructions.
+[ref:smoothon-pressure-casting-faq] [ref:smoothon-pressure-hold-faq]
+[ref:smoothon-blue-pressure-chamber-guide] [ref:smoothon-pressure-chamber-overview]
+
+These are experiment-review questions, not pressure, vacuum, additive or thermal recipes. No physical void,
+removal, fit, strength or safety qualification was performed; exact conflicts and remaining coverage stay in #552.
+
+</details>
 
 ## 9. What this changes in cad-agent
 

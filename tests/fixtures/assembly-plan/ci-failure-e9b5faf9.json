@@ -1,0 +1,79 @@
+{
+ "schema": "cad-agent.assembly-plan-ci-failure/1",
+ "source_revision": "e9b5faf949274b27748f932c2a32d749bff1993f",
+ "original_ci": {
+  "run_id": 43298895192,
+  "created_at": "2026-11-12T20:17:55Z",
+  "status": "cancelled",
+  "jobs": [
+   {
+    "conclusion": "cancelled",
+    "id": 131464592929,
+    "name": "supply-chain"
+   },
+   {
+    "conclusion": "cancelled",
+    "id": 131464593321,
+    "name": "full"
+   },
+   {
+    "conclusion": "cancelled",
+    "id": 131464593456,
+    "name": "installer-windows"
+   },
+   {
+    "conclusion": "cancelled",
+    "id": 131464593644,
+    "name": "core (3.12)"
+   },
+   {
+    "conclusion": "cancelled",
+    "id": 131464593692,
+    "name": "core (3.10)"
+   },
+   {
+    "conclusion": "cancelled",
+    "id": 131464593832,
+    "name": "mermaid-provenance"
+   }
+  ],
+  "acceptance": "NOT PASS"
+ },
+ "supersession": {
+  "action": "single final PR description edit; no author rerun/dispatch/cancel",
+  "last_edited_at": "2026-11-12T20:18:31Z",
+  "replacement_run_id": 43299002793,
+  "replacement_created_at": "2026-11-12T20:18:35Z",
+  "ready_event_at": "2026-11-12T20:03:26Z"
+ },
+ "core312": {
+  "run_id": 43299002793,
+  "job_id": 131464983949,
+  "conclusion": "failure",
+  "test": "tests/review/test_gate_assembly.py::test_native_serial_tool_approach_obstruction_and_stale_source_controls",
+  "error": "ModuleNotFoundError: No module named 'cadquery'",
+  "summary": "1 failed, 3625 passed, 378 skipped, 1 warning, 39 subtests passed in 246.44s",
+  "cause": "native test imports optional cadquery before fixture importorskip boundary"
+ },
+ "chromium": {
+  "run_id": 43298895294,
+  "job_id": 131464443703,
+  "conclusion": "failure",
+  "test": "the actual repository map and generated inventory are current",
+  "error": "docs/map.md is stale: run site-repo-map.mjs --write",
+  "cause": "generated inventory not refreshed after new fixture folder"
+ },
+ "raw_log_sha256": {
+  "pr637-e9b5-core312.log": "b8044547b3a458436331e0b50452515142425942effc5191823ec958d3282238",
+  "pr637-e9b5-chromium.log": "fe2879908d2778df83c299d091c2f8df2d698381d2809919e73f29c15c1ce788"
+ },
+ "limits": "Historical failed/cancelled instances, never acceptance. Core3.10 matrix failfast cancellation is not a passing core result. Later-source checks and independent review are separate.",
+ "core310": {
+  "completed_at": "2026-11-12T20:23:31Z",
+  "conclusion": "cancelled",
+  "id": 131464983924,
+  "name": "core (3.10)",
+  "started_at": "2026-11-12T20:18:53Z"
+ },
+ "independent_disposition": "https://github.com/Valpatel/cad-agent/pull/637#issuecomment-6835030160"
+}

@@ -284,7 +284,7 @@ flowchart TD
 - **Evidence:** During the cinematic header review on 2026-11-07, Chromium 151 page/context emulation stopped the
   standalone SVG but left the image moving. The browser-level preference stopped the same image bytes in Chromium; WebKit CI exposed the same embedding
   boundary. The README now selects a generated still explicitly through `picture`. The existing
-  [website motion harness](../../../tests/site/site-motion.mjs) now covers the compiled README image as well as
+  [website motion harness](../../../tests/site/layout/motion.mjs) now covers the compiled README image as well as
   the standalone historical CAD figure. [Observed commands, corrective rule and limits](../../../.agents/inbox/publish/2026-11-07-image-motion-needs-the-image-consumer.md).
 - **Include page composition:** A component proof must reach the compiler stages that can clone or move its
   pictures. The sharing badge initially passed the renderer/sanitizer proof but automatic section cards duplicated

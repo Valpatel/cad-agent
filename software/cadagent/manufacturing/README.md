@@ -66,7 +66,9 @@ nothing from cad-agent. `plates.py` uses `mesh3mf.py`'s 3MF parts, asks `slicer.
 settings, and reads the release's parts and quantities from `publish/release.py`. `prusa3mf.py` uses `mesh3mf.py`'s
 3MF parts and `plates.py`'s layout for PrusaSlicer projects. `process.py` loads the cited rules of
 `docs/research/process-profiles.yaml` and the filaments' data sheets from `mechanical/compliant/allowables.py`; `dfm.py`,
-`sheet_metal.py` and `fit_coupons.py` read their numbers from it. `cards.py` serves its rules as rule cards and its
+`sheet_metal.py` and `fit_coupons.py` read their numbers from it. `process.py` also says how each part of a project is
+made (`part_processes`: the dossier card's `material.process`, else `cad: part_process:`), which `publish/report.py`,
+`plates.py`, `slicer.py` and the CLI read so the print pipeline skips a welded, cut, machined or bought part. `cards.py` serves its rules as rule cards and its
 decision tables as decision cards (`cad-agent rules`, `cad-agent choose`), with the registry's evidence.
 
 Plate layout and project export

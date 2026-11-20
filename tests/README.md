@@ -5,6 +5,11 @@ not packages and the shared fixtures. A test goes in the folder of the package i
 else it imports. [`repo/test_layout.py`](repo/test_layout.py) refuses a test file directly in `tests/` and says
 which folder it belongs in.
 
+<picture>
+  <source media="(prefers-reduced-motion: reduce)" srcset="../docs/img/architecture/verification-still.svg">
+  <img src="../docs/img/architecture/verification.svg" alt="Known inputs exercise a subject, compare results and retain evidence." width="480">
+</picture>
+
 Arrows: which code each group of folders tests.
 
 Physical-domain checks
@@ -68,11 +73,11 @@ flowchart TD
 | [`repo/`](repo/README.md) | The repository's own rules and tooling: the topic tree, where files go, skills, the gates, releases, the supply-chain audit |
 | [`review/`](review/README.md) | `cadagent.review`: the dossier, the integrity gates, review packets, evidence hashes |
 | [`simulation/`](simulation/README.md) | `cadagent.simulation`: FEA, CFD, topology optimisation, robot export; design exploration in `simulation/explore/` |
-| [`site/`](site/README.md) | cad-agent's own website and its build (`tools/site/build-site.mjs`, `tools/site-*.mjs`) |
+| [`site/`](site/README.md) | cad-agent's own website and its build (`tools/site/build-site.mjs`, `tools/site/compiler/*.mjs`) |
 | [`thermal/`](thermal/README.md) | `cadagent.thermal`: heat sinks |
 | [`webkit/`](webkit/README.md) | `cadagent.webkit` in Node (`*.test.mjs`) and in real browsers (`*-browser.mjs`) |
 | [`fixtures/`](fixtures/README.md) | Data any test may read: the gate bench, recorded CFD runs, the formula vectors, McMaster pages, slicer templates, viewer files |
-| `__init__.py` | Empty, like one in every folder here: test modules are named `tests.<folder>.<file>`, so two folders may hold files of the same name |
+| `__init__.py` | Marks the Python test package so modules can share filenames across domains; JavaScript-only folders do not need this file |
 
 ## Adding a test
 
@@ -80,9 +85,9 @@ flowchart TD
   `tools/` script, the package whose output the script draws or checks (`tools/figures/motion_figures.py` → `mechanical/`),
   or `repo/` for the repo's own tooling and `site/` for the site build. A new folder is a new package or area: add it
   to `AREAS` in `repo/test_layout.py` and to this table, with its README and `__init__.py`.
-- **Paths:** a test file is two folders below the repo root: `ROOT = Path(__file__).resolve().parents[2]`, and the
+- **Paths:** a direct Python domain test such as `tests/geometry/test_step_export.py` is two folders below the repo root: `ROOT = Path(__file__).resolve().parents[2]`, and the
   shared fixtures are `Path(__file__).resolve().parents[1] / "fixtures"`. In Node, `path.resolve(import.meta.dirname,
-  '../..')`.
+  '../..')` for a Node file at that depth. Nested owners must resolve from their actual depth.
 - **Helpers** shared within a folder live in it (`simulation/cfd_fixtures.py`); import them relatively
   (`from .cfd_fixtures import recorded`), or as `tests.<folder>.<module>` from another folder.
 - **When a folder grows** past 20 files, split it into subfolders named after the subpackages, each with a README
@@ -91,10 +96,14 @@ flowchart TD
 
 ## Running them
 
+Choose checks for the changed owner. The commands below have separate scopes; a unit suite does not replace
+actual browser acceptance. Required CI composes the complete release checks.
+
 ```bash
 PYTHONPATH=software python -m pytest -q                    # everything Python; or one folder: pytest tests/review
-node --test tests/webkit/*.test.mjs tests/site/website-*.test.mjs
-npm --prefix tools/site run test:site && npm --prefix tools/site run test:part-table && npm --prefix tools/site run test:file-viewer && npm --prefix tools/site run test:diagrams
+npm --prefix tools/site run test:webkit-unit              # shared browser modules, including recorded replay
+npm --prefix tools/webkit/scada test                       # SCADA UI, models and Explorer units
+npm --prefix tools/site run test:site && npm --prefix tools/site run test:part-table && npm --prefix tools/site run test:model-explode && npm --prefix tools/site run test:model-touch && npm --prefix tools/site run test:file-viewer && npm --prefix tools/site run test:diagrams
 ```
 
 Related: [repository README](../README.md) · [CONTRIBUTING: where files go](../.github/CONTRIBUTING.md#where-files-go) ·

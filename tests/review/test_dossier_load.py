@@ -365,3 +365,18 @@ def test_gate_exemption_parties_that_cannot_be_right(tmp_path, parties, message)
                               f"parts: {parties}, reason: heat-set inserts")
     err = _error(tmp_path, {"dossier/project.yaml": project})
     assert message in str(err) and err.file == "dossier/project.yaml", str(err)
+
+
+def test_dossier_canonical_serial_plan_is_validated_at_existing_assembly_owner(tmp_path):
+    import json
+    from pathlib import Path
+    from cadagent.review.dossier.load import load_dossier, DossierError
+    plan = json.loads((Path(__file__).resolve().parents[1] / "fixtures/assembly-plan/plan.json").read_text())
+    source = tmp_path / "project.yaml"
+    source.write_text(json.dumps({"title":"serial bench", "assembly":{"plan":plan}}))
+    dossier = load_dossier(source)
+    assert dossier.assembly_plan["operations"][1]["requires"] == ["plate"]
+    plan["operations"][0]["type"] = "rotate"
+    source.write_text(json.dumps({"assembly":{"plan":plan}}))
+    with pytest.raises(DossierError, match="unsupported operation"):
+        load_dossier(source)

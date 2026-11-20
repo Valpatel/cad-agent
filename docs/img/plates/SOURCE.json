@@ -2,7 +2,7 @@
  "project": "Valpatel/gyropup",
  "license": "MIT",
  "revision": "77f6d00bdb262f0f75a18fa0ddf0075058a649d8",
- "regenerate": "python3 tools/plates_figure.py --gyropup <checkout>",
+ "regenerate": "python3 tools/figures/plates_figure.py --gyropup <checkout>",
  "inputs": [
   "exports/<part>.stl",
   "exports/geometry-checks.json",

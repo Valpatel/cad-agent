@@ -272,3 +272,237 @@ def test_planted_defect_an_applied_by_that_only_shares_a_module():
     assert not _reads(inserts.hole_design, "fdm-insert-hole-cad-offset-cnckitchen")
     assert _reads(inserts.printed_hole, "fdm-insert-hole-cad-offset-cnckitchen")
     assert _reads(inserts, "fdm-insert-hole-cad-offset-cnckitchen")
+
+
+def _mould_review_example():
+    """Exercise our original source-bounded illustrations, not vendor code."""
+    path = ROOT / "docs/research/manufacturing/moulding-wall-bond-and-release-review.md"
+    blocks = re.findall(r"```python\n(.*?)\n```", path.read_text(), re.S)
+    assert len(blocks) == 1
+    namespace = {}
+    exec(compile(blocks[0], str(path), "exec"), namespace)
+    return namespace
+
+
+def test_mould_wall_examples_preserve_inch_units_and_material_selection():
+    f = _mould_review_example()["wall_range_mm"]
+    assert f("ABS") == pytest.approx((1.143, 3.556))
+    assert f("polycarbonate") == pytest.approx((1.016, 3.81))
+    # Planted snippet/unconverted-unit/material substitutions must not reproduce ABS.
+    assert f("ABS") != pytest.approx((0.040, 0.140))
+    assert f("ABS") != pytest.approx((1.016, 3.556))
+    assert f("ABS") != pytest.approx(f("polycarbonate"))
+    for unknown in ("FDM ABS", "unknown", "glass-filled nylon"):
+        with pytest.raises(ValueError, match="consult"):
+            f(unknown)
+
+
+def test_mould_bond_candidates_preserve_grade_direction_and_retention():
+    f = _mould_review_example()["bond_route"]
+    assert f("Texin 983-000000", "ABS Lustran") == "chemical-candidate-qualify"
+    assert f("Santoprene 101-87", "ABS Lustran") == "mechanical-retention-review"
+    # A table dash, an unknown grade and the reversed layer direction are all unlisted.
+    for over, sub in (("Elastosil 3003/30 A/B", "ABS Lustran"), ("TPU", "ABS Lustran"),
+                      ("ABS Lustran", "Texin 983-000000"), ("Texin 983-000000", "ABS")):
+        assert f(over, sub) == "unlisted-consult"
+
+
+def test_mould_release_example_never_turns_missing_assumptions_into_approval():
+    f = _mould_review_example()["release_review"]
+    case = dict(feature_required=True, pull_named=True, method="bump-off", brittle=True, qualified=False)
+    assert f(**case) == "do not approve unqualified brittle deformation"
+    assert f(**{**case, "pull_named": False}) == "name pull direction and parting line"
+    assert f(**{**case, "brittle": False}) == "do not approve unqualified deformation"
+    assert f(**{**case, "qualified": True}) == "toolmaker review required"
+    assert f(**{**case, "method": "side-action"}) == "toolmaker review required"
+    assert f(**{**case, "feature_required": False}) == "consider removing unnecessary undercut"
+
+
+def test_three_mould_reads_preserve_identity_and_remove_the_universal_snippet():
+    reg = load_registry()
+    pairs = (("pl-mould-walls", "protolabs-injection-molding-wall-thickness-guidelines"),
+             ("pl-overmould", "protolabs-designing-for-overmolding-design-tip"),
+             ("fictiv-mould-undercuts", "fictiv-injection-molding-undercuts"))
+    for alias, canonical in pairs:
+        ref = reg.resolve(alias)
+        assert ref.id == canonical and ref.kind == "source"
+        assert alias not in reg.entries, "a short citation is not another document"
+        assert ref.data["evidence"]["class"] == "read"
+        assert ref.data["confidence"] == {"level": "low", "estimate": 0.4, "sources": 1}
+        assert not ref.data.get("claims"), "do not silently verify imported snippet claims"
+        assert "docs/research/manufacturing/moulding-wall-bond-and-release-review.md" in ref.data["used_for"]
+
+
+def _bend_hole_example():
+    """Run our published, self-contained illustration, never vendor code."""
+    path = ROOT / "docs/research/manufacturing/sheet-metal-file-and-hole-review.md"
+    blocks = re.findall(r"```python\n(.*?)\n```", path.read_text(), re.S)
+    blocks = [block for block in blocks if "def bend_callout(" in block]
+    assert len(blocks) == 1
+    namespace = {}
+    exec(compile(blocks[0], str(path), "exec"), namespace)
+    return namespace
+
+
+def test_bend_callout_preserves_source_convention_and_refuses_unknown():
+    f = _bend_hole_example()["bend_callout"]
+    # Supplier diagram: these are bend callouts, not the enclosed angles.
+    assert f(50, "enclosed") == 130
+    assert f(135, "enclosed") == 45
+    assert f(130, "supplier-bend") == 130
+    with pytest.raises(ValueError, match="convention"):
+        f(50, "unknown")
+    for bad in (0, 180, -1, float("nan"), float("inf")):
+        with pytest.raises(ValueError):
+            f(bad, "enclosed")
+
+
+def test_hole_edge_example_detects_recess_that_pilot_alone_misses():
+    f = _bend_hole_example()["edge_margin"]
+    assert f(4, 8, 3) == -1
+    assert f(4, 4, 3) == 1  # planted pilot-only substitution loses the overhang
+    assert f(4, 8, 4) == 0  # containment boundary, not a strength pass
+    assert f(4, 8, 5) == 1
+    with pytest.raises(ValueError, match="smaller"):
+        f(8, 4, 3)
+    for bad in (0, -1, float("nan"), float("inf")):
+        with pytest.raises(ValueError, match="finite"):
+            f(4, bad, 3)
+
+
+def test_three_full_reads_keep_identity_and_remove_unsupported_import_claims():
+    reg = load_registry()
+    ids = ("sendcutsend-designing-for-online-sheet-metal-bending",
+           "sendcutsend-step-by-step-guide-to-sheet-metal-bending",
+           "protolabs-cnc-hole-design-through-blind-tapped-and-more")
+    path = "docs/research/manufacturing/sheet-metal-file-and-hole-review.md"
+    aliases = ("scs-bend-files", "scs-bend-steps", "protolabs-hole-guide")
+    for key, alias in zip(ids, aliases):
+        ref = reg.resolve(key)
+        assert reg.resolve(alias).id == key
+        assert ref.id == key and ref.kind == "source"
+        assert ref.data["evidence"]["class"] == "read"
+        assert path in ref.data["used_for"]
+        assert not ref.data.get("claims"), "do not re-import unsupported snippet claims"
+        assert "2026-11-11" in ref.data["verified"]
+
+
+def _stratasys_source_examples():
+    """Use our published source-review examples, not a parallel manufacturing solver."""
+    blocks = re.findall(r"```python\n(.*?)\n```", PAGE.read_text(), re.S)
+    assert len(blocks) == 2
+    namespace = {}
+    for block in blocks:
+        exec(compile(block, str(PAGE), "exec"), namespace)
+    return namespace
+
+
+def test_stratasys_layer_example_preserves_the_table_exception_and_units():
+    from decimal import Decimal as D
+    f = _stratasys_source_examples()["selected_fdm_wall_in"]
+    assert f("0.010") == D("0.040")
+    assert f("0.020") == D("0.100")
+    assert f("0.020") != 4 * D("0.020")  # planted universal-multiplier substitution
+    assert f("0.010") * D("25.4") == D("1.016")
+    assert f("0.010") * D("25.4") != D("1.00")  # printed rounded mm is distinct
+    for unknown in ("0.007", "0", "NaN", "Infinity"):
+        with pytest.raises(ValueError, match="unlisted example"):
+            f(unknown)
+
+
+def test_stratasys_clearance_is_an_unresolved_observation_not_a_repaired_decimal():
+    from decimal import Decimal as D
+    f = _stratasys_source_examples()["fdm_clearance_observation"]
+    row = f("0.013")
+    assert row["state"] == "unresolved-confirm-supplier"
+    assert row["as_printed_in"] == D("0.13")
+    assert row["as_printed_in"] != D("0.013")
+    with pytest.raises(ValueError):
+        f("0.010")
+
+
+def test_stratasys_sls_conflict_survives_the_floor_and_lap_is_not_a_moving_gap():
+    from decimal import Decimal as D
+    examples = _stratasys_source_examples()
+    f = examples["sls_tolerance_observations_in"]
+    row = f("10")
+    assert row["state"] == "unresolved-conflicting-source"
+    assert (row["page_3"], row["page_10"]) == (D("0.020"), D("0.030"))
+    assert (row["page_3"] * D("25.4"), row["page_10"] * D("25.4")) == (D("0.508"), D("0.762"))
+    small = f("1")
+    assert small["page_3"] == small["page_10"] == D("0.015")
+    assert small["state"] == "unresolved-conflicting-source", "equal floors do not resolve the source"
+    for bad in ("0", "-1", "NaN", "Infinity"):
+        with pytest.raises(ValueError, match="finite"):
+            f(bad)
+    lap = examples["selected_sls_lap_example"]()
+    assert lap["state"] == "unqualified-SLS-bonded-lap-example"
+    assert lap["overlap_mm"] == (D("6"), D("10"))
+    assert lap["adhesive_gap_exact_mm"] == D("0.254")
+    assert lap["as_printed_gap_mm"] == D("0.3")
+    assert "moving_gap_mm" not in lap
+
+
+def test_two_stratasys_reads_do_not_create_ids_or_automatic_cross_process_rules(data):
+    reg = load_registry()
+    pairs = (("sd-fdm-2025", "stratasys-direct-stratasys-fdm-design-guide-stratasys-direct"),
+             ("sd-sls-2023", "stratasys-direct-sls-design-guide-2023"))
+    ids = {key for _, key in pairs}
+    for alias, key in pairs:
+        ref = reg.resolve(alias)
+        assert ref.id == key and ref.kind == "source" and alias not in reg.entries
+        assert ref.data["evidence"]["class"] == "read"
+        assert ref.data["confidence"] == {"level": "low", "estimate": 0.4, "sources": 1}
+        assert "docs/research/manufacturing/process-profiles.md" in ref.data["used_for"]
+    assert not any(rule["source"] in ids for rule in data["rules"]), "unresolved observations are not new automatic gates"
+    mjf = next(r for r in data["rules"] if r["id"] == "mjf-tolerance-stratasys")
+    assert mjf["source"] == "stratasys-direct-mjf-design-guide", "SLS must not replace the separate MJF source"
+
+
+def _scs_service_examples():
+    path = ROOT / "docs/research/manufacturing/sheet-metal-file-and-hole-review.md"
+    blocks = re.findall(r"```python\n(.*?)\n```", path.read_text(), re.S)
+    selected = [block for block in blocks if "def scs_cnc_envelope_review(" in block]
+    assert len(selected) == 1
+    namespace = {}
+    exec(compile(selected[0], str(path), "exec"), namespace)
+    return namespace
+
+
+def test_scs_envelope_is_a_supplier_question_not_a_thin_plate_prohibition():
+    from decimal import Decimal as D
+    f = _scs_service_examples()["scs_cnc_envelope_review"]
+    thin = f([80, 60, 6])
+    boundary = f([80, 60, "12.7"])
+    assert thin["published_min_each_axis_mm"] == D("12.7")
+    assert thin["below_published_min"] and not boundary["below_published_min"]
+    assert thin["decision"] == boundary["decision"] == "confirm-service-envelope-and-quote"
+    assert "pass" not in thin and "accepted" not in boundary
+    assert f(["3.15", "2.36", ".5"])["below_published_min"], "inches cannot be silently used as millimetres"
+    assert all(f(axes)["below_published_min"] for axes in ([6,80,60],[80,6,60],[80,60,6]))
+    for bad in ([80,60], [80,60,0], [80,60,-1], [80,60,"NaN"], [80,60,"Infinity"], [80,60,True]):
+        with pytest.raises(ValueError):f(bad)
+
+
+def test_scs_tapping_model_is_neither_a_tap_drill_nor_another_supplier():
+    from decimal import Decimal as D
+    f = _scs_service_examples()["scs_m3_tapping_model_hole"]
+    row = f("sendcutsend-cnc", "M3x0.5")
+    assert row["model_hole_mm"] == D("3")
+    assert row["model_hole_mm"] != D("2.5"), "a machinist's tap drill is a different datum/convention"
+    assert row["decision"] == "confirm-preferred-hole-in-tapping-setup"
+    for service,thread in (("generic-cnc","M3x0.5"),("sendcutsend-sheet","M3x0.5"),("sendcutsend-cnc","M4x0.7")):
+        with pytest.raises(ValueError):f(service,thread)
+
+
+def test_scs_reads_preserve_identities_and_add_no_automatic_profile_gates(data):
+    ids = {"sendcutsend-5052-h32-aluminum-sheet-metal", "sendcutsend-sheet-cnc-machining-design-guidelines"}
+    reg=load_registry()
+    for key in ids:
+        source=reg.resolve(key).data
+        assert source["evidence"]["class"] == "read"
+        assert source["evidence"]["tested"] == "no"
+        assert source["confidence"] == {"level":"low","estimate":0.4,"sources":1}
+        assert "SHA-256" in source["verified"]
+        assert "docs/research/manufacturing/sheet-metal-file-and-hole-review.md" in source["used_for"]
+    assert not any(rule["source"] in ids for rule in data["rules"])

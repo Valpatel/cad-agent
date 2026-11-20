@@ -1,0 +1,267 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:valpatel:scada-placeholder-snapshot:1",
+  "title": "SCADA placeholder snapshot, version 1",
+  "$comment": "Load the companion model schema under urn:valpatel:scada-placeholder-model:1. Runtime import additionally checks the exact scenario/topology signature, component coverage, registered failure modes, failure/mode agreement, ordered event IDs/times, and no event beyond elapsed time. Runtime imports never replay elapsed time or create a clock.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "format",
+    "version",
+    "system",
+    "model",
+    "state"
+  ],
+  "properties": {
+    "format": {
+      "const": "scada-placeholder-snapshot"
+    },
+    "version": {
+      "const": 1
+    },
+    "system": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "signature"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "signature": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1000000
+        }
+      }
+    },
+    "model": {
+      "$ref": "urn:valpatel:scada-placeholder-model:1"
+    },
+    "state": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "minutes",
+        "running",
+        "randomState",
+        "nextEventId",
+        "components",
+        "events"
+      ],
+      "properties": {
+        "minutes": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1000000000
+        },
+        "running": {
+          "type": "boolean"
+        },
+        "randomState": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4294967295
+        },
+        "nextEventId": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1000000000
+        },
+        "components": {
+          "type": "object",
+          "minProperties": 1,
+          "maxProperties": 256,
+          "propertyNames": {
+            "$ref": "#/$defs/id"
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/component"
+          }
+        },
+        "events": {
+          "type": "array",
+          "maxItems": 100,
+          "items": {
+            "$ref": "#/$defs/event"
+          }
+        }
+      }
+    },
+    "equationState": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "version",
+        "components"
+      ],
+      "properties": {
+        "version": {
+          "const": 1
+        },
+        "components": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "version",
+              "stateVersion",
+              "units",
+              "parameters",
+              "schemaSignature",
+              "state"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@+-]{0,127}$"
+              },
+              "version": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@+-]{0,127}$"
+              },
+              "stateVersion": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 1000000
+              },
+              "state": {
+                "type": "object"
+              },
+              "units": {
+                "const": "scada-index-v1"
+              },
+              "parameters": {
+                "type": "object"
+              },
+              "schemaSignature": {
+                "type": "string",
+                "maxLength": 16384
+              }
+            }
+          }
+        }
+      },
+      "description": "Optional owned provider state. Required for selected custom equations; omitted for the built-in path. Runtime checks exact bound component coverage, registered identity/version/stateVersion and each provider state schema before committing."
+    }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[A-Za-z][A-Za-z0-9_-]{0,99}$"
+    },
+    "index": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 100
+    },
+    "component": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "enabled",
+        "open",
+        "load",
+        "operating",
+        "inventory",
+        "pressure",
+        "temperature",
+        "damage",
+        "failed",
+        "mode",
+        "signal",
+        "warning",
+        "connected"
+      ],
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "open": {
+          "type": "boolean"
+        },
+        "load": {
+          "$ref": "#/$defs/index"
+        },
+        "operating": {
+          "$ref": "#/$defs/index"
+        },
+        "inventory": {
+          "$ref": "#/$defs/index"
+        },
+        "pressure": {
+          "$ref": "#/$defs/index"
+        },
+        "temperature": {
+          "$ref": "#/$defs/index"
+        },
+        "damage": {
+          "$ref": "#/$defs/index"
+        },
+        "failed": {
+          "type": "boolean"
+        },
+        "mode": {
+          "$ref": "#/$defs/id"
+        },
+        "signal": {
+          "$ref": "#/$defs/index"
+        },
+        "warning": {
+          "type": "boolean"
+        },
+        "connected": {
+          "type": "boolean"
+        }
+      }
+    },
+    "event": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "minutes",
+        "type",
+        "severity",
+        "equipment",
+        "message"
+      ],
+      "properties": {
+        "id": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 999999999
+        },
+        "minutes": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1000000000
+        },
+        "type": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "severity": {
+          "enum": [
+            "info",
+            "warning",
+            "critical"
+          ]
+        },
+        "equipment": {
+          "$ref": "#/$defs/id"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500
+        }
+      }
+    }
+  }
+}

@@ -6,6 +6,28 @@ bring that work in, keep the structure clean as it grows, and publish it, so the
 This page sets out that long-term loop first. Below it is the structure that makes the loop work: a topic tree,
 maturity levels, confidence, evaluation, discovery and folders. Tracking: #139.
 
+## From frontier to local
+
+People using frontier models on real projects use cad-agent and improve it. The project gathers the best references,
+design guides, design checks, procedures, open-source tools and current agent systems. Evals then measure whether
+cheaper, open and local models can do the same work with that help (#748).
+
+- **Use it on real projects.**
+  - Today: frontier-model agents use it on real builds such as Gyropup and the J501 enclosure.
+  - Next: more outside projects, so gaps show up beyond our own.
+- **Improve it.**
+  - Today: a gap becomes a reviewed PR with tests, sources and stated limits, merged under the gates.
+  - Next: skills for triaging and integrating outside contributions.
+- **Gather the best.**
+  - Today: the catalogue, cited references, process profiles and skills, each area with its maturity.
+  - Next: a confidence level on every rule and tool (#143).
+- **Measure smaller models.**
+  - Today: three analytical jobs with independent graders and a 28-entry candidate catalogue
+    ([standard evaluation](practice/standard-evaluation.md)). Three recorded attempts passed, all on one hosted
+    frontier model; two CLI attempts produced no artifact. No baseline without cad-agent.
+  - Next: paired trials with and without cad-agent on a local model first, then a lower-cost hosted one (#142). No
+    local or open model has been measured yet.
+
 ## The long-term loop
 
 ```mermaid
@@ -69,8 +91,7 @@ flowchart TD
 ```
 
 - **A cleaner structure over time, never pre-built.** A folder splits into domain subfolders only once it is
-  cluttered. The new folder gets a README map; source moves preserve public addresses or declare their redirects
-  and checkout compatibility window ([migration path](#migration-path)).
+  cluttered. The new folder gets a README map; source moves repair consumers directly; published URLs follow the separate publication contract ([migration path](#migration-path)).
   - The maintainer agents make these moves as part of the work; a contributor is never asked to reorganise.
   - `tests/repo/test_layout.py` caps root entries and blocks new over-limit folders; existing clutter exceptions warn (#276).
 - **The site follows the repo.**
@@ -219,7 +240,8 @@ flowchart TD
     classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
 ```
 
-Nothing here exists yet: no `evals/` folder and no runner. This is the plan #142 builds from.
+A first slice exists: three analytical jobs in `tests/fixtures/evaluation/jobs/`, their graders and a CLI collector in
+[`tools/evaluation/`](../tools/evaluation/README.md) ([what they prove](practice/standard-evaluation.md)). The rest below is the plan #142 builds from.
 
 - **Survey first.** Before building a runner, #142 will survey existing evaluation harnesses and CAD benchmarks (some
   are already listed in `docs/research/landscape.json`) and record adopt-vs-build, as for any new capability.
@@ -345,9 +367,9 @@ Existing content moves in small batches, never in one big reorganisation (#145):
    - If its public URL stays the same, update the source map and actual path consumers. The published page still
      answers directly at its established address; it does not need a redirect to itself.
    - If a public URL changes, retain a permanent rule in `tools/site/compiler/site-redirects.txt`, for the page and
-     its Markdown twin, with a target that the build actually publishes. Keep any promised source-path stub for
-     its declared compatibility window; the numbered lesson stubs expired at v0.6.0, but their 301s remain.
-   - State checkout-path changes and compatibility windows in the CHANGELOG. v0.22.0 moved the old knowledge roots
+     its Markdown twin, with a target that the build actually publishes. Do not recreate source-path stubs or compatibility folders. Existing public URL redirects are a
+     separate site contract; the numbered lesson source stubs expired at v0.6.0.
+   - State required consumer changes in the CHANGELOG and track unresolved repairs in bounded issues. v0.22.0 moved the old knowledge roots
      into `docs/` without recreating them as stub folders; scripts using those source paths must update.
    - Update every reference and `docs/areas.yaml`, and give each new folder a README and map (#113).
 5. **As jobs land:** `evals/jobs/` fills in area by area, starting with areas at `tooling`, since those have something

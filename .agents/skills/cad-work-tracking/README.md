@@ -7,10 +7,11 @@ flowchart TD
     A["README.md"]
     B["SKILL.md"]
     A --> B
+    B --> C["issue-labels.md<br/>scope, design stage and transitions"]
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
     class A here
-    class B near
+    class B,C near
 ```
 
 <details>
@@ -19,6 +20,7 @@ flowchart TD
 | File or folder | Purpose |
 |---|---|
 | [SKILL.md](SKILL.md) | Canonical applicability, procedure, requirements and limits. |
+| [issue-labels.md](issue-labels.md) | Canonical scope/stage/area taxonomy, additive maintenance, searches and design-review requirements; shipped with the skill. |
 
 </details>
 

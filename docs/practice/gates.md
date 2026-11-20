@@ -690,6 +690,87 @@ parent's. Independent joints are sampled one at a time with the others at home (
 get a `combination:` warning, since nothing sampled them moving at once. A grid over `max_poses` (2000) is
 coarsened evenly on every axis, with a `density:` warning.
 
+**Driven joints (one degree of freedom, several joints).** In a linkage one joint's value sets another's: the two
+arms of a parallelogram turn together and the link they carry keeps its attitude. Sampled as free joints, such a
+linkage is checked in poses it can never take, and reports collisions that are not there. Declare the dependent
+joint with `follows`, in the spirit of URDF's `<mimic>`:
+
+```mermaid
+flowchart TD
+    L["I-lower<br/>sampled over its range"] -->|"× 1"| U["I-upper<br/>driven, not sampled"]
+    L -->|"× -1"| C["I-cradle<br/>driven, not sampled"]
+    U & C --> P["every pose: all three placed,<br/>moving parts checked<br/>against the rest"]
+    P --> K["closes point, cradle<br/>on upper arm: its two<br/>copies still together?"]
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
+    classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
+    class U,C,P here
+    class L near
+    class K out
+```
+
+```python
+joint("I-lower", parts=("lower_arm", "tower"), axis=Axis(LOWER_PIVOT, UP), range_deg=(0, 60))        # sampled
+joint("I-upper", parts=("upper_arm", "tower"), axis=Axis(UPPER_PIVOT, UP), follows="I-lower")        # = I-lower
+joint("I-cradle", parts=("cradle", "lower_arm"), axis=Axis(LOWER_PIN, UP), follows=("I-lower", -1),  # = -I-lower
+      closes={"parts": ("cradle", "upper_arm"), "at": UPPER_PIN})
+# by hand: {"kind": "revolute", "moving": ..., "fixed": ..., "axis": ..., "follows": ("I-lower", -1), "closes": [...]}
+```
+
+Only the driver is sampled; each follower takes `multiplier × the driver's value + offset` about its own axis in
+every pose, and a `closes` point measures whether the declared values keep the loop together.
+
+<details>
+<summary>Driven joints in full: the law, sampling, ranges, which joints, the verdict, closes points</summary>
+
+- **The law.** `follows` is a joint id, `(id, multiplier)`, `(id, multiplier, offset)` or `{joint, multiplier,
+  offset}`. The follower's value is `multiplier × the driver's value + offset`, measured as every joint's is: from
+  the pose the model was built in, about the follower's own axis, right-handed about its direction. Two parallel
+  arms whose axes point the same way follow at `1`; a link that must keep its attitude while riding on an arm
+  follows that arm at `-1`. Each value is in its joint's own unit, so a slider following a revolute joint has a
+  multiplier in mm per degree. Values are offsets from the as-built pose, so with an offset `c` the follower stands
+  `c` away from where it was built whenever its driver is at 0, in every group's poses: the as-built pose is then
+  not on the path, and is never checked.
+- **Sampling.** Only the driver is sampled. The follower is posed in every pose of its driver's group (alone, in a
+  chain, in a `combine` grid) at its computed value, and its parts are checked against everything outside their
+  body as any moving part's are. A follower may follow a follower; the laws are composed down to the joint that is
+  sampled. A step cap (`max_step_deg`, `max_step_mm`) raises the driver's samples until the follower's step meets
+  it too. `samples` belong on the driver: on a follower they are refused by `joint()` and ignored by the gate with
+  a `samples:<id>` warning.
+- **Its range.** A follower needs no range. If it declares one (in its own unit), `follows:<id>` fails when the
+  computed values leave it, so a range you measured on the real joint still guards the declaration.
+- **Which joints.** `revolute` and `slider` joints follow and are followed (one value each). A cylindrical joint
+  has two values and cannot be either. A follower of itself, of a joint that is not declared, or in a loop of
+  followers is refused: a `RegistryError` at the build, a `joint:<id>` failure in the gate.
+- **The verdict.** `driven` (top level, and per group) names each driven joint: `joint`, `follows` (as declared),
+  `driver` (the sampled joint that moves it, with `driver_multiplier` and `driver_offset` composed), `range` (the
+  values it took), `declared_range` and `law` (`I-cradle = -1 × I-lower`). The group's `density` row for the driver
+  lists what it `drives` and their steps; pose labels give the driver's value.
+- **`closes`: a cheap measure of the loop.** A linkage has a pin that no joint in the tree states (the cradle on the
+  upper arm, above). `closes` on any joint names that point: `{"parts": (a, b), "at": point, "tol_mm": 0.1}`, the
+  point in assembly coordinates as built (an `Axis` or a function of the parameters also works in the build
+  script). The gate carries the point with each part's body and fails `closure:<joint>:<a>|<b>` when the two
+  copies come more than `tol_mm` apart at any sampled pose, naming the pose and the distance. A wrong multiplier,
+  a reversed axis or links of unequal length show up there. The point is measured in every group that moves either
+  part, whichever joint states it (a `fixed` joint may). A point that can measure nothing fails rather than
+  passing: both parts in one body, neither part moved by a sampled joint, a point on the axis of the only joint
+  between its two parts, a part that is missing, or a part whose instances lie in several bodies (name the instance
+  key). Those are the cases the gate recognises; a point that happens not to move for another reason still passes. The verdict lists every point under `closures`.
+- **The closing pin in the dossier.** The pin gets no `joint()` of its own: its part already has the joint that
+  moves it, and two joints cannot drive one body. Give its interface the kind `contact` (a mechanism kind would
+  ask for a joint), name it with `closes`, and list the pair in the `intended_contacts` of the joints that move it.
+
+</details>
+
+**What a driven joint does not do.** The ratio is the author's kinematic assumption. The gate does not solve loop
+closure: it does not derive the follower's value from the link lengths, and a linear law is exact only for
+linkages whose joints really turn in proportion (a parallelogram, gears, a belt, a rack and pinion). A four-bar
+with unequal links, a slider-crank or a cam is not linear; for those the declared ratio is an approximation, and
+only a `closes` point says how far off it is, at the sampled poses and at the points you named. A driven joint
+is listed in `not_checked` unless a measured `closes` point has it between its two parts (on the chain of joints
+carrying one part and not the other): a joint that carries both parts moves them together, and the point says
+nothing about its ratio.
+
 **Pairs and cost.** Per pose: every part of a moving body against every part outside it (the static frame, other
 bodies, both bodies of a chain). Pairs that never move relative to each other, static against static and parts of
 one body, are the same in every pose and are never queried: they are the relation table's and the connectivity
@@ -706,8 +787,11 @@ rerun reads only the cache.
 | `collision:<a>\|<b>` | a moving part shares more than `overlap_mm3` with another (overlapping or contains) at any pose, unless declared in `intended_overlaps`; also an intended contact driven into its face (`intended_contact: true`) | `first_pose`: the colliding pose nearest home (the sum over axes of the distance from home as a fraction of the range; ties in sweep order), the one met first moving out from rest; its `overlap_mm3`, `overlap_centroid` and `overlap_box`; `last_clear_pose`, its clear grid neighbour nearest home (one sample away on one axis), with `last_clear_gap_mm` and the closest points `point_a`/`point_b`; `colliding_poses`, `worst_pose`, `worst_overlap_mm3`; the `onset` bisected between the two along that axis (`joint`, `clear`, `hit`, the overlap at the hit side and the gap and closest points at the clear side; `others` gives the other axes' values, held fixed, on a grid) |
 | `contact:<a>\|<b>` | (warning) a moving part touches one that is not an intended contact; fails with `strict_contacts` | first pose, number of poses, closest points |
 | `relation:<a>\|<b>` | the kernel could not decide a pair at some pose (`unknown`) | the relation |
-| `motion:<group>` | any of the above in the group; passes otherwise | per axis `density` (samples, declared samples, `step` in deg or mm, the largest radius from the axis of the parts it carries, over the sampled poses, and `max_travel_per_step_mm`); the smallest exact clearance (touching included) among the non-intended pairs measured (`min_clearance_mm`, `at`: pair, pose, points) and, when smaller, the box distance of the nearest pair never measured (`unmeasured_gap_at_least_mm`: its gap is at least this); the intended contacts and the poses where they touch |
-| `joint:<id>` | a joint's part is missing, its `fixed` part is in its own moving body, two joints drive one body, joints carry each other in a loop, or a ranged joint has no range; a warning for `planar`/`ball` | |
+| `motion:<group>` | any of the above in the group; passes otherwise | per axis `density` (samples, declared samples, `step` in deg or mm, the largest radius from the axis of the parts it carries, over the sampled poses, and `max_travel_per_step_mm`; `drives`: the same for each joint that follows it); the smallest exact clearance (touching included) among the non-intended pairs measured (`min_clearance_mm`, `at`: pair, pose, points) and, when smaller, the box distance of the nearest pair never measured (`unmeasured_gap_at_least_mm`: its gap is at least this); the intended contacts and the poses where they touch |
+| `joint:<id>` | a joint's part is missing, its `fixed` part is in its own moving body, two joints drive one body, joints carry each other in a loop, or a ranged joint has no range; a driven joint whose driver is not declared, is itself, forms a loop of followers, is not `revolute` or `slider`, or cannot be posed; a warning for `planar`/`ball` | |
+| `follows:<id>` | a driven joint's computed values leave the range it declares; passes otherwise (and when it declares none) | `joint`, `follows`, `multiplier`, `offset`, `driver` with the composed `driver_multiplier` and `driver_offset`, the `range` it took, `declared_range`, `law` |
+| `closure:<joint>:<a>\|<b>` | a declared `closes` point's two copies come more than `tol_mm` apart at a sampled pose, or the point can measure nothing (a part missing or with instances in several bodies, both parts in one body, neither part moved) | `at`, `tol_mm`, `max_apart_mm`, `worst_pose`, the `group` it was worst in, `poses` |
+| `samples:<id>` | (warning) samples were given for a driven joint, which is not sampled | |
 | `combination:<g1>+<g2>`, `density:<g>` | (warnings) see above | |
 | `containment@<group>/<pose>/...` | with `contains=`: the containment gate's checks at every pose of a group that moves the container's cavity or the contents | as the containment gate |
 
@@ -724,7 +808,8 @@ so it lies slightly past the first touch (about 0.02° for a corner 45 mm from t
 
 **Density, honestly.** The verdict reports the step between samples and the furthest any carried point moves in
 one step: step × the largest distance from the axis of the corners of the carried parts' boxes, over every sampled
-pose (a child joint's motion included, so a turret carrying an arm slid out is measured at full reach). It bounds
+pose (a child joint's motion included, so a turret carrying an arm slid out is measured at full reach; a driven
+joint's own travel is added to that of the joint carrying it, and compared with it when it moves beside it). It bounds
 the travel at the sampled poses; on a chain, a child pose between samples can reach a little further. A collision
 shorter than one step, or a feature thinner than that travel, can pass between samples: raise `samples` or set
 `max_step_*` where the smallest clearance is small next to the travel per step. The verdict never claims a swept
@@ -746,7 +831,10 @@ Limits. Sampled poses, not a swept volume. Rigid bodies on ideal axes: no backla
 stack, so a clear pose in the model does not prove printed parts clear. Contacts are classified by the relation
 table's tolerances (`touch_mm`; a near-tangent crossing the boolean misses reads `unknown`, see
 [near-tangent crossings](#near-tangent-crossings-46)). Joint
-limits are the declared ranges; nothing checks that a stop actually ends the motion there.
+limits are the declared ranges; nothing checks that a stop actually ends the motion there. A driven joint's ratio
+is declared, not solved (see [driven joints](#motion-range-interference-cadagentreviewgatesmotion)): the gate checks
+the path the declaration describes, and a `closes` point measures how well that path keeps a loop together only at
+the sampled poses.
 
 ## Assembly-sequence access (`cadagent.review.gates.assembly`)
 
@@ -1015,7 +1103,8 @@ strict-xfail cases, and its implementer writes the adapter and removes the mark.
 - **Motion**: no pose renders (the verdict gives the poses and witness points; the section review packet,
   [review-packet.md](review-packet.md), renders each joint's range ends);
   chains are always gridded and independent joints combined on request (`combine`), where the plan grids only
-  joints declared `coupled`; pairs that do not move relative to each other are never queried rather than taken
+  joints declared `coupled`; a joint whose value another joint sets is declared with `follows` and not sampled
+  (#581), which the plan does not have; pairs that do not move relative to each other are never queried rather than taken
   from the full per-pose table; the collision onset of a one-axis joint is bisected; containment can run per pose.
 - **Assembly access**: the insertion is conservative advancement along the line (gap-sized steps, sampled only
   near contact, the first contact bisected), not a fused swept solid: OCCT's prism of a solid is refused and the

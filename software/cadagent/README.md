@@ -1,5 +1,9 @@
 # cadagent
 
+The installable toolkit contains Python engineering tools and a portable browser SDK. Its [browser toolkit](webkit/README.md)
+includes SCADA, model/file viewers, recorded simulation playback and build instructions. Python produces or checks
+artifacts; browser components present them through domain-specific contracts.
+
 The Python package behind the `cad-agent` command: it builds a CAD project, checks it, simulates it, makes the files
 to print and order, and publishes what it found. Its packages mirror the domains of the
 [topic tree](../../docs/areas.yaml), so the code for a topic is where the map puts it.
@@ -40,7 +44,7 @@ flowchart TD
 | [`electrical/`](electrical/README.md) | PCB evidence and routed-board measurements (electrical) |
 | [`review/`](review/README.md) | The design dossier, integrity gates, review packets, evidence hashes, the review workbench (practice: design process, review and evidence) |
 | [`publish/`](publish/README.md) | Results JSON, HTML reports, renders, 3D views, the project site, the local server, the print release (practice: publishing) |
-| [`webkit/`](webkit/README.md) | Browser pieces: 3D stage, file and FEA viewers, part tables, diagrams, copy buttons |
+| [`webkit/`](webkit/README.md) | Browser pieces: SCADA models/symbols, contained viewers, recorded replay, assembly guides, FEA, part tables and document controls |
 | `cli.py` | `cad-agent <subcommand>`: the parser and the handlers |
 | `project.py` | The `cad:` section of a project's `cad-agent.yaml`; the date build outputs record (`source_time`: `SOURCE_DATE_EPOCH`, else the last commit) |
 | `links.py`, `package.py` | Local link checks, the review zip (reproducible: the same files give the same bytes) |

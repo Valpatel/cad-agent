@@ -45,6 +45,11 @@ sources:
     evidence: No second source checked.
   summary: 'Vendor blog on annular rings and via reliability; search snippet only, capability page not returned. Note: Snippet
     figures came via third parties; verify on JLCPCB capabilities page'
+  archive:
+    sha256: f6518b10e6d7313df36462b50e7422c7ef7424b3e1882551c314f41bf39d4b3f
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: cfd1054c0a835d42
 - id: jlcpcb-dfm-dfa-guidelines-for-pcb-assembly
@@ -108,7 +113,7 @@ sources:
   process_groups:
   - pcb
   evidence:
-    class: snippet-only
+    class: read
     numbers: claimed
     tested: 'no'
     authority: primary
@@ -117,13 +122,26 @@ sources:
     estimate: 0.4
     sources: 1
   claims:
-  - text: Standard boards min trace/space 4 mil (0.1 mm); design above 6 mil to save cost.
+  - text: 'Advanced matrix rows 14 and 15, normal process, before compensation: 70 µm inner width/spacing 6/8 mil; outer 7/8
+      mil.'
     status: unconfirmed
-    evidence: No second source checked.
-  summary: 'Capability table: standard 4 mil trace/space; advanced 2/2 mil; 3 mil annular ring; half-hole minimum 0.4 mm.
-    Note: Figures differ between PCBWay pages and dates'
-  used_for: []
+    evidence: Primary table read; not independently corroborated. The Standard headline does not establish these values for
+      every copper thickness. Imported 6 mil cost advice, advanced 2/2 mil and generic 3 mil annular-ring summary were not
+      substantiated.
+  summary: Supplier capability tables distinguish Standard headlines from copper-side/thickness and process-difficulty rows.
+    Use before-compensation datums and confirm the selected manufacturing route; no universal advanced minimum or cost optimum
+    follows.
+  used_for:
+  - docs/pcb.md
   imported: 9d2c5a9936ae8deb
+  verified: '2026-11-12: Read original undated HTML technical tables; no numbered pages or edition. Standard PCB table and
+    complete Advanced PCB matrix/remarks, plus the 18 process descriptions. Native illustrations and linked pages were not
+    inspected. Row labels and normal-process columns bound the selected examples; no order or fabricated board checked.'
+  archive:
+    sha256: 830504881d2a4ce6b04d6a0a003725e958895504c4164009fdcbe77d6e573a89
+    kind: html
+    fetched: '2026-11-12'
+    redistribute: false
 - id: osh-park-fabrication-services
   kind: guide
   category: manufacturing-guides
@@ -163,6 +181,11 @@ sources:
     evidence: No second source checked.
   summary: 'Service specs: 2-layer 6 mil trace/clearance, 10 mil min drill; four-layer page lists 5 mil rules, 4 mil annular
     ring. Note: 2-layer annular ring not confirmed in snippet'
+  archive:
+    sha256: 4841c1e8259132e185d841776d97794d7372197df8ed8f7821ddfe1a52284de6
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: bb2618a34d9f4e5e
 - id: sierra-circuits-pcb-design-guides
@@ -200,6 +223,11 @@ sources:
     sources: 1
   summary: 'Series of design guides: vias, stack-up, trace/space, high-power creepage, IPC handbook; some gated. Note: Marketing-heavy;
     snippets only, guide text not read'
+  archive:
+    sha256: db2f8c90806bfcdfa224c7d73b397607231ecdb71a821d1005e2ab88ac0f048f
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: fc9679a09c41d9cb
 - id: sierra-circuits-pcb-via-design-guide
@@ -236,6 +264,11 @@ sources:
     estimate: 0.4
     sources: 1
   summary: 'Via guide covering common DFM mistakes, drill file setup and clearance guidelines. Note: Numbers not in snippet'
+  archive:
+    sha256: 9d3f0a33e808be050875e76fc33bdba12cb28373d90ffaab810e64a9686a3ad9
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: 4dbdf6aa7e5371ef
 - id: eurocircuits-current-pcb-design-guidelines
@@ -277,6 +310,11 @@ sources:
     evidence: No second source checked.
   summary: 'Guidelines with classification table and panelisation; pooled min track/space 0.100 mm vs 0.090 mm non-pooled.
     Note: Values from STANDARD pool snippet; guideline PDF not read'
+  archive:
+    sha256: b619e754f50af08f7f13aa4eba288d95574e27ee513a6747abaa6e165b344d5c
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: d97afec74fd5fb60
 - id: eurocircuits-standard-pool-services
@@ -304,7 +342,7 @@ sources:
   process_groups:
   - pcb
   evidence:
-    class: snippet-only
+    class: read
     numbers: claimed
     tested: 'no'
     authority: primary
@@ -312,10 +350,27 @@ sources:
     level: low
     estimate: 0.4
     sources: 1
-  summary: 'Pooled PCB service: 0-8 layers pooled, 10-16 non-pooled; order pooling lowers small-quantity cost. Note: European
-    service; relevance to design rules limited'
-  used_for: []
+  summary: Supplier STANDARD pool service tables separate pooled and non-pooled trace limits and finished-hole-based pad diameters.
+    Copper-edge requirements depend on layer and profiling method; internally conflicting layer/finish eligibility needs supplier
+    confirmation.
+  used_for:
+  - docs/pcb.md
   imported: 4ceccc70673a23be
+  verified: '2026-11-12: Read original undated HTML technical tables; no numbered pages or edition. Complete STANDARD pool
+    page: availability, bare-board and assembly parameter tables and three closing notes. Linked calculator, materials, technical
+    guidelines and assembly-capability pages were not read. Layer/thickness and immersion-silver pooling statements conflict;
+    supplier confirmation remains required.'
+  claims:
+  - text: The service table specifies pad-diameter additions relative to finished-hole size, separately for outer and inner
+      layers.
+    status: unconfirmed
+    evidence: Primary table read, not independent corroboration; additions are diametral, not radial annular-ring widths.
+      No drill-tool diameter is substituted.
+  archive:
+    sha256: eb5b272b40778776953d916130c74cabe5b90906472b4776ab3a9018124fba72
+    kind: html
+    fetched: '2026-11-12'
+    redistribute: false
 - id: altium-preventing-top-dfm-errors-in-your-pcb-design
   kind: guide
   category: manufacturing-guides
@@ -350,6 +405,11 @@ sources:
     estimate: 0.4
     sources: 1
   summary: 'Altium resource article on common DFM errors; only title seen in results. Note: Content not visible in snippet'
+  archive:
+    sha256: 45dcd729d954ffa11d84e38992e42ee74c7abca409c3413c7da604bb992ad4eb
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: ba476736c2902b6e
 - id: altium-are-fiducial-markers-still-necessary
@@ -391,6 +451,11 @@ sources:
     evidence: No second source checked.
   summary: 'Fiducial placement for machine assembly; two local fiducials let machine verify component rotation. Note: Rule
     figures from a different guide in the same results'
+  archive:
+    sha256: 7dcf0b6d1c20ce426a4946668c5e6528d7d95e82a05a077b12bf727da59f9857
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: 9f95675fdaa418ed
 - id: texas-instruments-ti-spraa99-pcb-dfm-guidance-ti-document
@@ -432,6 +497,11 @@ sources:
     evidence: No second source checked.
   summary: 'TI application note DFM guidance; spacing between SMD bodies and BGA clearance. Note: BGA figure from one document;
     verify'
+  archive:
+    sha256: e38a901cfc87d03146beee2f8ac59f6a6484f1ffdd05236c10f423ff05493a7e
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: 728c6d79162e88e5
 - id: sierra-circuits-ipc-2221-generic-standard-on-printed-board
@@ -469,6 +539,11 @@ sources:
     sources: 1
   summary: 'Summary of IPC-2221B: conductor spacing by voltage (Table 6-1), hole size, base for IPC-2222 rigid boards. Note:
     Vendor summary; standard itself paid; revisions inconsistently reported'
+  archive:
+    sha256: f92ebaf7d0af8ce4cdaf0c204d333efcbe9f71c6eeea0ed035dc94fcfbf5405a
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: 6a9422dba21e1c8e
 - id: spresxm-claude-pcb-designer

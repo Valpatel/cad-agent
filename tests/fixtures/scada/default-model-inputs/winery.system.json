@@ -1,0 +1,2669 @@
+{
+  "$schema": "../../../scada-ui/schema/scada-system.schema.json",
+  "format": "scada-system",
+  "version": 1,
+  "system": {
+    "id": "winery",
+    "label": "Winery",
+    "description": "Follow grape handling, extraction, fermentation vessels and bottling, with a separately labeled illustrative effluent-energy branch."
+  },
+  "components": [
+    {
+      "id": "grapeIntake",
+      "type": "conveyor",
+      "label": "Grape receiving belt",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/grapeIntake/active",
+        "running": "/components/grapeIntake/running",
+        "fault": "/components/grapeIntake/fault",
+        "status": "/components/grapeIntake/status",
+        "load": "/components/grapeIntake/load",
+        "speed": "/components/grapeIntake/speed",
+        "damage": "/components/grapeIntake/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "supply",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "crusher",
+      "type": "crusher",
+      "label": "Grape crusher",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/crusher/active",
+        "running": "/components/crusher/running",
+        "fault": "/components/crusher/fault",
+        "status": "/components/crusher/status",
+        "load": "/components/crusher/load",
+        "speed": "/components/crusher/speed",
+        "damage": "/components/crusher/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "supply",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "extraction",
+      "type": "separator",
+      "label": "Juice extraction separator",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "level": 55,
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/extraction/active",
+        "running": "/components/extraction/running",
+        "fault": "/components/extraction/fault",
+        "status": "/components/extraction/status",
+        "level": "/components/extraction/level",
+        "load": "/components/extraction/load",
+        "damage": "/components/extraction/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "supply",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "gas",
+          "side": "right",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "mustTransfer",
+      "type": "pump",
+      "label": "Must transfer pump",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/mustTransfer/active",
+        "running": "/components/mustTransfer/running",
+        "fault": "/components/mustTransfer/fault",
+        "status": "/components/mustTransfer/status",
+        "load": "/components/mustTransfer/load",
+        "speed": "/components/mustTransfer/speed",
+        "damage": "/components/mustTransfer/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "drive",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "fermenter",
+      "type": "reactor",
+      "label": "Fermentation vessel",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "level": 55,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/fermenter/active",
+        "running": "/components/fermenter/running",
+        "fault": "/components/fermenter/fault",
+        "status": "/components/fermenter/status",
+        "level": "/components/fermenter/level",
+        "damage": "/components/fermenter/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "vent",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "gas-inlet",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "aging",
+      "type": "tank",
+      "label": "Aging buffer",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "level": 55,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/aging/active",
+        "running": "/components/aging/running",
+        "fault": "/components/aging/fault",
+        "status": "/components/aging/status",
+        "level": "/components/aging/level",
+        "damage": "/components/aging/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "transferValve",
+      "type": "gate-valve",
+      "label": "Cellar transfer valve",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "open": true,
+        "opening": 100,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/transferValve/active",
+        "running": "/components/transferValve/running",
+        "fault": "/components/transferValve/fault",
+        "status": "/components/transferValve/status",
+        "open": "/components/transferValve/open",
+        "opening": "/components/transferValve/opening",
+        "damage": "/components/transferValve/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "polishing",
+      "type": "filter",
+      "label": "Polishing filter",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/polishing/active",
+        "running": "/components/polishing/running",
+        "fault": "/components/polishing/fault",
+        "status": "/components/polishing/status",
+        "load": "/components/polishing/load",
+        "damage": "/components/polishing/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "backwash",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "bottler",
+      "type": "filling-line",
+      "label": "Bottle filling",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/bottler/active",
+        "running": "/components/bottler/running",
+        "fault": "/components/bottler/fault",
+        "status": "/components/bottler/status",
+        "load": "/components/bottler/load",
+        "speed": "/components/bottler/speed",
+        "damage": "/components/bottler/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "supply",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "packer",
+      "type": "packaging-line",
+      "label": "Bottle packing",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/packer/active",
+        "running": "/components/packer/running",
+        "fault": "/components/packer/fault",
+        "status": "/components/packer/status",
+        "load": "/components/packer/load",
+        "speed": "/components/packer/speed",
+        "damage": "/components/packer/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "supply",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "effluent",
+      "type": "digester",
+      "label": "Illustrative effluent digester",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "level": 55,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/effluent/active",
+        "running": "/components/effluent/running",
+        "fault": "/components/effluent/fault",
+        "status": "/components/effluent/status",
+        "level": "/components/effluent/level",
+        "damage": "/components/effluent/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "biogas",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "drive",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "biogasFlare",
+      "type": "flare",
+      "label": "Illustrative biogas flare",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/biogasFlare/active",
+        "running": "/components/biogasFlare/running",
+        "fault": "/components/biogasFlare/fault",
+        "status": "/components/biogasFlare/status",
+        "load": "/components/biogasFlare/load",
+        "damage": "/components/biogasFlare/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "fuel",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "exhaust",
+          "side": "right",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "power",
+      "type": "generator",
+      "label": "Demonstration site power",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/power/active",
+        "running": "/components/power/running",
+        "fault": "/components/power/fault",
+        "status": "/components/power/status",
+        "load": "/components/power/load",
+        "speed": "/components/power/speed",
+        "damage": "/components/power/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "fuel",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "output",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "exhaust",
+          "side": "right",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "controller",
+      "type": "plc-rack",
+      "label": "Cellar controller",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "connected": true,
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/controller/active",
+        "running": "/components/controller/running",
+        "fault": "/components/controller/fault",
+        "status": "/components/controller/status",
+        "connected": "/components/controller/connected",
+        "load": "/components/controller/load",
+        "damage": "/components/controller/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "power",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "pressure",
+      "type": "pressure-transmitter",
+      "label": "Transfer pressure monitor",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "value": 42,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/pressure/active",
+        "running": "/components/pressure/running",
+        "fault": "/components/pressure/fault",
+        "status": "/components/pressure/status",
+        "value": "/components/pressure/value",
+        "damage": "/components/pressure/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "process",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "signal",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "power",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "grapeIntake-to-crusher",
+      "from": {
+        "component": "grapeIntake",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "crusher",
+        "port": "inlet"
+      },
+      "medium": "solids",
+      "flowBinding": "/flows/grapeIntake-to-crusher",
+      "label": "Grape receiving belt \u2192 Grape crusher"
+    },
+    {
+      "id": "crusher-to-extraction",
+      "from": {
+        "component": "crusher",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "extraction",
+        "port": "inlet"
+      },
+      "medium": "solids",
+      "flowBinding": "/flows/crusher-to-extraction",
+      "label": "Grape crusher \u2192 Juice extraction separator"
+    },
+    {
+      "id": "extraction-to-mustTransfer",
+      "from": {
+        "component": "extraction",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "mustTransfer",
+        "port": "inlet"
+      },
+      "medium": "fluid",
+      "flowBinding": "/flows/extraction-to-mustTransfer",
+      "label": "Juice extraction separator \u2192 Must transfer pump"
+    },
+    {
+      "id": "mustTransfer-to-fermenter",
+      "from": {
+        "component": "mustTransfer",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "fermenter",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "flowBinding": "/flows/mustTransfer-to-fermenter",
+      "label": "Must transfer pump \u2192 Fermentation vessel"
+    },
+    {
+      "id": "fermenter-to-aging",
+      "from": {
+        "component": "fermenter",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "aging",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "flowBinding": "/flows/fermenter-to-aging",
+      "label": "Fermentation vessel \u2192 Aging buffer"
+    },
+    {
+      "id": "aging-to-transferValve",
+      "from": {
+        "component": "aging",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "transferValve",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "flowBinding": "/flows/aging-to-transferValve",
+      "label": "Aging buffer \u2192 Cellar transfer valve"
+    },
+    {
+      "id": "transferValve-to-polishing",
+      "from": {
+        "component": "transferValve",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "polishing",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "flowBinding": "/flows/transferValve-to-polishing",
+      "label": "Cellar transfer valve \u2192 Polishing filter"
+    },
+    {
+      "id": "polishing-to-bottler",
+      "from": {
+        "component": "polishing",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "bottler",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "flowBinding": "/flows/polishing-to-bottler",
+      "label": "Polishing filter \u2192 Bottle filling"
+    },
+    {
+      "id": "bottler-to-packer",
+      "from": {
+        "component": "bottler",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "packer",
+        "port": "inlet"
+      },
+      "medium": "product",
+      "flowBinding": "/flows/bottler-to-packer",
+      "label": "Bottle filling \u2192 Bottle packing"
+    },
+    {
+      "id": "extraction-to-effluent",
+      "from": {
+        "component": "extraction",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "effluent",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "flowBinding": "/flows/extraction-to-effluent",
+      "label": "Juice extraction separator \u2192 Illustrative effluent digester"
+    },
+    {
+      "id": "effluent-to-biogasFlare",
+      "from": {
+        "component": "effluent",
+        "port": "biogas"
+      },
+      "to": {
+        "component": "biogasFlare",
+        "port": "fuel"
+      },
+      "medium": "gas",
+      "flowBinding": "/flows/effluent-to-biogasFlare",
+      "label": "Illustrative effluent digester \u2192 Illustrative biogas flare"
+    },
+    {
+      "id": "power-to-grapeIntake",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "grapeIntake",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-grapeIntake",
+      "label": "Demonstration site power \u2192 Grape receiving belt"
+    },
+    {
+      "id": "power-to-crusher",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "crusher",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-crusher",
+      "label": "Demonstration site power \u2192 Grape crusher"
+    },
+    {
+      "id": "power-to-extraction",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "extraction",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-extraction",
+      "label": "Demonstration site power \u2192 Juice extraction separator"
+    },
+    {
+      "id": "power-to-mustTransfer",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "mustTransfer",
+        "port": "drive"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-mustTransfer",
+      "label": "Demonstration site power \u2192 Must transfer pump"
+    },
+    {
+      "id": "power-to-bottler",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "bottler",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-bottler",
+      "label": "Demonstration site power \u2192 Bottle filling"
+    },
+    {
+      "id": "power-to-packer",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "packer",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-packer",
+      "label": "Demonstration site power \u2192 Bottle packing"
+    },
+    {
+      "id": "power-to-effluent",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "effluent",
+        "port": "drive"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-effluent",
+      "label": "Demonstration site power \u2192 Illustrative effluent digester"
+    },
+    {
+      "id": "power-to-controller",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "controller",
+        "port": "power"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-controller",
+      "label": "Demonstration site power \u2192 Cellar controller"
+    },
+    {
+      "id": "power-to-pressure",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "pressure",
+        "port": "power"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-pressure",
+      "label": "Demonstration site power \u2192 Transfer pressure monitor"
+    },
+    {
+      "id": "mustTransfer-to-pressure",
+      "from": {
+        "component": "mustTransfer",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "pressure",
+        "port": "process"
+      },
+      "medium": "measurement",
+      "flowBinding": "/flows/mustTransfer-to-pressure",
+      "label": "Must transfer pump \u2192 Transfer pressure monitor"
+    },
+    {
+      "id": "pressure-to-controller",
+      "from": {
+        "component": "pressure",
+        "port": "signal"
+      },
+      "to": {
+        "component": "controller",
+        "port": "network"
+      },
+      "medium": "data",
+      "flowBinding": "/flows/pressure-to-controller",
+      "label": "Transfer pressure monitor \u2192 Cellar controller"
+    }
+  ],
+  "views": [
+    {
+      "id": "process",
+      "label": "Main process",
+      "canvas": {
+        "width": 1280,
+        "height": 940
+      },
+      "placements": [
+        {
+          "component": "grapeIntake",
+          "x": 60,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "crusher",
+          "x": 360,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "extraction",
+          "x": 660,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "mustTransfer",
+          "x": 960,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "fermenter",
+          "x": 960,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "aging",
+          "x": 660,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "transferValve",
+          "x": 360,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "polishing",
+          "x": 60,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "bottler",
+          "x": 60,
+          "y": 620,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "packer",
+          "x": 360,
+          "y": 620,
+          "width": 200,
+          "height": 190
+        }
+      ],
+      "routes": [
+        {
+          "connection": "grapeIntake-to-crusher",
+          "points": [
+            {
+              "x": 260,
+              "y": 155
+            },
+            {
+              "x": 360,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "crusher-to-extraction",
+          "points": [
+            {
+              "x": 560,
+              "y": 155
+            },
+            {
+              "x": 660,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "extraction-to-mustTransfer",
+          "points": [
+            {
+              "x": 860,
+              "y": 155
+            },
+            {
+              "x": 960,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "mustTransfer-to-fermenter",
+          "points": [
+            {
+              "x": 1060,
+              "y": 250
+            },
+            {
+              "x": 1060,
+              "y": 340
+            }
+          ]
+        },
+        {
+          "connection": "fermenter-to-aging",
+          "points": [
+            {
+              "x": 960,
+              "y": 435
+            },
+            {
+              "x": 860,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "aging-to-transferValve",
+          "points": [
+            {
+              "x": 660,
+              "y": 435
+            },
+            {
+              "x": 560,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "transferValve-to-polishing",
+          "points": [
+            {
+              "x": 360,
+              "y": 435
+            },
+            {
+              "x": 260,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "polishing-to-bottler",
+          "points": [
+            {
+              "x": 160,
+              "y": 530
+            },
+            {
+              "x": 160,
+              "y": 620
+            }
+          ]
+        },
+        {
+          "connection": "bottler-to-packer",
+          "points": [
+            {
+              "x": 260,
+              "y": 715
+            },
+            {
+              "x": 360,
+              "y": 715
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "utilities",
+      "label": "Utilities & control",
+      "canvas": {
+        "width": 980,
+        "height": 940
+      },
+      "placements": [
+        {
+          "component": "effluent",
+          "x": 60,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "biogasFlare",
+          "x": 360,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "power",
+          "x": 660,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "controller",
+          "x": 660,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "pressure",
+          "x": 360,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "mustTransfer",
+          "x": 60,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "bottler",
+          "x": 60,
+          "y": 620,
+          "width": 200,
+          "height": 190
+        }
+      ],
+      "routes": [
+        {
+          "connection": "effluent-to-biogasFlare",
+          "points": [
+            {
+              "x": 260,
+              "y": 155
+            },
+            {
+              "x": 360,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "power-to-mustTransfer",
+          "points": [
+            {
+              "x": 660,
+              "y": 155
+            },
+            {
+              "x": 636,
+              "y": 155
+            },
+            {
+              "x": 636,
+              "y": 316
+            },
+            {
+              "x": 284,
+              "y": 316
+            },
+            {
+              "x": 284,
+              "y": 435
+            },
+            {
+              "x": 260,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "power-to-bottler",
+          "points": [
+            {
+              "x": 660,
+              "y": 155
+            },
+            {
+              "x": 636,
+              "y": 155
+            },
+            {
+              "x": 636,
+              "y": 596
+            },
+            {
+              "x": 284,
+              "y": 596
+            },
+            {
+              "x": 284,
+              "y": 715
+            },
+            {
+              "x": 260,
+              "y": 715
+            }
+          ]
+        },
+        {
+          "connection": "power-to-effluent",
+          "points": [
+            {
+              "x": 660,
+              "y": 155
+            },
+            {
+              "x": 584,
+              "y": 155
+            },
+            {
+              "x": 584,
+              "y": 36
+            },
+            {
+              "x": 284,
+              "y": 36
+            },
+            {
+              "x": 284,
+              "y": 155
+            },
+            {
+              "x": 260,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "power-to-controller",
+          "points": [
+            {
+              "x": 760,
+              "y": 250
+            },
+            {
+              "x": 760,
+              "y": 340
+            }
+          ]
+        },
+        {
+          "connection": "power-to-pressure",
+          "points": [
+            {
+              "x": 660,
+              "y": 155
+            },
+            {
+              "x": 636,
+              "y": 155
+            },
+            {
+              "x": 636,
+              "y": 316
+            },
+            {
+              "x": 584,
+              "y": 316
+            },
+            {
+              "x": 584,
+              "y": 435
+            },
+            {
+              "x": 560,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "mustTransfer-to-pressure",
+          "points": [
+            {
+              "x": 260,
+              "y": 435
+            },
+            {
+              "x": 360,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "pressure-to-controller",
+          "points": [
+            {
+              "x": 560,
+              "y": 435
+            },
+            {
+              "x": 660,
+              "y": 435
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "finishing",
+      "label": "Finishing & storage",
+      "canvas": {
+        "width": 980,
+        "height": 940
+      },
+      "placements": [
+        {
+          "component": "aging",
+          "x": 60,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "transferValve",
+          "x": 360,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "polishing",
+          "x": 660,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "bottler",
+          "x": 660,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "packer",
+          "x": 360,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "controller",
+          "x": 60,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "pressure",
+          "x": 60,
+          "y": 620,
+          "width": 200,
+          "height": 190
+        }
+      ],
+      "routes": [
+        {
+          "connection": "aging-to-transferValve",
+          "points": [
+            {
+              "x": 260,
+              "y": 155
+            },
+            {
+              "x": 360,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "transferValve-to-polishing",
+          "points": [
+            {
+              "x": 560,
+              "y": 155
+            },
+            {
+              "x": 660,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "polishing-to-bottler",
+          "points": [
+            {
+              "x": 760,
+              "y": 250
+            },
+            {
+              "x": 760,
+              "y": 340
+            }
+          ]
+        },
+        {
+          "connection": "bottler-to-packer",
+          "points": [
+            {
+              "x": 660,
+              "y": 435
+            },
+            {
+              "x": 560,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "pressure-to-controller",
+          "points": [
+            {
+              "x": 160,
+              "y": 620
+            },
+            {
+              "x": 160,
+              "y": 530
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "commands": [
+    {
+      "id": "grapeIntake-enabled",
+      "label": "Grape receiving belt \u00b7 Enabled",
+      "component": "grapeIntake",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "grapeIntake"
+      }
+    },
+    {
+      "id": "grapeIntake-load",
+      "label": "Grape receiving belt \u00b7 Requested load",
+      "component": "grapeIntake",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "grapeIntake"
+      }
+    },
+    {
+      "id": "grapeIntake-fault",
+      "label": "Grape receiving belt \u00b7 Injected failure",
+      "component": "grapeIntake",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "grapeIntake"
+      }
+    },
+    {
+      "id": "grapeIntake-repair",
+      "label": "Repair Grape receiving belt",
+      "component": "grapeIntake",
+      "action": "repair",
+      "arguments": {
+        "equipment": "grapeIntake"
+      }
+    },
+    {
+      "id": "crusher-enabled",
+      "label": "Grape crusher \u00b7 Enabled",
+      "component": "crusher",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "crusher"
+      }
+    },
+    {
+      "id": "crusher-load",
+      "label": "Grape crusher \u00b7 Requested load",
+      "component": "crusher",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "crusher"
+      }
+    },
+    {
+      "id": "crusher-fault",
+      "label": "Grape crusher \u00b7 Injected failure",
+      "component": "crusher",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "crusher"
+      }
+    },
+    {
+      "id": "crusher-repair",
+      "label": "Repair Grape crusher",
+      "component": "crusher",
+      "action": "repair",
+      "arguments": {
+        "equipment": "crusher"
+      }
+    },
+    {
+      "id": "extraction-enabled",
+      "label": "Juice extraction separator \u00b7 Enabled",
+      "component": "extraction",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "extraction"
+      }
+    },
+    {
+      "id": "extraction-load",
+      "label": "Juice extraction separator \u00b7 Requested load",
+      "component": "extraction",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "extraction"
+      }
+    },
+    {
+      "id": "extraction-fault",
+      "label": "Juice extraction separator \u00b7 Injected failure",
+      "component": "extraction",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "extraction"
+      }
+    },
+    {
+      "id": "extraction-repair",
+      "label": "Repair Juice extraction separator",
+      "component": "extraction",
+      "action": "repair",
+      "arguments": {
+        "equipment": "extraction"
+      }
+    },
+    {
+      "id": "mustTransfer-enabled",
+      "label": "Must transfer pump \u00b7 Enabled",
+      "component": "mustTransfer",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "mustTransfer"
+      }
+    },
+    {
+      "id": "mustTransfer-load",
+      "label": "Must transfer pump \u00b7 Requested load",
+      "component": "mustTransfer",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "mustTransfer"
+      }
+    },
+    {
+      "id": "mustTransfer-fault",
+      "label": "Must transfer pump \u00b7 Injected failure",
+      "component": "mustTransfer",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "mustTransfer"
+      }
+    },
+    {
+      "id": "mustTransfer-repair",
+      "label": "Repair Must transfer pump",
+      "component": "mustTransfer",
+      "action": "repair",
+      "arguments": {
+        "equipment": "mustTransfer"
+      }
+    },
+    {
+      "id": "fermenter-enabled",
+      "label": "Fermentation vessel \u00b7 Enabled",
+      "component": "fermenter",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "fermenter"
+      }
+    },
+    {
+      "id": "fermenter-load",
+      "label": "Fermentation vessel \u00b7 Requested load",
+      "component": "fermenter",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "fermenter"
+      }
+    },
+    {
+      "id": "fermenter-fault",
+      "label": "Fermentation vessel \u00b7 Injected failure",
+      "component": "fermenter",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "fermenter"
+      }
+    },
+    {
+      "id": "fermenter-repair",
+      "label": "Repair Fermentation vessel",
+      "component": "fermenter",
+      "action": "repair",
+      "arguments": {
+        "equipment": "fermenter"
+      }
+    },
+    {
+      "id": "aging-enabled",
+      "label": "Aging buffer \u00b7 Enabled",
+      "component": "aging",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "aging"
+      }
+    },
+    {
+      "id": "aging-load",
+      "label": "Aging buffer \u00b7 Requested load",
+      "component": "aging",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "aging"
+      }
+    },
+    {
+      "id": "aging-fault",
+      "label": "Aging buffer \u00b7 Injected failure",
+      "component": "aging",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "aging"
+      }
+    },
+    {
+      "id": "aging-repair",
+      "label": "Repair Aging buffer",
+      "component": "aging",
+      "action": "repair",
+      "arguments": {
+        "equipment": "aging"
+      }
+    },
+    {
+      "id": "transferValve-enabled",
+      "label": "Cellar transfer valve \u00b7 Enabled",
+      "component": "transferValve",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "transferValve"
+      }
+    },
+    {
+      "id": "transferValve-load",
+      "label": "Cellar transfer valve \u00b7 Opening setpoint (%)",
+      "component": "transferValve",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "transferValve"
+      }
+    },
+    {
+      "id": "transferValve-fault",
+      "label": "Cellar transfer valve \u00b7 Injected failure",
+      "component": "transferValve",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "transferValve"
+      }
+    },
+    {
+      "id": "transferValve-open",
+      "label": "Cellar transfer valve \u00b7 Open path",
+      "component": "transferValve",
+      "action": "setOpen",
+      "arguments": {
+        "equipment": "transferValve"
+      }
+    },
+    {
+      "id": "transferValve-repair",
+      "label": "Repair Cellar transfer valve",
+      "component": "transferValve",
+      "action": "repair",
+      "arguments": {
+        "equipment": "transferValve"
+      }
+    },
+    {
+      "id": "polishing-enabled",
+      "label": "Polishing filter \u00b7 Enabled",
+      "component": "polishing",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "polishing"
+      }
+    },
+    {
+      "id": "polishing-load",
+      "label": "Polishing filter \u00b7 Requested load",
+      "component": "polishing",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "polishing"
+      }
+    },
+    {
+      "id": "polishing-fault",
+      "label": "Polishing filter \u00b7 Injected failure",
+      "component": "polishing",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "polishing"
+      }
+    },
+    {
+      "id": "polishing-repair",
+      "label": "Repair Polishing filter",
+      "component": "polishing",
+      "action": "repair",
+      "arguments": {
+        "equipment": "polishing"
+      }
+    },
+    {
+      "id": "bottler-enabled",
+      "label": "Bottle filling \u00b7 Enabled",
+      "component": "bottler",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "bottler"
+      }
+    },
+    {
+      "id": "bottler-load",
+      "label": "Bottle filling \u00b7 Requested load",
+      "component": "bottler",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "bottler"
+      }
+    },
+    {
+      "id": "bottler-fault",
+      "label": "Bottle filling \u00b7 Injected failure",
+      "component": "bottler",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "bottler"
+      }
+    },
+    {
+      "id": "bottler-repair",
+      "label": "Repair Bottle filling",
+      "component": "bottler",
+      "action": "repair",
+      "arguments": {
+        "equipment": "bottler"
+      }
+    },
+    {
+      "id": "packer-enabled",
+      "label": "Bottle packing \u00b7 Enabled",
+      "component": "packer",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "packer"
+      }
+    },
+    {
+      "id": "packer-load",
+      "label": "Bottle packing \u00b7 Requested load",
+      "component": "packer",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "packer"
+      }
+    },
+    {
+      "id": "packer-fault",
+      "label": "Bottle packing \u00b7 Injected failure",
+      "component": "packer",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "packer"
+      }
+    },
+    {
+      "id": "packer-repair",
+      "label": "Repair Bottle packing",
+      "component": "packer",
+      "action": "repair",
+      "arguments": {
+        "equipment": "packer"
+      }
+    },
+    {
+      "id": "effluent-enabled",
+      "label": "Illustrative effluent digester \u00b7 Enabled",
+      "component": "effluent",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "effluent"
+      }
+    },
+    {
+      "id": "effluent-load",
+      "label": "Illustrative effluent digester \u00b7 Requested load",
+      "component": "effluent",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "effluent"
+      }
+    },
+    {
+      "id": "effluent-fault",
+      "label": "Illustrative effluent digester \u00b7 Injected failure",
+      "component": "effluent",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "effluent"
+      }
+    },
+    {
+      "id": "effluent-repair",
+      "label": "Repair Illustrative effluent digester",
+      "component": "effluent",
+      "action": "repair",
+      "arguments": {
+        "equipment": "effluent"
+      }
+    },
+    {
+      "id": "biogasFlare-enabled",
+      "label": "Illustrative biogas flare \u00b7 Enabled",
+      "component": "biogasFlare",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "biogasFlare"
+      }
+    },
+    {
+      "id": "biogasFlare-load",
+      "label": "Illustrative biogas flare \u00b7 Requested load",
+      "component": "biogasFlare",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "biogasFlare"
+      }
+    },
+    {
+      "id": "biogasFlare-fault",
+      "label": "Illustrative biogas flare \u00b7 Injected failure",
+      "component": "biogasFlare",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "biogasFlare"
+      }
+    },
+    {
+      "id": "biogasFlare-repair",
+      "label": "Repair Illustrative biogas flare",
+      "component": "biogasFlare",
+      "action": "repair",
+      "arguments": {
+        "equipment": "biogasFlare"
+      }
+    },
+    {
+      "id": "power-enabled",
+      "label": "Demonstration site power \u00b7 Enabled",
+      "component": "power",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "power"
+      }
+    },
+    {
+      "id": "power-load",
+      "label": "Demonstration site power \u00b7 Requested load",
+      "component": "power",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "power"
+      }
+    },
+    {
+      "id": "power-fault",
+      "label": "Demonstration site power \u00b7 Injected failure",
+      "component": "power",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "power"
+      }
+    },
+    {
+      "id": "power-repair",
+      "label": "Repair Demonstration site power",
+      "component": "power",
+      "action": "repair",
+      "arguments": {
+        "equipment": "power"
+      }
+    },
+    {
+      "id": "controller-enabled",
+      "label": "Cellar controller \u00b7 Enabled",
+      "component": "controller",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "controller"
+      }
+    },
+    {
+      "id": "controller-load",
+      "label": "Cellar controller \u00b7 Requested load",
+      "component": "controller",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "controller"
+      }
+    },
+    {
+      "id": "controller-fault",
+      "label": "Cellar controller \u00b7 Injected failure",
+      "component": "controller",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "controller"
+      }
+    },
+    {
+      "id": "controller-repair",
+      "label": "Repair Cellar controller",
+      "component": "controller",
+      "action": "repair",
+      "arguments": {
+        "equipment": "controller"
+      }
+    },
+    {
+      "id": "pressure-enabled",
+      "label": "Transfer pressure monitor \u00b7 Enabled",
+      "component": "pressure",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "pressure"
+      }
+    },
+    {
+      "id": "pressure-load",
+      "label": "Transfer pressure monitor \u00b7 Requested load",
+      "component": "pressure",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "pressure"
+      }
+    },
+    {
+      "id": "pressure-fault",
+      "label": "Transfer pressure monitor \u00b7 Injected failure",
+      "component": "pressure",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "pressure"
+      }
+    },
+    {
+      "id": "pressure-repair",
+      "label": "Repair Transfer pressure monitor",
+      "component": "pressure",
+      "action": "repair",
+      "arguments": {
+        "equipment": "pressure"
+      }
+    },
+    {
+      "id": "plant-setRunning",
+      "label": "Run the shared plant",
+      "action": "setRunning",
+      "arguments": {}
+    },
+    {
+      "id": "plant-step",
+      "label": "Advance one model step",
+      "action": "step",
+      "arguments": {
+        "value": 1
+      }
+    },
+    {
+      "id": "plant-reset",
+      "label": "Reset dynamics \u00b7 keep edited parameters",
+      "action": "reset",
+      "arguments": {}
+    }
+  ],
+  "controls": [
+    {
+      "id": "grapeIntake-enabled-control",
+      "label": "Enabled",
+      "component": "grapeIntake",
+      "kind": "toggle",
+      "command": "grapeIntake-enabled",
+      "binding": "/controls/grapeIntake/enabled"
+    },
+    {
+      "id": "grapeIntake-load-control",
+      "label": "Requested load",
+      "component": "grapeIntake",
+      "kind": "range",
+      "command": "grapeIntake-load",
+      "binding": "/controls/grapeIntake/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "grapeIntake-fault-control",
+      "label": "Injected failure",
+      "component": "grapeIntake",
+      "kind": "toggle",
+      "command": "grapeIntake-fault",
+      "binding": "/controls/grapeIntake/fault"
+    },
+    {
+      "id": "grapeIntake-repair-control",
+      "label": "Repair component",
+      "component": "grapeIntake",
+      "kind": "button",
+      "command": "grapeIntake-repair"
+    },
+    {
+      "id": "crusher-enabled-control",
+      "label": "Enabled",
+      "component": "crusher",
+      "kind": "toggle",
+      "command": "crusher-enabled",
+      "binding": "/controls/crusher/enabled"
+    },
+    {
+      "id": "crusher-load-control",
+      "label": "Requested load",
+      "component": "crusher",
+      "kind": "range",
+      "command": "crusher-load",
+      "binding": "/controls/crusher/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "crusher-fault-control",
+      "label": "Injected failure",
+      "component": "crusher",
+      "kind": "toggle",
+      "command": "crusher-fault",
+      "binding": "/controls/crusher/fault"
+    },
+    {
+      "id": "crusher-repair-control",
+      "label": "Repair component",
+      "component": "crusher",
+      "kind": "button",
+      "command": "crusher-repair"
+    },
+    {
+      "id": "extraction-enabled-control",
+      "label": "Enabled",
+      "component": "extraction",
+      "kind": "toggle",
+      "command": "extraction-enabled",
+      "binding": "/controls/extraction/enabled"
+    },
+    {
+      "id": "extraction-load-control",
+      "label": "Requested load",
+      "component": "extraction",
+      "kind": "range",
+      "command": "extraction-load",
+      "binding": "/controls/extraction/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "extraction-fault-control",
+      "label": "Injected failure",
+      "component": "extraction",
+      "kind": "toggle",
+      "command": "extraction-fault",
+      "binding": "/controls/extraction/fault"
+    },
+    {
+      "id": "extraction-repair-control",
+      "label": "Repair component",
+      "component": "extraction",
+      "kind": "button",
+      "command": "extraction-repair"
+    },
+    {
+      "id": "mustTransfer-enabled-control",
+      "label": "Enabled",
+      "component": "mustTransfer",
+      "kind": "toggle",
+      "command": "mustTransfer-enabled",
+      "binding": "/controls/mustTransfer/enabled"
+    },
+    {
+      "id": "mustTransfer-load-control",
+      "label": "Requested load",
+      "component": "mustTransfer",
+      "kind": "range",
+      "command": "mustTransfer-load",
+      "binding": "/controls/mustTransfer/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "mustTransfer-fault-control",
+      "label": "Injected failure",
+      "component": "mustTransfer",
+      "kind": "toggle",
+      "command": "mustTransfer-fault",
+      "binding": "/controls/mustTransfer/fault"
+    },
+    {
+      "id": "mustTransfer-repair-control",
+      "label": "Repair component",
+      "component": "mustTransfer",
+      "kind": "button",
+      "command": "mustTransfer-repair"
+    },
+    {
+      "id": "fermenter-enabled-control",
+      "label": "Enabled",
+      "component": "fermenter",
+      "kind": "toggle",
+      "command": "fermenter-enabled",
+      "binding": "/controls/fermenter/enabled"
+    },
+    {
+      "id": "fermenter-load-control",
+      "label": "Requested load",
+      "component": "fermenter",
+      "kind": "range",
+      "command": "fermenter-load",
+      "binding": "/controls/fermenter/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "fermenter-fault-control",
+      "label": "Injected failure",
+      "component": "fermenter",
+      "kind": "toggle",
+      "command": "fermenter-fault",
+      "binding": "/controls/fermenter/fault"
+    },
+    {
+      "id": "fermenter-repair-control",
+      "label": "Repair component",
+      "component": "fermenter",
+      "kind": "button",
+      "command": "fermenter-repair"
+    },
+    {
+      "id": "aging-enabled-control",
+      "label": "Enabled",
+      "component": "aging",
+      "kind": "toggle",
+      "command": "aging-enabled",
+      "binding": "/controls/aging/enabled"
+    },
+    {
+      "id": "aging-load-control",
+      "label": "Requested load",
+      "component": "aging",
+      "kind": "range",
+      "command": "aging-load",
+      "binding": "/controls/aging/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "aging-fault-control",
+      "label": "Injected failure",
+      "component": "aging",
+      "kind": "toggle",
+      "command": "aging-fault",
+      "binding": "/controls/aging/fault"
+    },
+    {
+      "id": "aging-repair-control",
+      "label": "Repair component",
+      "component": "aging",
+      "kind": "button",
+      "command": "aging-repair"
+    },
+    {
+      "id": "transferValve-enabled-control",
+      "label": "Enabled",
+      "component": "transferValve",
+      "kind": "toggle",
+      "command": "transferValve-enabled",
+      "binding": "/controls/transferValve/enabled"
+    },
+    {
+      "id": "transferValve-load-control",
+      "label": "Opening setpoint (%)",
+      "component": "transferValve",
+      "kind": "range",
+      "command": "transferValve-load",
+      "binding": "/controls/transferValve/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "transferValve-fault-control",
+      "label": "Injected failure",
+      "component": "transferValve",
+      "kind": "toggle",
+      "command": "transferValve-fault",
+      "binding": "/controls/transferValve/fault"
+    },
+    {
+      "id": "transferValve-open-control",
+      "label": "Open path",
+      "component": "transferValve",
+      "kind": "toggle",
+      "command": "transferValve-open",
+      "binding": "/controls/transferValve/open"
+    },
+    {
+      "id": "transferValve-repair-control",
+      "label": "Repair component",
+      "component": "transferValve",
+      "kind": "button",
+      "command": "transferValve-repair"
+    },
+    {
+      "id": "polishing-enabled-control",
+      "label": "Enabled",
+      "component": "polishing",
+      "kind": "toggle",
+      "command": "polishing-enabled",
+      "binding": "/controls/polishing/enabled"
+    },
+    {
+      "id": "polishing-load-control",
+      "label": "Requested load",
+      "component": "polishing",
+      "kind": "range",
+      "command": "polishing-load",
+      "binding": "/controls/polishing/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "polishing-fault-control",
+      "label": "Injected failure",
+      "component": "polishing",
+      "kind": "toggle",
+      "command": "polishing-fault",
+      "binding": "/controls/polishing/fault"
+    },
+    {
+      "id": "polishing-repair-control",
+      "label": "Repair component",
+      "component": "polishing",
+      "kind": "button",
+      "command": "polishing-repair"
+    },
+    {
+      "id": "bottler-enabled-control",
+      "label": "Enabled",
+      "component": "bottler",
+      "kind": "toggle",
+      "command": "bottler-enabled",
+      "binding": "/controls/bottler/enabled"
+    },
+    {
+      "id": "bottler-load-control",
+      "label": "Requested load",
+      "component": "bottler",
+      "kind": "range",
+      "command": "bottler-load",
+      "binding": "/controls/bottler/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "bottler-fault-control",
+      "label": "Injected failure",
+      "component": "bottler",
+      "kind": "toggle",
+      "command": "bottler-fault",
+      "binding": "/controls/bottler/fault"
+    },
+    {
+      "id": "bottler-repair-control",
+      "label": "Repair component",
+      "component": "bottler",
+      "kind": "button",
+      "command": "bottler-repair"
+    },
+    {
+      "id": "packer-enabled-control",
+      "label": "Enabled",
+      "component": "packer",
+      "kind": "toggle",
+      "command": "packer-enabled",
+      "binding": "/controls/packer/enabled"
+    },
+    {
+      "id": "packer-load-control",
+      "label": "Requested load",
+      "component": "packer",
+      "kind": "range",
+      "command": "packer-load",
+      "binding": "/controls/packer/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "packer-fault-control",
+      "label": "Injected failure",
+      "component": "packer",
+      "kind": "toggle",
+      "command": "packer-fault",
+      "binding": "/controls/packer/fault"
+    },
+    {
+      "id": "packer-repair-control",
+      "label": "Repair component",
+      "component": "packer",
+      "kind": "button",
+      "command": "packer-repair"
+    },
+    {
+      "id": "effluent-enabled-control",
+      "label": "Enabled",
+      "component": "effluent",
+      "kind": "toggle",
+      "command": "effluent-enabled",
+      "binding": "/controls/effluent/enabled"
+    },
+    {
+      "id": "effluent-load-control",
+      "label": "Requested load",
+      "component": "effluent",
+      "kind": "range",
+      "command": "effluent-load",
+      "binding": "/controls/effluent/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "effluent-fault-control",
+      "label": "Injected failure",
+      "component": "effluent",
+      "kind": "toggle",
+      "command": "effluent-fault",
+      "binding": "/controls/effluent/fault"
+    },
+    {
+      "id": "effluent-repair-control",
+      "label": "Repair component",
+      "component": "effluent",
+      "kind": "button",
+      "command": "effluent-repair"
+    },
+    {
+      "id": "biogasFlare-enabled-control",
+      "label": "Enabled",
+      "component": "biogasFlare",
+      "kind": "toggle",
+      "command": "biogasFlare-enabled",
+      "binding": "/controls/biogasFlare/enabled"
+    },
+    {
+      "id": "biogasFlare-load-control",
+      "label": "Requested load",
+      "component": "biogasFlare",
+      "kind": "range",
+      "command": "biogasFlare-load",
+      "binding": "/controls/biogasFlare/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "biogasFlare-fault-control",
+      "label": "Injected failure",
+      "component": "biogasFlare",
+      "kind": "toggle",
+      "command": "biogasFlare-fault",
+      "binding": "/controls/biogasFlare/fault"
+    },
+    {
+      "id": "biogasFlare-repair-control",
+      "label": "Repair component",
+      "component": "biogasFlare",
+      "kind": "button",
+      "command": "biogasFlare-repair"
+    },
+    {
+      "id": "power-enabled-control",
+      "label": "Enabled",
+      "component": "power",
+      "kind": "toggle",
+      "command": "power-enabled",
+      "binding": "/controls/power/enabled"
+    },
+    {
+      "id": "power-load-control",
+      "label": "Requested load",
+      "component": "power",
+      "kind": "range",
+      "command": "power-load",
+      "binding": "/controls/power/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "power-fault-control",
+      "label": "Injected failure",
+      "component": "power",
+      "kind": "toggle",
+      "command": "power-fault",
+      "binding": "/controls/power/fault"
+    },
+    {
+      "id": "power-repair-control",
+      "label": "Repair component",
+      "component": "power",
+      "kind": "button",
+      "command": "power-repair"
+    },
+    {
+      "id": "controller-enabled-control",
+      "label": "Enabled",
+      "component": "controller",
+      "kind": "toggle",
+      "command": "controller-enabled",
+      "binding": "/controls/controller/enabled"
+    },
+    {
+      "id": "controller-load-control",
+      "label": "Requested load",
+      "component": "controller",
+      "kind": "range",
+      "command": "controller-load",
+      "binding": "/controls/controller/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "controller-fault-control",
+      "label": "Injected failure",
+      "component": "controller",
+      "kind": "toggle",
+      "command": "controller-fault",
+      "binding": "/controls/controller/fault"
+    },
+    {
+      "id": "controller-repair-control",
+      "label": "Repair component",
+      "component": "controller",
+      "kind": "button",
+      "command": "controller-repair"
+    },
+    {
+      "id": "pressure-enabled-control",
+      "label": "Enabled",
+      "component": "pressure",
+      "kind": "toggle",
+      "command": "pressure-enabled",
+      "binding": "/controls/pressure/enabled"
+    },
+    {
+      "id": "pressure-load-control",
+      "label": "Requested load",
+      "component": "pressure",
+      "kind": "range",
+      "command": "pressure-load",
+      "binding": "/controls/pressure/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "pressure-fault-control",
+      "label": "Injected failure",
+      "component": "pressure",
+      "kind": "toggle",
+      "command": "pressure-fault",
+      "binding": "/controls/pressure/fault"
+    },
+    {
+      "id": "pressure-repair-control",
+      "label": "Repair component",
+      "component": "pressure",
+      "kind": "button",
+      "command": "pressure-repair"
+    },
+    {
+      "id": "plant-setRunning-control",
+      "label": "Run the shared plant",
+      "kind": "toggle",
+      "command": "plant-setRunning",
+      "binding": "/running"
+    },
+    {
+      "id": "plant-step-control",
+      "label": "Advance one model step",
+      "kind": "button",
+      "command": "plant-step"
+    },
+    {
+      "id": "plant-reset-control",
+      "label": "Reset dynamics \u00b7 keep edited parameters",
+      "kind": "button",
+      "command": "plant-reset"
+    }
+  ],
+  "units": {
+    "flow": "normalized flow units",
+    "inventory": "normalized inventory units",
+    "load": "% requested demonstration load",
+    "pressure": "normalized pressure index",
+    "temperature": "normalized model thermal index; artwork displays an illustrative range"
+  },
+  "provenance": [
+    {
+      "id": "demo-model",
+      "label": "Editable placeholder model",
+      "kind": "assumed",
+      "description": "Family-level normalized behavior for UI experimentation; no calibrated industry process, safety envelope or recipe."
+    },
+    {
+      "id": "assumed-topology",
+      "label": "Illustrative editable routing",
+      "kind": "illustrative",
+      "description": "Industry-inspired stage names and interfaces. This is not a verified plant P&ID, wiring diagram or production design."
+    }
+  ],
+  "assumptions": [
+    {
+      "id": "nominalCapacity",
+      "label": "Default normalized stage capacity",
+      "value": 75,
+      "unit": "normalized units",
+      "provenance": "demo-model"
+    },
+    {
+      "id": "warningIndex",
+      "label": "Demonstration warning threshold",
+      "value": 78,
+      "unit": "normalized index",
+      "provenance": "demo-model"
+    },
+    {
+      "id": "optionalUtilities",
+      "label": "Utility equipment is illustrative and may be optional",
+      "value": true,
+      "provenance": "assumed-topology"
+    }
+  ]
+}

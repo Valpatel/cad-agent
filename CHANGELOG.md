@@ -9,6 +9,452 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
 
 ## Unreleased
 
+## v0.48.0 (2026-11-17)
+
+**New**
+- The toolkit's build-guide demo and the home page's "Assembly & build guides" card now step through a real assembly: Gyropup's turret, twelve steps over 55 parts in the order Gyropup's own recipe gives, each step's new parts highlighted and drawn back along the way they go in, earlier parts ghosted. It is an example sequence from a work-in-progress prototype, not a verified build procedure; a CAD step order does not prove the parts can physically be assembled in that order. Converter, receipt and `--check`: `docs/examples/build-guide/`. Gyropup's design-log codes (D42, v1) are dropped from its instruction text by stated rules, every edit recorded so the original text can be restored and checked (#811).
+- Assembly guides may bind a packed `cad-agent-model/1` (from `pack_view`) instead of an STL manifest; the reader and release packaging accept it. The turret's 55 meshes take 306 KB this way instead of 4.4 MB of STL (#811).
+- Assembly reader: a guide's optional plain-text `source.qualification` (what the guide is and is not) is shown under its version line (#811).
+
+**Changed**
+- Assembly reader: Previous and Next sit above the step's text; on phones the step list, the buttons and the text come before the version line, so a long step keeps its buttons on a 390 × 664 screen. At phone widths every control is at least 44 px, and each part's show and colour inputs carry the part's name (#811).
+- The installed wheel now includes the assembly reader's examples (`webkit/assembly/examples/`): about 350 KB more. Exported assembly readers now carry `model/model.js` (33 KB), which the reader loads only for a packed model (#811).
+- The synthetic rail bench is no longer featured on any card; it stays the reader's test fixture and stays published at `/web/toolkit/assembly/`, so existing links to it keep working (#811).
+- The site's top bar (`ui/appnav.js`) on phones: every link is a 44 px target and all fit at 360 px; the assembly reader takes the bar's height from its 3D view, not from under its panel, and keeps its own top bar on one row (#811).
+
+## v0.47.0 (2026-11-17)
+
+**New**
+- Robot simulation replay: the featured example is now Gyropup, a work-in-progress wheel-legged robot, in four recorded MuJoCo scenarios from its dated snapshot (kerb drop, plank, push recovery, landing), chosen in the viewer, with the snapshot's own pass verdict and peak motor torque against its limit. Replayed, not recomputed; the two-link arm stays as the editable example (#798).
+- Replay format: optional mesh parts from a packed `cad-agent-model/1` library (`loadMeshLibrary`), fixed `scenery`, `opacity`, a camera-followed body (`view.follow`), and a `cad-agent.replay-index/1` of named recordings with summaries (`loadReplayIndex`, `createReplayViewer({scenarios})`, `selectScenario`) (#798).
+- `docs/examples/robot-replay/gyropup.py` converts Gyropup's recorded snapshot to that format with a receipt of source hashes; `--check` verifies. It needs no MuJoCo (#798).
+- `cad-agent --version` prints the version and the package folder it runs from; every `cad-agent <command> --help` opens with the command's one-line description (#799).
+- Site: every page has link-card tags (`og:title`, `og:description`, `og:url`, `og:image`, `twitter:card`) from its own title, description and address (the 404 page has no `og:url`), one owned card picture drawn by `tools/site/figures/social-card.mjs` with a hash record, and an `apple-touch-icon`. The build fails on a page without its own card tags, and on any address in `llms.txt` or `llms-full.txt` the built site does not serve (#804).
+
+**Changed**
+- Site browser suite: a failed navigation's receipt now says, for each main-frame document request, which of Playwright's `request`, `response`, `requestfinished` and `requestfailed` events it got and when, which routes the page and its context had, and, when a route handler took it, when the handler ran and ended and how each `fetch`, `fulfill` or `continue` it made settled (status and body size for a fetch). Two planted controls in the suite pin it: a handler that never answers and one that fulfils only after the navigation failed (#686).
+- The home and toolkit "Robot simulation replay" cards move: a lazy still, swapped for an animated capture only once the card nears the screen, never under reduced motion or Save-Data (#798).
+- The replay page takes the hosting site's top bar when its address carries `nav=1`, like the model and file demos; without it the page requests nothing extra (#798).
+
+**Fixed**
+- The POSIX installer uninstalls when `CAD_AGENT_UNINSTALL=1` is set, as the install guide says; before, it updated instead. Both installers take `1`, `true` or `yes` to uninstall and empty, `0`, `false` or `no` to install, and stop on any other value. Both installers say that uv, its cache and Pythons stay, and the guide lists what uninstall leaves (#799).
+- When `~/.local/bin` is not on PATH, the installers say how to use `cad-agent` in that terminal and name uv by its full path for `tool update-shell` (#799).
+- The agent guide (and llms.txt) prints `cad-agent choose joining --load 20 --material petg`, a form that decides, instead of the bare command, which exits 2 by design; a test runs every `cad-agent` command the guide prints (#799).
+- The Playwright hints name a command that works in the installer's uv tool environment (`uv tool install ... --with playwright`; it has no pip; quoted for PowerShell on Windows), and `cad-agent update` keeps packages added with `--with` when it reinstalls, from the folder, file, URL or Git source they came from; one it cannot add again exactly is named instead (#799).
+- `cad-agent agents install` and `update` list only the skill links they changed, not every link on every run (#799).
+- The local server's injected top bar imports `/_cadagent/kit/ui/appnav.js`, not a path that was a 404 (#799).
+- The install guide states the first download (about 1.7 GB on Linux x86-64, measured; the installers say about 2 GB) and names the installer scripts by their repository paths; a report's "no render" says which file is missing and what writes it (#799).
+- Site: a link to `/docs/agent-workflow#install-unix` or `#install-windows` opens that install block on arrival and when the address's `#` part changes, so the command shows below the header (which takes two rows on phones); the home card says to name what to build after the pasted line (#804).
+- Site: "For agents" stays in the phone header, which takes a second row below 560 px (#804).
+- Site: the home page's layer-cake blocks open the section their label names (for example `/docs/toolkit#commands`); a build fails on a section the page does not have, and a `--worktree` draft warns and links the page (#804).
+- Site: the toolkit's build-guide and original-file demos show the site's top bar (Explore, Toolkit, For agents; the name leads home). The Toolkit cards link them with `nav=1`, and the viewers then read the host's `site/nav.json` the way a project's `cad-agent site` pages do, so the generic kit names no site of its own. The assembly example's guide line says it is a synthetic fixture (`source commit 1111111111`) (#804).
+- Web kit: `model/viewer.html` and `files/file-viewer.html` show a host site's top bar only when their address carries `nav=1`; without it they load no `ui/appnav.js` and ask for no `site/nav.json`, so a project that copies the kit sees no request and no console line. A host that opts in without the file gets one 404 for it and no bar. `cad-agent site --serve` still adds its bar to them, with their tab marked, because it now skips only pages with a bar in their markup (#804).
+- Site: on phones the whole hero recording fits the first screen at 390x664 and 360x640 (a tighter lede, gaps and action rows; the wording and order are unchanged); at 320x568 it does not (#804).
+- Site: "Open the playground" opens Gyropup's playground on the recorded turret (`?design=turret-box`), not its default robot (#804).
+- Web kit: a viewer's top bar (`ui/appnav.js`) turns live reload on only when `site/nav.json` says the server offers it, which `cad-agent site --serve` now does; a static copy served from `localhost` no longer gets a 404 poll every two seconds (#804).
+- Site: the reference line in `llms.txt` no longer glues a `;` to an address, which plain link finders read as a dead link; the 404 page's feedback link names the missing address, and its link card names no address of its own (#804).
+
+## v0.46.0 (2026-11-16)
+
+**New**
+- `<cad-model loading="scroll">`: the viewer keeps its look-ahead but starts nothing (no three.js, no model data) until the reader scrolls the page, or focuses or presses inside the element; the element joins the tab order so a keyboard reader can start it without scrolling. Other viewers load as before (#748).
+- `tools/archive_pointers.py`: adds offline-mirror `archive` pointers (`sha256`, `kind`, `fetched`, `redistribute: false`) to reference records whose url is in a mirror's JSONL manifest kept outside the repo. Dry run by default, `--write` to apply; existing pointers are never overwritten and a sha256 mismatch is reported. Shards keep the importer's exact layout and the core file keeps its comments (#789).
+
+**Changed**
+- Home page: the first screen now shows a real running example. The headline, a shorter lede and the actions sit beside (on phones, above) Gyropup's turret playground recording, with its limits in one line (a work-in-progress prototype, not physics validation) and a link to the live playground. The page loads its 9 KB still first and swaps in the 324 KB animation after the page has loaded; under reduced motion, with Save-Data, or without script, the still stays (#748).
+- Home page: the pixel-art workshop is a slim cropped band between the hero and "See it run", which now leads with the two interactive 3D viewers. They use `loading="scroll"`, so a visitor who does not scroll downloads no 3D model at any screen size (#748).
+- `llms.txt` lists the home page's running examples under "See it run", and `index.md` follows the new hero order (#748).
+- `ScadaViewer.render()` now emits the same scale-note text that the mounted camera shows (`… · drag or pinch to explore` below 80% zoom); the visible text after mount is unchanged (#761).
+- Agent kit, `cad-pr-review`: "After the merge" now deletes the merged head branch on origin once its tip equals the merged head, and in a cloud session, whose git proxy has refused the delete (observed 2026-11-16), names the branch to the owner instead of retrying; the worktree, its venv and temp folder and the local branch go only after the worktree is clean and its head is on `origin/dev`. The merge conditions use "released" for a PR free to merge, link the work-claim section, rely on the role line rather than the shared footer, date the two refusals, and note that a failed job may be re-run once, by the author side, only for a failure the diff did not cause and only after the whole workflow run has finished (#772).
+- Agent kit, `cad-remote-runs`: a cloud session commits CI's SCADA recapture artifact unchanged (on `dev` since #763) and fetches it through the MCP artifact download; the folder-map width limit is stated as measured (#762).
+- CONTRIBUTING: agents use absolute paths for worktree commands; do not edit a PR description after opening (it re-runs CI and the gates); a new pull-request check step, or a suite naming a new repo file, updates `.github/ci-checks.json`; the merged branch is deleted after the worktree (#772).
+- The build-plates figure generator moved to `tools/figures/plates_figure.py`, beside the other figure generators (#789).
+
+**Fixed**
+- SCADA viewer: a live simulation tick no longer replaces the camera's zoom readout (a click target) or the scale note, and no longer strips and re-applies the diagram's camera style and `data-camera-*` attributes. A tick now writes only values that changed, so a press and release that straddle a tick stay on the same nodes, and keyboard focus and hover survive (#761).
+
+## v0.45.0 (2026-11-16)
+
+**New**
+- `tools/site/figures/gyropup-turret.mjs` records Gyropup's turret browser playground from a clean local checkout into
+  `docs/img/gyropup/turret-playground.webp` and a reduced-motion still, with its commit in `SOURCE.json`. It is a
+  playground of a work-in-progress prototype, not physics validation (#748).
+- `cad-pr-review` skill: one review-criteria page (severities, checks for every PR and by change type, the evidence
+  each needs, what a pass verdict does not mean), independence rules for the reviewer, and "Merging without the
+  owner": when an agent merges into `dev`, which PRs need the owner's go-ahead recorded on the PR first (it never
+  replaces a gate), and a post-merge checklist
+  (#750).
+- `cad-pr-review` and `cad-pr-reviewer` give the GitHub MCP tool beside each `gh` command, including the gate re-run
+  and the merge, and a stated substitute for the local `tools/ci_gates.py` run in a session without `gh`; what the
+  MCP merge needs under the ruleset and what its refusals mean (#750).
+- `python3 tools/ci/preflight.py`: before pushing, lists the checks CI runs for the files a branch changes (since `origin/dev`, plus uncommitted ones, or `--paths`) and runs those this machine can. Checks it cannot run (a missing Playwright engine or build, a Python minor CI pins for a version-sensitive check, uninstalled Node dependencies, Windows) are reported as `not run` with the reason, never as passed, and listed again at the end; slow ones run with `--slow`. A step that exists only for CI (the SCADA recapture after a failed provenance check) is listed as `ci only` with its reason and never run. Editing a workflow file selects every check that workflow runs. It exits 0 only when every selected check ran and passed (or none was selected, said as such), 1 when one failed and 3 when some did not run here; a pass on another browser, Python or Node than CI's is counted separately. `--list`, `--json` and `--only` serve agents. The path-to-check mapping is `.github/ci-checks.json`, and `tests/repo/ci/test_ci_checks.py` fails when a pull-request workflow gains a check it does not mirror (#759).
+- CI: when the SCADA gallery and scenario provenance check fails, the `scada (chromium)` job regenerates the stale outputs on its pinned shell and uploads them, with a hash manifest, as the `scada-recapture-<head SHA>` artifact; an author without that shell commits it unchanged instead of editing capture hashes (#762).
+
+**Changed**
+- Architecture explanations use subject-specific animated SVGs, with a complete inline gallery and static alternatives.
+- The agent guide explains how to identify and reuse an authorized existing toolkit when a workspace disallows installation or updates, and records provider provenance without assuming a default checkout (#743).
+- The home page leads with what runs: "See it run" sits under the hero, with Gyropup's turret playground first, then
+  the two 3D viewers and cards that open `/toolkit` robot replay, SCADA and build-guide examples (#748).
+- A new "What is in cad-agent" figure shows the stack as a layer cake of blocks, from the open source it is built on,
+  through the libraries, simulators, checks and tests, web widgets and command-line tools, to knowledge and the agent
+  kit. Counts (commands, skills, formulas, tests, references, …) are computed by the build; dashed blocks are planned
+  and link their issue. The README, `index.md`, `llms.txt` and the page title say the same (#748).
+- The checks reel keeps its animated tiles; three more checks stay one click away as text links. A "From frontier to
+  local" section says what the evals measure today and what is next (#748).
+- `/toolkit` example cards carry anchors (`/toolkit#robot-replay`, `#scada-simulations`, `#assembly`, …) (#748).
+- `cad-agent agents install` reports `cad-pr-review` and `cad-pr-reviewer` as needing GitHub access through `gh` or
+  the GitHub MCP tools, which it cannot check from here, instead of `gh` alone (#750).
+- The `cad-remote-runs` skill has a "Working from a cloud container" section: GitHub through MCP tools when `gh` is
+  missing, worktrees and venvs, Chromium-only Playwright, Python 3.12 for provenance checks, regenerating provenance
+  receipts with their generators (never editing a hash), slow steps and an orchestration pattern. `AGENTS.md` points at it, and
+  `.agents/SYMPTOM-INDEX.md` finds the dated evidence by its error text (#758).
+
+**Fixed**
+- `<cad-model>` (`kit/model/model.js`): on a touch screen a one-finger drag now turns the model without scrolling the page; two fingers still zoom the page. It turns the model up and down as well as sideways only while the viewer is at most half as tall as the space that scrolls past it; a taller viewer leaves vertical swipes to the page and turns only sideways (the rule, its limits and the phone figures are in the #769 bullet below) (#650, #769). Two fingers never zoom or pan the model itself (it has no pinch zoom), and a second finger cancels a one-finger turn. Checked with real touch input in Chromium's emulated phone mode only; dragging in Safari and on a physical phone is not yet checked.
+- `<cad-model>`: the turntable never steps backwards when a frame is stamped before the previous one.
+- `<cad-model>`: Explode no longer throws `Invalid explode factor` when the browser's first animation frame is timestamped slightly before the click or Enter press; the tween clamps its progress at both ends (#680).
+- Website visual-layout checks recognize visible images inside inline picture wrappers while retaining hidden-image and minimum-size checks.
+- SCADA Explorer: live ticks no longer rewrite unchanged text on Pause/Run and the sound controls, so a click whose press and release straddle a tick keeps its target; WebKit could drop such a click and leave the session running (#745).
+- SCADA Explorer browser suite: pausing is verified rather than assumed, and a fake-clock check places a tick inside the Pause click, then proves paused and running session round trips restore exactly, with ticks resuming only after import (#745).
+- `tools/ci_gates.py` review gate: a verdict marker followed by one attribution footer that the posting tool appends (a `---` line, then one `_Generated by [Name](https://...)_` line) now counts, so a reviewer in a cloud session can clear the gate. Any other text after the marker, a second footer or a footer with no marker still voids it (#751).
+- `<cad-model>` (`kit/model/model.js`): on a touch screen a viewer now takes vertical drags only while it is at most half as tall as the space that scrolls past it: the visible viewport, or the shortest box around it that can scroll vertically (a scrolling `overflow-y` with content taller than the box) when that is shorter. What lies beside a viewer is no longer counted as free, because it may be another viewer. With two viewers side by side in phone landscape (844×390, 740×360, 932×430) a vertical swipe on the home page layout now scrolls from all 35 sampled start points, where before it scrolled from 5 (the gutters). Those viewers now turn only under sideways drags in phone landscape (in portrait they still turn both ways). A viewer nearly as tall as its scrollable box lets the box scroll again, also behind wrappers that cannot scroll themselves; a wrapper with only `overflow-x:auto` no longer counts (#769).
+- `<cad-model>`: a second finger on the canvas ends a one-finger turn and is itself ignored, so a pinch zooms the page and leaves the view alone (#769).
+- Limits: checked with emulated touch in desktop Chromium only, not in Safari, Chrome on Android or on a physical phone. In portrait the home page's viewers keep vertical turning, and with the first viewer centred a vertical swipe scrolls from 18 of 35 sampled start points at 390×844, 28 at 412×915 and 15 at 360×640; with both viewers on screen at the worst offset, from 7, 7 and 14 (about 51–62 % of the screen takes the swipe, and only the band between the cards and the side gutters scroll). The page is never trapped there, and this is the same as before. On a page that does not scroll at all, a viewer taller than half the viewport now turns only sideways. The rule is decided again when the viewer, the viewport or a scrolling box around it changes size, or the viewer is connected again; not when an ancestor's `overflow` changes or its content starts to overflow without a resize (#769).
+
+## v0.44.1 (2026-11-14)
+
+**Changed**
+- Clarify toolkit, viewer and agent documentation journeys; replace stale feature-branch guidance with shipped source owners and explain current handoffs with reproducible animated SVGs and static alternatives. No runtime API changes.
+
+## v0.44.0 (2026-11-14)
+
+**New**
+- Explorer equipment settings show the actual active equation provider or built-in kernel implementation, contract units and accepted configuration beside editable parameters (#729).
+
+**Changed**
+- SCADA equipment displays its stable unique ID in the diagram and equipment pickers, and inspection no longer leaves a persistent pressed selection fill (#729).
+- Equipment inspection opens compact screen-space quick controls beside the equipment. Detailed readings and host model settings are an explicit second level, preserving the diagram for routine operation (#729).
+
+**Fixed**
+- SCADA valve symbols and diagram cards distinguish open, closed and partial positions with color, geometry and readable labels. Offline readings remain unavailable, while inactive or damaged equipment retains its supplied position (#731).
+- Butterfly valve levers stay inside their symbol bounds, and the shared gallery includes representative valve position and unavailable states (#731).
+
+**Projects must change**
+- `ScadaViewer.openInspector()` now opens nonmodal quick controls; use `openDetails()` for the complete native inspector, or supply `onDetails` to open host-owned model settings (#729).
+
+## v0.43.0 (2026-11-14)
+
+**New**
+- Toolkit capability cards now include owned previews and direct examples for 3D CAD review, recorded robot simulation, original-file viewing, assembly instructions, linkage motion and engineering calculators alongside SCADA. The published assembly example includes its complete source-bound fixture; planned review modes remain clearly identified (#704).
+- Add an inspectable recorded MuJoCo arm simulation with play/pause, time scrubbing, speed and Fit; reusable bounded pose playback, editable illustrative inputs, solver/source receipts and a portable browser example.
+- SCADA equipment can expose a declared valve or motor toggle directly on the diagram, using the same adapter and inspector controls. Missing readings disable the action and read-only observers cannot command equipment.
+- Wastewater, winery and brewery examples now include connected plant overviews, measurement taps, branch valves, PLC/remote I/O and focused views of the same model. Their documented normalized assumptions remain editable; valve isolation and PLC loss have tested downstream effects.
+
+**Changed**
+- Give the SCADA Explorer a fluid desktop workspace and the same local-font, light/dark palette and persisted theme controls as the public Toolkit, while preserving mobile document scrolling and standalone copied-kit operation.
+- Fit simple process chains into balanced rows on wide displays, preserving equipment identities, port connections and manually positioned cameras; complex diagrams keep their authored layouts.
+- Put zoom in, zoom out, readable scale and Fit in one screen-space SCADA camera toolbar, shared by direct cameras and managed viewers (#705).
+- Standalone CAD and assembly viewers follow the shared application theme, with readable controls in both palettes; explicit original-file theme overrides and scoped embedded-viewer APIs remain available.
+- Project-owned SCADA libraries, artwork, scenarios, maintenance tools and agent skills now use MIT, with complete licenses in portable packages and unchanged third-party notices (#713).
+- SCADA Toolkit documentation stays in the shared cad-agent navigation, with native library maps, local setup and canonical agent workflows (#713).
+
+**Fixed**
+- Use wide and ultrawide displays for site collections, document figures/tables and contained viewer examples while keeping prose readable. Compose the homepage introduction beside its artwork on wide screens, with bounded artwork and model-view heights (#703).
+- SCADA native controls follow the current application palette in WebKit. Switching views mounts a new SVG canvas atomically so tank and equipment gradient fills remain visible; ordinary model ticks preserve animation, focus and camera state.
+
+**Projects must change**
+- Direct diagram controls are optional; existing system definitions retain their inspectors. Saved sessions for the previous wastewater, winery and brewery topologies are rejected without changing the current session. Start a new session for those expanded examples; no compatibility model or runtime alias is added.
+
+## v0.42.0 (2026-11-14)
+
+**New**
+- Add a contained viewer host for ordinary assembly and original CAD-file viewing, with independent cameras, scoped controls and lifecycle handling (#691).
+- Native Toolkit sections for animated SCADA equipment and 61 example simulations, including a wastewater digester with shared treatment, sludge/energy and control views.
+- Local SCADA UI and simulation libraries, editable equation providers, browsable asset galleries and agent skills for components, models, system definitions and visual review.
+
+**Changed**
+- Agent issue tracking distinguishes ongoing programs, bounded work, understood quick fixes and pending design reviews, with a bundled label guide and evidence-based issue templates (#679).
+- Bound portable assembly-guide exports to a checked runtime dependency profile containing the required modules, notices and source-bound assets.
+- SCADA runtime, library images, maintenance tools and tests have distinct canonical owners. Equipment and scenario galleries are grouped by domain and type.
+- Folder maps support compact owned SVGs, and JavaScript-only test folders no longer require Python package markers.
+- Organize browser modules under their actual model, file, UI, document, assembly, analysis and calculator owners (#696).
+
+**Fixed**
+- Prevent broad filled floor-grid polygons in WebKit's shared 3D stage while preserving the camera range, grid axes, themes, dimming, ground shadows, and viewer controls.
+- The homepage’s recorded thermal and airflow examples and diagnosis card now link to their CFD evidence and its limits, instead of the unrelated contact-FEA survey (#677).
+- FEA `Study.converge()` compares unrounded design stresses, so tiny loads cannot falsely pass after rounding to zero; its stress pair and relative change retain full numerical precision (#687).
+- Mobile Toolkit readability, element-filter reset, nested application routing and draft asset selection.
+
+**Projects must change**
+- Refresh copied kits with `cad-agent webkit` and update direct imports and entry URLs to the [canonical owner paths](software/cadagent/webkit/README.md), such as `model/viewer.html` and `files/file-viewer.html`. Flat module URLs are removed; generated guides use the current paths (#696).
+- Re-run FEA convergence checks whose stress changes were affected by rounding to 0.01 MPa; convergence records now contain unrounded numerical values. Display summaries remain rounded (#687).
+
+## v0.41.1 (2026-11-13)
+
+**Fixed**
+- The four-bar transmission-angle chart describes the 40° band as a guideline instead of claiming every angle below it binds; actual kinematic lock reporting is unchanged (#670).
+- `pcb-check` explains that reports missing severity metadata need regeneration with KiCad CLI 10 or newer and `--severity-all`, rather than asking KiCad 9 users to repeat a flag that cannot add the metadata. Incomplete reports still fail closed (#672).
+
+## v0.41.0 (2026-11-13)
+
+**Changed**
+- Legacy CLI evaluation trials can request low, medium or high reasoning effort, preserving medium by default and recording requested effort separately from unknown effective effort; historical records are not backfilled (#665).
+
+## v0.40.1 (2026-11-13)
+
+**New**
+- Versioned YAML candidate task catalog for agent discovery, cloud/mobile review and hardware design studies; existing analytical jobs remain unchanged, and candidate briefs require qualified inputs and graders before execution (#657).
+
+**Fixed**
+- CI recognizes the observed Ubuntu runner's separate security stanza while preserving its source bytes, complete suite checks and archive-keyring requirements; unknown profiles still fail before mutation (#617).
+- `cad-agent init` prints a command using its current Python environment when `cad-agent` is not on PATH, so a custom installation can continue without opening a new shell (#655).
+- Assembly reversal browser checks wait for every independent world landmark before asserting the captured pose; the existing 0.002 mm tolerance and geometry fault controls remain unchanged (#660).
+- Browser reader overflow checks wait for the requested responsive layout and assert one captured sample, preserving containment expectations instead of sampling a resize transition (#663).
+
+## v0.40.0 (2026-11-12)
+
+**New**
+- Opt-in source-bound serial assembly plans drive the detailed guide and packed mini-viewer through the same finite piecewise paths, reversing operation order and path for disassembly. Existing playback and fastener gates check occupied/parked component paths and declared ordinary axial tool paths separately (#542).
+
+**Changed**
+- Hosted Ubuntu source rejections retain bounded, redacted field/URI evidence and the source hash before the original failure; no new source profile or URI is accepted (#617, #649).
+- Give the homepage knowledge indicator a luminous green core, soft halo and gentle looping pulse, with a still glow for reduced-motion readers (#651).
+
+**Projects must change**
+- To opt in, export exact source-instance BREP/mesh/placement/tooling bindings and an explicit plan; legacy guides remain illustrative. Rotations, simultaneous/process operations, support, retention, internal module qualification and physical build remain unsupported or unverified. Product migrations are separate (#542).
+
+## v0.39.0 (2026-11-12)
+
+**New**
+- A per-part manufacturing process, so a project that mixes printed parts with welded, cut, machined, moulded or bought ones is checked honestly. A dossier card's `material.process` (free text, such as `welded steel tube` or `purchased`) or the new `cad: part_process: {<part>: <process>, "*": <default>}` in `cad-agent.yaml` says how a part is made (`cadagent.manufacturing.process.part_processes`; names `weldment`, `purchased`, `sheet-metal`, `cnc`, `injection-moulding`). A part that is not printed gets skip rows with the reason in the report's "Printed parts" and "Print files" (never a pass), and `export-3mf`, the default build plates, the default slice list, `cad-agent overhangs` and the report's download table leave it out, so `cad-agent all` finishes on a machine with no printed part. A skip means the print checks do not apply; it does not say the part can be made ([toolkit.md](https://cad-agent.valpatel.com/docs/toolkit#parts-that-are-not-printed), #577).
+- `joint(..., follows=(driver, multiplier, offset))` declares a driven joint, in the spirit of URDF's `mimic`: the motion gate samples only the driver and poses the follower at `multiplier × driver + offset` about its own axis in every pose, alone, in chains and in `combine` grids. A one-degree-of-freedom linkage (a parallelogram lift, geared arms) is checked along its path, not as a grid of free joints that reports collisions between poses it can never take. The same key works in `dossier_items()` and in the joint mapping `motion_gate` accepts (#581).
+- `joint(..., closes={"parts": (a, b), "at": point, "tol_mm": 0.1})` names a point two parts share (the pin that closes a loop). The motion gate fails `closure:<joint>:<a>|<b>` when the sampled poses pull it more than `tol_mm` apart, and when the point can measure nothing (both parts in one body, neither part moved). The ratio of a driven joint is the author's declaration: the gate does not solve loop closure, and a driven joint that no `closes` point measures is listed in `not_checked` (#581).
+- The motion verdict has `driven` (which joints were driven, by which joint, with what law and over which values), `closures`, a `follows:<id>` check that fails when a follower leaves the range it declares, and `stats.driven_joints`. A driver that is not declared, followers in a loop and kinds that cannot follow are a `RegistryError` at the build and a `joint:<id>` failure in the gate; the dossier lint reports `unknown-joint` for a hand-written record (#581).
+- Added concise independent-curation guidance: appreciation and original-source links do not imply sponsorships, partnerships or paid placements.
+
+**Changed**
+- A dossier card whose `material.process` already names a non-additive process (for example `CNC` or `sheet metal`) now gets skip rows in "Printed parts" and "Print files" instead of print checks, and no 3MF, plate place or default slice row (#577).
+- The review packet draws a driven joint with its driver: the driver's range-end views carry `pose.moves` (every joint that moves, innermost first) and a follower gets no range-end views of its own. Packets of projects without driven joints are unchanged (#581).
+- The geometry record's joints carry `follows` and `closes` only where declared, so existing records keep their digests; a driven joint without a range has `"range": null` (#581).
+- Mined Anthropic's Claude for Manufacturing as a pinned knowledge and skill-structure reference: credited variant-preflight guidance in existing Explore/design workflows and a source-to-procedure method for our own harness-independent skills. Preserve evidence, handoffs and testing limits; no upstream plugin, scripts or connectors are included.
+- PowerShell installer-guard timeouts retain bounded fixture phase evidence without changing their deadline, checksum checks or failure verdict. This diagnostic does not explain or fix the earlier silent timeout (#640).
+- The homepage agent setup diagram fills the prompt's width, and its six agent badges align in an even responsive grid (#642).
+
+**Fixed**
+- A partial `overhangs PART` run discards old results for parts that are no longer printed, even when their STL bytes are unchanged. An explicitly named nonprinted part is still screened afresh; it is not silently carried into later partial runs (#577, #580).
+- With no printed parts, `export-3mf` still honors explicit diagnostic plate selections, and a rejected strict project export preserves prior plate files through the existing transactional exporter (#632).
+- Containment and packet range-end views retain followers’ nonzero home offsets while another independent group moves. Packet poses also retain held scalar driver frames and cylindrical slide travel when composed with driven moves (#581).
+- Hosted Ubuntu CI accepts the observed `us-east-2.ec2.archive.ubuntu.com` mirror profile and replaces its priority-one endpoint with the existing registered HTTPS mirror. Strict source/keyring/fallback checks remain in place; successful logs identify the recognized input profile.
+- Reference credits now retain known people alongside organisations in discovery, tables, Markdown and citation tooltips; author search and direct original-work links preserve the existing source identities and checking limits.
+
+**Projects must change**
+- Nothing for a project that declares no process: every part is printed, as before. A project that wrote a non-additive `material.process` on a card and still prints that part corrects the card's process (the card is read before `cad: part_process:`) (#577).
+
+## v0.38.1 (2026-11-12)
+
+**New**
+- Added supplier-scoped bent-bracket and simple CNC-plate review workflows with distinct bend/fastener datums, service-envelope uncertainty, tapping-model conventions and executable negative controls. Two existing manufacturer records now have full text-reading receipts; no automatic manufacturing gates or physical qualification are added.
+- Added CNC Kitchen creator links and versioned insert-recovery guidance, the owner's preferred V2 tool, exact McMaster extraction-tip alternatives, and coupon reuse/material-separation cautions. No recovered-joint strength or recycling acceptance is claimed.
+- Documented creator credit and direct original-source links beside concise takeaways, keeping source measurements separate from toolkit checks.
+
+**Changed**
+- Define the next fact-backed CAD evaluation phase in the existing Evaluation guide: provisional Inspect reuse, matched local/hosted trials, isolated subject bundles, independent CAD/source grading, compact bound visual evidence and explicit qualification tests. Whole-checkout access is deprecated for new controlled studies; v1 behavior and historical records are unchanged. No new runtime or model-performance claim (#622).
+
+**Fixed**
+- CI mirror rejections now retain bounded, redacted profile evidence for diagnosis; accepted sources, signatures, dependencies and test conditions remain unchanged (#617).
+- Reader-boundary browser navigation failures now retain bounded partial state and a viewport screenshot before page close; the original wait, timeout, thrown error and acceptance predicates remain unchanged. This improves diagnosis, not the unresolved navigation failure's cause (#625).
+
+## v0.38.0 (2026-11-12)
+
+**New**
+- Added three versioned analytical evaluation jobs with deterministic controller-side graders, passing references, negative controls, fresh workspace preparation and run-record ingestion. These measure declared calculations and graphs; they do not validate physical CAD or PCB safety.
+
+**Changed**
+- PCB fabrication review now distinguishes service, copper side/thickness, finished-hole pad diameters and profiling datums, with two dated manufacturer readings and executable source examples that preserve unknowns and supplier contradictions.
+
+## v0.37.2 (2026-11-12)
+
+**New**
+- Read guides inside Explore's shared topic hierarchy; browse catalogue capabilities in the same entrance while retaining saved catalogue filters and anchors. Hide area maturity presentation, fix dark outline interaction contrast, and show precise Pacific update times (#603).
+
+**Changed**
+- Reframe the homepage around a person's need, evidence-backed engineering and reviewed feedback, with an original looping 16-bit robot-building adventure, recorded numerical examples and independent real-CAD project views.
+
+**Fixed**
+- Keep desktop reader search and tree filters reachable when scrolling upward at the sidebar's edge; sidebar input no longer chains into an article scroll that brings the tracked section back into view. Mobile navigation keeps native page scrolling (#603).
+- Shared `cad-model` loading reports actual transferred bytes, keeps unknown totals indeterminate, creates fresh retry readiness, and rolls back partial GPU allocations before recovery. The homepage adds source-bound J501 enclosure/PCB geometry with fitted lid and four original optional antenna display shapes, with explicit licensing and RF/fit limits.
+
+## v0.37.1 (2026-11-12)
+
+**New**
+- Explore tools, guides, individual lesson/pitfall sections and all reference records through shared search and topics, with compact defaults and canonical deep links. Existing catalogue/reference feeds, evidence classes and legacy views remain separate (#599).
+
+## v0.37.0 (2026-11-11)
+
+**New**
+- `cadagent.formulas` checks fillet welds under static load (#578): `fillet_throat`, `fillet_throat_area` and `fillet_throat_stress` for one weld; `weld_line_parallel`, `weld_line_box` and `weld_line_circle` with `weld_group_stress` for a weld group treated as a line under shear, axial load, bending and torque (a tube or a boss welded all round to a plate); and `weld_metal_strength`, `base_metal_shear_strength` and `fillet_weld_check` for the strength AISC 360-16 allows, the weld metal and the base metal apart, by LRFD or ASD. `fillet_size_limits` gives the specification's least and largest leg. They leave out fatigue, weld quality, heat-affected-zone softening, residual stress and burn-through: a pass does not show that a weld is sound.
+- `cadagent.formulas` has the second moment and section modulus of hollow rectangular and round tube sections: `hollow_rect_second_moment`, `hollow_rect_section_modulus`, `round_tube_second_moment` and `round_tube_section_modulus` (#578). Sharp corners and one wall thickness: use the maker's table for a bought section.
+- Read two existing Stratasys FDM/SLS guides and extend printing review guidance with a supplier layer-table exception, explicit unresolved clearance/tolerance conflicts and scoped lap-joint examples (#595).
+
+**Changed**
+- Publication guidance verifies actual figures alongside source counters and uses structured deployment completion fields instead of presentation labels.
+
+**Fixed**
+- Qualify imported printing snippets rather than treating a general layer multiplier or fixed tolerance floor as a universal manufacturing rule (#595).
+
+## v0.36.2 (2026-11-11)
+
+**New**
+- Read three existing manufacturer guides and add bounded bend-file and CNC-hole review examples, with supplier angle conventions and recess-aware edge checks (#589).
+- Read three existing moulding guides and add source-bounded wall, bond and release review examples, preserving material-specific inch ranges and grade-specific retention limits (#591).
+
+**Changed**
+- Read three existing supplier guides on anodizing and bearing fits, correct source identities and unsupported imported claims, and connect their bounded examples to the design workflow. No new source IDs or physical qualification.
+- Extend the existing rule cards with exact MSIA/MSIB M2-length300 and TackSert10-150 geometry/tolerance examples, approximate anodize planning values and the source-bound6203 steel-seat example. CE geometry evidence is software-encoded; performance and physical outcomes remain unqualified.
+- Publication guidance distinguishes actual zero-job startup annotations from CLI heuristics and keeps local live verification separate from Actions-owned gate statuses.
+
+**Fixed**
+- Remove unsupported imported universal flange and two-sided hole-machining claims; material-specific flange limits and deep-hole review remain qualified (#589).
+- Replace an unsupported universal wall-thickness snippet range with exact material-specific reading boundaries; do not infer chemical bonding or ejection qualification from geometry alone (#591).
+
+## v0.36.1 (2026-11-11)
+
+**Fixed**
+- Read the existing Bossard plastic-screw article, correct an unsupported imported wall-thickness assertion, and expose limited screw-family guidance through the joining card and design-process skill. Preserve missing-capacity and printed-joint proxy warnings; no new dimensional or strength rating.
+
+## v0.36.0 (2026-11-11)
+
+**New**
+- Add a sourced PEM and microPEM family-selection skill, a deeper reading of the existing PEM overview and a new consumer-electronics guide reading, and separate M2 self-clinching/flaring geometry cards with a tolerance-screening example and explicit qualification limits.
+- Reject separate reference identities sharing one exact PDF URL; retain aliases and dated reading scopes on the canonical source.
+- Part tables can open full or matching printable checklists with project/revision context, stable part IDs and saved status marks, including matches across pages (#514). Plain numbers/status marks retain whole tokens; annotated procurement values wrap and long supporting notes stay grouped beneath their part; dense lists use landscape on the selected paper size.
+
+**Fixed**
+- Full CI provisioning prefers a registered HTTPS Ubuntu mirror outside Canonical's DNS during an outage, retaining Canonical fallbacks, Ubuntu archive signature checks, dependency packages and all required tests (#576).
+
+**Projects must change**
+- Opt in with the existing `enhancePartTable` API’s `printable` context; source tables, sorting and trackers remain compatible.
+
+## v0.35.0 (2026-11-11)
+
+**Fixed**
+- Bambu slice rows preserve both process/result codes and explicit `ok`; grams or a contradictory persisted `ok` cannot turn a failed command into a passing slice. Successful Bambu `Success.` text is retained without being treated as an error. Older report rows without status or code fields keep their grams fallback (#534).
+- A persisted stale, incomplete or unreadable slice report fails `check`, `report` and `all` with a reason and a request to slice again, instead of appearing as "slicer not run". A project with no report still passes the optional slicing check (#535).
+
+**Projects must change**
+- Projects retaining a slice report must slice again after changes to the sliced 3MFs or slicer settings before verification passes. `slicer_run` still means a current report; failed stale reports keep it false (#535).
+
+## v0.34.6 (2026-11-11)
+
+**New**
+- Bounded Smooth-On readings on mould-material selection and bubble investigation, with product-specific limits and unresolved equipment/source conflicts.
+
+## v0.34.5 (2026-11-11)
+
+**New**
+- Add bounded Smooth-On cure-diagnosis readings and cited prompts for comparing a batch control with the prepared-master interface, retaining product limits and unresolved source wording without a new test engine or qualified procedure (#552).
+
+## v0.34.4 (2026-11-11)
+
+**New**
+- Add bounded Smooth-On source readings and cited planning prompts for mould/core/support-shell removal, registration and interface-specific release; no new calculator or validated manufacturing procedure (#552).
+
+## v0.34.3 (2026-11-11)
+
+**New**
+- Read a bounded Smooth-On mold-making source batch and add cited planning prompts for mix basis, material estimates and printed-master compatibility, with product-specific limits and remaining reading tracked in #552.
+
+**Changed**
+- Reference publication guidance now distinguishes public source membership from the internal registry and derives release checks from committed IDs (#323).
+- Printed snap and hinge reviews now distinguish initial fit, dwell and repeated operation, with explicit material conditioning and support geometry. Two Fictiv guides are marked read and the original BASF manual is recovered with bounded coverage; vendor allowables and cycle claims are not manufacturing guarantees (#551).
+
+## v0.34.2 (2026-11-11)
+
+**Changed**
+- Linkage and rendered-motion reviews now include source-backed questions about wheel-leg balance, contact states, sensor bases, motor signs and the causes of joint limits. The Ascento paper and selected Upkie model documentation are marked read with explicit remaining coverage; this adds no dynamics or passive-stability certification (#545).
+- Dossier and design-process reviews now prompt separate-part justification, handling/insertion review and explicit tolerance assumptions, based on bounded readings of Nicholas P. Dewhurst and Fritz Scholz. The general DFA worksheet and statistical stack-up helper remain deferred (#547).
+
+## v0.34.1 (2026-11-11)
+
+**Fixed**
+- `cad-agent check`, `report` and `all`: a part in `cad.holes.skip` is a `skip` row under "Holes clear", not a
+  `pass`: it was not checked, so it no longer adds to the pass count. The report's overall result and
+  `exports/hole-checks.json` are unchanged (#526).
+
+## v0.34.0 (2026-11-11)
+
+**New**
+- PrusaSlicer slice rows record `supports` (`none`, `enforcers only`, `automatic` or `set in the model`),
+  `stability_checked` and `stability_note`. With automatic supports, enforced layers, an override that turns supports
+  on, or a 3MF that carries support data of its own (whatever the profile says), the slice is left alone,
+  `stability_checked` is false and `cad-agent slice` says the check is not known to have run: `ok` then means only
+  that the part sliced (#522).
+
+**Fixed**
+- `cad-agent slice` with PrusaSlicer: the print-stability check now runs with Prusa's stock MK4S and XL input-shaper
+  profiles. Those set supports "for support enforcers only", and PrusaSlicer then skips the check, so a part with a
+  large unsupported overhang sliced as ok with no warning. When the profile supports enforcers only, the 3MF carries
+  no support data of its own and `cad.slicer.overrides` does not set `support_material`, the part is sliced with
+  `support_material = 0`: the same toolpaths, and PrusaSlicer looks (#522).
+- Verification reports show “stability not checked” and the recorded reason on current Prusa slice rows whose stability check did not run. This disclosure does not change optional slicing or turn an unchecked slice into a slicer failure (#522).
+
+**Projects must change**
+- PrusaSlicer projects on a stock MK4S or XL input-shaper profile: slice again. A part with unsupported overhangs
+  that sliced as ok may now be `NOT OK`, and `cad-agent slice` then exits 1. Fix the geometry, or turn supports on
+  in `cad.slicer.overrides` knowing the stability check then does not run (#522).
+
+## v0.33.0 (2026-11-10)
+
+**Changed**
+- The maintainer homepage-model collection reuses an exact retained CAD runtime without installation, seals candidate bytes before decode checks, and preserves independent source/runtime/hardware guards (#104).
+- The homepage model, matching poster and project card now bind the collected front/rear-pack Gyropup source, with checks rejecting the former belly layout despite its identical battery names. Historical leg illustrations and their source record remain unchanged. Publication requires the accepted product CAD source in protected main; model collection does not establish physical fit or printer readiness (#104).
+
+**Fixed**
+- `cad-agent check`, `report` and `all`: a part the slicer did not report as ok (`ok: false` in a current
+  `exports/slice-report.json`: a slicer error or a print-stability issue PrusaSlicer names) is now a failing row in a
+  new "Slicer" feature (`cad-slicer`), with the slicer's own words. Before, it was footer text only and the report
+  still passed. Each sliced part that is ok gets a passing row with its grams and minutes (#520).
+- The homepage model maintenance guide now describes the front and rear battery envelopes shown by the collected Gyropup CAD and records their remaining physical qualification limits (#104).
+
+**Projects must change**
+- A project that runs `cad-agent slice` and has a flagged part now gets exit 1 from `check`, `report` and `all` until
+  the part is fixed and sliced again. Projects that do not slice, or whose slice report is stale, see no change (#520).
+
+## v0.32.0 (2026-11-10)
+
+**New**
+- Validate finite ordered assembly-guide paths through the existing insertion engine, with captured guide/mesh hashes and a BREP export binding. Reports retain blocked and undecided pairs and explicitly leave support, retention and physical assembly unverified (#512).
+- `cadagent.simulation.robot.settle_stage` simulates explicitly authored rigid assembly stages with MuJoCo, retaining support contacts, maximum drift/rotation, final speeds, penetration and solver warnings. It rejects false stability from disabled gravity/contact, static monitored bodies, implicit constraints and mesh collision hulls; finite modeled stability does not prove physical assembly readiness (#515).
+- The existing playback gate offers explicit input/frame-only preflight with a distinct verdict scope, plus optional JSON-safe progress before native load/frame and each pair/operation. Checkpoint failures stop and fail the run while preserving recorded collision/partial evidence; default full path behavior is unchanged (#517).
+
+**Fixed**
+- Assembly insertion sweeps retain an explicitly unchecked geometry relation as an unchecked failure, including at the final pose (#512).
+
+## v0.31.0 (2026-11-10)
+
+**New**
+- Extend assembly guides with orthogonal CAD section axes and flip, shared hover/selection interaction callbacks, and explicitly ordered per-instance playback over the existing viewer and frame loop. Preserve scalar section behavior and require authored operation order.
+
+**Changed**
+- Agent and contributor examples keep the canonical checkout and linked worktrees inside one project container,
+  preserving existing owners and dependency paths. The read-only `dev` example now updates its detached HEAD
+  explicitly rather than relying on an absent pull upstream (#503).
+
+## v0.30.0 (2026-11-10)
+
+**New**
+- Optional `cad.release.assembly_guides` packages hash-bound model, mesh and poster
+  inputs with the pinned shared viewer and readable static instructions. Rejected
+  guide inputs preserve an existing release; captured inputs and ZIPs are
+  reproducible. This does not qualify a product's instructions or physical build (#302).
+- Optional hash-bound assembly guides over the existing 3D viewer, with reversible instruction states, selected-part transparency/wireframe, and coherent loading/reset/cleanup. Broader build-package and physical qualification remain separate.
+
+## v0.29.1 (2026-11-08)
+
+**Fixed**
+- The page outline keeps the active entry visible when page scrolling stays within the same section after a reader moves its panel. Browser checks observe actual scroll/frame delivery before the same strict visibility assertion.
+- Print releases link the complete current native plate project, with per-plate copies and filament identities. Stale or unsupported handoffs are withheld; per-part estimates are not reported as plate slice results. Different extra CAD files cannot overwrite the verified whole-set download.
+
 ## v0.29.0 (2026-11-08)
 
 **New**

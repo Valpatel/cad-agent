@@ -56,6 +56,7 @@ import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
+from urllib.parse import urlsplit
 
 import yaml
 
@@ -321,6 +322,23 @@ class Registry:
         today = today or dt.date.today()
         out = [f"{k}: the id or alias is used twice" for k in sorted(set(self._duplicates))]
         out += self._load_problems
+        # One exact PDF locator is one source identity, even across a core/shard boundary.
+        # No URL normalization or network requests: different editions/mirrors need human comparison.
+        pdfs: Dict[str, List[str]] = {}
+        for ref in self.entries.values():
+            url = ref.data.get("url")
+            if ref.kind not in ("source", "catalogued") or not isinstance(url, str):
+                continue
+            try:
+                is_pdf = urlsplit(url).path.lower().endswith(".pdf")
+            except ValueError:
+                continue  # The ordinary entry validator reports a malformed URL.
+            if is_pdf:
+                pdfs.setdefault(url, []).append(ref.id)
+        for url, ids in pdfs.items():
+            if len(ids) > 1:
+                out.append(f"{', '.join(sorted(ids))}: same exact PDF URL {url}; reuse one canonical source with "
+                           "aliases or extends: true")
         if self.data.get("schema") != 1:
             out.append(f"schema is {self.data.get('schema')!r}, not 1")
         for key in list(self.entries) + list(self.aliases):

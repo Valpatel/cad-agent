@@ -40,6 +40,10 @@ References: [`docs/practice/dossier.md`](../../../docs/practice/dossier.md) (the
   `cad-remote-runs` skill, where installed). Where agents share a workstation, one `nice`d job at a time.
 - **No project yet?** `cad-agent init <dir>` copies the starter box (a box and lid on four M3 heat-set inserts, wired
   for `cad-agent all`). Change it rather than writing `cad-agent.yaml` and the scripts by hand.
+- **Comparing variants?** Follow the [Explore preflight](../../../docs/explore.md#before-a-variant-batch): probe a
+  parameter in an isolated copy and measure its intended geometry before a batch. Reuse the existing evaluator,
+  constraints and Pareto comparison; keep failed trials and unknown values. The preflight is an agent procedure,
+  not an automatic geometry validator.
 - **Set `CAD_AGENT_ACTOR`** to your session id. Builds record it; a reviewer's sign-off is refused when it equals the
   build's.
 
@@ -73,6 +77,12 @@ Add the rest when it is known, not before: `material` with `wall_mm` when the pr
 the joint is chosen, `contains` when the part holds something, `loads` when the analysis is set up, `checks` naming
 the gates and checks that verify it. Leave `status:` out: it is computed. The lint asks for what is missing.
 
+For each separate fastener, clip or bracket, record why an integral alternative was rejected. Keep part necessity
+separate from handling/insertion difficulty. For tolerance-dependent choices, record the assembly criterion,
+contributors and statistical assumptions before accepting an RSS claim. Use the dossier's
+[part-necessity and tolerance review prompts](../../../docs/practice/dossier.md#the-reviewer-pass); the general
+DFA worksheet and tolerance stack-up helper remain deferred under #40.
+
 **Before you draw a feature, get its card and design to it.** The cards hold the referenced design practice, so you
 do not have to recall it, in one call and about 2 KB:
 
@@ -84,6 +94,17 @@ do not have to recall it, in one call and about 2 KB:
   decision table. It gives the choice, the reasons, the runner-up and when that would win, and the cards to design to.
   `--load` is required. If the card says "not decided", give what it names as missing, or size the joint yourself
   from a test or a cited source and record that as a decision.
+
+For supplier-specific printing settings, inspect the [Stratasys layer-table and unresolved-clearance notes](../../../docs/research/manufacturing/process-profiles.md#stratasys-fdm-table-and-clearance-review) and [SLS tolerance/lap examples](../../../docs/research/manufacturing/process-profiles.md#stratasys-sls-source-conflicts-and-lap-joints). Preserve source conflicts rather than silently repairing a value; other suppliers and processes keep their own profiles.
+
+For plastic screw selection, read the [family-selection example and limits](../../../docs/research/manufacturing/process-profiles.md#select-the-screw-family-before-sizing-the-boss).
+A material-family preference does not fill a missing capacity model or qualify a printed resin; retain the card’s warnings.
+
+For a PCB or its enclosure, use the [fabrication service and datum review](../../../docs/pcb.md#select-fabrication-limits-before-routing) before routing. Retain supplier/service, copper side and thickness, profiling method and finished-hole datums; clean CAD reports do not close order or physical qualification gates.
+
+For a finished bearing seat or other precision interface, use the [manufacturer interface studies](../../../docs/research/manufacturing/joint-interfaces.md) before choosing a tolerance code. Confirm the loaded ring, material and post-finish dimensions; the worked cases are source-bound screening, not assembly qualification.
+
+For injection-moulded walls, overmoulds or trapped features, use the [wall, bond and release review](../../../docs/research/manufacturing/moulding-wall-bond-and-release-review.md). Preserve resin grades and units, separate chemical bonding from mechanical retention, and name the pull direction before asking for supplier DFM. Its examples do not qualify FDM parts, peel strength or ejection.
 
 Hold the MUST lines on their non-negotiable side; a MUST line's wiggle says which side, if any, is free. Use a
 guideline's wiggle room to make the part cheaper or simpler unless a function needs it tight. Where a card prints `?`
@@ -152,7 +173,10 @@ Fix in this order, rerunning after each group (a fix early in the list often cle
 3. **Containment**: contents outside their cavity, contents in the container's wall.
 4. **Fasteners**: seat, stack, holes, engagement, tip, length, then tool access.
 5. **Assembly access**: coverage, then blocked insertions and tools at their steps.
-6. **Motion**: collisions over each joint's range.
+6. **Motion**: collisions over each joint's range. In a linkage with one degree of freedom (a parallelogram, geared
+   arms), give each dependent joint `follows=(driver, multiplier)` and name the closing pin with `closes=`, or the
+   gate samples poses the linkage cannot take ([driven joints](../../../docs/practice/gates.md#motion-range-interference-cadagentreviewgatesmotion));
+   the ratio is your declaration, not a solved loop.
 7. **Wall**, then the **lint's status rules** (decisions, traces, checks).
 
 Then the standard part checks, which every project runs whether or not it has a dossier: `cad-agent holes` (every

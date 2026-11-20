@@ -10,6 +10,7 @@ from __future__ import annotations
 import json
 import os
 import subprocess
+import sys
 import time
 import types
 from pathlib import Path
@@ -159,11 +160,188 @@ def test_versions_staleness_and_project_advice(kit, tmp_path):
 
 def test_reinstall_keeps_the_extras_and_uses_how_it_was_installed(tmp_path, monkeypatch):
     monkeypatch.setattr(agentkit, "_uv_tool_env", lambda: True)
-    monkeypatch.setattr(agentkit.shutil, "which", lambda name: "/bin/uv")
+    monkeypatch.setattr(agentkit.shutil, "which", lambda name, path=None: "/bin/uv")
     cmd = agentkit.reinstall_command(tmp_path, ["cad", "fea"])
-    assert cmd[:6] == ["uv", "tool", "install", "--quiet", "--force", "--editable"] and cmd[-1] == f"{tmp_path}[cad,fea]"
+    assert cmd[:6] == ["/bin/uv", "tool", "install", "--quiet", "--force", "--editable"] and cmd[-1] == f"{tmp_path}[cad,fea]"
     monkeypatch.setattr(agentkit, "_uv_tool_env", lambda: False)
     assert agentkit.reinstall_command(tmp_path, [])[1:4] == ["-m", "pip", "install"]
+
+
+RECEIPT = """[tool]
+requirements = [
+    { name = "cad-agent", editable = "/k/cad-agent", extras = ["cad", "fea"] },
+    { name = "playwright", specifier = "==1.62.0" },
+    { name = "requests", extras = ["socks"], specifier = ">=2" },
+    { name = "idna", marker = "python_full_version >= '3.8'", specifier = ">=3" },
+]
+python = "3.12"
+"""
+
+
+@pytest.mark.parametrize("reader", ["tomllib", "python-3.10"])
+def test_the_receipt_reads_the_same_without_tomllib(monkeypatch, reader):
+    """Python 3.10 has no tomllib (#799, CI's core 3.10): the receipt's requirements read the same either way, for the
+    forms uv writes: several lines, one line, and a Windows path as a TOML literal string."""
+    one_line = '[tool]\nrequirements = [{ name = "cad-agent", editable = \'C:\\Users\\u\\cad-agent\', extras = ["cad"] }]\n'
+    expected = [
+        [{"name": "cad-agent", "editable": "/k/cad-agent", "extras": ["cad", "fea"]},
+         {"name": "playwright", "specifier": "==1.62.0"},
+         {"name": "requests", "extras": ["socks"], "specifier": ">=2"},
+         {"name": "idna", "marker": "python_full_version >= '3.8'", "specifier": ">=3"}],
+        [{"name": "cad-agent", "editable": "C:\\Users\\u\\cad-agent", "extras": ["cad"]}],
+    ]
+    if reader == "python-3.10":
+        monkeypatch.setitem(sys.modules, "tomllib", None)            # `import tomllib` raises ImportError
+    else:
+        pytest.importorskip("tomllib")
+    assert [agentkit._receipt_requirements(t) for t in (RECEIPT, one_line)] == expected
+
+
+def test_a_uv_tool_install_keeps_its_with_packages_and_is_told_uvs_way_to_add_one(tmp_path, monkeypatch):
+    """uv rebuilds a tool environment from exactly the requirements it is given, and it has no pip (#799): a reinstall
+    passes the receipt's --with packages back, and the hint to add one is uv's own `tool install --with`."""
+    (tmp_path / "uv-receipt.toml").write_text(RECEIPT)          # the receipt's format, as uv 0.11 writes it
+    monkeypatch.setattr(agentkit.sys, "prefix", str(tmp_path))
+    monkeypatch.setattr(agentkit.shutil, "which", lambda name, path=None: "/home/u/.local/bin/uv")
+    kept = ["--with", "playwright==1.62.0", "--with", "requests[socks]>=2", "--with", "idna>=3; python_full_version >= '3.8'"]
+    cmd = agentkit.reinstall_command(tmp_path / "k", ["cad", "fea"])
+    assert cmd[:3] == ["/home/u/.local/bin/uv", "tool", "install"] and cmd[-6:] == kept and f"{tmp_path / 'k'}[cad,fea]" in cmd
+    hint = agentkit.add_packages_command("playwright")
+    root = agentkit.kit_root()
+    assert hint.startswith("/home/u/.local/bin/uv tool install --force --editable --python ")
+    assert f"'{root}[cad,fea]'" in hint and hint.endswith("--with playwright") and "pip" not in hint
+    assert "--quiet" not in hint and "--with playwright==1.62.0" in hint, "earlier --with packages stay"
+    req = root / "tools" / "webkit" / "scada" / "ui" / "requirements.txt"
+    assert agentkit.add_packages_command(requirements=req).endswith(f"--with-requirements {req}")
+    monkeypatch.setattr(agentkit.importlib.util, "find_spec", lambda name: None)     # Playwright absent
+    assert agentkit._playwright().startswith("Playwright is not installed in this Python (`/home/u/.local/bin/uv tool")
+    assert f"--with-requirements {req}`" in agentkit._scada_browser()
+    (tmp_path / "uv-receipt.toml").unlink()                       # a venv install: pip in this Python
+    assert agentkit.add_packages_command("playwright").endswith("-m pip install playwright")
+
+
+# Rows as uv 0.13.5 wrote them for `--with <folder>`, `--with-editable <folder>`, `--with <wheel>`, `--with 'name @ <url>'`
+# and `--with 'name @ git+<url>@<ref>#subdirectory=<dir>'` (checked in a scratch tool install, #799), and rows uv's command
+# line cannot say again exactly.
+SOURCES = """[tool]
+requirements = [
+    { name = "cad-agent", editable = "/k/cad-agent", extras = ["cad"] },
+    { name = "local-pkg", directory = "/src/local pkg" },
+    { name = "dir-pkg", extras = ["x"], marker = "python_full_version >= '3.8'", directory = "/src/dirpkg" },
+    { name = "ed-pkg", editable = "/src/edpkg" },
+    { name = "whl-pkg", path = "/dist/whl_pkg-0.1.0-py3-none-any.whl" },
+    { name = "url-pkg", url = "https://example.org/url_pkg-0.1.0-py3-none-any.whl" },
+    { name = "git-pkg", git = "https://example.org/mono?subdirectory=sub&rev=v1" },
+    { name = "git-head", git = "file:///src/gitpkg" },
+    { name = "ed-extras", editable = "/src/edx", extras = ["x"] },
+    { name = "url-query", url = "https://example.org/u.whl?token=1" },
+    { name = "git-lfs", git = "https://example.org/r?rev=v1&lfs=true" },
+    { name = "rel-dir", directory = "relative/dir" },
+    { name = "named-index", index = "https://example.org/simple" },
+]
+"""
+
+
+def test_packages_from_folders_files_urls_and_git_come_back_from_their_source(tmp_path, monkeypatch, capsys):
+    """A row from a folder, file, URL or Git is passed back from that source, never as a bare name the index could answer
+    with another package (#799 review); one uv's command line cannot say again exactly is left out and named."""
+    (tmp_path / "uv-receipt.toml").write_text(SOURCES)
+    monkeypatch.setattr(agentkit.sys, "prefix", str(tmp_path))
+    args, dropped = agentkit._receipt_with()
+    assert args == [
+        "--with", "local-pkg @ file:///src/local%20pkg",
+        "--with", "dir-pkg[x] @ file:///src/dirpkg ; python_full_version >= '3.8'",
+        "--with-editable", "/src/edpkg",
+        "--with", "whl-pkg @ file:///dist/whl_pkg-0.1.0-py3-none-any.whl",
+        "--with", "url-pkg @ https://example.org/url_pkg-0.1.0-py3-none-any.whl",
+        "--with", "git-pkg @ git+https://example.org/mono@v1#subdirectory=sub",
+        "--with", "git-head @ git+file:///src/gitpkg",
+    ]
+    assert dropped == ["ed-extras", "url-query", "git-lfs", "rel-dir", "named-index"]
+    for name in ("local-pkg", "ed-pkg", "whl-pkg", "url-pkg", "git-pkg"):
+        assert name not in args, f"{name} is never passed as a bare name"
+    monkeypatch.setattr(agentkit.shutil, "which", lambda name, path=None: "/u/bin/uv")
+    monkeypatch.setattr(agentkit, "_uv_tool_env", lambda: True)
+    cmd = agentkit.reinstall_command(Path("/k/cad-agent"), ["cad"])
+    assert cmd[-len(args):] == args
+    assert capsys.readouterr().err == ("cad-agent: not carried over by the reinstall (add them again yourself, from where "
+                                       "they came): ed-extras, url-query, git-lfs, rel-dir, named-index\n")
+
+
+# The reviewer's receipts on which a hand-written reader and tomllib could disagree (#799 review). Each is valid TOML;
+# uv writes none of them. Without tomllib the reader either reads what tomllib reads or refuses: never something else.
+ODD_RECEIPTS = {
+    "brace in a string": '[tool]\nrequirements = [\n    { name = "cad-agent", editable = "/h/{weird}/c", extras = ["cad"] },\n]\n',
+    "bracket in an extra": '[tool]\nrequirements = [\n    { name = "cad-agent", editable = "/k", extras = ["a]b"] },\n]\n',
+    "comment holding a table": '[tool]\nrequirements = [\n    { name = "cad-agent", editable = "/k" },\n'
+                               '    # { name = "commented", specifier = "==9" },\n]\n',
+    "array of tables": '[[tool.requirements]]\nname = "cad-agent"\neditable = "/k"\n[[tool.requirements]]\nname = "x"\n',
+    "nested inline table": '[tool]\nrequirements = [\n    { name = "x", index = { url = "https://example.org" } },\n]\n',
+    "indented close, entrypoints after": '[tool]\nrequirements = [\n    { name = "cad-agent", editable = "/k" },\n'
+                                         '    { name = "x", specifier = ">=1" },\n    ]\nentrypoints = [\n'
+                                         '    { name = "cad-agent", install-path = "/b/cad-agent", from = "cad-agent" },\n]\n',
+}
+
+
+@pytest.mark.parametrize("case", sorted(ODD_RECEIPTS))
+def test_the_310_reader_reads_what_tomllib_reads_or_refuses(monkeypatch, case):
+    text = ODD_RECEIPTS[case]
+    tomllib = pytest.importorskip("tomllib")          # the reference; the fallback runs on every Python below
+    wanted = [r for r in tomllib.loads(text).get("tool", {}).get("requirements", []) if isinstance(r, dict)]
+    monkeypatch.setitem(sys.modules, "tomllib", None)
+    try:
+        got = agentkit._receipt_requirements(text)
+    except agentkit.ReceiptUnreadable:
+        got = None
+    assert got in (None, wanted), f"{case}: read {got}, tomllib reads {wanted}"
+
+
+@pytest.mark.parametrize("case", ["brace in a string", "comment holding a table", "array of tables",
+                                  "nested inline table"])
+def test_an_unreadable_receipt_gives_no_with_rows_and_says_so(tmp_path, monkeypatch, case):
+    monkeypatch.setitem(sys.modules, "tomllib", None)
+    with pytest.raises(agentkit.ReceiptUnreadable):
+        agentkit._receipt_requirements(ODD_RECEIPTS[case])
+    (tmp_path / "uv-receipt.toml").write_text(ODD_RECEIPTS[case])
+    monkeypatch.setattr(agentkit.sys, "prefix", str(tmp_path))
+    args, dropped = agentkit._receipt_with()
+    assert args == [] and dropped and "could not be read" in dropped[0]
+    assert agentkit._receipt_extras() is None, "the installed packages decide the extras instead"
+
+
+def test_the_reinstall_finds_uv_in_the_installers_folder_off_path(tmp_path, monkeypatch):
+    """`~/.local/bin/cad-agent update` with that folder off PATH still reinstalls with uv (#799 review), not pip."""
+    bin_dir = tmp_path / "home" / ".local" / "bin"
+    bin_dir.mkdir(parents=True)
+    (bin_dir / "uv").write_text("#!/bin/sh\n")
+    (bin_dir / "uv").chmod(0o755)
+    monkeypatch.setenv("HOME", str(tmp_path / "home"))
+    monkeypatch.delenv("XDG_BIN_HOME", raising=False)
+    monkeypatch.setenv("PATH", str(tmp_path / "empty"))
+    monkeypatch.setattr(agentkit, "_uv_tool_env", lambda: True)
+    monkeypatch.setattr(agentkit.sys, "prefix", str(tmp_path))          # no receipt: no --with rows
+    assert agentkit.reinstall_command(tmp_path / "k", ["cad"])[:3] == [str(bin_dir / "uv"), "tool", "install"]
+
+
+@pytest.mark.parametrize("word, pasted", [
+    ("idna>=3", "'idna>=3'"),                                   # a redirect if left bare
+    ("x<1", "'x<1'"), ("a|b", "'a|b'"), ("^x", "'^x'"), ("%PATH%", "'%PATH%'"),
+    ("x$(touch /tmp/x)", "'x$(touch /tmp/x)'"),                 # PowerShell expands this inside double quotes
+    ("it's", "'it''s'"), ("C:\\Users\\a\\cad-agent[cad]", "'C:\\Users\\a\\cad-agent[cad]'"),
+    ("a,b", "'a,b'"), ("@x", "'@x'"), ("x y", "'x y'"),
+    ("--with", "--with"), ("--python", "--python"), ("3.12", "3.12"), ("C:\\Users\\a\\req.txt", "C:\\Users\\a\\req.txt"),
+])
+def test_the_windows_hint_is_safe_to_paste_into_powershell(word, pasted):
+    """#799 review: the PowerShell line single-quotes every word that is not plainly safe (quotes doubled), so nothing
+    in it is a redirect, a pipe or an expansion. Checked on the text; not run on Windows here."""
+    assert agentkit._shell_line(["uv", word], windows=True) == f"uv {pasted}"
+
+
+def test_a_windows_uv_path_with_a_space_is_called_with_the_call_operator():
+    line = agentkit._shell_line(["C:\\Users\\First Last\\.local\\bin\\uv.exe", "tool", "install", "--with", "idna>=3"],
+                                windows=True)
+    assert line == "& 'C:\\Users\\First Last\\.local\\bin\\uv.exe' tool install --with 'idna>=3'"
+    assert agentkit._shell_line(["uv", "--with", "idna>=3"], windows=False) == "uv --with 'idna>=3'"
 
 
 def test_the_cli_reports_a_refusal_and_prints_the_reinstall_command(kit, monkeypatch, capsys):

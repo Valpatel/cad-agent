@@ -1,0 +1,232 @@
+{
+  "$schema": "../schema/scada-system.schema.json",
+  "format": "scada-system",
+  "version": 1,
+  "system": {
+    "id": "utility-water",
+    "label": "Illustrative utility water system",
+    "description": "Two views of one adapter snapshot; all values and geometry are editable demonstration assumptions."
+  },
+  "provenance": [
+    {
+      "id": "demo",
+      "label": "Editable demonstration assumptions",
+      "kind": "assumed",
+      "description": "No measured plant data or physical pump model is implied."
+    }
+  ],
+  "units": {
+    "flow": "L/s",
+    "tankLevel": "%"
+  },
+  "assumptions": [
+    {
+      "id": "tankCapacity",
+      "label": "Assumed tank capacity",
+      "value": 10000,
+      "unit": "L",
+      "provenance": "demo"
+    }
+  ],
+  "components": [
+    {
+      "id": "supplyPump",
+      "type": "pump",
+      "label": "Supply pump",
+      "state": {
+        "active": false
+      },
+      "bindings": {
+        "active": "/components/supplyPump/active",
+        "fault": "/components/supplyPump/fault"
+      },
+      "ports": [
+        {
+          "id": "outlet",
+          "side": "right"
+        }
+      ],
+      "provenance": [
+        "demo"
+      ]
+    },
+    {
+      "id": "storageTank",
+      "type": "tank",
+      "label": "Utility tank",
+      "state": {
+        "active": false,
+        "level": 40
+      },
+      "bindings": {
+        "active": "/components/storageTank/active",
+        "level": "/components/storageTank/level"
+      },
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left"
+        }
+      ],
+      "units": {
+        "level": "%"
+      },
+      "provenance": [
+        "demo"
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "fillLine",
+      "from": {
+        "component": "supplyPump",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "storageTank",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "flowBinding": "/flows/fillLine",
+      "label": "Assumed fill pipe"
+    }
+  ],
+  "views": [
+    {
+      "id": "overview",
+      "label": "Utility overview",
+      "canvas": {
+        "width": 800,
+        "height": 400
+      },
+      "placements": [
+        {
+          "component": "supplyPump",
+          "x": 60,
+          "y": 100,
+          "width": 200,
+          "height": 180
+        },
+        {
+          "component": "storageTank",
+          "x": 520,
+          "y": 100,
+          "width": 200,
+          "height": 180
+        }
+      ],
+      "routes": [
+        {
+          "connection": "fillLine",
+          "points": [
+            {
+              "x": 260,
+              "y": 190
+            },
+            {
+              "x": 520,
+              "y": 190
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "vertical",
+      "label": "Stacked equipment view",
+      "canvas": {
+        "width": 400,
+        "height": 700
+      },
+      "placements": [
+        {
+          "component": "supplyPump",
+          "x": 100,
+          "y": 50,
+          "width": 200,
+          "height": 180
+        },
+        {
+          "component": "storageTank",
+          "x": 100,
+          "y": 450,
+          "width": 200,
+          "height": 180
+        }
+      ],
+      "routes": [
+        {
+          "connection": "fillLine",
+          "points": [
+            {
+              "x": 300,
+              "y": 140
+            },
+            {
+              "x": 350,
+              "y": 140
+            },
+            {
+              "x": 350,
+              "y": 360
+            },
+            {
+              "x": 50,
+              "y": 360
+            },
+            {
+              "x": 50,
+              "y": 540
+            },
+            {
+              "x": 100,
+              "y": 540
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "commands": [
+    {
+      "id": "pumpEnabled",
+      "label": "Set supply pump",
+      "component": "supplyPump",
+      "action": "setPump",
+      "arguments": {
+        "equipment": "supplyPump"
+      }
+    },
+    {
+      "id": "tankLevel",
+      "label": "Set illustrative tank level",
+      "component": "storageTank",
+      "action": "setLevel",
+      "arguments": {
+        "equipment": "storageTank"
+      }
+    }
+  ],
+  "controls": [
+    {
+      "id": "pumpSwitch",
+      "label": "Supply pump",
+      "kind": "toggle",
+      "component": "supplyPump",
+      "command": "pumpEnabled",
+      "binding": "/components/supplyPump/active"
+    },
+    {
+      "id": "tankLevelSlider",
+      "label": "Illustrative tank level",
+      "kind": "range",
+      "component": "storageTank",
+      "command": "tankLevel",
+      "binding": "/components/storageTank/level",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    }
+  ]
+}

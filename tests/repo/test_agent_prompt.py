@@ -72,7 +72,7 @@ def test_commands_are_public_and_name_real_commands(tmp_path, monkeypatch):
             qe.commands(control)
     with pytest.raises(ValueError, match="exactly one"):
         qe.commands(qe.INSTALL_GUIDE.read_text() * 2)
-    assert "`cad-agent update`" in BLOCK, "an agent that finds it installed updates first"
+    assert "`cad-agent update`" in BLOCK, "the normal permitted update path remains available"
     from cadagent.cli import build_parser
     names = set(build_parser()._subparsers._group_actions[0].choices)
     named = set(re.findall(r"(?:bin/|`)cad-agent\"? ([a-z][a-z0-9-]+)", BLOCK))
@@ -159,6 +159,39 @@ def test_the_block_asks_nothing_risky():
     assert not piped, "the agent reads the canonical checked guide, without an unsafe pipe shortcut"
     assert not re.search(r"sudo|--force|rm -rf|token|password|secret|ignore (?:previous|all)|maintainer", BLOCK, re.I)
     assert "gh issue create -R Valpatel/cad-agent" in BLOCK and "--label" not in BLOCK   # outsiders cannot set labels
+
+
+def test_existing_install_respects_constraints_and_identifies_provider():
+    def check(text):
+        flat = " ".join(text.split())
+        assert "If installation or updates are disallowed, leave the installation unchanged." in flat
+        assert "`command -v cad-agent` on POSIX, `Get-Command cad-agent` in PowerShell" in flat
+        assert "inspect its launcher to identify the Python it uses" in flat
+        assert "use `-B` to disable bytecode writes" in flat
+        assert "`cadagent.__file__`, `cadagent.__version__`" in flat
+        assert "distribution version and `direct_url.json` metadata" in flat
+        assert "Editable metadata can be stale" in flat
+        assert "a non-editable install's URL describes its source, not a live checkout" in flat
+        assert "Reuse it only within the user's authorized scope" in flat
+        assert "otherwise say they are unknown" in flat
+        assert "Report missing dependencies and version limits." in flat
+        assert "When updates are allowed, run `cad-agent update` first." in flat
+        assert "actual provider checkout identified above" in flat
+        assert "CAD_AGENT_DIR is an installation-path hint, not proof of the loaded provider" in flat
+        assert "actual provider checkout's Git revision, or unknown" in flat
+
+    check(GUIDE)
+    for control in (
+        GUIDE.replace("If installation or updates are disallowed, leave the\n   installation unchanged.", "Always update."),
+        GUIDE.replace("its launcher to\n   identify the Python it uses", "the default checkout"),
+        GUIDE.replace("use `-B` to disable bytecode\n   writes", "import normally"),
+        GUIDE.replace("Editable metadata can\n   be stale", "Metadata is always current"),
+        GUIDE.replace("Report missing dependencies and version limits.", ""),
+        GUIDE.replace("CAD_AGENT_DIR is an installation-path hint, not proof of the loaded provider", "Use CAD_AGENT_DIR"),
+        GUIDE.replace("actual provider checkout's Git revision, or unknown", "$HOME/cad-agent"),
+    ):
+        with pytest.raises(AssertionError):
+            check(control)
 
 
 def _planted(tmp_path: Path, report: str, calls: list) -> Path:
@@ -352,3 +385,58 @@ print(json.dumps({{'type':'result','subtype':'success'}}))
         assert not list((work / 'home').rglob('private-auth-fixture.json'))
     if case == 'nonempty-work':
         assert (work / 'leave-me.txt').read_text() == 'existing evidence stays exact'
+
+
+# Every `cad-agent ...` the agent guide (docs/agent-prompt.txt, which llms.txt carries) and llms.txt's own template print
+# runs as printed (#799). A placeholder is replaced by the values below; a command that changes the install, or needs the
+# cad extra and a build, is named here with the test that runs it instead. A new command in the guide fails until it is
+# placed in one of the two. Two limits: it reads the template's literal text, so a command that reaches llms.txt
+# through `${...}` is not extracted (the `## Commands` list prints each bare `cad-agent <name>`, some of which, such as
+# `cad-agent choose`, exit 2 without arguments; the `<command> --help` case runs every name, with --help, not as printed);
+# and the starter README's commands (`cad-agent init my-box && cd my-box`, `cad-agent all`) are not extracted here:
+# tests/cli/test_init.py runs them.
+PLACEHOLDERS = {"<feature>": ["wall"], "<command>": None}         # None: every subcommand
+RUN_ELSEWHERE = {
+    "cad-agent update": "changes the install: tests/cli/test_update.py and test_installer.py run it",
+    "cad-agent all": "builds the starter with CadQuery: tests/cli/test_init.py runs it on what `init` copies",
+}
+
+
+def documented_commands():
+    template = (ROOT / "tools" / "site" / "build-site.mjs").read_text()
+    llms = template.split("const llms = `", 1)[1].split("\n`;", 1)[0]
+    found = re.findall(r"`(cad-agent(?: [^`]*)?)`", GUIDE) + re.findall(r"\\`(cad-agent(?: [^`$\\]*)?)\\`", llms)
+    return list(dict.fromkeys(" ".join(c.split()) for c in found))
+
+
+def test_every_documented_command_exits_0_as_printed(tmp_path, monkeypatch, capsys):
+    from cadagent.cli import build_parser, main
+    commands = documented_commands()
+    assert {"cad-agent --version", "cad-agent init my-part", "cad-agent update"} <= set(commands), commands
+    assert any(c.startswith("cad-agent choose joining") for c in commands)
+    names = sorted(build_parser()._subparsers._group_actions[0].choices)
+    monkeypatch.chdir(tmp_path)
+    ran = []
+    for command in commands:
+        if command in RUN_ELSEWHERE:
+            continue
+        argvs = [command.split()[1:]]
+        for name, values in PLACEHOLDERS.items():
+            if name in command:
+                argvs = [[a.replace(name, v) for a in argv] for argv in argvs for v in (values or names)]
+        for argv in argvs:
+            assert not any("<" in a for a in argv), f"{command}: give its placeholder a value in PLACEHOLDERS"
+            try:
+                code = main(argv)
+            except SystemExit as stop:                       # --help and --version exit through argparse
+                code = stop.code
+            out = capsys.readouterr()
+            assert code in (0, None), f"`cad-agent {' '.join(argv)}` exited {code}: {out.err[-400:]}"
+            ran.append(argv)
+    assert (tmp_path / "my-part" / "cad-agent.yaml").is_file(), "init made the project the next step builds"
+    assert ["--version"] in ran and len(ran) > len(names)
+    choice = [a for a in ran if a[:2] == ["choose", "joining"]]
+    assert choice, "the joining decision is run"
+    main(choice[0] + ["--json"])
+    decided = json.loads(capsys.readouterr().out)
+    assert decided.get("decided") and decided.get("choice"), f"the printed form decides: {decided}"

@@ -1,0 +1,1218 @@
+{
+  "title": "Turret bench assembly · WIP",
+  "units": "mm",
+  "up": "z",
+  "frame": "Neutral assembled turret; TM face origin, x forward, y left, z up.",
+  "parts": [
+    {
+      "name": "pan_base",
+      "file": "meshes/pan_base.stl",
+      "color": "#4c5259",
+      "sha256": "e915af5bf2d9103b28cf6eb07257bf927f3121d0fef3ef5c27e92c05b9f2d371",
+      "bounds_mm": [
+        -78.7772216796875,
+        -73.0,
+        0.0,
+        78.7772216796875,
+        87.5,
+        47.0
+      ],
+      "logical_part": "pan_base",
+      "title": "Pan base",
+      "original_group": "base",
+      "neutral_translation_mm": [
+        -0.0,
+        -0.0,
+        -145.0
+      ]
+    },
+    {
+      "name": "base_board_carrier",
+      "file": "meshes/base_board_carrier.stl",
+      "color": "#4c596b",
+      "sha256": "0138180326512697cc43d619b509c72e9e19628b8ff78bae174937575e08ccd9",
+      "bounds_mm": [
+        48.0,
+        -35.0,
+        5.5,
+        56.0,
+        35.0,
+        37.5
+      ],
+      "logical_part": "base_board_carrier",
+      "title": "base board carrier",
+      "original_group": "base",
+      "neutral_translation_mm": [
+        -0.0,
+        -0.0,
+        -145.0
+      ]
+    },
+    {
+      "name": "pan_ring",
+      "file": "meshes/pan_ring.stl",
+      "color": "#d96b1a",
+      "sha256": "b8f3a1da167be501326ad764f364411fa1f1af345b05f163ac8aeb5d84185ec1",
+      "bounds_mm": [
+        -40.59307861328125,
+        -40.620601654052734,
+        27.850000381469727,
+        40.62287902832031,
+        40.620601654052734,
+        69.0
+      ],
+      "logical_part": "pan_ring",
+      "title": "Pan ring (63 T)",
+      "original_group": "pan",
+      "neutral_translation_mm": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "name": "pan_spacer",
+      "file": "meshes/pan_spacer.stl",
+      "color": "#d96b1a",
+      "sha256": "767862d0b1c5457447451b487f87893f70fd6d92b5c08a690c28ca95db81c3f0",
+      "bounds_mm": [
+        -29.5,
+        -29.417512893676758,
+        36.0,
+        29.5,
+        29.417512893676758,
+        40.0
+      ],
+      "logical_part": "pan_spacer",
+      "title": "pan spacer",
+      "original_group": "pan",
+      "neutral_translation_mm": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "name": "pan_pinion",
+      "file": "meshes/pan_pinion.stl",
+      "color": "#f29e4c",
+      "sha256": "545744e3e2838459145f0a16806a30c1cb542b0c7e0f16dc405fe6a8189fd377",
+      "bounds_mm": [
+        -66.9131088256836,
+        -14.356999397277832,
+        52.0,
+        -38.27940368652344,
+        14.356999397277832,
+        69.0
+      ],
+      "logical_part": "pan_pinion",
+      "title": "Pan pinion (21 T)",
+      "original_group": "pinion",
+      "neutral_translation_mm": [
+        -0.0,
+        -0.0,
+        -145.0
+      ]
+    },
+    {
+      "name": "tilt_yoke",
+      "file": "meshes/tilt_yoke.stl",
+      "color": "#595e66",
+      "sha256": "b2604c2bd46b0dfd7dbe09adc4648082b82802d8d9fd5c7cee3f2722440bea9b",
+      "bounds_mm": [
+        -20.0,
+        -68.80999755859375,
+        69.0,
+        20.0,
+        103.70999908447266,
+        160.0
+      ],
+      "logical_part": "tilt_yoke",
+      "title": "Tilt yoke",
+      "original_group": "pan",
+      "neutral_translation_mm": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "name": "cradle",
+      "file": "meshes/cradle.stl",
+      "color": "#3373bf",
+      "sha256": "7fd34219aeea2bc0879e13069074e5d19359eb68dbfb9207aaf2f5e50b641789",
+      "bounds_mm": [
+        -101.5999984741211,
+        -56.810001373291016,
+        99.9000015258789,
+        48.0,
+        56.810001373291016,
+        109.9000015258789
+      ],
+      "logical_part": "cradle",
+      "title": "Cradle",
+      "original_group": "tilt",
+      "neutral_translation_mm": [
+        0.0,
+        0.0,
+        140.0
+      ]
+    },
+    {
+      "name": "horn_boss",
+      "file": "meshes/horn_boss.stl",
+      "color": "#3373bf",
+      "sha256": "6dbad9b7400d2bbf56b4a7b022ff89d2f1df13cb2a2a275605b184f4f93a5902",
+      "bounds_mm": [
+        -10.0,
+        56.78499984741211,
+        130.0279541015625,
+        10.0,
+        65.80999755859375,
+        149.9720458984375
+      ],
+      "logical_part": "horn_boss",
+      "title": "horn boss",
+      "original_group": "tilt",
+      "neutral_translation_mm": [
+        0.0,
+        0.0,
+        140.0
+      ]
+    },
+    {
+      "name": "pivot_spacer",
+      "file": "meshes/pivot_spacer.stl",
+      "color": "#3373bf",
+      "sha256": "917880de64aa1c565494c5c707b8210646dc6c4efc1069af7c0110e7498c8332",
+      "bounds_mm": [
+        -9.0,
+        -60.810001373291016,
+        131.02516174316406,
+        9.0,
+        -56.78499984741211,
+        148.97483825683594
+      ],
+      "logical_part": "pivot_spacer",
+      "title": "pivot spacer",
+      "original_group": "tilt",
+      "neutral_translation_mm": [
+        0.0,
+        0.0,
+        140.0
+      ]
+    },
+    {
+      "name": "cartridge_body",
+      "file": "meshes/cartridge_body.stl",
+      "color": "#737880",
+      "sha256": "cdf4b0cbaf59f40d7b1c6153879fddc7c4a622d98829a9ed412436e0746a4a5e",
+      "bounds_mm": [
+        -101.5999984741211,
+        -51.599998474121094,
+        106.9000015258789,
+        64.0,
+        51.599998474121094,
+        188.5
+      ],
+      "logical_part": "cartridge_body",
+      "title": "Ball cartridge",
+      "original_group": "tilt",
+      "neutral_translation_mm": [
+        0.0,
+        0.0,
+        140.0
+      ]
+    },
+    {
+      "name": "flywheel",
+      "file": "meshes/flywheel.stl",
+      "color": "#404045",
+      "sha256": "fd17b8319c89440e348f55551a82c5c713780d7e1ea017161c2a3d293504be52",
+      "bounds_mm": [
+        10.0,
+        10.851943016052246,
+        119.0,
+        40.0,
+        40.76805877685547,
+        131.0
+      ],
+      "logical_part": "flywheel",
+      "title": "Flywheel hub",
+      "original_group": "wheel_l",
+      "neutral_translation_mm": [
+        25.0,
+        25.81,
+        140.0
+      ]
+    },
+    {
+      "name": "flywheel_m",
+      "file": "meshes/flywheel_m.stl",
+      "color": "#404045",
+      "sha256": "0840aa84ae1049816e731af880cf3367512ba6609e82a0eee27a91322b4be4b1",
+      "bounds_mm": [
+        10.0,
+        -40.76805877685547,
+        119.0,
+        40.0,
+        -10.851943016052246,
+        131.0
+      ],
+      "logical_part": "flywheel",
+      "title": "Flywheel hub",
+      "original_group": "wheel_r",
+      "neutral_translation_mm": [
+        25.0,
+        -25.81,
+        140.0
+      ]
+    },
+    {
+      "name": "flywheel_tyre",
+      "file": "meshes/flywheel_tyre.stl",
+      "color": "#1a1a1a",
+      "sha256": "bd6886b48bc2f373236087004d1e16fe5dcbe8bfc26691e1c05bf0141300367e",
+      "bounds_mm": [
+        6.0,
+        6.8631272315979,
+        119.0,
+        44.0,
+        44.756874084472656,
+        131.0
+      ],
+      "logical_part": "flywheel_tyre",
+      "title": "Flywheel tyre",
+      "original_group": "wheel_l",
+      "neutral_translation_mm": [
+        25.0,
+        25.81,
+        140.0
+      ]
+    },
+    {
+      "name": "flywheel_tyre_m",
+      "file": "meshes/flywheel_tyre_m.stl",
+      "color": "#1a1a1a",
+      "sha256": "7bfa59673201256321a7b4e3ecb9239fe823f946c7880affae5eeb09403e74e2",
+      "bounds_mm": [
+        6.0,
+        -44.756874084472656,
+        119.0,
+        44.0,
+        -6.8631272315979,
+        131.0
+      ],
+      "logical_part": "flywheel_tyre",
+      "title": "Flywheel tyre",
+      "original_group": "wheel_r",
+      "neutral_translation_mm": [
+        25.0,
+        -25.81,
+        140.0
+      ]
+    },
+    {
+      "name": "dial",
+      "file": "meshes/dial.stl",
+      "color": "#f2cc33",
+      "sha256": "f247fe42e9fad751a3c66183e4e2fbbd9f657cd43e02d24c6cd4ebdcd29fed35",
+      "bounds_mm": [
+        -93.43494415283203,
+        -45.43494415283203,
+        135.75,
+        -2.5650558471679688,
+        45.43494415283203,
+        179.75
+      ],
+      "logical_part": "dial",
+      "title": "Feed dial",
+      "original_group": "dial",
+      "neutral_translation_mm": [
+        -48.0,
+        0.0,
+        140.0
+      ]
+    },
+    {
+      "name": "hopper",
+      "file": "meshes/hopper.stl",
+      "color": "#b2d9f2",
+      "sha256": "89ed2d919d32ad1045eef3adf4b7f234799ad8e39061440d48268c0fb315a659",
+      "bounds_mm": [
+        -100.71800231933594,
+        -51.288902282714844,
+        160.0,
+        2.700000047683716,
+        50.69984817504883,
+        225.0
+      ],
+      "logical_part": "hopper",
+      "title": "Hopper",
+      "original_group": "tilt",
+      "neutral_translation_mm": [
+        0.0,
+        0.0,
+        140.0
+      ]
+    },
+    {
+      "name": "hopper_lid",
+      "file": "meshes/hopper_lid.stl",
+      "color": "#b2d9f2",
+      "sha256": "1a01c8cbc59b548a00e7b060111c54e145b2205c25566c05b7704f385deb0816",
+      "bounds_mm": [
+        -99.05164337158203,
+        -53.318946838378906,
+        207.5,
+        8.141608238220215,
+        56.270179748535156,
+        234.0
+      ],
+      "logical_part": "hopper_lid",
+      "title": "Hopper lid",
+      "original_group": "tilt",
+      "neutral_translation_mm": [
+        0.0,
+        0.0,
+        140.0
+      ]
+    },
+    {
+      "name": "barrel",
+      "file": "meshes/barrel.stl",
+      "color": "#f2731a",
+      "sha256": "f54e430e8a2b3a9cc8ecd8de1d8db76509799230542bf79ffa489cec52b9899e",
+      "bounds_mm": [
+        50.0,
+        -17.5,
+        110.04194641113281,
+        150.0,
+        17.5,
+        139.9580535888672
+      ],
+      "logical_part": "barrel",
+      "title": "Barrel",
+      "original_group": "tilt",
+      "neutral_translation_mm": [
+        0.0,
+        0.0,
+        140.0
+      ]
+    },
+    {
+      "name": "laser_mount",
+      "file": "meshes/laser_mount.stl",
+      "color": "#4ca659",
+      "sha256": "0d31bdff43b5afad3ed9ee862953cce85563f11678499a36c67899015464b50b",
+      "bounds_mm": [
+        51.0,
+        -12.5,
+        145.5,
+        84.0,
+        12.5,
+        163.5
+      ],
+      "logical_part": "laser_mount",
+      "title": "Laser mount",
+      "original_group": "tilt",
+      "neutral_translation_mm": [
+        0.0,
+        0.0,
+        140.0
+      ]
+    },
+    {
+      "name": "ring_carrier",
+      "file": "meshes/ring_carrier.stl",
+      "color": "#4c5259",
+      "sha256": "5d7393bdcfc733ea1b182c40778523ebb9e29a7885a7f0f7dcbbad2cef56c83d",
+      "bounds_mm": [
+        -32.288818359375,
+        -36.61567687988281,
+        0.0,
+        32.25,
+        36.61567687988281,
+        12.0
+      ],
+      "logical_part": "ring_carrier",
+      "title": "ring carrier",
+      "original_group": "base",
+      "neutral_translation_mm": [
+        -0.0,
+        -0.0,
+        -145.0
+      ]
+    },
+    {
+      "name": "ring_driver",
+      "file": "meshes/ring_driver.stl",
+      "color": "#d96b1a",
+      "sha256": "7fecea689680baaef9812fb0dbc98438600f5f4096dc5e3d455c7c82b4c52e3e",
+      "bounds_mm": [
+        -19.664199829101562,
+        -20.200000762939453,
+        55.0,
+        19.664199829101562,
+        19.700000762939453,
+        69.0
+      ],
+      "logical_part": "ring_driver",
+      "title": "ring driver",
+      "original_group": "pan",
+      "neutral_translation_mm": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "name": "board_bay",
+      "file": "meshes/board_bay.stl",
+      "color": "#8c99a6",
+      "sha256": "667e34b614bad21f56378680f3ab7e60350056394fc1002fb330d4be2e901282",
+      "bounds_mm": [
+        -29.0,
+        -118.0,
+        69.80999755859375,
+        29.0,
+        -68.80999755859375,
+        129.19000244140625
+      ],
+      "logical_part": "board_bay",
+      "title": "Board bay",
+      "original_group": "pan",
+      "neutral_translation_mm": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "name": "pan_servo",
+      "file": "meshes/pan_servo.stl",
+      "color": "#1f1f24",
+      "sha256": "c34f8149d4a676ce437b4531208aa2f7b5d0703f9e7d1cfe748086c3a8516a74",
+      "bounds_mm": [
+        -65.0,
+        -10.109999656677246,
+        5.0,
+        -40.29999923706055,
+        35.09000015258789,
+        52.0
+      ],
+      "logical_part": "pan_servo",
+      "title": "Pan servo",
+      "original_group": "base",
+      "neutral_translation_mm": [
+        -0.0,
+        -0.0,
+        -145.0
+      ]
+    },
+    {
+      "name": "pan_bearing",
+      "file": "meshes/pan_bearing.stl",
+      "color": "#bfbfc7",
+      "sha256": "fb374e7898e00d2b500c810c9cb99bee4e2f80669d2416c67b5decf134dcd9d7",
+      "bounds_mm": [
+        -32.5,
+        -32.409122467041016,
+        40.0,
+        32.5,
+        32.409122467041016,
+        47.0
+      ],
+      "logical_part": "pan_bearing",
+      "title": "Pan bearing",
+      "original_group": "base",
+      "neutral_translation_mm": [
+        -0.0,
+        -0.0,
+        -145.0
+      ]
+    },
+    {
+      "name": "pan_bearing_inner",
+      "file": "meshes/pan_bearing_inner.stl",
+      "color": "#ccccd4",
+      "sha256": "5781f47a620e882dbca51662ef8be79923b37b425e2ede04054e0b11b76e08db",
+      "bounds_mm": [
+        -26.5,
+        -26.425901412963867,
+        40.0,
+        26.5,
+        26.425901412963867,
+        47.0
+      ],
+      "logical_part": "pan_bearing_inner",
+      "title": "pan bearing inner",
+      "original_group": "pan",
+      "neutral_translation_mm": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "name": "circlip_50",
+      "file": "meshes/circlip_50.stl",
+      "color": "#1a1a1c",
+      "sha256": "9b86035e26d244e1cce1a3ed2d8dee00ef9a19f38f207ea13f24f40bd94da27e",
+      "bounds_mm": [
+        -28.594200134277344,
+        -28.522064208984375,
+        34.0,
+        28.594200134277344,
+        30.399999618530273,
+        36.0
+      ],
+      "logical_part": "circlip_50",
+      "title": "circlip 50",
+      "original_group": "pan",
+      "neutral_translation_mm": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "name": "pan_clamp",
+      "file": "meshes/pan_clamp.stl",
+      "color": "#666b73",
+      "sha256": "8e73e488b07f5350eeb62862b4ff56a6279dfb6204e9927486a5605b3baf565a",
+      "bounds_mm": [
+        -37.0,
+        -43.37296676635742,
+        47.0,
+        48.98081970214844,
+        43.37296676635742,
+        50.17500305175781
+      ],
+      "logical_part": "pan_clamp",
+      "title": "Bearing clamp",
+      "original_group": "base",
+      "neutral_translation_mm": [
+        -0.0,
+        -0.0,
+        -145.0
+      ]
+    },
+    {
+      "name": "cradle_plate_l",
+      "file": "meshes/cradle_plate_l.stl",
+      "color": "#bdc2cc",
+      "sha256": "f4e91c69d68c42f6c54f3d49ae01ef6126026345a7f6e85145b7ea4e0e85ec70",
+      "bounds_mm": [
+        -58.0,
+        53.61000061035156,
+        99.9000015258789,
+        36.0,
+        56.78499984741211,
+        161.9384765625
+      ],
+      "logical_part": "cradle_plate_l",
+      "title": "cradle plate l",
+      "original_group": "tilt",
+      "neutral_translation_mm": [
+        0.0,
+        0.0,
+        140.0
+      ]
+    },
+    {
+      "name": "cradle_plate_r",
+      "file": "meshes/cradle_plate_r.stl",
+      "color": "#bdc2cc",
+      "sha256": "e8297bee654c00b7099bce62df53dcc888105972054f1f09c3ad70f863e67f32",
+      "bounds_mm": [
+        -58.0,
+        -56.78499984741211,
+        99.9000015258789,
+        36.0,
+        -53.61000061035156,
+        161.9384765625
+      ],
+      "logical_part": "cradle_plate_r",
+      "title": "cradle plate r",
+      "original_group": "tilt",
+      "neutral_translation_mm": [
+        0.0,
+        0.0,
+        140.0
+      ]
+    },
+    {
+      "name": "stop_lug",
+      "file": "meshes/stop_lug.stl",
+      "color": "#9ea3ad",
+      "sha256": "834af9b9e14db6ad5ffe37d6de987f5e3247ea745cef1828f4fe193111c6afef",
+      "bounds_mm": [
+        -11.92318344116211,
+        -59.32500076293945,
+        108.05413818359375,
+        11.92318344116211,
+        -56.78499984741211,
+        130.67147827148438
+      ],
+      "logical_part": "stop_lug",
+      "title": "stop lug",
+      "original_group": "tilt",
+      "neutral_translation_mm": [
+        0.0,
+        0.0,
+        140.0
+      ]
+    },
+    {
+      "name": "slip_ring",
+      "file": "meshes/slip_ring.stl",
+      "color": "#cca633",
+      "sha256": "11bf7be79475414346602c682deed2629d946d95d0d4b129306b79cb4034da1e",
+      "bounds_mm": [
+        -22.25,
+        -22.18778419494629,
+        9.399993896484375,
+        22.25,
+        22.18778419494629,
+        35.899993896484375
+      ],
+      "logical_part": "slip_ring",
+      "title": "slip ring",
+      "original_group": "base",
+      "neutral_translation_mm": [
+        -0.0,
+        -0.0,
+        -145.0
+      ]
+    },
+    {
+      "name": "slip_ring_rotor",
+      "file": "meshes/slip_ring_rotor.stl",
+      "color": "#cca633",
+      "sha256": "9278231204a19898ee2b61958537ea1a32613560a7666a81cd836fc424d04037",
+      "bounds_mm": [
+        -3.0,
+        -2.9916114807128906,
+        35.88999938964844,
+        3.0,
+        2.9916114807128906,
+        40.900001525878906
+      ],
+      "logical_part": "slip_ring_rotor",
+      "title": "slip ring rotor",
+      "original_group": "pan",
+      "neutral_translation_mm": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "name": "ring_coupling",
+      "file": "meshes/ring_coupling.stl",
+      "color": "#f2f2e6",
+      "sha256": "1c56b19b40c8264e3251d1130c6d832b1100623dc5fbf31b3948972075eb52f5",
+      "bounds_mm": [
+        -4.3699541091918945,
+        -4.3577351570129395,
+        36.20000076293945,
+        4.3699541091918945,
+        4.3577351570129395,
+        61.0
+      ],
+      "logical_part": "ring_coupling",
+      "title": "ring coupling",
+      "original_group": "pan",
+      "neutral_translation_mm": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "name": "ring_leads_rotor",
+      "file": "meshes/ring_leads_rotor.stl",
+      "color": "#bf2626",
+      "sha256": "69cb66d827479d8ed4992f5af4c2362901415c6ceeda31789dc7e717fe4a9147",
+      "bounds_mm": [
+        -3.75,
+        -71.80999755859375,
+        36.20000076293945,
+        3.75,
+        -9.260485649108887,
+        92.75
+      ],
+      "logical_part": "ring_leads_rotor",
+      "title": "ring leads rotor",
+      "original_group": "pan",
+      "neutral_translation_mm": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "name": "base_board",
+      "file": "meshes/base_board.stl",
+      "color": "#1a7333",
+      "sha256": "4b8fff6ca2a8e3dee495cc8bdb76b78b7728c404ae5d416e12a5bc45ad757987",
+      "bounds_mm": [
+        36.900001525878906,
+        -25.399999618530273,
+        6.0,
+        48.0,
+        25.399999618530273,
+        36.0
+      ],
+      "logical_part": "base_board",
+      "title": "base board",
+      "original_group": "base",
+      "neutral_translation_mm": [
+        -0.0,
+        -0.0,
+        -145.0
+      ]
+    },
+    {
+      "name": "base_board_screws",
+      "file": "meshes/base_board_screws.stl",
+      "color": "#404047",
+      "sha256": "ebb265c0e4dbc84bb7f93d9657f882c6725b17ab05f10db2ce58ae7c725afe86",
+      "bounds_mm": [
+        43.400001525878906,
+        -25.142311096191406,
+        6.25,
+        52.400001525878906,
+        25.142311096191406,
+        35.75
+      ],
+      "logical_part": "base_board_screws",
+      "title": "base board screws",
+      "original_group": "base",
+      "neutral_translation_mm": [
+        -0.0,
+        -0.0,
+        -145.0
+      ]
+    },
+    {
+      "name": "base_carrier_screws",
+      "file": "meshes/base_carrier_screws.stl",
+      "color": "#404047",
+      "sha256": "e39554877420f1e2102b705fded617cf92bc9ef519d85ef2a45dab8f4acd3066",
+      "bounds_mm": [
+        48.0,
+        -33.7423095703125,
+        6.25,
+        59.0,
+        33.7423095703125,
+        35.75
+      ],
+      "logical_part": "base_carrier_screws",
+      "title": "base carrier screws",
+      "original_group": "base",
+      "neutral_translation_mm": [
+        -0.0,
+        -0.0,
+        -145.0
+      ]
+    },
+    {
+      "name": "base_board_inserts",
+      "file": "meshes/base_board_inserts.stl",
+      "color": "#b88233",
+      "sha256": "d05f7f54b6b153d6de1f88106c1cf75ba9284d7f88b3e545aaa891d3dc8c9aac",
+      "bounds_mm": [
+        48.0,
+        -24.753400802612305,
+        6.6399993896484375,
+        53.7400016784668,
+        24.753400802612305,
+        35.36000061035156
+      ],
+      "logical_part": "base_board_inserts",
+      "title": "base board inserts",
+      "original_group": "base",
+      "neutral_translation_mm": [
+        -0.0,
+        -0.0,
+        -145.0
+      ]
+    },
+    {
+      "name": "base_carrier_inserts",
+      "file": "meshes/base_carrier_inserts.stl",
+      "color": "#b88233",
+      "sha256": "8ac0095e0394366789e0fb6de63245edcb9013951f7282c3f256ff978525aacd",
+      "bounds_mm": [
+        47.2599983215332,
+        -33.35340118408203,
+        6.6399993896484375,
+        53.0,
+        33.35340118408203,
+        35.36000061035156
+      ],
+      "logical_part": "base_carrier_inserts",
+      "title": "base carrier inserts",
+      "original_group": "base",
+      "neutral_translation_mm": [
+        -0.0,
+        -0.0,
+        -145.0
+      ]
+    },
+    {
+      "name": "turret_board",
+      "file": "meshes/turret_board.stl",
+      "color": "#1a7333",
+      "sha256": "7f940e6d05216891baed76704919b23da7bdbbd5c323dcbd732e80932eece323",
+      "bounds_mm": [
+        -26.0,
+        -116.11000061035156,
+        74.5,
+        26.0,
+        -76.80999755859375,
+        124.5
+      ],
+      "logical_part": "turret_board",
+      "title": "turret board",
+      "original_group": "pan",
+      "neutral_translation_mm": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "name": "index_magnet",
+      "file": "meshes/index_magnet.stl",
+      "color": "#9999a6",
+      "sha256": "0bb6dcaa0c9768c55889059d994794c308063020ed8875c974679845b2405217",
+      "bounds_mm": [
+        32.619998931884766,
+        -2.373345136642456,
+        47.0,
+        37.380001068115234,
+        2.373345136642456,
+        50.17999267578125
+      ],
+      "logical_part": "index_magnet",
+      "title": "index magnet",
+      "original_group": "base",
+      "neutral_translation_mm": [
+        -0.0,
+        -0.0,
+        -145.0
+      ]
+    },
+    {
+      "name": "hall_switch",
+      "file": "meshes/hall_switch.stl",
+      "color": "#1a1a1a",
+      "sha256": "7080d0d027e32403a036b13a2aceafb31fd228a7bf2240c1e736a771d931d95a",
+      "bounds_mm": [
+        32.95000076293945,
+        -1.5,
+        53.099998474121094,
+        37.04999923706055,
+        1.5,
+        54.70000076293945
+      ],
+      "logical_part": "hall_switch",
+      "title": "hall switch",
+      "original_group": "pan",
+      "neutral_translation_mm": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "name": "dt_receptacle",
+      "file": "meshes/dt_receptacle.stl",
+      "color": "#8c8c33",
+      "sha256": "ca61fb3f0cc6713213e2bfeb417142d4e72ec5a016b66d044729439e89da3305",
+      "bounds_mm": [
+        -27.559999465942383,
+        -97.88999938964844,
+        1.220001220703125,
+        27.559999465942383,
+        -52.0,
+        36.779998779296875
+      ],
+      "logical_part": "dt_receptacle",
+      "title": "DT12 socket",
+      "original_group": "base",
+      "neutral_translation_mm": [
+        -0.0,
+        -0.0,
+        -145.0
+      ]
+    },
+    {
+      "name": "tilt_servo",
+      "file": "meshes/tilt_servo.stl",
+      "color": "#1f1f24",
+      "sha256": "12a10874ac27721475d08ba9bc6463fd07f74d7bc506a84a2c0d35a0e45adca8",
+      "bounds_mm": [
+        -12.350000381469727,
+        65.80999755859375,
+        104.91000366210938,
+        12.350000381469727,
+        112.80999755859375,
+        150.11000061035156
+      ],
+      "logical_part": "tilt_servo",
+      "title": "Tilt servo",
+      "original_group": "pan",
+      "neutral_translation_mm": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "name": "tilt_bearing",
+      "file": "meshes/tilt_bearing.stl",
+      "color": "#bfbfc7",
+      "sha256": "9bb667ae3e0ddff782cfb196e31dc97614ac69709d1d3120882d58c4f14330a0",
+      "bounds_mm": [
+        -6.0,
+        -64.80999755859375,
+        134.01678466796875,
+        6.0,
+        -60.810001373291016,
+        145.98321533203125
+      ],
+      "logical_part": "tilt_bearing",
+      "title": "Tilt bearing",
+      "original_group": "pan",
+      "neutral_translation_mm": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "name": "tilt_bearing_inner",
+      "file": "meshes/tilt_bearing_inner.stl",
+      "color": "#ccccd4",
+      "sha256": "ec7d45a95d5961ef635009645982b33756a6e776e361e8b9c57cff95239cf159",
+      "bounds_mm": [
+        -3.5999999046325684,
+        -64.80999755859375,
+        136.41006469726562,
+        3.5999999046325684,
+        -60.810001373291016,
+        143.58993530273438
+      ],
+      "logical_part": "tilt_bearing_inner",
+      "title": "tilt bearing inner",
+      "original_group": "tilt",
+      "neutral_translation_mm": [
+        0.0,
+        0.0,
+        140.0
+      ]
+    },
+    {
+      "name": "shoulder_screw",
+      "file": "meshes/shoulder_screw.stl",
+      "color": "#1a1a1c",
+      "sha256": "c88b92fd1e77042e2fb043d828fefefa7b7550232569e73b603317012f25245c",
+      "bounds_mm": [
+        -5.0,
+        -77.80999755859375,
+        135.01397705078125,
+        5.0,
+        -50.810001373291016,
+        144.98602294921875
+      ],
+      "logical_part": "shoulder_screw",
+      "title": "shoulder screw",
+      "original_group": "tilt",
+      "neutral_translation_mm": [
+        0.0,
+        0.0,
+        140.0
+      ]
+    },
+    {
+      "name": "flywheel_motor_l",
+      "file": "meshes/flywheel_motor_l.stl",
+      "color": "#a62626",
+      "sha256": "b4c49bdf392a50917cd1a6b6fb4bd4e20735653791cdd0b01ebbffae3494ee59",
+      "bounds_mm": [
+        11.149999618530273,
+        11.998727798461914,
+        112.5,
+        38.849998474121094,
+        39.621273040771484,
+        169.5
+      ],
+      "logical_part": "flywheel_motor_l",
+      "title": "Flywheel motor L",
+      "original_group": "tilt",
+      "neutral_translation_mm": [
+        0.0,
+        0.0,
+        140.0
+      ]
+    },
+    {
+      "name": "flywheel_motor_r",
+      "file": "meshes/flywheel_motor_r.stl",
+      "color": "#a62626",
+      "sha256": "566ad3a7104612da94263b364757374e9aacc824d7b38902679537ed54e97c61",
+      "bounds_mm": [
+        11.149999618530273,
+        -39.621273040771484,
+        112.5,
+        38.849998474121094,
+        -11.998727798461914,
+        169.5
+      ],
+      "logical_part": "flywheel_motor_r",
+      "title": "Flywheel motor R",
+      "original_group": "tilt",
+      "neutral_translation_mm": [
+        0.0,
+        0.0,
+        140.0
+      ]
+    },
+    {
+      "name": "cartridge_board",
+      "file": "meshes/cartridge_board.stl",
+      "color": "#1a7333",
+      "sha256": "6fe2bde95c3c82635e12c06171d9633d13e284bb7501a61831992820c33a7122",
+      "bounds_mm": [
+        6.0,
+        -22.0,
+        188.5,
+        56.0,
+        22.0,
+        211.10000610351562
+      ],
+      "logical_part": "cartridge_board",
+      "title": "Cartridge board",
+      "original_group": "tilt",
+      "neutral_translation_mm": [
+        0.0,
+        0.0,
+        140.0
+      ]
+    },
+    {
+      "name": "esc_l",
+      "file": "meshes/esc_l.stl",
+      "color": "#1a5926",
+      "sha256": "681bb5a2a59734d4e371706aadc17ee90f8d3f066df716dfff4722f97aa91f38",
+      "bounds_mm": [
+        14.0,
+        1.5,
+        170.49000549316406,
+        40.0,
+        14.5,
+        175.5
+      ],
+      "logical_part": "esc_l",
+      "title": "ESC L",
+      "original_group": "tilt",
+      "neutral_translation_mm": [
+        0.0,
+        0.0,
+        140.0
+      ]
+    },
+    {
+      "name": "esc_r",
+      "file": "meshes/esc_r.stl",
+      "color": "#1a5926",
+      "sha256": "ca0e37fee8378729c3f85a45afc07ac678758743c2cdf25a7c70296b6291ff17",
+      "bounds_mm": [
+        14.0,
+        -14.5,
+        170.49000549316406,
+        40.0,
+        -1.5,
+        175.5
+      ],
+      "logical_part": "esc_r",
+      "title": "ESC R",
+      "original_group": "tilt",
+      "neutral_translation_mm": [
+        0.0,
+        0.0,
+        140.0
+      ]
+    },
+    {
+      "name": "feed_motor",
+      "file": "meshes/feed_motor.stl",
+      "color": "#1f1f24",
+      "sha256": "4b935314d22fad9cb08df1d88f35723c078c210fe32680491fc9eb80e5a81e2b",
+      "bounds_mm": [
+        -83.08999633789062,
+        -12.350000381469727,
+        88.75,
+        -37.88999938964844,
+        12.350000381469727,
+        135.75
+      ],
+      "logical_part": "feed_motor",
+      "title": "Feed servo (STS3215)",
+      "original_group": "tilt",
+      "neutral_translation_mm": [
+        0.0,
+        0.0,
+        140.0
+      ]
+    },
+    {
+      "name": "ct_thumbscrew",
+      "file": "meshes/ct_thumbscrew.stl",
+      "color": "#1a1a1c",
+      "sha256": "36e8045a11d9fad832e3b66d605693e413f2fdbddeb9457e3d3c9c53d3911c37",
+      "bounds_mm": [
+        35.0,
+        -51.28763198852539,
+        93.4000015258789,
+        51.0,
+        -35.33237075805664,
+        102.91000366210938
+      ],
+      "logical_part": "ct_thumbscrew",
+      "title": "ct thumbscrew",
+      "original_group": "tilt",
+      "neutral_translation_mm": [
+        0.0,
+        0.0,
+        140.0
+      ]
+    },
+    {
+      "name": "laser",
+      "file": "meshes/laser.stl",
+      "color": "#269926",
+      "sha256": "7163fe1ceaf8e98ad377c992fc6f2cd8eb7dabdccdc4e3bb628e8ac8c7494cee",
+      "bounds_mm": [
+        62.0,
+        -3.5,
+        151.00978088378906,
+        84.5,
+        3.5,
+        157.99021911621094
+      ],
+      "logical_part": "laser",
+      "title": "Aiming laser",
+      "original_group": "tilt",
+      "neutral_translation_mm": [
+        0.0,
+        0.0,
+        140.0
+      ]
+    }
+  ]
+}

@@ -1,0 +1,3093 @@
+{
+  "format": "scada-system",
+  "version": 1,
+  "system": {
+    "id": "power-substation-distribution",
+    "label": "Distribution substation",
+    "description": "An explicit upstream supply feeds the transformer and bus, then separate feeder bays/loads. Observation, reactive-support, ground-state and station auxiliary equipment are independently drawn."
+  },
+  "components": [
+    {
+      "id": "grid",
+      "type": "transformer",
+      "label": "Explicit upstream AC boundary",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/grid/active",
+        "running": "/components/grid/running",
+        "fault": "/components/grid/fault",
+        "status": "/components/grid/status",
+        "load": "/components/grid/load",
+        "damage": "/components/grid/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "P08",
+        "P09",
+        "P10"
+      ]
+    },
+    {
+      "id": "isolator",
+      "type": "disconnect-switch",
+      "label": "Incoming disconnector",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "open": false,
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/isolator/active",
+        "running": "/components/isolator/running",
+        "fault": "/components/isolator/fault",
+        "status": "/components/isolator/status",
+        "open": "/components/isolator/open",
+        "load": "/components/isolator/load",
+        "damage": "/components/isolator/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "P08",
+        "P09",
+        "P10"
+      ]
+    },
+    {
+      "id": "incoming",
+      "type": "hv-circuit-breaker",
+      "label": "Incoming circuit breaker",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "open": false,
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/incoming/active",
+        "running": "/components/incoming/running",
+        "fault": "/components/incoming/fault",
+        "status": "/components/incoming/status",
+        "open": "/components/incoming/open",
+        "load": "/components/incoming/load",
+        "damage": "/components/incoming/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "P08",
+        "P09",
+        "P10"
+      ]
+    },
+    {
+      "id": "stepdown",
+      "type": "transformer",
+      "label": "Distribution step-down transformer",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/stepdown/active",
+        "running": "/components/stepdown/running",
+        "fault": "/components/stepdown/fault",
+        "status": "/components/stepdown/status",
+        "load": "/components/stepdown/load",
+        "damage": "/components/stepdown/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "P08",
+        "P09",
+        "P10"
+      ]
+    },
+    {
+      "id": "bus",
+      "type": "busbar",
+      "label": "Distribution bus",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/bus/active",
+        "running": "/components/bus/running",
+        "fault": "/components/bus/fault",
+        "status": "/components/bus/status",
+        "load": "/components/bus/load",
+        "damage": "/components/bus/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "P08",
+        "P09",
+        "P10"
+      ]
+    },
+    {
+      "id": "feederA",
+      "type": "switchgear-panel",
+      "label": "Feeder A switchgear",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "open": false,
+        "load": 60,
+        "connected": true,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/feederA/active",
+        "running": "/components/feederA/running",
+        "fault": "/components/feederA/fault",
+        "status": "/components/feederA/status",
+        "open": "/components/feederA/open",
+        "load": "/components/feederA/load",
+        "connected": "/components/feederA/connected",
+        "damage": "/components/feederA/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "P08",
+        "P09",
+        "P10"
+      ]
+    },
+    {
+      "id": "feederB",
+      "type": "breaker",
+      "label": "Feeder B circuit breaker",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "open": true,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/feederB/active",
+        "running": "/components/feederB/running",
+        "fault": "/components/feederB/fault",
+        "status": "/components/feederB/status",
+        "open": "/components/feederB/open",
+        "damage": "/components/feederB/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "P08",
+        "P09",
+        "P10"
+      ]
+    },
+    {
+      "id": "loadA",
+      "type": "motor",
+      "label": "Explicit feeder A demand",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/loadA/active",
+        "running": "/components/loadA/running",
+        "fault": "/components/loadA/fault",
+        "status": "/components/loadA/status",
+        "load": "/components/loadA/load",
+        "speed": "/components/loadA/speed",
+        "damage": "/components/loadA/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "P08",
+        "P09",
+        "P10"
+      ]
+    },
+    {
+      "id": "loadB",
+      "type": "motor",
+      "label": "Explicit feeder B demand",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/loadB/active",
+        "running": "/components/loadB/running",
+        "fault": "/components/loadB/fault",
+        "status": "/components/loadB/status",
+        "load": "/components/loadB/load",
+        "speed": "/components/loadB/speed",
+        "damage": "/components/loadB/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "P08",
+        "P09",
+        "P10"
+      ]
+    },
+    {
+      "id": "ct",
+      "type": "current-transformer",
+      "label": "Feeder current observation",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "value": 42,
+        "connected": true,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/ct/active",
+        "running": "/components/ct/running",
+        "fault": "/components/ct/fault",
+        "status": "/components/ct/status",
+        "value": "/components/ct/value",
+        "connected": "/components/ct/connected",
+        "damage": "/components/ct/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "P08",
+        "P09",
+        "P10"
+      ]
+    },
+    {
+      "id": "vt",
+      "type": "voltage-transformer",
+      "label": "Bus voltage-index observation",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "value": 42,
+        "connected": true,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/vt/active",
+        "running": "/components/vt/running",
+        "fault": "/components/vt/fault",
+        "status": "/components/vt/status",
+        "value": "/components/vt/value",
+        "connected": "/components/vt/connected",
+        "damage": "/components/vt/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "P08",
+        "P09",
+        "P10"
+      ]
+    },
+    {
+      "id": "relay",
+      "type": "protection-relay",
+      "label": "Demonstration relay \u00b7 no real settings",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "value": 42,
+        "connected": true,
+        "tripped": false,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/relay/active",
+        "running": "/components/relay/running",
+        "fault": "/components/relay/fault",
+        "status": "/components/relay/status",
+        "value": "/components/relay/value",
+        "connected": "/components/relay/connected",
+        "tripped": "/components/relay/tripped",
+        "damage": "/components/relay/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "P08",
+        "P09",
+        "P10"
+      ]
+    },
+    {
+      "id": "arrester",
+      "type": "surge-arrester",
+      "label": "Surge-arrester branch",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "stress": 5,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/arrester/active",
+        "running": "/components/arrester/running",
+        "fault": "/components/arrester/fault",
+        "status": "/components/arrester/status",
+        "stress": "/components/arrester/stress",
+        "damage": "/components/arrester/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "P08",
+        "P09",
+        "P10"
+      ]
+    },
+    {
+      "id": "capacitors",
+      "type": "capacitor-bank",
+      "label": "Reactive-support display",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "open": false,
+        "load": 60,
+        "steps": 2,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/capacitors/active",
+        "running": "/components/capacitors/running",
+        "fault": "/components/capacitors/fault",
+        "status": "/components/capacitors/status",
+        "open": "/components/capacitors/open",
+        "load": "/components/capacitors/load",
+        "steps": "/components/capacitors/steps",
+        "damage": "/components/capacitors/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "P08",
+        "P09",
+        "P10"
+      ]
+    },
+    {
+      "id": "ground",
+      "type": "earthing-switch",
+      "label": "Separate earth-switch state",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "open": true,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/ground/active",
+        "running": "/components/ground/running",
+        "fault": "/components/ground/fault",
+        "status": "/components/ground/status",
+        "open": "/components/ground/open",
+        "damage": "/components/ground/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "P08",
+        "P09",
+        "P10"
+      ]
+    },
+    {
+      "id": "station",
+      "type": "transformer",
+      "label": "Explicit station-service boundary",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/station/active",
+        "running": "/components/station/running",
+        "fault": "/components/station/fault",
+        "status": "/components/station/status",
+        "load": "/components/station/load",
+        "damage": "/components/station/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "P08",
+        "P09",
+        "P10"
+      ]
+    },
+    {
+      "id": "plc",
+      "type": "plc-rack",
+      "label": "Shared plant controller",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "connected": true,
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/plc/active",
+        "running": "/components/plc/running",
+        "fault": "/components/plc/fault",
+        "status": "/components/plc/status",
+        "connected": "/components/plc/connected",
+        "load": "/components/plc/load",
+        "damage": "/components/plc/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "P08",
+        "P09",
+        "P10"
+      ]
+    },
+    {
+      "id": "dcService",
+      "type": "power-rectifier",
+      "label": "Explicit station AC/DC service",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "direction": "forward",
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/dcService/active",
+        "running": "/components/dcService/running",
+        "fault": "/components/dcService/fault",
+        "status": "/components/dcService/status",
+        "load": "/components/dcService/load",
+        "direction": "/components/dcService/direction",
+        "damage": "/components/dcService/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "P08",
+        "P09",
+        "P10"
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "grid-secondary-to-isolator-line",
+      "from": {
+        "component": "grid",
+        "port": "secondary"
+      },
+      "to": {
+        "component": "isolator",
+        "port": "line"
+      },
+      "medium": "electricity",
+      "label": "AC feeder path",
+      "flowBinding": "/flows/grid-secondary-to-isolator-line"
+    },
+    {
+      "id": "isolator-load-to-incoming-line",
+      "from": {
+        "component": "isolator",
+        "port": "load"
+      },
+      "to": {
+        "component": "incoming",
+        "port": "line"
+      },
+      "medium": "electricity",
+      "label": "AC feeder path",
+      "flowBinding": "/flows/isolator-load-to-incoming-line"
+    },
+    {
+      "id": "incoming-load-to-stepdown-primary",
+      "from": {
+        "component": "incoming",
+        "port": "load"
+      },
+      "to": {
+        "component": "stepdown",
+        "port": "primary"
+      },
+      "medium": "electricity",
+      "label": "AC feeder path",
+      "flowBinding": "/flows/incoming-load-to-stepdown-primary"
+    },
+    {
+      "id": "stepdown-secondary-to-bus-supply",
+      "from": {
+        "component": "stepdown",
+        "port": "secondary"
+      },
+      "to": {
+        "component": "bus",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "label": "AC feeder path",
+      "flowBinding": "/flows/stepdown-secondary-to-bus-supply"
+    },
+    {
+      "id": "bus-branch-a-to-feederA-line",
+      "from": {
+        "component": "bus",
+        "port": "branch-a"
+      },
+      "to": {
+        "component": "feederA",
+        "port": "line"
+      },
+      "medium": "electricity",
+      "label": "AC feeder path",
+      "flowBinding": "/flows/bus-branch-a-to-feederA-line"
+    },
+    {
+      "id": "feederA-load-to-loadA-supply",
+      "from": {
+        "component": "feederA",
+        "port": "load"
+      },
+      "to": {
+        "component": "loadA",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "label": "AC feeder path",
+      "flowBinding": "/flows/feederA-load-to-loadA-supply"
+    },
+    {
+      "id": "bus-branch-b-to-feederB-supply",
+      "from": {
+        "component": "bus",
+        "port": "branch-b"
+      },
+      "to": {
+        "component": "feederB",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "label": "AC feeder path",
+      "flowBinding": "/flows/bus-branch-b-to-feederB-supply"
+    },
+    {
+      "id": "feederB-load-to-loadB-supply",
+      "from": {
+        "component": "feederB",
+        "port": "load"
+      },
+      "to": {
+        "component": "loadB",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "label": "AC feeder path",
+      "flowBinding": "/flows/feederB-load-to-loadB-supply"
+    },
+    {
+      "id": "incoming-monitor-to-ct-process",
+      "from": {
+        "component": "incoming",
+        "port": "monitor"
+      },
+      "to": {
+        "component": "ct",
+        "port": "process"
+      },
+      "medium": "measurement",
+      "label": "Non-consuming current tap",
+      "flowBinding": "/flows/incoming-monitor-to-ct-process"
+    },
+    {
+      "id": "bus-branch-c-to-vt-process",
+      "from": {
+        "component": "bus",
+        "port": "branch-c"
+      },
+      "to": {
+        "component": "vt",
+        "port": "process"
+      },
+      "medium": "measurement",
+      "label": "Non-consuming bus tap",
+      "flowBinding": "/flows/bus-branch-c-to-vt-process"
+    },
+    {
+      "id": "ct-signal-to-relay-measurement",
+      "from": {
+        "component": "ct",
+        "port": "signal"
+      },
+      "to": {
+        "component": "relay",
+        "port": "measurement"
+      },
+      "medium": "data",
+      "label": "Sampled current signal",
+      "flowBinding": "/flows/ct-signal-to-relay-measurement"
+    },
+    {
+      "id": "vt-signal-to-relay-measurement",
+      "from": {
+        "component": "vt",
+        "port": "signal"
+      },
+      "to": {
+        "component": "relay",
+        "port": "measurement"
+      },
+      "medium": "data",
+      "label": "Sampled voltage index",
+      "flowBinding": "/flows/vt-signal-to-relay-measurement"
+    },
+    {
+      "id": "relay-trip-to-incoming-control",
+      "from": {
+        "component": "relay",
+        "port": "trip"
+      },
+      "to": {
+        "component": "incoming",
+        "port": "control"
+      },
+      "medium": "data",
+      "label": "Explicit demonstration command",
+      "flowBinding": "/flows/relay-trip-to-incoming-control"
+    },
+    {
+      "id": "incoming-load-to-arrester-line",
+      "from": {
+        "component": "incoming",
+        "port": "load"
+      },
+      "to": {
+        "component": "arrester",
+        "port": "line"
+      },
+      "medium": "electricity",
+      "label": "Protected parallel branch",
+      "flowBinding": "/flows/incoming-load-to-arrester-line"
+    },
+    {
+      "id": "bus-branch-c-to-capacitors-bus",
+      "from": {
+        "component": "bus",
+        "port": "branch-c"
+      },
+      "to": {
+        "component": "capacitors",
+        "port": "bus"
+      },
+      "medium": "electricity",
+      "label": "Parallel reactive branch",
+      "flowBinding": "/flows/bus-branch-c-to-capacitors-bus"
+    },
+    {
+      "id": "bus-branch-c-to-ground-circuit",
+      "from": {
+        "component": "bus",
+        "port": "branch-c"
+      },
+      "to": {
+        "component": "ground",
+        "port": "circuit"
+      },
+      "medium": "electricity",
+      "label": "Earth-switch connection",
+      "flowBinding": "/flows/bus-branch-c-to-ground-circuit"
+    },
+    {
+      "id": "station-secondary-to-dcService-ac",
+      "from": {
+        "component": "station",
+        "port": "secondary"
+      },
+      "to": {
+        "component": "dcService",
+        "port": "ac"
+      },
+      "medium": "electricity",
+      "label": "Station AC input",
+      "flowBinding": "/flows/station-secondary-to-dcService-ac"
+    },
+    {
+      "id": "station-secondary-to-plc-power",
+      "from": {
+        "component": "station",
+        "port": "secondary"
+      },
+      "to": {
+        "component": "plc",
+        "port": "power"
+      },
+      "medium": "electricity",
+      "label": "Station control power",
+      "flowBinding": "/flows/station-secondary-to-plc-power"
+    },
+    {
+      "id": "dcService-dc-to-ct-power",
+      "from": {
+        "component": "dcService",
+        "port": "dc"
+      },
+      "to": {
+        "component": "ct",
+        "port": "power"
+      },
+      "medium": "electricity",
+      "label": "Station auxiliary DC",
+      "flowBinding": "/flows/dcService-dc-to-ct-power"
+    },
+    {
+      "id": "dcService-dc-to-feederA-supply",
+      "from": {
+        "component": "dcService",
+        "port": "dc"
+      },
+      "to": {
+        "component": "feederA",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "label": "Station auxiliary DC",
+      "flowBinding": "/flows/dcService-dc-to-feederA-supply"
+    },
+    {
+      "id": "dcService-dc-to-ground-supply",
+      "from": {
+        "component": "dcService",
+        "port": "dc"
+      },
+      "to": {
+        "component": "ground",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "label": "Station auxiliary DC",
+      "flowBinding": "/flows/dcService-dc-to-ground-supply"
+    },
+    {
+      "id": "dcService-dc-to-incoming-supply",
+      "from": {
+        "component": "dcService",
+        "port": "dc"
+      },
+      "to": {
+        "component": "incoming",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "label": "Station auxiliary DC",
+      "flowBinding": "/flows/dcService-dc-to-incoming-supply"
+    },
+    {
+      "id": "dcService-dc-to-isolator-supply",
+      "from": {
+        "component": "dcService",
+        "port": "dc"
+      },
+      "to": {
+        "component": "isolator",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "label": "Station auxiliary DC",
+      "flowBinding": "/flows/dcService-dc-to-isolator-supply"
+    },
+    {
+      "id": "dcService-dc-to-relay-supply",
+      "from": {
+        "component": "dcService",
+        "port": "dc"
+      },
+      "to": {
+        "component": "relay",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "label": "Station auxiliary DC",
+      "flowBinding": "/flows/dcService-dc-to-relay-supply"
+    },
+    {
+      "id": "dcService-dc-to-vt-power",
+      "from": {
+        "component": "dcService",
+        "port": "dc"
+      },
+      "to": {
+        "component": "vt",
+        "port": "power"
+      },
+      "medium": "electricity",
+      "label": "Station auxiliary DC",
+      "flowBinding": "/flows/dcService-dc-to-vt-power"
+    },
+    {
+      "id": "plc-io-to-relay-network",
+      "from": {
+        "component": "plc",
+        "port": "io"
+      },
+      "to": {
+        "component": "relay",
+        "port": "network"
+      },
+      "medium": "data",
+      "label": "data",
+      "flowBinding": "/flows/plc-io-to-relay-network"
+    }
+  ],
+  "views": [
+    {
+      "id": "incoming",
+      "label": "Incoming supply and step-down",
+      "canvas": {
+        "width": 980,
+        "height": 660
+      },
+      "placements": [
+        {
+          "component": "grid",
+          "x": 60,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "isolator",
+          "x": 360,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "incoming",
+          "x": 660,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "stepdown",
+          "x": 660,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "arrester",
+          "x": 360,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        }
+      ],
+      "routes": [
+        {
+          "connection": "grid-secondary-to-isolator-line",
+          "points": [
+            {
+              "x": 260,
+              "y": 155
+            },
+            {
+              "x": 360,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "isolator-load-to-incoming-line",
+          "points": [
+            {
+              "x": 560,
+              "y": 155
+            },
+            {
+              "x": 660,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "incoming-load-to-stepdown-primary",
+          "points": [
+            {
+              "x": 760,
+              "y": 250
+            },
+            {
+              "x": 760,
+              "y": 340
+            }
+          ]
+        },
+        {
+          "connection": "incoming-load-to-arrester-line",
+          "points": [
+            {
+              "x": 660,
+              "y": 155
+            },
+            {
+              "x": 636,
+              "y": 155
+            },
+            {
+              "x": 636,
+              "y": 316
+            },
+            {
+              "x": 584,
+              "y": 316
+            },
+            {
+              "x": 584,
+              "y": 435
+            },
+            {
+              "x": 560,
+              "y": 435
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "feeders",
+      "label": "Two independent feeder paths",
+      "canvas": {
+        "width": 980,
+        "height": 660
+      },
+      "placements": [
+        {
+          "component": "stepdown",
+          "x": 60,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "bus",
+          "x": 360,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "feederA",
+          "x": 660,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "loadA",
+          "x": 660,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "feederB",
+          "x": 360,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "loadB",
+          "x": 60,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        }
+      ],
+      "routes": [
+        {
+          "connection": "stepdown-secondary-to-bus-supply",
+          "points": [
+            {
+              "x": 260,
+              "y": 155
+            },
+            {
+              "x": 360,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "bus-branch-a-to-feederA-line",
+          "points": [
+            {
+              "x": 560,
+              "y": 155
+            },
+            {
+              "x": 660,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "feederA-load-to-loadA-supply",
+          "points": [
+            {
+              "x": 760,
+              "y": 250
+            },
+            {
+              "x": 760,
+              "y": 340
+            }
+          ]
+        },
+        {
+          "connection": "bus-branch-b-to-feederB-supply",
+          "points": [
+            {
+              "x": 460,
+              "y": 250
+            },
+            {
+              "x": 460,
+              "y": 340
+            }
+          ]
+        },
+        {
+          "connection": "feederB-load-to-loadB-supply",
+          "points": [
+            {
+              "x": 360,
+              "y": 435
+            },
+            {
+              "x": 260,
+              "y": 435
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "observation",
+      "label": "Non-consuming measurement and control",
+      "canvas": {
+        "width": 980,
+        "height": 940
+      },
+      "placements": [
+        {
+          "component": "incoming",
+          "x": 60,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "bus",
+          "x": 360,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "ct",
+          "x": 660,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "vt",
+          "x": 660,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "relay",
+          "x": 360,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "capacitors",
+          "x": 60,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "ground",
+          "x": 60,
+          "y": 620,
+          "width": 200,
+          "height": 190
+        }
+      ],
+      "routes": [
+        {
+          "connection": "incoming-monitor-to-ct-process",
+          "points": [
+            {
+              "x": 260,
+              "y": 155
+            },
+            {
+              "x": 336,
+              "y": 155
+            },
+            {
+              "x": 336,
+              "y": 36
+            },
+            {
+              "x": 636,
+              "y": 36
+            },
+            {
+              "x": 636,
+              "y": 155
+            },
+            {
+              "x": 660,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "bus-branch-c-to-vt-process",
+          "points": [
+            {
+              "x": 560,
+              "y": 155
+            },
+            {
+              "x": 584,
+              "y": 155
+            },
+            {
+              "x": 584,
+              "y": 316
+            },
+            {
+              "x": 636,
+              "y": 316
+            },
+            {
+              "x": 636,
+              "y": 435
+            },
+            {
+              "x": 660,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "ct-signal-to-relay-measurement",
+          "points": [
+            {
+              "x": 660,
+              "y": 155
+            },
+            {
+              "x": 636,
+              "y": 155
+            },
+            {
+              "x": 636,
+              "y": 316
+            },
+            {
+              "x": 584,
+              "y": 316
+            },
+            {
+              "x": 584,
+              "y": 435
+            },
+            {
+              "x": 560,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "vt-signal-to-relay-measurement",
+          "points": [
+            {
+              "x": 660,
+              "y": 435
+            },
+            {
+              "x": 560,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "relay-trip-to-incoming-control",
+          "points": [
+            {
+              "x": 360,
+              "y": 435
+            },
+            {
+              "x": 336,
+              "y": 435
+            },
+            {
+              "x": 336,
+              "y": 274
+            },
+            {
+              "x": 284,
+              "y": 274
+            },
+            {
+              "x": 284,
+              "y": 155
+            },
+            {
+              "x": 260,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "bus-branch-c-to-capacitors-bus",
+          "points": [
+            {
+              "x": 360,
+              "y": 155
+            },
+            {
+              "x": 336,
+              "y": 155
+            },
+            {
+              "x": 336,
+              "y": 316
+            },
+            {
+              "x": 284,
+              "y": 316
+            },
+            {
+              "x": 284,
+              "y": 435
+            },
+            {
+              "x": 260,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "bus-branch-c-to-ground-circuit",
+          "points": [
+            {
+              "x": 460,
+              "y": 250
+            },
+            {
+              "x": 460,
+              "y": 316
+            },
+            {
+              "x": 336,
+              "y": 316
+            },
+            {
+              "x": 336,
+              "y": 596
+            },
+            {
+              "x": 160,
+              "y": 596
+            },
+            {
+              "x": 160,
+              "y": 620
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "auxiliary",
+      "label": "Station service and shared control",
+      "canvas": {
+        "width": 980,
+        "height": 660
+      },
+      "placements": [
+        {
+          "component": "station",
+          "x": 60,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "plc",
+          "x": 360,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "relay",
+          "x": 660,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "ct",
+          "x": 660,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "vt",
+          "x": 360,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "dcService",
+          "x": 60,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        }
+      ],
+      "routes": [
+        {
+          "connection": "ct-signal-to-relay-measurement",
+          "points": [
+            {
+              "x": 760,
+              "y": 340
+            },
+            {
+              "x": 760,
+              "y": 250
+            }
+          ]
+        },
+        {
+          "connection": "vt-signal-to-relay-measurement",
+          "points": [
+            {
+              "x": 560,
+              "y": 435
+            },
+            {
+              "x": 584,
+              "y": 435
+            },
+            {
+              "x": 584,
+              "y": 274
+            },
+            {
+              "x": 636,
+              "y": 274
+            },
+            {
+              "x": 636,
+              "y": 155
+            },
+            {
+              "x": 660,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "station-secondary-to-dcService-ac",
+          "points": [
+            {
+              "x": 160,
+              "y": 250
+            },
+            {
+              "x": 160,
+              "y": 340
+            }
+          ]
+        },
+        {
+          "connection": "station-secondary-to-plc-power",
+          "points": [
+            {
+              "x": 260,
+              "y": 155
+            },
+            {
+              "x": 360,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "dcService-dc-to-ct-power",
+          "points": [
+            {
+              "x": 260,
+              "y": 435
+            },
+            {
+              "x": 336,
+              "y": 435
+            },
+            {
+              "x": 336,
+              "y": 316
+            },
+            {
+              "x": 636,
+              "y": 316
+            },
+            {
+              "x": 636,
+              "y": 435
+            },
+            {
+              "x": 660,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "dcService-dc-to-relay-supply",
+          "points": [
+            {
+              "x": 260,
+              "y": 435
+            },
+            {
+              "x": 284,
+              "y": 435
+            },
+            {
+              "x": 284,
+              "y": 274
+            },
+            {
+              "x": 636,
+              "y": 274
+            },
+            {
+              "x": 636,
+              "y": 155
+            },
+            {
+              "x": 660,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "dcService-dc-to-vt-power",
+          "points": [
+            {
+              "x": 260,
+              "y": 435
+            },
+            {
+              "x": 360,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "plc-io-to-relay-network",
+          "points": [
+            {
+              "x": 560,
+              "y": 155
+            },
+            {
+              "x": 660,
+              "y": 155
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "commands": [
+    {
+      "id": "grid-enabled",
+      "label": "Equipment enabled",
+      "component": "grid",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "grid"
+      }
+    },
+    {
+      "id": "grid-load",
+      "label": "Requested output / load (%)",
+      "component": "grid",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "grid"
+      }
+    },
+    {
+      "id": "grid-fault",
+      "label": "Inject fictional fault",
+      "component": "grid",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "grid",
+        "value": true
+      }
+    },
+    {
+      "id": "grid-repair",
+      "label": "Repair damage",
+      "component": "grid",
+      "action": "repair",
+      "arguments": {
+        "equipment": "grid"
+      }
+    },
+    {
+      "id": "isolator-enabled",
+      "label": "Equipment enabled",
+      "component": "isolator",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "isolator"
+      }
+    },
+    {
+      "id": "isolator-load",
+      "label": "Requested output / load (%)",
+      "component": "isolator",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "isolator"
+      }
+    },
+    {
+      "id": "isolator-fault",
+      "label": "Inject fictional fault",
+      "component": "isolator",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "isolator",
+        "value": true
+      }
+    },
+    {
+      "id": "isolator-repair",
+      "label": "Repair damage",
+      "component": "isolator",
+      "action": "repair",
+      "arguments": {
+        "equipment": "isolator"
+      }
+    },
+    {
+      "id": "isolator-open",
+      "label": "Contacts open / isolated",
+      "component": "isolator",
+      "action": "setOpen",
+      "arguments": {
+        "equipment": "isolator"
+      }
+    },
+    {
+      "id": "incoming-enabled",
+      "label": "Equipment enabled",
+      "component": "incoming",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "incoming"
+      }
+    },
+    {
+      "id": "incoming-load",
+      "label": "Requested output / load (%)",
+      "component": "incoming",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "incoming"
+      }
+    },
+    {
+      "id": "incoming-fault",
+      "label": "Inject fictional fault",
+      "component": "incoming",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "incoming",
+        "value": true
+      }
+    },
+    {
+      "id": "incoming-repair",
+      "label": "Repair damage",
+      "component": "incoming",
+      "action": "repair",
+      "arguments": {
+        "equipment": "incoming"
+      }
+    },
+    {
+      "id": "incoming-open",
+      "label": "Contacts open / isolated",
+      "component": "incoming",
+      "action": "setOpen",
+      "arguments": {
+        "equipment": "incoming"
+      }
+    },
+    {
+      "id": "stepdown-enabled",
+      "label": "Equipment enabled",
+      "component": "stepdown",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "stepdown"
+      }
+    },
+    {
+      "id": "stepdown-load",
+      "label": "Requested output / load (%)",
+      "component": "stepdown",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "stepdown"
+      }
+    },
+    {
+      "id": "stepdown-fault",
+      "label": "Inject fictional fault",
+      "component": "stepdown",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "stepdown",
+        "value": true
+      }
+    },
+    {
+      "id": "stepdown-repair",
+      "label": "Repair damage",
+      "component": "stepdown",
+      "action": "repair",
+      "arguments": {
+        "equipment": "stepdown"
+      }
+    },
+    {
+      "id": "bus-enabled",
+      "label": "Equipment enabled",
+      "component": "bus",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "bus"
+      }
+    },
+    {
+      "id": "bus-load",
+      "label": "Requested output / load (%)",
+      "component": "bus",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "bus"
+      }
+    },
+    {
+      "id": "bus-fault",
+      "label": "Inject fictional fault",
+      "component": "bus",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "bus",
+        "value": true
+      }
+    },
+    {
+      "id": "bus-repair",
+      "label": "Repair damage",
+      "component": "bus",
+      "action": "repair",
+      "arguments": {
+        "equipment": "bus"
+      }
+    },
+    {
+      "id": "feederA-enabled",
+      "label": "Equipment enabled",
+      "component": "feederA",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "feederA"
+      }
+    },
+    {
+      "id": "feederA-load",
+      "label": "Requested output / load (%)",
+      "component": "feederA",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "feederA"
+      }
+    },
+    {
+      "id": "feederA-fault",
+      "label": "Inject fictional fault",
+      "component": "feederA",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "feederA",
+        "value": true
+      }
+    },
+    {
+      "id": "feederA-repair",
+      "label": "Repair damage",
+      "component": "feederA",
+      "action": "repair",
+      "arguments": {
+        "equipment": "feederA"
+      }
+    },
+    {
+      "id": "feederA-open",
+      "label": "Contacts open / isolated",
+      "component": "feederA",
+      "action": "setOpen",
+      "arguments": {
+        "equipment": "feederA"
+      }
+    },
+    {
+      "id": "feederB-enabled",
+      "label": "Equipment enabled",
+      "component": "feederB",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "feederB"
+      }
+    },
+    {
+      "id": "feederB-load",
+      "label": "Requested output / load (%)",
+      "component": "feederB",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "feederB"
+      }
+    },
+    {
+      "id": "feederB-fault",
+      "label": "Inject fictional fault",
+      "component": "feederB",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "feederB",
+        "value": true
+      }
+    },
+    {
+      "id": "feederB-repair",
+      "label": "Repair damage",
+      "component": "feederB",
+      "action": "repair",
+      "arguments": {
+        "equipment": "feederB"
+      }
+    },
+    {
+      "id": "feederB-open",
+      "label": "Contacts open / isolated",
+      "component": "feederB",
+      "action": "setOpen",
+      "arguments": {
+        "equipment": "feederB"
+      }
+    },
+    {
+      "id": "loadA-enabled",
+      "label": "Equipment enabled",
+      "component": "loadA",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "loadA"
+      }
+    },
+    {
+      "id": "loadA-load",
+      "label": "Requested output / load (%)",
+      "component": "loadA",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "loadA"
+      }
+    },
+    {
+      "id": "loadA-fault",
+      "label": "Inject fictional fault",
+      "component": "loadA",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "loadA",
+        "value": true
+      }
+    },
+    {
+      "id": "loadA-repair",
+      "label": "Repair damage",
+      "component": "loadA",
+      "action": "repair",
+      "arguments": {
+        "equipment": "loadA"
+      }
+    },
+    {
+      "id": "loadB-enabled",
+      "label": "Equipment enabled",
+      "component": "loadB",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "loadB"
+      }
+    },
+    {
+      "id": "loadB-load",
+      "label": "Requested output / load (%)",
+      "component": "loadB",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "loadB"
+      }
+    },
+    {
+      "id": "loadB-fault",
+      "label": "Inject fictional fault",
+      "component": "loadB",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "loadB",
+        "value": true
+      }
+    },
+    {
+      "id": "loadB-repair",
+      "label": "Repair damage",
+      "component": "loadB",
+      "action": "repair",
+      "arguments": {
+        "equipment": "loadB"
+      }
+    },
+    {
+      "id": "ct-enabled",
+      "label": "Equipment enabled",
+      "component": "ct",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "ct"
+      }
+    },
+    {
+      "id": "ct-load",
+      "label": "Requested output / load (%)",
+      "component": "ct",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "ct"
+      }
+    },
+    {
+      "id": "ct-fault",
+      "label": "Inject fictional fault",
+      "component": "ct",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "ct",
+        "value": true
+      }
+    },
+    {
+      "id": "ct-repair",
+      "label": "Repair damage",
+      "component": "ct",
+      "action": "repair",
+      "arguments": {
+        "equipment": "ct"
+      }
+    },
+    {
+      "id": "vt-enabled",
+      "label": "Equipment enabled",
+      "component": "vt",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "vt"
+      }
+    },
+    {
+      "id": "vt-load",
+      "label": "Requested output / load (%)",
+      "component": "vt",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "vt"
+      }
+    },
+    {
+      "id": "vt-fault",
+      "label": "Inject fictional fault",
+      "component": "vt",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "vt",
+        "value": true
+      }
+    },
+    {
+      "id": "vt-repair",
+      "label": "Repair damage",
+      "component": "vt",
+      "action": "repair",
+      "arguments": {
+        "equipment": "vt"
+      }
+    },
+    {
+      "id": "relay-enabled",
+      "label": "Equipment enabled",
+      "component": "relay",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "relay"
+      }
+    },
+    {
+      "id": "relay-load",
+      "label": "Requested output / load (%)",
+      "component": "relay",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "relay"
+      }
+    },
+    {
+      "id": "relay-fault",
+      "label": "Inject fictional fault",
+      "component": "relay",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "relay",
+        "value": true
+      }
+    },
+    {
+      "id": "relay-repair",
+      "label": "Repair damage",
+      "component": "relay",
+      "action": "repair",
+      "arguments": {
+        "equipment": "relay"
+      }
+    },
+    {
+      "id": "arrester-enabled",
+      "label": "Equipment enabled",
+      "component": "arrester",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "arrester"
+      }
+    },
+    {
+      "id": "arrester-load",
+      "label": "Requested output / load (%)",
+      "component": "arrester",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "arrester"
+      }
+    },
+    {
+      "id": "arrester-fault",
+      "label": "Inject fictional fault",
+      "component": "arrester",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "arrester",
+        "value": true
+      }
+    },
+    {
+      "id": "arrester-repair",
+      "label": "Repair damage",
+      "component": "arrester",
+      "action": "repair",
+      "arguments": {
+        "equipment": "arrester"
+      }
+    },
+    {
+      "id": "capacitors-enabled",
+      "label": "Equipment enabled",
+      "component": "capacitors",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "capacitors"
+      }
+    },
+    {
+      "id": "capacitors-load",
+      "label": "Requested output / load (%)",
+      "component": "capacitors",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "capacitors"
+      }
+    },
+    {
+      "id": "capacitors-fault",
+      "label": "Inject fictional fault",
+      "component": "capacitors",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "capacitors",
+        "value": true
+      }
+    },
+    {
+      "id": "capacitors-repair",
+      "label": "Repair damage",
+      "component": "capacitors",
+      "action": "repair",
+      "arguments": {
+        "equipment": "capacitors"
+      }
+    },
+    {
+      "id": "capacitors-open",
+      "label": "Flow path open",
+      "component": "capacitors",
+      "action": "setOpen",
+      "arguments": {
+        "equipment": "capacitors"
+      }
+    },
+    {
+      "id": "ground-enabled",
+      "label": "Equipment enabled",
+      "component": "ground",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "ground"
+      }
+    },
+    {
+      "id": "ground-load",
+      "label": "Requested output / load (%)",
+      "component": "ground",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "ground"
+      }
+    },
+    {
+      "id": "ground-fault",
+      "label": "Inject fictional fault",
+      "component": "ground",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "ground",
+        "value": true
+      }
+    },
+    {
+      "id": "ground-repair",
+      "label": "Repair damage",
+      "component": "ground",
+      "action": "repair",
+      "arguments": {
+        "equipment": "ground"
+      }
+    },
+    {
+      "id": "ground-open",
+      "label": "Contacts open / isolated",
+      "component": "ground",
+      "action": "setOpen",
+      "arguments": {
+        "equipment": "ground"
+      }
+    },
+    {
+      "id": "station-enabled",
+      "label": "Equipment enabled",
+      "component": "station",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "station"
+      }
+    },
+    {
+      "id": "station-load",
+      "label": "Requested output / load (%)",
+      "component": "station",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "station"
+      }
+    },
+    {
+      "id": "station-fault",
+      "label": "Inject fictional fault",
+      "component": "station",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "station",
+        "value": true
+      }
+    },
+    {
+      "id": "station-repair",
+      "label": "Repair damage",
+      "component": "station",
+      "action": "repair",
+      "arguments": {
+        "equipment": "station"
+      }
+    },
+    {
+      "id": "plc-enabled",
+      "label": "Equipment enabled",
+      "component": "plc",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "plc"
+      }
+    },
+    {
+      "id": "plc-load",
+      "label": "Requested output / load (%)",
+      "component": "plc",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "plc"
+      }
+    },
+    {
+      "id": "plc-fault",
+      "label": "Inject fictional fault",
+      "component": "plc",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "plc",
+        "value": true
+      }
+    },
+    {
+      "id": "plc-repair",
+      "label": "Repair damage",
+      "component": "plc",
+      "action": "repair",
+      "arguments": {
+        "equipment": "plc"
+      }
+    },
+    {
+      "id": "dcService-enabled",
+      "label": "Equipment enabled",
+      "component": "dcService",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "dcService"
+      }
+    },
+    {
+      "id": "dcService-load",
+      "label": "Requested output / load (%)",
+      "component": "dcService",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "dcService"
+      }
+    },
+    {
+      "id": "dcService-fault",
+      "label": "Inject fictional fault",
+      "component": "dcService",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "dcService",
+        "value": true
+      }
+    },
+    {
+      "id": "dcService-repair",
+      "label": "Repair damage",
+      "component": "dcService",
+      "action": "repair",
+      "arguments": {
+        "equipment": "dcService"
+      }
+    },
+    {
+      "id": "dcService-mode-forward",
+      "label": "Forward conversion",
+      "component": "dcService",
+      "action": "setMode",
+      "arguments": {
+        "equipment": "dcService",
+        "value": "forward"
+      }
+    },
+    {
+      "id": "dcService-mode-idle",
+      "label": "Idle conversion",
+      "component": "dcService",
+      "action": "setMode",
+      "arguments": {
+        "equipment": "dcService",
+        "value": "idle"
+      }
+    },
+    {
+      "id": "plant-setRunning",
+      "label": "Run shared plant",
+      "action": "setRunning",
+      "arguments": {}
+    },
+    {
+      "id": "plant-step",
+      "label": "Advance one toy minute",
+      "action": "step",
+      "arguments": {
+        "value": 1
+      }
+    },
+    {
+      "id": "plant-reset",
+      "label": "Reset dynamics \u00b7 retain edited parameters",
+      "action": "reset",
+      "arguments": {}
+    }
+  ],
+  "controls": [
+    {
+      "id": "grid-enabled-control",
+      "label": "Equipment enabled",
+      "component": "grid",
+      "kind": "toggle",
+      "command": "grid-enabled",
+      "binding": "/controls/grid/enabled"
+    },
+    {
+      "id": "grid-load-control",
+      "label": "Requested output / load (%)",
+      "component": "grid",
+      "kind": "range",
+      "command": "grid-load",
+      "binding": "/controls/grid/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "grid-fault-control",
+      "label": "Inject fictional fault",
+      "component": "grid",
+      "kind": "button",
+      "command": "grid-fault"
+    },
+    {
+      "id": "grid-repair-control",
+      "label": "Repair damage",
+      "component": "grid",
+      "kind": "button",
+      "command": "grid-repair"
+    },
+    {
+      "id": "isolator-enabled-control",
+      "label": "Equipment enabled",
+      "component": "isolator",
+      "kind": "toggle",
+      "command": "isolator-enabled",
+      "binding": "/controls/isolator/enabled"
+    },
+    {
+      "id": "isolator-load-control",
+      "label": "Requested output / load (%)",
+      "component": "isolator",
+      "kind": "range",
+      "command": "isolator-load",
+      "binding": "/controls/isolator/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "isolator-fault-control",
+      "label": "Inject fictional fault",
+      "component": "isolator",
+      "kind": "button",
+      "command": "isolator-fault"
+    },
+    {
+      "id": "isolator-repair-control",
+      "label": "Repair damage",
+      "component": "isolator",
+      "kind": "button",
+      "command": "isolator-repair"
+    },
+    {
+      "id": "isolator-open-control",
+      "label": "Contacts open / isolated",
+      "component": "isolator",
+      "kind": "toggle",
+      "command": "isolator-open",
+      "binding": "/controls/isolator/open"
+    },
+    {
+      "id": "incoming-enabled-control",
+      "label": "Equipment enabled",
+      "component": "incoming",
+      "kind": "toggle",
+      "command": "incoming-enabled",
+      "binding": "/controls/incoming/enabled"
+    },
+    {
+      "id": "incoming-load-control",
+      "label": "Requested output / load (%)",
+      "component": "incoming",
+      "kind": "range",
+      "command": "incoming-load",
+      "binding": "/controls/incoming/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "incoming-fault-control",
+      "label": "Inject fictional fault",
+      "component": "incoming",
+      "kind": "button",
+      "command": "incoming-fault"
+    },
+    {
+      "id": "incoming-repair-control",
+      "label": "Repair damage",
+      "component": "incoming",
+      "kind": "button",
+      "command": "incoming-repair"
+    },
+    {
+      "id": "incoming-open-control",
+      "label": "Contacts open / isolated",
+      "component": "incoming",
+      "kind": "toggle",
+      "command": "incoming-open",
+      "binding": "/controls/incoming/open"
+    },
+    {
+      "id": "stepdown-enabled-control",
+      "label": "Equipment enabled",
+      "component": "stepdown",
+      "kind": "toggle",
+      "command": "stepdown-enabled",
+      "binding": "/controls/stepdown/enabled"
+    },
+    {
+      "id": "stepdown-load-control",
+      "label": "Requested output / load (%)",
+      "component": "stepdown",
+      "kind": "range",
+      "command": "stepdown-load",
+      "binding": "/controls/stepdown/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "stepdown-fault-control",
+      "label": "Inject fictional fault",
+      "component": "stepdown",
+      "kind": "button",
+      "command": "stepdown-fault"
+    },
+    {
+      "id": "stepdown-repair-control",
+      "label": "Repair damage",
+      "component": "stepdown",
+      "kind": "button",
+      "command": "stepdown-repair"
+    },
+    {
+      "id": "bus-enabled-control",
+      "label": "Equipment enabled",
+      "component": "bus",
+      "kind": "toggle",
+      "command": "bus-enabled",
+      "binding": "/controls/bus/enabled"
+    },
+    {
+      "id": "bus-load-control",
+      "label": "Requested output / load (%)",
+      "component": "bus",
+      "kind": "range",
+      "command": "bus-load",
+      "binding": "/controls/bus/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "bus-fault-control",
+      "label": "Inject fictional fault",
+      "component": "bus",
+      "kind": "button",
+      "command": "bus-fault"
+    },
+    {
+      "id": "bus-repair-control",
+      "label": "Repair damage",
+      "component": "bus",
+      "kind": "button",
+      "command": "bus-repair"
+    },
+    {
+      "id": "feederA-enabled-control",
+      "label": "Equipment enabled",
+      "component": "feederA",
+      "kind": "toggle",
+      "command": "feederA-enabled",
+      "binding": "/controls/feederA/enabled"
+    },
+    {
+      "id": "feederA-load-control",
+      "label": "Requested output / load (%)",
+      "component": "feederA",
+      "kind": "range",
+      "command": "feederA-load",
+      "binding": "/controls/feederA/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "feederA-fault-control",
+      "label": "Inject fictional fault",
+      "component": "feederA",
+      "kind": "button",
+      "command": "feederA-fault"
+    },
+    {
+      "id": "feederA-repair-control",
+      "label": "Repair damage",
+      "component": "feederA",
+      "kind": "button",
+      "command": "feederA-repair"
+    },
+    {
+      "id": "feederA-open-control",
+      "label": "Contacts open / isolated",
+      "component": "feederA",
+      "kind": "toggle",
+      "command": "feederA-open",
+      "binding": "/controls/feederA/open"
+    },
+    {
+      "id": "feederB-enabled-control",
+      "label": "Equipment enabled",
+      "component": "feederB",
+      "kind": "toggle",
+      "command": "feederB-enabled",
+      "binding": "/controls/feederB/enabled"
+    },
+    {
+      "id": "feederB-load-control",
+      "label": "Requested output / load (%)",
+      "component": "feederB",
+      "kind": "range",
+      "command": "feederB-load",
+      "binding": "/controls/feederB/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "feederB-fault-control",
+      "label": "Inject fictional fault",
+      "component": "feederB",
+      "kind": "button",
+      "command": "feederB-fault"
+    },
+    {
+      "id": "feederB-repair-control",
+      "label": "Repair damage",
+      "component": "feederB",
+      "kind": "button",
+      "command": "feederB-repair"
+    },
+    {
+      "id": "feederB-open-control",
+      "label": "Contacts open / isolated",
+      "component": "feederB",
+      "kind": "toggle",
+      "command": "feederB-open",
+      "binding": "/controls/feederB/open"
+    },
+    {
+      "id": "loadA-enabled-control",
+      "label": "Equipment enabled",
+      "component": "loadA",
+      "kind": "toggle",
+      "command": "loadA-enabled",
+      "binding": "/controls/loadA/enabled"
+    },
+    {
+      "id": "loadA-load-control",
+      "label": "Requested output / load (%)",
+      "component": "loadA",
+      "kind": "range",
+      "command": "loadA-load",
+      "binding": "/controls/loadA/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "loadA-fault-control",
+      "label": "Inject fictional fault",
+      "component": "loadA",
+      "kind": "button",
+      "command": "loadA-fault"
+    },
+    {
+      "id": "loadA-repair-control",
+      "label": "Repair damage",
+      "component": "loadA",
+      "kind": "button",
+      "command": "loadA-repair"
+    },
+    {
+      "id": "loadB-enabled-control",
+      "label": "Equipment enabled",
+      "component": "loadB",
+      "kind": "toggle",
+      "command": "loadB-enabled",
+      "binding": "/controls/loadB/enabled"
+    },
+    {
+      "id": "loadB-load-control",
+      "label": "Requested output / load (%)",
+      "component": "loadB",
+      "kind": "range",
+      "command": "loadB-load",
+      "binding": "/controls/loadB/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "loadB-fault-control",
+      "label": "Inject fictional fault",
+      "component": "loadB",
+      "kind": "button",
+      "command": "loadB-fault"
+    },
+    {
+      "id": "loadB-repair-control",
+      "label": "Repair damage",
+      "component": "loadB",
+      "kind": "button",
+      "command": "loadB-repair"
+    },
+    {
+      "id": "ct-enabled-control",
+      "label": "Equipment enabled",
+      "component": "ct",
+      "kind": "toggle",
+      "command": "ct-enabled",
+      "binding": "/controls/ct/enabled"
+    },
+    {
+      "id": "ct-load-control",
+      "label": "Requested output / load (%)",
+      "component": "ct",
+      "kind": "range",
+      "command": "ct-load",
+      "binding": "/controls/ct/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "ct-fault-control",
+      "label": "Inject fictional fault",
+      "component": "ct",
+      "kind": "button",
+      "command": "ct-fault"
+    },
+    {
+      "id": "ct-repair-control",
+      "label": "Repair damage",
+      "component": "ct",
+      "kind": "button",
+      "command": "ct-repair"
+    },
+    {
+      "id": "vt-enabled-control",
+      "label": "Equipment enabled",
+      "component": "vt",
+      "kind": "toggle",
+      "command": "vt-enabled",
+      "binding": "/controls/vt/enabled"
+    },
+    {
+      "id": "vt-load-control",
+      "label": "Requested output / load (%)",
+      "component": "vt",
+      "kind": "range",
+      "command": "vt-load",
+      "binding": "/controls/vt/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "vt-fault-control",
+      "label": "Inject fictional fault",
+      "component": "vt",
+      "kind": "button",
+      "command": "vt-fault"
+    },
+    {
+      "id": "vt-repair-control",
+      "label": "Repair damage",
+      "component": "vt",
+      "kind": "button",
+      "command": "vt-repair"
+    },
+    {
+      "id": "relay-enabled-control",
+      "label": "Equipment enabled",
+      "component": "relay",
+      "kind": "toggle",
+      "command": "relay-enabled",
+      "binding": "/controls/relay/enabled"
+    },
+    {
+      "id": "relay-load-control",
+      "label": "Requested output / load (%)",
+      "component": "relay",
+      "kind": "range",
+      "command": "relay-load",
+      "binding": "/controls/relay/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "relay-fault-control",
+      "label": "Inject fictional fault",
+      "component": "relay",
+      "kind": "button",
+      "command": "relay-fault"
+    },
+    {
+      "id": "relay-repair-control",
+      "label": "Repair damage",
+      "component": "relay",
+      "kind": "button",
+      "command": "relay-repair"
+    },
+    {
+      "id": "arrester-enabled-control",
+      "label": "Equipment enabled",
+      "component": "arrester",
+      "kind": "toggle",
+      "command": "arrester-enabled",
+      "binding": "/controls/arrester/enabled"
+    },
+    {
+      "id": "arrester-load-control",
+      "label": "Requested output / load (%)",
+      "component": "arrester",
+      "kind": "range",
+      "command": "arrester-load",
+      "binding": "/controls/arrester/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "arrester-fault-control",
+      "label": "Inject fictional fault",
+      "component": "arrester",
+      "kind": "button",
+      "command": "arrester-fault"
+    },
+    {
+      "id": "arrester-repair-control",
+      "label": "Repair damage",
+      "component": "arrester",
+      "kind": "button",
+      "command": "arrester-repair"
+    },
+    {
+      "id": "capacitors-enabled-control",
+      "label": "Equipment enabled",
+      "component": "capacitors",
+      "kind": "toggle",
+      "command": "capacitors-enabled",
+      "binding": "/controls/capacitors/enabled"
+    },
+    {
+      "id": "capacitors-load-control",
+      "label": "Requested output / load (%)",
+      "component": "capacitors",
+      "kind": "range",
+      "command": "capacitors-load",
+      "binding": "/controls/capacitors/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "capacitors-fault-control",
+      "label": "Inject fictional fault",
+      "component": "capacitors",
+      "kind": "button",
+      "command": "capacitors-fault"
+    },
+    {
+      "id": "capacitors-repair-control",
+      "label": "Repair damage",
+      "component": "capacitors",
+      "kind": "button",
+      "command": "capacitors-repair"
+    },
+    {
+      "id": "capacitors-open-control",
+      "label": "Flow path open",
+      "component": "capacitors",
+      "kind": "toggle",
+      "command": "capacitors-open",
+      "binding": "/controls/capacitors/open"
+    },
+    {
+      "id": "ground-enabled-control",
+      "label": "Equipment enabled",
+      "component": "ground",
+      "kind": "toggle",
+      "command": "ground-enabled",
+      "binding": "/controls/ground/enabled"
+    },
+    {
+      "id": "ground-load-control",
+      "label": "Requested output / load (%)",
+      "component": "ground",
+      "kind": "range",
+      "command": "ground-load",
+      "binding": "/controls/ground/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "ground-fault-control",
+      "label": "Inject fictional fault",
+      "component": "ground",
+      "kind": "button",
+      "command": "ground-fault"
+    },
+    {
+      "id": "ground-repair-control",
+      "label": "Repair damage",
+      "component": "ground",
+      "kind": "button",
+      "command": "ground-repair"
+    },
+    {
+      "id": "ground-open-control",
+      "label": "Contacts open / isolated",
+      "component": "ground",
+      "kind": "toggle",
+      "command": "ground-open",
+      "binding": "/controls/ground/open"
+    },
+    {
+      "id": "station-enabled-control",
+      "label": "Equipment enabled",
+      "component": "station",
+      "kind": "toggle",
+      "command": "station-enabled",
+      "binding": "/controls/station/enabled"
+    },
+    {
+      "id": "station-load-control",
+      "label": "Requested output / load (%)",
+      "component": "station",
+      "kind": "range",
+      "command": "station-load",
+      "binding": "/controls/station/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "station-fault-control",
+      "label": "Inject fictional fault",
+      "component": "station",
+      "kind": "button",
+      "command": "station-fault"
+    },
+    {
+      "id": "station-repair-control",
+      "label": "Repair damage",
+      "component": "station",
+      "kind": "button",
+      "command": "station-repair"
+    },
+    {
+      "id": "plc-enabled-control",
+      "label": "Equipment enabled",
+      "component": "plc",
+      "kind": "toggle",
+      "command": "plc-enabled",
+      "binding": "/controls/plc/enabled"
+    },
+    {
+      "id": "plc-load-control",
+      "label": "Requested output / load (%)",
+      "component": "plc",
+      "kind": "range",
+      "command": "plc-load",
+      "binding": "/controls/plc/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "plc-fault-control",
+      "label": "Inject fictional fault",
+      "component": "plc",
+      "kind": "button",
+      "command": "plc-fault"
+    },
+    {
+      "id": "plc-repair-control",
+      "label": "Repair damage",
+      "component": "plc",
+      "kind": "button",
+      "command": "plc-repair"
+    },
+    {
+      "id": "dcService-enabled-control",
+      "label": "Equipment enabled",
+      "component": "dcService",
+      "kind": "toggle",
+      "command": "dcService-enabled",
+      "binding": "/controls/dcService/enabled"
+    },
+    {
+      "id": "dcService-load-control",
+      "label": "Requested output / load (%)",
+      "component": "dcService",
+      "kind": "range",
+      "command": "dcService-load",
+      "binding": "/controls/dcService/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "dcService-fault-control",
+      "label": "Inject fictional fault",
+      "component": "dcService",
+      "kind": "button",
+      "command": "dcService-fault"
+    },
+    {
+      "id": "dcService-repair-control",
+      "label": "Repair damage",
+      "component": "dcService",
+      "kind": "button",
+      "command": "dcService-repair"
+    },
+    {
+      "id": "dcService-mode-forward-control",
+      "label": "Forward conversion",
+      "component": "dcService",
+      "kind": "button",
+      "command": "dcService-mode-forward"
+    },
+    {
+      "id": "dcService-mode-idle-control",
+      "label": "Idle conversion",
+      "component": "dcService",
+      "kind": "button",
+      "command": "dcService-mode-idle"
+    },
+    {
+      "id": "plant-setRunning-control",
+      "label": "Run shared plant",
+      "kind": "toggle",
+      "command": "plant-setRunning",
+      "binding": "/running"
+    },
+    {
+      "id": "plant-step-control",
+      "label": "Advance one toy minute",
+      "kind": "button",
+      "command": "plant-step"
+    },
+    {
+      "id": "plant-reset-control",
+      "label": "Reset dynamics \u00b7 retain edited parameters",
+      "kind": "button",
+      "command": "plant-reset"
+    }
+  ],
+  "provenance": [
+    {
+      "id": "assumed-model",
+      "label": "Editable normalized model guesses",
+      "kind": "assumed",
+      "description": "Every capacity, inventory, thermal index, loss, response and incident coefficient is an authoring choice, not validated by the references."
+    },
+    {
+      "id": "authored-layout",
+      "label": "Illustrative plant routing and layout",
+      "kind": "illustrative",
+      "description": "Coordinates, asset tags, selected concept composition and simplified connections are editable authored diagrams, not a verified P&ID or electrical design."
+    },
+    {
+      "id": "P08",
+      "label": "P08 \u00b7 structural reference",
+      "kind": "external",
+      "source": "Bureau of Reclamation, [FIST 4-1B: Maintenance Scheduling for Electrical Equipment](https://www.usbr.gov/power/data/fist/FIST_4-1B_%2801-2026%29.pdf), January 2026, revision 4.0",
+      "description": "Equipment contents and circuit-breaker general description, printed p.39 | Supports: Distinguish cabinet/molded-case, medium-voltage switchgear and outdoor high-voltage breaker presentations. Keep alarms, station batteries, chargers, arresters and excitation as identifiable assets. No maintenance schedule becomes simulator behavior. | Reviewed 2026-11-13. Does not validate toy parameters."
+    },
+    {
+      "id": "P09",
+      "label": "P09 \u00b7 structural reference",
+      "kind": "external",
+      "source": "OSHA, [Illustrated Glossary: Substations](https://www.osha.gov/etools/electric-power/illustrated-glossary/sub-station), glossary identified as February 2004",
+      "description": "Types, functions and equipment list | Supports: Separate generator step-up, transmission step-down, distribution and underground arrangements. A substation is a composition of equipment, not merely a transformer icon. | Reviewed 2026-11-13. Does not validate toy parameters."
+    },
+    {
+      "id": "P10",
+      "label": "P10 \u00b7 structural reference",
+      "kind": "external",
+      "source": "OSHA, [Electric Power Glossary of Terms](https://www.osha.gov/etools/electric-power/glossary-terms), no individual revision date shown",
+      "description": "Entries for current transformers, disconnects, capacitor banks, converters, control houses, protective equipment, switchgear and synchronous condensers | Supports: Measurement, switching, surge protection, reactive support and conversion need distinct categories/ports. Illustrations support recognizable disconnect and switchgear silhouettes. This is a naming reference, not a protection-coordination design. | Reviewed 2026-11-13. Does not validate toy parameters."
+    }
+  ],
+  "assumptions": [
+    {
+      "id": "normalized",
+      "label": "All model numbers are editable teaching assumptions",
+      "value": true,
+      "provenance": "assumed-model"
+    },
+    {
+      "id": "circuitIdentity",
+      "label": "Separate named circuits never mix stock through heat links",
+      "value": true,
+      "provenance": "authored-layout"
+    }
+  ],
+  "units": {
+    "power": "normalized power units; explicit optional display mapping",
+    "flow": "normalized material units per toy minute",
+    "inventory": "normalized finite stock",
+    "heat": "normalized stored heat; not a physical operating temperature"
+  }
+}

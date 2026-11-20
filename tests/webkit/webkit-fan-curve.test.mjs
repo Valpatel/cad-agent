@@ -1,4 +1,4 @@
-// <cad-fan-curve> (software/cadagent/webkit/fan-curve.js) without a browser: every setting of its controls gives a point on
+// <cad-fan-curve> (software/cadagent/webkit/calculators/fan-curve.js) without a browser: every setting of its controls gives a point on
 // both curves, the stall warning agrees with the per-fan flow, the chart stays inside its figure, and the still on the
 // pages is what the component draws for their attributes (tools/site/figures/fan-curve-still.mjs --check).
 import test from 'node:test';
@@ -6,8 +6,8 @@ import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import path from 'node:path';
 import { readState, compute, verdict, summary, drawFanCurve, scales, readAt, CONTROLS, VOLTAGES, ARRANGEMENTS, VIEW,
-  DEFAULTS, REFERENCE_FLOW, m3h } from '../../software/cadagent/webkit/fan-curve.js';
-import { fanOperatingPoint, fanStallFlow } from '../../software/cadagent/webkit/formulas.js';
+  DEFAULTS, REFERENCE_FLOW, m3h } from '../../software/cadagent/webkit/calculators/fan-curve.js';
+import { fanOperatingPoint, fanStallFlow } from '../../software/cadagent/webkit/calculators/formulas.js';
 
 const root = path.resolve(import.meta.dirname, '../..');
 const states = function* () {

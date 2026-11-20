@@ -1,11 +1,11 @@
-/** kit/model.js, the <cad-model> element's decoder, against the reference (cadagent.publish.view.unpack_model): the packed
+/** kit/model/model.js, the <cad-model> element's decoder, against the reference (cadagent.publish.view.unpack_model): the packed
  * fixture decodes to what Python decodes, and the site's committed Gyropup model decodes whole and in place (#179). */
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import test from 'node:test';
-import { decodeModel, inflate, partLabel } from '../../software/cadagent/webkit/model.js';
+import { decodeModel, inflate, partLabel, planMeshHashes } from '../../software/cadagent/webkit/model/model.js';
 
 const root = path.resolve(import.meta.dirname, '../..');
 const load = async (json) => {
@@ -45,6 +45,20 @@ test('the site\'s Gyropup model decodes whole, matches its checksum and sits whe
   const members = Object.values(source.members).flat();
   assert.equal(new Set(members).size, members.length, 'each source part has one recorded group');
   assert.ok(Object.values(source.members).every(names => names.length > 0));
+  // This source-bound homepage fixture must show the accepted front/rear packs, not the former belly enclosure.
+  assert.equal(source.revision, '3a40891962b0b0a04625e070700f1d130bea3c7b', 'the end-pack fixture records its actual source');
+  assert.equal(parts.length, 32, 'the accepted model has 32 visible groups');
+  assert.equal(members.length, 224, 'the accepted source has 224 unique parts');
+  for (const name of ['end_pack_holder_front', 'end_pack_holder_rear', 'end_foot_front', 'end_foot_rear'])
+    assert.ok(members.includes(name), `${name}: current end-pack support is present`);
+  for (const name of ['adapter_plate_front', 'adapter_plate_rear', 'bay_door_front', 'bay_door_rear', 'bay_floor',
+    'bay_rail_l', 'bay_rail_r', 'bay_side_l', 'bay_side_r', 'bay_skid_1', 'bay_skid_2', 'bay_skid_3', 'bay_skid_4'])
+    assert.ok(!members.includes(name), `${name}: retired belly enclosure is absent`);
+  assert.deepEqual(source.members.battery.slice().sort(), ['item.battery_front', 'item.battery_rear']);
+  const battery = model.parts.find(p => p.name === 'battery');
+  const acceptedBattery = [-286.775, -48.5, -87.04, 286.775, 48.5, 49.96];
+  assert.ok(battery && battery.bounds_mm.every((v, k) => Math.abs(v - acceptedBattery[k]) < 0.02),
+    'battery placement matches the accepted front/rear packs, not the old belly');
   const { banner } = JSON.parse(await readFile(path.join(root, 'docs/img/gyropup/SOURCE.json'), 'utf8'));
   assert.equal(banner.revision, source.revision, 'project card and interactive model describe one source');
   for (const [file, sha] of [['tools/site/assets/models/gyropup.json', banner.model_sha256],
@@ -70,4 +84,94 @@ test('part labels read as words, with a side spelled out', () => {
   assert.equal(partLabel('wheel_link'), 'wheel link');
   assert.equal(partLabel('thigh_l'), 'thigh (left)');
   assert.equal(partLabel('hip_motor_r'), 'hip motor (right)');
+});
+
+test('J501 showcase includes the real board mesh with bounded render-only simplification', async () => {
+  const { model, packed, parts } = await load('tools/site/assets/models/j501.json');
+  assert.equal(packed.length, model.bytes);
+  assert.equal(createHash('sha256').update(packed).digest('hex'), model.sha256);
+  assert.ok(model.bytes < 1200 * 1024, 'phone transfer budget: 1.2 MiB');
+  assert.ok(model.triangles < 400000, 'render-only triangle budget');
+  assert.equal(parts.length, model.parts.length);
+  const materialContract = m => m.parts.forEach(p => assert.match(p.color, /^#[0-9a-f]{6}$/i, p.name+': CSS material color'));
+  materialContract(model);
+  const rawArrayDefect=structuredClone(model);rawArrayDefect.parts.find(p=>p.name==='wifi_1_antenna').color=[.06,.065,.075];
+  assert.throws(()=>materialContract(rawArrayDefect)); // The source-array defect must fail before the renderer silently paints white.
+  const board = model.parts.find(p => p.name === 'carrier_board');
+  assert.ok(board && board.triangles > 50000, 'detailed source PCB, not an invented box');
+  assert.deepEqual(board.bounds_mm, [15, 11.62, 13.5, 191.35, 180.5, 38.01]);
+  assert.equal(model.source.board_reference.repository, 'https://github.com/Seeed-Studio/OSHW-Jetson-Series');
+  assert.equal(model.source.board_reference.board.inflated_sha256, 'a131fdc60ed76df660e5d491c45af852d28f16e2f0d7f11de0152da4c5f45793');
+  assert.equal(model.source.revision, '97d7c7e46e11d5d52c4c15879dbe09deac07057c');
+  assert.equal(model.source.captured_geometry_revision, '240be82ec5420e989dbfad07d76ab62ea3e83a50');
+  assert.equal(model.view.azimuth, 0, 'opening view frames both opposite antenna sides');
+  assert.equal(model.parts.length, 23, 'complete source-bound showcase inventory');
+  assert.equal(model.parts.find(p=>p.name==='cover')?.visible, true, 'lid is fitted in the initial view');
+  assert.ok(!model.parts.some(p=>p.name==='agx_module'), 'unlicensed standalone NVIDIA mesh must not be shipped');
+  assert.equal(model.source.generator.sha256, createHash('sha256').update(await readFile(path.join(root, model.source.generator.file))).digest('hex'), 'pack source identity');
+  const antenna = model.source.antenna_context.manifest;
+  assert.equal(antenna.recipe_revision_sha256, 'eed4b24f644b45aba135da0bffea9fc4307f10b63cae2cfff4d98ff28504cd1b');
+  assert.equal(antenna.physical_fit_verified, false);
+  assert.equal(antenna.rf_qualified, false);
+  for (const name of ['wifi_1_antenna','wifi_2_antenna']) {
+    const part=model.parts.find(p=>p.name===name);
+    assert.ok(part && part.visible && part.triangles>100, name+': real source-owned context mesh');
+    assert.equal(part.color, '#0f1113', name+': source RGB must be a supported CSS color, not a silently white array');
+    assert.ok(part.bounds_mm[0]<-19 && part.bounds_mm[3]===-2.5, name+': outward-X at existing WiFi mounts');
+    assert.ok(part.bounds_mm[2]>58 && part.bounds_mm[5]>84, name+': upward elbow placement');
+  }
+  assert.equal(antenna.cellular_reference.mpn, 'TG.22.0152');
+  assert.match(antenna.cellular_reference.manufacturer_band_description, /not an LTE\/5G qualification/);
+  for (const name of ['cell_1_antenna','cell_2_antenna']) {
+    const part=model.parts.find(p=>p.name===name);
+    assert.ok(part && part.visible && part.triangles>100, name+': source-owned opposite context mesh');
+    assert.equal(part.color, '#0f1113');
+    assert.deepEqual(part.explode, [1,0,0], name+': outward positive-X explosion');
+    assert.ok(part.bounds_mm[0]===208.5 && part.bounds_mm[3]===225.5, name+': existing CELL mount outer planes');
+    assert.ok(part.bounds_mm[2]===58 && Math.abs(part.bounds_mm[5]-102.8)<.001, name+': source cellular envelope');
+  }
+  for (const [name, p] of Object.entries(model.source.display_only.parts)) {
+    assert.ok(p.max_vertex_move_mm < .7, name + ': display-only displacement bound');
+    assert.ok(p.display_triangles <= p.original_triangles, name);
+  }
+});
+
+test('loading counts actual received bytes without mixing compressed and decoded totals', async () => {
+  const { modelBytes, transferTotal } = await import('../../software/cadagent/webkit/model/model.js');
+  const body = new Uint8Array(40).fill(7);
+  for (const headers of [{}, {'content-length':'40'}, {'content-length':'5','content-encoding':'gzip'}, {'content-length':'5'}, {'content-length':'no'}]) {
+    const response = new Response(body, {headers}), progress=[];
+    const initial = transferTotal(response);
+    if (headers['content-encoding']) assert.equal(initial, null);
+    const got = await modelBytes(response, (bytes,total)=>progress.push([bytes,total]));
+    assert.deepEqual(got,body);
+    assert.equal(progress.at(-1)[0],40);
+    assert.equal(progress.at(-1)[1],headers['content-length']==='40'?40:null);
+    assert.ok(progress.every(([n,total])=>total===null||n<=total));
+  }
+  await assert.rejects(modelBytes(new Response('bad',{status:503})), /HTTP 503/);
+});
+
+test('J501 poster is bound to the actual source and shared renderer', async () => {
+  const receipt=JSON.parse(await readFile(path.join(root,'tools/site/assets/models/j501-source.json'),'utf8'));
+  const digest=b=>createHash('sha256').update(b).digest('hex');
+  assert.equal(receipt.poster.model_sha256, digest(await readFile(path.join(root,'tools/site/assets/models/j501.json'))));
+  assert.equal(receipt.poster.renderer_sha256, digest(await readFile(path.join(root,'software/cadagent/webkit/model/model.js'))));
+  assert.equal(receipt.poster.sha256, digest(await readFile(path.join(root,receipt.poster.file))));
+  assert.equal(receipt.poster.actual_parts, 23);
+  assert.equal(receipt.poster.canvases, 1);
+  assert.equal(receipt.poster.controls, 1);
+  assert.equal(receipt.poster.explode_and_reset, true);
+});
+
+
+test('plan partition binding rejects duplicates on the original list before map normalization', async () => {
+  const model = JSON.parse(await readFile(path.join(root,'tests/fixtures/assembly-plan/mini.json'),'utf8'));
+  const hashes = planMeshHashes(model.parts);
+  assert.equal(Object.keys(hashes).length,5);
+  for (const source of ['plate','rail']) {
+    const extra = {...model.parts.find(p=>p.name===source),name:'plate'};
+    assert.throws(()=>planMeshHashes([extra,...model.parts]),/unique source instance names/);
+  }
+  for (const parts of [null,[],[{}],[{name:''}],[{name:3}]]) assert.throws(()=>planMeshHashes(parts),/named source instances/);
 });

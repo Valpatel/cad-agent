@@ -25,6 +25,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Set, Tuple
 
+from cadagent.manufacturing.process import ADDITIVE_RE as _ADDITIVE_RE   # one list of additive words (#577)
 from cadagent.review.evidence import hash_platform_note, record_hash_platform
 from .model import PART_STATUS, Dossier, Issue, PartCard, Section, Where
 from .review import actor_check, check_record, part_actors, record_platform
@@ -36,7 +37,6 @@ LINT_GATE = "dossier-lint"
 STATUS_SCHEMA = "cad-agent.dossier-status/1"
 REVIEW_SCHEMA = "cad-agent.review/1"
 ADDITIVE = ("fdm", "fff", "sla", "sls", "mjf", "dlp", "polyjet", "additive", "3d print", "3d-print")
-_ADDITIVE_RE = re.compile(r"\b(?:fdm|fff|sla|sls|mjf|dlp|polyjet|additive)\b|\b3d[ -]?print", re.I)
 
 # code -> (severity, what the rule checks). Loader codes (unknown-id, bad-interface, ...) and the registry join's
 # codes (card-without-shape, ...; docs/practice/dossier.md "Joining cards and geometry") are reported under their own codes.

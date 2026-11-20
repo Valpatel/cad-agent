@@ -1668,9 +1668,39 @@ def sweep_svg() -> str:
     return svg(680, y + 242, label, body, an)
 
 
+def serial_plan_svg() -> str:
+    """Source bench datums and authored path, independently of browser/evaluator transforms."""
+    source = json.loads((ROOT / "tests/fixtures/assembly-plan/fixture.json").read_text())
+    project = View(-25, 38, 6, 55, 50)
+    body = [text(24, 28, "Open rail before roof · source bench (mm)", 18, weight="700")]
+    for name, boxes in source["boxes"].items():
+        for x,y,z,dx,dy,dz in boxes:
+            body.append(f'<path d="{path(project.rect(x,z,x+dx,z+dz))}" fill="{GREEN if name in source["fixed"] else PEACH}" stroke="{INK}"/>')
+    for op, color in zip(source["operations"], (ORANGE, GREEN)):
+        b = source["boxes"][op["members"][0]][0]
+        points = [project(b[0]+b[3]/2+v[0],b[2]+b[5]/2+v[2]) for v in op["path_mm"]]
+        body.append(f'<polyline points="{" ".join(f"{num(x)},{num(y)}" for x,y in points)}" fill="none" stroke="{color}" stroke-width="2" stroke-dasharray="5 3"/>')
+        for x,y in points:
+            body.append(f'<circle cx="{num(x)}" cy="{num(y)}" r="3" fill="{color}"/>')
+    # Independent seeded geometry: the path tests use these two controls separately.
+    for b in ((-4,16,4,16.2),(3,31,4,32)):
+        body.append(f'<path id="blocked{b[1]}" d="{path(project.rect(*b))}" fill="{ORANGE}" stroke="{ORANGE}"/>')
+    body += [text(365,115,"plate parked → corner → rail",12,ORANGE),
+             text(365,137,"lid parks outside the channel",12,GREEN),
+             text(365,170,"Red: separate negative controls",12,ORANGE),
+             text(365,191,"mid-path plate crossing at z16",11,MUTED),
+             text(365,212,"driver handle approach at z31",11,MUTED),
+             text(365,252,"x →    z ↑    y omitted",12),
+             text(24,328,"Source illustration; sampled checks and actual renderer traces are separate evidence.",11,MUTED),
+             ntext(30,50,"Rail",24,INK),ntext(285,50,"Plate",24,ORANGE),ntext(530,50,"Lid",24,GREEN)]
+    anim = Anim(4)
+    anim.add("#blocked16",[(0,1),(1,.25),(2,1),(4,1)],lambda value:f"opacity:{value}")
+    return svg(680,350,"Source-defined native rail bench in x-z projection: plate follows a finite corner and descends through open rails before the roof; red marks separate component and ordinary-driver obstruction controls, not a clearance verdict.",body,anim)
+
+
 FIGURES = {"hinge-sweep.svg": hinge_svg, "rib-in-counterbore.svg": counterbore_svg,
            "connector-window.svg": connector_svg, "cable-bend.svg": cable_svg, "module-insertion.svg": subassembly_svg,
-           "search-front.svg": search_svg, "motion-trace.svg": motion_trace_svg, "insertion-sweep.svg": sweep_svg}
+           "search-front.svg": search_svg, "motion-trace.svg": motion_trace_svg, "insertion-sweep.svg": sweep_svg, "assembly-plan-bench.svg": serial_plan_svg}
 
 
 def main(argv: list) -> int:

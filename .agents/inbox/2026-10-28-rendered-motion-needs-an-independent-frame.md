@@ -47,3 +47,34 @@ product must additionally capture its actual assets. Durable guidance is in
 
 The trace validates sampled kinematics only. It cannot prove reference truth, mesh identity, continuous collision
 clearance, dynamics or hardware safety. Missing independent reference evidence remains a review limitation.
+
+
+## A sampled group still needs other followers' home transforms
+
+On 2026-11-12, maintainer follow-through for #581 / PR #582 reproduced two independently reviewed failures at
+collaborator commit `3f6781b6`: containment and packet poses omitted `F = D + 10 mm` when independent joint C
+moved with D held at zero. The full motion collision/closure path already placed F correctly, so the consumers
+were checking different assemblies. The cause was forwarding only active-group matrices to containment and
+building packet moves only from followers of the selected driver.
+
+```text
+PYTHONPATH=software <existing Python 3.12/CadQuery 2.8.0 provider> -m pytest -q \
+  tests/review/test_gate_motion.py::test_containment_keeps_other_groups_follower_home_offset \
+  tests/review/test_packet.py::test_independent_pose_preserves_follower_home_offset
+2 failed in 2.65s (before implementation correction)
+```
+
+The native independent oracle explicitly placed container C and follower F at all four C/D endpoints and passed;
+omitting F's offset failed. The packet oracle requires four noncoplanar assembly-frame landmarks to move by the
+independently specified displacement, with positive/negative held-driver ranges and a nested carrier case.
+A separate native shape probe uses an offset Y axis and closed-form trigonometry. These checks do not derive
+expected points from the suspect follower resolver.
+
+Corrective rule: pass the complete physical pose to geometric consumers; retain the active-body set only for
+selecting relevant declarations. Initialize packet followers from their held driver values before overriding the
+selected driver, and compose carrier transforms innermost first. When the move list also carries a cylindrical
+joint, preserve both its rotation and slide in framing and native shape application.
+
+Limits: these are discrete CAD, plan and native-shape checks, not renderer captures, continuous clearance,
+constraint solving, load or physical qualification. The `follows` ratio remains a declared assumption, checked only
+where an observable `closes` point is supplied. No printed product geometry was changed.

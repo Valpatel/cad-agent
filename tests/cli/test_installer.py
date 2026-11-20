@@ -11,6 +11,7 @@ parser, failures reach no shell/child; PowerShell guards also run in the bounded
 from __future__ import annotations
 
 import hashlib
+import importlib.util
 import json
 import os
 import re
@@ -102,6 +103,59 @@ def test_checked_installers_pin_the_actual_snapshot_bytes():
         assert "Installer checksum mismatch" in block
 
 
+def test_the_pin_tool_writes_the_hashes_the_guide_checks():
+    """tools/site/pin_installers.py is how the hashes change: it pins both blocks from Git's blobs, never by hand."""
+    tool = _pin_tool()
+    assert tool.main(["--check"]) == 0, "the guide pins HEAD's installers: run tools/site/pin_installers.py <commit>"
+    head = _git(ROOT, "rev-parse", "HEAD")
+    pinned = tool.pin(INSTALL_GUIDE.read_text(), head)
+    for platform, source in (("posix", SH), ("powershell", PS1)):
+        block = tool._block(pinned, platform).group(1)
+        assert f"/cad-agent/{head}/tools/site/assets/{source.name}" in block
+        assert hashlib.sha256(_snapshot_bytes(source)).hexdigest() in block
+    assert pinned.replace(head, "") == re.sub(r"(?<=/cad-agent/)[0-9a-f]{40}(?=/tools/)", "", INSTALL_GUIDE.read_text()), \
+        "only the two URLs' commits change"
+
+
+def _pin_tool():
+    spec = importlib.util.spec_from_file_location("pin_installers", ROOT / "tools" / "site" / "pin_installers.py")
+    tool = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(tool)
+    return tool
+
+
+def test_the_pin_tool_refuses_a_commit_that_is_not_heads_or_not_its_ancestor(tmp_path):
+    """#799 review: the URL's commit must hold HEAD's installer (else every download fails its checksum) and be an
+    ancestor of HEAD (else it can stop resolving once its branch is gone)."""
+    tool = _pin_tool()
+    repo = tmp_path / "repo"
+    for rel in [tool.GUIDE, *[Path(p) for _, p in tool.INSTALLERS.values()]]:
+        (repo / rel).parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy(ROOT / rel, repo / rel)
+    _git(repo.parent, "init", "-q", str(repo))
+    _git(repo, "add", "-A")
+    _git(repo, "commit", "-q", "-m", "a")
+    old = _git(repo, "rev-parse", "HEAD")
+    (repo / "tools/site/assets/install.sh").write_text(SH.read_text() + "# changed\n")
+    _git(repo, "commit", "-q", "-am", "b")
+    new = _git(repo, "rev-parse", "HEAD")
+    guide = repo / tool.GUIDE
+    assert tool.main([new], root=repo) == 0 and tool.check(guide.read_text(), repo) == []
+    good = guide.read_text()
+    edited = good.replace(f"/cad-agent/{new}/tools/site/assets/install.sh", f"/cad-agent/{old}/tools/site/assets/install.sh")
+    assert edited != good
+    assert any("is not HEAD's" in line for line in tool.check(edited, repo)), "a hand-edited URL commit is caught"
+    guide.write_text(edited)
+    assert tool.main(["--check"], root=repo) == 1
+    sibling = _git(repo, "commit-tree", "HEAD^{tree}", "-p", old, "-m", "sibling")
+    with pytest.raises(SystemExit, match="not an ancestor of HEAD"):
+        tool.pin(good, sibling, repo)
+    beside = good.replace(new, sibling)
+    assert any("not an ancestor of HEAD" in line for line in tool.check(beside, repo)), "a sibling commit is caught"
+    with pytest.raises(SystemExit, match="is not HEAD's"):
+        tool.pin(good, old, repo)
+
+
 @pytest.mark.parametrize("hasher", ["sha256sum", "shasum"])
 @pytest.mark.parametrize("outcome", ["good", "corrupt", "download-failed"])
 def test_actual_posix_guide_checks_before_real_installer_handoff(tmp_path, hasher, outcome):
@@ -152,12 +206,58 @@ os.execv('/bin/sh',['sh',str(file),'--help'])
             assert "Installer checksum mismatch" in result.stderr
 
 
+def _powershell_receipt(path, fields):
+    """Only fixture field names and a bounded version may leave these owned JSON files."""
+    try:
+        with path.open("rb") as stream:
+            raw = stream.read(1025)
+    except FileNotFoundError:
+        return {"state": "missing"}
+    except OSError:
+        return {"state": "unreadable"}
+    if len(raw) > 1024:
+        return {"state": "oversized"}
+    try:
+        data = json.loads(raw.decode("utf-8-sig"))
+    except (ValueError, UnicodeError):
+        return {"state": "malformed"}
+    if not isinstance(data, dict) or any(key in data and not isinstance(data[key], kind) for key, kind in fields.items()):
+        return {"state": "malformed"}
+    present = sorted(set(data) & set(fields))
+    result = {"state": "complete" if set(present) == set(fields) else "partial", "fields": present}
+    if "powershell_version" in present:
+        if not re.fullmatch(r"[0-9A-Za-z.+-]{1,64}", data["powershell_version"]):
+            return {"state": "malformed"}
+        result["powershell_version"] = data["powershell_version"]
+    return result
+
+
+def _powershell_timeout_evidence(error, entered, downloaded, handed):
+    size = lambda value: len(value.encode("utf-8") if isinstance(value, str) else value or b"")
+    return {"event": "checked-powershell-timeout", "timeout_seconds": 20,
+            "stdout_bytes": size(error.output), "stderr_bytes": size(error.stderr),
+            "receipts": {"entered": _powershell_receipt(entered, {"powershell_version": str}),
+                         "download": _powershell_receipt(downloaded, {"uri": str, "output": str}),
+                         "handoff": _powershell_receipt(handed, {"sha256": str, "noProfile": bool, "policy": str})}}
+
+
+def _run_powershell_guard(script, entered, downloaded, handed):
+    try:
+        return subprocess.run(["pwsh", "-NoProfile", "-File", str(script)], capture_output=True, text=True, timeout=20)
+    except subprocess.TimeoutExpired as error:
+        try:
+            print(json.dumps(_powershell_timeout_evidence(error, entered, downloaded, handed), sort_keys=True), file=sys.stderr)
+        except Exception:
+            pass  # Evidence must never replace the original guard failure.
+        raise
+
+
 @pytest.mark.skipif(not shutil.which("pwsh"), reason="PowerShell (pwsh) is not installed")
 @pytest.mark.parametrize("outcome", ["good", "corrupt", "download-failed", "child-failed"])
 def test_actual_powershell_guide_checks_before_process_handoff(tmp_path, outcome):
     """Real PowerShell/hash/try-finally, inert downloader and child sink; no network or real installation."""
     quote = lambda value: "'" + str(value).replace("'", "''") + "'"
-    downloaded, handed = tmp_path / "download.json", tmp_path / "handoff.json"
+    entered, downloaded, handed = (tmp_path / name for name in ("entered.json", "download.json", "handoff.json"))
     payload = tmp_path / "source.ps1"
     payload.write_bytes(_snapshot_bytes(PS1))
     sink = tmp_path / "child.ps1"
@@ -167,6 +267,7 @@ def test_actual_powershell_guide_checks_before_process_handoff(tmp_path, outcome
                     f"Set-Content -LiteralPath {quote(handed)}\n"
                     f"$global:LASTEXITCODE = {7 if outcome == 'child-failed' else 0}\n")
     prefix = f'''
+[IO.File]::WriteAllText({quote(entered)}, ('{{"powershell_version":"' + $PSVersionTable.PSVersion.ToString() + '"}}'))
 function Invoke-WebRequest {{
   param([string]$Uri, [string]$OutFile, [switch]$UseBasicParsing, [string]$ErrorAction)
   @{{uri=$Uri; output=$OutFile}} | ConvertTo-Json -Compress | Set-Content -LiteralPath {quote(downloaded)}
@@ -178,7 +279,8 @@ function Get-Process {{ param([int]$Id) [pscustomobject]@{{Path={quote(sink)}}} 
 '''
     script = tmp_path / "checked.ps1"
     script.write_text(prefix + _checked_block("powershell"))
-    result = subprocess.run(["pwsh", "-NoProfile", "-File", str(script)], capture_output=True, text=True, timeout=20)
+    result = _run_powershell_guard(script, entered, downloaded, handed)
+    assert _powershell_receipt(entered, {"powershell_version": str})["state"] == "complete"
     download = json.loads(downloaded.read_text(encoding="utf-8-sig"))
     assert not Path(download["output"]).exists(), "finally cleans the downloaded script"
     assert re.search(r"/[a-f0-9]{40}/tools/site/assets/install\.ps1$", download["uri"])
@@ -194,6 +296,98 @@ function Get-Process {{ param([int]$Id) [pscustomobject]@{{Path={quote(sink)}}} 
             assert "Installer checksum mismatch" in result.stderr
 
 
+@pytest.mark.parametrize("phase, state", [("missing", "missing"), ("partial", "partial"),
+                                         ("malformed", "malformed"), ("oversized", "oversized"),
+                                         ("unreadable", "unreadable")])
+def test_powershell_timeout_reports_bounded_receipt_states_and_preserves_exception(tmp_path, monkeypatch, capsys,
+                                                                                 phase, state):
+    entered, downloaded, handed = (tmp_path / name for name in ("entered.json", "download.json", "handoff.json"))
+    entered.write_text(json.dumps({"powershell_version": "7.6.10", "unreported": "private-entry"}))
+    if phase == "partial":
+        downloaded.write_text(json.dumps({"uri": "private-uri", "unreported": "private-value"}))
+    elif phase == "malformed":
+        downloaded.write_text('{"uri": "private-unfinished')
+    elif phase == "oversized":
+        downloaded.write_text("private-oversized" * 1000)
+    elif phase == "unreadable":
+        downloaded.mkdir()
+    error = subprocess.TimeoutExpired(["pwsh"], 20, output=b"private-output", stderr="private-error")
+    calls = []
+
+    def timeout(*args, **kwargs):
+        calls.append((args, kwargs))
+        raise error
+
+    monkeypatch.setattr(subprocess, "run", timeout)
+    script = tmp_path / "checked.ps1"
+    with pytest.raises(subprocess.TimeoutExpired) as caught:
+        _run_powershell_guard(script, entered, downloaded, handed)
+    assert caught.value is error
+    assert calls == [((["pwsh", "-NoProfile", "-File", str(script)],),
+                     {"capture_output": True, "text": True, "timeout": 20})]
+    output = capsys.readouterr()
+    assert output.out == "" and "private" not in output.err
+    evidence = json.loads(output.err)
+    assert evidence["event"] == "checked-powershell-timeout" and evidence["timeout_seconds"] == 20
+    assert evidence["stdout_bytes"] == len(b"private-output") and evidence["stderr_bytes"] == len(b"private-error")
+    assert evidence["receipts"]["entered"] == {"state": "complete", "fields": ["powershell_version"],
+                                               "powershell_version": "7.6.10"}
+    assert evidence["receipts"]["download"]["state"] == state
+    assert evidence["receipts"]["handoff"] == {"state": "missing"}
+    assert len(output.err) < 1024
+
+
+def test_powershell_timeout_reports_entry_absence_and_handoff_without_claiming_completion(tmp_path, monkeypatch, capsys):
+    entered, downloaded, handed = (tmp_path / name for name in ("entered.json", "download.json", "handoff.json"))
+    downloaded.write_bytes(b'\xef\xbb\xbf' + json.dumps({"uri": "private-uri", "output": "private-path"}).encode())
+    handed.write_text(json.dumps({"sha256": "private-hash", "noProfile": True, "policy": "Bypass"}))
+    error = subprocess.TimeoutExpired(["pwsh"], 20)
+
+    def timeout(*args, **kwargs):
+        raise error
+
+    monkeypatch.setattr(subprocess, "run", timeout)
+    with pytest.raises(subprocess.TimeoutExpired) as caught:
+        _run_powershell_guard(tmp_path / "checked.ps1", entered, downloaded, handed)
+    assert caught.value is error
+    text = capsys.readouterr().err
+    assert "private" not in text
+    evidence = json.loads(text)
+    assert evidence["receipts"]["entered"] == {"state": "missing"}
+    assert evidence["receipts"]["download"]["state"] == evidence["receipts"]["handoff"]["state"] == "complete"
+    assert evidence["stdout_bytes"] == evidence["stderr_bytes"] == 0
+
+
+@pytest.mark.parametrize("failure", ["collector", "stderr"])
+def test_powershell_timeout_diagnostic_failure_cannot_mask_the_original(tmp_path, monkeypatch, capsys, failure):
+    error = subprocess.TimeoutExpired(["pwsh"], 20)
+
+    def timeout(*args, **kwargs):
+        raise error
+
+    def broken(*args):
+        raise OSError("diagnostic unavailable")
+
+    monkeypatch.setattr(subprocess, "run", timeout)
+    if failure == "collector":
+        monkeypatch.setattr(sys.modules[__name__], "_powershell_timeout_evidence", broken)
+    else:
+        class BrokenStream:
+            write = broken
+        monkeypatch.setattr(sys, "stderr", BrokenStream())
+    with pytest.raises(subprocess.TimeoutExpired) as caught:
+        _run_powershell_guard(tmp_path / "checked.ps1", *(tmp_path / name for name in ("entry", "download", "handoff")))
+    assert caught.value is error
+    assert capsys.readouterr() == ("", "")
+
+
+def test_powershell_guard_success_is_silent_and_keeps_the_process_result(tmp_path, monkeypatch, capsys):
+    result = subprocess.CompletedProcess(["pwsh"], 0, "unchanged stdout", "unchanged stderr")
+    monkeypatch.setattr(subprocess, "run", lambda *args, **kwargs: result)
+    assert _run_powershell_guard(tmp_path / "checked.ps1", *(tmp_path / name for name in ("entry", "download", "handoff"))) is result
+    assert capsys.readouterr() == ("", "")
+
+
 def test_it_installs_then_a_second_run_updates(world):
     remote, home, env = world
     first = _install(env)
@@ -205,7 +399,18 @@ def test_it_installs_then_a_second_run_updates(world):
     assert calls == [f"tool install --quiet --force --editable --python 3.12 {kit}[cad]"]
     skills = sorted(p.name for p in (home / ".claude" / "skills").iterdir())
     expected = sorted(p.parent.name for p in (kit / ".agents/skills").glob("*/SKILL.md"))
-    assert len(expected) == 8 and skills == expected
+    assert set(expected) == {
+        "cad-motion-validation", "cad-pr-review", "cad-remote-runs", "cad-supply-chain",
+        "cad-work-tracking", "design-process", "mcmaster-parts", "pem-fastener-selection", "sheet-metal-hardware",
+        "repository-documentation", "scada-component-authoring", "scada-distribution-review",
+        "scada-model-adaptation", "scada-system-authoring", "scada-viewer-review",
+    }
+    assert skills == expected
+    for name in expected:
+        installed = home / ".claude/skills" / name
+        source = kit / ".agents/skills" / name
+        assert installed.resolve() == source, f"{name} links to this installed checkout"
+        assert (installed / "SKILL.md").read_bytes() == (source / "SKILL.md").read_bytes()
     assert (kit / "software/cadagent/cli.py").is_file()
     assert (home / ".claude" / "skills" / "design-process").resolve() == kit / ".agents/skills/design-process"
     assert {p.name for p in (home / ".agents" / "skills").iterdir()} >= set(skills), "the same skills for the other agents"
@@ -216,6 +421,8 @@ def test_it_installs_then_a_second_run_updates(world):
 
     new = (remote / "NEWS.txt")
     new.write_text("x\n")
+    changed_skill = remote / ".agents/skills/scada-model-adaptation/SKILL.md"
+    changed_skill.write_text(changed_skill.read_text() + "\nInstaller update fixture.\n")
     _git(remote, "add", "-A")
     _git(remote, "commit", "-q", "-m", "more")
     second = _install(env)
@@ -224,6 +431,9 @@ def test_it_installs_then_a_second_run_updates(world):
     assert "dependencies unchanged, nothing to reinstall" in second.stdout
     assert _git(kit, "rev-parse", "HEAD") == _git(remote, "rev-parse", "HEAD"), "fast-forwarded to the new main"
     assert len((home / "uv-calls.log").read_text().splitlines()) == 1, "no reinstall when the dependencies are the same"
+    updated_skill = home / ".claude/skills/scada-model-adaptation/SKILL.md"
+    assert updated_skill.read_bytes() == changed_skill.read_bytes(), "new SCADA instructions update with the checkout"
+    assert "Installer update fixture." in updated_skill.read_text()
 
     log = lambda: (home / "uv-calls.log").read_text().splitlines()
     with (remote / "pyproject.toml").open("a") as f:      # a dependency change: reinstall, with the extras it had
@@ -257,6 +467,83 @@ def test_it_installs_then_a_second_run_updates(world):
     assert not (home / ".local" / "bin" / "cad-agent").exists()
     assert left(home / ".claude" / "skills") == left(home / ".agents" / "skills") == [], "every skill it placed is gone"
     assert kit.is_dir(), "the checkout stays"
+
+
+def test_the_uninstall_variable_the_guide_names_uninstalls(world):
+    """The guide says to set CAD_AGENT_UNINSTALL=1 before running the block (#799); 0 or unset installs or updates."""
+    remote, home, env = world
+    assert _install({**env, "CAD_AGENT_UNINSTALL": "0"}).returncode == 0
+    assert (home / ".local" / "bin" / "cad-agent").is_file() and any((home / ".claude" / "skills").iterdir())
+    gone = _install({**env, "CAD_AGENT_UNINSTALL": "1"})
+    assert gone.returncode == 0, gone.stdout + gone.stderr
+    assert "updating" not in gone.stdout and "removed the cad-agent command" in gone.stdout
+    assert not (home / ".local" / "bin" / "cad-agent").exists()
+    assert not any((home / ".claude" / "skills").iterdir()) and not any((home / ".agents" / "skills").iterdir())
+    assert (home / "uv-calls.log").read_text().splitlines()[-1] == "tool uninstall cad-agent"
+    assert "uv stays in" in gone.stdout and (home / "cad-agent" / ".git").is_dir(), "it says what it leaves"
+
+
+@pytest.mark.parametrize("value, uninstalls", [("1", True), ("true", True), ("YES", True), ("True", True),
+                                                ("", False), ("0", False), ("false", False), ("No", False)])
+def test_the_uninstall_variable_takes_yes_or_no_words(world, value, uninstalls):
+    """#799 review: 1, true or yes uninstall; empty, 0, false or no install, in any letter case."""
+    remote, home, env = world
+    assert _install(env).returncode == 0
+    run = _install({**env, "CAD_AGENT_UNINSTALL": value})
+    assert run.returncode == 0, run.stdout + run.stderr
+    assert ("removed the cad-agent command" in run.stdout) is uninstalls
+    assert (home / ".local" / "bin" / "cad-agent").exists() is not uninstalls
+
+
+@pytest.mark.parametrize("value", ["2", "off", "00", " ", "y", "1; echo pwn", "$(touch pwned)"])
+def test_any_other_uninstall_value_stops_before_changing_anything(world, value):
+    """#799 review: a value that is neither a yes nor a no word stops with a message and changes nothing."""
+    _, home, env = world
+    run = _install({**env, "CAD_AGENT_UNINSTALL": value})
+    assert run.returncode != 0 and "CAD_AGENT_UNINSTALL is 1, true or yes" in run.stderr, run.stdout + run.stderr
+    assert "nothing was changed" in run.stderr
+    assert sorted(p.name for p in home.iterdir()) == [], "no clone, no uv, no links"
+
+
+@pytest.mark.skipif(not shutil.which("pwsh"), reason="PowerShell (pwsh) is not installed")
+@pytest.mark.parametrize("value, says", [("maybe", "CAD_AGENT_UNINSTALL is 1, true or yes"), ("00", "CAD_AGENT_UNINSTALL is 1"),
+                                         ("TRUE", "removed the cad-agent command"), ("no", "git is needed")])
+def test_install_ps1_parses_the_uninstall_value(tmp_path, value, says):
+    """install.ps1 reads CAD_AGENT_UNINSTALL the same way (#799 review). PATH is an empty folder, so the install route
+    stops at its git check and the uninstall route finds no cad-agent or uv: nothing is installed or removed."""
+    home, empty = tmp_path / "home", tmp_path / "empty"
+    home.mkdir()
+    empty.mkdir()
+    env = {k: v for k, v in os.environ.items() if not k.startswith("CAD_AGENT_")}
+    env.update(PATH=str(empty), HOME=str(home), USERPROFILE=str(home), CAD_AGENT_UNINSTALL=value)
+    run = subprocess.run([shutil.which("pwsh"), "-NoProfile", "-NonInteractive", "-File", str(PS1)], env=env,
+                         capture_output=True, text=True, timeout=120)
+    out = run.stdout + run.stderr
+    assert says in out, out
+    assert (run.returncode == 0) is (value == "TRUE"), out
+    for made in ("cad-agent", ".local/bin", ".claude", ".agents"):           # pwsh itself may add AppData (Windows CI)
+        assert not (home / made).exists(), f"{made}: nothing installed in the home folder"
+
+
+def test_the_path_hint_names_commands_that_work_in_that_shell(world, tmp_path):
+    """~/.local/bin is not on PATH: the hint's `export PATH=...` finds cad-agent in this shell, and it names uv by its
+    full path, because the uv it just installed is in that same folder (#799)."""
+    _, home, env = world
+    first = _install(env)
+    assert first.returncode == 0, first.stdout + first.stderr
+    bin_dir = home / ".local" / "bin"
+    export = re.search(r"In this terminal: (export PATH=.*?) \(or call (\S+)\);", first.stdout)
+    assert export and export.group(2) == f"{bin_dir}/cad-agent", first.stdout
+    found = subprocess.run(["sh", "-c", export.group(1) + "; command -v cad-agent"], capture_output=True, text=True,
+                           env={"PATH": "/usr/bin:/bin"})
+    assert found.stdout.strip() == f"{bin_dir}/cad-agent", found.stderr
+    uv = re.search(r'for new terminals: "([^"]+)" tool update-shell', first.stdout)
+    assert uv and Path(uv.group(1)).is_absolute() and os.access(uv.group(1), os.X_OK), first.stdout
+    assert Path(uv.group(1)) == Path(env["PATH"].split(":")[0]) / "uv", "the uv this run used"
+    bare = re.search(r"run `uv tool update-shell`", first.stdout)
+    assert not bare, "a bare `uv` is not found when its folder is not on PATH"
+    on_path = _install({**env, "PATH": f"{bin_dir}:{env['PATH']}"})
+    assert on_path.returncode == 0 and "is not on your PATH" not in on_path.stdout
 
 
 def test_bad_options_and_a_folder_that_is_not_a_checkout_are_refused(world):
@@ -595,7 +882,13 @@ foreign=home/'.claude/skills/foreign/SKILL.md';foreign.parent.mkdir(parents=True
 result=agentkit.install(home,root)
 assert not result['conflicts'] and result['done'] and all(x.startswith(('copy ','generate ')) for x in result['done']),result
 skills=list((root/'.agents/skills').glob('*/SKILL.md'));roles=[p for p in (root/'.agents/agents').glob('*.md') if p.name!='README.md']
-assert len(skills)==8 and len(roles)==2
+assert {p.parent.name for p in skills} == {
+    'cad-motion-validation', 'cad-pr-review', 'cad-remote-runs', 'cad-supply-chain',
+    'cad-work-tracking', 'design-process', 'mcmaster-parts', 'pem-fastener-selection', 'sheet-metal-hardware',
+    'repository-documentation', 'scada-component-authoring', 'scada-distribution-review',
+    'scada-model-adaptation', 'scada-system-authoring', 'scada-viewer-review',
+}
+assert {p.stem for p in roles} == {'cad-pr-reviewer', 'cad-resume'}
 for src in skills:
     target=home/'.claude/skills'/src.parent.name
     assert not target.is_symlink() and (target/'SKILL.md').read_bytes()==src.read_bytes()
@@ -723,7 +1016,8 @@ def test_actual_windows_copy_content_resources_and_foreign_files(tmp_path):
                 assert not shared.is_symlink() and (shared / 'SKILL.md').read_text() == expected[item.name]['generated']
         assert foreign.read_bytes() == original_foreign
         assert {p.name for p in (home / '.agents/skills').iterdir()} == {i.name for i in items}
-        result.update(ok=True, claude_skills=8, claude_roles=2, shared_skills=10,
+        result.update(ok=True, claude_skills=sum(i.kind == 'skill' for i in items),
+                      claude_roles=sum(i.kind == 'agent' for i in items), shared_skills=len(items),
                       copied_resource_files=sum(len(expected[i.name]) for i in items if i.kind == 'skill'),
                       unrelated_foreign_unchanged=True, same_name_foreign_unchanged=True,
                       source_removed='only owned disposable fixture', automatic_denial=False)

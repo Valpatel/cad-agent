@@ -37,6 +37,7 @@ import os
 import re
 import shutil
 import subprocess
+import zipfile
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
@@ -387,6 +388,77 @@ def _sha(path: Path) -> str:
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 
 
+# what a PrusaSlicer 3MF carries when its supports were set by hand: painted enforcers or blockers, an enforcer or
+# blocker volume, or an object's own support settings
+_MODEL_SUPPORTS = (b'custom_supports', b'SupportEnforcer', b'SupportBlocker', b'support_enforcer', b'support_blocker',
+                   b'key="support_material')
+
+
+def model_sets_supports(model: Path) -> bool:
+    """Whether a 3MF carries its own PrusaSlicer support data (painted supports, enforcer or blocker volumes, an
+    object's own ``support_material`` settings). An STL carries none. A 3MF that cannot be read counts as carrying
+    some, so the slice is left as the profile says."""
+    model = Path(model)
+    if model.suffix.lower() != '.3mf':
+        return False
+    try:
+        with zipfile.ZipFile(model) as zf:
+            return any(mark in zf.read(name) for name in zf.namelist()
+                       if name.lower().endswith(('.model', '.config')) for mark in _MODEL_SUPPORTS)
+    except (OSError, zipfile.BadZipFile, KeyError):
+        return True
+
+
+def _on(cfg: Dict[str, str], key: str) -> bool:
+    try:
+        return float(str(cfg.get(key, '0')).strip() or 0) > 0
+    except ValueError:
+        return True
+
+
+def stability_setup(cfg: Dict[str, str], model: Path, overrides: Optional[dict] = None) -> Tuple[Dict[str, str], dict]:
+    """PrusaSlicer runs its print-stability check ("Detected print stability issues") only when supports are off:
+    ``support_material = 0`` and ``support_material_enforce_layers = 0`` (seen with 2.9.6; a raft does not stop it).
+    Prusa's input-shaper print profiles (``*MK4IS_common*`` and ``*XLIS_common*`` in its bundle 2.4.14, which the
+    default ``0.20mm SPEED @MK4S 0.4`` inherits) set ``support_material = 1`` with ``support_material_auto = 0``
+    ("for support enforcers only"), so with them an unsupported shelf slices with no warning at all.
+
+    Returns the configuration to slice with and what to record:
+
+    * a model with support data of its own (``model_sets_supports``): unchanged, and ``stability_checked`` is False
+      whatever the profile says. An object's own ``support_material`` or ``support_material_enforce_layers`` wins
+      over the profile's (PrusaSlicer 2.9.6, ``PrintObject.cpp``), and PrusaSlicer skips the check for an object
+      that has supports, so the profile alone cannot say the check ran. The object's settings are not resolved here.
+    * supports for enforcers only, no enforced layers, a bare model, and no ``support_material`` override: nothing
+      would be supported, so the slice is made with ``support_material = 0`` (the same toolpaths) and the check
+      runs. ``supports``: ``none``.
+    * supports off, a bare model: unchanged. ``supports``: ``none``.
+    * anything else (automatic supports, enforced layers, an explicit override that turns them on): unchanged, and
+      ``stability_checked`` is False with the reason in ``stability_note``.
+    """
+    cfg = dict(cfg)
+    material, auto = _on(cfg, 'support_material'), _on(cfg, 'support_material_auto')
+    enforced, own = _on(cfg, 'support_material_enforce_layers'), model_sets_supports(model)
+    chosen = 'support_material' in (overrides or {})
+    note = None
+    if material and not auto and not enforced and not own and not chosen:
+        cfg['support_material'] = '0'
+        material = False
+        note = ('the profile supports enforcers only and the model has none: sliced with support_material = 0, the '
+                'same toolpaths, so PrusaSlicer runs its print-stability check')
+    if not material and not enforced and not own:
+        return cfg, {'supports': 'none', 'stability_checked': True, 'stability_note': note}
+    supports = 'automatic' if material and auto else 'enforcers only' if material or enforced else 'set in the model'
+    why = ('automatic supports are on' if material and auto else
+           'the first support_material_enforce_layers layers are supported' if enforced and not material else
+           'the model carries its own support settings (painted supports, enforcer or blocker volumes, or an '
+           "object's own support settings), which are not resolved here and can turn supports on for an object" if own else
+           'support_material is on (enforcers only)')
+    return cfg, {'supports': supports, 'stability_checked': False,
+                 'stability_note': f"PrusaSlicer's print-stability check is not known to have run: {why}; a part that "
+                                   'needs supports it does not get may not be flagged'}
+
+
 def slice_part(model, workdir, printer: str, process: str, filament: str, overrides: Optional[dict] = None,
                timeout: float = 900) -> dict:
     """Slice one STL or 3MF (already in print orientation) in ``workdir`` and return grams, minutes and the settings
@@ -402,6 +474,7 @@ def slice_part(model, workdir, printer: str, process: str, filament: str, overri
     sources = {kind: resolve_profile(kind, name)['files']
                for kind, name in (('printer', printer), ('print', process), ('filament', filament))}
     cfg = build_config(resolved_by_prusaslicer(exe, printer, process, filament, work, timeout), overrides)
+    cfg, stability = stability_setup(cfg, model, overrides)
     config = work / 'config.ini'
     config.write_text(''.join(f'{k} = {v}\n' for k, v in sorted(cfg.items())), encoding='utf-8')
     settings_hash = _sha(config)
@@ -421,7 +494,8 @@ def slice_part(model, workdir, printer: str, process: str, filament: str, overri
     r = dict(stats, model=str(model), printer=printer, process=process, filament=filament,
              overrides=dict(overrides or {}), exit_code=p.returncode, profile_sources=sources,
              settings_sha256={'config': settings_hash}, slicer=Path(exe[-1] if exe[0] != 'flatpak' else 'prusa-slicer').name,
-             minutes=round(stats['seconds'] / 60, 1) if stats['seconds'] else None, error=None, log=str(log), **said)
+             minutes=round(stats['seconds'] / 60, 1) if stats['seconds'] else None, error=None, log=str(log), **said,
+             **stability)
     if not r['grams']:
         # PrusaSlicer prints its reason last, on stderr or stdout, and exits 0 for some failures (2.9.4: "All
         # objects are outside of the print volume.")
@@ -429,7 +503,8 @@ def slice_part(model, workdir, printer: str, process: str, filament: str, overri
         r['error'] = ('no "filament used [g]" in the G-code (is filament_density 0?)' if gcode.exists() else
                       reason or 'no G-code produced')
         r['log_tail'] = log_text[-2000:]
-    # a slice that exits 0 with G-code can still say the part will print badly
+    # a slice that exits 0 with G-code can still say the part will print badly. With supports on PrusaSlicer does not
+    # look (stability_checked False): ok then says only that it sliced
     r['ok'] = (p.returncode == 0 and gcode.exists() and r['error'] is None and not said['errors']
                and not said['stability_issues'])
     return r

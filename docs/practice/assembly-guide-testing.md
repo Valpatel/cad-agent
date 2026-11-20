@@ -1,0 +1,267 @@
+# Assembly guide feature tests
+
+This document accompanies the [design and API](assembly-guide.md). It distinguishes checks actually executed
+from planned feature acceptance. CAD illustrations and browser presentation are not physical qualification.
+
+The arrows show where the same snapshot travels through increasingly complete consumers. Each layer keeps its
+own rejection controls; passing shared components does not stand in for portable release or product acceptance.
+
+```mermaid
+flowchart TD
+    D["guide and view fixtures<br/>two versions plus WIP"] --> N["guide.test.mjs<br/>schema and byte faults"]
+    D --> B["browser.mjs<br/>real mesh and controls"]
+    N --> Z["release ZIP tests<br/>portable asset closure"]
+    B --> Z
+    B --> P["product tests<br/>switching and fallback"]
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
+    classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
+    class N,B here
+    class D near
+    class Z,P out
+```
+
+## Requirement-to-test matrix
+
+<details>
+<summary>Feature cases, owners and verified versus pending acceptance</summary>
+
+| Requirement | Test owner / concrete case | Status at this source checkpoint |
+|---|---|---|
+| Orthogonal CAD planes, flip at unchanged plane location, legacy scalar and reset/off | `browser.mjs`: emissive landmarks through the real clipping shader; off-centre X/Y/Z cuts, wrong-axis and normal-only-flip mutants, off/reset/invalid-state controls | Actual Chromium and WebKit passed in the 26-case component run at `a259f46c`; current composed CI/review/publication remain separate |
+| Hover and repeated selection interaction, hidden ancestors, drag/touch/leave/dispose | `browser.mjs`: real mouse hover/click/repeat, orbit/wheel, clipped-surface and hidden-parent negatives, leave and disposed callbacks; native touchscreen tap in its own touch context | Mouse controls passed in both 26-case local runs at `a259f46c`; native-touch extension is enforced by current two-engine CI; product popover placement/list-focus metadata remain product-owned |
+| Explicit per-instance install order, absolute intermediate poses, speed/pause/loop/manual navigation and unsubscribe | `playback.test.mjs`: B-before-A, exact order coverage, time/speed/pause/loop/manual controls, prototype names, owner/disposal failures; `browser.mjs`: actual 18.75/22.5/26.25 mm intermediate world deltas and hidden-future framing/negative | 38 Node contracts include 31 guide contracts and seven playback cases; both actual 26-case browser runs passed ordinary fixture poses; strengthened prototype/native-touch cases require current CI. No physical insertion-path claim |
+| Strict guide schema, snapshot identity, explicit mm/z-up and per-instance mesh hashes | `tests/webkit/assembly/guide.test.mjs`: legacy versus guide manifest; invalid guide cases; duplicate mesh/frame/hash cases | 38 total Node contracts passed on Node 22, including 31 guide cases; final entry-hash counterexample is retained |
+| Required model members, repeated screws, unknown/duplicate instances, prerequisites and finite vectors | Same file: invalid guide cases and absolute-state test | Passed in the above Node run |
+| HTTP/body deadline, wrong hash, byte cap, abort, missing/corrupt version | Same file: download failure controls and loadGuide binding | Passed in the above Node run |
+| Absolute direct/backward states, previous/future membership and unchanged source pose | `tests/webkit/assembly/browser.mjs`: each v1/v2/WIP Previous/direct step; assembled reset | Chromium and WebKit component suites passed at `a259f46c` (26 cases per engine); portable release acceptance is separate |
+| Selected-instance transparent/wireframe override, unrelated meshes unchanged, clear-on-new-step/reset | Node visible-only/invalid appearance controls plus browser selected-screw DOM/material assertions | Node and both actual browser suites passed at `a259f46c` (26 cases per engine) |
+| Real highlighted/ghost/wireframe/solid states and visible multipart output | Browser suite: real materials/visibility plus retained screenshots | Chromium and WebKit component suites passed at `a259f46c` (26 cases per engine); portable release acceptance is separate |
+| CAD units/frame applied exactly once | Browser suite: independently hard-coded +25 mm CAD-Z→+0.025 m stage-Y delta, plus wrong 1000x, wrong-axis and doubled-offset fault controls | Chromium and WebKit component suites passed at `a259f46c` (26 cases per engine); portable release acceptance is separate; expectations do not read guide offsets |
+| Authored underside camera direction, with ordinary orbit behavior retained | Browser suite: independent CAD direction and actual camera-target vector; restored old clamp must reject | Both actual engines passed the underside vector and old-clamp rejection; ordinary limit retained; current CI required |
+| Picking, selection and explicit isolation | Browser suite: actual projected canvas click plus two repeated screw identities | Chromium and WebKit component suites passed at `a259f46c` (26 cases per engine); portable release acceptance is separate |
+| Framing, reset and legacy `?manifest=&explode=&section=` behavior, spaced filenames, CSS colours, absolute/root/CORS URLs and ordinary redirects | Browser suite: existing route and API round trip | Chromium and WebKit component suites passed at `a259f46c` (26 cases per engine); portable release acceptance is separate |
+| Resource teardown and cancelled load | Browser suite: geometry/material dispose events, repeated dispose, no canvas, aborted creation | Chromium and WebKit component suites passed at `a259f46c` (26 cases per engine); portable release acceptance is separate |
+| Two frozen versions and exact-commit WIP use independent scenes/instructions | Browser suite: differing dimensions, steps, hashes, UUIDs and snapshot IDs | Chromium and WebKit component suites passed at `a259f46c` (26 cases per engine); portable release acceptance is separate; product selector/deep links/progress are Gyropup #266 acceptance |
+| Phone portrait/landscape and keyboard navigation | Browser suite: actual previous/next controls and overflow checks | Chromium and WebKit component suites passed at `a259f46c` (26 cases per engine); portable release acceptance is separate |
+| Runtime and complete asset closure in release ZIP; preserve old output on rejection | `tests/publish/test_release_guides.py` and `tests/webkit/assembly/release-browser.mjs` | Publisher tests and actual extracted-ZIP Chromium/WebKit suites passed at `47b07508`; [packaging test plan](../../tests/publish/README.md#assembly-guide-release-test-plan) states exact scope |
+| Current recipe/neutral transforms/posters and static/Markdown fallback | Gyropup #266 producer and product tests | Product-owned, pending; no stale turret illustration accepted here |
+| Rapid switch race, progress isolation, no-WebGL fallback, touch/reduced motion, complete requirement UI | Gyropup #266 tests, with shared abort/dispose primitives | Product acceptance still pending; not implied by this shared module |
+
+</details>
+
+<details>
+<summary>Retained corrective failures and current component evidence</summary>
+
+
+The first new clipping observer run at `8fefeeff` failed after a retained blue surface changed brightness from
+`[55,136,186]` to `[125,183,217]`; later hover cases and WebKit were unrun. Its failed receipt remains retained.
+The corrected fixture keeps the real physical material/clipping shader but uses emissive diagnostic landmarks,
+retains the same RGB-distance threshold, and rejects wrong-axis and normal-only flips at off-centre cuts. Both
+actual 26-case engines then passed at `a259f46c`, including the existing legacy scenarios. That local packet does
+not substitute for current composed CI, the later native-touch/prototype additions, release ZIP or product UI
+acceptance. The parser-only matrix correction below likewise is not a browser-render acceptance.
+
+The product's existing ordinary-viewer fixtures also exposed a legacy absolute/root URL regression. Ordinary
+HTTP(S) URL resolution and external CORS/redirect behavior are retained separately from strict guide paths;
+pure and real browser cases passed in both engines at `a259f46c` (26 cases per engine). The held ordinary load uses an absolute
+mesh URL. Programmatic slider readouts and first-usable-frame readiness are reconciled with the existing product
+viewer. The portable reader's assembled reset now synchronizes mode/explosion/section labels, with actual DOM
+assertions in the component suite; both engines passed these corrective cases at `a259f46c` (26 cases per engine).
+
+The rendered WebKit CI at `ca70ce09` also rejected uninterrupted design/testing-page stretches of 2810/1332 px.
+Native disclosures now keep schema/API/reference evidence available without that initial wall. A bounded actual
+two-route check measured Chrome 629/237 px and WebKit 627/235 px against the unchanged 1200 px limit; both real
+diagrams rendered and each named reference opened. Two earlier local probe failures selected the diagram source
+disclosure rather than the named reference, so they are retained as probe failures, not product-wall results.
+
+The first current-head Chromium CI stopped before component execution on missing parent README links and a
+fixture row outside its ownership table. After those fixes, the local structural suite also exposed a stale
+`docs/map.md`; the unchanged generator refreshed its inventory from 1034 to 1039 folders. The final structural
+map suite passed 28 tests with one explicit CI-only drawing skip. These failures remain classified separately
+from browser interaction evidence; actual themed map rendering still belongs to current CI.
+
+</details>
+
+## Commands and CI
+
+<details>
+<summary>Run the existing suites and interpret their evidence</summary>
+
+Use installed Node 22 and the existing `tools/site` npm context:
+
+```sh
+node --test tests/webkit/assembly/guide.test.mjs
+npm --prefix tools/site run test:webkit-unit
+PLAYWRIGHT_BROWSER=chromium npm --prefix tools/site run test:assembly-guide
+PLAYWRIGHT_BROWSER=webkit npm --prefix tools/site run test:assembly-guide
+```
+
+The per-instance corrective multipart suites at `cdbee23b` recorded 18 case rows per engine, zero page errors, and terminal
+owned service cleanup. They include selected-instance appearance and actual reset-control assertions, ordinary
+absolute/root/CORS/redirect loads, slider readouts, first-frame readiness and abort-after-late-response controls.
+The earlier `e219d2ac` pair recorded 13 rows per engine and remains the narrower historical result. The final
+underside-camera correction then passed the existing suite in both engines with 19 case rows each, zero page
+errors and terminal owned cleanup. It preserves the ordinary orbit limit and detects reinstating the old guide
+clamp; these are shared-component results, not product or portable-release acceptance. The earlier `65d7dcd9` WebKit picking failure and changed `5fe0132d` offscreen-projection failure
+remain retained failures; camera matrices and overlay fitting were corrected with strict projected-bound checks.
+The final top-guide hash forwarding changes only the portable entry binding; its explicit Node corruption control
+passes, while actual extracted-ZIP valid/corrupt-entry browser acceptance belongs to the release integration.
+The composed release suite subsequently passed seven case rows in both engines at `47b07508`, using runtime
+bytes from `cdbee23b`. It removes the original source/release, checks real draw and DOM/material reset, selected
+appearance, corruption refusal and no-script instructions, and allows no outside requests. Synthetic released
+fixtures establish version independence; they are not claims of historical Gyropup releases. The final-runtime
+portable pair with `d0d13ee3` subsequently passed seven cases per engine, including the independent underside
+camera vector, zero page errors/foreign requests and owned cleanup. The publisher reference wall was folded
+after its actual CI failure and measured 265/264 px against the unchanged 1200 px bound.
+The focused existing and new Node suites passed 37 tests; exporter/render/layout/area/packaging checks passed
+138 tests with two optional-extra skips. The corrective layout/area/package checks passed 120 tests, and the structural map suite passed 28 with its
+explicit CI-only drawing skip. These counts do not substitute for current-head CI or product acceptance.
+
+The existing `webkit.yml` runs the new browser suite in both engines; it does not waive the existing site,
+file-viewer, part-table or diagram suites. Browser reports and screenshots use `TEST_OUTPUT`, defaulting to a
+private temporary output directory. Failure receipts remain failures; a corrected source needs a fresh run.
+
+Existing `tests/publish/test_view.py` checks exporter/packing/frame metadata and Python↔JavaScript decoding.
+`tests/review/test_packet.py` checks source hashes, staleness and step-derived offsets. Existing rigid-subassembly
+and assembly gates remain separate. Release tests already check deterministic ZIPs, source/dirty state, rewritten
+links, stale print sets and destination collisions; extending guide packaging must retain those controls.
+
+The composed publisher CI also caught the missing visual flows on these two newly published pages. The diagrams
+above follow real loader/controller calls and test consumers; the website visual gate stays unchanged.
+
+</details>
+
+## Geometric playback validation follow-through (#512)
+
+The existing assembly gate is the insertion engine for ordered guide validation. Its ordinary dossier sweep
+starts beyond all obstacles; playback instead needs an explicitly bounded path from each authored offset to
+zero. The default dossier behavior must stay unchanged. Guide navigation, model bytes and mechanical evidence
+need distinct bindings: an STL SHA alone cannot establish that a same-named BREP is the same geometry.
+
+<details>
+<summary>Finite-path acceptance controls, physical limits and retained frame failure</summary>
+
+The first slice adds bounded sweeps and a source-bound Python adapter over the existing gate. A producer records
+the guide/model hashes and each actual BREP content hash and placement when exporting the guide meshes from
+those shapes. Validation compares that frozen binding with the current inputs before any geometric query.
+Missing or stale binding fails visibly. The fixture must include an impossible insertion which becomes clear
+after an explicit order change, a side blocker, a finite path that excludes a distant obstacle, units/frame
+mutations, unknown kernel responses, and sample-budget exhaustion. The original failing report remains evidence.
+
+This checks rigid, straight, finite presentation trajectories against earlier installed geometry. It does not
+assert that explode offsets are authored manufacturing instructions, that a grouped mesh is an internally
+assembled rigid module, or that touching parts are retained. Existing separately qualified subassembly plans
+and fastener/tool gates retain those responsibilities.
+
+Support and stability are explicitly unknown until the producer supplies masses/inertias, stage fixtures,
+retention/connectivity assumptions, gravity, friction/contact settings and collision geometry suitable for the
+existing MuJoCo exporter. A prescribed kinematic path can drive a part through a wall, and convex collision
+hulls can fill bearing bores; neither is a physical assembly proof. A later bounded gravity/settle fixture must
+compare a supported stage with an unsupported/falling stage, record solver inputs and drift/contact evidence,
+and keep insertion, retention and gravity results separate. Long native product runs belong on a compute host.
+
+Independent review reproduced a false pass after changing only the insert's CAD matrix by +100 mm while
+leaving guide/STL/BREP bytes unchanged. The regression now requires a failing world-bounds screen before any
+path query, and separately rejects double-applied placements. Bounds compare actual captured STL vertices,
+located CAD and model metadata with explicit bounded tessellation allowance; matching bounds still do not prove
+complete shape correspondence. Original-BREP byte binding preserves the native producer platform and avoids
+rehashing imported shapes. Nonfinite distances/tolerances, infinite or fractional budgets, and undecided
+refinement midpoints have negative controls.
+
+</details>
+
+## Large native collections need input-only preflight and recoverable progress (#517)
+
+A 233-instance source collection can require 27,028 ordered pairs. Extend the existing playback gate with an
+explicit input-only mode, returning a distinct `assembly-playback-preflight` gate and `paths_checked: false`.
+It must reuse captured-input, BREP-load and actual-world-frame checks without running insertion paths.
+
+<details>
+<summary>Checkpoint ownership, failure evidence and acceptance controls</summary>
+
+An optional progress callback receives isolated JSON-safe phase, per-part load/frame, per-pair and per-operation
+snapshots. Emit before potentially slow native work and after completed evidence. The project wrapper owns
+flushed JSONL storage, external runtime caps and detached execution. A callback/storage failure stops validation
+and produces a failing report retaining earlier collisions and partial current-operation evidence. Progress is
+not a resume or clearance certificate; unrecorded or uncompleted pairs remain unchecked. Defaults retain the
+existing full-check behavior. Prove event order, mutation isolation and failures before native work and after a
+known collision, with the existing box and real CAD fixture.
+
+</details>
+
+## Canonical serial-plan acceptance (#542)
+
+The native rail bench shares one plan across mini and detailed viewers. Acceptance pairs finite geometry/tool
+blockers with independent source landmarks and actual rendered world vertices. Results stay source-scoped;
+physical qualification is separate.
+
+<details>
+<summary>Contract controls, receipt commands and source-scoped results</summary>
+
+The first slice uses one small native base/rail/plate/lid/fastener fixture in both detailed and mini
+consumers. Source-derived noncoplanar mesh landmarks and actual rendered world matrices are independent
+of the evaluator. Required controls cover a mid-segment obstacle despite clear endpoints, future parked
+occupancy, attached-fastener-only collision, wrong axis/order, units/parent errors, stale source/export,
+ordinary-driver obstruction, and unavailable/unsupported tool work. Forward/reverse equivalence, segment
+boundaries, direct seeks, reset and repeated reversals are checked without resampling rest transforms.
+
+Contract tests cover exact IDs, duplicate membership, dependencies/cycles, finite nonzero segments and
+unsupported rotation/concurrency/process fields. Publication tests require both consumers to bind the same
+plan hash and reject stale bytes. Native checks retain pair/segment witnesses and finite sampling settings;
+browser checks observe vertices through actual current world matrices, never requested offsets alone.
+Current implementation/evidence is tracked in the #542 slice PR; this matrix is acceptance work, not a
+statement that these cases or any product build have passed.
+
+The native fixture lives in `tests/fixtures/assembly-plan/`; its generator emits the same plan bytes for both
+consumers. `ASSEMBLY_PLAN_ONLY=1` selects eleven bounded cases in the existing browser harness. Receipts include
+source/mesh/renderer/harness hashes, actual world-vertex captures for four noncoplanar source corners per
+instance, engine version, console/page errors, and a 320 px/DPR2 reduced-motion screenshot. The independent
+oracle derives piecewise plate/roof locations from the source bench datums, not the suspect path. Source-bound
+Python checks reject tooling shrinkage; unknown tool declarations and positive unmeasured tool allowance
+cannot become clear. Source and tests must be pushed before acceptance capture. Current-head CI and separate
+review remain required even after a local packet passes.
+
+For a reproducible compact native receipt, call
+`write_serial_native_receipt(output_path, exact_head_sha)` from `tests.review.test_gate_assembly` with the existing
+CAD Python and `PYTHONPATH=software`. It regenerates original BREP inputs in a temporary directory, captures
+both directions and retains actual pair/contact witnesses for the thin, attached-fastener and ordinary-handle
+controls. The tool control has clear engaged/start envelopes and a first blocked/last clear approach bracket;
+the alternative lid route is recorded. Browser receipts remain separate actual-scene observations. The legacy
+J501 poster receipt may also need regeneration after shared renderer edits; that still frame validates only
+its existing illustrative consumer and is never assembly-plan evidence.
+
+At source `6c5e3647`, the bounded native fixture passed nine cases in both actual Chromium and WebKit with zero
+page/console errors. Its retained [historical receipt](https://github.com/Valpatel/cad-agent/blob/9b819b9a69f49bc37a6692dd3e00b0e081109a83/tests/fixtures/assembly-plan/acceptance.json) includes source,
+mesh, runtime and harness hashes, noncoplanar world-vertex samples, native first-contact witnesses, and an
+ordinary-handle obstruction with clear start/engaged poses and a 21→20 mm last-clear/first-blocked approach
+bracket. The matching phone screenshot is retained beside the fixture. Independent review and final CI remain
+separate; these results establish no J501/Gyropup assembly path or physical build qualification.
+
+
+Independent review of `9b819b9a` found that map normalization could hide an earlier duplicate partition while
+packing/rendering all six entries against five source IDs. This blocked-head failure is preserved beside the
+fixture and remains distinct from its older passing nine-case traces. Exporter and actual mini-browser
+controls now prepend both a genuine plate copy and a rail renamed `plate`, preserving original plan/bin
+hashes. Both must reject the original list before packing output or allocating a scene; exact map keys alone
+are insufficient. Renewed current-source receipts and separate review are required for the correction.
+
+
+After the duplicate-partition correction and integration of accepted dev `fac4da61`, source `31cdf630` passed
+**eleven cases in both Chromium and WebKit**, with zero page/console errors. Both original-list duplicate
+controls now refuse with no canvas, controls, part count or explode API; the independent second valid mini
+still loads. Receipts bind their exact recorded source, renderer/harness/mesh hashes, actual world-vertex
+observations and freshly regenerated native witnesses.
+The original blocked-head failure remains retained and is never relabeled as a passing capture. Independent
+exact-head review and full CI remain required.
+
+
+Later hosted CI at `e9b5faf9` still failed the missing-optional-CadQuery boundary and generated-map freshness;
+those real failures and the superseded cancellations remain in `ci-failure-e9b5faf9.json`, not as passes.
+Correction source `d1ca1514` guards the first optional import and regenerates the canonical map. Local checks
+report 15 pure cases passed / two native cases skipped with CadQuery unavailable, 17 passed with CAD installed,
+and 28 ownership/freshness cases passed / one separate CI-only diagram case skipped. Its renewed
+[current receipt](../../tests/fixtures/assembly-plan/acceptance.json) also records eleven actual cases per engine
+with zero page/console errors. Required hosted CI and fresh independent review remain separate acceptance.
+
+</details>

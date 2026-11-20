@@ -125,10 +125,10 @@ domains:
         title: Fasteners, bought hardware and assembly
         scope: Screws, inserts and other bought parts, and getting them in and out.
         maturity: tooling
-        pages: [docs/mechanical/subassembly-insertion.md]
+        pages: [docs/mechanical/subassembly-insertion.md, docs/research/manufacturing/pem-micro-fasteners.md]
         cli: [holes, mcmaster]
         api: [cadagent.mechanical.fasteners, cadagent.mechanical.holes, cadagent.mechanical.mcmaster]
-        skills: [mcmaster-parts]
+        skills: [mcmaster-parts, pem-fastener-selection]
         issues: [46]
         topics:
           - {slug: fasteners, title: Fasteners, scope: "Screw stacks, engagement, bottoming and hole clearance.", maturity: tooling}
@@ -150,7 +150,7 @@ domains:
         title: Mould design
         scope: Parts designed for moulding, and the moulds themselves.
         maturity: idea
-        pages: [docs/research/manufacturing/process-profiles.md]
+        pages: [docs/research/manufacturing/process-profiles.md, docs/research/manufacturing/moulding-wall-bond-and-release-review.md]
         issues: [99]
         topics:
           - {slug: moulded-part-design, title: Moulded-part design, scope: "Walls, draft, ribs, bosses, gates and sink.", maturity: idea, issues: [99]}
@@ -160,7 +160,7 @@ domains:
     title: Manufacturing
     scope: Turning a design into a part, process by process.
     maturity: tooling
-    pages: [docs/process-checks.md, docs/research/manufacturing/process-profiles.md, docs/research/manufacturing/README.md]
+    pages: [docs/process-checks.md, docs/research/manufacturing/process-profiles.md, docs/research/manufacturing/README.md, docs/research/manufacturing/joint-interfaces.md]
     cli: [rules, choose]
     api: [cadagent.manufacturing.process, cadagent.manufacturing.dfm, cadagent.manufacturing.cards]
     uses: [cadagent.mechanical.compliant.allowables, cadagent.mechanical.inserts, cadagent.review.references]
@@ -184,6 +184,7 @@ domains:
           - {slug: resin-and-powder, title: Resin and powder, scope: "SLA/MSLA, SLS and MJF design rules.", maturity: idea, issues: [99]}
       - slug: cnc-machining
         title: CNC machining
+        pages: [docs/research/manufacturing/sheet-metal-file-and-hole-review.md]
         scope: Milled and turned parts.
         maturity: idea
         issues: [99]
@@ -202,6 +203,7 @@ domains:
           - docs/process-checks.md
           - docs/research/fea-and-process-tools.md
           - docs/research/manufacturing/sheet-metal-guides.md
+          - docs/research/manufacturing/sheet-metal-file-and-hole-review.md
           - docs/research/manufacturing/sheet-metal.md
           - docs/research/manufacturing/sheet-metal-joining.md
           - docs/sheet-metal-hardware.md
@@ -214,6 +216,7 @@ domains:
         title: Mould making
         scope: Short-run moulds made in the shop.
         maturity: idea
+        pages: [docs/research/manufacturing/process-profiles.md]
         topics:
           - {slug: silicone-moulds, title: Silicone moulds, scope: "Printed masters and silicone moulds.", maturity: idea}
           - {slug: urethane-casting, title: Urethane casting, scope: "Casting urethane parts in silicone moulds.", maturity: idea}
@@ -274,6 +277,8 @@ domains:
         maturity: tooling
         priority: [demo]
         api: [cadagent.simulation.robot]
+        pages: [docs/examples/robot-replay/README.md]
+        issues: [515, 710, 798]
         projects: [gyropup]
       - slug: topology-optimisation
         title: Topology optimisation
@@ -357,14 +362,14 @@ domains:
         skills: [cad-work-tracking, cad-pr-review, cad-remote-runs]
         agents: [cad-pr-reviewer, cad-resume]
         lessons: process
-        issues: [111, 112]
+        issues: [111, 112, 759]
       - slug: design-process
         title: Design process
         scope: Requirements and the dossier that holds them, integrity gates and section reviews, through to release.
         maturity: tooling
         pages: [docs/practice/design-process-plan.md, docs/practice/dossier.md, docs/practice/gates.md, docs/practice/review-packet.md, docs/practice/volume-precision.md, docs/research/agent-workflow/design-workflows.md]
         cli: [init, build, check, report, all, dossier, gates, review-packet, review-section]
-        api: [cadagent.review.gates, cadagent.review.dossier, cadagent.review.packet]
+        api: [cadagent.review.gates, cadagent.review.gates.playback, cadagent.review.dossier, cadagent.review.packet]
         skills: [design-process]
         issues: [40, 41, 97]
       - slug: review-and-evidence
@@ -386,14 +391,22 @@ domains:
         title: Publishing
         scope: Review sites, viewers, releases and this site.
         maturity: tooling
-        pages: [docs/practice/file-viewer.md, docs/practice/style-guide.md, docs/practice/web-diagrams.md, docs/practice/web-parts.md, docs/practice/animated-figures.md, docs/practice/share-badge.md]
+        pages: [docs/practice/assembly-guide.md, docs/practice/assembly-guide-testing.md, docs/examples/build-guide/README.md, docs/practice/file-viewer.md, docs/practice/style-guide.md, docs/practice/web-diagrams.md, docs/practice/web-parts.md, docs/practice/animated-figures.md, docs/practice/share-badge.md]
         cli: [package, release, serve, site, view, webkit]
         api: [cadagent.publish.site, cadagent.publish.site_review, cadagent.publish.report, cadagent.publish.htmlreport,
               cadagent.publish.render, cadagent.publish.view, cadagent.publish.dotsvg, cadagent.publish.serve,
-              cadagent.publish.release, cadagent.publish.anim]
-        issues: [104, 141, 181]
+              cadagent.publish.release, cadagent.publish.guides, cadagent.publish.runtime, cadagent.publish.anim]
+        issues: [104, 141, 181, 811]
+      - slug: scada
+        title: SCADA toolkit
+        scope: Shared process diagrams, equipment artwork, replaceable simulation models and reusable authoring workflows.
+        maturity: tooling
+        pages: [docs/practice/scada/README.md, docs/practice/scada/architecture.md, docs/practice/scada/local-use.md, docs/practice/scada/resources-and-growth.md]
+        skills: [scada-component-authoring, scada-system-authoring, scada-model-adaptation, scada-viewer-review, scada-distribution-review, repository-documentation]
+        issues: [692]
       - slug: evaluation
         title: Evaluation
         scope: Standard jobs and graders that measure models, harnesses and our tooling.
-        maturity: idea
-        issues: [39, 142, 143]
+        maturity: tooling
+        pages: [docs/practice/standard-evaluation.md]
+        issues: [39, 142, 143, 612]

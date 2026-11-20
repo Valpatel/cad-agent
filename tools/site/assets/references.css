@@ -71,3 +71,6 @@
 .ref-unread{border-bottom:1px dotted var(--line-3)}
 /* on a phone the all-areas charts keep a readable size and scroll sideways in their own box */
 @media(max-width:700px){.refs-chart-wide{overflow-x:auto}.refs-chart-wide svg{min-width:600px}.refs-charts{grid-template-columns:1fr}.refs-filters label{flex:1 1 40%}.refs-table-wrap{max-height:70vh}}
+
+/* Long canonical citation labels stay complete and linked inside a phone-width article. */
+@media(max-width:700px){.ref-cite{white-space:normal;overflow-wrap:anywhere}}

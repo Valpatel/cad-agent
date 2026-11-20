@@ -1,0 +1,3307 @@
+{
+  "$schema": "../../../scada-ui/schema/scada-system.schema.json",
+  "format": "scada-system",
+  "version": 1,
+  "system": {
+    "id": "carbonated-beverages",
+    "label": "Carbonated beverages",
+    "description": "Treat water, blend a demonstration syrup stream, cool, carbonate and fill. The gas-conditioning skid is explicit; carbonation chemistry and real protection settings are not modeled."
+  },
+  "components": [
+    {
+      "id": "water",
+      "type": "tank",
+      "label": "Water feed store",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "level": 55,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/water/active",
+        "running": "/components/water/running",
+        "fault": "/components/water/fault",
+        "status": "/components/water/status",
+        "level": "/components/water/level",
+        "damage": "/components/water/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "waterFilter",
+      "type": "filter",
+      "label": "Water polishing",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/waterFilter/active",
+        "running": "/components/waterFilter/running",
+        "fault": "/components/waterFilter/fault",
+        "status": "/components/waterFilter/status",
+        "load": "/components/waterFilter/load",
+        "damage": "/components/waterFilter/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "backwash",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "waterPump",
+      "type": "pump",
+      "label": "Water feed pump",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/waterPump/active",
+        "running": "/components/waterPump/running",
+        "fault": "/components/waterPump/fault",
+        "status": "/components/waterPump/status",
+        "load": "/components/waterPump/load",
+        "speed": "/components/waterPump/speed",
+        "damage": "/components/waterPump/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "drive",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "syrup",
+      "type": "tank",
+      "label": "Syrup feed store",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "level": 55,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/syrup/active",
+        "running": "/components/syrup/running",
+        "fault": "/components/syrup/fault",
+        "status": "/components/syrup/status",
+        "level": "/components/syrup/level",
+        "damage": "/components/syrup/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "syrupDose",
+      "type": "dosing-pump",
+      "label": "Syrup metering",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/syrupDose/active",
+        "running": "/components/syrupDose/running",
+        "fault": "/components/syrupDose/fault",
+        "status": "/components/syrupDose/status",
+        "load": "/components/syrupDose/load",
+        "speed": "/components/syrupDose/speed",
+        "damage": "/components/syrupDose/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "suction",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "dose",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "drive",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "blend",
+      "type": "mixing-tank",
+      "label": "Beverage blend vessel",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "level": 55,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/blend/active",
+        "running": "/components/blend/running",
+        "fault": "/components/blend/fault",
+        "status": "/components/blend/status",
+        "level": "/components/blend/level",
+        "damage": "/components/blend/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "drive",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "cooler",
+      "type": "heat-exchanger",
+      "label": "Beverage cooling exchanger",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "temperature": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/cooler/active",
+        "running": "/components/cooler/running",
+        "fault": "/components/cooler/fault",
+        "status": "/components/cooler/status",
+        "load": "/components/cooler/load",
+        "temperature": "/components/cooler/temperature",
+        "damage": "/components/cooler/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "hot-in",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "hot-out",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "cold-in",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "cold-out",
+          "side": "right",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "carbonator",
+      "type": "reactor",
+      "label": "Carbonation contact vessel",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "level": 55,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/carbonator/active",
+        "running": "/components/carbonator/running",
+        "fault": "/components/carbonator/fault",
+        "status": "/components/carbonator/status",
+        "level": "/components/carbonator/level",
+        "damage": "/components/carbonator/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "vent",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "gas-inlet",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "controlValve",
+      "type": "control-valve",
+      "label": "Filling supply valve",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "open": true,
+        "opening": 100,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/controlValve/active",
+        "running": "/components/controlValve/running",
+        "fault": "/components/controlValve/fault",
+        "status": "/components/controlValve/status",
+        "open": "/components/controlValve/open",
+        "opening": "/components/controlValve/opening",
+        "damage": "/components/controlValve/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "control",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "buffer",
+      "type": "tank",
+      "label": "Filler buffer",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "level": 55,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/buffer/active",
+        "running": "/components/buffer/running",
+        "fault": "/components/buffer/fault",
+        "status": "/components/buffer/status",
+        "level": "/components/buffer/level",
+        "damage": "/components/buffer/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "filler",
+      "type": "filling-line",
+      "label": "Beverage filling",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/filler/active",
+        "running": "/components/filler/running",
+        "fault": "/components/filler/fault",
+        "status": "/components/filler/status",
+        "load": "/components/filler/load",
+        "speed": "/components/filler/speed",
+        "damage": "/components/filler/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "supply",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "packer",
+      "type": "packaging-line",
+      "label": "Case packing",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/packer/active",
+        "running": "/components/packer/running",
+        "fault": "/components/packer/fault",
+        "status": "/components/packer/status",
+        "load": "/components/packer/load",
+        "speed": "/components/packer/speed",
+        "damage": "/components/packer/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "supply",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "gasStore",
+      "type": "gas-holder",
+      "label": "Illustrative CO2 supply buffer",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "level": 55,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/gasStore/active",
+        "running": "/components/gasStore/running",
+        "fault": "/components/gasStore/fault",
+        "status": "/components/gasStore/status",
+        "level": "/components/gasStore/level",
+        "damage": "/components/gasStore/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "gasQuality",
+      "type": "gas-treatment",
+      "label": "Gas conditioning skid",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/gasQuality/active",
+        "running": "/components/gasQuality/running",
+        "fault": "/components/gasQuality/fault",
+        "status": "/components/gasQuality/status",
+        "load": "/components/gasQuality/load",
+        "damage": "/components/gasQuality/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "drive",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "gasCompressor",
+      "type": "compressor",
+      "label": "Gas supply compressor",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/gasCompressor/active",
+        "running": "/components/gasCompressor/running",
+        "fault": "/components/gasCompressor/fault",
+        "status": "/components/gasCompressor/status",
+        "load": "/components/gasCompressor/load",
+        "speed": "/components/gasCompressor/speed",
+        "damage": "/components/gasCompressor/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "drive",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "chiller",
+      "type": "chiller",
+      "label": "Cooling-water chiller",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "temperature": 7,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/chiller/active",
+        "running": "/components/chiller/running",
+        "fault": "/components/chiller/fault",
+        "status": "/components/chiller/status",
+        "load": "/components/chiller/load",
+        "temperature": "/components/chiller/temperature",
+        "damage": "/components/chiller/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "supply",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "heat",
+          "side": "right",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "power",
+      "type": "generator",
+      "label": "Demonstration site power",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/power/active",
+        "running": "/components/power/running",
+        "fault": "/components/power/fault",
+        "status": "/components/power/status",
+        "load": "/components/power/load",
+        "speed": "/components/power/speed",
+        "damage": "/components/power/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "fuel",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "output",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "exhaust",
+          "side": "right",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "controller",
+      "type": "plc-rack",
+      "label": "Blend and filling controller",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "connected": true,
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/controller/active",
+        "running": "/components/controller/running",
+        "fault": "/components/controller/fault",
+        "status": "/components/controller/status",
+        "connected": "/components/controller/connected",
+        "load": "/components/controller/load",
+        "damage": "/components/controller/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "power",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "flow",
+      "type": "flow-meter",
+      "label": "Beverage flow monitor",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "value": 42,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/flow/active",
+        "running": "/components/flow/running",
+        "fault": "/components/flow/fault",
+        "status": "/components/flow/status",
+        "value": "/components/flow/value",
+        "damage": "/components/flow/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "process",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "signal",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "power",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "water-to-waterFilter",
+      "from": {
+        "component": "water",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "waterFilter",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "flowBinding": "/flows/water-to-waterFilter",
+      "label": "Water feed store \u2192 Water polishing"
+    },
+    {
+      "id": "waterFilter-to-waterPump",
+      "from": {
+        "component": "waterFilter",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "waterPump",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "flowBinding": "/flows/waterFilter-to-waterPump",
+      "label": "Water polishing \u2192 Water feed pump"
+    },
+    {
+      "id": "waterPump-to-blend",
+      "from": {
+        "component": "waterPump",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "blend",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "flowBinding": "/flows/waterPump-to-blend",
+      "label": "Water feed pump \u2192 Beverage blend vessel"
+    },
+    {
+      "id": "syrup-to-syrupDose",
+      "from": {
+        "component": "syrup",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "syrupDose",
+        "port": "suction"
+      },
+      "medium": "liquid",
+      "flowBinding": "/flows/syrup-to-syrupDose",
+      "label": "Syrup feed store \u2192 Syrup metering"
+    },
+    {
+      "id": "syrupDose-to-blend",
+      "from": {
+        "component": "syrupDose",
+        "port": "dose"
+      },
+      "to": {
+        "component": "blend",
+        "port": "inlet"
+      },
+      "medium": "chemical",
+      "flowBinding": "/flows/syrupDose-to-blend",
+      "label": "Syrup metering \u2192 Beverage blend vessel"
+    },
+    {
+      "id": "blend-to-cooler",
+      "from": {
+        "component": "blend",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "cooler",
+        "port": "hot-in"
+      },
+      "medium": "liquid",
+      "flowBinding": "/flows/blend-to-cooler",
+      "label": "Beverage blend vessel \u2192 Beverage cooling exchanger"
+    },
+    {
+      "id": "cooler-to-carbonator",
+      "from": {
+        "component": "cooler",
+        "port": "hot-out"
+      },
+      "to": {
+        "component": "carbonator",
+        "port": "inlet"
+      },
+      "medium": "thermal-fluid",
+      "flowBinding": "/flows/cooler-to-carbonator",
+      "label": "Beverage cooling exchanger \u2192 Carbonation contact vessel"
+    },
+    {
+      "id": "carbonator-to-controlValve",
+      "from": {
+        "component": "carbonator",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "controlValve",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "flowBinding": "/flows/carbonator-to-controlValve",
+      "label": "Carbonation contact vessel \u2192 Filling supply valve"
+    },
+    {
+      "id": "controlValve-to-buffer",
+      "from": {
+        "component": "controlValve",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "buffer",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "flowBinding": "/flows/controlValve-to-buffer",
+      "label": "Filling supply valve \u2192 Filler buffer"
+    },
+    {
+      "id": "buffer-to-filler",
+      "from": {
+        "component": "buffer",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "filler",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "flowBinding": "/flows/buffer-to-filler",
+      "label": "Filler buffer \u2192 Beverage filling"
+    },
+    {
+      "id": "filler-to-packer",
+      "from": {
+        "component": "filler",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "packer",
+        "port": "inlet"
+      },
+      "medium": "product",
+      "flowBinding": "/flows/filler-to-packer",
+      "label": "Beverage filling \u2192 Case packing"
+    },
+    {
+      "id": "gasStore-to-gasQuality",
+      "from": {
+        "component": "gasStore",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "gasQuality",
+        "port": "inlet"
+      },
+      "medium": "gas",
+      "flowBinding": "/flows/gasStore-to-gasQuality",
+      "label": "Illustrative CO2 supply buffer \u2192 Gas conditioning skid"
+    },
+    {
+      "id": "gasQuality-to-gasCompressor",
+      "from": {
+        "component": "gasQuality",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "gasCompressor",
+        "port": "inlet"
+      },
+      "medium": "gas",
+      "flowBinding": "/flows/gasQuality-to-gasCompressor",
+      "label": "Gas conditioning skid \u2192 Gas supply compressor"
+    },
+    {
+      "id": "gasCompressor-to-carbonator",
+      "from": {
+        "component": "gasCompressor",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "carbonator",
+        "port": "gas-inlet"
+      },
+      "medium": "gas",
+      "flowBinding": "/flows/gasCompressor-to-carbonator",
+      "label": "Gas supply compressor \u2192 Carbonation contact vessel"
+    },
+    {
+      "id": "chiller-to-cooler",
+      "from": {
+        "component": "chiller",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "cooler",
+        "port": "cold-in"
+      },
+      "medium": "thermal-fluid",
+      "flowBinding": "/flows/chiller-to-cooler",
+      "label": "Cooling-water chiller \u2192 Beverage cooling exchanger"
+    },
+    {
+      "id": "power-to-waterPump",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "waterPump",
+        "port": "drive"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-waterPump",
+      "label": "Demonstration site power \u2192 Water feed pump"
+    },
+    {
+      "id": "power-to-syrupDose",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "syrupDose",
+        "port": "drive"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-syrupDose",
+      "label": "Demonstration site power \u2192 Syrup metering"
+    },
+    {
+      "id": "power-to-blend",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "blend",
+        "port": "drive"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-blend",
+      "label": "Demonstration site power \u2192 Beverage blend vessel"
+    },
+    {
+      "id": "power-to-filler",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "filler",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-filler",
+      "label": "Demonstration site power \u2192 Beverage filling"
+    },
+    {
+      "id": "power-to-packer",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "packer",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-packer",
+      "label": "Demonstration site power \u2192 Case packing"
+    },
+    {
+      "id": "power-to-gasQuality",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "gasQuality",
+        "port": "drive"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-gasQuality",
+      "label": "Demonstration site power \u2192 Gas conditioning skid"
+    },
+    {
+      "id": "power-to-gasCompressor",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "gasCompressor",
+        "port": "drive"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-gasCompressor",
+      "label": "Demonstration site power \u2192 Gas supply compressor"
+    },
+    {
+      "id": "power-to-chiller",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "chiller",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-chiller",
+      "label": "Demonstration site power \u2192 Cooling-water chiller"
+    },
+    {
+      "id": "power-to-controller",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "controller",
+        "port": "power"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-controller",
+      "label": "Demonstration site power \u2192 Blend and filling controller"
+    },
+    {
+      "id": "power-to-flow",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "flow",
+        "port": "power"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-flow",
+      "label": "Demonstration site power \u2192 Beverage flow monitor"
+    },
+    {
+      "id": "controlValve-to-flow",
+      "from": {
+        "component": "controlValve",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "flow",
+        "port": "process"
+      },
+      "medium": "measurement",
+      "flowBinding": "/flows/controlValve-to-flow",
+      "label": "Filling supply valve \u2192 Beverage flow monitor"
+    },
+    {
+      "id": "flow-to-controller",
+      "from": {
+        "component": "flow",
+        "port": "signal"
+      },
+      "to": {
+        "component": "controller",
+        "port": "network"
+      },
+      "medium": "data",
+      "flowBinding": "/flows/flow-to-controller",
+      "label": "Beverage flow monitor \u2192 Blend and filling controller"
+    },
+    {
+      "id": "controller-to-controlValve",
+      "from": {
+        "component": "controller",
+        "port": "network"
+      },
+      "to": {
+        "component": "controlValve",
+        "port": "control"
+      },
+      "medium": "data",
+      "flowBinding": "/flows/controller-to-controlValve",
+      "label": "Blend and filling controller \u2192 Filling supply valve"
+    }
+  ],
+  "views": [
+    {
+      "id": "process",
+      "label": "Main process",
+      "canvas": {
+        "width": 1280,
+        "height": 940
+      },
+      "placements": [
+        {
+          "component": "water",
+          "x": 60,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "waterFilter",
+          "x": 360,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "waterPump",
+          "x": 660,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "syrup",
+          "x": 960,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "syrupDose",
+          "x": 960,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "blend",
+          "x": 660,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "cooler",
+          "x": 360,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "carbonator",
+          "x": 60,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "controlValve",
+          "x": 60,
+          "y": 620,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "buffer",
+          "x": 360,
+          "y": 620,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "filler",
+          "x": 660,
+          "y": 620,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "packer",
+          "x": 960,
+          "y": 620,
+          "width": 200,
+          "height": 190
+        }
+      ],
+      "routes": [
+        {
+          "connection": "water-to-waterFilter",
+          "points": [
+            {
+              "x": 260,
+              "y": 155
+            },
+            {
+              "x": 360,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "waterFilter-to-waterPump",
+          "points": [
+            {
+              "x": 560,
+              "y": 155
+            },
+            {
+              "x": 660,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "waterPump-to-blend",
+          "points": [
+            {
+              "x": 760,
+              "y": 250
+            },
+            {
+              "x": 760,
+              "y": 340
+            }
+          ]
+        },
+        {
+          "connection": "syrup-to-syrupDose",
+          "points": [
+            {
+              "x": 1060,
+              "y": 250
+            },
+            {
+              "x": 1060,
+              "y": 340
+            }
+          ]
+        },
+        {
+          "connection": "syrupDose-to-blend",
+          "points": [
+            {
+              "x": 960,
+              "y": 435
+            },
+            {
+              "x": 860,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "blend-to-cooler",
+          "points": [
+            {
+              "x": 660,
+              "y": 435
+            },
+            {
+              "x": 560,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "cooler-to-carbonator",
+          "points": [
+            {
+              "x": 360,
+              "y": 435
+            },
+            {
+              "x": 260,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "carbonator-to-controlValve",
+          "points": [
+            {
+              "x": 160,
+              "y": 530
+            },
+            {
+              "x": 160,
+              "y": 620
+            }
+          ]
+        },
+        {
+          "connection": "controlValve-to-buffer",
+          "points": [
+            {
+              "x": 260,
+              "y": 715
+            },
+            {
+              "x": 360,
+              "y": 715
+            }
+          ]
+        },
+        {
+          "connection": "buffer-to-filler",
+          "points": [
+            {
+              "x": 560,
+              "y": 715
+            },
+            {
+              "x": 660,
+              "y": 715
+            }
+          ]
+        },
+        {
+          "connection": "filler-to-packer",
+          "points": [
+            {
+              "x": 860,
+              "y": 715
+            },
+            {
+              "x": 960,
+              "y": 715
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "utilities",
+      "label": "Utilities & control",
+      "canvas": {
+        "width": 980,
+        "height": 940
+      },
+      "placements": [
+        {
+          "component": "gasStore",
+          "x": 60,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "gasQuality",
+          "x": 360,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "gasCompressor",
+          "x": 660,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "chiller",
+          "x": 660,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "power",
+          "x": 360,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "controller",
+          "x": 60,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "flow",
+          "x": 60,
+          "y": 620,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "syrup",
+          "x": 360,
+          "y": 620,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "filler",
+          "x": 660,
+          "y": 620,
+          "width": 200,
+          "height": 190
+        }
+      ],
+      "routes": [
+        {
+          "connection": "gasStore-to-gasQuality",
+          "points": [
+            {
+              "x": 260,
+              "y": 155
+            },
+            {
+              "x": 360,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "gasQuality-to-gasCompressor",
+          "points": [
+            {
+              "x": 560,
+              "y": 155
+            },
+            {
+              "x": 660,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "power-to-filler",
+          "points": [
+            {
+              "x": 560,
+              "y": 435
+            },
+            {
+              "x": 584,
+              "y": 435
+            },
+            {
+              "x": 584,
+              "y": 596
+            },
+            {
+              "x": 636,
+              "y": 596
+            },
+            {
+              "x": 636,
+              "y": 715
+            },
+            {
+              "x": 660,
+              "y": 715
+            }
+          ]
+        },
+        {
+          "connection": "power-to-gasQuality",
+          "points": [
+            {
+              "x": 460,
+              "y": 340
+            },
+            {
+              "x": 460,
+              "y": 250
+            }
+          ]
+        },
+        {
+          "connection": "power-to-gasCompressor",
+          "points": [
+            {
+              "x": 560,
+              "y": 435
+            },
+            {
+              "x": 584,
+              "y": 435
+            },
+            {
+              "x": 584,
+              "y": 274
+            },
+            {
+              "x": 636,
+              "y": 274
+            },
+            {
+              "x": 636,
+              "y": 155
+            },
+            {
+              "x": 660,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "power-to-chiller",
+          "points": [
+            {
+              "x": 560,
+              "y": 435
+            },
+            {
+              "x": 660,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "power-to-controller",
+          "points": [
+            {
+              "x": 360,
+              "y": 435
+            },
+            {
+              "x": 260,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "power-to-flow",
+          "points": [
+            {
+              "x": 360,
+              "y": 435
+            },
+            {
+              "x": 336,
+              "y": 435
+            },
+            {
+              "x": 336,
+              "y": 596
+            },
+            {
+              "x": 284,
+              "y": 596
+            },
+            {
+              "x": 284,
+              "y": 715
+            },
+            {
+              "x": 260,
+              "y": 715
+            }
+          ]
+        },
+        {
+          "connection": "flow-to-controller",
+          "points": [
+            {
+              "x": 160,
+              "y": 620
+            },
+            {
+              "x": 160,
+              "y": 530
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "finishing",
+      "label": "Finishing & storage",
+      "canvas": {
+        "width": 980,
+        "height": 940
+      },
+      "placements": [
+        {
+          "component": "carbonator",
+          "x": 60,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "controlValve",
+          "x": 360,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "buffer",
+          "x": 660,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "filler",
+          "x": 660,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "packer",
+          "x": 360,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "controller",
+          "x": 60,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "flow",
+          "x": 60,
+          "y": 620,
+          "width": 200,
+          "height": 190
+        }
+      ],
+      "routes": [
+        {
+          "connection": "carbonator-to-controlValve",
+          "points": [
+            {
+              "x": 260,
+              "y": 155
+            },
+            {
+              "x": 360,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "controlValve-to-buffer",
+          "points": [
+            {
+              "x": 560,
+              "y": 155
+            },
+            {
+              "x": 660,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "buffer-to-filler",
+          "points": [
+            {
+              "x": 760,
+              "y": 250
+            },
+            {
+              "x": 760,
+              "y": 340
+            }
+          ]
+        },
+        {
+          "connection": "filler-to-packer",
+          "points": [
+            {
+              "x": 660,
+              "y": 435
+            },
+            {
+              "x": 560,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "controlValve-to-flow",
+          "points": [
+            {
+              "x": 460,
+              "y": 250
+            },
+            {
+              "x": 460,
+              "y": 316
+            },
+            {
+              "x": 336,
+              "y": 316
+            },
+            {
+              "x": 336,
+              "y": 596
+            },
+            {
+              "x": 160,
+              "y": 596
+            },
+            {
+              "x": 160,
+              "y": 620
+            }
+          ]
+        },
+        {
+          "connection": "flow-to-controller",
+          "points": [
+            {
+              "x": 160,
+              "y": 620
+            },
+            {
+              "x": 160,
+              "y": 530
+            }
+          ]
+        },
+        {
+          "connection": "controller-to-controlValve",
+          "points": [
+            {
+              "x": 260,
+              "y": 435
+            },
+            {
+              "x": 284,
+              "y": 435
+            },
+            {
+              "x": 284,
+              "y": 274
+            },
+            {
+              "x": 336,
+              "y": 274
+            },
+            {
+              "x": 336,
+              "y": 155
+            },
+            {
+              "x": 360,
+              "y": 155
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "commands": [
+    {
+      "id": "water-enabled",
+      "label": "Water feed store \u00b7 Enabled",
+      "component": "water",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "water"
+      }
+    },
+    {
+      "id": "water-load",
+      "label": "Water feed store \u00b7 Requested load",
+      "component": "water",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "water"
+      }
+    },
+    {
+      "id": "water-fault",
+      "label": "Water feed store \u00b7 Injected failure",
+      "component": "water",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "water"
+      }
+    },
+    {
+      "id": "water-repair",
+      "label": "Repair Water feed store",
+      "component": "water",
+      "action": "repair",
+      "arguments": {
+        "equipment": "water"
+      }
+    },
+    {
+      "id": "waterFilter-enabled",
+      "label": "Water polishing \u00b7 Enabled",
+      "component": "waterFilter",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "waterFilter"
+      }
+    },
+    {
+      "id": "waterFilter-load",
+      "label": "Water polishing \u00b7 Requested load",
+      "component": "waterFilter",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "waterFilter"
+      }
+    },
+    {
+      "id": "waterFilter-fault",
+      "label": "Water polishing \u00b7 Injected failure",
+      "component": "waterFilter",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "waterFilter"
+      }
+    },
+    {
+      "id": "waterFilter-repair",
+      "label": "Repair Water polishing",
+      "component": "waterFilter",
+      "action": "repair",
+      "arguments": {
+        "equipment": "waterFilter"
+      }
+    },
+    {
+      "id": "waterPump-enabled",
+      "label": "Water feed pump \u00b7 Enabled",
+      "component": "waterPump",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "waterPump"
+      }
+    },
+    {
+      "id": "waterPump-load",
+      "label": "Water feed pump \u00b7 Requested load",
+      "component": "waterPump",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "waterPump"
+      }
+    },
+    {
+      "id": "waterPump-fault",
+      "label": "Water feed pump \u00b7 Injected failure",
+      "component": "waterPump",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "waterPump"
+      }
+    },
+    {
+      "id": "waterPump-repair",
+      "label": "Repair Water feed pump",
+      "component": "waterPump",
+      "action": "repair",
+      "arguments": {
+        "equipment": "waterPump"
+      }
+    },
+    {
+      "id": "syrup-enabled",
+      "label": "Syrup feed store \u00b7 Enabled",
+      "component": "syrup",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "syrup"
+      }
+    },
+    {
+      "id": "syrup-load",
+      "label": "Syrup feed store \u00b7 Requested load",
+      "component": "syrup",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "syrup"
+      }
+    },
+    {
+      "id": "syrup-fault",
+      "label": "Syrup feed store \u00b7 Injected failure",
+      "component": "syrup",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "syrup"
+      }
+    },
+    {
+      "id": "syrup-repair",
+      "label": "Repair Syrup feed store",
+      "component": "syrup",
+      "action": "repair",
+      "arguments": {
+        "equipment": "syrup"
+      }
+    },
+    {
+      "id": "syrupDose-enabled",
+      "label": "Syrup metering \u00b7 Enabled",
+      "component": "syrupDose",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "syrupDose"
+      }
+    },
+    {
+      "id": "syrupDose-load",
+      "label": "Syrup metering \u00b7 Requested load",
+      "component": "syrupDose",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "syrupDose"
+      }
+    },
+    {
+      "id": "syrupDose-fault",
+      "label": "Syrup metering \u00b7 Injected failure",
+      "component": "syrupDose",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "syrupDose"
+      }
+    },
+    {
+      "id": "syrupDose-repair",
+      "label": "Repair Syrup metering",
+      "component": "syrupDose",
+      "action": "repair",
+      "arguments": {
+        "equipment": "syrupDose"
+      }
+    },
+    {
+      "id": "blend-enabled",
+      "label": "Beverage blend vessel \u00b7 Enabled",
+      "component": "blend",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "blend"
+      }
+    },
+    {
+      "id": "blend-load",
+      "label": "Beverage blend vessel \u00b7 Requested load",
+      "component": "blend",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "blend"
+      }
+    },
+    {
+      "id": "blend-fault",
+      "label": "Beverage blend vessel \u00b7 Injected failure",
+      "component": "blend",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "blend"
+      }
+    },
+    {
+      "id": "blend-repair",
+      "label": "Repair Beverage blend vessel",
+      "component": "blend",
+      "action": "repair",
+      "arguments": {
+        "equipment": "blend"
+      }
+    },
+    {
+      "id": "cooler-enabled",
+      "label": "Beverage cooling exchanger \u00b7 Enabled",
+      "component": "cooler",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "cooler"
+      }
+    },
+    {
+      "id": "cooler-load",
+      "label": "Beverage cooling exchanger \u00b7 Requested load",
+      "component": "cooler",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "cooler"
+      }
+    },
+    {
+      "id": "cooler-fault",
+      "label": "Beverage cooling exchanger \u00b7 Injected failure",
+      "component": "cooler",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "cooler"
+      }
+    },
+    {
+      "id": "cooler-repair",
+      "label": "Repair Beverage cooling exchanger",
+      "component": "cooler",
+      "action": "repair",
+      "arguments": {
+        "equipment": "cooler"
+      }
+    },
+    {
+      "id": "carbonator-enabled",
+      "label": "Carbonation contact vessel \u00b7 Enabled",
+      "component": "carbonator",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "carbonator"
+      }
+    },
+    {
+      "id": "carbonator-load",
+      "label": "Carbonation contact vessel \u00b7 Requested load",
+      "component": "carbonator",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "carbonator"
+      }
+    },
+    {
+      "id": "carbonator-fault",
+      "label": "Carbonation contact vessel \u00b7 Injected failure",
+      "component": "carbonator",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "carbonator"
+      }
+    },
+    {
+      "id": "carbonator-repair",
+      "label": "Repair Carbonation contact vessel",
+      "component": "carbonator",
+      "action": "repair",
+      "arguments": {
+        "equipment": "carbonator"
+      }
+    },
+    {
+      "id": "controlValve-enabled",
+      "label": "Filling supply valve \u00b7 Enabled",
+      "component": "controlValve",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "controlValve"
+      }
+    },
+    {
+      "id": "controlValve-load",
+      "label": "Filling supply valve \u00b7 Opening setpoint (%)",
+      "component": "controlValve",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "controlValve"
+      }
+    },
+    {
+      "id": "controlValve-fault",
+      "label": "Filling supply valve \u00b7 Injected failure",
+      "component": "controlValve",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "controlValve"
+      }
+    },
+    {
+      "id": "controlValve-open",
+      "label": "Filling supply valve \u00b7 Open path",
+      "component": "controlValve",
+      "action": "setOpen",
+      "arguments": {
+        "equipment": "controlValve"
+      }
+    },
+    {
+      "id": "controlValve-repair",
+      "label": "Repair Filling supply valve",
+      "component": "controlValve",
+      "action": "repair",
+      "arguments": {
+        "equipment": "controlValve"
+      }
+    },
+    {
+      "id": "buffer-enabled",
+      "label": "Filler buffer \u00b7 Enabled",
+      "component": "buffer",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "buffer"
+      }
+    },
+    {
+      "id": "buffer-load",
+      "label": "Filler buffer \u00b7 Requested load",
+      "component": "buffer",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "buffer"
+      }
+    },
+    {
+      "id": "buffer-fault",
+      "label": "Filler buffer \u00b7 Injected failure",
+      "component": "buffer",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "buffer"
+      }
+    },
+    {
+      "id": "buffer-repair",
+      "label": "Repair Filler buffer",
+      "component": "buffer",
+      "action": "repair",
+      "arguments": {
+        "equipment": "buffer"
+      }
+    },
+    {
+      "id": "filler-enabled",
+      "label": "Beverage filling \u00b7 Enabled",
+      "component": "filler",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "filler"
+      }
+    },
+    {
+      "id": "filler-load",
+      "label": "Beverage filling \u00b7 Requested load",
+      "component": "filler",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "filler"
+      }
+    },
+    {
+      "id": "filler-fault",
+      "label": "Beverage filling \u00b7 Injected failure",
+      "component": "filler",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "filler"
+      }
+    },
+    {
+      "id": "filler-repair",
+      "label": "Repair Beverage filling",
+      "component": "filler",
+      "action": "repair",
+      "arguments": {
+        "equipment": "filler"
+      }
+    },
+    {
+      "id": "packer-enabled",
+      "label": "Case packing \u00b7 Enabled",
+      "component": "packer",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "packer"
+      }
+    },
+    {
+      "id": "packer-load",
+      "label": "Case packing \u00b7 Requested load",
+      "component": "packer",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "packer"
+      }
+    },
+    {
+      "id": "packer-fault",
+      "label": "Case packing \u00b7 Injected failure",
+      "component": "packer",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "packer"
+      }
+    },
+    {
+      "id": "packer-repair",
+      "label": "Repair Case packing",
+      "component": "packer",
+      "action": "repair",
+      "arguments": {
+        "equipment": "packer"
+      }
+    },
+    {
+      "id": "gasStore-enabled",
+      "label": "Illustrative CO2 supply buffer \u00b7 Enabled",
+      "component": "gasStore",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "gasStore"
+      }
+    },
+    {
+      "id": "gasStore-load",
+      "label": "Illustrative CO2 supply buffer \u00b7 Requested load",
+      "component": "gasStore",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "gasStore"
+      }
+    },
+    {
+      "id": "gasStore-fault",
+      "label": "Illustrative CO2 supply buffer \u00b7 Injected failure",
+      "component": "gasStore",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "gasStore"
+      }
+    },
+    {
+      "id": "gasStore-repair",
+      "label": "Repair Illustrative CO2 supply buffer",
+      "component": "gasStore",
+      "action": "repair",
+      "arguments": {
+        "equipment": "gasStore"
+      }
+    },
+    {
+      "id": "gasQuality-enabled",
+      "label": "Gas conditioning skid \u00b7 Enabled",
+      "component": "gasQuality",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "gasQuality"
+      }
+    },
+    {
+      "id": "gasQuality-load",
+      "label": "Gas conditioning skid \u00b7 Requested load",
+      "component": "gasQuality",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "gasQuality"
+      }
+    },
+    {
+      "id": "gasQuality-fault",
+      "label": "Gas conditioning skid \u00b7 Injected failure",
+      "component": "gasQuality",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "gasQuality"
+      }
+    },
+    {
+      "id": "gasQuality-repair",
+      "label": "Repair Gas conditioning skid",
+      "component": "gasQuality",
+      "action": "repair",
+      "arguments": {
+        "equipment": "gasQuality"
+      }
+    },
+    {
+      "id": "gasCompressor-enabled",
+      "label": "Gas supply compressor \u00b7 Enabled",
+      "component": "gasCompressor",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "gasCompressor"
+      }
+    },
+    {
+      "id": "gasCompressor-load",
+      "label": "Gas supply compressor \u00b7 Requested load",
+      "component": "gasCompressor",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "gasCompressor"
+      }
+    },
+    {
+      "id": "gasCompressor-fault",
+      "label": "Gas supply compressor \u00b7 Injected failure",
+      "component": "gasCompressor",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "gasCompressor"
+      }
+    },
+    {
+      "id": "gasCompressor-repair",
+      "label": "Repair Gas supply compressor",
+      "component": "gasCompressor",
+      "action": "repair",
+      "arguments": {
+        "equipment": "gasCompressor"
+      }
+    },
+    {
+      "id": "chiller-enabled",
+      "label": "Cooling-water chiller \u00b7 Enabled",
+      "component": "chiller",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "chiller"
+      }
+    },
+    {
+      "id": "chiller-load",
+      "label": "Cooling-water chiller \u00b7 Requested load",
+      "component": "chiller",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "chiller"
+      }
+    },
+    {
+      "id": "chiller-fault",
+      "label": "Cooling-water chiller \u00b7 Injected failure",
+      "component": "chiller",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "chiller"
+      }
+    },
+    {
+      "id": "chiller-repair",
+      "label": "Repair Cooling-water chiller",
+      "component": "chiller",
+      "action": "repair",
+      "arguments": {
+        "equipment": "chiller"
+      }
+    },
+    {
+      "id": "power-enabled",
+      "label": "Demonstration site power \u00b7 Enabled",
+      "component": "power",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "power"
+      }
+    },
+    {
+      "id": "power-load",
+      "label": "Demonstration site power \u00b7 Requested load",
+      "component": "power",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "power"
+      }
+    },
+    {
+      "id": "power-fault",
+      "label": "Demonstration site power \u00b7 Injected failure",
+      "component": "power",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "power"
+      }
+    },
+    {
+      "id": "power-repair",
+      "label": "Repair Demonstration site power",
+      "component": "power",
+      "action": "repair",
+      "arguments": {
+        "equipment": "power"
+      }
+    },
+    {
+      "id": "controller-enabled",
+      "label": "Blend and filling controller \u00b7 Enabled",
+      "component": "controller",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "controller"
+      }
+    },
+    {
+      "id": "controller-load",
+      "label": "Blend and filling controller \u00b7 Requested load",
+      "component": "controller",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "controller"
+      }
+    },
+    {
+      "id": "controller-fault",
+      "label": "Blend and filling controller \u00b7 Injected failure",
+      "component": "controller",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "controller"
+      }
+    },
+    {
+      "id": "controller-repair",
+      "label": "Repair Blend and filling controller",
+      "component": "controller",
+      "action": "repair",
+      "arguments": {
+        "equipment": "controller"
+      }
+    },
+    {
+      "id": "flow-enabled",
+      "label": "Beverage flow monitor \u00b7 Enabled",
+      "component": "flow",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "flow"
+      }
+    },
+    {
+      "id": "flow-load",
+      "label": "Beverage flow monitor \u00b7 Requested load",
+      "component": "flow",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "flow"
+      }
+    },
+    {
+      "id": "flow-fault",
+      "label": "Beverage flow monitor \u00b7 Injected failure",
+      "component": "flow",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "flow"
+      }
+    },
+    {
+      "id": "flow-repair",
+      "label": "Repair Beverage flow monitor",
+      "component": "flow",
+      "action": "repair",
+      "arguments": {
+        "equipment": "flow"
+      }
+    },
+    {
+      "id": "plant-setRunning",
+      "label": "Run the shared plant",
+      "action": "setRunning",
+      "arguments": {}
+    },
+    {
+      "id": "plant-step",
+      "label": "Advance one model step",
+      "action": "step",
+      "arguments": {
+        "value": 1
+      }
+    },
+    {
+      "id": "plant-reset",
+      "label": "Reset dynamics \u00b7 keep edited parameters",
+      "action": "reset",
+      "arguments": {}
+    }
+  ],
+  "controls": [
+    {
+      "id": "water-enabled-control",
+      "label": "Enabled",
+      "component": "water",
+      "kind": "toggle",
+      "command": "water-enabled",
+      "binding": "/controls/water/enabled"
+    },
+    {
+      "id": "water-load-control",
+      "label": "Requested load",
+      "component": "water",
+      "kind": "range",
+      "command": "water-load",
+      "binding": "/controls/water/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "water-fault-control",
+      "label": "Injected failure",
+      "component": "water",
+      "kind": "toggle",
+      "command": "water-fault",
+      "binding": "/controls/water/fault"
+    },
+    {
+      "id": "water-repair-control",
+      "label": "Repair component",
+      "component": "water",
+      "kind": "button",
+      "command": "water-repair"
+    },
+    {
+      "id": "waterFilter-enabled-control",
+      "label": "Enabled",
+      "component": "waterFilter",
+      "kind": "toggle",
+      "command": "waterFilter-enabled",
+      "binding": "/controls/waterFilter/enabled"
+    },
+    {
+      "id": "waterFilter-load-control",
+      "label": "Requested load",
+      "component": "waterFilter",
+      "kind": "range",
+      "command": "waterFilter-load",
+      "binding": "/controls/waterFilter/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "waterFilter-fault-control",
+      "label": "Injected failure",
+      "component": "waterFilter",
+      "kind": "toggle",
+      "command": "waterFilter-fault",
+      "binding": "/controls/waterFilter/fault"
+    },
+    {
+      "id": "waterFilter-repair-control",
+      "label": "Repair component",
+      "component": "waterFilter",
+      "kind": "button",
+      "command": "waterFilter-repair"
+    },
+    {
+      "id": "waterPump-enabled-control",
+      "label": "Enabled",
+      "component": "waterPump",
+      "kind": "toggle",
+      "command": "waterPump-enabled",
+      "binding": "/controls/waterPump/enabled"
+    },
+    {
+      "id": "waterPump-load-control",
+      "label": "Requested load",
+      "component": "waterPump",
+      "kind": "range",
+      "command": "waterPump-load",
+      "binding": "/controls/waterPump/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "waterPump-fault-control",
+      "label": "Injected failure",
+      "component": "waterPump",
+      "kind": "toggle",
+      "command": "waterPump-fault",
+      "binding": "/controls/waterPump/fault"
+    },
+    {
+      "id": "waterPump-repair-control",
+      "label": "Repair component",
+      "component": "waterPump",
+      "kind": "button",
+      "command": "waterPump-repair"
+    },
+    {
+      "id": "syrup-enabled-control",
+      "label": "Enabled",
+      "component": "syrup",
+      "kind": "toggle",
+      "command": "syrup-enabled",
+      "binding": "/controls/syrup/enabled"
+    },
+    {
+      "id": "syrup-load-control",
+      "label": "Requested load",
+      "component": "syrup",
+      "kind": "range",
+      "command": "syrup-load",
+      "binding": "/controls/syrup/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "syrup-fault-control",
+      "label": "Injected failure",
+      "component": "syrup",
+      "kind": "toggle",
+      "command": "syrup-fault",
+      "binding": "/controls/syrup/fault"
+    },
+    {
+      "id": "syrup-repair-control",
+      "label": "Repair component",
+      "component": "syrup",
+      "kind": "button",
+      "command": "syrup-repair"
+    },
+    {
+      "id": "syrupDose-enabled-control",
+      "label": "Enabled",
+      "component": "syrupDose",
+      "kind": "toggle",
+      "command": "syrupDose-enabled",
+      "binding": "/controls/syrupDose/enabled"
+    },
+    {
+      "id": "syrupDose-load-control",
+      "label": "Requested load",
+      "component": "syrupDose",
+      "kind": "range",
+      "command": "syrupDose-load",
+      "binding": "/controls/syrupDose/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "syrupDose-fault-control",
+      "label": "Injected failure",
+      "component": "syrupDose",
+      "kind": "toggle",
+      "command": "syrupDose-fault",
+      "binding": "/controls/syrupDose/fault"
+    },
+    {
+      "id": "syrupDose-repair-control",
+      "label": "Repair component",
+      "component": "syrupDose",
+      "kind": "button",
+      "command": "syrupDose-repair"
+    },
+    {
+      "id": "blend-enabled-control",
+      "label": "Enabled",
+      "component": "blend",
+      "kind": "toggle",
+      "command": "blend-enabled",
+      "binding": "/controls/blend/enabled"
+    },
+    {
+      "id": "blend-load-control",
+      "label": "Requested load",
+      "component": "blend",
+      "kind": "range",
+      "command": "blend-load",
+      "binding": "/controls/blend/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "blend-fault-control",
+      "label": "Injected failure",
+      "component": "blend",
+      "kind": "toggle",
+      "command": "blend-fault",
+      "binding": "/controls/blend/fault"
+    },
+    {
+      "id": "blend-repair-control",
+      "label": "Repair component",
+      "component": "blend",
+      "kind": "button",
+      "command": "blend-repair"
+    },
+    {
+      "id": "cooler-enabled-control",
+      "label": "Enabled",
+      "component": "cooler",
+      "kind": "toggle",
+      "command": "cooler-enabled",
+      "binding": "/controls/cooler/enabled"
+    },
+    {
+      "id": "cooler-load-control",
+      "label": "Requested load",
+      "component": "cooler",
+      "kind": "range",
+      "command": "cooler-load",
+      "binding": "/controls/cooler/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "cooler-fault-control",
+      "label": "Injected failure",
+      "component": "cooler",
+      "kind": "toggle",
+      "command": "cooler-fault",
+      "binding": "/controls/cooler/fault"
+    },
+    {
+      "id": "cooler-repair-control",
+      "label": "Repair component",
+      "component": "cooler",
+      "kind": "button",
+      "command": "cooler-repair"
+    },
+    {
+      "id": "carbonator-enabled-control",
+      "label": "Enabled",
+      "component": "carbonator",
+      "kind": "toggle",
+      "command": "carbonator-enabled",
+      "binding": "/controls/carbonator/enabled"
+    },
+    {
+      "id": "carbonator-load-control",
+      "label": "Requested load",
+      "component": "carbonator",
+      "kind": "range",
+      "command": "carbonator-load",
+      "binding": "/controls/carbonator/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "carbonator-fault-control",
+      "label": "Injected failure",
+      "component": "carbonator",
+      "kind": "toggle",
+      "command": "carbonator-fault",
+      "binding": "/controls/carbonator/fault"
+    },
+    {
+      "id": "carbonator-repair-control",
+      "label": "Repair component",
+      "component": "carbonator",
+      "kind": "button",
+      "command": "carbonator-repair"
+    },
+    {
+      "id": "controlValve-enabled-control",
+      "label": "Enabled",
+      "component": "controlValve",
+      "kind": "toggle",
+      "command": "controlValve-enabled",
+      "binding": "/controls/controlValve/enabled"
+    },
+    {
+      "id": "controlValve-load-control",
+      "label": "Opening setpoint (%)",
+      "component": "controlValve",
+      "kind": "range",
+      "command": "controlValve-load",
+      "binding": "/controls/controlValve/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "controlValve-fault-control",
+      "label": "Injected failure",
+      "component": "controlValve",
+      "kind": "toggle",
+      "command": "controlValve-fault",
+      "binding": "/controls/controlValve/fault"
+    },
+    {
+      "id": "controlValve-open-control",
+      "label": "Open path",
+      "component": "controlValve",
+      "kind": "toggle",
+      "command": "controlValve-open",
+      "binding": "/controls/controlValve/open"
+    },
+    {
+      "id": "controlValve-repair-control",
+      "label": "Repair component",
+      "component": "controlValve",
+      "kind": "button",
+      "command": "controlValve-repair"
+    },
+    {
+      "id": "buffer-enabled-control",
+      "label": "Enabled",
+      "component": "buffer",
+      "kind": "toggle",
+      "command": "buffer-enabled",
+      "binding": "/controls/buffer/enabled"
+    },
+    {
+      "id": "buffer-load-control",
+      "label": "Requested load",
+      "component": "buffer",
+      "kind": "range",
+      "command": "buffer-load",
+      "binding": "/controls/buffer/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "buffer-fault-control",
+      "label": "Injected failure",
+      "component": "buffer",
+      "kind": "toggle",
+      "command": "buffer-fault",
+      "binding": "/controls/buffer/fault"
+    },
+    {
+      "id": "buffer-repair-control",
+      "label": "Repair component",
+      "component": "buffer",
+      "kind": "button",
+      "command": "buffer-repair"
+    },
+    {
+      "id": "filler-enabled-control",
+      "label": "Enabled",
+      "component": "filler",
+      "kind": "toggle",
+      "command": "filler-enabled",
+      "binding": "/controls/filler/enabled"
+    },
+    {
+      "id": "filler-load-control",
+      "label": "Requested load",
+      "component": "filler",
+      "kind": "range",
+      "command": "filler-load",
+      "binding": "/controls/filler/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "filler-fault-control",
+      "label": "Injected failure",
+      "component": "filler",
+      "kind": "toggle",
+      "command": "filler-fault",
+      "binding": "/controls/filler/fault"
+    },
+    {
+      "id": "filler-repair-control",
+      "label": "Repair component",
+      "component": "filler",
+      "kind": "button",
+      "command": "filler-repair"
+    },
+    {
+      "id": "packer-enabled-control",
+      "label": "Enabled",
+      "component": "packer",
+      "kind": "toggle",
+      "command": "packer-enabled",
+      "binding": "/controls/packer/enabled"
+    },
+    {
+      "id": "packer-load-control",
+      "label": "Requested load",
+      "component": "packer",
+      "kind": "range",
+      "command": "packer-load",
+      "binding": "/controls/packer/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "packer-fault-control",
+      "label": "Injected failure",
+      "component": "packer",
+      "kind": "toggle",
+      "command": "packer-fault",
+      "binding": "/controls/packer/fault"
+    },
+    {
+      "id": "packer-repair-control",
+      "label": "Repair component",
+      "component": "packer",
+      "kind": "button",
+      "command": "packer-repair"
+    },
+    {
+      "id": "gasStore-enabled-control",
+      "label": "Enabled",
+      "component": "gasStore",
+      "kind": "toggle",
+      "command": "gasStore-enabled",
+      "binding": "/controls/gasStore/enabled"
+    },
+    {
+      "id": "gasStore-load-control",
+      "label": "Requested load",
+      "component": "gasStore",
+      "kind": "range",
+      "command": "gasStore-load",
+      "binding": "/controls/gasStore/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "gasStore-fault-control",
+      "label": "Injected failure",
+      "component": "gasStore",
+      "kind": "toggle",
+      "command": "gasStore-fault",
+      "binding": "/controls/gasStore/fault"
+    },
+    {
+      "id": "gasStore-repair-control",
+      "label": "Repair component",
+      "component": "gasStore",
+      "kind": "button",
+      "command": "gasStore-repair"
+    },
+    {
+      "id": "gasQuality-enabled-control",
+      "label": "Enabled",
+      "component": "gasQuality",
+      "kind": "toggle",
+      "command": "gasQuality-enabled",
+      "binding": "/controls/gasQuality/enabled"
+    },
+    {
+      "id": "gasQuality-load-control",
+      "label": "Requested load",
+      "component": "gasQuality",
+      "kind": "range",
+      "command": "gasQuality-load",
+      "binding": "/controls/gasQuality/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "gasQuality-fault-control",
+      "label": "Injected failure",
+      "component": "gasQuality",
+      "kind": "toggle",
+      "command": "gasQuality-fault",
+      "binding": "/controls/gasQuality/fault"
+    },
+    {
+      "id": "gasQuality-repair-control",
+      "label": "Repair component",
+      "component": "gasQuality",
+      "kind": "button",
+      "command": "gasQuality-repair"
+    },
+    {
+      "id": "gasCompressor-enabled-control",
+      "label": "Enabled",
+      "component": "gasCompressor",
+      "kind": "toggle",
+      "command": "gasCompressor-enabled",
+      "binding": "/controls/gasCompressor/enabled"
+    },
+    {
+      "id": "gasCompressor-load-control",
+      "label": "Requested load",
+      "component": "gasCompressor",
+      "kind": "range",
+      "command": "gasCompressor-load",
+      "binding": "/controls/gasCompressor/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "gasCompressor-fault-control",
+      "label": "Injected failure",
+      "component": "gasCompressor",
+      "kind": "toggle",
+      "command": "gasCompressor-fault",
+      "binding": "/controls/gasCompressor/fault"
+    },
+    {
+      "id": "gasCompressor-repair-control",
+      "label": "Repair component",
+      "component": "gasCompressor",
+      "kind": "button",
+      "command": "gasCompressor-repair"
+    },
+    {
+      "id": "chiller-enabled-control",
+      "label": "Enabled",
+      "component": "chiller",
+      "kind": "toggle",
+      "command": "chiller-enabled",
+      "binding": "/controls/chiller/enabled"
+    },
+    {
+      "id": "chiller-load-control",
+      "label": "Requested load",
+      "component": "chiller",
+      "kind": "range",
+      "command": "chiller-load",
+      "binding": "/controls/chiller/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "chiller-fault-control",
+      "label": "Injected failure",
+      "component": "chiller",
+      "kind": "toggle",
+      "command": "chiller-fault",
+      "binding": "/controls/chiller/fault"
+    },
+    {
+      "id": "chiller-repair-control",
+      "label": "Repair component",
+      "component": "chiller",
+      "kind": "button",
+      "command": "chiller-repair"
+    },
+    {
+      "id": "power-enabled-control",
+      "label": "Enabled",
+      "component": "power",
+      "kind": "toggle",
+      "command": "power-enabled",
+      "binding": "/controls/power/enabled"
+    },
+    {
+      "id": "power-load-control",
+      "label": "Requested load",
+      "component": "power",
+      "kind": "range",
+      "command": "power-load",
+      "binding": "/controls/power/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "power-fault-control",
+      "label": "Injected failure",
+      "component": "power",
+      "kind": "toggle",
+      "command": "power-fault",
+      "binding": "/controls/power/fault"
+    },
+    {
+      "id": "power-repair-control",
+      "label": "Repair component",
+      "component": "power",
+      "kind": "button",
+      "command": "power-repair"
+    },
+    {
+      "id": "controller-enabled-control",
+      "label": "Enabled",
+      "component": "controller",
+      "kind": "toggle",
+      "command": "controller-enabled",
+      "binding": "/controls/controller/enabled"
+    },
+    {
+      "id": "controller-load-control",
+      "label": "Requested load",
+      "component": "controller",
+      "kind": "range",
+      "command": "controller-load",
+      "binding": "/controls/controller/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "controller-fault-control",
+      "label": "Injected failure",
+      "component": "controller",
+      "kind": "toggle",
+      "command": "controller-fault",
+      "binding": "/controls/controller/fault"
+    },
+    {
+      "id": "controller-repair-control",
+      "label": "Repair component",
+      "component": "controller",
+      "kind": "button",
+      "command": "controller-repair"
+    },
+    {
+      "id": "flow-enabled-control",
+      "label": "Enabled",
+      "component": "flow",
+      "kind": "toggle",
+      "command": "flow-enabled",
+      "binding": "/controls/flow/enabled"
+    },
+    {
+      "id": "flow-load-control",
+      "label": "Requested load",
+      "component": "flow",
+      "kind": "range",
+      "command": "flow-load",
+      "binding": "/controls/flow/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "flow-fault-control",
+      "label": "Injected failure",
+      "component": "flow",
+      "kind": "toggle",
+      "command": "flow-fault",
+      "binding": "/controls/flow/fault"
+    },
+    {
+      "id": "flow-repair-control",
+      "label": "Repair component",
+      "component": "flow",
+      "kind": "button",
+      "command": "flow-repair"
+    },
+    {
+      "id": "plant-setRunning-control",
+      "label": "Run the shared plant",
+      "kind": "toggle",
+      "command": "plant-setRunning",
+      "binding": "/running"
+    },
+    {
+      "id": "plant-step-control",
+      "label": "Advance one model step",
+      "kind": "button",
+      "command": "plant-step"
+    },
+    {
+      "id": "plant-reset-control",
+      "label": "Reset dynamics \u00b7 keep edited parameters",
+      "kind": "button",
+      "command": "plant-reset"
+    }
+  ],
+  "units": {
+    "flow": "normalized flow units",
+    "inventory": "normalized inventory units",
+    "load": "% requested demonstration load",
+    "pressure": "normalized pressure index",
+    "temperature": "normalized model thermal index; artwork displays an illustrative range"
+  },
+  "provenance": [
+    {
+      "id": "demo-model",
+      "label": "Editable placeholder model",
+      "kind": "assumed",
+      "description": "Family-level normalized behavior for UI experimentation; no calibrated industry process, safety envelope or recipe."
+    },
+    {
+      "id": "assumed-topology",
+      "label": "Illustrative editable routing",
+      "kind": "illustrative",
+      "description": "Industry-inspired stage names and interfaces. This is not a verified plant P&ID, wiring diagram or production design."
+    }
+  ],
+  "assumptions": [
+    {
+      "id": "nominalCapacity",
+      "label": "Default normalized stage capacity",
+      "value": 75,
+      "unit": "normalized units",
+      "provenance": "demo-model"
+    },
+    {
+      "id": "warningIndex",
+      "label": "Demonstration warning threshold",
+      "value": 78,
+      "unit": "normalized index",
+      "provenance": "demo-model"
+    },
+    {
+      "id": "optionalUtilities",
+      "label": "Utility equipment is illustrative and may be optional",
+      "value": true,
+      "provenance": "assumed-topology"
+    }
+  ]
+}

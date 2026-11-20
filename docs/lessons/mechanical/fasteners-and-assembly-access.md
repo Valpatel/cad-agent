@@ -89,3 +89,18 @@ flowchart TD
 - **Check:** `storage-checks.json` `drive_fastening` records the material under the head and the spec range per drive
   type. Add a computed-penetration field and assert that it is inside the range.
 - **Source:** 2026-10-25T01:23; `cad/parameters.json` (`drives`, `ssd_clip`); `exports/storage-checks.json`.
+
+
+### Separate tool approach obstructions from component path obstructions
+
+A declared engaged envelope does not establish an ordinary driver's finite approach or withdrawal. Keep its
+full identity, compatible drive, shaft, handle and operating swing; bind those inputs so a smaller unnamed
+tool cannot silently turn a conflict green. Check every occupied stage, including removed parts parked nearby.
+
+The #542 native rail bench deliberately blocks a handle at z31 while its engaged envelope and component paths
+stay clear. An initial control also blocked the later lid; the corrected control lowers that lid beside the
+obstruction before sliding it into place. This is an explicit alternative route, with unchanged source geometry
+and tool dimensions. The regression requires all three facts independently. The incident and dated command
+results live in [the canonical record](https://github.com/Valpatel/cad-agent/blob/dev/.agents/inbox/review/2026-11-12-tool-control-must-clear-later-component-paths.md).
+Finite axial envelope/sector samples leave hands, counter-tools, engagement, torque, support and retention
+unqualified. Sampled parent insertion does not qualify a rigid module's internal assembly.

@@ -1,11 +1,11 @@
 # Viewing original CAD files
 
-The standalone `webkit/file-viewer.html` opens original STL, STEP/STP and core 3MF
+The standalone `webkit/files/file-viewer.html` opens original STL, STEP/STP and core 3MF
 files. It parses the requested file itself; it never substitutes a similarly named
 STL or an assembly manifest. The download link retains the original URL and bytes.
 
 ```html
-<a href="kit/file-viewer.html?file=%2Fexports%2Fbracket.step&back=%2Fbuild.html">View bracket</a>
+<a href="kit/files/file-viewer.html?file=%2Fexports%2Fbracket.step&back=%2Fbuild.html">View bracket</a>
 ```
 
 Files and the optional back link must be on the current origin. Deploy the entire
@@ -74,7 +74,7 @@ flowchart TD
 Link `file-viewer.css` and provide the existing Three import map before importing:
 
 ```js
-import {createFileViewer} from './kit/file-viewer.js';
+import {createFileViewer} from './kit/files/file-viewer.js';
 const viewer = createFileViewer(host, {
   file: '/exports/bracket.step',
   back: '/build.html',
@@ -137,8 +137,8 @@ usable frame. `?view=iso&ui=0` is available for a clean automated capture.
 
 ```sh
 npm --prefix tools/site run test:webkit-unit
-node tests/webkit/webkit-file-viewer-browser.mjs
-PLAYWRIGHT_BROWSER=webkit node tests/webkit/webkit-file-viewer-browser.mjs
+node tests/webkit/files/browser.mjs
+PLAYWRIGHT_BROWSER=webkit node tests/webkit/files/browser.mjs
 ```
 
 The fixtures use an independently specified 10 × 20 × 30 mm box in all three formats,
@@ -149,7 +149,7 @@ bounded worker stalls, import failure recovery, actual projected bounds on 320px
 portrait and short landscape, small wheel deltas, orbit and standard views.
 Screenshots and JSON receipts default to `/tmp/cad-agent-file-viewer`.
 
-`tests/webkit/webkit-file-corpus.mjs` runs the exact shipped worker modules through a
+`tests/webkit/files/corpus.mjs` runs the exact shipped worker modules through a
 small test-only Node adapter, without a GPU. Its input is a JSON object with
 `files:[{path,sha256}]`; it verifies each original's hash before parsing and records
 per-file geometry/bounds/triangles, timing, warnings and failures. Run a large CAD

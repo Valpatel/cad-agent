@@ -1,0 +1,9 @@
+{
+  "length_mm": 16,
+  "thickness_mm": 2,
+  "width_mm": 6,
+  "root_radius_mm": 1.2,
+  "root_strain": 0.009328358208955223,
+  "allowable_strain": 0.012,
+  "hook_force_n": 4.197761194029851
+}

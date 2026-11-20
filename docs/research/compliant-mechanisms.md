@@ -98,9 +98,10 @@ separation.
 
 </details>
 
-- **BASF** *Snap-Fit Design Manual*, p. IV-4, has allowable strain and friction for eight resins, with worked examples
-  for an Ultradur PBT grade and an Ultraform POM grade [BASF]. The values were **not read**: the tables are images, and
-  only unofficial Scribd/studylib copies exist.
+- **BASF** *Snap-Fit Design Manual*, printed p. IV-4: the original table and equations were visually read on
+  2026-11-10 from the 2007-copyright MIT-hosted copy. Material-condition footnotes and wall-compliance assumptions
+  matter; no new allowable, Q curve or fatigue-life rule is adopted. Parts III/IV/VI were read; the U/L section
+  and cited experimental papers remain unreviewed. [ref:basf-snapfit-manual]
 - **Celanese/Ticona**: a dynamic strain limit up to 70 % of the yield strain for resins with a yield point, and 60 % of
   that for repeated engagement [CEL]. These figures are (s): the OCR is garbled.
 - **Older Bayer table.** Third-party skills quote ABS 4–6 % and PA 4–6 % "from the Bayer 1998 manual" [AGCAD]. That is
@@ -311,9 +312,13 @@ living hinges, bistable beams, a generated physical coupon and the first product
 - **[BAY]** Bayer MaterialScience, *Snap-Fit Joints for Plastics – A Design Guide*:
   https://cdn.sparkfun.com/assets/home_page_posts/1/4/1/0/Plastic_Snap_fit_design.pdf (read); mirror:
   https://fab.cba.mit.edu/classes/S62.12/people/vernelle.noel/Plastic_Snap_fit_design.pdf
+  Table 1 and Example I were visually read on 2026-11-10; these two mirrors have identical bytes, not independent evidence.
 - **[DUP]** DuPont, *General Design Principles – Module I*:
   https://www.emcoplastics.com/assets/pdf/acetal/General%20Design%20Principles%20for%20Engineering%20Polymers.pdf (read)
-- **[BASF]** https://ulprospector.ul.com/1248/snapfit-3/ (read; points to manual pp. IV-3…IV-5 and V-1…V-4)
+- **[BASF]** BASF Corporation, 2007-copyright *Snap-Fit Design Manual*, recovered at
+  https://stuff.mit.edu/afs/athena/course/2/2.75/resources/random/Snap-Fit%20Design%20Manual.pdf;
+  Parts III/IV/VI read on 2026-11-10, Part V unreviewed. Earlier article pointer:
+  https://ulprospector.ul.com/1248/snapfit-3/. [ref:basf-snapfit-manual]
 - **[CEL]**
   https://www.docketalarm.com/cases/PTAB/IPR2017-01990/Inter_Partes_Review_of_U.S._Pat._6631715/12-12-2017-Patent_Owner/Exhibit-2002-18-Exhibit_2002_Snap_Fits_Celanese/
   (s)
@@ -405,8 +410,7 @@ living hinges, bistable beams, a generated physical coupon and the first product
 </details>
 
 **Could not verify:**
-- Bayer Table 1 constants 0.67 and 0.86 (image).
-- BASF and Celanese strain tables.
+- Celanese strain tables.
 - The older Bayer ABS/PA rows.
 - Paros–Weisbord constant.
 - CAFP 8EI/L.

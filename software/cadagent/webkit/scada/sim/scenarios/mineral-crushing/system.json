@@ -1,0 +1,2429 @@
+{
+  "$schema": "../../../scada-ui/schema/scada-system.schema.json",
+  "format": "scada-system",
+  "version": 1,
+  "system": {
+    "id": "mineral-crushing",
+    "label": "Mineral crushing & screening",
+    "description": "Run a generic receiving, crushing, screening and recirculation circuit. Particle distributions and equipment design capacities are deliberately abstract."
+  },
+  "components": [
+    {
+      "id": "feed",
+      "type": "weigh-hopper",
+      "label": "Ore receiving hopper",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "level": 55,
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/feed/active",
+        "running": "/components/feed/running",
+        "fault": "/components/feed/fault",
+        "status": "/components/feed/status",
+        "level": "/components/feed/level",
+        "load": "/components/feed/load",
+        "damage": "/components/feed/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "supply",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "feeder",
+      "type": "screw-feeder",
+      "label": "Ore feed screw",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/feeder/active",
+        "running": "/components/feeder/running",
+        "fault": "/components/feeder/fault",
+        "status": "/components/feeder/status",
+        "load": "/components/feeder/load",
+        "speed": "/components/feeder/speed",
+        "damage": "/components/feeder/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "supply",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "primary",
+      "type": "crusher",
+      "label": "Primary crusher",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/primary/active",
+        "running": "/components/primary/running",
+        "fault": "/components/primary/fault",
+        "status": "/components/primary/status",
+        "load": "/components/primary/load",
+        "speed": "/components/primary/speed",
+        "damage": "/components/primary/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "supply",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "screen",
+      "type": "vibrating-screen",
+      "label": "Primary screen",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/screen/active",
+        "running": "/components/screen/running",
+        "fault": "/components/screen/fault",
+        "status": "/components/screen/status",
+        "load": "/components/screen/load",
+        "speed": "/components/screen/speed",
+        "damage": "/components/screen/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "supply",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "secondary",
+      "type": "crusher",
+      "label": "Secondary crusher",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/secondary/active",
+        "running": "/components/secondary/running",
+        "fault": "/components/secondary/fault",
+        "status": "/components/secondary/status",
+        "load": "/components/secondary/load",
+        "speed": "/components/secondary/speed",
+        "damage": "/components/secondary/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "supply",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "transfer",
+      "type": "conveyor",
+      "label": "Product transfer belt",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/transfer/active",
+        "running": "/components/transfer/running",
+        "fault": "/components/transfer/fault",
+        "status": "/components/transfer/status",
+        "load": "/components/transfer/load",
+        "speed": "/components/transfer/speed",
+        "damage": "/components/transfer/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "supply",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "classification",
+      "type": "vibrating-screen",
+      "label": "Final classification screen",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/classification/active",
+        "running": "/components/classification/running",
+        "fault": "/components/classification/fault",
+        "status": "/components/classification/status",
+        "load": "/components/classification/load",
+        "speed": "/components/classification/speed",
+        "damage": "/components/classification/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "supply",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "surge",
+      "type": "silo",
+      "label": "Product surge bin",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "level": 55,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/surge/active",
+        "running": "/components/surge/running",
+        "fault": "/components/surge/fault",
+        "status": "/components/surge/status",
+        "level": "/components/surge/level",
+        "damage": "/components/surge/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "fill",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "discharge",
+          "side": "right",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "outfeed",
+      "type": "conveyor",
+      "label": "Product outfeed",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/outfeed/active",
+        "running": "/components/outfeed/running",
+        "fault": "/components/outfeed/fault",
+        "status": "/components/outfeed/status",
+        "load": "/components/outfeed/load",
+        "speed": "/components/outfeed/speed",
+        "damage": "/components/outfeed/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "supply",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "dust",
+      "type": "cyclone",
+      "label": "Dust separation utility",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/dust/active",
+        "running": "/components/dust/running",
+        "fault": "/components/dust/fault",
+        "status": "/components/dust/status",
+        "load": "/components/dust/load",
+        "damage": "/components/dust/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "supply",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "solids",
+          "side": "right",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "power",
+      "type": "generator",
+      "label": "Demonstration site power",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/power/active",
+        "running": "/components/power/running",
+        "fault": "/components/power/fault",
+        "status": "/components/power/status",
+        "load": "/components/power/load",
+        "speed": "/components/power/speed",
+        "damage": "/components/power/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "fuel",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "output",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "exhaust",
+          "side": "right",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "controller",
+      "type": "remote-io",
+      "label": "Crushing-line IO",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "connected": true,
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/controller/active",
+        "running": "/components/controller/running",
+        "fault": "/components/controller/fault",
+        "status": "/components/controller/status",
+        "connected": "/components/controller/connected",
+        "load": "/components/controller/load",
+        "damage": "/components/controller/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "power",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "inputs",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outputs",
+          "side": "right",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "network",
+      "type": "network-switch",
+      "label": "Control network switch",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "connected": true,
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/network/active",
+        "running": "/components/network/running",
+        "fault": "/components/network/fault",
+        "status": "/components/network/status",
+        "connected": "/components/network/connected",
+        "load": "/components/network/load",
+        "damage": "/components/network/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "power",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "motor",
+      "type": "motor",
+      "label": "Auxiliary extraction drive",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/motor/active",
+        "running": "/components/motor/running",
+        "fault": "/components/motor/fault",
+        "status": "/components/motor/status",
+        "load": "/components/motor/load",
+        "speed": "/components/motor/speed",
+        "damage": "/components/motor/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "supply",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "shaft",
+          "side": "right",
+          "offset": 0.5
+        }
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "feed-to-feeder",
+      "from": {
+        "component": "feed",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "feeder",
+        "port": "inlet"
+      },
+      "medium": "solids",
+      "flowBinding": "/flows/feed-to-feeder",
+      "label": "Ore receiving hopper \u2192 Ore feed screw"
+    },
+    {
+      "id": "feeder-to-primary",
+      "from": {
+        "component": "feeder",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "primary",
+        "port": "inlet"
+      },
+      "medium": "solids",
+      "flowBinding": "/flows/feeder-to-primary",
+      "label": "Ore feed screw \u2192 Primary crusher"
+    },
+    {
+      "id": "primary-to-screen",
+      "from": {
+        "component": "primary",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "screen",
+        "port": "inlet"
+      },
+      "medium": "solids",
+      "flowBinding": "/flows/primary-to-screen",
+      "label": "Primary crusher \u2192 Primary screen"
+    },
+    {
+      "id": "screen-to-secondary",
+      "from": {
+        "component": "screen",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "secondary",
+        "port": "inlet"
+      },
+      "medium": "solids",
+      "flowBinding": "/flows/screen-to-secondary",
+      "label": "Primary screen \u2192 Secondary crusher"
+    },
+    {
+      "id": "secondary-to-transfer",
+      "from": {
+        "component": "secondary",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "transfer",
+        "port": "inlet"
+      },
+      "medium": "solids",
+      "flowBinding": "/flows/secondary-to-transfer",
+      "label": "Secondary crusher \u2192 Product transfer belt"
+    },
+    {
+      "id": "transfer-to-classification",
+      "from": {
+        "component": "transfer",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "classification",
+        "port": "inlet"
+      },
+      "medium": "solids",
+      "flowBinding": "/flows/transfer-to-classification",
+      "label": "Product transfer belt \u2192 Final classification screen"
+    },
+    {
+      "id": "classification-to-surge",
+      "from": {
+        "component": "classification",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "surge",
+        "port": "fill"
+      },
+      "medium": "solids",
+      "flowBinding": "/flows/classification-to-surge",
+      "label": "Final classification screen \u2192 Product surge bin"
+    },
+    {
+      "id": "surge-to-outfeed",
+      "from": {
+        "component": "surge",
+        "port": "discharge"
+      },
+      "to": {
+        "component": "outfeed",
+        "port": "inlet"
+      },
+      "medium": "solids",
+      "flowBinding": "/flows/surge-to-outfeed",
+      "label": "Product surge bin \u2192 Product outfeed"
+    },
+    {
+      "id": "power-to-feed",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "feed",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-feed",
+      "label": "Demonstration site power \u2192 Ore receiving hopper"
+    },
+    {
+      "id": "power-to-feeder",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "feeder",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-feeder",
+      "label": "Demonstration site power \u2192 Ore feed screw"
+    },
+    {
+      "id": "power-to-primary",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "primary",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-primary",
+      "label": "Demonstration site power \u2192 Primary crusher"
+    },
+    {
+      "id": "power-to-screen",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "screen",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-screen",
+      "label": "Demonstration site power \u2192 Primary screen"
+    },
+    {
+      "id": "power-to-secondary",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "secondary",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-secondary",
+      "label": "Demonstration site power \u2192 Secondary crusher"
+    },
+    {
+      "id": "power-to-transfer",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "transfer",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-transfer",
+      "label": "Demonstration site power \u2192 Product transfer belt"
+    },
+    {
+      "id": "power-to-classification",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "classification",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-classification",
+      "label": "Demonstration site power \u2192 Final classification screen"
+    },
+    {
+      "id": "power-to-outfeed",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "outfeed",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-outfeed",
+      "label": "Demonstration site power \u2192 Product outfeed"
+    },
+    {
+      "id": "power-to-dust",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "dust",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-dust",
+      "label": "Demonstration site power \u2192 Dust separation utility"
+    },
+    {
+      "id": "power-to-controller",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "controller",
+        "port": "power"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-controller",
+      "label": "Demonstration site power \u2192 Crushing-line IO"
+    },
+    {
+      "id": "power-to-network",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "network",
+        "port": "power"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-network",
+      "label": "Demonstration site power \u2192 Control network switch"
+    },
+    {
+      "id": "power-to-motor",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "motor",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-motor",
+      "label": "Demonstration site power \u2192 Auxiliary extraction drive"
+    },
+    {
+      "id": "network-to-controller",
+      "from": {
+        "component": "network",
+        "port": "uplink"
+      },
+      "to": {
+        "component": "controller",
+        "port": "network"
+      },
+      "medium": "data",
+      "flowBinding": "/flows/network-to-controller",
+      "label": "Control network switch \u2192 Crushing-line IO"
+    }
+  ],
+  "views": [
+    {
+      "id": "process",
+      "label": "Main process",
+      "canvas": {
+        "width": 1280,
+        "height": 940
+      },
+      "placements": [
+        {
+          "component": "feed",
+          "x": 60,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "feeder",
+          "x": 360,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "primary",
+          "x": 660,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "screen",
+          "x": 960,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "secondary",
+          "x": 960,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "transfer",
+          "x": 660,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "classification",
+          "x": 360,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "surge",
+          "x": 60,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "outfeed",
+          "x": 60,
+          "y": 620,
+          "width": 200,
+          "height": 190
+        }
+      ],
+      "routes": [
+        {
+          "connection": "feed-to-feeder",
+          "points": [
+            {
+              "x": 260,
+              "y": 155
+            },
+            {
+              "x": 360,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "feeder-to-primary",
+          "points": [
+            {
+              "x": 560,
+              "y": 155
+            },
+            {
+              "x": 660,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "primary-to-screen",
+          "points": [
+            {
+              "x": 860,
+              "y": 155
+            },
+            {
+              "x": 960,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "screen-to-secondary",
+          "points": [
+            {
+              "x": 1060,
+              "y": 250
+            },
+            {
+              "x": 1060,
+              "y": 340
+            }
+          ]
+        },
+        {
+          "connection": "secondary-to-transfer",
+          "points": [
+            {
+              "x": 960,
+              "y": 435
+            },
+            {
+              "x": 860,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "transfer-to-classification",
+          "points": [
+            {
+              "x": 660,
+              "y": 435
+            },
+            {
+              "x": 560,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "classification-to-surge",
+          "points": [
+            {
+              "x": 360,
+              "y": 435
+            },
+            {
+              "x": 260,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "surge-to-outfeed",
+          "points": [
+            {
+              "x": 160,
+              "y": 530
+            },
+            {
+              "x": 160,
+              "y": 620
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "utilities",
+      "label": "Utilities & control",
+      "canvas": {
+        "width": 980,
+        "height": 940
+      },
+      "placements": [
+        {
+          "component": "dust",
+          "x": 60,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "power",
+          "x": 360,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "controller",
+          "x": 660,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "network",
+          "x": 660,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "motor",
+          "x": 360,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "screen",
+          "x": 60,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "surge",
+          "x": 60,
+          "y": 620,
+          "width": 200,
+          "height": 190
+        }
+      ],
+      "routes": [
+        {
+          "connection": "power-to-screen",
+          "points": [
+            {
+              "x": 360,
+              "y": 155
+            },
+            {
+              "x": 336,
+              "y": 155
+            },
+            {
+              "x": 336,
+              "y": 316
+            },
+            {
+              "x": 284,
+              "y": 316
+            },
+            {
+              "x": 284,
+              "y": 435
+            },
+            {
+              "x": 260,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "power-to-dust",
+          "points": [
+            {
+              "x": 360,
+              "y": 155
+            },
+            {
+              "x": 260,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "power-to-controller",
+          "points": [
+            {
+              "x": 560,
+              "y": 155
+            },
+            {
+              "x": 660,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "power-to-network",
+          "points": [
+            {
+              "x": 560,
+              "y": 155
+            },
+            {
+              "x": 584,
+              "y": 155
+            },
+            {
+              "x": 584,
+              "y": 316
+            },
+            {
+              "x": 636,
+              "y": 316
+            },
+            {
+              "x": 636,
+              "y": 435
+            },
+            {
+              "x": 660,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "power-to-motor",
+          "points": [
+            {
+              "x": 460,
+              "y": 250
+            },
+            {
+              "x": 460,
+              "y": 340
+            }
+          ]
+        },
+        {
+          "connection": "network-to-controller",
+          "points": [
+            {
+              "x": 760,
+              "y": 340
+            },
+            {
+              "x": 760,
+              "y": 250
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "finishing",
+      "label": "Finishing & storage",
+      "canvas": {
+        "width": 980,
+        "height": 660
+      },
+      "placements": [
+        {
+          "component": "secondary",
+          "x": 60,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "transfer",
+          "x": 360,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "classification",
+          "x": 660,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "surge",
+          "x": 660,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "outfeed",
+          "x": 360,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "controller",
+          "x": 60,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        }
+      ],
+      "routes": [
+        {
+          "connection": "secondary-to-transfer",
+          "points": [
+            {
+              "x": 260,
+              "y": 155
+            },
+            {
+              "x": 360,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "transfer-to-classification",
+          "points": [
+            {
+              "x": 560,
+              "y": 155
+            },
+            {
+              "x": 660,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "classification-to-surge",
+          "points": [
+            {
+              "x": 760,
+              "y": 250
+            },
+            {
+              "x": 760,
+              "y": 340
+            }
+          ]
+        },
+        {
+          "connection": "surge-to-outfeed",
+          "points": [
+            {
+              "x": 660,
+              "y": 435
+            },
+            {
+              "x": 560,
+              "y": 435
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "commands": [
+    {
+      "id": "feed-enabled",
+      "label": "Ore receiving hopper \u00b7 Enabled",
+      "component": "feed",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "feed"
+      }
+    },
+    {
+      "id": "feed-load",
+      "label": "Ore receiving hopper \u00b7 Requested load",
+      "component": "feed",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "feed"
+      }
+    },
+    {
+      "id": "feed-fault",
+      "label": "Ore receiving hopper \u00b7 Injected failure",
+      "component": "feed",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "feed"
+      }
+    },
+    {
+      "id": "feed-repair",
+      "label": "Repair Ore receiving hopper",
+      "component": "feed",
+      "action": "repair",
+      "arguments": {
+        "equipment": "feed"
+      }
+    },
+    {
+      "id": "feeder-enabled",
+      "label": "Ore feed screw \u00b7 Enabled",
+      "component": "feeder",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "feeder"
+      }
+    },
+    {
+      "id": "feeder-load",
+      "label": "Ore feed screw \u00b7 Requested load",
+      "component": "feeder",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "feeder"
+      }
+    },
+    {
+      "id": "feeder-fault",
+      "label": "Ore feed screw \u00b7 Injected failure",
+      "component": "feeder",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "feeder"
+      }
+    },
+    {
+      "id": "feeder-repair",
+      "label": "Repair Ore feed screw",
+      "component": "feeder",
+      "action": "repair",
+      "arguments": {
+        "equipment": "feeder"
+      }
+    },
+    {
+      "id": "primary-enabled",
+      "label": "Primary crusher \u00b7 Enabled",
+      "component": "primary",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "primary"
+      }
+    },
+    {
+      "id": "primary-load",
+      "label": "Primary crusher \u00b7 Requested load",
+      "component": "primary",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "primary"
+      }
+    },
+    {
+      "id": "primary-fault",
+      "label": "Primary crusher \u00b7 Injected failure",
+      "component": "primary",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "primary"
+      }
+    },
+    {
+      "id": "primary-repair",
+      "label": "Repair Primary crusher",
+      "component": "primary",
+      "action": "repair",
+      "arguments": {
+        "equipment": "primary"
+      }
+    },
+    {
+      "id": "screen-enabled",
+      "label": "Primary screen \u00b7 Enabled",
+      "component": "screen",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "screen"
+      }
+    },
+    {
+      "id": "screen-load",
+      "label": "Primary screen \u00b7 Requested load",
+      "component": "screen",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "screen"
+      }
+    },
+    {
+      "id": "screen-fault",
+      "label": "Primary screen \u00b7 Injected failure",
+      "component": "screen",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "screen"
+      }
+    },
+    {
+      "id": "screen-repair",
+      "label": "Repair Primary screen",
+      "component": "screen",
+      "action": "repair",
+      "arguments": {
+        "equipment": "screen"
+      }
+    },
+    {
+      "id": "secondary-enabled",
+      "label": "Secondary crusher \u00b7 Enabled",
+      "component": "secondary",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "secondary"
+      }
+    },
+    {
+      "id": "secondary-load",
+      "label": "Secondary crusher \u00b7 Requested load",
+      "component": "secondary",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "secondary"
+      }
+    },
+    {
+      "id": "secondary-fault",
+      "label": "Secondary crusher \u00b7 Injected failure",
+      "component": "secondary",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "secondary"
+      }
+    },
+    {
+      "id": "secondary-repair",
+      "label": "Repair Secondary crusher",
+      "component": "secondary",
+      "action": "repair",
+      "arguments": {
+        "equipment": "secondary"
+      }
+    },
+    {
+      "id": "transfer-enabled",
+      "label": "Product transfer belt \u00b7 Enabled",
+      "component": "transfer",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "transfer"
+      }
+    },
+    {
+      "id": "transfer-load",
+      "label": "Product transfer belt \u00b7 Requested load",
+      "component": "transfer",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "transfer"
+      }
+    },
+    {
+      "id": "transfer-fault",
+      "label": "Product transfer belt \u00b7 Injected failure",
+      "component": "transfer",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "transfer"
+      }
+    },
+    {
+      "id": "transfer-repair",
+      "label": "Repair Product transfer belt",
+      "component": "transfer",
+      "action": "repair",
+      "arguments": {
+        "equipment": "transfer"
+      }
+    },
+    {
+      "id": "classification-enabled",
+      "label": "Final classification screen \u00b7 Enabled",
+      "component": "classification",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "classification"
+      }
+    },
+    {
+      "id": "classification-load",
+      "label": "Final classification screen \u00b7 Requested load",
+      "component": "classification",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "classification"
+      }
+    },
+    {
+      "id": "classification-fault",
+      "label": "Final classification screen \u00b7 Injected failure",
+      "component": "classification",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "classification"
+      }
+    },
+    {
+      "id": "classification-repair",
+      "label": "Repair Final classification screen",
+      "component": "classification",
+      "action": "repair",
+      "arguments": {
+        "equipment": "classification"
+      }
+    },
+    {
+      "id": "surge-enabled",
+      "label": "Product surge bin \u00b7 Enabled",
+      "component": "surge",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "surge"
+      }
+    },
+    {
+      "id": "surge-load",
+      "label": "Product surge bin \u00b7 Requested load",
+      "component": "surge",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "surge"
+      }
+    },
+    {
+      "id": "surge-fault",
+      "label": "Product surge bin \u00b7 Injected failure",
+      "component": "surge",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "surge"
+      }
+    },
+    {
+      "id": "surge-repair",
+      "label": "Repair Product surge bin",
+      "component": "surge",
+      "action": "repair",
+      "arguments": {
+        "equipment": "surge"
+      }
+    },
+    {
+      "id": "outfeed-enabled",
+      "label": "Product outfeed \u00b7 Enabled",
+      "component": "outfeed",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "outfeed"
+      }
+    },
+    {
+      "id": "outfeed-load",
+      "label": "Product outfeed \u00b7 Requested load",
+      "component": "outfeed",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "outfeed"
+      }
+    },
+    {
+      "id": "outfeed-fault",
+      "label": "Product outfeed \u00b7 Injected failure",
+      "component": "outfeed",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "outfeed"
+      }
+    },
+    {
+      "id": "outfeed-repair",
+      "label": "Repair Product outfeed",
+      "component": "outfeed",
+      "action": "repair",
+      "arguments": {
+        "equipment": "outfeed"
+      }
+    },
+    {
+      "id": "dust-enabled",
+      "label": "Dust separation utility \u00b7 Enabled",
+      "component": "dust",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "dust"
+      }
+    },
+    {
+      "id": "dust-load",
+      "label": "Dust separation utility \u00b7 Requested load",
+      "component": "dust",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "dust"
+      }
+    },
+    {
+      "id": "dust-fault",
+      "label": "Dust separation utility \u00b7 Injected failure",
+      "component": "dust",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "dust"
+      }
+    },
+    {
+      "id": "dust-repair",
+      "label": "Repair Dust separation utility",
+      "component": "dust",
+      "action": "repair",
+      "arguments": {
+        "equipment": "dust"
+      }
+    },
+    {
+      "id": "power-enabled",
+      "label": "Demonstration site power \u00b7 Enabled",
+      "component": "power",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "power"
+      }
+    },
+    {
+      "id": "power-load",
+      "label": "Demonstration site power \u00b7 Requested load",
+      "component": "power",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "power"
+      }
+    },
+    {
+      "id": "power-fault",
+      "label": "Demonstration site power \u00b7 Injected failure",
+      "component": "power",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "power"
+      }
+    },
+    {
+      "id": "power-repair",
+      "label": "Repair Demonstration site power",
+      "component": "power",
+      "action": "repair",
+      "arguments": {
+        "equipment": "power"
+      }
+    },
+    {
+      "id": "controller-enabled",
+      "label": "Crushing-line IO \u00b7 Enabled",
+      "component": "controller",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "controller"
+      }
+    },
+    {
+      "id": "controller-load",
+      "label": "Crushing-line IO \u00b7 Requested load",
+      "component": "controller",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "controller"
+      }
+    },
+    {
+      "id": "controller-fault",
+      "label": "Crushing-line IO \u00b7 Injected failure",
+      "component": "controller",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "controller"
+      }
+    },
+    {
+      "id": "controller-repair",
+      "label": "Repair Crushing-line IO",
+      "component": "controller",
+      "action": "repair",
+      "arguments": {
+        "equipment": "controller"
+      }
+    },
+    {
+      "id": "network-enabled",
+      "label": "Control network switch \u00b7 Enabled",
+      "component": "network",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "network"
+      }
+    },
+    {
+      "id": "network-load",
+      "label": "Control network switch \u00b7 Requested load",
+      "component": "network",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "network"
+      }
+    },
+    {
+      "id": "network-fault",
+      "label": "Control network switch \u00b7 Injected failure",
+      "component": "network",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "network"
+      }
+    },
+    {
+      "id": "network-repair",
+      "label": "Repair Control network switch",
+      "component": "network",
+      "action": "repair",
+      "arguments": {
+        "equipment": "network"
+      }
+    },
+    {
+      "id": "motor-enabled",
+      "label": "Auxiliary extraction drive \u00b7 Enabled",
+      "component": "motor",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "motor"
+      }
+    },
+    {
+      "id": "motor-load",
+      "label": "Auxiliary extraction drive \u00b7 Requested load",
+      "component": "motor",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "motor"
+      }
+    },
+    {
+      "id": "motor-fault",
+      "label": "Auxiliary extraction drive \u00b7 Injected failure",
+      "component": "motor",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "motor"
+      }
+    },
+    {
+      "id": "motor-repair",
+      "label": "Repair Auxiliary extraction drive",
+      "component": "motor",
+      "action": "repair",
+      "arguments": {
+        "equipment": "motor"
+      }
+    },
+    {
+      "id": "plant-setRunning",
+      "label": "Run the shared plant",
+      "action": "setRunning",
+      "arguments": {}
+    },
+    {
+      "id": "plant-step",
+      "label": "Advance one model step",
+      "action": "step",
+      "arguments": {
+        "value": 1
+      }
+    },
+    {
+      "id": "plant-reset",
+      "label": "Reset dynamics \u00b7 keep edited parameters",
+      "action": "reset",
+      "arguments": {}
+    }
+  ],
+  "controls": [
+    {
+      "id": "feed-enabled-control",
+      "label": "Enabled",
+      "component": "feed",
+      "kind": "toggle",
+      "command": "feed-enabled",
+      "binding": "/controls/feed/enabled"
+    },
+    {
+      "id": "feed-load-control",
+      "label": "Requested load",
+      "component": "feed",
+      "kind": "range",
+      "command": "feed-load",
+      "binding": "/controls/feed/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "feed-fault-control",
+      "label": "Injected failure",
+      "component": "feed",
+      "kind": "toggle",
+      "command": "feed-fault",
+      "binding": "/controls/feed/fault"
+    },
+    {
+      "id": "feed-repair-control",
+      "label": "Repair component",
+      "component": "feed",
+      "kind": "button",
+      "command": "feed-repair"
+    },
+    {
+      "id": "feeder-enabled-control",
+      "label": "Enabled",
+      "component": "feeder",
+      "kind": "toggle",
+      "command": "feeder-enabled",
+      "binding": "/controls/feeder/enabled"
+    },
+    {
+      "id": "feeder-load-control",
+      "label": "Requested load",
+      "component": "feeder",
+      "kind": "range",
+      "command": "feeder-load",
+      "binding": "/controls/feeder/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "feeder-fault-control",
+      "label": "Injected failure",
+      "component": "feeder",
+      "kind": "toggle",
+      "command": "feeder-fault",
+      "binding": "/controls/feeder/fault"
+    },
+    {
+      "id": "feeder-repair-control",
+      "label": "Repair component",
+      "component": "feeder",
+      "kind": "button",
+      "command": "feeder-repair"
+    },
+    {
+      "id": "primary-enabled-control",
+      "label": "Enabled",
+      "component": "primary",
+      "kind": "toggle",
+      "command": "primary-enabled",
+      "binding": "/controls/primary/enabled"
+    },
+    {
+      "id": "primary-load-control",
+      "label": "Requested load",
+      "component": "primary",
+      "kind": "range",
+      "command": "primary-load",
+      "binding": "/controls/primary/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "primary-fault-control",
+      "label": "Injected failure",
+      "component": "primary",
+      "kind": "toggle",
+      "command": "primary-fault",
+      "binding": "/controls/primary/fault"
+    },
+    {
+      "id": "primary-repair-control",
+      "label": "Repair component",
+      "component": "primary",
+      "kind": "button",
+      "command": "primary-repair"
+    },
+    {
+      "id": "screen-enabled-control",
+      "label": "Enabled",
+      "component": "screen",
+      "kind": "toggle",
+      "command": "screen-enabled",
+      "binding": "/controls/screen/enabled"
+    },
+    {
+      "id": "screen-load-control",
+      "label": "Requested load",
+      "component": "screen",
+      "kind": "range",
+      "command": "screen-load",
+      "binding": "/controls/screen/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "screen-fault-control",
+      "label": "Injected failure",
+      "component": "screen",
+      "kind": "toggle",
+      "command": "screen-fault",
+      "binding": "/controls/screen/fault"
+    },
+    {
+      "id": "screen-repair-control",
+      "label": "Repair component",
+      "component": "screen",
+      "kind": "button",
+      "command": "screen-repair"
+    },
+    {
+      "id": "secondary-enabled-control",
+      "label": "Enabled",
+      "component": "secondary",
+      "kind": "toggle",
+      "command": "secondary-enabled",
+      "binding": "/controls/secondary/enabled"
+    },
+    {
+      "id": "secondary-load-control",
+      "label": "Requested load",
+      "component": "secondary",
+      "kind": "range",
+      "command": "secondary-load",
+      "binding": "/controls/secondary/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "secondary-fault-control",
+      "label": "Injected failure",
+      "component": "secondary",
+      "kind": "toggle",
+      "command": "secondary-fault",
+      "binding": "/controls/secondary/fault"
+    },
+    {
+      "id": "secondary-repair-control",
+      "label": "Repair component",
+      "component": "secondary",
+      "kind": "button",
+      "command": "secondary-repair"
+    },
+    {
+      "id": "transfer-enabled-control",
+      "label": "Enabled",
+      "component": "transfer",
+      "kind": "toggle",
+      "command": "transfer-enabled",
+      "binding": "/controls/transfer/enabled"
+    },
+    {
+      "id": "transfer-load-control",
+      "label": "Requested load",
+      "component": "transfer",
+      "kind": "range",
+      "command": "transfer-load",
+      "binding": "/controls/transfer/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "transfer-fault-control",
+      "label": "Injected failure",
+      "component": "transfer",
+      "kind": "toggle",
+      "command": "transfer-fault",
+      "binding": "/controls/transfer/fault"
+    },
+    {
+      "id": "transfer-repair-control",
+      "label": "Repair component",
+      "component": "transfer",
+      "kind": "button",
+      "command": "transfer-repair"
+    },
+    {
+      "id": "classification-enabled-control",
+      "label": "Enabled",
+      "component": "classification",
+      "kind": "toggle",
+      "command": "classification-enabled",
+      "binding": "/controls/classification/enabled"
+    },
+    {
+      "id": "classification-load-control",
+      "label": "Requested load",
+      "component": "classification",
+      "kind": "range",
+      "command": "classification-load",
+      "binding": "/controls/classification/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "classification-fault-control",
+      "label": "Injected failure",
+      "component": "classification",
+      "kind": "toggle",
+      "command": "classification-fault",
+      "binding": "/controls/classification/fault"
+    },
+    {
+      "id": "classification-repair-control",
+      "label": "Repair component",
+      "component": "classification",
+      "kind": "button",
+      "command": "classification-repair"
+    },
+    {
+      "id": "surge-enabled-control",
+      "label": "Enabled",
+      "component": "surge",
+      "kind": "toggle",
+      "command": "surge-enabled",
+      "binding": "/controls/surge/enabled"
+    },
+    {
+      "id": "surge-load-control",
+      "label": "Requested load",
+      "component": "surge",
+      "kind": "range",
+      "command": "surge-load",
+      "binding": "/controls/surge/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "surge-fault-control",
+      "label": "Injected failure",
+      "component": "surge",
+      "kind": "toggle",
+      "command": "surge-fault",
+      "binding": "/controls/surge/fault"
+    },
+    {
+      "id": "surge-repair-control",
+      "label": "Repair component",
+      "component": "surge",
+      "kind": "button",
+      "command": "surge-repair"
+    },
+    {
+      "id": "outfeed-enabled-control",
+      "label": "Enabled",
+      "component": "outfeed",
+      "kind": "toggle",
+      "command": "outfeed-enabled",
+      "binding": "/controls/outfeed/enabled"
+    },
+    {
+      "id": "outfeed-load-control",
+      "label": "Requested load",
+      "component": "outfeed",
+      "kind": "range",
+      "command": "outfeed-load",
+      "binding": "/controls/outfeed/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "outfeed-fault-control",
+      "label": "Injected failure",
+      "component": "outfeed",
+      "kind": "toggle",
+      "command": "outfeed-fault",
+      "binding": "/controls/outfeed/fault"
+    },
+    {
+      "id": "outfeed-repair-control",
+      "label": "Repair component",
+      "component": "outfeed",
+      "kind": "button",
+      "command": "outfeed-repair"
+    },
+    {
+      "id": "dust-enabled-control",
+      "label": "Enabled",
+      "component": "dust",
+      "kind": "toggle",
+      "command": "dust-enabled",
+      "binding": "/controls/dust/enabled"
+    },
+    {
+      "id": "dust-load-control",
+      "label": "Requested load",
+      "component": "dust",
+      "kind": "range",
+      "command": "dust-load",
+      "binding": "/controls/dust/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "dust-fault-control",
+      "label": "Injected failure",
+      "component": "dust",
+      "kind": "toggle",
+      "command": "dust-fault",
+      "binding": "/controls/dust/fault"
+    },
+    {
+      "id": "dust-repair-control",
+      "label": "Repair component",
+      "component": "dust",
+      "kind": "button",
+      "command": "dust-repair"
+    },
+    {
+      "id": "power-enabled-control",
+      "label": "Enabled",
+      "component": "power",
+      "kind": "toggle",
+      "command": "power-enabled",
+      "binding": "/controls/power/enabled"
+    },
+    {
+      "id": "power-load-control",
+      "label": "Requested load",
+      "component": "power",
+      "kind": "range",
+      "command": "power-load",
+      "binding": "/controls/power/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "power-fault-control",
+      "label": "Injected failure",
+      "component": "power",
+      "kind": "toggle",
+      "command": "power-fault",
+      "binding": "/controls/power/fault"
+    },
+    {
+      "id": "power-repair-control",
+      "label": "Repair component",
+      "component": "power",
+      "kind": "button",
+      "command": "power-repair"
+    },
+    {
+      "id": "controller-enabled-control",
+      "label": "Enabled",
+      "component": "controller",
+      "kind": "toggle",
+      "command": "controller-enabled",
+      "binding": "/controls/controller/enabled"
+    },
+    {
+      "id": "controller-load-control",
+      "label": "Requested load",
+      "component": "controller",
+      "kind": "range",
+      "command": "controller-load",
+      "binding": "/controls/controller/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "controller-fault-control",
+      "label": "Injected failure",
+      "component": "controller",
+      "kind": "toggle",
+      "command": "controller-fault",
+      "binding": "/controls/controller/fault"
+    },
+    {
+      "id": "controller-repair-control",
+      "label": "Repair component",
+      "component": "controller",
+      "kind": "button",
+      "command": "controller-repair"
+    },
+    {
+      "id": "network-enabled-control",
+      "label": "Enabled",
+      "component": "network",
+      "kind": "toggle",
+      "command": "network-enabled",
+      "binding": "/controls/network/enabled"
+    },
+    {
+      "id": "network-load-control",
+      "label": "Requested load",
+      "component": "network",
+      "kind": "range",
+      "command": "network-load",
+      "binding": "/controls/network/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "network-fault-control",
+      "label": "Injected failure",
+      "component": "network",
+      "kind": "toggle",
+      "command": "network-fault",
+      "binding": "/controls/network/fault"
+    },
+    {
+      "id": "network-repair-control",
+      "label": "Repair component",
+      "component": "network",
+      "kind": "button",
+      "command": "network-repair"
+    },
+    {
+      "id": "motor-enabled-control",
+      "label": "Enabled",
+      "component": "motor",
+      "kind": "toggle",
+      "command": "motor-enabled",
+      "binding": "/controls/motor/enabled"
+    },
+    {
+      "id": "motor-load-control",
+      "label": "Requested load",
+      "component": "motor",
+      "kind": "range",
+      "command": "motor-load",
+      "binding": "/controls/motor/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "motor-fault-control",
+      "label": "Injected failure",
+      "component": "motor",
+      "kind": "toggle",
+      "command": "motor-fault",
+      "binding": "/controls/motor/fault"
+    },
+    {
+      "id": "motor-repair-control",
+      "label": "Repair component",
+      "component": "motor",
+      "kind": "button",
+      "command": "motor-repair"
+    },
+    {
+      "id": "plant-setRunning-control",
+      "label": "Run the shared plant",
+      "kind": "toggle",
+      "command": "plant-setRunning",
+      "binding": "/running"
+    },
+    {
+      "id": "plant-step-control",
+      "label": "Advance one model step",
+      "kind": "button",
+      "command": "plant-step"
+    },
+    {
+      "id": "plant-reset-control",
+      "label": "Reset dynamics \u00b7 keep edited parameters",
+      "kind": "button",
+      "command": "plant-reset"
+    }
+  ],
+  "units": {
+    "flow": "normalized flow units",
+    "inventory": "normalized inventory units",
+    "load": "% requested demonstration load",
+    "pressure": "normalized pressure index",
+    "temperature": "normalized model thermal index; artwork displays an illustrative range"
+  },
+  "provenance": [
+    {
+      "id": "demo-model",
+      "label": "Editable placeholder model",
+      "kind": "assumed",
+      "description": "Family-level normalized behavior for UI experimentation; no calibrated industry process, safety envelope or recipe."
+    },
+    {
+      "id": "assumed-topology",
+      "label": "Illustrative editable routing",
+      "kind": "illustrative",
+      "description": "Industry-inspired stage names and interfaces. This is not a verified plant P&ID, wiring diagram or production design."
+    }
+  ],
+  "assumptions": [
+    {
+      "id": "nominalCapacity",
+      "label": "Default normalized stage capacity",
+      "value": 75,
+      "unit": "normalized units",
+      "provenance": "demo-model"
+    },
+    {
+      "id": "warningIndex",
+      "label": "Demonstration warning threshold",
+      "value": 78,
+      "unit": "normalized index",
+      "provenance": "demo-model"
+    },
+    {
+      "id": "optionalUtilities",
+      "label": "Utility equipment is illustrative and may be optional",
+      "value": true,
+      "provenance": "assumed-topology"
+    }
+  ]
+}

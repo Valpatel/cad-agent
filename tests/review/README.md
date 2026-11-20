@@ -26,7 +26,7 @@ flowchart TD
 | `test_dossier_load.py` | The design dossier's schema and loader |
 | `test_dossier_registry.py` | The build-script registry: `@part`, `@cavity`, `@joint`, `fastener()`, the geometry export |
 | `test_dossier_review.py` | The reviewer pass and its hash-bound sign-off |
-| `test_gate_assembly.py` | Assembly-sequence access gate, on a box world and then real geometry |
+| `test_gate_assembly.py` | Assembly access and finite source-bound guide playback/preflight/progress, on box worlds and real geometry |
 | `test_gate_bench.py` | The gate bench: the clean fixture and each seeded defect |
 | `test_gate_connectivity.py` | Connectivity and floating-parts gate |
 | `test_gate_containment.py` | Containment gate: contents inside their container's cavity, per pose |

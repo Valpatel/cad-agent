@@ -5,7 +5,11 @@ runs nothing. Features:
 
 * ``cad-parts``: one row per printable part — valid CAD, exactly one solid,
   watertight STL, within the printer bed. Evidence: ``preview/part-<name>.png``.
-* ``cad-print-files``: STL, 3MF and STEP present for every part.
+* ``cad-print-files``: STL, 3MF and STEP present for every printed part.
+* A part made another way (a dossier card's ``material.process`` or ``cad: part_process:`` names welded fabrication,
+  cut sheet, machining, moulding or a bought part; ``cadagent.manufacturing.process.part_processes``) is a **skip**
+  row with the reason in both features: not checked is a skip, never a pass, and a skip does not say the part can be
+  made. A part nobody declared is printed.
 * ``cad-checks``: one row per configured check, from its ``pass_key``.
 * ``cad-links``: local links in ``html_pages`` resolve.
 * ``cad-dossier`` (only with ``cad: dossier:``): the dossier lint, one row per error and one per section with its
@@ -13,6 +17,9 @@ runs nothing. Features:
 * ``cad-gates`` (only with ``cad: dossier:`` or ``cad: gates:``): one row per integrity gate from
   ``exports/gates/<gate>.json``; a missing, stale (inputs differ from the current geometry record, declarations or
   options) or failing verdict fails, a gate with nothing to check is a skip (``cadagent.review.gates.run.gate_rows``).
+* ``cad-slicer`` (with ``exports/slice-report.json``, ``cad-agent slice``): one row per current sliced part;
+  a part the slicer did not report as ok (an error, or a print-stability issue PrusaSlicer names) fails. Without a
+  slice report there is no such feature: slicing is optional. A persisted stale or invalid report fails visibly.
 
 A missing file, missing key or non-boolean verdict is a failure, never a pass.
 Evidence paths are relative to ``docs_dir``, where the HTML report is written.
@@ -40,6 +47,11 @@ HONESTY_NOTE = (
     "CAD checks only. They do not verify physical fit, print quality, slicer "
     "output, fastener engagement, thermal behaviour or load capacity."
 )
+
+# Why a part has no thumbnail: nothing wrote it. The starter project has no render step; cadagent.publish.render (the
+# cad extra: VTK and Pillow) renders one from a project step.
+_NO_RENDER = ("no preview/part-{part}.png yet: a render step in cad-agent.yaml writes it "
+              "(cadagent.publish.render, docs/toolkit.md)")
 
 def _rel(path: Path, base: Path) -> str:
     return Path(os.path.relpath(Path(path).resolve(), Path(base).resolve())).as_posix()
@@ -125,8 +137,8 @@ def holes_feature(project: CadProject) -> Dict[str, Any]:
         label = project.part_label(part)
         if row is None:
             checks.append(_row(label, False, f"hole check {why}", why))
-        elif row.get("skipped"):
-            checks.append(_row(label, True, f"not checked: {row['skipped']}", ""))
+        elif row.get("skipped"):      # cad.holes.skip: not checked is a skip, never a pass (#526)
+            checks.append({"name": label, "status": "skip", "message": f"not checked: {row['skipped']}"})
         elif row.get("error"):
             checks.append(_row(label, False, f"hole check failed to run: {row['error']}", row["error"]))
         elif row.get("findings"):
@@ -142,12 +154,28 @@ def holes_feature(project: CadProject) -> Dict[str, Any]:
             checks.append(_row(label, True, f"{holes.describe_count(row)} clear{ex}{ld}", ""))
     return {"feature_id": "cad-holes", "feature_title": "Holes clear", "checks": checks}
 
+def _not_printed_row(project: CadProject, part: str, how: Any, report_dir: Optional[Path] = None) -> Dict[str, Any]:
+    """The row of a part the print pipeline leaves out: a skip with the reason, never a pass (#577, as #526)."""
+    row: Dict[str, Any] = {"name": project.part_label(part), "status": "skip", "message": how.skip_reason}
+    image = project.preview_dir / f"part-{part}.png"
+    if report_dir is not None and image.is_file():
+        row["evidence"] = {"type": "screenshot", "path": _rel(image, report_dir), "title": project.part_label(part)}
+    return row
+
 def parts_feature(project: CadProject, report_dir: Path) -> Dict[str, Any]:
+    from cadagent.manufacturing.process import PART_PROCESS_DEFAULT, part_processes
+
     parts, error = load_parts(project)
-    checks = (
-        [_row("parts file", False, "no part results; run the build", error)]
-        if error else [_part_row(project, p, info, report_dir) for p, info in parts.items()]
-    )
+    if error:
+        checks = [_row("parts file", False, "no part results; run the build", error)]
+    else:
+        how = part_processes(project, parts)
+        checks = [_part_row(project, p, info, report_dir) if how[p].printed
+                  else _not_printed_row(project, p, how[p], report_dir) for p, info in parts.items()]
+        for name in project.part_process:       # a mistyped part name must not leave its part in the wrong pipeline
+            if name != PART_PROCESS_DEFAULT and name not in parts:
+                why = f"cad.part_process names {name!r}, which is not a part in {project.parts_file.name}"
+                checks.append(_row(f"cad.part_process: {name}", False, why, why))
     return {"feature_id": "cad-parts", "feature_title": "Printed parts", "checks": checks}
 
 def print_files_feature(project: CadProject, report_dir: Path) -> Dict[str, Any]:
@@ -155,8 +183,13 @@ def print_files_feature(project: CadProject, report_dir: Path) -> Dict[str, Any]
     if error:
         return {"feature_id": "cad-print-files", "feature_title": "Print files",
                 "checks": [_row("parts file", False, "no part list", error)]}
+    from cadagent.manufacturing.process import part_processes
+    how = part_processes(project, parts)
     checks = []
     for part in parts:
+        if not how[part].printed:
+            checks.append(_not_printed_row(project, part, how[part]))
+            continue
         files = {ext: project.exports_dir / f"{part}.{ext}" for ext in PRINT_FORMATS}
         missing = [str(p.relative_to(project.root)) for p in files.values() if not p.is_file()]
         ok = not missing
@@ -265,6 +298,53 @@ def gates_feature(project: CadProject, report_dir: Path) -> Optional[Dict[str, A
         checks = [{"name": "gates", "status": "skip", "message": "no gate applies"}]
     return {"feature_id": "cad-gates", "feature_title": "Integrity gates", "checks": checks}
 
+def slicer_feature(sliced: Optional[Dict[str, Any]], problem: Optional[str] = None) -> Optional[Dict[str, Any]]:
+    """The current slice report (``cadagent.manufacturing.slicer.current_report``) as report rows, one per sliced
+    part: pass when the slicer's row is ok, fail with the slicer's own words when it is not (an error, a non-zero
+    exit, a print-stability issue). A persisted stale/invalid report fails with a rerun action. None when no report
+    exists: slicing stays optional, and the footer says "slicer not run".
+
+    A row says what the slicer reported for its profile. It does not prove the part prints."""
+    from cadagent.manufacturing.slicer import _bambu_status_errors, _row_ok
+
+    if problem:
+        message = f'{problem}; slice again with cad-agent slice'
+        return {"feature_id": "cad-slicer", "feature_title": "Slicer · report needs a new slice",
+                "checks": [_row("slice report", False, message, message)]}
+    if not sliced:
+        return None
+    engine = sliced.get('engine', 'bambu')
+    checks = []
+    for name, row in sorted((sliced.get("parts") or {}).items()):
+        row = row if isinstance(row, dict) else {}
+        facts = []
+        if row.get("grams"):
+            facts.append(f"{row['grams']:g} g")
+        if row.get("minutes") is not None:
+            facts.append(f"{row['minutes']:g} min")
+        if sliced.get("engine") == "prusa" and row.get("stability_checked") is False:
+            note = row.get("stability_note")
+            facts.append("stability not checked" + (f": {note}" if note else ""))
+        if _row_ok(row, engine):
+            said = [f"{len(row['warnings'])} slicer warning(s)"] if row.get("warnings") else []
+            checks.append(_row(name, True, " · ".join(facts + said)))
+            continue
+        why = [f"print stability: {', '.join(row['stability_issues'])}"] if row.get("stability_issues") else []
+        why += [str(line) for level in ("errors", "warnings") for line in row.get(level) or []
+                if "print stability issues" not in str(line)]      # listed above, by category
+        if row.get("error"):
+            why.append(str(row["error"]))
+        if engine == 'bambu':
+            why += _bambu_status_errors(row)
+        else:
+            why += [f"{key} {row[key]}" for key in ("exit_code", "return_code")
+                    if row.get(key) is not None and row[key] != 0]
+        why = why or ["the slicer did not report the part as ok"]
+        checks.append(_row(name, False, " · ".join(["flagged by the slicer: " + "; ".join(why)] + facts),
+                           "\n".join(why)))
+    return {"feature_id": "cad-slicer", "feature_title": f"Slicer · {sliced.get('slicer') or 'engine not recorded'}",
+            "checks": checks}
+
 def collect(project: CadProject) -> Dict[str, Any]:
     """Results dict in schema 1.0 (``SCHEMA_VERSION``)."""
     report_dir = project.docs_dir
@@ -281,14 +361,18 @@ def collect(project: CadProject) -> Dict[str, Any]:
     dossier = dossier_feature(project)
     if dossier is not None:
         features.append(dossier)
+    from cadagent.manufacturing.slicer import report_status
+    sliced, slice_problem = report_status(project)
+    slicing = slicer_feature(sliced, slice_problem)
+    if slicing is not None:      # a part the slicer flagged fails the report, not only its footer (#520)
+        features.append(slicing)
     counts = summarize({"features": features})
     revision = project.resolve_revision()
-    from cadagent.manufacturing.slicer import current_report
-    sliced = current_report(project)
     slicer_text = (f"sliced ({sliced['slicer']}): {sliced['total_grams']} g, {sliced['total_hours']} h for "
-                   f"{len(sliced['parts'])} part(s), {sliced['process']}, {sliced['filament']}") if sliced else "slicer not run"
-    flagged = sorted(n for n, r in (sliced or {}).get("parts", {}).items() if isinstance(r, dict) and r.get("ok") is False)
-    if flagged:      # PrusaSlicer said these may print badly: the grams stand, the part is not fine
+                   f"{len(sliced['parts'])} part(s), {sliced['process']}, {sliced['filament']}") if sliced else (
+                       f"{slice_problem}; slice again with cad-agent slice" if slice_problem else "slicer not run")
+    flagged = sorted(c["name"] for c in (slicing or {}).get("checks", []) if c["status"] == "fail")
+    if flagged and sliced:      # the slicer said these may print badly: the grams stand, the part is not fine
         slicer_text += f"; NOT OK, flagged by the slicer: {', '.join(flagged)}"
     return {
         "schema_version": SCHEMA_VERSION,
@@ -364,6 +448,7 @@ _DOWNLOADS_CSS = (
     ".vcad-dl td,.vcad-dl th{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line,#dde5eb);vertical-align:middle}"
     ".vcad-dl img{width:110px;border-radius:6px;background:var(--surface-2,#f3f5f7);display:block}"
     ".vcad-dl a{font-weight:600}.vcad-dl .vcad-missing{color:var(--fail,#b3261e)}"
+    ".vcad-dl .vcad-na{color:var(--muted,#5b6770)}"
 )
 
 # Upgrades the slicer links in place when the page is served over http(s); the
@@ -385,18 +470,23 @@ def downloads_snippet(
 
     Paths are relative to ``page_dir`` (default ``preview_dir``), so the snippet
     can be dropped into any page of the project. Missing files are shown as
-    missing, not linked. The Bambu Studio link only works when the page is
+    missing, not linked. A part that is not printed (``cadagent.manufacturing.process.part_processes``) links the
+    files it has and shows a dash, not "missing", for an absent STL or 3MF. The Bambu Studio link only works when the page is
     served over http (``cad-agent serve``); from file:// it downloads the 3MF.
     """
+    from cadagent.manufacturing.process import part_processes
+
     page_dir = Path(page_dir or project.preview_dir)
     names = list(parts) if parts is not None else list(load_parts(project)[0])
+    how = part_processes(project, names)
     esc = _html.escape
     rows = []
     for part in names:
         image = project.preview_dir / f"part-{part}.png"
         thumb = (
             f'<a href="{esc(_rel(image, page_dir))}"><img loading="lazy" src="{esc(_rel(image, page_dir))}" '
-            f'alt="{esc(part)}"></a>' if image.is_file() else '<span class="vcad-missing">no render</span>'
+            f'alt="{esc(part)}"></a>' if image.is_file() else
+            f'<span class="vcad-missing" title="{esc(_NO_RENDER.format(part=part))}">no render</span>'
         )
         cells = []
         for ext in PRINT_FORMATS:
@@ -404,6 +494,8 @@ def downloads_snippet(
             cells.append(
                 f'<td><a href="{esc(_rel(path, page_dir))}" download>{ext.upper()}</a></td>'
                 if path.is_file() else f'<td><span class="vcad-missing">{ext.upper()} missing</span></td>'
+                if how[part].printed or ext == "step"      # STEP is for CAD review, whatever makes the part
+                else '<td><span class="vcad-na" title="not a printed part">–</span></td>'
             )
         three_mf = project.exports_dir / f"{part}.3mf"
         slicer = (
@@ -416,6 +508,9 @@ def downloads_snippet(
         '<section class="vcad-downloads"><h2>Print files</h2>'
         f"<style>{_DOWNLOADS_CSS}</style>"
         '<p>STL and 3MF are in print orientation (3MF centred on the bed); STEP is in assembly coordinates.</p>'
+        + ('<p>A dash marks a part that is not printed (welded, cut, machined, moulded or bought): the print '
+           'pipeline does not check it or write print files for it.</p>'
+           if any(not h.printed for h in how.values()) else '') +
         '<table class="vcad-dl"><thead><tr><th></th><th>Part</th><th>STL</th><th>3MF</th><th>STEP</th><th>Slicer</th></tr></thead>'
         f"<tbody>{''.join(rows)}</tbody></table>"
         f"<script>{_DOWNLOADS_JS}</script></section>"

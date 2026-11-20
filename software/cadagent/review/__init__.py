@@ -12,7 +12,7 @@ import html,json
 from cadagent.review.evidence import hashes_are_current
 from urllib.parse import quote
 
-_SCRIPT = Path(__file__).resolve().parent.parent / 'webkit' / 'review.js'
+_SCRIPT = Path(__file__).resolve().parent.parent / 'webkit' / 'documents' / 'review.js'
 
 
 def _local(root: Path, rel) -> Path | None:
@@ -27,7 +27,7 @@ def _local(root: Path, rel) -> Path | None:
 def review_html(root: Path, manifest: dict, prefix: str = '../') -> str:
     """Render trusted project-local assets; unsupported/missing views stay visible as gaps.
 
-    The page works as a static file: every panel is rendered visible and the inlined review script (webkit/review.js)
+    The page works as a static file: every panel is rendered visible and the inlined review script (webkit/documents/review.js)
     turns them into tabs. Report and download files outside the project root are treated as missing.
     """
     e=lambda x:html.escape(str(x),quote=True)
@@ -44,7 +44,7 @@ def review_html(root: Path, manifest: dict, prefix: str = '../') -> str:
             caption=e(v.get("caption",""))
             tabs.append(f'<button type="button" data-review-view="{j}" aria-pressed="{str(j==0).lower()}">{title}</button>')
             if kind=='model':
-                url=e('/_cadagent/kit/viewer.html?manifest=/'+quote(str(rel),safe='/'))
+                url=e('/_cadagent/kit/model/viewer.html?manifest=/'+quote(str(rel),safe='/'))
                 caption=(caption+' · ' if caption else '')+'The 3D viewer needs the local server (<code>cad-agent site --serve</code>)'
             if not valid:body=f'<p class="notice">Pending asset: {e(rel)}</p>'
             elif kind in {'image','svg'}:body=f'<img src="{url}" alt="{title}" loading="lazy">'

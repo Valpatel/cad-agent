@@ -9,7 +9,7 @@
    "part": "wheel_link",
    "case": "E1",
    "safety_factor": 3.15,
-   "target": 2.0,
+   "target": 2,
    "ok": true,
    "material": "PA6-CF along the layers (humid)",
    "tets": 52134,
@@ -21,19 +21,80 @@
    "source": "exports/leg/leg-stand-iso.png",
    "width": 601,
    "height": 861
+  },
+  "turret-playground": {
+   "file": "turret-playground.webp",
+   "page": "software/site/designer/sim.html?design=turret-box",
+   "public": "https://gyropup.com/designer/sim?design=turret-box",
+   "project": "Valpatel/gyropup",
+   "revision": "41c5c266569d6141ecda28711188343b54ab43d8",
+   "committed": "2026-11-11T15:25:14-08:00",
+   "generator": {
+    "path": "tools/site/figures/gyropup-turret.mjs",
+    "sha256": "1c792faa7998f837d0b078c46fc5d477bbbc2e78e1921e96252f1e92797c57c5"
+   },
+   "browser": {
+    "engine": "chromium",
+    "version": "153.0.8010.12",
+    "webgl": "SwiftShader (software)"
+   },
+   "actions": "hold ARM (Space), then hold FIRE (F) for automatic fire, then release both",
+   "frames": 72,
+   "width": 720,
+   "viewport": {
+    "width": 960,
+    "height": 600
+   },
+   "crop": {
+    "x": 0.03,
+    "y": 0.18,
+    "w": 0.92,
+    "h": 0.77
+   },
+   "camera": {
+    "orbit_drag_px": [
+     -35,
+     -4
+    ],
+    "zoom_at_px": [
+     300,
+     320
+    ],
+    "zoom_steps": 2
+   },
+   "duration_ms": 7749,
+   "timing": "each frame lasts the playground time it covers (2 rendered steps of at most 50 ms each), not wall time",
+   "sha256": "ba9914d7a97646c712b9961e91947bc4cccffe540f372d615bbc60b81e49836b",
+   "still": {
+    "file": "turret-playground-still.webp",
+    "frame": 48,
+    "sha256": "d1347fbfbd15efa49f456cd38ce290116886ced112c1eb1105d0afd02e71e8fd"
+   },
+   "served_sources": 149,
+   "served_sources_sha256": "012a082a9e6a58be623dc536c31e615852128b8ced7d33f14acfbe36e2509f81",
+   "limits": "A browser playground of an unqualified work-in-progress prototype (the page says PLAYGROUND - WIP). Ball flight is the playground's simplified model, not physics validation; no hardware was tested."
   }
+ },
+ "released_hardware_audit": {
+  "checked_utc": "2026-11-12",
+  "released_main": "41c5c266569d6141ecda28711188343b54ab43d8",
+  "released_hardware_tree": "346f5a5623560177390ad8cf207e5b8331ab5bae",
+  "packed_source_revision": "3a40891962b0b0a04625e070700f1d130bea3c7b",
+  "packed_hardware_tree": "346f5a5623560177390ad8cf207e5b8331ab5bae",
+  "method": "Direct Git tree equality from released main, independently checked by the coordinator. No recollection and no printed-leg change.",
+  "limits": "Hardware tree identity only. Historical FEA pictures retain their original source revision and assumptions."
  },
  "banner": {
   "file": "docs/img/gyropup.jpg",
   "made": "node tools/site/figures/site-model-poster.mjs: the model's poster on a dark card with the project's words",
   "model": "web/models/gyropup.json",
-  "revision": "01d5823062ace26eddd7d13428cbbfeec9e0105d",
+  "revision": "3a40891962b0b0a04625e070700f1d130bea3c7b",
   "width": 1600,
   "height": 733,
-  "model_sha256": "576de9ae431c405eda84972e9ba163b565b8bfa782fa336e8b4756627e48bdc1",
-  "binary_sha256": "b7297636dd11edb61bc56190b1bc45c4bb05dce6b789f981655d248749edd0c3",
+  "model_sha256": "8ad815c1c821145d092592414334b9df3a3ec5e67532cbf78fdf68e9e376277f",
+  "binary_sha256": "4d244cb77ee7b6ed5d9749dfe32c8a45182c335459c787dca667652e8acfa5e4",
   "poster": "tools/site/assets/models/gyropup.webp",
-  "poster_sha256": "aec5890a1d351c9d18252ee98d23c877ecb5fb80d15e8276dd71bc1175c5c13e",
-  "sha256": "ced498bdba91792e03b8d2f00651de8ae1175eba8e53d391fb440125f847f31c"
+  "poster_sha256": "9317c738f6a7919c3acca5dae2321e71461b86713f7169fc6fe7973a384c2829",
+  "sha256": "5056eceda2e9d75c8840ded65c158fe93ad943d9863d18a5540e4cacf7419350"
  }
 }

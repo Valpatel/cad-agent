@@ -21,6 +21,7 @@ flowchart TD
 |---|---|
 | `__init__.py` | Empty: makes the folder a package, so a test here may share a file name with one in another folder |
 | `test_pcb.py` | `cadagent.electrical.pcb`: board evidence fails closed on missing, stale or incomplete reports |
+| `test_pcb_source_examples.py` | Published manufacturer service/datum observations, unit conversions and missing-scope negatives; no board qualification |
 | `test_pcb_routing.py` | `cadagent.electrical.pcb_routing`: trunk lengths, layer crossings and differential pairs |
 
 Run: `pytest tests/electrical` (with `PYTHONPATH=software`).

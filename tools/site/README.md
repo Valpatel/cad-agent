@@ -8,6 +8,11 @@ catalogue cards or entries to the full agent prompt. `version.json` reports edit
 separately. The dependency-free selector shares the ownership policy with the repo-map check; CI still validates
 every authored map and exercises the actual rendered HTML and Markdown destinations.
 
+`/toolkit` presents native viewer and simulation capabilities. Its SCADA sections derive equipment, state controls,
+SVG previews and simulation launches from the owned libraries' metadata; `/toolkit/scada/catalog.json` is a browser
+projection, while `/catalog.json` retains the shared discovery identities. The command/Python manual stays at
+`/docs/toolkit`. Package licence overrides in `docs/catalog.yaml` also apply to indexed guides and skills.
+
 Publication and compilers
 
 ```mermaid
@@ -42,11 +47,12 @@ flowchart TD
 |---|---|
 | [build-site.mjs](build-site.mjs) | Build HTML, Markdown twins, catalogue, references and agent indexes |
 | [pages-build.mjs](pages-build.mjs) | Fetch required public history and enforce release-build validation |
-| [preview-site.mjs](preview-site.mjs) | Serve the result with Pages-style routes and headers |
+| [preview-site.mjs](preview-site.mjs) | Serve the result with Pages-style routes and headers; started with an IPC channel, it keeps a record of recent requests for a failing browser test (#686) |
 | [publication.mjs](publication.mjs), [page-sources.json](page-sources.json) | Dependency-free source selection and stable public page identity |
 | [compiler/](compiler/README.md) | Compilers, rendering helpers and permanent redirect data |
 | [figures/](figures/README.md) | Explorer stills and existing-viewer picture scripts |
 | [assets/](assets/README.md) | Files emitted at /web/ and the existing installer URLs |
+| [pin_installers.py](pin_installers.py) | Pin the install guide's checked installer blocks (URL commit and SHA-256) to a pushed commit; `--check` compares them with HEAD |
 | package.json, package-lock.json, wrangler.toml | npm ownership, pinned dependencies and root-dist deployment configuration |
 
 From the repository root:
@@ -60,6 +66,9 @@ npm --prefix tools/site run preview:site
 The default result remains the repository's dist/ folder. Release builds still require a clean reviewed commit and
 full history. The Pages settings transition is tracked and reviewed separately in
 [#362](https://github.com/Valpatel/cad-agent/issues/362); moving these files does not change a live setting.
+
+Local `--worktree` drafts include staged additions and read tracked files on disk. Ordinary and release builds
+select and read only committed files; untracked work never enters either output.
 
 [Tools](../README.md) · [Site tests](../../tests/site/README.md)
 

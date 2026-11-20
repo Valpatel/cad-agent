@@ -1,0 +1,1375 @@
+{
+  "format": "scada-placeholder-model",
+  "version": 2,
+  "scenarioId": "greenhouse-drip",
+  "seed": 41005,
+  "components": {
+    "reservoir": {
+      "model": "processor",
+      "parameters": {
+        "capacity": 60,
+        "response": 0.4,
+        "demand": 2,
+        "loss": 0,
+        "pressureGain": 20,
+        "heatGain": 20,
+        "warningAt": 95,
+        "damageRate": 0.05,
+        "oxygenTransfer": 0.1,
+        "tracerConversion": 0.02,
+        "uptake": 0.01,
+        "mistDuty": 60,
+        "ventExchange": 0.1,
+        "condensation": 0.1,
+        "cycleFill": 5,
+        "cycleHold": 3,
+        "cycleDrain": 5,
+        "humidityGain": 0.1,
+        "lightGain": 0.8,
+        "temperatureResponse": 0.1
+      },
+      "initial": {
+        "enabled": true,
+        "open": true,
+        "load": 55,
+        "damage": 0,
+        "mode": "forward",
+        "rodPosition": 30
+      },
+      "circuits": {
+        "water": {
+          "ports": [
+            "inlet",
+            "outlet"
+          ],
+          "medium": "liquid",
+          "fluid": "water",
+          "role": "storage",
+          "parameters": {
+            "capacity": 50,
+            "stockScale": 10,
+            "thermalCapacity": 1,
+            "loss": 0,
+            "pressureGain": 20
+          },
+          "initial": {
+            "inventory": 80,
+            "temperature": 20,
+            "pressure": 10,
+            "tracers": {
+              "oxygen": 60,
+              "nutrient": 50,
+              "solids": 10,
+              "ph": 50,
+              "ec": 50
+            }
+          }
+        }
+      },
+      "thermalLinks": [],
+      "assumptions": [
+        "All version 2 quantities and coefficients are editable normalized teaching assumptions. No hidden bench supply."
+      ],
+      "presentation": {
+        "primaryCircuit": "water"
+      },
+      "energy": {
+        "role": "load",
+        "inputs": [
+          "drive"
+        ],
+        "outputs": [],
+        "capacity": 60,
+        "demand": 2,
+        "efficiency": 0.9
+      }
+    },
+    "irrigationPump": {
+      "model": "pump",
+      "parameters": {
+        "capacity": 60,
+        "response": 0.4,
+        "demand": 2,
+        "loss": 0,
+        "pressureGain": 20,
+        "heatGain": 20,
+        "warningAt": 95,
+        "damageRate": 0.05,
+        "oxygenTransfer": 0.1,
+        "tracerConversion": 0.02,
+        "uptake": 0.01,
+        "mistDuty": 60,
+        "ventExchange": 0.1,
+        "condensation": 0.1,
+        "cycleFill": 5,
+        "cycleHold": 3,
+        "cycleDrain": 5,
+        "humidityGain": 0.1,
+        "lightGain": 0.8,
+        "temperatureResponse": 0.1
+      },
+      "initial": {
+        "enabled": true,
+        "open": true,
+        "load": 55,
+        "damage": 0,
+        "mode": "forward",
+        "rodPosition": 30
+      },
+      "circuits": {
+        "water": {
+          "ports": [
+            "inlet",
+            "outlet"
+          ],
+          "medium": "liquid",
+          "fluid": "water",
+          "role": "passage",
+          "parameters": {
+            "capacity": 50,
+            "stockScale": 10,
+            "thermalCapacity": 1,
+            "loss": 0,
+            "pressureGain": 20
+          },
+          "initial": {
+            "inventory": 0,
+            "temperature": 20,
+            "pressure": 10,
+            "tracers": {
+              "oxygen": 60,
+              "nutrient": 50,
+              "solids": 10,
+              "ph": 50,
+              "ec": 50
+            }
+          }
+        }
+      },
+      "thermalLinks": [],
+      "assumptions": [
+        "All version 2 quantities and coefficients are editable normalized teaching assumptions. No hidden bench supply."
+      ],
+      "presentation": {
+        "primaryCircuit": "water"
+      },
+      "energy": {
+        "role": "load",
+        "inputs": [
+          "drive"
+        ],
+        "outputs": [],
+        "capacity": 60,
+        "demand": 2,
+        "efficiency": 0.9
+      },
+      "variant": "water"
+    },
+    "filter": {
+      "model": "processor",
+      "parameters": {
+        "capacity": 60,
+        "response": 0.4,
+        "demand": 2,
+        "loss": 0,
+        "pressureGain": 20,
+        "heatGain": 20,
+        "warningAt": 95,
+        "damageRate": 0.05,
+        "oxygenTransfer": 0.1,
+        "tracerConversion": 0.02,
+        "uptake": 0.01,
+        "mistDuty": 60,
+        "ventExchange": 0.1,
+        "condensation": 0.1,
+        "cycleFill": 5,
+        "cycleHold": 3,
+        "cycleDrain": 5,
+        "humidityGain": 0.1,
+        "lightGain": 0.8,
+        "temperatureResponse": 0.1
+      },
+      "initial": {
+        "enabled": true,
+        "open": true,
+        "load": 55,
+        "damage": 0,
+        "mode": "forward",
+        "rodPosition": 30
+      },
+      "circuits": {
+        "water": {
+          "ports": [
+            "inlet",
+            "outlet",
+            "backwash"
+          ],
+          "medium": "liquid",
+          "fluid": "water",
+          "role": "passage",
+          "parameters": {
+            "capacity": 50,
+            "stockScale": 10,
+            "thermalCapacity": 1,
+            "loss": 0,
+            "pressureGain": 20
+          },
+          "initial": {
+            "inventory": 0,
+            "temperature": 20,
+            "pressure": 10,
+            "tracers": {
+              "oxygen": 60,
+              "nutrient": 50,
+              "solids": 10,
+              "ph": 50,
+              "ec": 50
+            }
+          }
+        }
+      },
+      "thermalLinks": [],
+      "assumptions": [
+        "All version 2 quantities and coefficients are editable normalized teaching assumptions. No hidden bench supply."
+      ],
+      "presentation": {
+        "primaryCircuit": "water"
+      }
+    },
+    "header": {
+      "model": "pipe",
+      "parameters": {
+        "capacity": 60,
+        "response": 0.4,
+        "demand": 2,
+        "loss": 0,
+        "pressureGain": 20,
+        "heatGain": 20,
+        "warningAt": 95,
+        "damageRate": 0.05,
+        "oxygenTransfer": 0.1,
+        "tracerConversion": 0.02,
+        "uptake": 0.01,
+        "mistDuty": 60,
+        "ventExchange": 0.1,
+        "condensation": 0.1,
+        "cycleFill": 5,
+        "cycleHold": 3,
+        "cycleDrain": 5,
+        "humidityGain": 0.1,
+        "lightGain": 0.8,
+        "temperatureResponse": 0.1
+      },
+      "initial": {
+        "enabled": true,
+        "open": true,
+        "load": 55,
+        "damage": 0,
+        "mode": "forward",
+        "rodPosition": 30
+      },
+      "circuits": {
+        "water": {
+          "ports": [
+            "west",
+            "east",
+            "north",
+            "south"
+          ],
+          "medium": "fluid",
+          "fluid": "water",
+          "role": "passage",
+          "parameters": {
+            "capacity": 50,
+            "stockScale": 10,
+            "thermalCapacity": 1,
+            "loss": 0,
+            "pressureGain": 20
+          },
+          "initial": {
+            "inventory": 0,
+            "temperature": 20,
+            "pressure": 10,
+            "tracers": {
+              "oxygen": 60,
+              "nutrient": 50,
+              "solids": 10,
+              "ph": 50,
+              "ec": 50
+            }
+          }
+        }
+      },
+      "thermalLinks": [],
+      "assumptions": [
+        "All version 2 quantities and coefficients are editable normalized teaching assumptions. No hidden bench supply."
+      ],
+      "presentation": {
+        "primaryCircuit": "water"
+      }
+    },
+    "rowA": {
+      "model": "processor",
+      "parameters": {
+        "capacity": 60,
+        "response": 0.4,
+        "demand": 2,
+        "loss": 0,
+        "pressureGain": 20,
+        "heatGain": 20,
+        "warningAt": 95,
+        "damageRate": 0.05,
+        "oxygenTransfer": 0.1,
+        "tracerConversion": 0.02,
+        "uptake": 0.004,
+        "mistDuty": 60,
+        "ventExchange": 0.1,
+        "condensation": 0.1,
+        "cycleFill": 5,
+        "cycleHold": 3,
+        "cycleDrain": 5,
+        "humidityGain": 0.1,
+        "lightGain": 0.8,
+        "temperatureResponse": 0.1
+      },
+      "initial": {
+        "enabled": true,
+        "open": true,
+        "load": 55,
+        "damage": 0,
+        "mode": "forward",
+        "rodPosition": 30
+      },
+      "circuits": {
+        "water": {
+          "ports": [
+            "inlet",
+            "outlet"
+          ],
+          "medium": "liquid",
+          "fluid": "water",
+          "role": "passage",
+          "parameters": {
+            "capacity": 50,
+            "stockScale": 10,
+            "thermalCapacity": 1,
+            "loss": 0,
+            "pressureGain": 20
+          },
+          "initial": {
+            "inventory": 0,
+            "temperature": 20,
+            "pressure": 10,
+            "tracers": {
+              "oxygen": 60,
+              "nutrient": 50,
+              "solids": 10,
+              "ph": 50,
+              "ec": 50
+            }
+          }
+        }
+      },
+      "thermalLinks": [],
+      "assumptions": [
+        "All version 2 quantities and coefficients are editable normalized teaching assumptions. No hidden bench supply."
+      ],
+      "presentation": {
+        "primaryCircuit": "water"
+      },
+      "energy": {
+        "role": "load",
+        "inputs": [
+          "light"
+        ],
+        "outputs": [],
+        "capacity": 60,
+        "demand": 2,
+        "efficiency": 0.9
+      },
+      "zone": "growRoom"
+    },
+    "rowB": {
+      "model": "processor",
+      "parameters": {
+        "capacity": 60,
+        "response": 0.4,
+        "demand": 2,
+        "loss": 0,
+        "pressureGain": 20,
+        "heatGain": 20,
+        "warningAt": 95,
+        "damageRate": 0.05,
+        "oxygenTransfer": 0.1,
+        "tracerConversion": 0.02,
+        "uptake": 0.004,
+        "mistDuty": 60,
+        "ventExchange": 0.1,
+        "condensation": 0.1,
+        "cycleFill": 5,
+        "cycleHold": 3,
+        "cycleDrain": 5,
+        "humidityGain": 0.1,
+        "lightGain": 0.8,
+        "temperatureResponse": 0.1
+      },
+      "initial": {
+        "enabled": true,
+        "open": true,
+        "load": 55,
+        "damage": 0,
+        "mode": "forward",
+        "rodPosition": 30
+      },
+      "circuits": {
+        "water": {
+          "ports": [
+            "inlet",
+            "outlet"
+          ],
+          "medium": "liquid",
+          "fluid": "water",
+          "role": "passage",
+          "parameters": {
+            "capacity": 50,
+            "stockScale": 10,
+            "thermalCapacity": 1,
+            "loss": 0,
+            "pressureGain": 20
+          },
+          "initial": {
+            "inventory": 0,
+            "temperature": 20,
+            "pressure": 10,
+            "tracers": {
+              "oxygen": 60,
+              "nutrient": 50,
+              "solids": 10,
+              "ph": 50,
+              "ec": 50
+            }
+          }
+        }
+      },
+      "thermalLinks": [],
+      "assumptions": [
+        "All version 2 quantities and coefficients are editable normalized teaching assumptions. No hidden bench supply."
+      ],
+      "presentation": {
+        "primaryCircuit": "water"
+      },
+      "energy": {
+        "role": "load",
+        "inputs": [
+          "light"
+        ],
+        "outputs": [],
+        "capacity": 60,
+        "demand": 2,
+        "efficiency": 0.9
+      },
+      "zone": "growRoom"
+    },
+    "drainTank": {
+      "model": "storage",
+      "parameters": {
+        "capacity": 60,
+        "response": 0.4,
+        "demand": 2,
+        "loss": 0,
+        "pressureGain": 20,
+        "heatGain": 20,
+        "warningAt": 95,
+        "damageRate": 0.05,
+        "oxygenTransfer": 0.1,
+        "tracerConversion": 0.02,
+        "uptake": 0.01,
+        "mistDuty": 60,
+        "ventExchange": 0.1,
+        "condensation": 0.1,
+        "cycleFill": 5,
+        "cycleHold": 3,
+        "cycleDrain": 5,
+        "humidityGain": 0.1,
+        "lightGain": 0.8,
+        "temperatureResponse": 0.1
+      },
+      "initial": {
+        "enabled": true,
+        "open": true,
+        "load": 55,
+        "damage": 0,
+        "mode": "forward",
+        "rodPosition": 30
+      },
+      "circuits": {
+        "water": {
+          "ports": [
+            "inlet",
+            "outlet"
+          ],
+          "medium": "liquid",
+          "fluid": "water",
+          "role": "storage",
+          "parameters": {
+            "capacity": 50,
+            "stockScale": 10,
+            "thermalCapacity": 1,
+            "loss": 0,
+            "pressureGain": 20
+          },
+          "initial": {
+            "inventory": 60,
+            "temperature": 20,
+            "pressure": 10,
+            "tracers": {
+              "oxygen": 60,
+              "nutrient": 50,
+              "solids": 10,
+              "ph": 50,
+              "ec": 50
+            }
+          }
+        }
+      },
+      "thermalLinks": [],
+      "assumptions": [
+        "All version 2 quantities and coefficients are editable normalized teaching assumptions. No hidden bench supply."
+      ],
+      "presentation": {
+        "primaryCircuit": "water"
+      }
+    },
+    "returnPump": {
+      "model": "pump",
+      "parameters": {
+        "capacity": 60,
+        "response": 0.4,
+        "demand": 2,
+        "loss": 0,
+        "pressureGain": 20,
+        "heatGain": 20,
+        "warningAt": 95,
+        "damageRate": 0.05,
+        "oxygenTransfer": 0.1,
+        "tracerConversion": 0.02,
+        "uptake": 0.01,
+        "mistDuty": 60,
+        "ventExchange": 0.1,
+        "condensation": 0.1,
+        "cycleFill": 5,
+        "cycleHold": 3,
+        "cycleDrain": 5,
+        "humidityGain": 0.1,
+        "lightGain": 0.8,
+        "temperatureResponse": 0.1
+      },
+      "initial": {
+        "enabled": true,
+        "open": true,
+        "load": 55,
+        "damage": 0,
+        "mode": "forward",
+        "rodPosition": 30
+      },
+      "circuits": {
+        "water": {
+          "ports": [
+            "inlet",
+            "outlet"
+          ],
+          "medium": "liquid",
+          "fluid": "water",
+          "role": "passage",
+          "parameters": {
+            "capacity": 50,
+            "stockScale": 10,
+            "thermalCapacity": 1,
+            "loss": 0,
+            "pressureGain": 20
+          },
+          "initial": {
+            "inventory": 0,
+            "temperature": 20,
+            "pressure": 10,
+            "tracers": {
+              "oxygen": 60,
+              "nutrient": 50,
+              "solids": 10,
+              "ph": 50,
+              "ec": 50
+            }
+          }
+        }
+      },
+      "thermalLinks": [],
+      "assumptions": [
+        "All version 2 quantities and coefficients are editable normalized teaching assumptions. No hidden bench supply."
+      ],
+      "presentation": {
+        "primaryCircuit": "water"
+      },
+      "energy": {
+        "role": "load",
+        "inputs": [
+          "drive"
+        ],
+        "outputs": [],
+        "capacity": 60,
+        "demand": 2,
+        "efficiency": 0.9
+      },
+      "variant": "water"
+    },
+    "sitePower": {
+      "model": "processor",
+      "parameters": {
+        "capacity": 60,
+        "response": 0.4,
+        "demand": 2,
+        "loss": 0,
+        "pressureGain": 20,
+        "heatGain": 20,
+        "warningAt": 95,
+        "damageRate": 0.05,
+        "oxygenTransfer": 0.1,
+        "tracerConversion": 0.02,
+        "uptake": 0.01,
+        "mistDuty": 60,
+        "ventExchange": 0.1,
+        "condensation": 0.1,
+        "cycleFill": 5,
+        "cycleHold": 3,
+        "cycleDrain": 5,
+        "humidityGain": 0.1,
+        "lightGain": 0.8,
+        "temperatureResponse": 0.1
+      },
+      "initial": {
+        "enabled": true,
+        "open": true,
+        "load": 80,
+        "damage": 0,
+        "mode": "forward",
+        "rodPosition": 30
+      },
+      "circuits": {},
+      "thermalLinks": [],
+      "assumptions": [
+        "All version 2 quantities and coefficients are editable normalized teaching assumptions. No hidden bench supply."
+      ],
+      "energy": {
+        "role": "source",
+        "inputs": [],
+        "outputs": [
+          "secondary"
+        ],
+        "capacity": 100,
+        "demand": 0,
+        "efficiency": 1,
+        "supply": {
+          "kind": "boundary"
+        }
+      }
+    },
+    "plc": {
+      "model": "controller",
+      "parameters": {
+        "capacity": 60,
+        "response": 0.4,
+        "demand": 2,
+        "loss": 0,
+        "pressureGain": 20,
+        "heatGain": 20,
+        "warningAt": 95,
+        "damageRate": 0.05,
+        "oxygenTransfer": 0.1,
+        "tracerConversion": 0.02,
+        "uptake": 0.01,
+        "mistDuty": 60,
+        "ventExchange": 0.1,
+        "condensation": 0.1,
+        "cycleFill": 5,
+        "cycleHold": 3,
+        "cycleDrain": 5,
+        "humidityGain": 0.1,
+        "lightGain": 0.8,
+        "temperatureResponse": 0.1
+      },
+      "initial": {
+        "enabled": true,
+        "open": true,
+        "load": 55,
+        "damage": 0,
+        "mode": "forward",
+        "rodPosition": 30
+      },
+      "circuits": {},
+      "thermalLinks": [],
+      "assumptions": [
+        "All version 2 quantities and coefficients are editable normalized teaching assumptions. No hidden bench supply."
+      ],
+      "energy": {
+        "role": "load",
+        "inputs": [
+          "power"
+        ],
+        "outputs": [],
+        "capacity": 60,
+        "demand": 2,
+        "efficiency": 0.9
+      }
+    },
+    "shade": {
+      "model": "valve",
+      "parameters": {
+        "capacity": 60,
+        "response": 0.4,
+        "demand": 2,
+        "loss": 0,
+        "pressureGain": 20,
+        "heatGain": 20,
+        "warningAt": 95,
+        "damageRate": 0.05,
+        "oxygenTransfer": 0.1,
+        "tracerConversion": 0.02,
+        "uptake": 0.01,
+        "mistDuty": 60,
+        "ventExchange": 0.1,
+        "condensation": 0.1,
+        "cycleFill": 5,
+        "cycleHold": 3,
+        "cycleDrain": 5,
+        "humidityGain": 0.1,
+        "lightGain": 0.8,
+        "temperatureResponse": 0.1
+      },
+      "initial": {
+        "enabled": true,
+        "open": true,
+        "load": 55,
+        "damage": 0,
+        "mode": "forward",
+        "rodPosition": 30
+      },
+      "circuits": {},
+      "thermalLinks": [],
+      "assumptions": [
+        "Incident daylight is an explicit environmental boundary; screen retraction scales transmitted light."
+      ],
+      "energy": {
+        "role": "source",
+        "inputs": [],
+        "outputs": [
+          "light-out"
+        ],
+        "capacity": 70,
+        "demand": 1,
+        "efficiency": 1,
+        "supply": {
+          "kind": "environment",
+          "environment": "light"
+        }
+      },
+      "zone": "growRoom"
+    },
+    "airFan": {
+      "model": "load",
+      "parameters": {
+        "capacity": 60,
+        "response": 0.4,
+        "demand": 2,
+        "loss": 0,
+        "pressureGain": 20,
+        "heatGain": 20,
+        "warningAt": 95,
+        "damageRate": 0.05,
+        "oxygenTransfer": 0.1,
+        "tracerConversion": 0.02,
+        "uptake": 0.01,
+        "mistDuty": 60,
+        "ventExchange": 0.1,
+        "condensation": 0.1,
+        "cycleFill": 5,
+        "cycleHold": 3,
+        "cycleDrain": 5,
+        "humidityGain": 0.1,
+        "lightGain": 0.8,
+        "temperatureResponse": 0.1
+      },
+      "initial": {
+        "enabled": true,
+        "open": true,
+        "load": 50,
+        "damage": 0,
+        "mode": "forward",
+        "rodPosition": 30
+      },
+      "circuits": {
+        "air": {
+          "ports": [
+            "inlet",
+            "outlet"
+          ],
+          "medium": "air",
+          "fluid": "air",
+          "role": "source",
+          "parameters": {
+            "capacity": 50,
+            "stockScale": 10,
+            "thermalCapacity": 1,
+            "loss": 0,
+            "pressureGain": 20
+          },
+          "initial": {
+            "inventory": 0,
+            "temperature": 20,
+            "pressure": 10,
+            "tracers": {
+              "oxygen": 60,
+              "nutrient": 50,
+              "solids": 10,
+              "ph": 50,
+              "ec": 50
+            }
+          }
+        }
+      },
+      "thermalLinks": [],
+      "assumptions": [
+        "All version 2 quantities and coefficients are editable normalized teaching assumptions. No hidden bench supply."
+      ],
+      "presentation": {
+        "primaryCircuit": "air"
+      },
+      "energy": {
+        "role": "load",
+        "inputs": [
+          "supply"
+        ],
+        "outputs": [],
+        "capacity": 60,
+        "demand": 2,
+        "efficiency": 0.9
+      },
+      "zone": "growRoom"
+    },
+    "pad": {
+      "model": "processor",
+      "parameters": {
+        "capacity": 60,
+        "response": 0.4,
+        "demand": 2,
+        "loss": 0,
+        "pressureGain": 20,
+        "heatGain": 20,
+        "warningAt": 95,
+        "damageRate": 0.05,
+        "oxygenTransfer": 0.1,
+        "tracerConversion": 0.02,
+        "uptake": 0.01,
+        "mistDuty": 60,
+        "ventExchange": 0.1,
+        "condensation": 0.1,
+        "cycleFill": 5,
+        "cycleHold": 3,
+        "cycleDrain": 5,
+        "humidityGain": 0.04,
+        "lightGain": 0.8,
+        "temperatureResponse": 0.1
+      },
+      "initial": {
+        "enabled": true,
+        "open": true,
+        "load": 55,
+        "damage": 0,
+        "mode": "forward",
+        "rodPosition": 30
+      },
+      "circuits": {
+        "water": {
+          "ports": [
+            "inlet",
+            "drain"
+          ],
+          "medium": "liquid",
+          "fluid": "cooling-water",
+          "role": "passage",
+          "parameters": {
+            "capacity": 50,
+            "stockScale": 10,
+            "thermalCapacity": 1,
+            "loss": 0,
+            "pressureGain": 20
+          },
+          "initial": {
+            "inventory": 0,
+            "temperature": 20,
+            "pressure": 10,
+            "tracers": {
+              "oxygen": 60,
+              "nutrient": 50,
+              "solids": 10,
+              "ph": 50,
+              "ec": 50
+            }
+          }
+        },
+        "air": {
+          "ports": [
+            "air-in",
+            "air-out"
+          ],
+          "medium": "air",
+          "fluid": "air",
+          "role": "passage",
+          "parameters": {
+            "capacity": 50,
+            "stockScale": 10,
+            "thermalCapacity": 1,
+            "loss": 0,
+            "pressureGain": 20
+          },
+          "initial": {
+            "inventory": 0,
+            "temperature": 20,
+            "pressure": 10,
+            "tracers": {
+              "oxygen": 60,
+              "nutrient": 50,
+              "solids": 10,
+              "ph": 50,
+              "ec": 50
+            }
+          }
+        }
+      },
+      "thermalLinks": [],
+      "assumptions": [
+        "All version 2 quantities and coefficients are editable normalized teaching assumptions. No hidden bench supply."
+      ],
+      "presentation": {
+        "primaryCircuit": "water"
+      },
+      "zone": "growRoom"
+    },
+    "vent": {
+      "model": "valve",
+      "parameters": {
+        "capacity": 60,
+        "response": 0.4,
+        "demand": 2,
+        "loss": 0,
+        "pressureGain": 20,
+        "heatGain": 20,
+        "warningAt": 95,
+        "damageRate": 0.05,
+        "oxygenTransfer": 0.1,
+        "tracerConversion": 0.02,
+        "uptake": 0.01,
+        "mistDuty": 60,
+        "ventExchange": 0.08,
+        "condensation": 0.1,
+        "cycleFill": 5,
+        "cycleHold": 3,
+        "cycleDrain": 5,
+        "humidityGain": 0.1,
+        "lightGain": 0.8,
+        "temperatureResponse": 0.1
+      },
+      "initial": {
+        "enabled": true,
+        "open": true,
+        "load": 55,
+        "damage": 0,
+        "mode": "forward",
+        "rodPosition": 30
+      },
+      "circuits": {
+        "air": {
+          "ports": [
+            "inlet",
+            "outlet"
+          ],
+          "medium": "air",
+          "fluid": "air",
+          "role": "sink",
+          "parameters": {
+            "capacity": 50,
+            "stockScale": 10,
+            "thermalCapacity": 1,
+            "loss": 0,
+            "pressureGain": 20
+          },
+          "initial": {
+            "inventory": 0,
+            "temperature": 20,
+            "pressure": 10,
+            "tracers": {
+              "oxygen": 60,
+              "nutrient": 50,
+              "solids": 10,
+              "ph": 50,
+              "ec": 50
+            }
+          }
+        }
+      },
+      "thermalLinks": [],
+      "assumptions": [
+        "All version 2 quantities and coefficients are editable normalized teaching assumptions. No hidden bench supply."
+      ],
+      "presentation": {
+        "primaryCircuit": "air"
+      },
+      "energy": {
+        "role": "load",
+        "inputs": [
+          "supply"
+        ],
+        "outputs": [],
+        "capacity": 60,
+        "demand": 2,
+        "efficiency": 0.9
+      },
+      "zone": "growRoom"
+    },
+    "padSump": {
+      "model": "storage",
+      "parameters": {
+        "capacity": 60,
+        "response": 0.4,
+        "demand": 2,
+        "loss": 0,
+        "pressureGain": 20,
+        "heatGain": 20,
+        "warningAt": 95,
+        "damageRate": 0.05,
+        "oxygenTransfer": 0.1,
+        "tracerConversion": 0.02,
+        "uptake": 0.01,
+        "mistDuty": 60,
+        "ventExchange": 0.1,
+        "condensation": 0.1,
+        "cycleFill": 5,
+        "cycleHold": 3,
+        "cycleDrain": 5,
+        "humidityGain": 0.1,
+        "lightGain": 0.8,
+        "temperatureResponse": 0.1
+      },
+      "initial": {
+        "enabled": true,
+        "open": true,
+        "load": 55,
+        "damage": 0,
+        "mode": "forward",
+        "rodPosition": 30
+      },
+      "circuits": {
+        "water": {
+          "ports": [
+            "inlet",
+            "outlet"
+          ],
+          "medium": "liquid",
+          "fluid": "cooling-water",
+          "role": "storage",
+          "parameters": {
+            "capacity": 50,
+            "stockScale": 10,
+            "thermalCapacity": 1,
+            "loss": 0,
+            "pressureGain": 20
+          },
+          "initial": {
+            "inventory": 80,
+            "temperature": 20,
+            "pressure": 10,
+            "tracers": {
+              "oxygen": 60,
+              "nutrient": 50,
+              "solids": 10,
+              "ph": 50,
+              "ec": 50
+            }
+          }
+        }
+      },
+      "thermalLinks": [],
+      "assumptions": [
+        "All version 2 quantities and coefficients are editable normalized teaching assumptions. No hidden bench supply."
+      ],
+      "presentation": {
+        "primaryCircuit": "water"
+      }
+    },
+    "padPump": {
+      "model": "pump",
+      "parameters": {
+        "capacity": 60,
+        "response": 0.4,
+        "demand": 2,
+        "loss": 0,
+        "pressureGain": 20,
+        "heatGain": 20,
+        "warningAt": 95,
+        "damageRate": 0.05,
+        "oxygenTransfer": 0.1,
+        "tracerConversion": 0.02,
+        "uptake": 0.01,
+        "mistDuty": 60,
+        "ventExchange": 0.1,
+        "condensation": 0.1,
+        "cycleFill": 5,
+        "cycleHold": 3,
+        "cycleDrain": 5,
+        "humidityGain": 0.1,
+        "lightGain": 0.8,
+        "temperatureResponse": 0.1
+      },
+      "initial": {
+        "enabled": true,
+        "open": true,
+        "load": 55,
+        "damage": 0,
+        "mode": "forward",
+        "rodPosition": 30
+      },
+      "circuits": {
+        "water": {
+          "ports": [
+            "inlet",
+            "outlet"
+          ],
+          "medium": "liquid",
+          "fluid": "cooling-water",
+          "role": "passage",
+          "parameters": {
+            "capacity": 50,
+            "stockScale": 10,
+            "thermalCapacity": 1,
+            "loss": 0,
+            "pressureGain": 20
+          },
+          "initial": {
+            "inventory": 0,
+            "temperature": 20,
+            "pressure": 10,
+            "tracers": {
+              "oxygen": 60,
+              "nutrient": 50,
+              "solids": 10,
+              "ph": 50,
+              "ec": 50
+            }
+          }
+        }
+      },
+      "thermalLinks": [],
+      "assumptions": [
+        "All version 2 quantities and coefficients are editable normalized teaching assumptions. No hidden bench supply."
+      ],
+      "presentation": {
+        "primaryCircuit": "water"
+      },
+      "energy": {
+        "role": "load",
+        "inputs": [
+          "drive"
+        ],
+        "outputs": [],
+        "capacity": 60,
+        "demand": 2,
+        "efficiency": 0.9
+      },
+      "variant": "water"
+    },
+    "humidityProbe": {
+      "model": "sensor",
+      "parameters": {
+        "capacity": 60,
+        "response": 0.4,
+        "demand": 2,
+        "loss": 0,
+        "pressureGain": 20,
+        "heatGain": 20,
+        "warningAt": 95,
+        "damageRate": 0.05,
+        "oxygenTransfer": 0.1,
+        "tracerConversion": 0.02,
+        "uptake": 0.01,
+        "mistDuty": 60,
+        "ventExchange": 0.1,
+        "condensation": 0.1,
+        "cycleFill": 5,
+        "cycleHold": 3,
+        "cycleDrain": 5,
+        "humidityGain": 0.1,
+        "lightGain": 0.8,
+        "temperatureResponse": 0.1
+      },
+      "initial": {
+        "enabled": true,
+        "open": true,
+        "load": 55,
+        "damage": 0,
+        "mode": "forward",
+        "rodPosition": 30
+      },
+      "circuits": {},
+      "thermalLinks": [],
+      "assumptions": [
+        "All version 2 quantities and coefficients are editable normalized teaching assumptions. No hidden bench supply."
+      ],
+      "energy": {
+        "role": "load",
+        "inputs": [
+          "supply"
+        ],
+        "outputs": [],
+        "capacity": 60,
+        "demand": 2,
+        "efficiency": 0.9
+      },
+      "zone": "growRoom",
+      "observation": {
+        "zone": "growRoom",
+        "quantity": "humidity"
+      }
+    },
+    "lightProbe": {
+      "model": "sensor",
+      "parameters": {
+        "capacity": 60,
+        "response": 0.4,
+        "demand": 2,
+        "loss": 0,
+        "pressureGain": 20,
+        "heatGain": 20,
+        "warningAt": 95,
+        "damageRate": 0.05,
+        "oxygenTransfer": 0.1,
+        "tracerConversion": 0.02,
+        "uptake": 0.01,
+        "mistDuty": 60,
+        "ventExchange": 0.1,
+        "condensation": 0.1,
+        "cycleFill": 5,
+        "cycleHold": 3,
+        "cycleDrain": 5,
+        "humidityGain": 0.1,
+        "lightGain": 0.8,
+        "temperatureResponse": 0.1
+      },
+      "initial": {
+        "enabled": true,
+        "open": true,
+        "load": 55,
+        "damage": 0,
+        "mode": "forward",
+        "rodPosition": 30
+      },
+      "circuits": {},
+      "thermalLinks": [],
+      "assumptions": [
+        "All version 2 quantities and coefficients are editable normalized teaching assumptions. No hidden bench supply."
+      ],
+      "energy": {
+        "role": "load",
+        "inputs": [
+          "supply"
+        ],
+        "outputs": [],
+        "capacity": 60,
+        "demand": 2,
+        "efficiency": 0.9
+      },
+      "zone": "growRoom",
+      "observation": {
+        "zone": "growRoom",
+        "quantity": "light"
+      }
+    },
+    "ecProbe": {
+      "model": "sensor",
+      "parameters": {
+        "capacity": 60,
+        "response": 0.4,
+        "demand": 2,
+        "loss": 0,
+        "pressureGain": 20,
+        "heatGain": 20,
+        "warningAt": 95,
+        "damageRate": 0.05,
+        "oxygenTransfer": 0.1,
+        "tracerConversion": 0.02,
+        "uptake": 0.01,
+        "mistDuty": 60,
+        "ventExchange": 0.1,
+        "condensation": 0.1,
+        "cycleFill": 5,
+        "cycleHold": 3,
+        "cycleDrain": 5,
+        "humidityGain": 0.1,
+        "lightGain": 0.8,
+        "temperatureResponse": 0.1
+      },
+      "initial": {
+        "enabled": true,
+        "open": true,
+        "load": 55,
+        "damage": 0,
+        "mode": "forward",
+        "rodPosition": 30
+      },
+      "circuits": {},
+      "thermalLinks": [],
+      "assumptions": [
+        "All version 2 quantities and coefficients are editable normalized teaching assumptions. No hidden bench supply."
+      ],
+      "energy": {
+        "role": "load",
+        "inputs": [
+          "supply"
+        ],
+        "outputs": [],
+        "capacity": 60,
+        "demand": 2,
+        "efficiency": 0.9
+      },
+      "measurement": "ec",
+      "observation": {
+        "component": "reservoir",
+        "circuit": "water",
+        "quantity": "ec"
+      }
+    }
+  },
+  "connections": {},
+  "environment": {
+    "ambient": 20,
+    "light": 60,
+    "wind": 60,
+    "wave": 60,
+    "waterCurrent": 60
+  },
+  "zones": {
+    "growRoom": {
+      "initial": {
+        "temperature": 30,
+        "humidity": 55,
+        "light": 50,
+        "oxygen": 60
+      },
+      "parameters": {
+        "response": 0.03
+      }
+    }
+  },
+  "assumptions": [
+    "All sources, sinks, and environmental inputs are explicitly declared. Model values are normalized indices, not plant operating predictions.",
+    "Structural references: A1, A7, A8, A9, A10; every model number remains an editable teaching guess.",
+    "No fish welfare, nutrient sufficiency, crop yield, disease, irrigation schedule or real protection claim."
+  ]
+}

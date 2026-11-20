@@ -303,6 +303,26 @@ again and checks the figure against it ([animated figures](../practice/animated-
 - Hook-face geometry and mould release are not checked. CAD and calculation do not prove a joint: print it and
   measure.
 
+<details>
+<summary>Review a printed snap or hinge experiment</summary>
+
+Axsom and Willson's Fictiv guide separates brief joining, sustained assembled bending and repeated opening.
+Record those as separate load cases; a successful first fit does not establish retained force after a dwell or
+after cycling. Its broad strain table and extracted equation typography are not new calculator inputs.
+[ref:fictiv-how-to-design-snap-fit-components]
+
+BASF's original manual makes conditioning, wall compliance and service temperature explicit. Record the
+material state, layer/hinge axes, support geometry, applied displacement, dwell and cycle definition alongside
+measured force, retention and damage. Use the existing calculations within their stated limits; the BASF
+Q-factor method is not implemented here. [ref:basf-snapfit-manual]
+
+Sahota and Willson's hinge guide distinguishes moulded production from printed prototypes and recommends
+thickness experiments. Compare thickness/shape variants using the actual process and an explicit axis sketch;
+its cycle estimates do not qualify a printed hinge. Physical coupon generation and qualification remain open
+under #94/#95. [ref:fictiv-design-guide-for-living-hinges-fictiv]
+
+</details>
+
 ## Tests that keep it honest
 
 `tests/mechanical/test_snapfit.py` reproduces the guide's worked examples — Example I (h 3.28 mm, P 32.5 N, W 58.5 N), Example II

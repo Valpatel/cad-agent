@@ -23,10 +23,29 @@
 
 ## What is it?
 
-An open-source toolkit that helps your AI assistant design physical things: find a method, build a model, check
-its assumptions and keep the evidence for review.
+An open-source stack of CAD libraries, simulators, deterministic checks, web widgets and command-line tools, with
+knowledge and an agent kit on top. It is headed toward free, open and local models doing the CAD work frontier
+models do today ([where it is headed](docs/vision.md#from-frontier-to-local)).
 
-Start with the [guides](docs/README.md), or explore the [visual catalogue](https://cad-agent.valpatel.com/catalog).
+<img src="docs/img/gyropup/turret-playground-still.webp" alt="Gyropup's turret playground: a foam-ball turret on a compute box firing at targets" width="420">
+
+<sub>Gyropup's [turret playground](https://gyropup.com/designer/sim), recorded by [`gyropup-turret.mjs`](tools/site/figures/gyropup-turret.mjs): a work-in-progress prototype, not physics validation.</sub>
+
+The stack, top layer first:
+
+| Layer | In cad-agent today |
+|---|---|
+| Agent kit | [skills](.agents/skills/README.md) · [subagents](.agents/agents/README.md) · [eval jobs](docs/practice/standard-evaluation.md) |
+| Knowledge | [guides](docs/README.md) · [lessons](docs/lessons/README.md) · [references](docs/research/README.md) |
+| Command-line tools | [`cad-agent`](docs/toolkit.md): build, check, rules, review, print |
+| Web widgets | [viewers, guides, part tables, replay, SCADA](software/cadagent/webkit/README.md) |
+| Checks and tests | [formulas](software/cadagent/formulas/README.md) · [gates](docs/practice/gates.md) · [tests](tests/README.md) |
+| Simulators | [FEA, CFD, robots](software/cadagent/simulation/README.md) · [SCADA](docs/practice/scada/README.md) |
+| Libraries | [the `cadagent` package](software/cadagent/README.md) |
+| Built on | CadQuery, trimesh, Gmsh, OpenFOAM, MuJoCo, three.js; [vendored projects](software/vendor/README.md) |
+
+Start with the [guides](docs/README.md), explore the [visual catalogue](https://cad-agent.valpatel.com/catalog),
+or try the [toolkit viewers and simulations](https://cad-agent.valpatel.com/toolkit).
 
 <a id="find-your-next-step"></a>
 <a id="how-it-improves-itself"></a>

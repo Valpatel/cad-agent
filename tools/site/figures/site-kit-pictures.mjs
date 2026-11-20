@@ -4,12 +4,12 @@
  *
  * Each picture is the kit itself (software/cadagent/webkit/), served as the site serves it, running on real files:
  *
- * - docs/img/kit/part-table.webp: kit/part-table.js and kit/part-tracker.js on the gate bench's parts (its committed
+ * - docs/img/kit/part-table.webp: kit/assembly/part-table.js and kit/assembly/part-tracker.js on the gate bench's parts (its committed
  *   run, tests/fixtures/gate_bench/site_snapshot/dossier-geometry.json, and its dossier cards), one row per part or
  *   screw entry in that record (19 rows for 26 parts: the eight balls are one), sorted by size; a cell the bench does
  *   not declare says so; nothing is marked ordered or printed;
  * - docs/img/kit/part-table-search.webp: the same table searched for "screw";
- * - docs/img/kit/file-viewer-step.webp: kit/file-viewer.html on one of Gyropup's STEP files (MIT; read from the
+ * - docs/img/kit/file-viewer-step.webp: kit/files/file-viewer.html on one of Gyropup's STEP files (MIT; read from the
  *   checkout's git at the revision docs/img/gyropup/SOURCE.json records, never its working tree);
  * - docs/img/kit/file-viewer-front.webp: the same viewer after viewer.fit('front');
  * - docs/img/kit/file-viewer-theme.webp: the same viewer after setTheme() with the palette docs/practice/file-viewer.md shows;
@@ -57,13 +57,13 @@ for (const [id, f] of Object.entries(geometry.fasteners))
   rows.push({ id, section: 'not declared', what: `M${f.diameter_mm} × ${f.length_mm} screw (${f.key}) into ${f.into}`, material: 'not declared', size: null, sizeText: `Ø${f.diameter_mm} × ${f.length_mm}`, count: f.count });
 const mm = r => r.sizeText || r.size.map(v => +v.toFixed(1)).join(' × ');
 const table = `<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<link rel="stylesheet" href="/kit/vendor/fonts/fonts.css"><link rel="stylesheet" href="/kit/part-table.css">
+<link rel="stylesheet" href="/kit/vendor/fonts/fonts.css"><link rel="stylesheet" href="/kit/assembly/part-table.css">
 <style>body{margin:0;padding:18px 20px;background:#fffdf5;color:#173d3c;font:14px/1.5 Inter,system-ui,sans-serif}table{width:100%}h1{font-size:20px;margin:0 0 12px}</style>
 <main><h1>Gate bench parts</h1><div id="progress"></div><div class="cad-table-scroll"><table id="parts"><caption>Parts, from the bench's dossier and geometry record</caption>
 <thead><tr><th data-sort="text">Part</th><th data-sort="text">Section</th><th data-sort="text">What it does</th><th data-sort="number">Size, mm</th><th data-sort="number">Count</th></tr></thead><tbody>
 ${rows.map(r => `<tr data-part-key="${esc(r.id)}" data-part-label="${esc(r.id)}"><td><b>${esc(r.id)}</b><br><small>${esc(r.material)}</small></td><td>${esc(r.section)}</td><td>${esc(r.what)}</td><td data-sort-value="${r.size ? r.size.reduce((a, b) => a * b, 1).toFixed(1) : ''}">${esc(mm(r))}</td><td data-sort-value="${r.count}">${r.count}</td></tr>`).join('\n')}
 </tbody></table></div></main><script type="module">
-import {createPartTracker} from '/kit/part-tracker.js';import {enhancePartTable,mountProgressTools} from '/kit/part-table.js';
+import {createPartTracker} from '/kit/assembly/part-tracker.js';import {enhancePartTable,mountProgressTools} from '/kit/assembly/part-table.js';
 const tracker=createPartTracker({project:'gate-bench'});mountProgressTools(document.getElementById('progress'),tracker);
 enhancePartTable(document.getElementById('parts'),{tracker,statuses:[{id:'ordered',label:'Ordered'},{id:'printed',label:'Printed'}]});document.body.dataset.ready='true';
 </script></html>`;
@@ -119,7 +119,7 @@ try {
   await page.setViewportSize({ width: DOCS_COLUMN, height: 560 });
   const ready = state => page.waitForFunction(s => window.__fileViewer?.root.dataset.state === s, state, { timeout: 120000 });
   const settle = () => page.evaluate(() => new Promise(done => setTimeout(() => requestAnimationFrame(() => requestAnimationFrame(done)), 900)));
-  await page.goto(base + '/kit/file-viewer.html?file=' + encodeURIComponent('/' + path.basename(PART)));
+  await page.goto(base + '/kit/files/file-viewer.html?file=' + encodeURIComponent('/' + path.basename(PART)));
   await ready('ready');
   await settle();
   await save(page, 'file-viewer-step.webp');
@@ -131,7 +131,7 @@ try {
   await settle();
   await save(page, 'file-viewer-theme.webp');
   // A STEP file cut off halfway: the viewer says what failed and offers Retry.
-  await page.goto(base + '/kit/file-viewer.html?file=%2Ftruncated.step');
+  await page.goto(base + '/kit/files/file-viewer.html?file=%2Ftruncated.step');
   await ready('error');
   await settle();
   await save(page, 'file-viewer-error.webp');

@@ -21,7 +21,9 @@ flowchart TD
 
 1. Inventory all moving joints and components, including shafts/rotors, stationary housings, feed mechanisms,
    helper geometry and scene attachments. Record ownership, units, axis handedness, home datums and parent chains
-   from CAD source or inspected geometry. Do not take the expected pivots from the suspect animation manifest.
+   from CAD source or inspected geometry. For imported robot descriptions, use the trace protocol's frame/limit
+   inventory, including sensor bases, motor signs and the physical cause of limits. Do not take the expected pivots
+   from the suspect animation manifest.
 2. Read [the trace protocol](references/trace-protocol.md). Build a reference with at least four noncoplanar
    landmarks per component. Drive the real renderer using `cad-agent motion-trace reference.json --poses-only`,
    then capture actual mesh vertices through its current world matrices in the common assembly frame, in mm.

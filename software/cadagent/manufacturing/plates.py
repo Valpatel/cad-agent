@@ -864,7 +864,10 @@ def _number(raw: Dict[str, Any], key: str, default: float) -> float:
 
 def plates_config(project, known_parts: Sequence[str]) -> Optional[PlatesConfig]:
     """Parse ``cad.plates`` (None when it is ``false``). The parts default to ``cad.release.build``, else every part
-    the release lists; quantities to ``cad.release.quantities``, else 1; filaments to ``cad.slicer.filament``."""
+    the release lists, less the parts that are not printed (``manufacturing.process.printed_parts``, #577; None when
+    that leaves none); quantities to ``cad.release.quantities``, else 1; filaments to ``cad.slicer.filament``.
+    Parts listed in ``cad.plates.parts`` are laid out as listed."""
+    from cadagent.manufacturing.process import printed_parts
     from cadagent.manufacturing.slicer import FILAMENTS, _settings
     from cadagent.project import CadConfigError
     from cadagent.publish.release import release_config
@@ -907,6 +910,13 @@ def plates_config(project, known_parts: Sequence[str]) -> Optional[PlatesConfig]
             if loose:
                 warnings.append(f"the plates hold every part of the pick-one or optional groups {loose}; set "
                                 "cad.release.build or cad.plates.parts to print one build")
+        made = printed_parts(project, parts)
+        if len(made) < len(parts):
+            left = [p for p in parts if p not in made]
+            if not made:
+                return None
+            warnings.append(f"not printed, left off the plates: {', '.join(left)}")
+            parts = made
     elif isinstance(spec, list) and spec and all(isinstance(p, str) for p in spec):
         parts = list(spec)
     elif isinstance(spec, dict) and spec:
@@ -939,6 +949,24 @@ def plates_file(project) -> Path:
     """``<exports_dir>/<name>-plates.3mf``."""
     import re
     return project.exports_dir / (re.sub(r"[^A-Za-z0-9._-]+", "-", project.name).strip("-") + "-plates.3mf")
+
+
+def _release_inputs(project, cfg: PlatesConfig, stl_hashes=None) -> Dict[str, Any]:
+    """Inputs bound by a generated plate record; legacy records cannot establish this freshness."""
+    import hashlib
+    from cadagent.manufacturing.slicer import _settings, part_overrides
+
+    if stl_hashes is None:
+        stl_hashes = {}
+        for name in cfg.parts:
+            path = project.exports_dir / (name + '.stl')
+            if not path.resolve().is_relative_to(project.root.resolve()):
+                raise PlatesError('plate source STL is outside the project')
+            stl_hashes[name] = hashlib.sha256(path.read_bytes()).hexdigest()
+    return {"stls": stl_hashes, "parts": cfg.parts, "quantities": cfg.quantities, "filaments": cfg.filaments,
+            "bed_mm": list(project.printer.bed_mm), "gap_mm": cfg.gap, "margin_mm": cfg.margin,
+            "rotate": cfg.rotate, "keep_out_mm": [list(k) for k in cfg.keep_out], "bed_type": cfg.bed_type,
+            "slicer": _settings(project), "part_overrides": {n: part_overrides(project, n) for n in cfg.parts}}
 
 
 def _short(filament: str) -> str:
@@ -996,7 +1024,8 @@ def _remove_outputs(path: Path) -> None:
 def export_plates(project, known_parts: Optional[Sequence[str]] = None, settings_bytes: Optional[bytes] = None,
                   use_slicer: bool = True, require_project_settings: bool = False) -> Optional[Dict[str, Any]]:
     """Write ``<name>-plates.3mf`` (verified), ``<name>-plates.json`` (the layout) and ``<name>-plates.svg`` (the
-    plates from above) into ``exports_dir``; None when ``cad.plates`` is false. The project settings are
+    plates from above) into ``exports_dir``; None when ``cad.plates`` is false or the default selection has no
+    printed parts. Explicit ``cad.plates.parts`` selections remain eligible. The project settings are
     ``settings_bytes`` when given, else Bambu Studio's for ``cad.slicer`` when it is installed and ``use_slicer``,
     else left out (the record and the warnings say so: Bambu Studio then opens the file on one plate). A printer,
     process or filament that Bambu Studio has no profile for is a ``CadConfigError``.
@@ -1046,12 +1075,13 @@ def export_plates(project, known_parts: Optional[Sequence[str]] = None, settings
 def _export_plates(project, known_parts=None, settings_bytes=None, use_slicer=True, *,
                    require_project_settings=False, output_path=None):
     """Shared exporter; strict calls write into their owned staging directory."""
+    import hashlib
+    import io
     import subprocess
 
     from cadagent.manufacturing import slicer
     from cadagent.publish.report import load_parts
 
-    trimesh = require("trimesh", "build plates (STL loading)")
     if known_parts is None:
         known, error = load_parts(project)
         if error:
@@ -1062,19 +1092,24 @@ def _export_plates(project, known_parts=None, settings_bytes=None, use_slicer=Tr
     cfg = plates_config(project, known_parts)
     if cfg is None:
         if require_project_settings:
-            raise PlatesError('project settings required, but cad.plates is false')
+            raise PlatesError('project settings required, but cad.plates is false or no part is printed')
         return None
+    trimesh = require("trimesh", "build plates (STL loading)")
     bed = project.printer.bed_mm
     if not bed:
         raise PlatesError("cad.printer.bed_mm is required to lay out build plates")
     if path.stem in known_parts:
         raise PlatesError(f"a part is named {path.stem!r}, the plates file's name; rename it or set cad.plates: false")
-    meshes = {}
+    meshes, stl_hashes = {}, {}
     for part in cfg.parts:
         stl = project.exports_dir / f"{part}.stl"
         if not stl.is_file():
             raise FileNotFoundError(f"{stl} not found; run the build first")
-        mesh = trimesh.load_mesh(stl, process=True)
+        if not stl.resolve().is_relative_to(project.root.resolve()):
+            raise PlatesError('plate source STL is outside the project')
+        raw = stl.read_bytes()
+        mesh = trimesh.load_mesh(io.BytesIO(raw), file_type='stl', process=True)
+        stl_hashes[part] = hashlib.sha256(raw).hexdigest()
         meshes[part] = (_normalised(mesh.vertices), np.asarray(mesh.faces, dtype=np.int64))
     groups = []
     for part in cfg.parts:
@@ -1169,6 +1204,7 @@ def _export_plates(project, known_parts=None, settings_bytes=None, use_slicer=Tr
     import hashlib
     record = {
         "format": MARKER,
+        "inputs": _release_inputs(project, cfg, stl_hashes),
         "file": path.name,
         "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
         "picture": svg_path.name,

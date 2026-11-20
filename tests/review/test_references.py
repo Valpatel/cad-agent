@@ -103,6 +103,19 @@ def test_lookup_resolves_ids_and_aliases(registry):
         registry.resolve("covestro-snapfi")
 
 
+def test_pem_overview_reading_has_one_identity_and_retains_both_scopes(registry):
+    canonical = registry.resolve("pem-fastener-guide")
+    assert canonical.kind == "source"
+    for key in ("pem-design-engineers-fastener-guide-2022", "pem-fastener-guide-2022"):
+        assert registry.resolve(key) is canonical
+    assert "2026-11-01:" in canonical["verified"] and "skimmed" in canonical["verified"]
+    assert "2026-11-11:" in canonical["verified"] and "all 20 PDF pages" in canonical["verified"]
+    assert [ref.id for ref in registry.entries.values() if ref.data.get("url") == canonical["url"]] == [canonical.id]
+    assert {"docs/research/manufacturing/sheet-metal-guides.md",
+            "docs/research/manufacturing/pem-micro-fasteners.md"} <= set(canonical["used_for"])
+    assert canonical.evidence_class == "read"  # More reading is not independent validation.
+
+
 def test_a_citation_names_the_people_and_the_link(registry):
     roark = registry.resolve("roark").citation()
     assert roark.startswith("Warren C. Young, Richard G. Budynas, Ali M. Sadegh, Roark's Formulas")
@@ -347,6 +360,22 @@ def test_an_id_in_two_files_is_reported(tmp_path):
     assert "maker-insert-guide: in docs/research/references/guides-b.yaml and in docs/research/references/guides-a.yaml" in problems
     assert "good-guide: in docs/research/references/guides-c.yaml and in docs/research/references.yaml" in problems
     assert "write `extends: true`" in problems
+
+
+def test_duplicate_exact_pdf_identity_is_refused_but_an_extension_preserves_one_source(tmp_path):
+    url = "https://example.org/design-guide.pdf"
+    core = {**GOOD, "url": url}
+    duplicate = {**GUIDE, "url": url}
+    root = _planted2(tmp_path / "duplicate", {"guides-inserts": _shard([duplicate])}, sources=(core,))
+    problems = "\n".join(_problems(root))
+    assert "good-guide, maker-insert-guide: same exact PDF URL" in problems
+    # Reconcile a deeper reading into the same source; aliases do not add a document.
+    ext = {"id": "good-guide", "extends": True, "aliases": ["maker-insert-guide"], "kind": "guide"}
+    root = _planted2(tmp_path / "extended", {"guides-inserts": _shard([ext])}, sources=(core,))
+    reg = load(root / "docs/research/references.yaml")
+    assert not reg.problems(root)
+    assert reg.resolve("maker-insert-guide") is reg.resolve("good-guide")
+    assert len(reg.of_kind("source")) == 1
 
 
 def test_extends_adds_schema2_fields_to_a_core_entry(tmp_path):
@@ -653,3 +682,38 @@ def test_the_coverage_rows_keep_their_drafts_unposted(registry):
     assert drafts and all(d["posted"] is False or (isinstance(d["posted"], int) and not isinstance(d["posted"], bool))
                           for d in drafts)
     assert {w["group"] for w in registry.coverage["wanted"]} == set(registry.vocab["process_group"])
+
+
+def test_bossard_reading_preserves_identity_and_historical_claim_limit(registry):
+    key = "bossard-fastening-technology-self-tapping-screws-for-plastic"
+    ref = registry.resolve(key)
+    assert ref.kind == "source" and ref.data["evidence"]["class"] == "read"
+    assert ref.data["evidence"]["numbers"] == "none" and ref.data["evidence"]["tested"] == "no"
+    assert ref.data["url"] == "https://www.bossard.com.cn/cn-en/knowledge-hub/inspiration/blog/self-tapping-screws-plastic/"
+    assert sum(r.data.get("url") == ref.data["url"] for r in registry.entries.values()) == 1
+    note = ref.data["verified"]
+    assert "2026-11-11" in note and "b5b250c9101e26eec7852dfe0e8603ba3c6ed9f894b6374dbf2b86410b8b3871" in note
+    assert "not corroborated" in note and "historically" in note
+    assert not any("1.8" in str(claim) or "2.5" in str(claim) for claim in ref.data["claims"])
+    draft = next(r for r in registry.coverage["rows"] if r["id"] == "ca-2-screw-boss-wall-spacing-self-tapping")["draft_issue"]
+    assert "1.8-2.5" not in draft["body"], "the uncorroborated dimension must not survive as actionable backlog advice"
+
+
+def test_joint_interface_readings_preserve_exact_documents_without_numerical_claim_transfer(registry):
+    sources = {
+        "omw-corp-understanding-and-specifying-anodizing": "6171af22375e7f1ce338f20389ff7f4ce565941164792eee454a1c06daed5436",
+        "nsk-bearing-shaft-and-housing-tolerance-nsk-technical": "483ccd47d9861016207a1724ddbf02fd7018cc14a0590388bcd8fdc231da78f8",
+        "skf-shaft-and-housing-fits-skf-catalog-excerpt": "922639535be9b33e16d1554ad38640217b55d717f517ed2c52b48b0786e5aa39",
+    }
+    aliases = {'omw-corp-understanding-and-specifying-anodizing': 'omw-anodizing', 'nsk-bearing-shaft-and-housing-tolerance-nsk-technical': 'nsk-ti-0001', 'skf-shaft-and-housing-fits-skf-catalog-excerpt': 'general-bearing-fits'}
+    for key, digest in sources.items():
+        ref = registry.resolve(key)
+        assert registry.resolve(aliases[key]) is ref
+        assert ref.kind == "source" and ref.evidence_class == "read"
+        assert ref.data["evidence"]["tested"] == "no" and digest in ref.data["verified"]
+        assert sum(r.data.get("url") == ref.data["url"] for r in registry.entries.values()) == 1
+    nsk = registry.resolve("nsk-bearing-shaft-and-housing-tolerance-nsk-technical")
+    assert nsk.data["evidence"]["numbers"] == "none" and not nsk.data["claims"]
+    assert "7/10000" in nsk.data["verified"] and "not corroborated" in nsk.data["verified"]
+    general = registry.resolve("skf-shaft-and-housing-fits-skf-catalog-excerpt")
+    assert "General Bearing" in general.data["org"] and "not a complete" in general.data["summary"]

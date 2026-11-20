@@ -13,7 +13,7 @@ import path from 'node:path';
 import { YAML } from './npm-context.mjs';
 import { builtSite } from './built-site.mjs';
 import {
-  CORE, DIR, EXPERTS, LADDER, NOT_SHARDS, UNPLACED, areaOf, isRead, areaTree, barChart, expertsMarkdown, linkTags, loadReferences, mdTags, referenceModel,
+  creatorText, originalUrl, CORE, DIR, EXPERTS, LADDER, NOT_SHARDS, UNPLACED, areaOf, isRead, areaTree, barChart, expertsMarkdown, linkTags, loadReferences, mdTags, referenceModel,
   referenceJson, referenceSite, healthOf,
 } from '../../tools/site/compiler/site-references.mjs';
 
@@ -180,6 +180,23 @@ test('[ref:<id>] in a page links to the record and the source; code, links and u
   assert.deepEqual(bare, []);
 });
 
+test('the deeper PEM overview reading publishes one canonical source and resolves both newer names', async () => {
+  const canonical = 'pem-fastener-guide';
+  for (const alias of ['pem-design-engineers-fastener-guide-2022', 'pem-fastener-guide-2022']) {
+    assert.equal(refs.aliases.get(alias), canonical);
+    assert.equal(model.home(alias), model.home(canonical));
+    assert.equal(refs.records.has(alias), false, 'an alias is not another published document');
+  }
+  const area = await json('catalog/references/fasteners-and-hardware.json');
+  const matching = area.records.filter(r => r.url === refs.records.get(canonical).url);
+  assert.deepEqual(matching.map(r => r.id), [canonical]);
+  assert.match(matching[0].verified, /2026-11-01:.*skimmed/s);
+  assert.match(matching[0].verified, /2026-11-11:.*all 20 PDF pages/s);
+  const page = await text('research/manufacturing/pem-micro-fasteners.html');
+  assert.ok(page.includes(`href="${model.home(canonical)}"`), 'the actual guide citation targets the canonical row');
+  assert.ok(!page.includes('#pem-design-engineers-fastener-guide-2022"'));
+});
+
 test('Markdown twins link [ref:] tags to the records\' pages; code is left alone', () => {
   const md = `A [ref:pem-handbook] rule.\n\n\`[ref:pem-handbook]\`\n\n\`\`\`\n[ref:pem-handbook]\n\`\`\`\n[ref:pem-handbook](kept)\n[see [ref:pem-handbook]](https://x) [[ref:pem-handbook]](https://y)\n`;
   const page = model.home('pem-handbook').slice(1).split('#')[0];
@@ -274,10 +291,117 @@ test('charts are drawn as links that filter, with what they show spoken', () => 
   assert.equal((svg.match(/class="refs-chart-bar/g) || []).length, 1, 'an empty row draws no bar');
 });
 
-test('the reference pages\' stylesheet sets colours only through the site\'s tokens', async () => {
+test('the reference pages\' stylesheet uses the shared theme and site-local tokens', async () => {
   const css = (await show('tools/site/assets/references.css')).replace(/\/\*[\s\S]*?\*\//g, '');
-  assert.deepEqual(css.match(/#[0-9a-f]{3,8}\b|rgba?\(|hsla?\(/gi) || [], [], 'use var(--token) from web/site.css, so both themes apply');
-  const tokens = new Set([...(await show('tools/site/assets/site.css')).matchAll(/--([\w-]+):/g)].map(m => m[1]));
+  assert.deepEqual(css.match(/#[0-9a-f]{3,8}\b|rgba?\(|hsla?\(/gi) || [], [], 'use var(--token) from the shared theme or site-local styles, so both themes apply');
+  const siteCss = await show('tools/site/assets/site.css');
+  const themeCss = await show('software/cadagent/webkit/ui/theme.css');
+  assert.match(siteCss, /@import\s+url\(["']?\/kit\/ui\/theme\.css["']?\)/, 'the site loads the canonical shared theme');
+  const tokens = new Set([...`${themeCss}\n${siteCss}`.matchAll(/--([\w-]+):/g)].map(m => m[1]));
   const used = [...css.matchAll(/var\(--([\w-]+)/g)].map(m => m[1]);
-  assert.deepEqual([...new Set(used.filter(t => !tokens.has(t)))], [], 'every token exists in web/site.css');
+  assert.deepEqual([...new Set(used.filter(t => !tokens.has(t)))], [], 'every token exists in kit/ui/theme.css or web/site.css');
+});
+
+
+test('short joint-interface citations retain the three canonical document identities', async () => {
+  const names = {
+    'omw-anodizing': 'omw-corp-understanding-and-specifying-anodizing',
+    'nsk-ti-0001': 'nsk-bearing-shaft-and-housing-tolerance-nsk-technical',
+    'general-bearing-fits': 'skf-shaft-and-housing-fits-skf-catalog-excerpt',
+  };
+  const page = await text('research/manufacturing/joint-interfaces.html');
+  for (const [alias, canonical] of Object.entries(names)) {
+    assert.equal(refs.aliases.get(alias), canonical);
+    assert.equal(refs.records.has(alias), false, 'a short display key must not add a document');
+    assert.ok(page.includes(`href="${model.home(canonical)}"`), `${alias}: citation links to its existing row`);
+    assert.ok(page.includes(`>${alias}</a>`), `${alias}: actual displayed citation is short`);
+    assert.ok(!page.includes(`>${canonical}</a>`), `${canonical}: no unbreakable long citation badge`);
+  }
+});
+
+test('moulding review aliases publish the same three full-read source identities', async () => {
+  const page = await text('research/manufacturing/moulding-wall-bond-and-release-review.html');
+  const pairs = [
+    ['pl-mould-walls', 'protolabs-injection-molding-wall-thickness-guidelines'],
+    ['pl-overmould', 'protolabs-designing-for-overmolding-design-tip'],
+    ['fictiv-mould-undercuts', 'fictiv-injection-molding-undercuts'],
+  ];
+  const records = (await json('catalog/references/records.json')).records;
+  for (const [alias, id] of pairs) {
+    assert.equal(refs.aliases.get(alias), id);
+    assert.equal(refs.records.has(alias), false, 'citation alias is not another document');
+    assert.equal(records.filter(r => r.id === id).length, 1);
+    assert.equal(records.find(r => r.id === id).status, 'source');
+    assert.ok(page.includes(`href="${model.home(id)}"`), id);
+    assert.ok(page.includes(`>${alias}</a>`), alias);
+  }
+});
+
+test('bend-file and CNC-hole short citations retain the exact full-read identities', async () => {
+  const page = await text('research/manufacturing/sheet-metal-file-and-hole-review.html');
+  const pairs = [
+    ['scs-bend-files', 'sendcutsend-designing-for-online-sheet-metal-bending'],
+    ['scs-bend-steps', 'sendcutsend-step-by-step-guide-to-sheet-metal-bending'],
+    ['protolabs-hole-guide', 'protolabs-cnc-hole-design-through-blind-tapped-and-more'],
+  ];
+  const records = (await json('catalog/references/records.json')).records;
+  for (const [alias, id] of pairs) {
+    assert.equal(refs.aliases.get(alias), id);
+    assert.equal(refs.records.has(alias), false, 'short citation is not another source');
+    assert.equal(records.filter(r => r.id === id).length, 1);
+    assert.equal(records.find(r => r.id === id).status, 'source');
+    assert.ok(page.includes(`href="${model.home(id)}"`), id);
+    assert.ok(page.includes(`>${alias}</a>`), alias);
+  }
+});
+
+test('Stratasys review aliases keep two existing identities and unresolved evidence scope', async () => {
+  const page = await text('research/process-profiles.html');
+  const records = (await json('catalog/references/records.json')).records;
+  for (const [alias, id] of [
+    ['sd-fdm-2025', 'stratasys-direct-stratasys-fdm-design-guide-stratasys-direct'],
+    ['sd-sls-2023', 'stratasys-direct-sls-design-guide-2023'],
+  ]) {
+    assert.equal(refs.aliases.get(alias), id);
+    assert.equal(refs.records.has(alias), false, 'short citation is not another document');
+    assert.equal(records.filter(r => r.id === id).length, 1);
+    assert.equal(records.find(r => r.id === id).evidence, 'read');
+    assert.ok(page.includes(`href="${model.home(id)}"`), id);
+    assert.ok(page.includes(`>${alias}</a>`), alias);
+  }
+  assert.match(page, /unresolved-conflicting-source/);
+  assert.match(page, /unresolved-confirm-supplier/);
+});
+
+
+test('creator credit retains people and organisation without inventing or repeating names', () => {
+  assert.equal(creatorText({authors:['  Ada Lovelace ', 'ada lovelace'],org:'Example Lab'}), 'Ada Lovelace · Example Lab');
+  assert.equal(creatorText({authors:['Ada'],org:' ada '}), 'Ada');
+  assert.equal(creatorText({authors:['Ada']}), 'Ada');
+  assert.equal(creatorText({org:'Example Lab'}), 'Example Lab');
+  assert.equal(creatorText({}), '');
+  assert.equal(creatorText({authors:[null,{},' Ada '],org:{bad:true}}), 'Ada');
+});
+
+test('original links preserve query parameters and reject unsafe destinations', () => {
+  const url='https://example.com/document?dlpdf=t&part=92160A227#specs';
+  assert.equal(originalUrl(url),url);
+  for(const unsafe of ['javascript:alert(1)','data:text/html,x','//example.com/x','/local','https://user:password@example.com/x','https://'])
+    assert.equal(originalUrl(unsafe),null,unsafe);
+});
+
+test('reference HTML Markdown and citation tooltips credit named people alongside their publisher', async () => {
+  const source={id:'credit-example',title:'A useful study',org:'Example Lab',authors:['Ada Lovelace'],url:'https://example.com/original?dlpdf=t&part=1',areas:['fdm'],verified:'2026-11-12 read'};
+  const m=referenceModel(await fake({[CORE]:JSON.stringify({sources:[source]})}),{domains:[{slug:'manufacturing',title:'Manufacturing',areas:[{slug:'3d-printing',title:'3D printing',topics:[{slug:'fdm'}]}]}]});
+  const site=referenceSite(m,{ORIGIN,revision:'r',built:'b',feedbackBox:()=>''});
+  const area=site.pages.find(p=>p.url==='/references/3d-printing');
+  assert.ok(area.body.includes('Ada Lovelace · Example Lab'));
+  assert.ok(area.body.includes('href="https://example.com/original?dlpdf=t&amp;part=1"'));
+  assert.ok(area.body.includes('Read original'));
+  assert.ok(site.pages[0].body.includes('No sponsorships, partnerships or paid placements'));
+  assert.ok(site.pages[0].body.includes('Meet the creators'));
+  assert.ok(area.markdown.includes('Ada Lovelace · Example Lab'));
+  assert.ok(area.markdown.includes('— Read original'));
+  assert.match(linkTags('[ref:credit-example]',m),/title="A useful study, Ada Lovelace · Example Lab/);
+  assert.match(area.body,/data-text="[^"]*ada lovelace/,'people are searchable even when org is recorded');
 });

@@ -1,0 +1,424 @@
+{
+  "format": "scada-placeholder-model",
+  "version": 1,
+  "scenarioId": "concrete-batching",
+  "seed": 4114,
+  "components": {
+    "aggregate": {
+      "kind": "source",
+      "parameters": {
+        "capacity": 90,
+        "response": 0.3,
+        "demand": 1,
+        "loss": 0.03,
+        "pressureGain": 4,
+        "heatGain": 0,
+        "warningAt": 78,
+        "damageRate": 0.4
+      },
+      "initial": {
+        "enabled": true,
+        "level": 80,
+        "open": true,
+        "load": 55,
+        "inventory": 80,
+        "temperature": 30,
+        "pressure": 15,
+        "failed": false
+      },
+      "assumptions": [
+        "Aggregate storage uses normalized demonstration parameters, not a manufacturer curve or industry operating recipe.",
+        "Nominal electrical demand is intentionally small relative to the demonstration supply so a healthy plant starts with headroom.",
+        "This explicit source is externally replenished at the model boundary. Its visual starting level is maintained; it is not a finite intermediate inventory."
+      ]
+    },
+    "screen": {
+      "kind": "processor",
+      "parameters": {
+        "capacity": 75,
+        "response": 0.3,
+        "demand": 4,
+        "loss": 0.03,
+        "pressureGain": 4,
+        "heatGain": 0,
+        "warningAt": 78,
+        "damageRate": 0.4
+      },
+      "initial": {
+        "enabled": true,
+        "level": 45,
+        "open": true,
+        "load": 55,
+        "inventory": 45,
+        "temperature": 30,
+        "pressure": 15,
+        "failed": false
+      },
+      "assumptions": [
+        "Aggregate screening uses normalized demonstration parameters, not a manufacturer curve or industry operating recipe.",
+        "Nominal electrical demand is intentionally small relative to the demonstration supply so a healthy plant starts with headroom."
+      ]
+    },
+    "aggregateWeigh": {
+      "kind": "storage",
+      "parameters": {
+        "capacity": 75,
+        "response": 0.3,
+        "demand": 1,
+        "loss": 0.03,
+        "pressureGain": 4,
+        "heatGain": 0,
+        "warningAt": 78,
+        "damageRate": 0.4
+      },
+      "initial": {
+        "enabled": true,
+        "level": 45,
+        "open": true,
+        "load": 55,
+        "inventory": 45,
+        "temperature": 30,
+        "pressure": 15,
+        "failed": false
+      },
+      "assumptions": [
+        "Aggregate weighing uses normalized demonstration parameters, not a manufacturer curve or industry operating recipe.",
+        "Nominal electrical demand is intentionally small relative to the demonstration supply so a healthy plant starts with headroom."
+      ]
+    },
+    "cement": {
+      "kind": "source",
+      "parameters": {
+        "capacity": 90,
+        "response": 0.3,
+        "demand": 1,
+        "loss": 0.03,
+        "pressureGain": 4,
+        "heatGain": 0,
+        "warningAt": 78,
+        "damageRate": 0.4
+      },
+      "initial": {
+        "enabled": true,
+        "level": 80,
+        "open": true,
+        "load": 55,
+        "inventory": 80,
+        "temperature": 30,
+        "pressure": 15,
+        "failed": false
+      },
+      "assumptions": [
+        "Binder storage uses normalized demonstration parameters, not a manufacturer curve or industry operating recipe.",
+        "Nominal electrical demand is intentionally small relative to the demonstration supply so a healthy plant starts with headroom.",
+        "This explicit source is externally replenished at the model boundary. Its visual starting level is maintained; it is not a finite intermediate inventory."
+      ]
+    },
+    "binderFeed": {
+      "kind": "processor",
+      "parameters": {
+        "capacity": 75,
+        "response": 0.3,
+        "demand": 4,
+        "loss": 0.03,
+        "pressureGain": 4,
+        "heatGain": 0,
+        "warningAt": 78,
+        "damageRate": 0.4
+      },
+      "initial": {
+        "enabled": true,
+        "level": 45,
+        "open": true,
+        "load": 55,
+        "inventory": 45,
+        "temperature": 30,
+        "pressure": 15,
+        "failed": false
+      },
+      "assumptions": [
+        "Binder metering screw uses normalized demonstration parameters, not a manufacturer curve or industry operating recipe.",
+        "Nominal electrical demand is intentionally small relative to the demonstration supply so a healthy plant starts with headroom."
+      ]
+    },
+    "water": {
+      "kind": "source",
+      "parameters": {
+        "capacity": 90,
+        "response": 0.3,
+        "demand": 1,
+        "loss": 0.03,
+        "pressureGain": 4,
+        "heatGain": 0,
+        "warningAt": 78,
+        "damageRate": 0.4
+      },
+      "initial": {
+        "enabled": true,
+        "level": 80,
+        "open": true,
+        "load": 55,
+        "inventory": 80,
+        "temperature": 30,
+        "pressure": 15,
+        "failed": false
+      },
+      "assumptions": [
+        "Water feed store uses normalized demonstration parameters, not a manufacturer curve or industry operating recipe.",
+        "Nominal electrical demand is intentionally small relative to the demonstration supply so a healthy plant starts with headroom.",
+        "This explicit source is externally replenished at the model boundary. Its visual starting level is maintained; it is not a finite intermediate inventory."
+      ]
+    },
+    "waterPump": {
+      "kind": "pump",
+      "parameters": {
+        "capacity": 75,
+        "response": 0.3,
+        "demand": 3,
+        "loss": 0.03,
+        "pressureGain": 12,
+        "heatGain": 0,
+        "warningAt": 78,
+        "damageRate": 0.4
+      },
+      "initial": {
+        "enabled": true,
+        "level": 45,
+        "open": true,
+        "load": 55,
+        "inventory": 45,
+        "temperature": 30,
+        "pressure": 15,
+        "failed": false
+      },
+      "assumptions": [
+        "Water metering pump uses normalized demonstration parameters, not a manufacturer curve or industry operating recipe.",
+        "Nominal electrical demand is intentionally small relative to the demonstration supply so a healthy plant starts with headroom."
+      ]
+    },
+    "mixer": {
+      "kind": "processor",
+      "parameters": {
+        "capacity": 75,
+        "response": 0.3,
+        "demand": 4,
+        "loss": 0.03,
+        "pressureGain": 4,
+        "heatGain": 0,
+        "warningAt": 78,
+        "damageRate": 0.4
+      },
+      "initial": {
+        "enabled": true,
+        "level": 45,
+        "open": true,
+        "load": 55,
+        "inventory": 45,
+        "temperature": 30,
+        "pressure": 15,
+        "failed": false
+      },
+      "assumptions": [
+        "Batch mixing drum uses normalized demonstration parameters, not a manufacturer curve or industry operating recipe.",
+        "Nominal electrical demand is intentionally small relative to the demonstration supply so a healthy plant starts with headroom."
+      ]
+    },
+    "transfer": {
+      "kind": "processor",
+      "parameters": {
+        "capacity": 75,
+        "response": 0.3,
+        "demand": 4,
+        "loss": 0.03,
+        "pressureGain": 4,
+        "heatGain": 0,
+        "warningAt": 78,
+        "damageRate": 0.4
+      },
+      "initial": {
+        "enabled": true,
+        "level": 45,
+        "open": true,
+        "load": 55,
+        "inventory": 45,
+        "temperature": 30,
+        "pressure": 15,
+        "failed": false
+      },
+      "assumptions": [
+        "Mixed-product transfer uses normalized demonstration parameters, not a manufacturer curve or industry operating recipe.",
+        "Nominal electrical demand is intentionally small relative to the demonstration supply so a healthy plant starts with headroom."
+      ]
+    },
+    "discharge": {
+      "kind": "sink",
+      "parameters": {
+        "capacity": 75,
+        "response": 0.3,
+        "demand": 3,
+        "loss": 0.03,
+        "pressureGain": 4,
+        "heatGain": 0,
+        "warningAt": 78,
+        "damageRate": 0.4
+      },
+      "initial": {
+        "enabled": true,
+        "level": 45,
+        "open": true,
+        "load": 55,
+        "inventory": 45,
+        "temperature": 30,
+        "pressure": 15,
+        "failed": false
+      },
+      "assumptions": [
+        "Discharge buffer uses normalized demonstration parameters, not a manufacturer curve or industry operating recipe.",
+        "Nominal electrical demand is intentionally small relative to the demonstration supply so a healthy plant starts with headroom.",
+        "This explicit sink transfers product out of the model boundary; it does not accumulate a hidden storage inventory."
+      ]
+    },
+    "power": {
+      "kind": "generator",
+      "parameters": {
+        "capacity": 100,
+        "response": 0.3,
+        "demand": 0,
+        "loss": 0.03,
+        "pressureGain": 4,
+        "heatGain": 0,
+        "warningAt": 90,
+        "damageRate": 0.4
+      },
+      "initial": {
+        "enabled": true,
+        "level": 80,
+        "open": true,
+        "load": 75,
+        "inventory": 80,
+        "temperature": 30,
+        "pressure": 15,
+        "failed": false
+      },
+      "assumptions": [
+        "Demonstration site power uses normalized demonstration parameters, not a manufacturer curve or industry operating recipe.",
+        "Nominal electrical demand is intentionally small relative to the demonstration supply so a healthy plant starts with headroom."
+      ]
+    },
+    "breaker": {
+      "kind": "pipe",
+      "parameters": {
+        "capacity": 75,
+        "response": 0.3,
+        "demand": 0.5,
+        "loss": 0.03,
+        "pressureGain": 4,
+        "heatGain": 0,
+        "warningAt": 78,
+        "damageRate": 0.4
+      },
+      "initial": {
+        "enabled": true,
+        "level": 45,
+        "open": false,
+        "load": 55,
+        "inventory": 45,
+        "temperature": 30,
+        "pressure": 15,
+        "failed": false
+      },
+      "assumptions": [
+        "Mixing-line breaker uses normalized demonstration parameters, not a manufacturer curve or industry operating recipe.",
+        "Nominal electrical demand is intentionally small relative to the demonstration supply so a healthy plant starts with headroom."
+      ]
+    },
+    "controller": {
+      "kind": "controller",
+      "parameters": {
+        "capacity": 75,
+        "response": 0.3,
+        "demand": 1,
+        "loss": 0.03,
+        "pressureGain": 4,
+        "heatGain": 0,
+        "warningAt": 78,
+        "damageRate": 0.4
+      },
+      "initial": {
+        "enabled": true,
+        "level": 45,
+        "open": true,
+        "load": 20,
+        "inventory": 45,
+        "temperature": 30,
+        "pressure": 15,
+        "failed": false
+      },
+      "assumptions": [
+        "Batch controller uses normalized demonstration parameters, not a manufacturer curve or industry operating recipe.",
+        "Nominal electrical demand is intentionally small relative to the demonstration supply so a healthy plant starts with headroom."
+      ]
+    },
+    "radio": {
+      "kind": "network",
+      "parameters": {
+        "capacity": 75,
+        "response": 0.3,
+        "demand": 1,
+        "loss": 0.03,
+        "pressureGain": 4,
+        "heatGain": 0,
+        "warningAt": 78,
+        "damageRate": 0.4
+      },
+      "initial": {
+        "enabled": true,
+        "level": 45,
+        "open": true,
+        "load": 20,
+        "inventory": 45,
+        "temperature": 30,
+        "pressure": 15,
+        "failed": false
+      },
+      "assumptions": [
+        "Illustrative remote telemetry uses normalized demonstration parameters, not a manufacturer curve or industry operating recipe.",
+        "Nominal electrical demand is intentionally small relative to the demonstration supply so a healthy plant starts with headroom."
+      ]
+    },
+    "level": {
+      "kind": "sensor",
+      "parameters": {
+        "capacity": 75,
+        "response": 0.3,
+        "demand": 0.5,
+        "loss": 0.03,
+        "pressureGain": 4,
+        "heatGain": 0,
+        "warningAt": 78,
+        "damageRate": 0.4
+      },
+      "initial": {
+        "enabled": true,
+        "level": 45,
+        "open": true,
+        "load": 20,
+        "inventory": 45,
+        "temperature": 30,
+        "pressure": 15,
+        "failed": false
+      },
+      "assumptions": [
+        "Water inventory monitor uses normalized demonstration parameters, not a manufacturer curve or industry operating recipe.",
+        "Nominal electrical demand is intentionally small relative to the demonstration supply so a healthy plant starts with headroom."
+      ]
+    }
+  },
+  "assumptions": [
+    "Independent aggregate, binder and water feeds converge at a generic mixing/discharge process. Batch quantities and strength recipes are not provided.",
+    "All quantities are editable normalized placeholders. Stage names do not supply a production recipe, validated quality criterion or real protection setting.",
+    "Material, electrical, thermal, data and measurement connections have separate roles. The external model owns one shared state and clock for every view.",
+    "Repair clears component damage; it does not undo intentionally changed load, valves, capacity or other operating inputs.",
+    "Optional utility skids illustrate dependency plumbing and are not claims about standard industry equipment or energy performance."
+  ]
+}

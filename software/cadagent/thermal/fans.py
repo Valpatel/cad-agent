@@ -1,5 +1,5 @@
 """Fan curves from manufacturers' datasheets, for :func:`cadagent.formulas.fan_operating_point` and the site's
-fan-curve explorer (``webkit/fan-curve.js``).
+fan-curve explorer (``webkit/calculators/fan-curve.js``).
 
     from cadagent import formulas as fx
     from cadagent.thermal.fans import FANS

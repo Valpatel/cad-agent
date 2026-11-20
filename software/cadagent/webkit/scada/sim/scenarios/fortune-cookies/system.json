@@ -1,0 +1,2796 @@
+{
+  "$schema": "../../../scada-ui/schema/scada-system.schema.json",
+  "format": "scada-system",
+  "version": 1,
+  "system": {
+    "id": "fortune-cookies",
+    "label": "Fortune-cookie factory",
+    "description": "A playful batter-to-box line with a depositor, oven, transfer belt, folding station and cooling section; no recipe or baking specification is encoded."
+  },
+  "components": [
+    {
+      "id": "flour",
+      "type": "weigh-hopper",
+      "label": "Ingredient weighing hopper",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "level": 55,
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/flour/active",
+        "running": "/components/flour/running",
+        "fault": "/components/flour/fault",
+        "status": "/components/flour/status",
+        "level": "/components/flour/level",
+        "load": "/components/flour/load",
+        "damage": "/components/flour/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "supply",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "batter",
+      "type": "mixing-tank",
+      "label": "Batter mixing vessel",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "level": 55,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/batter/active",
+        "running": "/components/batter/running",
+        "fault": "/components/batter/fault",
+        "status": "/components/batter/status",
+        "level": "/components/batter/level",
+        "damage": "/components/batter/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "drive",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "metering",
+      "type": "dosing-pump",
+      "label": "Batter metering pump",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/metering/active",
+        "running": "/components/metering/running",
+        "fault": "/components/metering/fault",
+        "status": "/components/metering/status",
+        "load": "/components/metering/load",
+        "speed": "/components/metering/speed",
+        "damage": "/components/metering/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "suction",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "dose",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "drive",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "depositor",
+      "type": "forming-machine",
+      "label": "Sheet depositing station",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/depositor/active",
+        "running": "/components/depositor/running",
+        "fault": "/components/depositor/fault",
+        "status": "/components/depositor/status",
+        "load": "/components/depositor/load",
+        "speed": "/components/depositor/speed",
+        "damage": "/components/depositor/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "supply",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "oven",
+      "type": "oven",
+      "label": "Baking tunnel",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "temperature": 180,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/oven/active",
+        "running": "/components/oven/running",
+        "fault": "/components/oven/fault",
+        "status": "/components/oven/status",
+        "load": "/components/oven/load",
+        "temperature": "/components/oven/temperature",
+        "damage": "/components/oven/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "supply",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "fuel",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "transfer",
+      "type": "conveyor",
+      "label": "Warm product transfer",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/transfer/active",
+        "running": "/components/transfer/running",
+        "fault": "/components/transfer/fault",
+        "status": "/components/transfer/status",
+        "load": "/components/transfer/load",
+        "speed": "/components/transfer/speed",
+        "damage": "/components/transfer/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "supply",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "folder",
+      "type": "forming-machine",
+      "label": "Cookie folding station",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/folder/active",
+        "running": "/components/folder/running",
+        "fault": "/components/folder/fault",
+        "status": "/components/folder/status",
+        "load": "/components/folder/load",
+        "speed": "/components/folder/speed",
+        "damage": "/components/folder/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "supply",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "coolingBelt",
+      "type": "conveyor",
+      "label": "Cooling transfer belt",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/coolingBelt/active",
+        "running": "/components/coolingBelt/running",
+        "fault": "/components/coolingBelt/fault",
+        "status": "/components/coolingBelt/status",
+        "load": "/components/coolingBelt/load",
+        "speed": "/components/coolingBelt/speed",
+        "damage": "/components/coolingBelt/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "supply",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "packer",
+      "type": "packaging-line",
+      "label": "Cookie wrapping",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/packer/active",
+        "running": "/components/packer/running",
+        "fault": "/components/packer/fault",
+        "status": "/components/packer/status",
+        "load": "/components/packer/load",
+        "speed": "/components/packer/speed",
+        "damage": "/components/packer/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "supply",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "ovenAir",
+      "type": "fan",
+      "label": "Oven air circulation",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/ovenAir/active",
+        "running": "/components/ovenAir/running",
+        "fault": "/components/ovenAir/fault",
+        "status": "/components/ovenAir/status",
+        "load": "/components/ovenAir/load",
+        "speed": "/components/ovenAir/speed",
+        "damage": "/components/ovenAir/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "supply",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "control",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "coolingAir",
+      "type": "blower",
+      "label": "Product cooling air",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/coolingAir/active",
+        "running": "/components/coolingAir/running",
+        "fault": "/components/coolingAir/fault",
+        "status": "/components/coolingAir/status",
+        "load": "/components/coolingAir/load",
+        "speed": "/components/coolingAir/speed",
+        "damage": "/components/coolingAir/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "intake",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "discharge",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "drive",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "power",
+      "type": "generator",
+      "label": "Demonstration line power",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/power/active",
+        "running": "/components/power/running",
+        "fault": "/components/power/fault",
+        "status": "/components/power/status",
+        "load": "/components/power/load",
+        "speed": "/components/power/speed",
+        "damage": "/components/power/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "fuel",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "output",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "exhaust",
+          "side": "right",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "controller",
+      "type": "hmi",
+      "label": "Line operator panel",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "connected": true,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/controller/active",
+        "running": "/components/controller/running",
+        "fault": "/components/controller/fault",
+        "status": "/components/controller/status",
+        "connected": "/components/controller/connected",
+        "damage": "/components/controller/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "power",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "motor",
+      "type": "motor",
+      "label": "Transfer drive",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/motor/active",
+        "running": "/components/motor/running",
+        "fault": "/components/motor/fault",
+        "status": "/components/motor/status",
+        "load": "/components/motor/load",
+        "speed": "/components/motor/speed",
+        "damage": "/components/motor/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "supply",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "shaft",
+          "side": "right",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "temperature",
+      "type": "temperature-sensor",
+      "label": "Oven display probe",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "value": 42,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/temperature/active",
+        "running": "/components/temperature/running",
+        "fault": "/components/temperature/fault",
+        "status": "/components/temperature/status",
+        "value": "/components/temperature/value",
+        "damage": "/components/temperature/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "process",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "signal",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "power",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "flour-to-batter",
+      "from": {
+        "component": "flour",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "batter",
+        "port": "inlet"
+      },
+      "medium": "solids",
+      "flowBinding": "/flows/flour-to-batter",
+      "label": "Ingredient weighing hopper \u2192 Batter mixing vessel"
+    },
+    {
+      "id": "batter-to-metering",
+      "from": {
+        "component": "batter",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "metering",
+        "port": "suction"
+      },
+      "medium": "liquid",
+      "flowBinding": "/flows/batter-to-metering",
+      "label": "Batter mixing vessel \u2192 Batter metering pump"
+    },
+    {
+      "id": "metering-to-depositor",
+      "from": {
+        "component": "metering",
+        "port": "dose"
+      },
+      "to": {
+        "component": "depositor",
+        "port": "inlet"
+      },
+      "medium": "chemical",
+      "flowBinding": "/flows/metering-to-depositor",
+      "label": "Batter metering pump \u2192 Sheet depositing station"
+    },
+    {
+      "id": "depositor-to-oven",
+      "from": {
+        "component": "depositor",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "oven",
+        "port": "inlet"
+      },
+      "medium": "product",
+      "flowBinding": "/flows/depositor-to-oven",
+      "label": "Sheet depositing station \u2192 Baking tunnel"
+    },
+    {
+      "id": "oven-to-transfer",
+      "from": {
+        "component": "oven",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "transfer",
+        "port": "inlet"
+      },
+      "medium": "material",
+      "flowBinding": "/flows/oven-to-transfer",
+      "label": "Baking tunnel \u2192 Warm product transfer"
+    },
+    {
+      "id": "transfer-to-folder",
+      "from": {
+        "component": "transfer",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "folder",
+        "port": "inlet"
+      },
+      "medium": "solids",
+      "flowBinding": "/flows/transfer-to-folder",
+      "label": "Warm product transfer \u2192 Cookie folding station"
+    },
+    {
+      "id": "folder-to-coolingBelt",
+      "from": {
+        "component": "folder",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "coolingBelt",
+        "port": "inlet"
+      },
+      "medium": "product",
+      "flowBinding": "/flows/folder-to-coolingBelt",
+      "label": "Cookie folding station \u2192 Cooling transfer belt"
+    },
+    {
+      "id": "coolingBelt-to-packer",
+      "from": {
+        "component": "coolingBelt",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "packer",
+        "port": "inlet"
+      },
+      "medium": "solids",
+      "flowBinding": "/flows/coolingBelt-to-packer",
+      "label": "Cooling transfer belt \u2192 Cookie wrapping"
+    },
+    {
+      "id": "ovenAir-to-oven",
+      "from": {
+        "component": "ovenAir",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "oven",
+        "port": "air"
+      },
+      "medium": "air",
+      "flowBinding": "/flows/ovenAir-to-oven",
+      "label": "Oven air circulation \u2192 Baking tunnel"
+    },
+    {
+      "id": "power-to-flour",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "flour",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-flour",
+      "label": "Demonstration line power \u2192 Ingredient weighing hopper"
+    },
+    {
+      "id": "power-to-batter",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "batter",
+        "port": "drive"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-batter",
+      "label": "Demonstration line power \u2192 Batter mixing vessel"
+    },
+    {
+      "id": "power-to-metering",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "metering",
+        "port": "drive"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-metering",
+      "label": "Demonstration line power \u2192 Batter metering pump"
+    },
+    {
+      "id": "power-to-depositor",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "depositor",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-depositor",
+      "label": "Demonstration line power \u2192 Sheet depositing station"
+    },
+    {
+      "id": "power-to-oven",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "oven",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-oven",
+      "label": "Demonstration line power \u2192 Baking tunnel"
+    },
+    {
+      "id": "power-to-transfer",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "transfer",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-transfer",
+      "label": "Demonstration line power \u2192 Warm product transfer"
+    },
+    {
+      "id": "power-to-folder",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "folder",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-folder",
+      "label": "Demonstration line power \u2192 Cookie folding station"
+    },
+    {
+      "id": "power-to-coolingBelt",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "coolingBelt",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-coolingBelt",
+      "label": "Demonstration line power \u2192 Cooling transfer belt"
+    },
+    {
+      "id": "power-to-packer",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "packer",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-packer",
+      "label": "Demonstration line power \u2192 Cookie wrapping"
+    },
+    {
+      "id": "power-to-ovenAir",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "ovenAir",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-ovenAir",
+      "label": "Demonstration line power \u2192 Oven air circulation"
+    },
+    {
+      "id": "power-to-coolingAir",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "coolingAir",
+        "port": "drive"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-coolingAir",
+      "label": "Demonstration line power \u2192 Product cooling air"
+    },
+    {
+      "id": "power-to-controller",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "controller",
+        "port": "power"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-controller",
+      "label": "Demonstration line power \u2192 Line operator panel"
+    },
+    {
+      "id": "power-to-motor",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "motor",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-motor",
+      "label": "Demonstration line power \u2192 Transfer drive"
+    },
+    {
+      "id": "power-to-temperature",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "temperature",
+        "port": "power"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-temperature",
+      "label": "Demonstration line power \u2192 Oven display probe"
+    },
+    {
+      "id": "oven-to-temperature",
+      "from": {
+        "component": "oven",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "temperature",
+        "port": "process"
+      },
+      "medium": "measurement",
+      "flowBinding": "/flows/oven-to-temperature",
+      "label": "Baking tunnel \u2192 Oven display probe"
+    },
+    {
+      "id": "temperature-to-controller",
+      "from": {
+        "component": "temperature",
+        "port": "signal"
+      },
+      "to": {
+        "component": "controller",
+        "port": "network"
+      },
+      "medium": "data",
+      "flowBinding": "/flows/temperature-to-controller",
+      "label": "Oven display probe \u2192 Line operator panel"
+    },
+    {
+      "id": "controller-to-ovenAir",
+      "from": {
+        "component": "controller",
+        "port": "network"
+      },
+      "to": {
+        "component": "ovenAir",
+        "port": "control"
+      },
+      "medium": "data",
+      "flowBinding": "/flows/controller-to-ovenAir",
+      "label": "Line operator panel \u2192 Oven air circulation"
+    }
+  ],
+  "views": [
+    {
+      "id": "process",
+      "label": "Main process",
+      "canvas": {
+        "width": 1280,
+        "height": 940
+      },
+      "placements": [
+        {
+          "component": "flour",
+          "x": 60,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "batter",
+          "x": 360,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "metering",
+          "x": 660,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "depositor",
+          "x": 960,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "oven",
+          "x": 960,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "transfer",
+          "x": 660,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "folder",
+          "x": 360,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "coolingBelt",
+          "x": 60,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "packer",
+          "x": 60,
+          "y": 620,
+          "width": 200,
+          "height": 190
+        }
+      ],
+      "routes": [
+        {
+          "connection": "flour-to-batter",
+          "points": [
+            {
+              "x": 260,
+              "y": 155
+            },
+            {
+              "x": 360,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "batter-to-metering",
+          "points": [
+            {
+              "x": 560,
+              "y": 155
+            },
+            {
+              "x": 660,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "metering-to-depositor",
+          "points": [
+            {
+              "x": 860,
+              "y": 155
+            },
+            {
+              "x": 960,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "depositor-to-oven",
+          "points": [
+            {
+              "x": 1060,
+              "y": 250
+            },
+            {
+              "x": 1060,
+              "y": 340
+            }
+          ]
+        },
+        {
+          "connection": "oven-to-transfer",
+          "points": [
+            {
+              "x": 960,
+              "y": 435
+            },
+            {
+              "x": 860,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "transfer-to-folder",
+          "points": [
+            {
+              "x": 660,
+              "y": 435
+            },
+            {
+              "x": 560,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "folder-to-coolingBelt",
+          "points": [
+            {
+              "x": 360,
+              "y": 435
+            },
+            {
+              "x": 260,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "coolingBelt-to-packer",
+          "points": [
+            {
+              "x": 160,
+              "y": 530
+            },
+            {
+              "x": 160,
+              "y": 620
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "utilities",
+      "label": "Utilities & control",
+      "canvas": {
+        "width": 980,
+        "height": 940
+      },
+      "placements": [
+        {
+          "component": "ovenAir",
+          "x": 60,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "coolingAir",
+          "x": 360,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "power",
+          "x": 660,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "controller",
+          "x": 660,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "motor",
+          "x": 360,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "temperature",
+          "x": 60,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "depositor",
+          "x": 60,
+          "y": 620,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "coolingBelt",
+          "x": 360,
+          "y": 620,
+          "width": 200,
+          "height": 190
+        }
+      ],
+      "routes": [
+        {
+          "connection": "power-to-depositor",
+          "points": [
+            {
+              "x": 660,
+              "y": 155
+            },
+            {
+              "x": 636,
+              "y": 155
+            },
+            {
+              "x": 636,
+              "y": 596
+            },
+            {
+              "x": 284,
+              "y": 596
+            },
+            {
+              "x": 284,
+              "y": 715
+            },
+            {
+              "x": 260,
+              "y": 715
+            }
+          ]
+        },
+        {
+          "connection": "power-to-coolingBelt",
+          "points": [
+            {
+              "x": 760,
+              "y": 250
+            },
+            {
+              "x": 760,
+              "y": 316
+            },
+            {
+              "x": 636,
+              "y": 316
+            },
+            {
+              "x": 636,
+              "y": 596
+            },
+            {
+              "x": 460,
+              "y": 596
+            },
+            {
+              "x": 460,
+              "y": 620
+            }
+          ]
+        },
+        {
+          "connection": "power-to-ovenAir",
+          "points": [
+            {
+              "x": 660,
+              "y": 155
+            },
+            {
+              "x": 584,
+              "y": 155
+            },
+            {
+              "x": 584,
+              "y": 36
+            },
+            {
+              "x": 284,
+              "y": 36
+            },
+            {
+              "x": 284,
+              "y": 155
+            },
+            {
+              "x": 260,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "power-to-coolingAir",
+          "points": [
+            {
+              "x": 660,
+              "y": 155
+            },
+            {
+              "x": 560,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "power-to-controller",
+          "points": [
+            {
+              "x": 760,
+              "y": 250
+            },
+            {
+              "x": 760,
+              "y": 340
+            }
+          ]
+        },
+        {
+          "connection": "power-to-motor",
+          "points": [
+            {
+              "x": 660,
+              "y": 155
+            },
+            {
+              "x": 636,
+              "y": 155
+            },
+            {
+              "x": 636,
+              "y": 316
+            },
+            {
+              "x": 584,
+              "y": 316
+            },
+            {
+              "x": 584,
+              "y": 435
+            },
+            {
+              "x": 560,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "power-to-temperature",
+          "points": [
+            {
+              "x": 660,
+              "y": 155
+            },
+            {
+              "x": 636,
+              "y": 155
+            },
+            {
+              "x": 636,
+              "y": 316
+            },
+            {
+              "x": 284,
+              "y": 316
+            },
+            {
+              "x": 284,
+              "y": 435
+            },
+            {
+              "x": 260,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "temperature-to-controller",
+          "points": [
+            {
+              "x": 260,
+              "y": 435
+            },
+            {
+              "x": 336,
+              "y": 435
+            },
+            {
+              "x": 336,
+              "y": 316
+            },
+            {
+              "x": 636,
+              "y": 316
+            },
+            {
+              "x": 636,
+              "y": 435
+            },
+            {
+              "x": 660,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "controller-to-ovenAir",
+          "points": [
+            {
+              "x": 660,
+              "y": 435
+            },
+            {
+              "x": 636,
+              "y": 435
+            },
+            {
+              "x": 636,
+              "y": 274
+            },
+            {
+              "x": 284,
+              "y": 274
+            },
+            {
+              "x": 284,
+              "y": 155
+            },
+            {
+              "x": 260,
+              "y": 155
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "finishing",
+      "label": "Finishing & storage",
+      "canvas": {
+        "width": 980,
+        "height": 940
+      },
+      "placements": [
+        {
+          "component": "oven",
+          "x": 60,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "transfer",
+          "x": 360,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "folder",
+          "x": 660,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "coolingBelt",
+          "x": 660,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "packer",
+          "x": 360,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "controller",
+          "x": 60,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "temperature",
+          "x": 60,
+          "y": 620,
+          "width": 200,
+          "height": 190
+        }
+      ],
+      "routes": [
+        {
+          "connection": "oven-to-transfer",
+          "points": [
+            {
+              "x": 260,
+              "y": 155
+            },
+            {
+              "x": 360,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "transfer-to-folder",
+          "points": [
+            {
+              "x": 560,
+              "y": 155
+            },
+            {
+              "x": 660,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "folder-to-coolingBelt",
+          "points": [
+            {
+              "x": 760,
+              "y": 250
+            },
+            {
+              "x": 760,
+              "y": 340
+            }
+          ]
+        },
+        {
+          "connection": "coolingBelt-to-packer",
+          "points": [
+            {
+              "x": 660,
+              "y": 435
+            },
+            {
+              "x": 560,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "oven-to-temperature",
+          "points": [
+            {
+              "x": 160,
+              "y": 250
+            },
+            {
+              "x": 160,
+              "y": 316
+            },
+            {
+              "x": 36,
+              "y": 316
+            },
+            {
+              "x": 36,
+              "y": 596
+            },
+            {
+              "x": 160,
+              "y": 596
+            },
+            {
+              "x": 160,
+              "y": 620
+            }
+          ]
+        },
+        {
+          "connection": "temperature-to-controller",
+          "points": [
+            {
+              "x": 160,
+              "y": 620
+            },
+            {
+              "x": 160,
+              "y": 530
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "commands": [
+    {
+      "id": "flour-enabled",
+      "label": "Ingredient weighing hopper \u00b7 Enabled",
+      "component": "flour",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "flour"
+      }
+    },
+    {
+      "id": "flour-load",
+      "label": "Ingredient weighing hopper \u00b7 Requested load",
+      "component": "flour",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "flour"
+      }
+    },
+    {
+      "id": "flour-fault",
+      "label": "Ingredient weighing hopper \u00b7 Injected failure",
+      "component": "flour",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "flour"
+      }
+    },
+    {
+      "id": "flour-repair",
+      "label": "Repair Ingredient weighing hopper",
+      "component": "flour",
+      "action": "repair",
+      "arguments": {
+        "equipment": "flour"
+      }
+    },
+    {
+      "id": "batter-enabled",
+      "label": "Batter mixing vessel \u00b7 Enabled",
+      "component": "batter",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "batter"
+      }
+    },
+    {
+      "id": "batter-load",
+      "label": "Batter mixing vessel \u00b7 Requested load",
+      "component": "batter",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "batter"
+      }
+    },
+    {
+      "id": "batter-fault",
+      "label": "Batter mixing vessel \u00b7 Injected failure",
+      "component": "batter",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "batter"
+      }
+    },
+    {
+      "id": "batter-repair",
+      "label": "Repair Batter mixing vessel",
+      "component": "batter",
+      "action": "repair",
+      "arguments": {
+        "equipment": "batter"
+      }
+    },
+    {
+      "id": "metering-enabled",
+      "label": "Batter metering pump \u00b7 Enabled",
+      "component": "metering",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "metering"
+      }
+    },
+    {
+      "id": "metering-load",
+      "label": "Batter metering pump \u00b7 Requested load",
+      "component": "metering",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "metering"
+      }
+    },
+    {
+      "id": "metering-fault",
+      "label": "Batter metering pump \u00b7 Injected failure",
+      "component": "metering",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "metering"
+      }
+    },
+    {
+      "id": "metering-repair",
+      "label": "Repair Batter metering pump",
+      "component": "metering",
+      "action": "repair",
+      "arguments": {
+        "equipment": "metering"
+      }
+    },
+    {
+      "id": "depositor-enabled",
+      "label": "Sheet depositing station \u00b7 Enabled",
+      "component": "depositor",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "depositor"
+      }
+    },
+    {
+      "id": "depositor-load",
+      "label": "Sheet depositing station \u00b7 Requested load",
+      "component": "depositor",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "depositor"
+      }
+    },
+    {
+      "id": "depositor-fault",
+      "label": "Sheet depositing station \u00b7 Injected failure",
+      "component": "depositor",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "depositor"
+      }
+    },
+    {
+      "id": "depositor-repair",
+      "label": "Repair Sheet depositing station",
+      "component": "depositor",
+      "action": "repair",
+      "arguments": {
+        "equipment": "depositor"
+      }
+    },
+    {
+      "id": "oven-enabled",
+      "label": "Baking tunnel \u00b7 Enabled",
+      "component": "oven",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "oven"
+      }
+    },
+    {
+      "id": "oven-load",
+      "label": "Baking tunnel \u00b7 Requested load",
+      "component": "oven",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "oven"
+      }
+    },
+    {
+      "id": "oven-fault",
+      "label": "Baking tunnel \u00b7 Injected failure",
+      "component": "oven",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "oven"
+      }
+    },
+    {
+      "id": "oven-repair",
+      "label": "Repair Baking tunnel",
+      "component": "oven",
+      "action": "repair",
+      "arguments": {
+        "equipment": "oven"
+      }
+    },
+    {
+      "id": "transfer-enabled",
+      "label": "Warm product transfer \u00b7 Enabled",
+      "component": "transfer",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "transfer"
+      }
+    },
+    {
+      "id": "transfer-load",
+      "label": "Warm product transfer \u00b7 Requested load",
+      "component": "transfer",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "transfer"
+      }
+    },
+    {
+      "id": "transfer-fault",
+      "label": "Warm product transfer \u00b7 Injected failure",
+      "component": "transfer",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "transfer"
+      }
+    },
+    {
+      "id": "transfer-repair",
+      "label": "Repair Warm product transfer",
+      "component": "transfer",
+      "action": "repair",
+      "arguments": {
+        "equipment": "transfer"
+      }
+    },
+    {
+      "id": "folder-enabled",
+      "label": "Cookie folding station \u00b7 Enabled",
+      "component": "folder",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "folder"
+      }
+    },
+    {
+      "id": "folder-load",
+      "label": "Cookie folding station \u00b7 Requested load",
+      "component": "folder",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "folder"
+      }
+    },
+    {
+      "id": "folder-fault",
+      "label": "Cookie folding station \u00b7 Injected failure",
+      "component": "folder",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "folder"
+      }
+    },
+    {
+      "id": "folder-repair",
+      "label": "Repair Cookie folding station",
+      "component": "folder",
+      "action": "repair",
+      "arguments": {
+        "equipment": "folder"
+      }
+    },
+    {
+      "id": "coolingBelt-enabled",
+      "label": "Cooling transfer belt \u00b7 Enabled",
+      "component": "coolingBelt",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "coolingBelt"
+      }
+    },
+    {
+      "id": "coolingBelt-load",
+      "label": "Cooling transfer belt \u00b7 Requested load",
+      "component": "coolingBelt",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "coolingBelt"
+      }
+    },
+    {
+      "id": "coolingBelt-fault",
+      "label": "Cooling transfer belt \u00b7 Injected failure",
+      "component": "coolingBelt",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "coolingBelt"
+      }
+    },
+    {
+      "id": "coolingBelt-repair",
+      "label": "Repair Cooling transfer belt",
+      "component": "coolingBelt",
+      "action": "repair",
+      "arguments": {
+        "equipment": "coolingBelt"
+      }
+    },
+    {
+      "id": "packer-enabled",
+      "label": "Cookie wrapping \u00b7 Enabled",
+      "component": "packer",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "packer"
+      }
+    },
+    {
+      "id": "packer-load",
+      "label": "Cookie wrapping \u00b7 Requested load",
+      "component": "packer",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "packer"
+      }
+    },
+    {
+      "id": "packer-fault",
+      "label": "Cookie wrapping \u00b7 Injected failure",
+      "component": "packer",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "packer"
+      }
+    },
+    {
+      "id": "packer-repair",
+      "label": "Repair Cookie wrapping",
+      "component": "packer",
+      "action": "repair",
+      "arguments": {
+        "equipment": "packer"
+      }
+    },
+    {
+      "id": "ovenAir-enabled",
+      "label": "Oven air circulation \u00b7 Enabled",
+      "component": "ovenAir",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "ovenAir"
+      }
+    },
+    {
+      "id": "ovenAir-load",
+      "label": "Oven air circulation \u00b7 Requested load",
+      "component": "ovenAir",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "ovenAir"
+      }
+    },
+    {
+      "id": "ovenAir-fault",
+      "label": "Oven air circulation \u00b7 Injected failure",
+      "component": "ovenAir",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "ovenAir"
+      }
+    },
+    {
+      "id": "ovenAir-repair",
+      "label": "Repair Oven air circulation",
+      "component": "ovenAir",
+      "action": "repair",
+      "arguments": {
+        "equipment": "ovenAir"
+      }
+    },
+    {
+      "id": "coolingAir-enabled",
+      "label": "Product cooling air \u00b7 Enabled",
+      "component": "coolingAir",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "coolingAir"
+      }
+    },
+    {
+      "id": "coolingAir-load",
+      "label": "Product cooling air \u00b7 Requested load",
+      "component": "coolingAir",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "coolingAir"
+      }
+    },
+    {
+      "id": "coolingAir-fault",
+      "label": "Product cooling air \u00b7 Injected failure",
+      "component": "coolingAir",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "coolingAir"
+      }
+    },
+    {
+      "id": "coolingAir-repair",
+      "label": "Repair Product cooling air",
+      "component": "coolingAir",
+      "action": "repair",
+      "arguments": {
+        "equipment": "coolingAir"
+      }
+    },
+    {
+      "id": "power-enabled",
+      "label": "Demonstration line power \u00b7 Enabled",
+      "component": "power",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "power"
+      }
+    },
+    {
+      "id": "power-load",
+      "label": "Demonstration line power \u00b7 Requested load",
+      "component": "power",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "power"
+      }
+    },
+    {
+      "id": "power-fault",
+      "label": "Demonstration line power \u00b7 Injected failure",
+      "component": "power",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "power"
+      }
+    },
+    {
+      "id": "power-repair",
+      "label": "Repair Demonstration line power",
+      "component": "power",
+      "action": "repair",
+      "arguments": {
+        "equipment": "power"
+      }
+    },
+    {
+      "id": "controller-enabled",
+      "label": "Line operator panel \u00b7 Enabled",
+      "component": "controller",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "controller"
+      }
+    },
+    {
+      "id": "controller-load",
+      "label": "Line operator panel \u00b7 Requested load",
+      "component": "controller",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "controller"
+      }
+    },
+    {
+      "id": "controller-fault",
+      "label": "Line operator panel \u00b7 Injected failure",
+      "component": "controller",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "controller"
+      }
+    },
+    {
+      "id": "controller-repair",
+      "label": "Repair Line operator panel",
+      "component": "controller",
+      "action": "repair",
+      "arguments": {
+        "equipment": "controller"
+      }
+    },
+    {
+      "id": "motor-enabled",
+      "label": "Transfer drive \u00b7 Enabled",
+      "component": "motor",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "motor"
+      }
+    },
+    {
+      "id": "motor-load",
+      "label": "Transfer drive \u00b7 Requested load",
+      "component": "motor",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "motor"
+      }
+    },
+    {
+      "id": "motor-fault",
+      "label": "Transfer drive \u00b7 Injected failure",
+      "component": "motor",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "motor"
+      }
+    },
+    {
+      "id": "motor-repair",
+      "label": "Repair Transfer drive",
+      "component": "motor",
+      "action": "repair",
+      "arguments": {
+        "equipment": "motor"
+      }
+    },
+    {
+      "id": "temperature-enabled",
+      "label": "Oven display probe \u00b7 Enabled",
+      "component": "temperature",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "temperature"
+      }
+    },
+    {
+      "id": "temperature-load",
+      "label": "Oven display probe \u00b7 Requested load",
+      "component": "temperature",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "temperature"
+      }
+    },
+    {
+      "id": "temperature-fault",
+      "label": "Oven display probe \u00b7 Injected failure",
+      "component": "temperature",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "temperature"
+      }
+    },
+    {
+      "id": "temperature-repair",
+      "label": "Repair Oven display probe",
+      "component": "temperature",
+      "action": "repair",
+      "arguments": {
+        "equipment": "temperature"
+      }
+    },
+    {
+      "id": "plant-setRunning",
+      "label": "Run the shared plant",
+      "action": "setRunning",
+      "arguments": {}
+    },
+    {
+      "id": "plant-step",
+      "label": "Advance one model step",
+      "action": "step",
+      "arguments": {
+        "value": 1
+      }
+    },
+    {
+      "id": "plant-reset",
+      "label": "Reset dynamics \u00b7 keep edited parameters",
+      "action": "reset",
+      "arguments": {}
+    }
+  ],
+  "controls": [
+    {
+      "id": "flour-enabled-control",
+      "label": "Enabled",
+      "component": "flour",
+      "kind": "toggle",
+      "command": "flour-enabled",
+      "binding": "/controls/flour/enabled"
+    },
+    {
+      "id": "flour-load-control",
+      "label": "Requested load",
+      "component": "flour",
+      "kind": "range",
+      "command": "flour-load",
+      "binding": "/controls/flour/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "flour-fault-control",
+      "label": "Injected failure",
+      "component": "flour",
+      "kind": "toggle",
+      "command": "flour-fault",
+      "binding": "/controls/flour/fault"
+    },
+    {
+      "id": "flour-repair-control",
+      "label": "Repair component",
+      "component": "flour",
+      "kind": "button",
+      "command": "flour-repair"
+    },
+    {
+      "id": "batter-enabled-control",
+      "label": "Enabled",
+      "component": "batter",
+      "kind": "toggle",
+      "command": "batter-enabled",
+      "binding": "/controls/batter/enabled"
+    },
+    {
+      "id": "batter-load-control",
+      "label": "Requested load",
+      "component": "batter",
+      "kind": "range",
+      "command": "batter-load",
+      "binding": "/controls/batter/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "batter-fault-control",
+      "label": "Injected failure",
+      "component": "batter",
+      "kind": "toggle",
+      "command": "batter-fault",
+      "binding": "/controls/batter/fault"
+    },
+    {
+      "id": "batter-repair-control",
+      "label": "Repair component",
+      "component": "batter",
+      "kind": "button",
+      "command": "batter-repair"
+    },
+    {
+      "id": "metering-enabled-control",
+      "label": "Enabled",
+      "component": "metering",
+      "kind": "toggle",
+      "command": "metering-enabled",
+      "binding": "/controls/metering/enabled"
+    },
+    {
+      "id": "metering-load-control",
+      "label": "Requested load",
+      "component": "metering",
+      "kind": "range",
+      "command": "metering-load",
+      "binding": "/controls/metering/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "metering-fault-control",
+      "label": "Injected failure",
+      "component": "metering",
+      "kind": "toggle",
+      "command": "metering-fault",
+      "binding": "/controls/metering/fault"
+    },
+    {
+      "id": "metering-repair-control",
+      "label": "Repair component",
+      "component": "metering",
+      "kind": "button",
+      "command": "metering-repair"
+    },
+    {
+      "id": "depositor-enabled-control",
+      "label": "Enabled",
+      "component": "depositor",
+      "kind": "toggle",
+      "command": "depositor-enabled",
+      "binding": "/controls/depositor/enabled"
+    },
+    {
+      "id": "depositor-load-control",
+      "label": "Requested load",
+      "component": "depositor",
+      "kind": "range",
+      "command": "depositor-load",
+      "binding": "/controls/depositor/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "depositor-fault-control",
+      "label": "Injected failure",
+      "component": "depositor",
+      "kind": "toggle",
+      "command": "depositor-fault",
+      "binding": "/controls/depositor/fault"
+    },
+    {
+      "id": "depositor-repair-control",
+      "label": "Repair component",
+      "component": "depositor",
+      "kind": "button",
+      "command": "depositor-repair"
+    },
+    {
+      "id": "oven-enabled-control",
+      "label": "Enabled",
+      "component": "oven",
+      "kind": "toggle",
+      "command": "oven-enabled",
+      "binding": "/controls/oven/enabled"
+    },
+    {
+      "id": "oven-load-control",
+      "label": "Requested load",
+      "component": "oven",
+      "kind": "range",
+      "command": "oven-load",
+      "binding": "/controls/oven/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "oven-fault-control",
+      "label": "Injected failure",
+      "component": "oven",
+      "kind": "toggle",
+      "command": "oven-fault",
+      "binding": "/controls/oven/fault"
+    },
+    {
+      "id": "oven-repair-control",
+      "label": "Repair component",
+      "component": "oven",
+      "kind": "button",
+      "command": "oven-repair"
+    },
+    {
+      "id": "transfer-enabled-control",
+      "label": "Enabled",
+      "component": "transfer",
+      "kind": "toggle",
+      "command": "transfer-enabled",
+      "binding": "/controls/transfer/enabled"
+    },
+    {
+      "id": "transfer-load-control",
+      "label": "Requested load",
+      "component": "transfer",
+      "kind": "range",
+      "command": "transfer-load",
+      "binding": "/controls/transfer/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "transfer-fault-control",
+      "label": "Injected failure",
+      "component": "transfer",
+      "kind": "toggle",
+      "command": "transfer-fault",
+      "binding": "/controls/transfer/fault"
+    },
+    {
+      "id": "transfer-repair-control",
+      "label": "Repair component",
+      "component": "transfer",
+      "kind": "button",
+      "command": "transfer-repair"
+    },
+    {
+      "id": "folder-enabled-control",
+      "label": "Enabled",
+      "component": "folder",
+      "kind": "toggle",
+      "command": "folder-enabled",
+      "binding": "/controls/folder/enabled"
+    },
+    {
+      "id": "folder-load-control",
+      "label": "Requested load",
+      "component": "folder",
+      "kind": "range",
+      "command": "folder-load",
+      "binding": "/controls/folder/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "folder-fault-control",
+      "label": "Injected failure",
+      "component": "folder",
+      "kind": "toggle",
+      "command": "folder-fault",
+      "binding": "/controls/folder/fault"
+    },
+    {
+      "id": "folder-repair-control",
+      "label": "Repair component",
+      "component": "folder",
+      "kind": "button",
+      "command": "folder-repair"
+    },
+    {
+      "id": "coolingBelt-enabled-control",
+      "label": "Enabled",
+      "component": "coolingBelt",
+      "kind": "toggle",
+      "command": "coolingBelt-enabled",
+      "binding": "/controls/coolingBelt/enabled"
+    },
+    {
+      "id": "coolingBelt-load-control",
+      "label": "Requested load",
+      "component": "coolingBelt",
+      "kind": "range",
+      "command": "coolingBelt-load",
+      "binding": "/controls/coolingBelt/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "coolingBelt-fault-control",
+      "label": "Injected failure",
+      "component": "coolingBelt",
+      "kind": "toggle",
+      "command": "coolingBelt-fault",
+      "binding": "/controls/coolingBelt/fault"
+    },
+    {
+      "id": "coolingBelt-repair-control",
+      "label": "Repair component",
+      "component": "coolingBelt",
+      "kind": "button",
+      "command": "coolingBelt-repair"
+    },
+    {
+      "id": "packer-enabled-control",
+      "label": "Enabled",
+      "component": "packer",
+      "kind": "toggle",
+      "command": "packer-enabled",
+      "binding": "/controls/packer/enabled"
+    },
+    {
+      "id": "packer-load-control",
+      "label": "Requested load",
+      "component": "packer",
+      "kind": "range",
+      "command": "packer-load",
+      "binding": "/controls/packer/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "packer-fault-control",
+      "label": "Injected failure",
+      "component": "packer",
+      "kind": "toggle",
+      "command": "packer-fault",
+      "binding": "/controls/packer/fault"
+    },
+    {
+      "id": "packer-repair-control",
+      "label": "Repair component",
+      "component": "packer",
+      "kind": "button",
+      "command": "packer-repair"
+    },
+    {
+      "id": "ovenAir-enabled-control",
+      "label": "Enabled",
+      "component": "ovenAir",
+      "kind": "toggle",
+      "command": "ovenAir-enabled",
+      "binding": "/controls/ovenAir/enabled"
+    },
+    {
+      "id": "ovenAir-load-control",
+      "label": "Requested load",
+      "component": "ovenAir",
+      "kind": "range",
+      "command": "ovenAir-load",
+      "binding": "/controls/ovenAir/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "ovenAir-fault-control",
+      "label": "Injected failure",
+      "component": "ovenAir",
+      "kind": "toggle",
+      "command": "ovenAir-fault",
+      "binding": "/controls/ovenAir/fault"
+    },
+    {
+      "id": "ovenAir-repair-control",
+      "label": "Repair component",
+      "component": "ovenAir",
+      "kind": "button",
+      "command": "ovenAir-repair"
+    },
+    {
+      "id": "coolingAir-enabled-control",
+      "label": "Enabled",
+      "component": "coolingAir",
+      "kind": "toggle",
+      "command": "coolingAir-enabled",
+      "binding": "/controls/coolingAir/enabled"
+    },
+    {
+      "id": "coolingAir-load-control",
+      "label": "Requested load",
+      "component": "coolingAir",
+      "kind": "range",
+      "command": "coolingAir-load",
+      "binding": "/controls/coolingAir/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "coolingAir-fault-control",
+      "label": "Injected failure",
+      "component": "coolingAir",
+      "kind": "toggle",
+      "command": "coolingAir-fault",
+      "binding": "/controls/coolingAir/fault"
+    },
+    {
+      "id": "coolingAir-repair-control",
+      "label": "Repair component",
+      "component": "coolingAir",
+      "kind": "button",
+      "command": "coolingAir-repair"
+    },
+    {
+      "id": "power-enabled-control",
+      "label": "Enabled",
+      "component": "power",
+      "kind": "toggle",
+      "command": "power-enabled",
+      "binding": "/controls/power/enabled"
+    },
+    {
+      "id": "power-load-control",
+      "label": "Requested load",
+      "component": "power",
+      "kind": "range",
+      "command": "power-load",
+      "binding": "/controls/power/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "power-fault-control",
+      "label": "Injected failure",
+      "component": "power",
+      "kind": "toggle",
+      "command": "power-fault",
+      "binding": "/controls/power/fault"
+    },
+    {
+      "id": "power-repair-control",
+      "label": "Repair component",
+      "component": "power",
+      "kind": "button",
+      "command": "power-repair"
+    },
+    {
+      "id": "controller-enabled-control",
+      "label": "Enabled",
+      "component": "controller",
+      "kind": "toggle",
+      "command": "controller-enabled",
+      "binding": "/controls/controller/enabled"
+    },
+    {
+      "id": "controller-load-control",
+      "label": "Requested load",
+      "component": "controller",
+      "kind": "range",
+      "command": "controller-load",
+      "binding": "/controls/controller/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "controller-fault-control",
+      "label": "Injected failure",
+      "component": "controller",
+      "kind": "toggle",
+      "command": "controller-fault",
+      "binding": "/controls/controller/fault"
+    },
+    {
+      "id": "controller-repair-control",
+      "label": "Repair component",
+      "component": "controller",
+      "kind": "button",
+      "command": "controller-repair"
+    },
+    {
+      "id": "motor-enabled-control",
+      "label": "Enabled",
+      "component": "motor",
+      "kind": "toggle",
+      "command": "motor-enabled",
+      "binding": "/controls/motor/enabled"
+    },
+    {
+      "id": "motor-load-control",
+      "label": "Requested load",
+      "component": "motor",
+      "kind": "range",
+      "command": "motor-load",
+      "binding": "/controls/motor/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "motor-fault-control",
+      "label": "Injected failure",
+      "component": "motor",
+      "kind": "toggle",
+      "command": "motor-fault",
+      "binding": "/controls/motor/fault"
+    },
+    {
+      "id": "motor-repair-control",
+      "label": "Repair component",
+      "component": "motor",
+      "kind": "button",
+      "command": "motor-repair"
+    },
+    {
+      "id": "temperature-enabled-control",
+      "label": "Enabled",
+      "component": "temperature",
+      "kind": "toggle",
+      "command": "temperature-enabled",
+      "binding": "/controls/temperature/enabled"
+    },
+    {
+      "id": "temperature-load-control",
+      "label": "Requested load",
+      "component": "temperature",
+      "kind": "range",
+      "command": "temperature-load",
+      "binding": "/controls/temperature/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "temperature-fault-control",
+      "label": "Injected failure",
+      "component": "temperature",
+      "kind": "toggle",
+      "command": "temperature-fault",
+      "binding": "/controls/temperature/fault"
+    },
+    {
+      "id": "temperature-repair-control",
+      "label": "Repair component",
+      "component": "temperature",
+      "kind": "button",
+      "command": "temperature-repair"
+    },
+    {
+      "id": "plant-setRunning-control",
+      "label": "Run the shared plant",
+      "kind": "toggle",
+      "command": "plant-setRunning",
+      "binding": "/running"
+    },
+    {
+      "id": "plant-step-control",
+      "label": "Advance one model step",
+      "kind": "button",
+      "command": "plant-step"
+    },
+    {
+      "id": "plant-reset-control",
+      "label": "Reset dynamics \u00b7 keep edited parameters",
+      "kind": "button",
+      "command": "plant-reset"
+    }
+  ],
+  "units": {
+    "flow": "normalized flow units",
+    "inventory": "normalized inventory units",
+    "load": "% requested demonstration load",
+    "pressure": "normalized pressure index",
+    "temperature": "normalized model thermal index; artwork displays an illustrative range"
+  },
+  "provenance": [
+    {
+      "id": "demo-model",
+      "label": "Editable placeholder model",
+      "kind": "assumed",
+      "description": "Family-level normalized behavior for UI experimentation; no calibrated industry process, safety envelope or recipe."
+    },
+    {
+      "id": "assumed-topology",
+      "label": "Illustrative editable routing",
+      "kind": "illustrative",
+      "description": "Industry-inspired stage names and interfaces. This is not a verified plant P&ID, wiring diagram or production design."
+    }
+  ],
+  "assumptions": [
+    {
+      "id": "nominalCapacity",
+      "label": "Default normalized stage capacity",
+      "value": 75,
+      "unit": "normalized units",
+      "provenance": "demo-model"
+    },
+    {
+      "id": "warningIndex",
+      "label": "Demonstration warning threshold",
+      "value": 78,
+      "unit": "normalized index",
+      "provenance": "demo-model"
+    },
+    {
+      "id": "optionalUtilities",
+      "label": "Utility equipment is illustrative and may be optional",
+      "value": true,
+      "provenance": "assumed-topology"
+    }
+  ]
+}

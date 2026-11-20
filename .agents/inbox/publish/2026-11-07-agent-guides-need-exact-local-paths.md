@@ -1,6 +1,6 @@
 # Read the actual installed guide when a web summary loses its requirements
 
-On 2026-11-07, the single current Opus trial under #282 installed cad-agent and produced a part, but its unchanged grader failed five report requirements: headings, model, harness, source citation and installed commit. [Independent actual disposition](https://github.com/Valpatel/cad-agent/issues/282#issuecomment-6709824302) retained the overall FAILED 7/12 result. The existing [discovery boundary lesson](../2026-11-06-agent-discovery-and-resource-boundaries.md) already distinguishes installed instructions, native discovery and clean-user evidence; none makes a fetched summary complete.
+On 2026-11-07, the single current Opus trial under #282 installed cad-agent and produced a part, but its unchanged grader failed five report requirements: headings, model, harness, source citation and installed commit. [Independent actual disposition](https://github.com/Valpatel/cad-agent/issues/282#issuecomment-6709824302) retained the overall FAILED 7/12 result. The existing [discovery boundary lesson](../agents/2026-11-06-agent-discovery-and-resource-boundaries.md) already distinguishes installed instructions, native discovery and clean-user evidence; none makes a fetched summary complete.
 
 **Evidence:** read-only JSONL inspection of the retained transcript (SHA-256 `be2a144bbdb06c7d3116c451a836aefa7493e0062f7d781db2487224f718639f`) found:
 

@@ -685,3 +685,15 @@ def test_a_fastener_moves_with_its_body_when_the_gate_is_posed():
     f = [x for x in v["findings"]]
     assert [x["id"] for x in f] == ["fastener:screw:tool"] and "roof" in f[0]["parts"], f
     assert v["limits"]["poses"]["arm"][3] == pytest.approx(0.0)
+
+
+def test_axial_plan_tool_paths_keep_unknown_special_and_exhausted_states():
+    from cadagent.review.gates.fasteners import axial_tool_path
+    spec = FastenerSpec('test','a','b',drive='hex-test')
+    assert axial_tool_path(None,spec,0,'special',{'ordinary':False},[],10)['state']=='unsupported'
+    ordinary={'ordinary':True,'identity':'ordinary test driver','drive':'wrong','d':2,'length':30}
+    assert axial_tool_path(None,spec,0,'ordinary',ordinary,[],10)['state']=='unknown'
+    ordinary['drive']='hex-test'
+    assert axial_tool_path(None,spec,0,'ordinary',ordinary,[],10,max_samples=1)['state']=='unchecked'
+    for invalid in ({'d':float('nan'),'length':30},{'d':2,'length':float('inf')},{'d':2,'length':30,'offset_mm':float('nan')}):
+        with pytest.raises(ValueError):tool_envelope(invalid)

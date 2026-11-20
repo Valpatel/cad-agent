@@ -14,10 +14,12 @@ import tempfile
 import venv
 import zipfile
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
 from cadagent import project
+from cadagent import cli
 from cadagent.cli import main
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -32,6 +34,7 @@ def starter_files(folder: Path = STARTER) -> set:
 
 
 def test_init_copies_the_starter_and_says_what_to_run(tmp_path, monkeypatch, capsys):
+    monkeypatch.setattr(shutil, "which", lambda name: "/installed/bin/cad-agent")
     monkeypatch.chdir(tmp_path)
     assert main(["init", "my box"]) == 0
     dest = tmp_path / "my box"
@@ -44,11 +47,44 @@ def test_init_copies_the_starter_and_says_what_to_run(tmp_path, monkeypatch, cap
 
 
 def test_init_here_says_only_cad_agent_all(tmp_path, monkeypatch, capsys):
+    monkeypatch.setattr(shutil, "which", lambda name: "/installed/bin/cad-agent")
     monkeypatch.chdir(tmp_path)
     assert main(["init"]) == 0
     assert (tmp_path / "cad-agent.yaml").is_file()
     out = capsys.readouterr().out
     assert "cd " not in out and "  cad-agent all" in out
+
+
+@pytest.mark.skipif(os.name == "nt", reason="executes the POSIX shell handoff")
+@pytest.mark.parametrize("spaced_interpreter", [False, True])
+def test_init_next_command_runs_without_cad_agent_on_path(tmp_path, monkeypatch, capsys, spaced_interpreter):
+    """A custom install need not change PATH: execute the suggested command after its suggested cd."""
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("PATH", "")
+    monkeypatch.setenv("PYTHONPATH", str(ROOT / "software"))
+    if spaced_interpreter:
+        interpreter = tmp_path / "python with 'quotes' and spaces"
+        interpreter.symlink_to(sys.executable)
+        monkeypatch.setattr(sys, "executable", str(interpreter))
+    assert shutil.which("cad-agent") is None
+    assert main(["init", "my box"]) == 0
+    lines = capsys.readouterr().out.split("next:\n", 1)[1].splitlines()
+    command = lines[-1].split("          #", 1)[0].strip()
+    # --help exercises command discovery, import and argument dispatch without requiring CAD extras.
+    result = subprocess.run(["/bin/sh", "-c", lines[0].strip() + "\n" + command + " --help"],
+                            capture_output=True, text=True)
+    assert result.returncode == 0, result.stderr
+    assert "cad-agent all" in result.stdout
+
+
+def test_init_windows_fallback_is_literal_powershell(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(cli, "os", SimpleNamespace(name="nt"))
+    monkeypatch.setattr(shutil, "which", lambda name: None)
+    monkeypatch.setattr(sys, "executable", "C:/Users/O'Brien/$tools/python.exe")
+    assert main(["init", "my box"]) == 0
+    out = capsys.readouterr().out
+    assert "  cd 'my box'\n  & 'C:/Users/O''Brien/$tools/python.exe' -m cadagent.cli all" in out
 
 
 def test_init_refuses_a_folder_that_is_not_empty_unless_forced(tmp_path, capsys):
@@ -147,14 +183,22 @@ def _wheel_smoke(tmp_path):
         metadata_paths = [name for name in names if name.endswith(".dist-info/METADATA")]
         assert len(metadata_paths) == 1
         metadata = BytesParser().parsebytes(wheel.read(metadata_paths[0]))
+        assert metadata["License"] == "MIT"
+        for notice in ("LICENSE.txt", "ui/LICENSE.txt", "sim/LICENSE.txt"):
+            assert wheel.read(f"cadagent/webkit/scada/{notice}") == (source / "LICENSE").read_bytes()
+        third_party_notices = [p for p in (sdk_source / "vendor").rglob("*")
+                               if p.is_file() and ("LICENSE" in p.name.upper() or "NOTICE" in p.name.upper())]
+        assert third_party_notices, "the installed SDK must retain third-party rights notices"
+        for notice in third_party_notices:
+            assert wheel.read("cadagent/webkit/" + notice.relative_to(sdk_source).as_posix()) == notice.read_bytes()
         pardiso = [Requirement(r) for r in metadata.get_all("Requires-Dist", []) if Requirement(r).name == "pypardiso"]
         assert len(pardiso) == 1 and pardiso[0].marker is not None
         for system, machine, expected_pardiso in (("Linux", "x86_64", True), ("Windows", "AMD64", True),
                                           ("Linux", "aarch64", False), ("Darwin", "arm64", False),
                                           ("Darwin", "x86_64", False), ("Windows", "ARM64", False)):
-            env = {"platform_system": system, "platform_machine": machine}
-            assert pardiso[0].marker.evaluate({**env, "extra": "fea"}) is expected_pardiso, env
-            assert not pardiso[0].marker.evaluate({**env, "extra": ""}), "PARDISO leaked into the core install"
+            marker_env = {"platform_system": system, "platform_machine": machine}
+            assert pardiso[0].marker.evaluate({**marker_env, "extra": "fea"}) is expected_pardiso, marker_env
+            assert not pardiso[0].marker.evaluate({**marker_env, "extra": ""}), "PARDISO leaked into the core install"
     shutil.rmtree(source)
     assert not source.exists()
     # Package type follows the installed file's physical ancestors, not the process CWD. This explicit ancestor
@@ -196,15 +240,103 @@ print(json.dumps({"package": str(Path(cadagent.__file__).resolve()), "project": 
 const sdk = await import(pathToFileURL(process.argv[1]).href);
 if (typeof sdk.snapArm !== 'function' || sdk.SMALL_DEFLECTION !== 0.1) throw new Error('wrong installed SDK exports');
 console.log('installed SDK ESM PASS');"""
-    good_sdk = run([node, "--input-type=module", "-e", sdk_probe, sdk / "formulas.js"])
+    good_sdk = run([node, "--input-type=module", "-e", sdk_probe, sdk / "calculators/formulas.js"])
     assert "installed SDK ESM PASS" in good_sdk.stdout
+    # Consume the actual copied SDK after installation and source removal. This
+    # catches missing nested assets as well as imports that reach into a checkout.
+    run([cli, "webkit", "--project", target, "webkit"])
+    copied_sdk = target / "webkit"
+    assert {p.relative_to(copied_sdk).as_posix(): hashlib.sha256(p.read_bytes()).hexdigest()
+            for p in copied_sdk.rglob("*") if p.is_file()} == sdk_expected
+    scada_probe = """import assert from 'node:assert/strict';
+import {readFileSync, existsSync} from 'node:fs';
+import {pathToFileURL} from 'node:url';
+const root = pathToFileURL(process.argv[1] + '/');
+const read = name => JSON.parse(readFileSync(new URL(name, root), 'utf8'));
+for (const key of ['fetch', 'setInterval', 'setTimeout']) globalThis[key] = () => { throw Error('unexpected IO: ' + key); };
+const ui = await import(new URL('ui/src/index.mjs', root));
+const sim = await import(new URL('sim/src/index.mjs', root));
+const types = ui.SCADA_COMPONENTS;
+assert.ok(types.length >= 142);
+for (const item of types) assert.match(ui.renderScadaComponent(item.type), /<svg/);
+for (const item of read('sim/scenarios/index.json').scenarios) {
+  const system = read('sim/scenarios/' + item.system);
+  const definition = read('sim/scenarios/' + item.model);
+  assert.equal(ui.validateSystemDefinition(system).ok, true, item.id);
+  const model = new sim.PlaceholderSystemModel(system, definition);
+  model.step(.1);
+  const before = model.exportSnapshot();
+  model.step(.1); const after = model.exportSnapshot();
+  model.importSnapshot(before); model.step(.1);
+  assert.deepEqual(model.exportSnapshot(), after, item.id);
+  model.destroy();
+}
+const system = read('sim/scenarios/wastewater-digester/system.json');
+const model = new sim.PlaceholderSystemModel(system, read('sim/scenarios/wastewater-digester/model.json'));
+model.dispatch({action:'setEnabled', arguments:{equipment:'liftPump',value:false}});
+assert.equal(model.exportSnapshot().state.components.liftPump.enabled, false);
+model.destroy();
+for (const name of ['explorer/index.html', 'explorer/main.mjs', 'ui/src/styles.css',
+                   'ui/schema/scada-system.schema.json', 'ui/metadata/gallery.json',
+                   'ui/img/README.md', 'sim/img/README.md', 'sim/docs/INTEGRATION.md'])
+  assert.ok(existsSync(new URL(name, root)), name);
+console.log('installed copied SCADA PASS: all symbols, scenarios, commands and replay without IO');"""
+    scada = run([node, "--input-type=module", "-e", scada_probe, copied_sdk / "scada"])
+    assert "installed copied SCADA PASS" in scada.stdout
+    equations = json.loads(run([node, copied_sdk / "scada/sim/examples/equation-models/run.mjs"]).stdout)
+    assert equations["replay"] == "exact saved-state continuation verified"
+    assert len(equations["results"]) == 4
+    print("installed copied SCADA PASS: full bytes, MIT and third-party notices, all scenarios and swappable equations")
+    replay_probe = """import assert from 'node:assert/strict';
+import {readFileSync, existsSync} from 'node:fs';
+import {createHash} from 'node:crypto';
+import {pathToFileURL} from 'node:url';
+const root = pathToFileURL(process.argv[1] + '/');
+const read = name => JSON.parse(readFileSync(new URL(name, root), 'utf8'));
+const {validateRecording, samplePose, createPlayback} = await import(new URL('replay.js', root));
+const recording = validateRecording(read('examples/two-link-arm/recording.json'));
+const receipt = read('examples/two-link-arm/receipt.json');
+assert.equal(recording.duration, 10); assert.equal(recording.frames.length, 501);
+assert.equal(receipt.engine.name, 'MuJoCo');
+for (const [name, hash] of Object.entries(receipt.artifacts))
+  assert.equal(createHash('sha256').update(readFileSync(new URL('examples/two-link-arm/' + name, root))).digest('hex'), hash);
+const initial = samplePose(recording, 0), later = samplePose(recording, 3.2);
+assert.deepEqual(initial[0], later[0]); assert.notDeepEqual(initial[2], later[2]);
+const clock = createPlayback(recording); clock.play(); clock.advance(.1); assert.equal(clock.state().time, .1); clock.dispose();
+for (const name of ['viewer.html', 'viewer.js', 'viewer.css', 'scene.js', 'page.js', 'examples/two-link-arm/preview.webp', 'examples/two-link-arm/README.md'])
+  assert.ok(existsSync(new URL(name, root)), name);
+console.log('installed copied robot replay PASS');"""
+    replay = run([node, "--input-type=module", "-e", replay_probe, copied_sdk / "simulation"])
+    assert "installed copied robot replay PASS" in replay.stdout
+    print("installed copied robot replay PASS: recorded poses, solver hashes, interpolation and clock")
+    # Profiles must be installed data, resolving real nested files with no checkout fallback.
+    profile_probe = """import json
+from cadagent.publish.runtime import capture_profile
+bundle = capture_profile("assembly-reader")
+print(json.dumps({"identity": dict(bundle.identity), "files": sorted(bundle)}))"""
+    profile = json.loads(run([python, "-I", "-c", profile_probe]).stdout)
+    assert profile["identity"]["profile"] == "assembly-reader"
+    assert "assembly/playback.js" in profile["files"] and "vendor/fonts/fonts.css" in profile["files"]
+    module_probe = """import { pathToFileURL } from 'node:url';
+const reader = await import(pathToFileURL(process.argv[1]).href);
+if (typeof reader.validateGuide !== 'function') throw new Error('wrong installed reader');
+console.log('installed nested reader PASS');"""
+    assert "installed nested reader PASS" in run([node, "--input-type=module", "-e", module_probe,
+                                                    sdk / "assembly/guide.js"]).stdout
+    profile_file = sdk.parent / "publish/runtime-profiles.json"
+    declared = profile_file.read_bytes()
+    profile_file.unlink()
+    rejected_profile = run([python, "-I", "-c", profile_probe], check=False)
+    assert rejected_profile.returncode != 0 and "cannot read manifest" in rejected_profile.stderr
+    profile_file.write_bytes(declared)
+    print("installed runtime profile PASS: nested ESM and missing-manifest rejection")
     # Only the installed scope metadata changes; source is gone, starter remains installed and module bytes match.
     (sdk / "package.json").unlink()
     assert Path(paths["declared_config"]).is_file() and not source.exists()
-    assert hashlib.sha256((sdk / "formulas.js").read_bytes()).hexdigest() == sdk_expected["formulas.js"]
-    bad_sdk = run([node, "--input-type=module", "-e", sdk_probe, sdk / "formulas.js"], check=False)
+    assert hashlib.sha256((sdk / "calculators/formulas.js").read_bytes()).hexdigest() == sdk_expected["calculators/formulas.js"]
+    bad_sdk = run([node, "--input-type=module", "-e", sdk_probe, sdk / "calculators/formulas.js"], check=False)
     assert bad_sdk.returncode != 0 and "SyntaxError" in bad_sdk.stderr and "export" in bad_sdk.stderr, (bad_sdk.stdout, bad_sdk.stderr)
-    assert str(sdk / "formulas.js") in bad_sdk.stderr and "installed SDK ESM PASS" not in bad_sdk.stdout
+    assert str(sdk / "calculators/formulas.js") in bad_sdk.stderr and "installed SDK ESM PASS" not in bad_sdk.stdout
     print(f"installed SDK scope PASS on Node {node_version}: real file-URL import and missing-metadata rejection")
     Path(paths["declared_config"]).unlink()
     rejected = outside / "missing-starter"

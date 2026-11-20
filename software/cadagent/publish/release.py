@@ -36,6 +36,7 @@ Config ``cad: release:`` (all optional)::
       thumbnail: "{preview}/part-{part}.png"
       extra_cad: [exports/assembly.step]   # more CAD files for cad/
       pages: [ASSEMBLY.md, "docs/assembly/*"]
+      assembly_guides: [exports/guide/guide.json]  # optional hash-bound model, meshes, posters and pinned viewer
       hardware: docs/hardware.csv          # a CSV, or a list of mappings ({item, qty, ...})
       include: ["cad/**", "tools/**", cad-agent.yaml, "requirements*.txt", README.md, "LICENSE*"]
       exclude: ["**/__pycache__/**", "**/*.pyc"]
@@ -70,7 +71,7 @@ CAD_SUFFIXES = (".step", ".stl", ".3mf")
 IMAGE_SUFFIXES = {".png", ".jpg", ".jpeg", ".gif", ".svg", ".webp"}
 MARKER = "cad-agent.release/1"
 ZIP_DATE = (1980, 1, 1, 0, 0, 0)
-_KEYS = {"title", "revision", "parts", "groups", "build", "quantities", "material", "notes", "thumbnail", "extra_cad", "pages",
+_KEYS = {"title", "revision", "parts", "groups", "build", "quantities", "material", "notes", "thumbnail", "extra_cad", "pages", "assembly_guides",
          "hardware", "include", "exclude", "max_file_mb", "date"}
 _GROUP_KEYS = {"title", "parts", "note", "optional", "pick_one"}
 
@@ -95,6 +96,7 @@ class ReleaseConfig:
     thumbnail: str = DEFAULT_THUMBNAIL
     extra_cad: List[str] = field(default_factory=list)
     pages: List[str] = field(default_factory=list)
+    assembly_guides: List[str] = field(default_factory=list)
     hardware: Any = None
     include: List[str] = field(default_factory=lambda: list(DEFAULT_INCLUDE))
     exclude: List[str] = field(default_factory=lambda: list(DEFAULT_EXCLUDE))
@@ -235,7 +237,8 @@ def release_config(project: CadProject, known_parts: Sequence[str]) -> ReleaseCo
     if isinstance(max_mb, bool) or not isinstance(max_mb, (int, float)) or max_mb <= 0:
         raise CadConfigError("cad.release.max_file_mb must be a positive number")
     globs = {}
-    for key, default in (("include", DEFAULT_INCLUDE), ("exclude", DEFAULT_EXCLUDE), ("extra_cad", []), ("pages", [])):
+    for key, default in (("include", DEFAULT_INCLUDE), ("exclude", DEFAULT_EXCLUDE), ("extra_cad", []), ("pages", []),
+                         ("assembly_guides", [])):
         values = _strings(raw[key], f"cad.release.{key}", allow_none=False) if key in raw else list(default)
         globs[key] = [_inside(v, f"cad.release.{key}") for v in values]
     return ReleaseConfig(
@@ -250,6 +253,7 @@ def release_config(project: CadProject, known_parts: Sequence[str]) -> ReleaseCo
         thumbnail=thumbnail,
         extra_cad=globs["extra_cad"],
         pages=globs["pages"],
+        assembly_guides=globs["assembly_guides"],
         hardware=hardware,
         include=globs["include"],
         exclude=globs["exclude"],
@@ -405,6 +409,87 @@ def _slice_rows(project: CadProject) -> Tuple[Dict[str, Any], Dict[str, Dict[str
     return rep, current, ""
 
 
+def _print_set(project: CadProject, cfg: ReleaseConfig, known: Sequence[str], warnings: List[str]):
+    """A current complete native plate project, never a glob or the per-part slice totals."""
+    from cadagent.manufacturing import plates as P
+    import xml.etree.ElementTree as ET
+
+    path = P.plates_file(project)
+    record_path = path.with_suffix('.json')
+    if not any(p.exists() or p.is_symlink() for p in (path, record_path)):
+        return None
+    try:
+        for p in (path, record_path):
+            if p.is_symlink() or not p.is_file() or not p.resolve().is_relative_to(project.root.resolve()):
+                raise ValueError('project and record must be regular files inside the project')
+        pc = P.plates_config(project, known)
+        if pc is None:
+            raise ValueError('cad.plates is disabled')
+        expected = {n: cfg.quantities.get(n, 1) for n in
+                    (cfg.build.parts if cfg.build else [n for g in cfg.groups for n in g.parts])}
+        if pc.quantities != expected or (not cfg.build and any(g.pick_one for g in cfg.groups)):
+            raise ValueError('plates do not identify the complete released build at its quantities')
+        inputs = P._release_inputs(project, pc)
+        if any(inputs['part_overrides'].values()):
+            raise ValueError('per-part slicer overrides are not represented by this plate exporter')
+        record = json.loads(record_path.read_text())
+        if (not isinstance(record, dict) or record.get('format') != P.MARKER
+                or record.get('file') != path.name or record.get('sha256') != _sha(path)):
+            raise ValueError('plate project does not match its generated record')
+        if record.get('inputs') != inputs:
+            raise ValueError('plate inputs are changed or lack a current input record; run export-3mf again')
+        with zipfile.ZipFile(path) as archive:
+            if len(archive.namelist()) != len(set(archive.namelist())):
+                raise ValueError('native project has duplicate archive members')
+            model = ET.fromstring(archive.read('3D/3dmodel.model'))
+        if model.get('unit') != 'millimeter':
+            raise ValueError('native project does not use the exported millimeter units')
+        applications = model.findall(f'{{{P.CORE_NS}}}metadata[@name="Application"]')
+        back = P.read_plates_3mf(path, project.printer.bed_mm)
+        native = back['project_settings']
+        groups = list(dict.fromkeys(pc.filaments[n] for n in pc.parts))
+        if (not isinstance(native, dict) or P.application(native) == P.APPLICATION
+                or any(not isinstance(native.get(k), str) or not native[k].strip()
+                       for k in ('printer_settings_id', 'print_settings_id'))
+                or not isinstance(native.get('filament_settings_id'), list)
+                or len(native['filament_settings_id']) != len(groups)
+                or any(not isinstance(f, str) or not f.strip() for f in native['filament_settings_id'])):
+            raise ValueError('native printer/process/filament settings are missing')
+        if len(applications) != 1 or applications[0].text != P.application(native):
+            raise ValueError('model does not declare the native Bambu project version')
+        keep_out = list(pc.keep_out)
+        area, _ = P.printable_area(native, project.printer.bed_mm)
+        excluded = P._exclude_box(native, area)
+        if excluded:
+            keep_out.append(excluded)
+        problems = P.check_plates(P.as_plates(back), project.printer.bed_mm, pc.gap, pc.margin,
+                                  keep_out=keep_out, quantities=expected, tol=P.POSITION_TOL_MM)
+        if not back['plates'] or back['outside'] or problems:
+            raise ValueError('native plate layout is incomplete or outside the current layout rules')
+        rows = []
+        for plate in back['plates']:
+            if sorted(plate['listed']) != sorted((q['object'], q['instance']) for q in plate['placements']):
+                raise ValueError('native plate lists differ from actual placements')
+            filaments = set()
+            for q in plate['placements']:
+                obj = back['objects'][q['object']]
+                slot = obj['extruder']
+                if not 1 <= slot <= len(groups) or groups[slot - 1] != pc.filaments[q['part']] or abs(q['z_mm']) > 1e-6:
+                    raise ValueError('native filament slot or print orientation differs from the plate inputs')
+                filaments.add(native['filament_settings_id'][slot - 1])
+            if len(filaments) != 1:
+                raise ValueError('a plate does not have one filament group')
+            rows.append({'plate': plate['index'], 'name': plate['name'], 'copies': len(plate['placements']),
+                         'filament': next(iter(filaments)), 'grams': None, 'minutes': None})
+        return {'path': path, 'sha256': record['sha256'], 'inputs': inputs, 'plates': rows,
+                'copies': sum(r['copies'] for r in rows), 'sliced': False, 'gui_verified': False,
+                'scope': cfg.build.title if cfg.build else 'All released parts',
+                'settings': {k: native[k] for k in ('printer_settings_id', 'print_settings_id', 'filament_settings_id')}}
+    except (OSError, ValueError, TypeError, KeyError, IndexError, AttributeError, ET.ParseError, zipfile.BadZipFile) as exc:
+        warnings.append(f'whole print set not linked: {exc}')
+        return None
+
+
 def _hardware_rows(project: CadProject, hardware: Any) -> List[Dict[str, str]]:
     if hardware is None:
         return []
@@ -499,6 +584,44 @@ def _linked_images(text: str, src_rel: str, root: Path) -> List[str]:
         if f.is_file() and f.resolve().is_relative_to(real_root) and not any(b.startswith(".") for b in rel.split("/")):
             out.append(rel)
     return out
+
+
+def _guide_runtime():
+    """Capture only the checked assembly-reader dependency closure."""
+    from cadagent.publish.runtime import capture_profile
+    from cadagent.publish.site import KIT_DIR
+    return capture_profile("assembly-reader", kit_dir=KIT_DIR)
+
+
+def _guide_page(bundle) -> str:
+    """Static instructions are usable even without JavaScript/WebGL."""
+    import posixpath
+    from urllib.parse import unquote
+    guide = bundle.guide
+    snapshot = guide["snapshot"]
+    title = snapshot["revision"]
+    target = "../../" + bundle.identifier + "/project/" + quote(bundle.path, safe="/")
+    back = "../../" + bundle.identifier + "/index.html"
+    guide_sha = hashlib.sha256(bundle.files[bundle.path]).hexdigest()
+    interactive = ("../_cadagent/model/viewer.html?guide=" + quote(target, safe="") + "&back=" + quote(back, safe="")
+                   + "&sha256=" + guide_sha)
+    rows = []
+    for step in guide["steps"]:
+        poster = step.get("poster")
+        image = ""
+        if poster:
+            asset = posixpath.normpath(posixpath.join(posixpath.dirname(bundle.path), unquote(poster["file"])))
+            image = f'<img style="max-width:100%;height:auto" src="{_u("project/" + asset)}" alt="{_e(step.get("title", step["id"]))}">'
+        rows.append(f'<section id="{_e(step["id"])}"><h2>{_e(step.get("title", step["id"]))}</h2>'
+                    f'{image}<p style="white-space:pre-line">{_e(step.get("text", ""))}</p></section>')
+    return ('<!doctype html><html lang="en"><head><meta charset="utf-8">'
+            '<meta name="viewport" content="width=device-width,initial-scale=1">'
+            f'<title>{_e(title)}</title><style>{_DOC_CSS}</style></head><body><main class="page">'
+            '<p><a href="../../index.html">← Release</a></p>'
+            f'<h1>{_e(title)}</h1><p>{_e(snapshot["revision"])} · {_e(snapshot["status"])} · '
+            f'<code>{_e(snapshot["source_commit"])}</code></p>'
+            f'<p><a href="{_e(interactive)}">Open interactive 3D instructions</a></p>'
+            + "".join(rows) + '</main></body></html>\n')
 
 
 # ----------------------------------------------------------------------------- page
@@ -598,7 +721,8 @@ def _build_entry(cfg: ReleaseConfig, parts: List[Dict[str, Any]]) -> Optional[Di
 
 def _page(project: CadProject, cfg: ReleaseConfig, revision: str, date: str, parts: List[Dict[str, Any]],
           settings: Dict[str, Any], slice_note: str, docs: List[Dict[str, str]], hardware: List[Dict[str, str]],
-          sources: List[str], extra: List[Dict[str, str]], zip_name: Optional[str], git: Dict[str, Any]) -> str:
+          sources: List[str], extra: List[Dict[str, str]], zip_name: Optional[str], git: Dict[str, Any],
+          print_set: Optional[Dict[str, Any]] = None) -> str:
     missing = [p["part"] for p in parts if not p.get("grams")]
     meta = [("Revision", revision)] + ([("Date", date)] if date else [])
     if git.get("commit"):
@@ -641,8 +765,19 @@ def _page(project: CadProject, cfg: ReleaseConfig, revision: str, date: str, par
     toc = ['<a href="#parts">Parts</a>'] + (['<a href="#assembly">Assembly</a>'] if docs else []) \
         + (['<a href="#hardware">Hardware</a>'] if hardware else []) + ['<a href="#source">Source</a>']
     body = [f'<header><h1>{_e(cfg.title)}</h1><ul class="meta">{meta_html}</ul></header>',
-            f'<div class="stats">{stats_html}</div>', settings_html, alert, f'<nav class="toc">{"".join(toc)}</nav>',
-            '<section id="parts">']
+            f'<div class="stats">{stats_html}</div>', settings_html, alert, f'<nav class="toc">{"".join(toc)}</nav>']
+    if print_set:
+        rows = ''.join(f'<tr><td>{r["plate"]}</td><td>{_e(r["name"])}</td><td>{_e(r["filament"])}</td>'
+                       f'<td>{r["copies"]}</td><td>not sliced</td></tr>' for r in print_set['plates'])
+        body.append('<section id="print-set"><h2>Whole print set</h2>'
+                    f'<p><a href="{_u(print_set["href"])}" download>Open the whole print set</a> in Bambu Studio '
+                    f'· {_e(print_set["scope"])} · {print_set["copies"]} copies on {len(print_set["plates"])} plates.</p>'
+                    '<p>Native presets are embedded. Plate time and mass have not been recorded; per-part estimates '
+                    'above are separate. Check profiles and placements in Bambu Studio before slicing. '
+                    'GUI compatibility and physical print quality remain unverified.</p>'
+                    '<div class="tablewrap"><table><tr><th>Plate</th><th>Name</th><th>Filament preset</th>'
+                    '<th>Copies</th><th>Slice result</th></tr>' + rows + '</table></div></section>')
+    body.append('<section id="parts">')
     by_name = {p["part"]: p for p in parts}
     for g in cfg.groups:
         members = [by_name[n] for n in g.parts]
@@ -727,6 +862,7 @@ def build_release(project: CadProject, out: Optional[Path] = None, make_zip: boo
     project's (``--revision``, ``--date``)."""
     from cadagent.publish.report import load_parts
     from cadagent.manufacturing.slicer import _settings
+    from cadagent.publish.guides import collect_guides
 
     known, _ = load_parts(project)
     cfg = release_config(project, list(known))
@@ -749,6 +885,17 @@ def build_release(project: CadProject, out: Optional[Path] = None, make_zip: boo
     folder = (Path(out) if out else root / "release" / f"{_slug(project.name)}-rev{_slug(revision)}").resolve()
     if root == folder or root.is_relative_to(folder):
         raise CadConfigError(f"release folder {folder} would contain the project")
+    skipped: List[str] = []
+    extra_files = _glob(project.root, cfg.extra_cad, skipped=skipped)
+    # Validate and capture every guide dependency before replacing an existing release.
+    guides = collect_guides(root, cfg.assembly_guides)
+    guide_runtime = _guide_runtime() if guides else {}
+    print_set = _print_set(project, cfg, list(known), warnings)
+    if print_set:
+        source = print_set['path'].resolve()
+        for extra_file in extra_files:
+            if extra_file.name == source.name and extra_file.resolve() != source:
+                raise CadConfigError(f'cad/{source.name}: different source files collide with the whole print set')
     _prepare(folder)
     report, current, slice_note = _slice_rows(project)
     # Recommended settings: cad.slicer when the project names them, else those of a current slice report; never the
@@ -763,6 +910,7 @@ def build_release(project: CadProject, out: Optional[Path] = None, make_zip: boo
         settings = {}
     material = cfg.material or str(settings.get("filament") or "").split(" @")[0]
     copied: Dict[str, Path] = {}
+    destination_sources: Dict[Path, Path] = {}
     origin: Dict[str, str] = {}      # project path -> its copy in the release (rewrites the pages' links)
     limit = cfg.max_file_mb * 1024 * 1024
 
@@ -773,10 +921,16 @@ def build_release(project: CadProject, out: Optional[Path] = None, make_zip: boo
         real = src.resolve()
         if not real.is_relative_to(root):
             raise CadConfigError(f"{src}: is outside the project; not released")
+        rel = dst.relative_to(folder).as_posix()
+        if dst in destination_sources:
+            if destination_sources[dst] != real:
+                raise CadConfigError(f'{rel}: different source files collide at one release destination')
+            return rel
         if src.stat().st_size > limit:
             warnings.append(f"{rel} is {_size(src.stat().st_size)} (over cad.release.max_file_mb = {cfg.max_file_mb:g})")
         dst.parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(real, dst)
+        destination_sources[dst] = real
         copied[rel] = dst
         origin.setdefault(real.relative_to(root).as_posix(), rel)
         return rel
@@ -811,10 +965,14 @@ def build_release(project: CadProject, out: Optional[Path] = None, make_zip: boo
             parts.append({"part": name, "group": g.title, "optional": g.optional, "pick_one": g.pick_one, "quantity": cfg.quantities.get(name, 1),
                           "material": material, "files": files, "image": image, "grams": row.get("grams"),
                           "minutes": row.get("minutes"), "slicer_flags": flags})
-    skipped: List[str] = []
     extra = []
-    for src in _glob(project.root, cfg.extra_cad, skipped=skipped):
+    if print_set:
+        source = print_set.pop('path')
+        print_set['href'] = put(source, f'cad/{source.name}')
+    for src in extra_files:
         rel = put(src, f"cad/{src.name}")
+        if print_set and rel == print_set['href']:
+            continue
         extra.append({"name": src.name, "href": rel, "size": _size(src.stat().st_size)})
     hardware = _hardware_rows(project, cfg.hardware)
     sources = []
@@ -848,6 +1006,7 @@ def build_release(project: CadProject, out: Optional[Path] = None, make_zip: boo
         others = set((_git(root, "ls-files", "--others", "--exclude-standard", "-z") or "").split("\0")) - {""}
         released = set(sources) | {f.relative_to(project.root).as_posix() for f in page_files} | {
             f.relative_to(project.root).as_posix() for f in _glob(project.root, cfg.extra_cad)}
+        released.update(relative for bundle in guides for relative in bundle.files)
         git["untracked_released"] = sorted(others & released)
         if git["untracked_released"]:
             warnings.append(f"not in git (the commit cannot rebuild them): {', '.join(git['untracked_released'][:5])}"
@@ -882,9 +1041,35 @@ def build_release(project: CadProject, out: Optional[Path] = None, make_zip: boo
             copied[at] = folder / at
             href = at
         docs.append({"title": title, "href": href})
+    guide_entries = []
+    if guides:
+        from cadagent import __version__
+        # These names live in a release-owned subtree and preserve source-relative
+        # URLs. No rewriting of JSON, mesh bytes or old guide inputs is needed.
+        for relative, data in guide_runtime.items():
+            at = "guides/_cadagent/" + relative
+            target = folder / at
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_bytes(data)
+            copied[at] = target
+        for bundle in guides:
+            prefix = "guides/" + bundle.identifier + "/"
+            for relative, data in bundle.files.items():
+                at = prefix + "project/" + relative
+                target = folder / at
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_bytes(data)
+                copied[at] = target
+            at = prefix + "index.html"
+            (folder / at).write_text(_guide_page(bundle))
+            copied[at] = folder / at
+            docs.append({"title": "Assembly: " + bundle.guide["snapshot"]["revision"], "href": at})
+            guide_entries.append({"id": bundle.identifier, "href": at, "snapshot": bundle.guide["snapshot"],
+                                  "guide": prefix + "project/" + bundle.path,
+                                  "sha256": hashlib.sha256(bundle.files[bundle.path]).hexdigest()})
     zip_path = folder.with_name(folder.name + ".zip") if make_zip else None
     (folder / "index.html").write_text(_page(project, cfg, revision, date, parts, settings, slice_note, docs, hardware,
-                                             sources, extra, zip_path.name if zip_path else None, git))
+                                             sources, extra, zip_path.name if zip_path else None, git, print_set))
     copied["index.html"] = folder / "index.html"
     files = {rel: _sha(p) for rel, p in sorted(copied.items())}
     manifest = {"format": MARKER, "project": project.name, "title": cfg.title, "revision": revision, "date": date,
@@ -895,7 +1080,14 @@ def build_release(project: CadProject, out: Optional[Path] = None, make_zip: boo
                 "parts": [{k: p[k] for k in ("part", "group", "optional", "pick_one", "quantity", "grams", "minutes")}
                           for p in parts],
                 "build": _build_entry(cfg, parts),
+                "print_set": print_set,
                 "warnings": warnings, "files": files}
+    if guides:
+        manifest["assembly_guides"] = guide_entries
+        manifest["guide_runtime"] = {"root": "guides/_cadagent/", "toolkit_version": __version__,
+                                     **getattr(guide_runtime, "identity", {}),
+                                     "files": {name: hashlib.sha256(data).hexdigest()
+                                               for name, data in guide_runtime.items()}}
     (folder / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
     if zip_path:
         _zip(folder, zip_path)

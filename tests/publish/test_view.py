@@ -100,7 +100,7 @@ def test_bad_config_rejected_before_writing(tmp_path, bad):
     assert not (tmp_path / 'exports/view').exists()
 
 
-# ---- pack_view: the compact model the site's <cad-model> loads (kit/model.js decodes it; #179) ----
+# ---- pack_view: the compact model the site's <cad-model> loads (kit/model/model.js decodes it; #179) ----
 
 import importlib.util
 from pathlib import Path
@@ -228,3 +228,91 @@ def test_showcase_group_policy_preserves_current_members_and_rejects_drift(tmp_p
         with pytest.raises(ValueError, match="outside the product"):
             tool.model(product, "unused", "unused", toolkit, destination)
         assert not destination.exists()
+
+
+def test_showcase_collection_packet_is_import_safe_and_old_pack_names_do_not_prove_position(tmp_path, monkeypatch):
+    import copy
+    import importlib.util
+    import subprocess
+    from pathlib import Path
+    def forbidden(*args, **kwargs):
+        raise AssertionError("Import/identity validation must not launch processes")
+    monkeypatch.setattr(subprocess, "Popen", forbidden)
+    root = Path(__file__).resolve().parents[2]
+    spec = importlib.util.spec_from_file_location("showcase_collection_packet", root / "tools/site/figures/collect-showcase.py")
+    worker = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(worker)
+    assert worker.ROOT is None and worker.OUT is None
+    current = json.loads((root / "tools/site/assets/models/gyropup.json").read_text())
+    assert worker.validate_end_packs(current)["source_parts"] == 224
+    # Both old and current models have these pack names. Keep all current identity/member fields,
+    # but plant the actual former belly bounds: a name/revision check alone must not accept it.
+    stale = copy.deepcopy(current)
+    battery = next(p for p in stale["parts"] if p["name"] == "battery")
+    battery["bounds_mm"] = [-153, -43.5, -219.04, 153, 43.5, -122.04]
+    assert sum(map(len, stale["source"]["members"].values())) == 224
+    with pytest.raises(ValueError, match="Battery placement"):
+        worker.validate_end_packs(stale)
+    wrong = copy.deepcopy(current)
+    wrong["source"]["members"]["frame"][0] = "bay_floor"
+    with pytest.raises(ValueError, match="belly enclosure"):
+        worker.validate_end_packs(wrong)
+    wrong_identity = copy.deepcopy(current)
+    wrong_identity["source"]["revision"] = "0" * 40
+    with pytest.raises(ValueError, match="Wrong original end-pack source"):
+        worker.validate_end_packs(wrong_identity)
+    output = tmp_path / "candidate"
+    output.mkdir()
+    (output / "gyropup.json").write_text("partial output retained")
+    assert set(worker.inventory(output)) == {"gyropup.json"}
+    (output / "alias").symlink_to(output / "gyropup.json")
+    with pytest.raises(ValueError, match="Nonregular"):
+        worker.inventory(output)
+    (output / "alias").unlink()
+    # Partial regular output must still be sealable before a later decoder rejects its incomplete contents.
+    import tarfile
+    monkeypatch.setattr(worker, "OUT", tmp_path)
+    monkeypatch.setattr(worker, "results", {})
+    output.rename(tmp_path / "model")
+    members = worker.archive_model()
+    assert set(members) == {"gyropup.json"}
+    with tarfile.open(tmp_path / "model-produced.tgz") as archive:
+        assert archive.getnames() == ["gyropup.json"]
+        assert archive.extractfile("gyropup.json").read() == b"partial output retained"
+
+
+def test_j501_source_rgb_conversion_rejects_invalid_material_channels():
+    """Product context uses normalized RGB; the display consumer requires CSS color."""
+    import runpy
+    from pathlib import Path
+    convert = runpy.run_path(str(Path(__file__).resolve().parents[2] / 'tools/site/figures/pack-j501.py'))['css_rgb']
+    assert convert([.06, .065, .075]) == '#0f1113'
+    assert convert([0, 1, 0]) == '#00ff00'
+    for invalid in [[0, 0], [0, 0, 0, 0], [-.1, 0, 0], [0, 1.1, 0],
+                    [float('nan'), 0, 0], [float('inf'), 0, 0], [True, 0, 0], '#000000', ['0', 0, 0]]:
+        with pytest.raises(RuntimeError, match='finite normalized RGB'):
+            convert(invalid)
+
+
+@pytest.mark.parametrize("duplicate_mesh", ["plate", "rail"])
+def test_plan_pack_rejects_original_duplicate_partitions_before_reading_or_writing(tmp_path, monkeypatch, duplicate_mesh):
+    """Same-mesh duplicates and a wrong earlier rail aliased as plate both violate exact ownership."""
+    import shutil
+    import cadagent.publish.view as view
+    fixture = Path(__file__).resolve().parents[1] / "fixtures/assembly-plan"
+    for filename in ("view.json", "plan.json", "base.stl", "rail.stl", "plate.stl", "fastener.stl", "lid.stl"):
+        shutil.copyfile(fixture / filename, tmp_path / filename)
+    manifest = json.loads((tmp_path / "view.json").read_text())
+    extra = dict(next(p for p in manifest["parts"] if p["name"] == duplicate_mesh), name="plate")
+    manifest["parts"].insert(0, extra)
+    (tmp_path / "duplicate.json").write_text(json.dumps(manifest))
+    # Retain prior complete outputs; a rejected new source cannot corrupt them.
+    out = tmp_path / "retained"
+    (tmp_path / "retained.json").write_bytes(b"previous manifest")
+    (tmp_path / "retained.bin").write_bytes(b"previous binary")
+    monkeypatch.setattr(view, "_read_stl", lambda *a: pytest.fail("reject duplicate source IDs before geometry decoding"))
+    with pytest.raises(ValueError, match="unique source instance names"):
+        view.pack_view(tmp_path / "duplicate.json", out, assembly_plan=tmp_path / "plan.json")
+    assert (tmp_path / "retained.json").read_bytes() == b"previous manifest"
+    assert (tmp_path / "retained.bin").read_bytes() == b"previous binary"
+    assert not (tmp_path / "retained.assembly-plan.json").exists()

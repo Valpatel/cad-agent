@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="480" height="360" viewBox="0 0 480 360" role="img" aria-labelledby="gallery-boiler-liquid-fuel-active-title gallery-boiler-liquid-fuel-active-desc"><title id="gallery-boiler-liquid-fuel-active-title">Liquid-fuel boiler · Liquid-fuel boiler</title><desc id="gallery-boiler-liquid-fuel-active-desc">Liquid-fuel boiler (Liquid-fuel boiler). Active, illustrative load 60%, illustrative temperature 180°C. Standalone illustrative gallery preview; not a running model.</desc><style>.twin-equipment-art{display:block;position:relative;flex:none;width:116px;max-width:90%;height:48px;pointer-events:none;isolation:isolate}
+.twin-equipment-art&gt;svg{display:block;width:100%;height:100%;overflow:visible}
+.twin-art-stream{stroke-dasharray:5 12;stroke-linecap:round;animation:twin-art-stream 1.2s linear infinite;animation-play-state:paused;opacity:.18}
+.twin-art-fire{opacity:0;visibility:hidden;transition:opacity .35s}
+.twin-art-fire-size{transform-box:view-box;transform-origin:90px 75px;transform:scale(var(--flame-scale,1));transition:transform 1s ease}
+.twin-art-flame-outer,.twin-art-flame-middle,.twin-art-flame-core{transform-box:view-box;transform-origin:90px 75px;animation:twin-art-flame .8s ease-in-out infinite alternate;animation-play-state:paused}
+.twin-art-flame-middle{animation-name:twin-art-flame-core;animation-duration:.55s;animation-delay:-.3s}
+.twin-art-flame-core{animation-name:twin-art-flame-core;animation-duration:.38s;animation-delay:-.17s}
+.twin-art-fire-halo{animation:twin-art-warmth 1.4s ease-in-out infinite alternate;animation-play-state:paused;transform-box:fill-box;transform-origin:center}
+.twin-art-ember{animation:twin-art-ember 1.7s ease-out var(--ember-delay,0s) infinite;animation-play-state:paused;opacity:0}
+@keyframes twin-art-stream{to{stroke-dashoffset:-34}}
+@keyframes twin-art-flame{0%{transform:scale(.94,1) rotate(-3deg)}30%{transform:scale(1.03,.93) rotate(2deg)}65%{transform:scale(.91,1.1) rotate(-1deg)}100%{transform:scale(1,1.04) rotate(3deg)}}
+@keyframes twin-art-flame-core{0%{transform:scale(1,.88) rotate(3deg)}50%{transform:scale(.85,1.08) rotate(-4deg)}100%{transform:scale(1.08,.95) rotate(1deg)}}
+@keyframes twin-art-warmth{from{opacity:.55;transform:scale(.93)}to{opacity:1;transform:scale(1.08)}}
+@keyframes twin-art-ember{0%{transform:translate(0,6px);opacity:0}20%{opacity:.9}100%{transform:translate(8px,-23px);opacity:0}}
+:is(.twin-root.is-paused,.twin-document-hidden,html.motion-paused) .twin-equipment-art *,
+:is(.twin-root.is-paused,.twin-document-hidden,html.motion-paused) .twin-equipment-art *::before,
+:is(.twin-root.is-paused,.twin-document-hidden,html.motion-paused) .twin-equipment-art *::after{animation-play-state:paused!important;transition:none!important}
+@media (prefers-reduced-motion:reduce){.twin-equipment-art *,.twin-equipment-art *::before,.twin-equipment-art *::after{animation:none!important;transition:none!important}
+.twin-art-ember{opacity:0}}
+.scada-component{display:inline-flex;position:relative;align-items:center;justify-content:center;width:210px;height:160px;max-width:100%;vertical-align:middle;isolation:isolate;color:#c4ebf1;--scada-accent:#62ffbc;--scada-activity-duration:2.4s}
+.scada-component.scada-component-with-gauges{box-sizing:border-box;height:calc(136px + var(--scada-gauge-height,22px));padding-bottom:var(--scada-gauge-height,22px)}
+.scada-component[data-scada-host-state=false]&gt;.twin-equipment-art{width:180px;max-width:100%;height:100%;max-height:100%;flex:none}
+.scada-component[data-scada-host-state=false][data-active=true] :is(.twin-art-stream,.twin-art-filter-stream,.twin-art-charge-orbit,.twin-art-generator-current,.twin-art-generator-electric,.twin-art-generator-meter){opacity:1}
+.scada-component[data-scada-host-state=false][data-active=true] :is(.twin-art-stream,.twin-art-filter-stream,.twin-art-generator-current){opacity:calc(.18 + var(--scada-load,60)*.0082)}
+.scada-component[data-scada-host-state=false][data-active=true] .twin-art-fire{opacity:1;visibility:visible}
+.scada-component[data-scada-host-state=false][data-active=true][data-running=true] :is(.twin-art-rotor,.twin-art-wave,.twin-art-mixer,.twin-art-bubble,.twin-art-stream,.twin-art-filter-stream,.twin-art-charge-orbit,.twin-art-flame-outer,.twin-art-flame-middle,.twin-art-flame-core,.twin-art-fire-halo,.twin-art-ember,.twin-art-generator-current,.twin-art-generator-heat){animation-play-state:running}
+.scada-component[data-scada-host-state=false][data-running=false] *,.scada-component[data-scada-host-state=false][data-running=false] *::before,.scada-component[data-scada-host-state=false][data-running=false] *::after{animation-play-state:paused!important;transition:none!important}
+html.motion-paused .scada-component *,html.motion-paused .scada-component *::before,html.motion-paused .scada-component *::after{animation-play-state:paused!important;transition:none!important}
+@media (prefers-reduced-motion:reduce){.scada-component *,.scada-component *::before,.scada-component *::after{animation:none!important;transition:none!important}}
+
+.gallery-label{font-family:Arial,sans-serif;fill:#dcecf1}
+.gallery-code{font-family:monospace;fill:#8fbac9}
+.gallery-symbol.scada-component{display:block;width:auto;height:auto;padding:0;max-width:none;overflow:visible}
+.gallery-symbol&gt;.twin-equipment-art{display:block;width:auto;height:auto;max-width:none}
+.gallery-symbol&gt;svg,.gallery-symbol&gt;.twin-equipment-art&gt;svg{display:block;width:280px!important;height:194px!important;max-width:none!important;max-height:none!important;overflow:visible}
+.gallery-condition svg{width:24px;height:24px}
+</style><defs><linearGradient id="gallery-boiler-liquid-fuel-active-card" x2="1" y2="1"><stop offset="0" stop-color="#102635"/><stop offset="1" stop-color="#0b1724"/></linearGradient></defs><rect x="0.5" y="0.5" width="479" height="359" rx="14" fill="url(#gallery-boiler-liquid-fuel-active-card)" stroke="#355665"/><text class="gallery-label" x="20" y="28" font-size="11" letter-spacing="1" style="fill:#7acfc9">PROCESS VESSELS</text><text class="gallery-label" x="20" y="55" font-size="21" font-weight="600">Liquid-fuel boiler</text><text class="gallery-label" x="20" y="74" font-size="12" style="fill:#a9bfd0">Liquid-fuel boiler</text><g transform="translate(100 79)"><g class="scada-component scada-component-with-gauges gallery-symbol" data-scada-type="boiler" data-scada-instance="scada-gallery-boiler-liquid-fuel-active" data-scada-variant="liquid-fuel" data-scada-host-state="false" data-active="true" data-failed="false" data-running="true" data-status="normal" data-flow="true" data-damage="none" data-speed-zero="false" style="--scada-level:55;--scada-load:60;--scada-flow-opacity:0.95;--scada-gauge-height:30px;--scada-activity-duration:2.2s;--activity-speed:2.2s;--buffer-fraction:0.55;--scada-level-offset:0px;--flame-scale:0.87" aria-hidden="true"><g class="twin-equipment-art twin-equipment-art-othergas" aria-hidden="true"><svg viewBox="0 0 180 112" focusable="false" aria-hidden="true" x="0" y="0" width="280" height="194" preserveAspectRatio="xMidYMid meet"><defs>
+ <linearGradient id="twin-art-scada-gallery-boiler-liquid-fuel-active-steel" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#112d3c"/><stop offset=".25" stop-color="#548d9f"/><stop offset=".46" stop-color="#b1dce8"/><stop offset=".7" stop-color="#3b6a7f"/><stop offset="1" stop-color="#102b39"/></linearGradient>
+ <linearGradient id="twin-art-scada-gallery-boiler-liquid-fuel-active-glass" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#00f0ff" stop-opacity=".15"/><stop offset=".3" stop-color="#c5f4ff" stop-opacity=".1"/><stop offset=".7" stop-color="#4eb0c8" stop-opacity=".04"/><stop offset="1" stop-color="#080e19" stop-opacity=".5"/></linearGradient>
+ <linearGradient id="twin-art-scada-gallery-boiler-liquid-fuel-active-liquid" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#05ffa1" stop-opacity=".82"/><stop offset=".35" stop-color="#1ba894" stop-opacity=".66"/><stop offset="1" stop-color="#15546b" stop-opacity=".6"/></linearGradient>
+ <linearGradient id="twin-art-scada-gallery-boiler-liquid-fuel-active-dome" x1="0" y1="0" x2=".8" y2="1"><stop stop-color="#b3e3eb"/><stop offset=".4" stop-color="#568fa4"/><stop offset="1" stop-color="#213b51"/></linearGradient>
+ <linearGradient id="twin-art-scada-gallery-boiler-liquid-fuel-active-fire" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#ffe6a2"/><stop offset=".3" stop-color="#ffbe57"/><stop offset=".72" stop-color="#ff7b37"/><stop offset="1" stop-color="#d6462c"/></linearGradient>
+ <radialGradient id="twin-art-scada-gallery-boiler-liquid-fuel-active-warm"><stop stop-color="#ffac45" stop-opacity=".42"/><stop offset=".5" stop-color="#ff7d37" stop-opacity=".14"/><stop offset="1" stop-color="#ff7933" stop-opacity="0"/></radialGradient>
+ <radialGradient id="twin-art-scada-gallery-boiler-liquid-fuel-active-cool"><stop stop-color="#00f0ff" stop-opacity=".23"/><stop offset="1" stop-color="#00f0ff" stop-opacity="0"/></radialGradient>
+ <radialGradient id="twin-art-scada-gallery-boiler-liquid-fuel-active-fault"><stop stop-color="#ff2a6d" stop-opacity=".42"/><stop offset=".5" stop-color="#ff2a6d" stop-opacity=".15"/><stop offset="1" stop-color="#ff2a6d" stop-opacity="0"/></radialGradient>
+ <radialGradient id="twin-art-scada-gallery-boiler-liquid-fuel-active-blast"><stop stop-color="#fff9d8"/><stop offset=".24" stop-color="#ffd379" stop-opacity=".95"/><stop offset=".56" stop-color="#ff7e38" stop-opacity=".65"/><stop offset="1" stop-color="#ff2a6d" stop-opacity="0"/></radialGradient>
+ </defs><g class="twin-art-body"><ellipse cx="90" cy="104" rx="54" ry="6" fill="#05050d" opacity=".6"/>
+ <path d="M52 20H128V99H52Z" fill="url(#twin-art-scada-gallery-boiler-liquid-fuel-active-steel)" stroke="#71bbc9"/>
+ <path d="M52 20Q90 1 128 20" fill="url(#twin-art-scada-gallery-boiler-liquid-fuel-active-dome)" stroke="#71bbc9"/>
+ <path d="M116 11V2H132V25" fill="#3f768e" stroke="#7ac4cf"/>
+ <rect x="62" y="29" width="56" height="56" rx="15" fill="#0b1323" stroke="#5c9fb6"/>
+ <g transform="translate(29 28) scale(.67)"><g class="twin-art-fire">
+ <ellipse class="twin-art-fire-halo" cx="90" cy="48" rx="53" ry="49" fill="url(#twin-art-scada-gallery-boiler-liquid-fuel-active-warm)"/>
+ <g class="twin-art-fire-size"><path class="twin-art-flame-outer" d="M90 75C63 63 71 43 83 29C83 44 96 38 94 9C121 33 123 61 90 75Z" fill="url(#twin-art-scada-gallery-boiler-liquid-fuel-active-fire)"/>
+ <path class="twin-art-flame-middle" d="M91 74C74 64 80 49 89 40C89 52 100 44 99 31C114 49 111 65 91 74Z" fill="#ffd279"/>
+ <path class="twin-art-flame-core" d="M90 74C82 66 85 60 91 53C92 62 99 59 99 55C105 66 97 71 90 74Z" fill="#fff4c1"/>
+ </g>
+ <g fill="#ffd99a"><circle class="twin-art-ember" cx="75" cy="40" r="1.5" style="--ember-delay:-.2s"/><circle class="twin-art-ember" cx="106" cy="28" r="1.2" style="--ember-delay:-1.2s"/><circle class="twin-art-ember" cx="92" cy="20" r="1.1" style="--ember-delay:-.7s"/></g>
+ </g></g>
+ <path d="M14 92H52M128 92H163" stroke="#537f97" stroke-width="8"/><path d="M14 92H52" class="twin-art-stream" stroke="#f8d190" stroke-width="2.4"/>
+ <path d="M67 94h46" stroke="#173447" stroke-width="3"/></g></svg></g></g></g><g data-scada-gauge="load"><text class="gallery-code" x="90" y="288" font-size="10">LOAD</text><rect x="155" y="282" width="145" height="5" rx="2.5" fill="#153c50" stroke="#537d90" stroke-width="0.6"/><rect x="155" y="282" width="87" height="5" rx="2.5" fill="#63e6d9"/><text class="gallery-code" x="385" y="288" font-size="10" text-anchor="end">60%</text></g><g data-scada-gauge="temperature"><text class="gallery-code" x="90" y="300" font-size="10">TEMP</text><rect x="155" y="294" width="145" height="5" rx="2.5" fill="#153c50" stroke="#537d90" stroke-width="0.6"/><rect x="155" y="294" width="46.77424499999999" height="5" rx="2.5" fill="#63e6d9"/><text class="gallery-code" x="385" y="300" font-size="10" text-anchor="end">180 °C</text></g><text class="gallery-label" x="20" y="328" font-size="12" style="fill:#bdeee6">Active illustrative preview</text><text class="gallery-code" x="20" y="346" font-size="10">boiler / liquid-fuel</text></svg>

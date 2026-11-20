@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "id": "lid-rib-clearance",
+  "version": 1,
+  "domain": "mechanical",
+  "area": "housings",
+  "grader": "lid-v1",
+  "task": "Work only in the current project. Do not ask questions, install packages, post messages, or push changes. Read input.json. Write exactly one JSON object to solution.json using the specified schema. You may use Python or other tools already available. Do not merely describe a proposed result. Repair the declared lid rib geometry. Ribs are axis-aligned solid rectangular prisms crossing the entire lid x interior from x_min to x_max. Retain exactly two ribs, same width and height as supplied. Only their y center coordinates may change. Stay within the interior y bounds. Avoid each cylindrical counterbore/service keepout by at least clearance_mm measured in the XY plane; because each rib crosses every keepout x coordinate, the distance from keepout center to rib y interval must be >= keepout radius + clearance. Ribs must also be separated edge to edge by at least rib_gap_mm. Choose the valid pair closest in total absolute y movement to the original centers; break ties by the lexicographically smallest sorted pair. Allowed centers are integer mm on the supplied grid. Output {\"rib_centers_y_mm\": [lower, upper], \"rib_width_mm\": ..., \"rib_height_mm\": ..., \"x_min_mm\": ..., \"x_max_mm\": ...}. This grades declared analytical envelopes, not exported CAD or tool access in 3D.",
+  "input_file": "input.json",
+  "output_file": "solution.json",
+  "budget": {
+    "wall_seconds": 180,
+    "max_output_tokens": 4000
+  },
+  "limits": "Analytical declarations only; no physical, CAD-kernel, manufacturing or electrical safety validation."
+}

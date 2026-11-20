@@ -1,0 +1,10 @@
+{
+  "rib_centers_y_mm": [
+    3,
+    27
+  ],
+  "rib_width_mm": 2,
+  "rib_height_mm": 3,
+  "x_min_mm": 2,
+  "x_max_mm": 58
+}

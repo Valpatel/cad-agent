@@ -132,15 +132,28 @@ def cmd_export_3mf(project: CadProject, args: argparse.Namespace) -> int:
     from cadagent.manufacturing.mesh3mf import export_parts_3mf
     from cadagent.publish.report import load_parts
 
+    from cadagent.manufacturing.process import printed_parts
+
     parts, error = load_parts(project)
     if error:
         raise _Unusable(error)
+    strict = getattr(args, 'require_project_settings', False)
+    printed = printed_parts(project, parts)     # a part made another way has no print files (#577)
+    others = [p for p in parts if p not in printed]
+    if others:
+        _say(f"  not printed, no per-part 3MF written: {', '.join(others)}")
+        old = [f"{p}.3mf" for p in others if (project.exports_dir / f"{p}.3mf").is_file()]
+        if old:                                 # written when the part was printed: not this run's, and not deleted
+            _say(f"  note: left in {project.exports_dir.name}/ from an earlier run, not checked: {', '.join(old)}")
+    if not printed:
+        _say("no printed part: no per-part 3MF written")
+        # The plate owner honors explicit selections and preserves prior outputs on strict failure.
+        return _export_plates(project, list(parts), require_project_settings=strict)
     if not project.printer.bed_mm:
         raise _Unusable("cad.printer.bed_mm is required to centre 3MF files on the bed")
-    strict = getattr(args, 'require_project_settings', False)
     if strict and _export_plates(project, list(parts), require_project_settings=True):
         return 1
-    reports = export_parts_3mf(project.exports_dir, list(parts), project.printer.bed_mm[:2])
+    reports = export_parts_3mf(project.exports_dir, printed, project.printer.bed_mm[:2])
     for r in reports:
         _say(f"  {r['part']}.3mf  {r['triangles']} triangles  watertight  {r['volume_mm3']:.1f} mm3")
     _say(f"{len(reports)} 3MF file(s) written and read back")
@@ -165,13 +178,15 @@ def _export_plates(project: CadProject, parts: List[str], require_project_settin
     return 0
 
 def cmd_slice(project: CadProject, args: argparse.Namespace) -> int:
-    from cadagent.manufacturing.slicer import engine_executable, engine_of, not_installed, slice_project
+    from cadagent.manufacturing.slicer import NothingToSlice, engine_executable, engine_of, not_installed, slice_project
 
     engine = engine_of(project)
     if not engine_executable(engine):
         raise _Unusable(f"{not_installed(engine)}; nothing was sliced")
     try:
         rep = slice_project(project, getattr(args, "parts", None) or None)
+    except NothingToSlice as exc:
+        raise _Unusable(str(exc)) from None
     except (ValueError, KeyError, FileNotFoundError) as exc:   # PrusaSlicer: a profile name or override key it lacks
         if engine == "bambu":
             raise
@@ -186,10 +201,16 @@ def cmd_slice(project: CadProject, args: argparse.Namespace) -> int:
         # what PrusaSlicer's log said (Bambu Studio rows carry none of these)
         if row.get("stability_issues"):
             _say(f"      stability: {', '.join(row['stability_issues'])}")
+        if row.get("stability_checked") is False:
+            _say(f"      {row.get('stability_note') or 'print stability not checked: supports are on'}")
         for level in ("errors", "warnings"):
             for line in row.get(level) or []:
                 if "print stability issues" not in line:      # listed above, by category
                     _say(f"      {level[:-1]}: {line}")
+    unchecked = [n for n, row in rep["parts"].items() if row.get("stability_checked") is False]
+    if unchecked:
+        _say(f"{len(unchecked)} part(s) whose print stability PrusaSlicer is not known to have checked (supports): "
+             f"{', '.join(unchecked)}")
     not_ok = [n for n, row in rep["parts"].items() if row.get("ok") is False and row.get("grams")]
     if not_ok:
         _say(f"{len(not_ok)} part(s) sliced but not ok (a slicer error or print stability issue): {', '.join(not_ok)}")
@@ -351,7 +372,7 @@ def cmd_view(project: CadProject, args: argparse.Namespace) -> int:
 
     r = export_view(project)
     _say(f"view: {r['manifest']} ({r['parts']} parts" + (f"; no STEP for {', '.join(r['skipped'])}" if r["skipped"] else "") + ")")
-    _say("open it with `cad-agent site --serve` (3D model link) or webkit/viewer.html")
+    _say("open it with `cad-agent site --serve` (3D model link) or webkit/model/viewer.html")
     return 0
 
 def cmd_webkit(project: CadProject, args: argparse.Namespace) -> int:
@@ -885,6 +906,7 @@ def cmd_overhangs(project: CadProject, args: argparse.Namespace) -> int:
     import hashlib
 
     from cadagent.geometry import overhang_regions
+    from cadagent.manufacturing.process import printed_parts
     from cadagent.publish.report import load_parts
 
     known, error = load_parts(project)
@@ -898,19 +920,28 @@ def cmd_overhangs(project: CadProject, args: argparse.Namespace) -> int:
     if not 0.0 < limit <= 90.0:
         raise _Unusable(f"--limit must be in (0, 90] degrees, not {limit:g}")
     settings = {"limit_deg": limit, "min_area_mm2": min_area}
+    printed = printed_parts(project, known)
+    current_printed = set(printed)
     path = project.exports_dir / "overhang-screen.json"
     rows: Dict[str, Any] = {}
     if parts and path.is_file():          # a partial run keeps the other parts' current rows from a run with the same settings
         try:
             old = json.loads(path.read_text())
             if old.get("version") == OVERHANG_SCREEN_VERSION and all(old.get(k) == v for k, v in settings.items()):
-                rows = {k: v for k, v in (old.get("parts") or {}).items()     # only rows whose STL is unchanged
-                        if k in known and isinstance(v, dict) and (project.exports_dir / f"{k}.stl").is_file()
+                # An unchanged STL is insufficient if the part is now made by another process.
+                # Explicitly named nonprinted parts are screened afresh in the loop below.
+                rows = {k: v for k, v in (old.get("parts") or {}).items()
+                        if k in current_printed and isinstance(v, dict) and (project.exports_dir / f"{k}.stl").is_file()
                         and hashlib.sha256((project.exports_dir / f"{k}.stl").read_bytes()).hexdigest() == v.get("sha256")}
         except (OSError, ValueError, AttributeError):
             rows = {}
     failed = 0
-    for name in parts or list(known):
+    if not parts:       # by default the printed parts: a welded or bought part has no overhangs to print (#577)
+        parts = printed
+        left = [p for p in known if p not in parts]
+        if left:
+            _say(f"  not printed, not screened: {', '.join(left)}")
+    for name in parts:
         stl = project.exports_dir / f"{name}.stl"
         if not stl.is_file():
             rows[name] = {"error": f"{stl.name} not found; run the build first"}
@@ -990,6 +1021,7 @@ def cmd_agents(args: argparse.Namespace) -> int:
     for dest in result["conflicts"]:
         _err(f"agents: {dest} exists and was not installed by cad-agent; left untouched (move it away and rerun)")
     _say(f"agents: {len(result['done'])} {'planned' if args.dry_run else 'installed'} from {root}"
+         + (f", {len(result['unchanged'])} already in place" if result["unchanged"] else "")
          + (f", {len(result['conflicts'])} conflicts" if result["conflicts"] else ""))
     for line in agentkit.notice(agentkit.readiness(root)):
         _say(line)
@@ -1051,7 +1083,7 @@ def cmd_update(args: argparse.Namespace) -> int:
     if why:
         cmd = agentkit.reinstall_command(root, extras)
         agentkit.reinstall_pending(root, extras)
-        if os.name == "nt" and cmd[0] == "uv":       # this process holds cad-agent.exe: the installer finishes it
+        if os.name == "nt" and cmd[1:3] == ["tool", "install"]:  # uv: this process holds cad-agent.exe, install.ps1 finishes
             _update_notes(root, moved["old"], args.project)
             _say(f"update: {why}; finish with: " + " ".join(cmd) + ", then cad-agent update --reinstalled and "
                  "cad-agent agents install (install.ps1 does this)")
@@ -1269,16 +1301,22 @@ def cmd_init(args: argparse.Namespace) -> int:
     """Copy the starter project (docs/examples/starter-box: a box and lid on four M3 heat-set inserts) into a folder, and
     say what to run next."""
     import shlex
+    import shutil
 
     from cadagent.project import init_project
-    quote = shlex.quote if os.name != "nt" else (lambda s: f'"{s}"' if any(ch in s for ch in ' &()^') else s)
+    # Windows installation instructions use PowerShell; single quotes preserve literal path characters.
+    quote = shlex.quote if os.name != "nt" else (lambda s: "'" + s.replace("'", "''") + "'")
     dest = Path(args.dir)
     files = init_project(dest, force=args.force)
     _say(f"init: the starter box, {len(files)} files, in {dest.resolve()}")
     _say("next:")
     if dest.resolve() != Path.cwd().resolve():
         _say(f"  cd {quote(args.dir)}")
-    _say("  cad-agent all          # build, print files, every check, report; then edit cad/build.py (README.md)")
+    command = "cad-agent"
+    if shutil.which(command) is None:
+        # Keep this interpreter's installed dependencies (including its venv), independent of PATH or argv[0].
+        command = ("& " if os.name == "nt" else "") + quote(sys.executable) + " -m cadagent.cli"
+    _say(f"  {command} all          # build, print files, every check, report; then edit cad/build.py (README.md)")
     return 0
 
 
@@ -1410,12 +1448,25 @@ def dispatch(args: argparse.Namespace) -> int:
 
 PROJECT_HELP = "CAD project root containing cad-agent.yaml with a cad: section (default: cwd)"
 
+class _Version(argparse.Action):
+    """``--version``: one line, never wrapped to the terminal (argparse's own action wraps a long path)."""
+
+    def __init__(self, option_strings, dest=argparse.SUPPRESS, default=argparse.SUPPRESS, help=None):
+        super().__init__(option_strings, dest=dest, default=default, nargs=0, help=help)
+
+    def __call__(self, parser, namespace, values, option_string=None):
+        import cadagent
+        print(f"cad-agent {cadagent.__version__} ({Path(cadagent.__file__).resolve().parent})")
+        parser.exit()
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="cad-agent",
         description="CAD design verification: build, check, report, package (docs/toolkit.md)",
     )
     parser.add_argument("--project", default=None, help=PROJECT_HELP)
+    parser.add_argument("--version", action=_Version, help="print the version and where this cad-agent runs from")
     # also accepted after the subcommand; SUPPRESS keeps it from resetting the parent's value
     common = argparse.ArgumentParser(add_help=False)
     common.add_argument("--project", default=argparse.SUPPRESS, help=PROJECT_HELP)
@@ -1661,6 +1712,9 @@ def build_parser() -> argparse.ArgumentParser:
                         help="Check a filled-in reviewer record against the current build and write it to "
                              "dossier/reviews/ (the actor is CAD_AGENT_ACTOR)")
     rs_grp.add_argument("--check", metavar="RECORD", help="Like --submit, but write nothing")
+    for action in sub._choices_actions:              # `cad-agent <command> --help` opens with what the list says
+        if sub.choices[action.dest].description is None:
+            sub.choices[action.dest].description = action.help
     return parser
 
 def main(argv: Optional[Sequence[str]] = None) -> int:

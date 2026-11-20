@@ -1,8 +1,8 @@
 # README and diagram style guide
 
 Every folder in this repo explains itself in a `README.md`, so a person or an agent landing anywhere can tell what the
-folder is for, how its pieces connect, and where to go next. This page says how those READMEs look. The checker that
-keeps them present and linked is tracked in #113.
+folder is for, how its pieces connect, and where to go next. This page says how those READMEs look. The implemented `tools/site/compiler/site-repo-map.mjs --check` verifies owner maps and local destinations.
+A passing structural check does not establish that prose accurately describes the code.
 
 The **root README is a mini hyperpage**, not a file inventory or a manual. Answer three questions: **What is it?**,
 **Why this is cool**, and **How to join in**. Show the pixel workflow header beside a compact genuine CAD example
@@ -19,7 +19,7 @@ side by side.
 
 ```mermaid
 flowchart TD
-    N["# folder name<br/>one line: what it is for"] --> D["one Mermaid diagram<br/>arrows from the code"]
+    N["# folder name<br/>one line: what it is for"] --> D["one compact diagram<br/>arrows from the code"]
     D --> W["What's here<br/>a row per file"]
     W --> R["Related<br/>parent, neighbours, docs"]
     W --> C["Credits<br/>whose work it builds on"]
@@ -40,7 +40,9 @@ flowchart TD
 ## Shape of a README
 
 1. `# <folder name>`, then one sentence: what the folder is for.
-2. One Mermaid diagram (below).
+2. One compact Mermaid diagram (below) or an owned SVG map. Use a clean SVG for a stable topology or asset gallery;
+   do not stretch a simple file list into a tall chain of boxes. Link the actual local SVG so it works on GitHub
+   and in a local checkout. A screenshot or an external image alone does not describe source ownership.
 3. **What's here**: a table, one row per file or subfolder, one plain line each.
 4. **Related**: the parent README, neighbouring folders, the docs page that explains the topic.
 5. Credits where the folder builds on someone's work: name the person or project and link it.
@@ -114,13 +116,39 @@ flowchart TD
     class O out
 ```
 
+## Animated explanations
+
+Use motion to explain a handoff or state change, with all labels readable in a still frame.
+
+Choose the composition from the subject: a feedback loop, source funnel, comparison plot or state fan-out should
+look different at a glance. Share typography and colors, not one box arrangement with swapped labels. Topic gallery
+READMEs display every authored figure inline, with a short explanation and source/static links; a filename list
+alone is not a visual gallery. Review the whole set together as well as each figure at its embedded reading size.
+
+<details>
+<summary>SVG authoring and verification</summary>
+
+Prefer an owned, self-contained SVG in the existing topic or library `img/` folder; preserve library-local paths for copied kits.
+Use CSS without scripts, external fonts or remote assets. Give each SVG a title, description and meaningful alt text.
+Keep the generator and source owners discoverable; `--check` must detect stale output. Use a `<picture>` with a
+static SVG for `prefers-reduced-motion`, as well as an internal reduced-motion rule. Validate actual SVG image mode,
+not just inline DOM: check motion, its disabled state, text bounds, narrow rendering and light/dark surroundings.
+Animation timing is illustrative unless a source-bound measurement establishes otherwise.
+
+</details>
+
+The [architecture figures](../img/architecture/README.md) explain current handoffs. Existing symbol galleries and
+engineering figures retain their own generators and evidence; do not replace them with decorative flowcharts.
+
 ## Writing
 
 Plain, short sentences. Say what a thing does and what it assumes, not how good it is. Name sources and people.
+Beside concise takeaways, credit known creators and organisations together and provide a direct **Read/watch original** link, explaining why its methods, data or practical demonstration are worth visiting. The [CNC Kitchen recovery guidance](../mechanical/inserts.md#recover-inserts-before-discarding-a-print) is one example; distinguish the creator’s measurements and source licences from our checks. Attribution is independent appreciation: we have no affiliations, sponsorships, partnerships or agreements with listed creators, and do not imply paid placements or endorsement.
+
 
 ## Folder ownership checks
 
-Run `node tools/site/compiler/site-repo-map.mjs --check` in the existing Node22 site context; `--write` regenerates [the repository map](../map.md). The required Chromium job runs its actual structural fault controls and freshness check. Normal owned folders have a README/Mermaid/table, an up link and child-map links. Every direct file appears explicitly in a table, including package entry points. The root keeps its compact introduction.
+Run `node tools/site/compiler/site-repo-map.mjs --check` in the existing Node22 site context; `--write` regenerates [the repository map](../map.md). The required Chromium job runs its actual structural fault controls and freshness check. Normal owned folders have a README, a Mermaid or local SVG map, a table, an up link and child-map links. Every direct file appears explicitly in a table, including package entry points; gallery thumbnails may link the exact asset instead of repeating its filename. The root keeps its compact introduction.
 
 Installer role prompts are mapped from the agent-kit owner; installed skills own their bundled resource links. GitHub policy uses CONTRIBUTING. Named fixture sets, generated figure topics and pinned upstream components retain their layouts under explicit parent owners in `tools/site/compiler/repo-map.json`; a new set/topic/component still needs a parent row. Dated incidents require actual symptom-index links, and numbered changelog fragments retain the existing release-parser contract. These are consumer-based ownership rules, not historical inventory counts or wildcard exemptions for new source folders.
 

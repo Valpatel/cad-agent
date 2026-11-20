@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "id": "connector-breakout",
+  "version": 1,
+  "domain": "electrical",
+  "area": "pcb",
+  "grader": "breakout-v1",
+  "task": "Work only in the current project. Do not ask questions, install packages, post messages, or push changes. Read input.json. Write exactly one JSON object to solution.json using the specified schema. You may use Python or other tools already available. Do not merely describe a proposed result. Create a connector breakout net declaration. J1's pin numbers are authoritative; input gives its pin order viewed from mating face. J2 is viewed from wire side and therefore its left-to-right physical order is the reverse of its numbered mating-face order. Match by signal label, never by left-to-right position. Connect each connector signal to the same-labelled test point. Each net must contain exactly those three endpoints, no endpoints on another net, no extras or missing pins. Output {\"nets\": [{\"name\": signal, \"nodes\": [\"J1.pin\", \"J2.pin\", \"TPx.1\"]}, ...]}. Order of nets and nodes is irrelevant. This tests an explicit pin/net graph, not KiCad connectivity, routing, DRC, polarity under operating power, or a manufactured board.",
+  "input_file": "input.json",
+  "output_file": "solution.json",
+  "budget": {
+    "wall_seconds": 180,
+    "max_output_tokens": 4000
+  },
+  "limits": "Analytical declarations only; no physical, CAD-kernel, manufacturing or electrical safety validation."
+}

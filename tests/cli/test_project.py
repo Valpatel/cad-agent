@@ -165,3 +165,16 @@ def test_the_not_found_hint_names_only_top_level_cad_sections(tmp_path):
     with pytest.raises(CadConfigError, match="a.yaml, b.yml have a cad: section but only cad-agent.yaml is read: "
                                              "rename the one that holds the project config to cad-agent.yaml"):
         load_project(tmp_path)
+
+
+def test_part_process_names_a_process_per_part_and_refuses_an_unknown_one(tmp_path):
+    """#577: a mistyped process must not be read as printed."""
+    (tmp_path / "cad-agent.yaml").write_text('cad:\n  name: t\n  part_process: {"*": weldment, motor: Purchased, lid: fdm}\n')
+    project = load_project(tmp_path)
+    assert project.part_process == {"*": "weldment", "motor": "Purchased", "lid": "fdm"} and project.unknown_keys == []
+    for bad in ("{chassis: carved}", "{chassis: 3}", "[chassis]"):
+        (tmp_path / "cad-agent.yaml").write_text(f"cad:\n  name: t\n  part_process: {bad}\n")
+        with pytest.raises(CadConfigError, match="cad.part_process"):
+            load_project(tmp_path)
+    (tmp_path / "cad-agent.yaml").write_text("cad:\n  name: t\n")
+    assert load_project(tmp_path).part_process == {}

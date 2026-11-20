@@ -133,7 +133,7 @@ flowchart TD
 
 One process group (or one area) per PR. The first, threaded inserts (#323 phase 7), is the pattern.
 
-1. **List the records.** Take every non-project record whose `processes`, `process_groups` or `areas` name the group,
+1. **List the records.** Search the complete core and shards by exact URL, title and aliases before treating a document as new; preserve earlier dated reading scopes on the existing source. Take every non-project record whose `processes`, `process_groups` or `areas` name the group,
    core entries included, and save the list with each record's `url` and claims.
 2. **Fetch at the source.** Use the real page or PDF, never the snippet. Make at most 1 request a second per host,
    honour `robots.txt`, and give up on a 403 or 429 after one later retry. Keep the downloads in a scratch folder
@@ -149,7 +149,10 @@ One process group (or one area) per PR. The first, threaded inserts (#323 phase 
    - `encoded` when a profile rule (`rules`) and a tested check (`checks`) carry it.
 
    Fix `year`, `authors`, `kind` and `summary` from the page: no snippet-era note stays. Edit the record where it
-   is; the importer keeps it from now on (see above). A source the map lacks goes in the group's shard as a new
+   is; the importer keeps it from now on (see above). Preserve the importer's YAML layout using
+   `tools/import_refmap.py`'s `dump`, including its string representer and line width. The health updater requires
+   an exact parse/dump round-trip before it can edit a shard; valid YAML alone does not preserve that ability.
+   Run `python -m pytest -q tests/repo/test_references_health_apply.py` after editing a shard. A source the map lacks goes in the group's shard as a new
    record, read, with its `verified` note.
 6. **Leave the rest as they are.** A record you could not read stays `snippet-only`. Name it and the reason (403,
    429, `robots.txt`, a bot check, a script-only page, a moved page) in the PR body, not in the shard. Raw link health
@@ -176,6 +179,7 @@ One process group (or one area) per PR. The first, threaded inserts (#323 phase 
 - One id across the core file and every shard. An id in two files is a problem, unless the shard's record says
   `extends: true`.
 - A shard holds at most 150 records and 150 KB. Past either, split it by topic slug.
+- One exact PDF URL across the effective read/catalogued entries has one canonical source identity. Reuse aliases or `extends: true` for deeper readings; the checker does not normalize URLs, compare editions or discover mirrors.
 - Every vocabulary value and every area slug resolves. The licence class decides geometry reuse. The ladder's rules
   hold, and a stored `confidence` equals the derived one.
 
@@ -195,6 +199,12 @@ mistake of each kind.
 - `catalog/references/index.json` and `<area>.json` hold the same records for agents;
 - `[ref:<id>]` in any page links to the record's row and to the source;
 - `docs/practice/experts.md` is generated from the read sources.
+
+Public membership is core `sources` plus non-extension shard records; `extends: true` augments a core source.
+Core `unverified` and `uncited` entries stay internal (`loadReferences().others`) and have no public reference page.
+Derive publication IDs and totals from the exact committed revision, with core sources read and shard status set
+by the evidence ladder. Compare the complete public ID set as well as counts; the internal registry total is a
+different inventory. `tests/site/website-references.test.mjs` checks this boundary and the published records.
 
 After changing a record, run `node tools/site/compiler/site-references.mjs --experts` and commit `docs/practice/experts.md`
 (`tests/site/website-references.test.mjs` fails until it is current). A record whose `areas` match no slug is listed on

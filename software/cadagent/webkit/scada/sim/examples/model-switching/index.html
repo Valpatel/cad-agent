@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>Pump equation bench · SCADA simulation kit</title>
+  <link rel="stylesheet" href="../../../ui/src/styles.css">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <main class="bench" id="bench" aria-labelledby="bench-title">
+    <section id="host-tools" class="host-tools" aria-label="Equation bench controls">
+      <header class="bench-heading">
+        <div><span class="eyebrow">SCADA SIM KIT / LIVE EQUATION REPLACEMENT</span><h1 id="bench-title">Pump equation bench<span class="live-dot" aria-hidden="true"></span></h1><p>Two pump laws. One shared system. All starting parameters are assumed and editable.</p></div>
+        <button type="button" id="about" data-scada-open="about">How this works</button>
+      </header>
+      <div class="bench-tools">
+        <div class="law-choice"><label for="provider">Pump law</label><select id="provider" disabled aria-describedby="law-note"></select><button type="button" id="parameters" disabled>Curve parameters</button></div>
+        <div class="session-tools" role="group" aria-label="Session files"><button type="button" id="save" disabled>Save session</button><button type="button" id="load" disabled>Load session</button><input id="session-file" type="file" accept=".json,application/json" hidden></div>
+      </div>
+      <p id="law-note" class="law-note">Swapping a law keeps system time and inventories; it restarts that law’s shaft state.</p>
+      <div id="dialogs"></div>
+    </section>
+    <section class="metrics" aria-label="Current pump solution">
+      <div><span>Allocated outlet flow</span><strong id="actual-flow">—</strong><small>After shared kernel limits</small></div>
+      <div><span>Local curve potential</span><strong id="potential-flow">—</strong><small>Before network allocation</small></div>
+      <div><span>Accepted electric power</span><strong id="actual-power">—</strong><small id="requested-power">Local curve demand: —</small></div>
+      <div><span>Commanded shaft speed</span><strong id="shaft-speed">—</strong><small id="developed-head">Local developed head: —</small></div>
+    </section>
+    <section class="playbar" aria-label="Simulation clock and commands">
+      <div class="clock-tools"><button id="run" class="primary" type="button" disabled>Run</button><button id="step" type="button" disabled>Step 1 s</button><button id="reset" type="button" disabled>Reset state</button><label for="rate">Rate <select id="rate"><option value="1">1×</option><option value="5" selected>5×</option><option value="20">20×</option></select></label></div>
+      <div class="clock-readout"><span id="clock-state">INITIALIZING</span><time id="clock">0.0 s</time><span id="provider-state">Provider state: —</span></div>
+    </section>
+    <div id="viewer" aria-label="Shared simulation views"></div>
+    <footer class="bench-footer"><p id="status" role="status">Loading registered equation providers…</p><a href="https://valpatel.com" target="_blank" rel="noopener noreferrer">Created by Valpatel Software LLC</a></footer>
+  </main>
+  <script type="module" src="./main.mjs"></script>
+</body>
+</html>

@@ -47,6 +47,7 @@ flowchart TD
 
 | File or folder | What it is |
 |---|---|
+| [assembly-plan/](assembly-plan/README.md) | Native serial rail bench shared by geometry checks and both viewer consumers |
 | `site-page-identities.json` | Public page IDs, kinds and URLs from the actual fleet 171 build at `e4556ea0`; a compatibility baseline for physical source moves, not generated from the new mapping |
 | `bambu_templates/` | A reduced Bambu Studio P1S profile graph, for `manufacturing/test_slicer.py` ([README](bambu_templates/README.md)) |
 | `cards/` | Golden `cad-agent rules` and `choose` output for `manufacturing/test_cards.py`; rewrite with `CADAGENT_UPDATE_GOLDEN=1` and read the diff |
@@ -67,3 +68,6 @@ Related: [tests](../README.md) · [where files go](../../.github/CONTRIBUTING.md
 | [gcode/](gcode/) | Recorded G-code examples for parsing controls. |
 | [prusa_config/](prusa_config/) | Synthetic/recorded Prusa configuration fixtures. |
 | [prusa_logs/](prusa_logs/) | Recorded-format Prusa log fixtures. |
+| [assembly-guide/](assembly-guide/README.md) | Real cross-chapter guide and model-manifest contract from the pinned Gyropup pilot |
+| [evaluation/](evaluation/README.md) | Versioned analytical jobs and controller-only passing controls. |
+| [scada/](scada/README.md) | Frozen original SCADA scenario checkpoints and provenance. |

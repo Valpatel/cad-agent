@@ -1,0 +1,29 @@
+{
+ "schema": "cad-agent.assembly-plan-partition-failure/1",
+ "source_revision": "9b819b9a69f49bc37a6692dd3e00b0e081109a83",
+ "review": "https://github.com/Valpatel/cad-agent/pull/637#discussion_r4555742929",
+ "mutation": "prepend the rail partition renamed plate; retain the genuine later plate and original plan/bin bytes",
+ "exporter": {
+  "accepted": true,
+  "source_instances": 5,
+  "packed_parts": 6,
+  "names": [
+   "plate",
+   "base",
+   "rail",
+   "plate",
+   "fastener",
+   "lid"
+  ]
+ },
+ "actual_chromium": {
+  "state": "ready",
+  "parts": 6,
+  "error": null
+ },
+ "probe_sha256": {
+  "pr637-astra-pack-probe.py": "6e4c17adddc25ced988116cacd6a9912cb3dc11b642e50932bcef7202ccc4346",
+  "pr637-astra-browser-probe.mjs": "175cd3b771eaec7c3d8a7efb952c2d3f9200e61fa944505acda31edd897a6004"
+ },
+ "limits": "Verified failure of original-list identity validation, not a physical assembly result. Preserved independently reviewed blocked-head evidence."
+}

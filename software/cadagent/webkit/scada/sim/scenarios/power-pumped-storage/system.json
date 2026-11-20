@@ -1,0 +1,2068 @@
+{
+  "format": "scada-system",
+  "version": 1,
+  "system": {
+    "id": "power-pumped-storage",
+    "label": "Reversible pumped storage",
+    "description": "Two finite reservoirs connect through one reversible unit. Generate moves upper water to lower while delivering energy; pump consumes grid energy and moves lower water upward; idle transfers neither."
+  },
+  "components": [
+    {
+      "id": "upper",
+      "type": "reservoir",
+      "label": "Finite upper reservoir",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "level": 55,
+        "flow": 40,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/upper/active",
+        "running": "/components/upper/running",
+        "fault": "/components/upper/fault",
+        "status": "/components/upper/status",
+        "level": "/components/upper/level",
+        "flow": "/components/upper/flow",
+        "damage": "/components/upper/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "P05",
+        "P19"
+      ]
+    },
+    {
+      "id": "lower",
+      "type": "reservoir",
+      "label": "Finite lower reservoir",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "level": 55,
+        "flow": 40,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/lower/active",
+        "running": "/components/lower/running",
+        "fault": "/components/lower/fault",
+        "status": "/components/lower/status",
+        "level": "/components/lower/level",
+        "flow": "/components/lower/flow",
+        "damage": "/components/lower/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "P05",
+        "P19"
+      ]
+    },
+    {
+      "id": "unit",
+      "type": "reversible-pump-turbine",
+      "label": "Reversible pump-turbine",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "speed": 60,
+        "load": 60,
+        "flow": 60,
+        "mode": "generating",
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/unit/active",
+        "running": "/components/unit/running",
+        "fault": "/components/unit/fault",
+        "status": "/components/unit/status",
+        "speed": "/components/unit/speed",
+        "load": "/components/unit/load",
+        "flow": "/components/unit/flow",
+        "mode": "/components/unit/mode",
+        "damage": "/components/unit/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "P05",
+        "P19"
+      ]
+    },
+    {
+      "id": "machine",
+      "type": "alternator",
+      "label": "Reversible motor-generator",
+      "variant": "motor-generator",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "heat": 45,
+        "field": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/machine/active",
+        "running": "/components/machine/running",
+        "fault": "/components/machine/fault",
+        "status": "/components/machine/status",
+        "load": "/components/machine/load",
+        "speed": "/components/machine/speed",
+        "heat": "/components/machine/heat",
+        "field": "/components/machine/field",
+        "damage": "/components/machine/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "P05",
+        "P19"
+      ]
+    },
+    {
+      "id": "excitation",
+      "type": "excitation-system",
+      "label": "Motor-generator excitation",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "field": 60,
+        "connected": true,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/excitation/active",
+        "running": "/components/excitation/running",
+        "fault": "/components/excitation/fault",
+        "status": "/components/excitation/status",
+        "load": "/components/excitation/load",
+        "field": "/components/excitation/field",
+        "connected": "/components/excitation/connected",
+        "damage": "/components/excitation/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "P05",
+        "P19"
+      ]
+    },
+    {
+      "id": "gridImport",
+      "type": "transformer",
+      "label": "Explicit pumping/import boundary",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/gridImport/active",
+        "running": "/components/gridImport/running",
+        "fault": "/components/gridImport/fault",
+        "status": "/components/gridImport/status",
+        "load": "/components/gridImport/load",
+        "damage": "/components/gridImport/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "P05",
+        "P19"
+      ]
+    },
+    {
+      "id": "gridExport",
+      "type": "motor",
+      "label": "Explicit generation/export demand",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/gridExport/active",
+        "running": "/components/gridExport/running",
+        "fault": "/components/gridExport/fault",
+        "status": "/components/gridExport/status",
+        "load": "/components/gridExport/load",
+        "speed": "/components/gridExport/speed",
+        "damage": "/components/gridExport/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "P05",
+        "P19"
+      ]
+    },
+    {
+      "id": "bay",
+      "type": "hv-circuit-breaker",
+      "label": "Bidirectional AC machine bay",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "open": false,
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/bay/active",
+        "running": "/components/bay/running",
+        "fault": "/components/bay/fault",
+        "status": "/components/bay/status",
+        "open": "/components/bay/open",
+        "load": "/components/bay/load",
+        "damage": "/components/bay/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "P05",
+        "P19"
+      ]
+    },
+    {
+      "id": "station",
+      "type": "transformer",
+      "label": "Explicit station-service boundary",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/station/active",
+        "running": "/components/station/running",
+        "fault": "/components/station/fault",
+        "status": "/components/station/status",
+        "load": "/components/station/load",
+        "damage": "/components/station/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "P05",
+        "P19"
+      ]
+    },
+    {
+      "id": "plc",
+      "type": "plc-rack",
+      "label": "Shared plant controller",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "connected": true,
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/plc/active",
+        "running": "/components/plc/running",
+        "fault": "/components/plc/fault",
+        "status": "/components/plc/status",
+        "connected": "/components/plc/connected",
+        "load": "/components/plc/load",
+        "damage": "/components/plc/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "P05",
+        "P19"
+      ]
+    },
+    {
+      "id": "dcService",
+      "type": "power-rectifier",
+      "label": "Explicit station AC/DC service",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "direction": "forward",
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/dcService/active",
+        "running": "/components/dcService/running",
+        "fault": "/components/dcService/fault",
+        "status": "/components/dcService/status",
+        "load": "/components/dcService/load",
+        "direction": "/components/dcService/direction",
+        "damage": "/components/dcService/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "P05",
+        "P19"
+      ]
+    },
+    {
+      "id": "acBus",
+      "type": "busbar",
+      "variant": "bidirectional",
+      "label": "Common AC bus \u00b7 import / storage / export",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/acBus/active",
+        "running": "/components/acBus/running",
+        "fault": "/components/acBus/fault",
+        "status": "/components/acBus/status",
+        "load": "/components/acBus/load",
+        "damage": "/components/acBus/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "P05",
+        "P19"
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "upper-connection-to-unit-upper",
+      "from": {
+        "component": "upper",
+        "port": "connection"
+      },
+      "to": {
+        "component": "unit",
+        "port": "upper"
+      },
+      "medium": "liquid",
+      "label": "Reversible upper water path",
+      "flowBinding": "/flows/upper-connection-to-unit-upper"
+    },
+    {
+      "id": "unit-lower-to-lower-connection",
+      "from": {
+        "component": "unit",
+        "port": "lower"
+      },
+      "to": {
+        "component": "lower",
+        "port": "connection"
+      },
+      "medium": "liquid",
+      "label": "Reversible lower water path",
+      "flowBinding": "/flows/unit-lower-to-lower-connection"
+    },
+    {
+      "id": "unit-shaft-to-machine-shaft",
+      "from": {
+        "component": "unit",
+        "port": "shaft"
+      },
+      "to": {
+        "component": "machine",
+        "port": "shaft"
+      },
+      "medium": "mechanical",
+      "label": "Reversible shaft",
+      "flowBinding": "/flows/unit-shaft-to-machine-shaft"
+    },
+    {
+      "id": "machine-output-to-acBus-branch-a",
+      "from": {
+        "component": "machine",
+        "port": "output"
+      },
+      "to": {
+        "component": "acBus",
+        "port": "branch-a"
+      },
+      "medium": "electricity",
+      "label": "Generation / pumping connection",
+      "flowBinding": "/flows/machine-output-to-acBus-branch-a"
+    },
+    {
+      "id": "gridImport-secondary-to-acBus-supply",
+      "from": {
+        "component": "gridImport",
+        "port": "secondary"
+      },
+      "to": {
+        "component": "acBus",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "label": "Explicit imported energy",
+      "flowBinding": "/flows/gridImport-secondary-to-acBus-supply"
+    },
+    {
+      "id": "bay-load-to-gridExport-supply",
+      "from": {
+        "component": "bay",
+        "port": "load"
+      },
+      "to": {
+        "component": "gridExport",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "label": "Explicit exported demand",
+      "flowBinding": "/flows/bay-load-to-gridExport-supply"
+    },
+    {
+      "id": "excitation-field-to-machine-field",
+      "from": {
+        "component": "excitation",
+        "port": "field"
+      },
+      "to": {
+        "component": "machine",
+        "port": "field"
+      },
+      "medium": "electricity",
+      "label": "Independent DC field",
+      "flowBinding": "/flows/excitation-field-to-machine-field"
+    },
+    {
+      "id": "station-secondary-to-dcService-ac",
+      "from": {
+        "component": "station",
+        "port": "secondary"
+      },
+      "to": {
+        "component": "dcService",
+        "port": "ac"
+      },
+      "medium": "electricity",
+      "label": "Station AC input",
+      "flowBinding": "/flows/station-secondary-to-dcService-ac"
+    },
+    {
+      "id": "station-secondary-to-plc-power",
+      "from": {
+        "component": "station",
+        "port": "secondary"
+      },
+      "to": {
+        "component": "plc",
+        "port": "power"
+      },
+      "medium": "electricity",
+      "label": "Station control power",
+      "flowBinding": "/flows/station-secondary-to-plc-power"
+    },
+    {
+      "id": "dcService-dc-to-bay-supply",
+      "from": {
+        "component": "dcService",
+        "port": "dc"
+      },
+      "to": {
+        "component": "bay",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "label": "Station auxiliary DC",
+      "flowBinding": "/flows/dcService-dc-to-bay-supply"
+    },
+    {
+      "id": "station-secondary-to-excitation-supply",
+      "from": {
+        "component": "station",
+        "port": "secondary"
+      },
+      "to": {
+        "component": "excitation",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "label": "Station auxiliary AC",
+      "flowBinding": "/flows/station-secondary-to-excitation-supply"
+    },
+    {
+      "id": "plc-io-to-unit-control",
+      "from": {
+        "component": "plc",
+        "port": "io"
+      },
+      "to": {
+        "component": "unit",
+        "port": "control"
+      },
+      "medium": "data",
+      "label": "data",
+      "flowBinding": "/flows/plc-io-to-unit-control"
+    },
+    {
+      "id": "acBus-branch-b-to-bay-line",
+      "from": {
+        "component": "acBus",
+        "port": "branch-b"
+      },
+      "to": {
+        "component": "bay",
+        "port": "line"
+      },
+      "medium": "electricity",
+      "label": "AC bus to isolated load/export bay",
+      "flowBinding": "/flows/acBus-branch-b-to-bay-line"
+    }
+  ],
+  "views": [
+    {
+      "id": "inventory",
+      "label": "Two finite water inventories",
+      "canvas": {
+        "width": 980,
+        "height": 380
+      },
+      "placements": [
+        {
+          "component": "upper",
+          "x": 60,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "unit",
+          "x": 360,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "lower",
+          "x": 660,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        }
+      ],
+      "routes": [
+        {
+          "connection": "upper-connection-to-unit-upper",
+          "points": [
+            {
+              "x": 260,
+              "y": 155
+            },
+            {
+              "x": 360,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "unit-lower-to-lower-connection",
+          "points": [
+            {
+              "x": 560,
+              "y": 155
+            },
+            {
+              "x": 660,
+              "y": 155
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "conversion",
+      "label": "Reversible machine and explicit boundaries",
+      "canvas": {
+        "width": 980,
+        "height": 940
+      },
+      "placements": [
+        {
+          "component": "unit",
+          "x": 60,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "machine",
+          "x": 360,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "excitation",
+          "x": 660,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "acBus",
+          "x": 660,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "bay",
+          "x": 360,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "gridImport",
+          "x": 60,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "gridExport",
+          "x": 60,
+          "y": 620,
+          "width": 200,
+          "height": 190
+        }
+      ],
+      "routes": [
+        {
+          "connection": "unit-shaft-to-machine-shaft",
+          "points": [
+            {
+              "x": 260,
+              "y": 155
+            },
+            {
+              "x": 360,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "machine-output-to-acBus-branch-a",
+          "points": [
+            {
+              "x": 560,
+              "y": 155
+            },
+            {
+              "x": 584,
+              "y": 155
+            },
+            {
+              "x": 584,
+              "y": 316
+            },
+            {
+              "x": 636,
+              "y": 316
+            },
+            {
+              "x": 636,
+              "y": 435
+            },
+            {
+              "x": 660,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "gridImport-secondary-to-acBus-supply",
+          "points": [
+            {
+              "x": 260,
+              "y": 435
+            },
+            {
+              "x": 336,
+              "y": 435
+            },
+            {
+              "x": 336,
+              "y": 316
+            },
+            {
+              "x": 636,
+              "y": 316
+            },
+            {
+              "x": 636,
+              "y": 435
+            },
+            {
+              "x": 660,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "bay-load-to-gridExport-supply",
+          "points": [
+            {
+              "x": 360,
+              "y": 435
+            },
+            {
+              "x": 336,
+              "y": 435
+            },
+            {
+              "x": 336,
+              "y": 596
+            },
+            {
+              "x": 284,
+              "y": 596
+            },
+            {
+              "x": 284,
+              "y": 715
+            },
+            {
+              "x": 260,
+              "y": 715
+            }
+          ]
+        },
+        {
+          "connection": "excitation-field-to-machine-field",
+          "points": [
+            {
+              "x": 660,
+              "y": 155
+            },
+            {
+              "x": 560,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "acBus-branch-b-to-bay-line",
+          "points": [
+            {
+              "x": 660,
+              "y": 435
+            },
+            {
+              "x": 560,
+              "y": 435
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "control",
+      "label": "Shared mode and station service",
+      "canvas": {
+        "width": 980,
+        "height": 940
+      },
+      "placements": [
+        {
+          "component": "station",
+          "x": 60,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "plc",
+          "x": 360,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "unit",
+          "x": 660,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "upper",
+          "x": 660,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "lower",
+          "x": 360,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "machine",
+          "x": 60,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "dcService",
+          "x": 60,
+          "y": 620,
+          "width": 200,
+          "height": 190
+        }
+      ],
+      "routes": [
+        {
+          "connection": "upper-connection-to-unit-upper",
+          "points": [
+            {
+              "x": 760,
+              "y": 340
+            },
+            {
+              "x": 760,
+              "y": 250
+            }
+          ]
+        },
+        {
+          "connection": "unit-lower-to-lower-connection",
+          "points": [
+            {
+              "x": 660,
+              "y": 155
+            },
+            {
+              "x": 636,
+              "y": 155
+            },
+            {
+              "x": 636,
+              "y": 316
+            },
+            {
+              "x": 584,
+              "y": 316
+            },
+            {
+              "x": 584,
+              "y": 435
+            },
+            {
+              "x": 560,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "unit-shaft-to-machine-shaft",
+          "points": [
+            {
+              "x": 660,
+              "y": 155
+            },
+            {
+              "x": 636,
+              "y": 155
+            },
+            {
+              "x": 636,
+              "y": 316
+            },
+            {
+              "x": 284,
+              "y": 316
+            },
+            {
+              "x": 284,
+              "y": 435
+            },
+            {
+              "x": 260,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "station-secondary-to-dcService-ac",
+          "points": [
+            {
+              "x": 160,
+              "y": 250
+            },
+            {
+              "x": 160,
+              "y": 316
+            },
+            {
+              "x": 36,
+              "y": 316
+            },
+            {
+              "x": 36,
+              "y": 596
+            },
+            {
+              "x": 160,
+              "y": 596
+            },
+            {
+              "x": 160,
+              "y": 620
+            }
+          ]
+        },
+        {
+          "connection": "station-secondary-to-plc-power",
+          "points": [
+            {
+              "x": 260,
+              "y": 155
+            },
+            {
+              "x": 360,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "plc-io-to-unit-control",
+          "points": [
+            {
+              "x": 560,
+              "y": 155
+            },
+            {
+              "x": 660,
+              "y": 155
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "commands": [
+    {
+      "id": "upper-enabled",
+      "label": "Equipment enabled",
+      "component": "upper",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "upper"
+      }
+    },
+    {
+      "id": "upper-load",
+      "label": "Requested output / load (%)",
+      "component": "upper",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "upper"
+      }
+    },
+    {
+      "id": "upper-fault",
+      "label": "Inject fictional fault",
+      "component": "upper",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "upper",
+        "value": true
+      }
+    },
+    {
+      "id": "upper-repair",
+      "label": "Repair damage",
+      "component": "upper",
+      "action": "repair",
+      "arguments": {
+        "equipment": "upper"
+      }
+    },
+    {
+      "id": "lower-enabled",
+      "label": "Equipment enabled",
+      "component": "lower",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "lower"
+      }
+    },
+    {
+      "id": "lower-load",
+      "label": "Requested output / load (%)",
+      "component": "lower",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "lower"
+      }
+    },
+    {
+      "id": "lower-fault",
+      "label": "Inject fictional fault",
+      "component": "lower",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "lower",
+        "value": true
+      }
+    },
+    {
+      "id": "lower-repair",
+      "label": "Repair damage",
+      "component": "lower",
+      "action": "repair",
+      "arguments": {
+        "equipment": "lower"
+      }
+    },
+    {
+      "id": "unit-enabled",
+      "label": "Equipment enabled",
+      "component": "unit",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "unit"
+      }
+    },
+    {
+      "id": "unit-load",
+      "label": "Requested output / load (%)",
+      "component": "unit",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "unit"
+      }
+    },
+    {
+      "id": "unit-fault",
+      "label": "Inject fictional fault",
+      "component": "unit",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "unit",
+        "value": true
+      }
+    },
+    {
+      "id": "unit-repair",
+      "label": "Repair damage",
+      "component": "unit",
+      "action": "repair",
+      "arguments": {
+        "equipment": "unit"
+      }
+    },
+    {
+      "id": "unit-mode-generating",
+      "label": "Generate: upper \u2192 lower",
+      "component": "unit",
+      "action": "setMode",
+      "arguments": {
+        "equipment": "unit",
+        "value": "generating"
+      }
+    },
+    {
+      "id": "unit-mode-pumping",
+      "label": "Pump: lower \u2192 upper",
+      "component": "unit",
+      "action": "setMode",
+      "arguments": {
+        "equipment": "unit",
+        "value": "pumping"
+      }
+    },
+    {
+      "id": "unit-mode-stopped",
+      "label": "Idle: water transfer stopped",
+      "component": "unit",
+      "action": "setMode",
+      "arguments": {
+        "equipment": "unit",
+        "value": "stopped"
+      }
+    },
+    {
+      "id": "machine-enabled",
+      "label": "Equipment enabled",
+      "component": "machine",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "machine"
+      }
+    },
+    {
+      "id": "machine-load",
+      "label": "Requested output / load (%)",
+      "component": "machine",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "machine"
+      }
+    },
+    {
+      "id": "machine-fault",
+      "label": "Inject fictional fault",
+      "component": "machine",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "machine",
+        "value": true
+      }
+    },
+    {
+      "id": "machine-repair",
+      "label": "Repair damage",
+      "component": "machine",
+      "action": "repair",
+      "arguments": {
+        "equipment": "machine"
+      }
+    },
+    {
+      "id": "machine-mode-forward",
+      "label": "Forward conversion",
+      "component": "machine",
+      "action": "setMode",
+      "arguments": {
+        "equipment": "machine",
+        "value": "forward"
+      }
+    },
+    {
+      "id": "machine-mode-reverse",
+      "label": "Reverse conversion",
+      "component": "machine",
+      "action": "setMode",
+      "arguments": {
+        "equipment": "machine",
+        "value": "reverse"
+      }
+    },
+    {
+      "id": "machine-mode-idle",
+      "label": "Idle conversion",
+      "component": "machine",
+      "action": "setMode",
+      "arguments": {
+        "equipment": "machine",
+        "value": "idle"
+      }
+    },
+    {
+      "id": "excitation-enabled",
+      "label": "Equipment enabled",
+      "component": "excitation",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "excitation"
+      }
+    },
+    {
+      "id": "excitation-load",
+      "label": "Requested output / load (%)",
+      "component": "excitation",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "excitation"
+      }
+    },
+    {
+      "id": "excitation-fault",
+      "label": "Inject fictional fault",
+      "component": "excitation",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "excitation",
+        "value": true
+      }
+    },
+    {
+      "id": "excitation-repair",
+      "label": "Repair damage",
+      "component": "excitation",
+      "action": "repair",
+      "arguments": {
+        "equipment": "excitation"
+      }
+    },
+    {
+      "id": "gridImport-enabled",
+      "label": "Equipment enabled",
+      "component": "gridImport",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "gridImport"
+      }
+    },
+    {
+      "id": "gridImport-load",
+      "label": "Requested output / load (%)",
+      "component": "gridImport",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "gridImport"
+      }
+    },
+    {
+      "id": "gridImport-fault",
+      "label": "Inject fictional fault",
+      "component": "gridImport",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "gridImport",
+        "value": true
+      }
+    },
+    {
+      "id": "gridImport-repair",
+      "label": "Repair damage",
+      "component": "gridImport",
+      "action": "repair",
+      "arguments": {
+        "equipment": "gridImport"
+      }
+    },
+    {
+      "id": "gridExport-enabled",
+      "label": "Equipment enabled",
+      "component": "gridExport",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "gridExport"
+      }
+    },
+    {
+      "id": "gridExport-load",
+      "label": "Requested output / load (%)",
+      "component": "gridExport",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "gridExport"
+      }
+    },
+    {
+      "id": "gridExport-fault",
+      "label": "Inject fictional fault",
+      "component": "gridExport",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "gridExport",
+        "value": true
+      }
+    },
+    {
+      "id": "gridExport-repair",
+      "label": "Repair damage",
+      "component": "gridExport",
+      "action": "repair",
+      "arguments": {
+        "equipment": "gridExport"
+      }
+    },
+    {
+      "id": "bay-enabled",
+      "label": "Equipment enabled",
+      "component": "bay",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "bay"
+      }
+    },
+    {
+      "id": "bay-load",
+      "label": "Requested output / load (%)",
+      "component": "bay",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "bay"
+      }
+    },
+    {
+      "id": "bay-fault",
+      "label": "Inject fictional fault",
+      "component": "bay",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "bay",
+        "value": true
+      }
+    },
+    {
+      "id": "bay-repair",
+      "label": "Repair damage",
+      "component": "bay",
+      "action": "repair",
+      "arguments": {
+        "equipment": "bay"
+      }
+    },
+    {
+      "id": "bay-open",
+      "label": "Contacts open / isolated",
+      "component": "bay",
+      "action": "setOpen",
+      "arguments": {
+        "equipment": "bay"
+      }
+    },
+    {
+      "id": "station-enabled",
+      "label": "Equipment enabled",
+      "component": "station",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "station"
+      }
+    },
+    {
+      "id": "station-load",
+      "label": "Requested output / load (%)",
+      "component": "station",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "station"
+      }
+    },
+    {
+      "id": "station-fault",
+      "label": "Inject fictional fault",
+      "component": "station",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "station",
+        "value": true
+      }
+    },
+    {
+      "id": "station-repair",
+      "label": "Repair damage",
+      "component": "station",
+      "action": "repair",
+      "arguments": {
+        "equipment": "station"
+      }
+    },
+    {
+      "id": "plc-enabled",
+      "label": "Equipment enabled",
+      "component": "plc",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "plc"
+      }
+    },
+    {
+      "id": "plc-load",
+      "label": "Requested output / load (%)",
+      "component": "plc",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "plc"
+      }
+    },
+    {
+      "id": "plc-fault",
+      "label": "Inject fictional fault",
+      "component": "plc",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "plc",
+        "value": true
+      }
+    },
+    {
+      "id": "plc-repair",
+      "label": "Repair damage",
+      "component": "plc",
+      "action": "repair",
+      "arguments": {
+        "equipment": "plc"
+      }
+    },
+    {
+      "id": "dcService-enabled",
+      "label": "Equipment enabled",
+      "component": "dcService",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "dcService"
+      }
+    },
+    {
+      "id": "dcService-load",
+      "label": "Requested output / load (%)",
+      "component": "dcService",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "dcService"
+      }
+    },
+    {
+      "id": "dcService-fault",
+      "label": "Inject fictional fault",
+      "component": "dcService",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "dcService",
+        "value": true
+      }
+    },
+    {
+      "id": "dcService-repair",
+      "label": "Repair damage",
+      "component": "dcService",
+      "action": "repair",
+      "arguments": {
+        "equipment": "dcService"
+      }
+    },
+    {
+      "id": "dcService-mode-forward",
+      "label": "Forward conversion",
+      "component": "dcService",
+      "action": "setMode",
+      "arguments": {
+        "equipment": "dcService",
+        "value": "forward"
+      }
+    },
+    {
+      "id": "dcService-mode-idle",
+      "label": "Idle conversion",
+      "component": "dcService",
+      "action": "setMode",
+      "arguments": {
+        "equipment": "dcService",
+        "value": "idle"
+      }
+    },
+    {
+      "id": "plant-setRunning",
+      "label": "Run shared plant",
+      "action": "setRunning",
+      "arguments": {}
+    },
+    {
+      "id": "plant-step",
+      "label": "Advance one toy minute",
+      "action": "step",
+      "arguments": {
+        "value": 1
+      }
+    },
+    {
+      "id": "plant-reset",
+      "label": "Reset dynamics \u00b7 retain edited parameters",
+      "action": "reset",
+      "arguments": {}
+    },
+    {
+      "id": "acBus-enabled",
+      "label": "Equipment enabled",
+      "component": "acBus",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "acBus"
+      }
+    },
+    {
+      "id": "acBus-load",
+      "label": "Requested output / load (%)",
+      "component": "acBus",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "acBus"
+      }
+    },
+    {
+      "id": "acBus-fault",
+      "label": "Inject fictional fault",
+      "component": "acBus",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "acBus",
+        "value": true
+      }
+    },
+    {
+      "id": "acBus-repair",
+      "label": "Repair damage",
+      "component": "acBus",
+      "action": "repair",
+      "arguments": {
+        "equipment": "acBus"
+      }
+    }
+  ],
+  "controls": [
+    {
+      "id": "upper-enabled-control",
+      "label": "Equipment enabled",
+      "component": "upper",
+      "kind": "toggle",
+      "command": "upper-enabled",
+      "binding": "/controls/upper/enabled"
+    },
+    {
+      "id": "upper-load-control",
+      "label": "Requested output / load (%)",
+      "component": "upper",
+      "kind": "range",
+      "command": "upper-load",
+      "binding": "/controls/upper/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "upper-fault-control",
+      "label": "Inject fictional fault",
+      "component": "upper",
+      "kind": "button",
+      "command": "upper-fault"
+    },
+    {
+      "id": "upper-repair-control",
+      "label": "Repair damage",
+      "component": "upper",
+      "kind": "button",
+      "command": "upper-repair"
+    },
+    {
+      "id": "lower-enabled-control",
+      "label": "Equipment enabled",
+      "component": "lower",
+      "kind": "toggle",
+      "command": "lower-enabled",
+      "binding": "/controls/lower/enabled"
+    },
+    {
+      "id": "lower-load-control",
+      "label": "Requested output / load (%)",
+      "component": "lower",
+      "kind": "range",
+      "command": "lower-load",
+      "binding": "/controls/lower/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "lower-fault-control",
+      "label": "Inject fictional fault",
+      "component": "lower",
+      "kind": "button",
+      "command": "lower-fault"
+    },
+    {
+      "id": "lower-repair-control",
+      "label": "Repair damage",
+      "component": "lower",
+      "kind": "button",
+      "command": "lower-repair"
+    },
+    {
+      "id": "unit-enabled-control",
+      "label": "Equipment enabled",
+      "component": "unit",
+      "kind": "toggle",
+      "command": "unit-enabled",
+      "binding": "/controls/unit/enabled"
+    },
+    {
+      "id": "unit-load-control",
+      "label": "Requested output / load (%)",
+      "component": "unit",
+      "kind": "range",
+      "command": "unit-load",
+      "binding": "/controls/unit/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "unit-fault-control",
+      "label": "Inject fictional fault",
+      "component": "unit",
+      "kind": "button",
+      "command": "unit-fault"
+    },
+    {
+      "id": "unit-repair-control",
+      "label": "Repair damage",
+      "component": "unit",
+      "kind": "button",
+      "command": "unit-repair"
+    },
+    {
+      "id": "unit-mode-generating-control",
+      "label": "Generate: upper \u2192 lower",
+      "component": "unit",
+      "kind": "button",
+      "command": "unit-mode-generating"
+    },
+    {
+      "id": "unit-mode-pumping-control",
+      "label": "Pump: lower \u2192 upper",
+      "component": "unit",
+      "kind": "button",
+      "command": "unit-mode-pumping"
+    },
+    {
+      "id": "unit-mode-stopped-control",
+      "label": "Idle: water transfer stopped",
+      "component": "unit",
+      "kind": "button",
+      "command": "unit-mode-stopped"
+    },
+    {
+      "id": "machine-enabled-control",
+      "label": "Equipment enabled",
+      "component": "machine",
+      "kind": "toggle",
+      "command": "machine-enabled",
+      "binding": "/controls/machine/enabled"
+    },
+    {
+      "id": "machine-load-control",
+      "label": "Requested output / load (%)",
+      "component": "machine",
+      "kind": "range",
+      "command": "machine-load",
+      "binding": "/controls/machine/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "machine-fault-control",
+      "label": "Inject fictional fault",
+      "component": "machine",
+      "kind": "button",
+      "command": "machine-fault"
+    },
+    {
+      "id": "machine-repair-control",
+      "label": "Repair damage",
+      "component": "machine",
+      "kind": "button",
+      "command": "machine-repair"
+    },
+    {
+      "id": "machine-mode-forward-control",
+      "label": "Forward conversion",
+      "component": "machine",
+      "kind": "button",
+      "command": "machine-mode-forward"
+    },
+    {
+      "id": "machine-mode-reverse-control",
+      "label": "Reverse conversion",
+      "component": "machine",
+      "kind": "button",
+      "command": "machine-mode-reverse"
+    },
+    {
+      "id": "machine-mode-idle-control",
+      "label": "Idle conversion",
+      "component": "machine",
+      "kind": "button",
+      "command": "machine-mode-idle"
+    },
+    {
+      "id": "excitation-enabled-control",
+      "label": "Equipment enabled",
+      "component": "excitation",
+      "kind": "toggle",
+      "command": "excitation-enabled",
+      "binding": "/controls/excitation/enabled"
+    },
+    {
+      "id": "excitation-load-control",
+      "label": "Requested output / load (%)",
+      "component": "excitation",
+      "kind": "range",
+      "command": "excitation-load",
+      "binding": "/controls/excitation/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "excitation-fault-control",
+      "label": "Inject fictional fault",
+      "component": "excitation",
+      "kind": "button",
+      "command": "excitation-fault"
+    },
+    {
+      "id": "excitation-repair-control",
+      "label": "Repair damage",
+      "component": "excitation",
+      "kind": "button",
+      "command": "excitation-repair"
+    },
+    {
+      "id": "gridImport-enabled-control",
+      "label": "Equipment enabled",
+      "component": "gridImport",
+      "kind": "toggle",
+      "command": "gridImport-enabled",
+      "binding": "/controls/gridImport/enabled"
+    },
+    {
+      "id": "gridImport-load-control",
+      "label": "Requested output / load (%)",
+      "component": "gridImport",
+      "kind": "range",
+      "command": "gridImport-load",
+      "binding": "/controls/gridImport/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "gridImport-fault-control",
+      "label": "Inject fictional fault",
+      "component": "gridImport",
+      "kind": "button",
+      "command": "gridImport-fault"
+    },
+    {
+      "id": "gridImport-repair-control",
+      "label": "Repair damage",
+      "component": "gridImport",
+      "kind": "button",
+      "command": "gridImport-repair"
+    },
+    {
+      "id": "gridExport-enabled-control",
+      "label": "Equipment enabled",
+      "component": "gridExport",
+      "kind": "toggle",
+      "command": "gridExport-enabled",
+      "binding": "/controls/gridExport/enabled"
+    },
+    {
+      "id": "gridExport-load-control",
+      "label": "Requested output / load (%)",
+      "component": "gridExport",
+      "kind": "range",
+      "command": "gridExport-load",
+      "binding": "/controls/gridExport/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "gridExport-fault-control",
+      "label": "Inject fictional fault",
+      "component": "gridExport",
+      "kind": "button",
+      "command": "gridExport-fault"
+    },
+    {
+      "id": "gridExport-repair-control",
+      "label": "Repair damage",
+      "component": "gridExport",
+      "kind": "button",
+      "command": "gridExport-repair"
+    },
+    {
+      "id": "bay-enabled-control",
+      "label": "Equipment enabled",
+      "component": "bay",
+      "kind": "toggle",
+      "command": "bay-enabled",
+      "binding": "/controls/bay/enabled"
+    },
+    {
+      "id": "bay-load-control",
+      "label": "Requested output / load (%)",
+      "component": "bay",
+      "kind": "range",
+      "command": "bay-load",
+      "binding": "/controls/bay/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "bay-fault-control",
+      "label": "Inject fictional fault",
+      "component": "bay",
+      "kind": "button",
+      "command": "bay-fault"
+    },
+    {
+      "id": "bay-repair-control",
+      "label": "Repair damage",
+      "component": "bay",
+      "kind": "button",
+      "command": "bay-repair"
+    },
+    {
+      "id": "bay-open-control",
+      "label": "Contacts open / isolated",
+      "component": "bay",
+      "kind": "toggle",
+      "command": "bay-open",
+      "binding": "/controls/bay/open"
+    },
+    {
+      "id": "station-enabled-control",
+      "label": "Equipment enabled",
+      "component": "station",
+      "kind": "toggle",
+      "command": "station-enabled",
+      "binding": "/controls/station/enabled"
+    },
+    {
+      "id": "station-load-control",
+      "label": "Requested output / load (%)",
+      "component": "station",
+      "kind": "range",
+      "command": "station-load",
+      "binding": "/controls/station/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "station-fault-control",
+      "label": "Inject fictional fault",
+      "component": "station",
+      "kind": "button",
+      "command": "station-fault"
+    },
+    {
+      "id": "station-repair-control",
+      "label": "Repair damage",
+      "component": "station",
+      "kind": "button",
+      "command": "station-repair"
+    },
+    {
+      "id": "plc-enabled-control",
+      "label": "Equipment enabled",
+      "component": "plc",
+      "kind": "toggle",
+      "command": "plc-enabled",
+      "binding": "/controls/plc/enabled"
+    },
+    {
+      "id": "plc-load-control",
+      "label": "Requested output / load (%)",
+      "component": "plc",
+      "kind": "range",
+      "command": "plc-load",
+      "binding": "/controls/plc/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "plc-fault-control",
+      "label": "Inject fictional fault",
+      "component": "plc",
+      "kind": "button",
+      "command": "plc-fault"
+    },
+    {
+      "id": "plc-repair-control",
+      "label": "Repair damage",
+      "component": "plc",
+      "kind": "button",
+      "command": "plc-repair"
+    },
+    {
+      "id": "dcService-enabled-control",
+      "label": "Equipment enabled",
+      "component": "dcService",
+      "kind": "toggle",
+      "command": "dcService-enabled",
+      "binding": "/controls/dcService/enabled"
+    },
+    {
+      "id": "dcService-load-control",
+      "label": "Requested output / load (%)",
+      "component": "dcService",
+      "kind": "range",
+      "command": "dcService-load",
+      "binding": "/controls/dcService/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "dcService-fault-control",
+      "label": "Inject fictional fault",
+      "component": "dcService",
+      "kind": "button",
+      "command": "dcService-fault"
+    },
+    {
+      "id": "dcService-repair-control",
+      "label": "Repair damage",
+      "component": "dcService",
+      "kind": "button",
+      "command": "dcService-repair"
+    },
+    {
+      "id": "dcService-mode-forward-control",
+      "label": "Forward conversion",
+      "component": "dcService",
+      "kind": "button",
+      "command": "dcService-mode-forward"
+    },
+    {
+      "id": "dcService-mode-idle-control",
+      "label": "Idle conversion",
+      "component": "dcService",
+      "kind": "button",
+      "command": "dcService-mode-idle"
+    },
+    {
+      "id": "plant-setRunning-control",
+      "label": "Run shared plant",
+      "kind": "toggle",
+      "command": "plant-setRunning",
+      "binding": "/running"
+    },
+    {
+      "id": "plant-step-control",
+      "label": "Advance one toy minute",
+      "kind": "button",
+      "command": "plant-step"
+    },
+    {
+      "id": "plant-reset-control",
+      "label": "Reset dynamics \u00b7 retain edited parameters",
+      "kind": "button",
+      "command": "plant-reset"
+    },
+    {
+      "id": "acBus-enabled-control",
+      "label": "Equipment enabled",
+      "component": "acBus",
+      "kind": "toggle",
+      "command": "acBus-enabled",
+      "binding": "/controls/acBus/enabled"
+    },
+    {
+      "id": "acBus-load-control",
+      "label": "Requested output / load (%)",
+      "component": "acBus",
+      "kind": "range",
+      "command": "acBus-load",
+      "binding": "/controls/acBus/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "acBus-fault-control",
+      "label": "Inject fictional fault",
+      "component": "acBus",
+      "kind": "button",
+      "command": "acBus-fault"
+    },
+    {
+      "id": "acBus-repair-control",
+      "label": "Repair damage",
+      "component": "acBus",
+      "kind": "button",
+      "command": "acBus-repair"
+    }
+  ],
+  "provenance": [
+    {
+      "id": "assumed-model",
+      "label": "Editable normalized model guesses",
+      "kind": "assumed",
+      "description": "Every capacity, inventory, thermal index, loss, response and incident coefficient is an authoring choice, not validated by the references."
+    },
+    {
+      "id": "authored-layout",
+      "label": "Illustrative plant routing and layout",
+      "kind": "illustrative",
+      "description": "Coordinates, asset tags, selected concept composition and simplified connections are editable authored diagrams, not a verified P&ID or electrical design."
+    },
+    {
+      "id": "P05",
+      "label": "P05 \u00b7 structural reference",
+      "kind": "external",
+      "source": "DOE, [Types of Hydropower Plants](https://www.energy.gov/cmei/water/types-hydropower-plants), no page publication date shown",
+      "description": "Impoundment, diversion and pumped-storage sections | Supports: Three distinct water-path examples. Reservoir storage, river diversion and reversible pumping must not be portrayed as interchangeable one-way turbine feeds. | Reviewed 2026-11-13. Does not validate toy parameters."
+    },
+    {
+      "id": "P19",
+      "label": "P19 \u00b7 structural reference",
+      "kind": "external",
+      "source": "DOE, [Solar Energy and Storage Basics](https://www.energy.gov/cmei/systems/solar-integration-solar-energy-and-storage-basics), updated 2025-03-31",
+      "description": "Energy/power capacity distinction and storage-type descriptions | Supports: Storage has separate energy and power metadata. Batteries, thermal storage and pumped storage use different state quantities and connection media. | Reviewed 2026-11-13. Does not validate toy parameters."
+    }
+  ],
+  "assumptions": [
+    {
+      "id": "normalized",
+      "label": "All model numbers are editable teaching assumptions",
+      "value": true,
+      "provenance": "assumed-model"
+    },
+    {
+      "id": "circuitIdentity",
+      "label": "Separate named circuits never mix stock through heat links",
+      "value": true,
+      "provenance": "authored-layout"
+    }
+  ],
+  "units": {
+    "power": "normalized power units; explicit optional display mapping",
+    "flow": "normalized material units per toy minute",
+    "inventory": "normalized finite stock",
+    "heat": "normalized stored heat; not a physical operating temperature"
+  }
+}

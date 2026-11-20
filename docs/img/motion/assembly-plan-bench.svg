@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 350" width="680" height="350" role="img" aria-label="Source-defined native rail bench in x-z projection: plate follows a finite corner and descends through open rails before the roof; red marks separate component and ordinary-driver obstruction controls, not a clearance verdict." font-family="system-ui,-apple-system,Segoe UI,Roboto,sans-serif" font-size="12" fill="#173d3c">
+<style>.m10,.m11{fill:#526863}.m10{font-size:10px}.m11{font-size:11px}.n{visibility:hidden}@media (max-width:400px){text:not(.n),.w{visibility:hidden}.n{visibility:visible}}@keyframes k0{0%,50%,100%{opacity:1}25%{opacity:0.25}}#blocked16{animation:k0 4s ease-in-out infinite}@media (prefers-reduced-motion:reduce){*{animation:none!important}}</style>
+<rect width="680" height="350" rx="14" fill="#fffdf5" stroke="#d8e0d3"/>
+<text x="24" y="28" font-size="18" font-weight="700">Open rail before roof · source bench (mm)</text>
+<path d="M85 296 325 296 325 278 85 278Z" fill="#6f8a80" stroke="#173d3c"/>
+<path d="M157 278 169 278 169 206 157 206Z" fill="#6f8a80" stroke="#173d3c"/>
+<path d="M241 278 253 278 253 206 241 206Z" fill="#6f8a80" stroke="#173d3c"/>
+<path d="M175 272 235 272 235 260 175 260Z" fill="#ffe1cc" stroke="#173d3c"/>
+<path d="M199 260 211 260 211 248 199 248Z" fill="#ffe1cc" stroke="#173d3c"/>
+<path d="M151 200 259 200 259 188 151 188Z" fill="#ffe1cc" stroke="#173d3c"/>
+<polyline points="325,116 205,116 205,266" fill="none" stroke="#bd3a12" stroke-width="2" stroke-dasharray="5 3"/>
+<circle cx="325" cy="116" r="3" fill="#bd3a12"/>
+<circle cx="205" cy="116" r="3" fill="#bd3a12"/>
+<circle cx="205" cy="266" r="3" fill="#bd3a12"/>
+<polyline points="415,74 205,74 205,194" fill="none" stroke="#6f8a80" stroke-width="2" stroke-dasharray="5 3"/>
+<circle cx="415" cy="74" r="3" fill="#6f8a80"/>
+<circle cx="205" cy="74" r="3" fill="#6f8a80"/>
+<circle cx="205" cy="194" r="3" fill="#6f8a80"/>
+<path id="blocked16" d="M181 182 229 182 229 180.8 181 180.8Z" fill="#bd3a12" stroke="#bd3a12"/>
+<path id="blocked31" d="M223 92 229 92 229 86 223 86Z" fill="#bd3a12" stroke="#bd3a12"/>
+<text x="365" y="115" fill="#bd3a12">plate parked → corner → rail</text>
+<text x="365" y="137" fill="#6f8a80">lid parks outside the channel</text>
+<text x="365" y="170" fill="#bd3a12">Red: separate negative controls</text>
+<text x="365" y="191" class="m11">mid-path plate crossing at z16</text>
+<text x="365" y="212" class="m11">driver handle approach at z31</text>
+<text x="365" y="252">x →    z ↑    y omitted</text>
+<text x="24" y="328" class="m11">Source illustration; sampled checks and actual renderer traces are separate evidence.</text>
+<text x="30" y="50" font-size="24" class="n">Rail</text>
+<text x="285" y="50" font-size="24" fill="#bd3a12" class="n">Plate</text>
+<text x="530" y="50" font-size="24" fill="#6f8a80" class="n">Lid</text>
+</svg>

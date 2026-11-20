@@ -139,6 +139,82 @@ my-cad-project/
 | `exports/<name>-plates.svg`, `-plates.json` | seen from above | the plates as a picture, and the layout as data: each copy's place and turn, each plate's filament and surface, the 3MF's sha256 |
 | `<name>.3mf`, `<stem>-NN-<group>.3mf` (PrusaSlicer) | print orientation, placed on the bed | PrusaSlicer projects from `cadagent.manufacturing.prusa3mf`: objects of several volumes, each on its own tool, and the wipe tower's place; one 3MF per plate; read back and verified; byte-reproducible ([PrusaSlicer projects](#prusaslicer-projects-cadagentmanufacturingprusa3mf)) |
 
+### Parts that are not printed
+
+A machine is rarely all printed: a welded frame, cut plate, bought motors and a few printed brackets share one parts
+file. Say how each part is made, and the print pipeline (the report's "Printed parts" and "Print files" rows,
+`export-3mf`, the build plates, `cad-agent slice`'s default part list and `cad-agent overhangs`) applies to the
+printed parts only.
+
+```mermaid
+flowchart TD
+    D["dossier card<br/>material.process"] --> R["how the part is made<br/>part_processes"]
+    C["cad: part_process:<br/>part, then '*'"] --> R
+    R -->|"additive, or nothing declared"| P["print pipeline<br/>checked as before"]
+    R -->|"weldment, purchased, sheet-metal,<br/>cnc, injection-moulding"| S["skip rows with the reason<br/>no print files written"]
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
+    classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
+    class R here
+    class D,C near
+    class P,S out
+```
+
+For each part, the first of these decides (`cadagent.manufacturing.process.part_processes`):
+
+1. the dossier card's `material.process` ([dossier](practice/dossier.md)), for the card whose id is the part's name, when its words name a process in the table below;
+2. `cad: part_process: {<part>: <process>}` in `cad-agent.yaml`, for a project without a dossier or a card without a process;
+3. `cad: part_process: {"*": <process>}`, the project's default;
+4. nothing: the part is printed, as every part was before. A project that declares nothing is unchanged.
+
+```yaml
+cad:
+  part_process:
+    "*": weldment          # every part nothing else names
+    drive_motor: purchased
+    sensor_bracket: fdm
+```
+
+- **A skipped part's rows are skips, never passes**, with the reason: `not checked by the print pipeline: welded
+  fabrication (dossier material.process 'welded steel tube'); no check here says this part can be made`. The skip
+  count goes up and the pass count does not.
+- **What a skip does not say.** cad-agent has no weld, cut-list or purchasing check behind these names, and no rule
+  cards for `weldment` or `purchased`. A skip means the print checks do not apply. It does not mean the part is valid
+  CAD, fits a machine, can be welded or cut, or can be bought. "Holes clear", the integrity gates and the project's
+  own `cad: checks:` still run on every part.
+
+<details>
+<summary>The words that name each process, and what is left out for a skipped part</summary>
+
+| Process | Words that mean it | The print pipeline |
+|---|---|---|
+| printed | `fdm`, `fff`, `sla`, `sls`, `mjf`, `dlp`, `polyjet`, `additive`, `3D printed`, any `print`, `printed`, `printing` | applies, exactly as before |
+| `weldment` | `welded ...`, `weldment` | skips the part |
+| `purchased` | `purchased`, `bought`, `off-the-shelf`, `COTS` | skips the part |
+| `sheet-metal` | `sheet metal`, `laser-cut`, `plasma-cut`, `waterjet-cut`, `saw-cut`, `hand-cut`, `cut plate` | skips the part |
+| `cnc` | `cnc`, `machined`, `milled`, `turned`, `lathe` | skips the part |
+| `injection-moulding` | `injection ...`, `moulded`, `molded` | skips the part |
+
+- **The words are read from free text**, so a dossier card may say `welded steel tube` or `laser-cut 6 mm plate`.
+  Printing words win: `FDM, then machined` and `printed PETG with purchased inserts` are printed parts. The words
+  are matched, not parsed (`not welded` reads as welded), so write what the part is.
+- **Words that match nothing** (`casting`) on a dossier card pass the decision to `cad: part_process:`; with no entry
+  there the part stays in the print pipeline, where its rows fail and show it. In `cad: part_process:` such words are
+  a config error, and an entry for a name that is not a part is a failing row, so a typo is never read as "printed"
+  or lost.
+- **What is left out for a skipped part:** its `<part>.3mf`, its place on the default build plates, its row in the
+  default slice and in the overhang screen, and the "missing" marks in the report's download table (a dash instead).
+  A part named in `cad.plates.parts`, in `cad.slicer.parts` or on the command line is handled as named.
+  When no part is printed and no plate parts are explicitly selected, `export-3mf` writes nothing and exits 0,
+  and needs no `cad.printer.bed_mm`. A strict project-settings request fails without replacing prior plate files.
+  Explicit plate selections still use the normal export and validation path; a slice
+  report from when a part was printed no longer counts. A `<part>.3mf` an earlier run wrote is left in place and
+  named in a note. The download table still marks a missing STEP: STEP is for CAD review, whatever makes the part.
+- **Not covered yet:** `cad-agent release` is a print release and still lists every part by default; name the printed
+  parts in `cad.release.parts` or `groups`.
+
+</details>
+
 ### Checked booleans (`cadagent.geometry`)
 
 OpenCASCADE can fail a boolean without raising where faces nearly coincide: a multi-argument fuse of nearly
@@ -197,7 +273,7 @@ boom = robust_cut(robust_union(*plates), *pin_holes, report=notes)
 `export-3mf` also writes `exports/<name>-plates.3mf`: one Bambu Studio project that holds every printed part, at its
 quantity and in its print orientation, packed onto as many plates as the printer's bed needs. Open it, check each
 plate and slice. This is Gyropup's print set, from its committed STLs and print plan
-(`tools/plates_figure.py` makes it; `docs/img/plates/SOURCE.json` records the revision and settings):
+(`tools/figures/plates_figure.py` makes it; `docs/img/plates/SOURCE.json` records the revision and settings):
 
 ![Gyropup's 45 printed parts on 19 Bambu Studio plates of 256 mm, grouped by filament: 14 plates of PA6-CF, 3 of PETG and 2 of TPU. The long shins and thighs lie diagonally; small parts fill the space beside large ones; every plate keeps the printer's wiper corner clear.](img/plates/gyropup-plates.svg)
 
@@ -226,7 +302,7 @@ plate and slice. This is Gyropup's print set, from its committed STLs and print 
 
 | Key | Default | Meaning |
 |---|---|---|
-| `parts` | `cad.release.build`, else every part the release lists | a list of parts, or a mapping of part to `{quantity, filament}` |
+| `parts` | `cad.release.build`, else every part the release lists, less the [parts that are not printed](#parts-that-are-not-printed) | a list of parts, or a mapping of part to `{quantity, filament}` |
 | quantity | `cad.release.quantities`, else 1 | copies of the part |
 | filament | `cad.slicer.filament` | `pla`, `petg` or a Bambu filament profile name; one filament per plate |
 | `gap_mm`, `margin_mm` | 5, 5 | least distance between two footprints, and from the bed's edge |
@@ -462,6 +538,7 @@ can be renamed: no other file name is read.
 | `steps` | `[]` | `{name, run, log?, timeout_s=1800, needs?}`; `run` is a script relative to the root, run with cwd = root and `CAD_AGENT_PROJECT` set to the root; `log` is a file in `exports_dir`; `needs` names earlier steps |
 | `parts_file` | `exports/geometry-checks.json` | part -> `{cad_valid, solid_count, watertight, print_bounds_mm}` |
 | `part_ids` | `{}` | part -> display id (`P1`) |
+| `part_process` | `{}` | part (or `"*"`, every other part) -> how it is made: `fdm`, `weldment`, `purchased`, `sheet-metal`, `cnc`, ...; a part that is not printed is skipped by the print checks and exports. A dossier card's `material.process` is read first ([parts that are not printed](#parts-that-are-not-printed)) |
 | `checks` | `[]` | `{id, title, file, pass_key="pass", evidence?, links?}`; `pass_key` may be a list (all must be `true`) |
 | `printer` | none | `{name, bed_mm: [x, y, z]}`; parts must fit; 3MF files are centred on it |
 | `package` | none | `{name, include: [globs]}`; zip + `<name>-manifest.json` (sha256) in `exports_dir` |
@@ -551,11 +628,12 @@ after that every step runs, and the exit code says whether anything failed.*
 
 | Command | Does | Exit code |
 |---------|------|-----------|
+| `cad-agent --version` | prints the version and the package folder this cad-agent runs from | |
 | `cad-agent init [DIR] [--force]` | copies the starter project ([`docs/examples/starter-box`](examples/starter-box/README.md): a box and lid on four M3 heat-set inserts, `cad-agent.yaml`, `cad/build.py`, `tools/checks.py`) into `DIR` (default: here) and prints the next commands; from a wheel, the copy installed under `<prefix>/share/cad-agent/` | 2 if `DIR` is not empty (`--force` writes the starter's files over it) |
 | `cad-agent build [--from STEP] [--only STEP ...]` | runs steps in order with the project python; per-step timing; stops at the first failure and prints the log tail | 1 on a failed step |
-| `cad-agent export-3mf` | `<part>.stl` -> verified, bed-centred `<part>.3mf` for every part in the parts file, then every printed part on [build plates](#build-plates-cadagentmanufacturingplates) in `<name>-plates.3mf` | 1 on a read-back mismatch, or when the parts cannot be laid out |
+| `cad-agent export-3mf` | `<part>.stl` -> verified, bed-centred `<part>.3mf` for every printed part in the parts file ([parts that are not printed](#parts-that-are-not-printed) are left out), then every printed part on [build plates](#build-plates-cadagentmanufacturingplates) in `<name>-plates.3mf` | 1 on a read-back mismatch, or when the parts cannot be laid out |
 | `cad-agent holes [PART ...]` | checks every hole in every part is clear of material: finds the cylindrical holes and countersinks in `exports/<part>.step` (concave, at least 200° of wall, up to 30 mm across), probes each with a cylinder or cone just inside its wall, and writes `exports/hole-checks.json` bound to each STEP's sha256; `all` runs it and the report's "Holes clear" rows fail on material in a hole, a stale result or a check that did not run (config `cad: holes:`, [below](#holes-clear)) | 1 if a hole has material inside |
-| `cad-agent overhangs [PART ...] [--limit DEG] [--min-area MM2]` | groups each part's (`exports/<part>.stl`, every part in the parts file) downward faces flatter than `--limit` (slope from horizontal, 0° a flat ceiling; default 45°) into connected regions, each with area, bounds, centre and flattest angle, and writes `exports/overhang-screen.json`; a screen, not a slicer: bridges anchored on both sides are listed too ([below](#overhangs-and-bridges-cad-agent-overhangs)) | 1 if a part's STL is missing or unreadable |
+| `cad-agent overhangs [PART ...] [--limit DEG] [--min-area MM2]` | groups each part's (`exports/<part>.stl`, every printed part in the parts file, or the parts named) downward faces flatter than `--limit` (slope from horizontal, 0° a flat ceiling; default 45°) into connected regions, each with area, bounds, centre and flattest angle, and writes `exports/overhang-screen.json`; a screen, not a slicer: bridges anchored on both sides are listed too ([below](#overhangs-and-bridges-cad-agent-overhangs)) | 1 if a part's STL is missing or unreadable |
 | `cad-agent check [--json]` | collects results (no build), prints a table or the results JSON | 1 if any row fails |
 | `cad-agent report [--open]` | writes `exports/cad-agent-results.json` (results schema 1.0) and a standalone `docs/cad-agent-report.html` with inline styles (light and dark) that opens from `file://` | 1 if any row fails |
 | `cad-agent package` | zip + sha256 manifest from `package.include`; the same files give the same zip ([reproducible outputs](#reproducible-outputs)) | 2 on a malformed `SOURCE_DATE_EPOCH` |
@@ -1264,8 +1342,11 @@ Showing how it fails, for the report:
   ("edge of a Ø5.5 hole", "R4 inside fillet", "flat face, 1.9 mm from an R4 inside fillet", "sharp inside corner"),
   and a mesh note when the smoothed value is far below the peak.
 
-Open a case with `kit/fea.html?case=../../exports/fea/<part>-<case>.json` (the kit copied by `cad-agent webkit`, or the
-copy `cad-agent site --serve` serves at `/_cadagent/kit/fea.html`). The viewer has:
+For the default `cad-agent webkit` copy, open
+`web/kit/fea/fea.html?case=../../../exports/fea/<part>-<case>.json` from the project server.
+With `cad-agent site --serve`, open
+`/_cadagent/kit/fea/fea.html?case=../../../exports/fea/<part>-<case>.json`.
+The viewer has:
 
 - a load-factor slider from 0 to 1.3 x the failure load, and a play button that ramps it (pausing at the design load
   and at first failure). Deformation and colours scale linearly. Triangles whose element is past the strength turn
@@ -1305,6 +1386,63 @@ Turns CAD parts into a simulator model with real mass properties:
   in the controller. `cadagent.mechanical.linkages` solves the loop's poses ([Linkages](mechanical/linkages.md)).
 - `check_urdf` checks the tree, inertias (positive definite, triangle inequality), mesh files and joint limits.
   text-to-cad's `cadgen urdf validate` is a second, independent validator.
+
+<details>
+<summary>Assembly-stage support and drift with MuJoCo</summary>
+
+`settle_stage` evaluates an explicitly authored rigid stage under gravity, complementing insertion path checks.
+It accepts captured MJCF bytes, an explicit scenario description, all dynamic free root groups and all fixed
+colliding fixture geoms. It integrates without controls and returns an assumption-bearing verdict with exact
+model/assets hashes, effective physics settings, group mass/COM/inertia, maximum translation/rotation and
+penetration, final speeds, contact support paths and solver warning counts.
+
+```python
+from cadagent.simulation.robot import settle_stage, SettleLimits
+
+report = settle_stage(mjcf_path.read_bytes(),
+    monitored_bodies=["loose_module"], fixture_geoms=["bench"],
+    scenario="Source-bound module on the declared bench; masses and friction are estimates",
+    assets=captured_asset_bytes, duration_s=1.0,
+    expected_gravity=(0, 0, -9.81),
+    limits=SettleLimits(translation_mm=0.5, rotation_deg=1.0,
+                        linear_speed_mm_s=1.0, angular_speed_deg_s=1.0,
+                        penetration_mm=0.5))
+```
+
+Lengths in MJCF are metres; report translation/penetration are mm, rotation is degrees, and speeds are mm/s and
+degrees/s. The window is 0.1..10 seconds, with a default 10,000-step budget. Long product models still run on a
+detached compute host with an external runtime cap and source/runtime receipt. Assets are captured bytes, not
+ambient files; includes, plugins, nested model assets/attachments, explicit contact pairs, directory indirection
+and callbacks are refused before compilation. Deformable/flex collision objects are outside the primitive rigid
+scope and are rejected in both source preflight and compiled-model checks. First scope is independent
+free rigid groups with fixed descendants and primitive collisions. Articulation, implicit equality/tendon or
+controller retention, mocap, gravity compensation/passive joint holding, aerodynamic forces and mesh/heightfield
+collisions are unsupported. A guide mesh cannot supply mass, rigidity, retention or fixtures by inference.
+
+Zero gravity, disabled contact/constraint solving and static monitored bodies fail before integration.
+State validity and contact penetration are measured at the initial forward state as well as every integrated
+state, so initial interference cannot disappear from the complete-window maximum after relaxation. Explicit
+contact pairs are unsupported because they bypass geom-mask filtering; nested model assets/attachments are
+unsupported because captured child XML could otherwise load uncaptured transitive resources. Solver
+warnings, nonfinite states or a numerical time reset fail while retaining completed-step/metric evidence.
+Each group must finish within drift/speed limits and have a force-bearing contact path to a declared fixture;
+stacked groups may reach that fixture through each other. A compound rigid group remains a producer assumption,
+which needs separately checked internal assembly and retention.
+
+The analytic 20 mm, 0.1 kg cube control on 2026-11-10 (MuJoCo 3.17.0) carried 0.981 N in floor contacts and stayed
+within the 0.5 mm criterion. Removing support produced 4914.81 mm freefall and 9810 mm/s final speed after one
+second; moving its COM outside a narrow pedestal produced tipping. Refinement exposed transient sensitivity:
+peak soft-contact drift was 0.17513 mm at 2 ms, 0.11440 mm at 1 ms, 0.10775542 mm at 0.5 ms and 0.10775543 mm at
+0.25 ms. The initial 0.05 mm coarse-to-fine bound failed by 0.01073 mm; the regression retains three refinement
+levels rather than claiming the 2 ms peak converged. Final penetration was about 0.10775542 mm and normal force
+balanced weight throughout the refinement series. These are fixture results, not product evidence.
+
+A passing finite settle predicts only the declared model over its recorded time. It does not establish indefinite
+stability, insertion clearance, fastening, compliance, strength or physical readiness. See
+[MuJoCo collision semantics](https://mujoco.readthedocs.io/en/stable/computation/#checking) and its
+[step/forward API](https://mujoco.readthedocs.io/en/stable/APIreference/APIfunctions.html#mj-forward).
+
+</details>
 
 ## Simulation and optimisation (standard practice for anything that carries load or heat)
 
@@ -1474,8 +1612,19 @@ row is told from a current one. A PrusaSlicer row also keeps what PrusaSlicer's 
 PrusaSlicer reports an error or a print stability issue. That is PrusaSlicer's own heuristic: an ok part can still
 print badly, and a slice does not prove a part prints or fits.
 
+Slicing remains optional when `exports/slice-report.json` is absent. Once a report exists, `check`, `report` and
+`all` fail visibly if it is stale, incomplete or unreadable, with a reason and `cad-agent slice` as the next action.
+After changing a sliced 3MF, profiles or part overrides, slice again before verification; a partial slice must
+leave every expected part current. `slicer_run` stays false until the report is current. These checks establish
+report currency and the slicer's status, not physical fit or print quality.
+
 <details>
-<summary>Bambu Studio profiles, and the <code>cad.slicer</code> keys</summary>
+<summary>Bambu Studio status codes, profiles, and the <code>cad.slicer</code> keys</summary>
+
+New Bambu rows retain `exit_code`, `return_code` and explicit `ok`: success needs grams and both integer codes
+zero. Missing or invalid result codes cannot establish a new success. Bambu's `error_string` can say `Success.`;
+the text is kept as `error` and does not decide success. Historical rows without `ok` or either code field retain
+the grams fallback. Retained codes must agree with explicit success; deleting `ok` cannot erase a known failure.
 
 Bambu Studio's system
 profiles resolve `inherits`, then ordered `include` templates, then explicit child settings (unresolved profiles
@@ -1522,9 +1671,25 @@ Runs `prusa-slicer` (on PATH, or the flatpak `com.prusa3d.PrusaSlicer`).
   `benign_log_lines` (a count of lines that say nothing about the print: a multi-tool printer's "SupportSpotsGenerator
   does not currently handle different materials" and Arachne's "Detected … Voronoi … rotated back and forth"), `log`
   and `ok`: true only with exit code 0, G-code written and no error or stability issue. Other warnings are listed but
-  do not fail a part. `cad-agent slice` prints them under each part and exits 1 when any part is not ok. The
+  do not fail a part. `cad-agent slice` prints them under each part and exits 1 when any part is not ok, and while
+  that slice report is current `cad-agent check`, `report` and `all` show a failing "Slicer" row for the part. The
   stability check is PrusaSlicer's own heuristic, run with the settings sliced: an ok part can still print badly, and
   turning supports or a brim on may clear an issue rather than fix the geometry.
+- **When the stability check runs:** PrusaSlicer looks for stability issues only with supports off
+  (`support_material = 0` and `support_material_enforce_layers = 0`; seen with 2.9.6), object by object. Prusa's
+  input-shaper print profiles, the default `0.20mm SPEED @MK4S 0.4` among them, set supports "for support enforcers
+  only" (`support_material = 1`, `support_material_auto = 0`), and with that an unsupported shelf slices with no
+  warning. Each row records `supports`, `stability_checked` and, when something was changed or not checked,
+  `stability_note`:
+  - **A bare model on an enforcers-only profile**, with no `support_material` in `cad.slicer.overrides`: sliced with
+    `support_material = 0`. The toolpaths are the same and the check runs (`supports: none`).
+  - **A 3MF with support data of its own** (painted supports, enforcer or blocker volumes, an object's own support
+    settings): left alone, and `stability_checked` is false whatever the profile says (`supports: set in the model`
+    when the profile has them off). An object's own settings win over the profile's and are not resolved here.
+  - **Automatic supports, enforced layers, or an override that turns supports on:** left alone, and
+    `stability_checked` is false (`supports: automatic` or `enforcers only`).
+
+  When `stability_checked` is false, `cad-agent slice` says so and `ok` means only that the part sliced.
 - **Limits:** the flatpak cannot read `/tmp`, so keep the project under your home folder. `export-3mf` plates carry
   no Bambu Studio project settings for a PrusaSlicer project.
 
@@ -1536,7 +1701,7 @@ cad:
     process: 0.20mm SPEED @XLIS 0.4
     filament: Prusament PLA @XLIS                        # or pla / petg (the MK4S variants)
     overrides: {perimeters: "3", fill_density: "20%"}    # PrusaSlicer names
-    parts:                                               # default: every part, cad.slicer.overrides only
+    parts:                                               # default: every printed part, cad.slicer.overrides only
       tower: {overrides: {brim_width: "10"}}
       link: {overrides: {perimeters: "4", fill_density: "40%"}}
       lid: {}
@@ -1630,7 +1795,8 @@ at what to change: a flat ring left by a cutter's end, a cavity roof, a wall tha
 `downward_area` gives one total, and its `max_angle_deg` is the normal's angle below horizontal (90° minus this
 slope). `cad-agent overhangs` writes `exports/overhang-screen.json` (`version`, `limit_deg`, `min_area_mm2`,
 `parts: {part: {stl, sha256, downward_area_mm2, regions, small_regions, small_area_mm2}}`, or `{error}` for a missing
-or unreadable STL); `cad-agent overhangs PART` redoes one part and keeps the other rows when the settings match.
+or unreadable STL); `cad-agent overhangs PART` redoes one part and keeps other rows only when their STL hashes and
+settings match and their parts are still printed. Explicitly naming a nonprinted part screens it afresh.
 Needs trimesh and scipy (`sim` extra).
 
 </details>
@@ -1663,11 +1829,20 @@ DIR`, the zip is `DIR.zip`):
 | Path | Content |
 |---|---|
 | `index.html` | one standalone page (inline CSS, light and dark, no scripts, opens from `file://`): the release's parts and totals, the recommended print settings (`cad.slicer`, else those of a current slice report; with neither, the page says no slicer settings are configured), then each group of parts (with its own count, mass and time) as cards: thumbnail, quantity, material, notes, mass and time per copy, and the STEP, STL and 3MF; then the assembly pages, the hardware table and the source |
-| `cad/` | `<part>.step`, `.stl`, `.3mf` from `exports_dir`, plus `extra_cad` |
+| `cad/` | `<part>.step`, `.stl`, `.3mf` from `exports_dir`, the complete current native plate project when verified, plus `extra_cad` |
 | `images/` | the thumbnails |
 | `docs/<project path>` | the `pages`, and the images they link to, at their project paths, so their relative links keep working; links to files the release carries elsewhere (`cad/`, `source/`) are rewritten in the copies; Markdown is also rendered to HTML (with the `markdown` package) |
 | `source/<project path>` | the files matched by `include` minus `exclude` |
-| `manifest.json` | `format: cad-agent.release/1`, `revision`, `date`, `git` (`commit`, `dirty`, `modified`, `untracked_released`), `slicer`, `parts` (`part`, `group`, `optional`, `pick_one`, `quantity`, `grams`, `minutes`), `build` (`title`, `parts`, `grams`, `minutes`; null without one; `grams` and `minutes` are null while any of its parts is not sliced), `warnings`, and `files` (the sha256 of every file) |
+| `manifest.json` | `format: cad-agent.release/1`, `revision`, `date`, `git` (`commit`, `dirty`, `modified`, `untracked_released`), `slicer`, `parts` (`part`, `group`, `optional`, `pick_one`, `quantity`, `grams`, `minutes`), `build` (`title`, `parts`, `grams`, `minutes`; null without one; `grams` and `minutes` are null while any of its parts is not sliced), `print_set` (current native project, source inputs, profiles and plate handoff; null when unavailable), `warnings`, and `files` (the sha256 of every file) |
+
+When the generated native plate project and its current input record cover the released parts at their quantities
+(or the explicit `cad.release.build`), the page also links **Open the whole print set**. Its plate table records the
+actual native placements and filament presets, with plate time/mass explicitly unrecorded. Per-part slice estimates
+are not plate results. Changed STL bytes, layout/profile inputs, missing native settings, legacy records without input
+fingerprints or unsupported per-part overrides withhold this link with a warning; ordinary part downloads remain.
+Different sources must not flatten onto the same released CAD filename; a repeated reference to the same file is allowed.
+Re-export through the existing `export-3mf` path when inputs change. This does not establish Bambu GUI compatibility,
+printer readiness, physical print quality or the remaining per-plate slicing/override acceptance in #84.
 
 </details>
 

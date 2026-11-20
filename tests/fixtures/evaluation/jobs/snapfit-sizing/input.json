@@ -1,0 +1,21 @@
+{
+  "length_choices_mm": [
+    8,
+    10,
+    12,
+    14,
+    16,
+    18,
+    20
+  ],
+  "thickness_mm": 2,
+  "width_mm": 6,
+  "deflection_mm": 0.8,
+  "deflection_factor": 0.67,
+  "allowable_single": 0.04,
+  "repeated_factor": 0.6,
+  "process_factor": 0.5,
+  "secant_mpa": 1800,
+  "radius_min_mm": 0.381,
+  "radius_ratio": 0.6
+}

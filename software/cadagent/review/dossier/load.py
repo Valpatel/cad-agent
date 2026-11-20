@@ -624,7 +624,13 @@ def load_dossier(path: PathLike, strict: bool = True, root: Optional[PathLike] =
     assembly_node = top.get("assembly")
     if isinstance(assembly_node, dict):
         am = p.mapping(assembly_node, _where(top, "assembly"), "assembly")
-        p.keys(am, ("steps",), "assembly")
+        p.keys(am, ("steps", "plan"), "assembly")
+        if "plan" in am:
+            from .plan import normalize_plan
+            try:
+                dossier.assembly_plan = normalize_plan(_strip(am["plan"]))
+            except (ValueError, TypeError) as exc:
+                p.error(_where(am, "plan"), str(exc))
         steps = p.items(am, "steps", "assembly")
     elif assembly_node is not None:
         p.error(_where(top, "assembly"), "assembly must be a mapping with `steps: [...]`")

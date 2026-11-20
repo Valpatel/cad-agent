@@ -1,3 +1,4 @@
+import {topicSprite, readerNav, updateTime, articleOutline} from './compiler/site-explore-shell.mjs';
 /** Build cad-agent.valpatel.com into dist/: one static bundle for local preview and Cloudflare Pages.
  *
  * Agent-first: every page has its Markdown source next to it (same path, .md), /llms.txt and /llms-full.txt index
@@ -9,19 +10,22 @@
  * browser, leaves them to the reader's browser, as before (#132).
  */
 import { readFile, writeFile, mkdir, rm, readdir } from 'node:fs/promises';
-import { readFileSync } from 'node:fs';
+import { readFileSync, existsSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import path from 'node:path';
 import { marked } from 'marked';
 import YAML from 'yaml';
 import { snapDemo } from './compiler/snap-demo.mjs';
-import { buildCatalog } from './compiler/site-catalog.mjs';            // the catalogue page, catalog.json, catalog/*.json and covers
+import { buildCatalog } from './compiler/site-catalog.mjs';
+import { prepareDiscoveryPage, discoveryModel, discoveryHTML } from './compiler/site-discovery.mjs';            // the catalogue page, catalog.json, catalog/*.json and covers
 import { sanitize, safeUrl, rewriteUrls, imageSize } from './compiler/site-html.mjs';   // allowlist sanitizer for rendered Markdown
 import { drawBoth, drawDiagrams } from './compiler/site-diagrams.mjs';         // Mermaid blocks drawn into finished figures, at build time
 import { ON, fold, pagePlacer } from './compiler/site-pages.mjs';    // docs/pages.yaml: bands, section cards, figures, folds
 import { SECTIONS, createPublication, validateRedirects, folderMapSources } from './publication.mjs';
 import { loadReferences, referenceModel, referenceSite, linkTags, mdTags, healthOf } from './compiler/site-references.mjs';   // /references (#323)
+import { CARD, socialMeta, socialProblems, llmsProblems, servedFiles } from './compiler/site-checks.mjs';   // card tags and llms.txt links (#804)
+import {SCADA_INPUTS, TOOLKIT_ROUTES, scadaToolkitModel, toolkitPages, toolkitFullText, toolkitCapabilities, buildGuideCaptionMissing} from './compiler/site-toolkit.mjs';
 
 // --root DIR builds another checkout of this repo (the tests use a scratch worktree); the build tools still run from here.
 const rootArg = process.argv.indexOf('--root');
@@ -46,15 +50,15 @@ if (RELEASE && WORKTREE) throw new Error('--release and --worktree are exclusive
 // Production is built from reviewed history only: a commit on origin/main or origin/dev (CD deploys from main).
 const onReviewed = ref => { try { execFileSync('git', ['merge-base', '--is-ancestor', 'HEAD', ref], { cwd: root }); return true; } catch { return false; } };
 if (RELEASE && !onReviewed('origin/main') && !onReviewed('origin/dev')) throw new Error('--release needs HEAD on origin/main or origin/dev (merged and pushed), so production only shows reviewed commits');
-const tracked = git('ls-tree', '-r', '-z', '--name-only', 'HEAD').split('\0').filter(Boolean);
+const tracked = (WORKTREE ? git('ls-files','-z') : git('ls-tree', '-r', '-z', '--name-only', 'HEAD')).split('\0').filter(Boolean);
 // Preserve the public image library; rendered pages also add their actual local illustrations below.
 const publishedImages = new Set(tracked.filter(f => /^docs\/img\/.*\.(svg|png|jpe?g|gif|webp)$/i.test(f)));
 const head = git('rev-parse', 'HEAD');
 const revision = head;
 // The content is always HEAD's (or the working tree's with --worktree), but the build tools run from disk (from this
 // checkout, even with --root): say so when they differ from the built commit's, and never release with them.
-const TOOLS = ['tools/site/build-site.mjs', 'tools/site/compiler/site-html.mjs', 'tools/site/compiler/snap-demo.mjs', 'tools/site/compiler/site-catalog.mjs', 'tools/site/compiler/catalog-art.mjs',
-  'tools/site/compiler/site-diagrams.mjs', 'tools/site/compiler/site-pages.mjs', 'tools/site/compiler/site-references.mjs', 'tools/site/publication.mjs', 'tools/site/page-sources.json', 'tools/site/package.json', 'tools/site/package-lock.json'];
+const TOOLS = ['tools/site/build-site.mjs', 'tools/site/compiler/site-html.mjs', 'tools/site/compiler/snap-demo.mjs', 'tools/site/compiler/site-catalog.mjs', 'tools/site/compiler/site-discovery.mjs', 'tools/site/compiler/site-explore-shell.mjs', 'tools/site/compiler/catalog-art.mjs',
+  'tools/site/compiler/site-diagrams.mjs', 'tools/site/compiler/site-pages.mjs', 'tools/site/compiler/site-references.mjs', 'tools/site/compiler/site-checks.mjs', 'tools/site/compiler/site-toolkit.mjs', 'tools/site/publication.mjs', 'tools/site/page-sources.json', 'tools/site/package.json', 'tools/site/package-lock.json'];
 const toolsHere = path.join(import.meta.dirname, '../..');
 const toolsDirty = TOOLS.filter(t => {
   let committedCopy; try { committedCopy = gitRaw('show', `HEAD:${t}`); } catch { return true; }
@@ -80,10 +84,13 @@ const copyTracked = async (f, dest) => { await mkdir(path.dirname(dest), { recur
 await rm(out, { recursive: true, force: true });
 await mkdir(out, { recursive: true });
 const ASSETS = 'tools/site/assets';
-for (const f of tracked.filter(f => f.startsWith(ASSETS + '/') && f !== ASSETS + '/README.md'))
+// Owner maps are compiled below with source-relative links; only runtime assets belong under /web/.
+for (const f of tracked.filter(f => f.startsWith(ASSETS + '/') && !folderPaths.has(f)))
   await copyTracked(f, path.join(out, 'web', f.slice(ASSETS.length + 1)));
 // Browsers ask for /favicon.ico on pages without an icon link (llms.txt, the .md twins).
 if (tracked.includes(ASSETS + '/favicon.ico')) await copyTracked(ASSETS + '/favicon.ico', path.join(out, 'favicon.ico'));
+// iOS asks for /apple-touch-icon.png whatever the page says; every page also links it (tools/site/figures/social-card.mjs draws it).
+await copyTracked(ASSETS + '/apple-touch-icon.png', path.join(out, 'apple-touch-icon.png'));
 // The one-line installers (#282), at the short URLs the README and the home page give.
 for (const f of ['install.sh', 'install.ps1']) await copyTracked(`${ASSETS}/${f}`, path.join(out, f));
 // The shared web kit (3D viewer, part tables, diagrams) is published as /kit/, the same files projects copy.
@@ -161,7 +168,9 @@ validateRedirects(redirects, { tracked, pageFiles, moved, publicPath });
 // ----------------------------------------------------------------------------- references
 // The reference registry (docs/research/references.yaml and its shards): /references pages, their JSON, and [ref:<id>]
 // tags in every page as links to the record (tools/site/compiler/site-references.mjs). Records are not catalogue entries.
-const refModel = referenceModel(await loadReferences({ files: tracked, read }), YAML.parse(await read('docs/areas.yaml')));
+const areaTree = YAML.parse(await read('docs/areas.yaml'));
+await writeFile(path.join(out,'web/topic-icons.svg'),topicSprite(areaTree));
+const refModel = referenceModel(await loadReferences({ files: tracked, read }), areaTree);
 
 // ----------------------------------------------------------------------------- catalogue
 const landscape = JSON.parse(await read('docs/research/landscape.json'));
@@ -174,10 +183,10 @@ if (commands.length !== parserCount) throw new Error(`read ${commands.length} of
 // The catalogue itself is built after the pages (it uses their figures): see `buildCatalog` below.
 
 // ----------------------------------------------------------------------------- HTML frame
-const NAV = [['/catalog', 'Catalogue', true], ['/docs/toolkit', 'Tools', true], ['/research/landscape', 'Landscape'],
-  ['/references', 'References'], ['/docs/common-issues', 'Pitfalls'], ['/docs/agent-workflow', 'For agents']];
+// All three stay in the phone header (#804: For agents was hidden there); below 560 px it takes a second row.
+const NAV = [['/explore', 'Explore', true], ['/toolkit', 'Toolkit', true], ['/docs/agent-workflow', 'For agents', true]];
 // Feedback goes to GitHub: a short issue form with the page filled in, or an edit of the page's source.
-const feedbackURL = (title, url) => `${REPO}/issues/new?template=feedback.yml&title=${encodeURIComponent(`Feedback: ${title}`)}&page=${encodeURIComponent(ORIGIN + url)}`;
+const feedbackURL = (title, url) => `${REPO}/issues/new?template=feedback.yml&title=${encodeURIComponent(`Feedback: ${title}`)}${url === null ? '' : `&page=${encodeURIComponent(ORIGIN + url)}`}`;
 const feedbackBox = (title, url, file) => `<aside class="feedback" aria-label="Feedback"><div><p class="feedback-title">Help us improve!</p>
 <p>Something wrong, missing or confusing on this page? Tell us in a minute. Every note is read, and ideas we use are credited.</p></div>
 <div class="feedback-actions"><a class="button" href="${esc(feedbackURL(title, url))}">Give feedback</a>${file ? `<a href="${REPO}/edit/dev/${esc(file)}">Suggest an edit</a>` : ''}</div></aside>`;
@@ -186,25 +195,28 @@ const feedbackBox = (title, url, file) => `<aside class="feedback" aria-label="F
 const KIT_DEMOS = { 'cad-cantilever': 'cantilever', 'cad-fourbar': 'fourbar', 'cad-fan-curve': 'fan-curve',
   'cad-torsion-snap': 'torsion-snap', 'cad-printed-boss': 'printed-boss' };
 const kitDemos = body => Object.entries(KIT_DEMOS).filter(([tag]) => body.includes(`<${tag}`))
-  .map(([, f]) => `<link rel="stylesheet" href="/kit/${f}.css"><link rel="modulepreload" href="/kit/${f}.js">`).join('');
-// The theme button (web/theme.js shows it and keeps aria-pressed true while the page is dark).
+  .map(([, f]) => `<link rel="stylesheet" href="/kit/calculators/${f}.css"><link rel="modulepreload" href="/kit/calculators/${f}.js">`).join('');
+// The theme button (kit/ui/theme.js shows it and keeps aria-pressed true while the page is dark).
 const THEME_BUTTON = '<button type="button" class="theme-toggle" aria-pressed="false" title="Dark theme" hidden><span class="visually-hidden">Dark theme</span>' +
   '<svg class="sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>' +
   '<svg class="moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg></button>';
-function frame({ title, body, md, description = LEDE, current = '', page = 'doc', css = [], updated = committed, url = current || '/' }) {
+// A shared link shows a card (#804): the page's own title, description and address, and the one owned picture.
+// `missing` (the 404 page) has no address of its own: its feedback link names the address the reader asked for (web/site.js).
+function frame({ title, fullTitle, body, md, description = LEDE, current = '', page = 'doc', css = [], updated = committed, url = current || '/', missing = false }) {
+  const pageTitle = fullTitle || (title === TAGLINE ? 'cad-agent · ' + TAGLINE : title + ' · cad-agent');
   // Cloudflare's documented region guard preserves package@version code literals without changing zone settings,
   // compression or CSP. Keep the guard outside the authored elements; verify actual hosted bytes after release.
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>${esc(title === TAGLINE ? 'cad-agent · ' + TAGLINE : title + ' · cad-agent')}</title>
-<meta name="description" content="${esc(description)}">${current ? `<link rel="canonical" href="${esc(ORIGIN + current)}">` : ''}
-<script src="/web/theme.js"></script><link rel="icon" href="/web/icon.svg"><link rel="preload" href="/kit/vendor/fonts/inter.woff2" as="font" type="font/woff2" crossorigin><link rel="preload" href="/kit/vendor/fonts/jetbrains-mono.woff2" as="font" type="font/woff2" crossorigin><link rel="stylesheet" href="/web/site.css"><link rel="stylesheet" href="/kit/diagrams.css">${css.map(c => `<link rel="stylesheet" href="${c}">`).join('')}${kitDemos(body)}
+<title>${esc(pageTitle)}</title>
+<meta name="description" content="${esc(description)}">${current ? `<link rel="canonical" href="${esc(ORIGIN + current)}">` : ''}${socialMeta({ title: pageTitle, description, url: missing ? null : url ?? '/', origin: ORIGIN })}
+<script src="/kit/ui/theme.js"></script><link rel="icon" href="/web/icon.svg"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><link rel="preload" href="/kit/vendor/fonts/inter.woff2" as="font" type="font/woff2" crossorigin><link rel="preload" href="/kit/vendor/fonts/jetbrains-mono.woff2" as="font" type="font/woff2" crossorigin><link rel="stylesheet" href="/web/site.css"><link rel="stylesheet" href="/kit/documents/diagrams.css">${css.map(c => `<link rel="stylesheet" href="${c}">`).join('')}${kitDemos(body)}
 ${md ? `<link rel="alternate" type="text/markdown" href="${esc(md)}" title="Markdown for agents">` : ''}
 <link rel="alternate" type="text/plain" href="/llms.txt" title="llms.txt"></head>
 <body class="${page}-page"><!--email_off--><a class="skip-link" href="#main:content">Skip to content</a><header class="site-header"><div class="wrap"><a class="wordmark" href="/"><img src="/web/icon.svg" alt="" width="34" height="34">cad-agent<b>.</b></a>
-<nav aria-label="Main">${NAV.map(([h, t, keep]) => `<a href="${h}"${keep ? ' data-keep' : ''}${h === current ? ' aria-current="page"' : ''}>${t}</a>`).join('')}<a class="pill-link" href="${REPO}">GitHub ↗</a>${THEME_BUTTON}</nav></div></header>
-<main class="${page === 'landing' ? '' : 'wrap'} ${page === 'doc' ? 'doc' : ''}"${body.includes('id="main:content"') ? '' : ' id="main:content" tabindex="-1"'}>${body}</main>
-<footer class="site-footer"><div class="wrap"><p>Created by <a href="https://valpatel.com">Valpatel Software LLC</a>. Code under the <a href="${REPO}/blob/dev/LICENSE">MIT licence</a>; every third-party tool keeps its own licence and credit. ${updated ? `Last updated <time datetime="${isoDay(updated)}">${day(updated)}</time>.` : 'This page has uncommitted changes.'} Built from <a href="${REPO}/commit/${revision}">${esc(revisionLabel)}</a>.</p>
-<div class="links"><a href="${esc(feedbackURL(title === TAGLINE ? 'home page' : title, url))}">Help us improve ↗</a><a href="/llms.txt">llms.txt</a><a href="/llms-full.txt">llms-full.txt</a><a href="/catalog.json">catalog.json</a>${md ? `<a href="${esc(md)}">this page .md</a>` : ''}</div></div></footer>
+<nav aria-label="Main">${NAV.map(([h, t, keep]) => `<a href="${h}"${keep ? ' data-keep' : ''}${h === current || (h === '/toolkit' && current.startsWith('/toolkit/')) ? ' aria-current="page"' : ''}>${t}</a>`).join('')}<a class="pill-link" href="${REPO}">GitHub ↗</a>${THEME_BUTTON}</nav></div></header>
+<main class="${page === 'landing' ? '' : 'wrap'} ${page === 'doc' ? 'doc' : ''}"${body.includes('id="main:content"') ? '' : ' id="main:content" tabindex="-1"'}>${current === '/catalog' || current.startsWith('/references') || current === '/docs/common-issues' || current === '/research/landscape' ? `<p class="discovery-context"><a href="/explore${current.startsWith('/references') ? '?kind=references' + (current.split('/')[2] ? '&amp;area=' + encodeURIComponent(current.split('/')[2]) : '') : current === '/docs/common-issues' ? '?kind=lessons' : current === '/research/landscape' ? '?kind=external' : ''}">← Explore all knowledge${current.startsWith('/references') ? ' · search sources across topics' : current === '/docs/common-issues' ? ' · search individual lessons and pitfalls' : ''}</a></p>` : ''}${body}</main>
+<footer class="site-footer"><div class="wrap"><p>Created by <a href="https://valpatel.com">Valpatel Software LLC</a>. Project-owned toolkit code, documentation and artwork use the <a href="${REPO}/blob/dev/LICENSE">MIT licence</a>. Every third-party tool keeps its own licence and credit. ${updated ? `Last updated <time datetime="${esc(updateTime(updated).datetime)}">${esc(updateTime(updated).label)}</time>.` : 'This page has uncommitted changes.'} Built from <a href="${REPO}/commit/${revision}">${esc(revisionLabel)}</a>.</p>
+<div class="links"><a href="${esc(feedbackURL(title === TAGLINE ? 'home page' : title, url))}"${missing ? ' data-feedback-here' : ''}>Help us improve ↗</a><a href="/llms.txt">llms.txt</a><a href="/llms-full.txt">llms-full.txt</a><a href="/catalog.json">catalog.json</a>${md ? `<a href="${esc(md)}">this page .md</a>` : ''}</div></div></footer>
 <script type="module" src="/web/site.js"></script><!--/email_off--></body></html>`;
 }
 
@@ -326,6 +338,7 @@ for (const p of allPages) {
   // One-click copy on every code block (not on diagram sources, which render as pictures).
   html = html.replace(/<pre>(<code(?! class="language-mermaid")[\s\S]*?<\/pre>)/g, '<cad-copy><pre>$1</cad-copy>');
   html = await placeVisuals(p.file, fold(html));
+  html = prepareDiscoveryPage(p, html);
   if (p.parent && !pageFiles.has(p.parent)) throw new Error(`folder map ${p.file}: parent ${p.parent} is not published`);
   const entrance = p.section === 'folder-maps'
     ? `<a href="/docs/map">Repository map</a> · <a href="${esc(pageURL(p.parent))}">Parent folder</a>`
@@ -342,15 +355,9 @@ for (const p of allPages) {
   // The skip link's target is "main:content": slug() drops ":", so no heading id can take it (a "## Content" is "content").
   const outline = (cls, label) => heads.length < 2 ? '' : `<ol class="cad-nav-outline${cls}"${label ? ' aria-label="On this page"' : ''}>${heads.map(h =>
     `<li class="h${h.level}"><a href="#${esc(encodeURIComponent(h.id))}">${h.text}</a></li>`).join('')}</ol>`;
-  const tree = SECTIONS.map(s => {
-    const list = pages.filter(q => q.section === s.id);
-    if (!list.length) return '';
-    return `<details class="cad-nav-group"${s.id === p.section ? ' open' : ''}><summary>${esc(s.title)}</summary><ul>${list.map(q =>
-      `<li><a href="${esc(pageURL(q.file))}"${q.file === p.file ? ` aria-current="page">${esc(q.title)}</a>${outline('', true)}` : `>${esc(q.title)}</a>`}</li>`).join('')}</ul></details>`;
-  }).join('');
-  const nav = `<cad-nav for=".prose" rail=".doc-rail" role="navigation" aria-label="Pages and contents"><details class="cad-nav-fold"><summary class="cad-nav-toggle">Pages and contents</summary><div class="cad-nav-panel"><input type="search" class="cad-nav-filter" placeholder="Filter pages" aria-label="Filter pages"><p class="cad-nav-empty" role="status"></p>${tree}</div></details></cad-nav>`;
+  const nav = readerNav({areas:areaTree,pages,pageURL,current:pageURL(p.file),outlineHTML:outline('',true)});
   const rail = heads.length < 2 ? '' : `<nav class="doc-rail" aria-labelledby="rail-title"><p class="doc-rail-title" id="rail-title">On this page</p>${outline(' cad-nav-rail', false)}</nav>`;
-  docPages.push([dest, frame({ title: p.title, body: `<div class="doc-layout">${nav}<div class="doc-main" id="main:content" tabindex="-1">${crumbs}<article class="prose">${html}</article>` + feedbackBox(p.title, pageURL(p.file), p.file) + `</div>${rail}</div>`, md: '/' + publicPath(p.file), description: p.summary, current: pageURL(p.file), updated: lastChange(p.file), css: ['/kit/nav.css', ...(html.includes('class="ref-cite') ? ['/web/references.css'] : [])] })]);
+  docPages.push([dest, frame({ title: p.title, body: `<div class="doc-layout explore-reader">${nav}<div class="doc-main" id="main:content" tabindex="-1">${crumbs}<article class="prose">${html}</article>` + feedbackBox(p.title, pageURL(p.file), p.file) + `</div>${rail}</div>`, md: '/' + publicPath(p.file), description: p.summary, current: pageURL(p.file), updated: lastChange(p.file), css: ['/kit/documents/nav.css', '/web/catalog.css', '/web/discovery.css', ...(html.includes('class="ref-cite') ? ['/web/references.css'] : [])] })]);
   visuals.set(p.file, (html.match(VISUAL) || []).length);
   p.html = html;                                                      // the catalogue takes each page's first figure
   p.updated = lastChange(p.file);
@@ -360,7 +367,7 @@ for (const p of allPages) await writeFile(path.join(out, publicPath(p.file)), tw
 placeVisuals.checkLinks(file => pages.find(q => q.file === file)?.html);   // band tiles' links to other pages' headings
 // Every Mermaid block drawn once in each of the site's themes and written into its page as two finished figures, which
 // web/site.css shows one of (#305). A block left as it is (no browser, or one Mermaid cannot draw) is drawn by
-// kit/diagrams.js in the reader's browser, in the page's theme.
+// kit/documents/diagrams.js in the reader's browser, in the page's theme.
 const drawIn = theme => drawDiagrams(docPages.map(([, html]) => html), {
   kit: f => readBuf(`software/cadagent/webkit/${f}`), site: f => readBuf(`${ASSETS}/${f}`), theme, client: CLIENT_DIAGRAMS,
   cacheDir: process.env.CAD_AGENT_DIAGRAM_CACHE || path.join(toolsHere, '.cache', 'site-diagrams'),
@@ -374,19 +381,38 @@ for (const f of publishedImages) await copyTracked(f, path.join(out, f));
 
 // Catalogue: catalog.json, catalog/index.json, catalog/<area>.json, the covers and the page (tools/site/compiler/site-catalog.mjs).
 const SNAP = snapDemo();                 // geometry-driven animation: tools/site/compiler/snap-demo.mjs
+const scadaSources = Object.fromEntries(await Promise.all(Object.entries(SCADA_INPUTS).map(async ([key,file]) => [key,JSON.parse(await read(file))])));
+const scada = scadaToolkitModel({...scadaSources,has:file=>tracked.includes(file)});
 const { catalog, files: catalogFiles, body: catalogBody, counts } = await buildCatalog({
   ORIGIN, REPO, revision, built: committed, tagline: TAGLINE, description: LEDE, commands, cli, upstreams, landscape, pages, pageURL, publicPath, safeUrl,
   areas: YAML.parse(await read('docs/areas.yaml')), data: YAML.parse(await read('docs/catalog.yaml')) || {}, tracked, read: readBuf,
   securityReport: JSON.parse(await read('docs/research/security-report.json')),
   snap: SNAP, cliUpdated: lastChange('software/cadagent/cli.py'), draft: WORKTREE,
+  generatedRoutes: TOOLKIT_ROUTES,
 });
 for (const [f, text] of catalogFiles) { await mkdir(path.dirname(path.join(out, f)), { recursive: true }); await writeFile(path.join(out, f), text); }
+const toolkit = toolkitPages(scada, {catalog:catalog.items,has:file=>tracked.includes(file)});
+for (const [file,text] of toolkit.files) {await mkdir(path.dirname(path.join(out,file)),{recursive:true});await writeFile(path.join(out,file),text);}
+for (const p of toolkit.pages) {
+  const filename=p.url.slice(1);
+  await mkdir(path.dirname(path.join(out,filename)),{recursive:true});
+  await writeFile(path.join(out,filename+'.html'),frame({title:p.title,body:p.body,description:p.description,current:p.url,page:'toolkit',md:p.url+'.md',css:['/web/toolkit.css',...(p.css || []),...(p.url.endsWith('/elements')?['/kit/scada/ui/src/styles.css']:[])]}));
+  await writeFile(path.join(out,filename+'.md'),p.markdown);
+}
 // Each ### entry in a lesson file is one lesson (docs/lessons/README.md#lesson-format); the area READMEs are maps, not lessons.
 const lessonCount = pages.filter(p => p.section === 'lessons' && !/(?:^|\/)README\.md$/.test(p.file))
   .reduce((n, p) => n + (p.body.replace(/```[\s\S]*?```/g, '').match(/^### /gm) || []).length, 0);
-await writeFile(path.join(out, 'catalog.html'), frame({ title: 'Catalogue', body: catalogBody, current: '/catalog', page: 'catalog',
-  description: `${catalog.items.length} open-source projects, libraries, benchmarks, demos, tools, guides and lessons for agentic CAD, by area of hardware design.`,
-  css: ['/kit/gallery.css', '/web/catalog.css'] }));
+// A derived search view: no new source identity and no mutation of the catalogue/reference machine feeds.
+const discovery = discoveryModel({ catalog, pages, references: refModel, ORIGIN, revision, pageURL });
+await writeFile(path.join(out, 'discovery.json'), JSON.stringify(discovery) + '\n');
+await writeFile(path.join(out,'catalog.html'),frame({title:'Explore',current:'/catalog',page:'discovery',body:discoveryHTML(discovery,{areas:areaTree,pages,pageURL,catalog,legacy:true}),css:['/kit/ui/gallery.css','/kit/documents/nav.css','/web/catalog.css','/web/discovery.css']}));
+await writeFile(path.join(out, 'explore.html'), frame({ title: 'Explore', current: '/explore', page: 'discovery',
+  description: 'Find tools, guides, practical lessons and reference records by topic.',
+  body: discoveryHTML(discovery, { areas: areaTree, pages, pageURL, catalog }),
+  md: '/explore.md', css: ['/kit/ui/gallery.css', '/web/catalog.css', '/web/discovery.css'] }));
+await writeFile(path.join(out, 'explore.md'), '# Explore hardware knowledge\n\nSearch: ' + ORIGIN + '/explore\n\n'
+  + '- [Engineering toolkit](/toolkit)\n- [Command and Python API](/docs/toolkit)\n- [Reference evidence](/references)\n- [Review pitfalls](/docs/common-issues)\n- [Tool landscape](/research/landscape)\n\n'
+  + 'Derived search metadata: /discovery.json. Existing source IDs, evidence and adoption decisions remain separate.\n');
 
 // The reference pages and their twins, and catalog/references/*.json (no record is a catalogue entry).
 // CAD_AGENT_REFERENCES_HEALTH: the weekly link check's JSON (its references-health artifact), to show each record's
@@ -399,9 +425,10 @@ for (const [f, text] of refSite.files) { await mkdir(path.dirname(path.join(out,
 const REF_SOURCES = ['docs/research/references.yaml', 'docs/research/references', 'docs/areas.yaml'];
 const refsUpdated = WORKTREE && git('status', '--porcelain', '--', ...REF_SOURCES) ? null : git('log', '-1', '--format=%cI', 'HEAD', '--', ...REF_SOURCES) || committed;
 for (const p of refSite.pages) {
+  const outline=articleOutline(p.body),rail=outline?`<nav class="doc-rail" aria-labelledby="rail-title"><p class="doc-rail-title" id="rail-title">On this page</p>${outline.replace('class="cad-nav-outline"','class="cad-nav-outline cad-nav-rail"')}</nav>`:'';
   await mkdir(path.dirname(path.join(out, p.file)), { recursive: true });
-  await writeFile(path.join(out, p.file), frame({ title: p.title, body: p.body, md: '/' + p.md, description: p.description, current: p.url,
-    page: 'references', css: ['/web/references.css'], updated: refsUpdated }));
+  await writeFile(path.join(out, p.file), frame({ title: p.title, body: `<div class="doc-layout explore-reader">${readerNav({areas:areaTree,pages,pageURL,current:p.url,outlineHTML:outline})}<div class="doc-main" id="main:content" tabindex="-1">${p.body}</div>${rail}</div>`, md: '/' + p.md, description: p.description, current: p.url,
+    page: 'references', css: ['/web/references.css','/kit/documents/nav.css','/web/catalog.css','/web/discovery.css'], updated: refsUpdated }));
   await writeFile(path.join(out, p.md), p.markdown);
 }
 
@@ -420,16 +447,34 @@ const LADDER = areasTree.maturity.map(m => m.level);
 const areaMaturity = new Map();
 for (const d of areasTree.domains) for (const a of d.areas || []) areaMaturity.set(a.slug, a.maturity);
 // A home link is a published page (repo path) or a full URL; a picture is a committed image, sized so nothing jumps.
+// A page may name one of its sections (docs/toolkit.md#commands, #804); the section must be one the built page has.
 const homeHref = (h, at) => {
   if (/^https:\/\//.test(h)) return h;
-  if (!pageFiles.has(h)) throw new Error(`docs/home.yaml ${at}: ${h} is not a published page`);
-  return pageURL(h);
+  const [file, anchor] = h.split('#');
+  if (!pageFiles.has(file)) throw new Error(`docs/home.yaml ${at}: ${file} is not a published page`);
+  if (anchor === undefined) return pageURL(file);
+  const built = path.join(out, pageURL(file).slice(1) + '.html');
+  if (!existsSync(built)) throw new Error(`docs/home.yaml ${at}: ${file} is not built before the home page, so #${anchor} cannot be checked`);
+  if (!readFileSync(built, 'utf8').includes(` id="${anchor}"`)) {
+    // A draft (--worktree) links the page and says so, as the catalogue does for a missing heading (site-catalog.mjs).
+    if (!WORKTREE) throw new Error(`docs/home.yaml ${at}: ${file} has no section #${anchor}`);
+    console.warn(`draft: docs/home.yaml ${at}: ${file} has no section #${anchor}; linking the page`);
+    return pageURL(file);
+  }
+  return `${pageURL(file)}#${anchor}`;
 };
 const homeImg = async (src, at, attrs = '') => {
   if (!tracked.includes(src) || !/^docs\/img\/.*\.(svg|png|jpe?g|webp)$/.test(src)) throw new Error(`docs/home.yaml ${at}: ${src} is not a committed picture under docs/img/`);
   const size = imageSize(await readBuf(src), src);
   if (!size) throw new Error(`docs/home.yaml ${at}: cannot read the size of ${src}`);
   return `<img src="/${esc(src)}" width="${size.width}" height="${size.height}"${attrs}>`;
+};
+const resultStills = new Map(home.reel.filter(r => r.still).map(r => [r.img, r.still]));
+const homePicture = async (src, at, attrs = '', still = resultStills.get(src)) => {
+  const image = await homeImg(src, at, attrs);
+  if (!still) return image;
+  await homeImg(still, at + '.still'); // Apply the same committed local-image validation.
+  return `<picture><source media="(prefers-reduced-motion: reduce)" srcset="/${esc(still)}">${image}</picture>`;
 };
 // What each output was computed on, said on its tile (#182 review: not every picture is a real part): ON, from
 // tools/site/compiler/site-pages.mjs, which the doc pages' figures use too.
@@ -453,47 +498,156 @@ const checkNumbers = (r, at) => {
   for (const n of [fea.tets.toLocaleString('en-US'), String(fea.safety_factor), Number(fea.target).toFixed(1)])
     if (!quotes(n)) throw new Error(`docs/home.yaml ${at}: the caption does not quote ${n} from docs/img/gyropup/SOURCE.json`);
 };
-const reel = [], homeMd = { reel: [], ours: [] };
+const reel = [], homeMd = { reel: [] };
 for (const [i, r] of home.reel.entries()) {
   const at = `reel[${i}]`;
   for (const k of ['img', 'tool', 'title', 'caption', 'alt', 'href', 'on']) if (!r[k]) throw new Error(`docs/home.yaml ${at} has no ${k}`);
   if (!ON[r.on]) throw new Error(`docs/home.yaml ${at}: on is one of ${Object.keys(ON).join(', ')}`);
   checkNumbers(r, at);
   homeMd.reel.push(`- [${r.title}](${/^https:/.test(r.href) ? r.href : ORIGIN + pageURL(r.href)}): ${r.caption} (\`${r.tool}\`, on ${ON[r.on].replace(/<[^>]+>/g, '')})`);
-  reel.push(`<li class="reel-tile${r.fit === 'cover' ? ' reel-cover' : ''}"><a class="reel-media" href="${esc(homeHref(r.href, at))}" tabindex="-1" aria-hidden="true">${await homeImg(r.img, at, ` alt="" loading="lazy" decoding="async"`)}</a>
+  reel.push(`<li class="reel-tile${r.fit === 'cover' ? ' reel-cover' : ''}"><a class="reel-media${r.field ? ' reel-recorded' : ''}" href="${esc(homeHref(r.href, at))}" tabindex="-1" aria-hidden="true">${r.field ? `<span class="recorded-field">${await homeImg(r.field, at, ' alt="Recorded thermal field and streamlines for the two fixed solver cases" loading="lazy" decoding="async"')}</span>` : ''}${await homePicture(r.img, at, ` alt="" loading="lazy" decoding="async"`)}</a>
 <p class="reel-tool"><code>${esc(realTool(r.tool, at))}</code></p><h3><a href="${esc(homeHref(r.href, at))}">${esc(r.title)}</a></h3><p>${esc(r.caption)}</p><p class="reel-credit">On ${ON[r.on]}</p>
 <span class="visually-hidden">${esc(r.alt)}</span></li>`);
 }
 // The snap-fit demo is drawn from its geometry in this build (tools/site/compiler/snap-demo.mjs), so it joins the reel inline.
 reel.splice(3, 0, `<li class="reel-tile reel-snap"><a class="reel-media" href="/docs/compliant" tabindex="-1" aria-hidden="true">${SNAP.svg}</a>
 <p class="reel-tool"><code>cad-agent snapfit</code></p><h3><a href="/docs/compliant">One part, no screws</a></h3><p>A cantilever snap fit animated from its own geometry: contact and root strain computed against the material and the print's layer direction.</p><p class="reel-credit">Drawn by this site's build from the snap-fit geometry</p></li>`);
-const fitsTile = async (t, i) => {
-  const at = `fits.ours[${i}]`;
-  const levels = t.maturity ? [t.maturity] : (t.areas || []).map(a => {
-    if (!areaMaturity.has(a)) throw new Error(`docs/home.yaml ${at}: no area ${a} in docs/areas.yaml`);
-    return areaMaturity.get(a);
-  });
-  if (!levels.length || levels.some(l => !LADDER.includes(l))) throw new Error(`docs/home.yaml ${at}: a maturity on the ladder (${LADDER.join(', ')}), from areas or stated with a why`);
-  if (t.maturity && !t.why) throw new Error(`docs/home.yaml ${at}: a stated maturity needs its why`);
-  const level = levels.reduce((lo, l) => LADDER.indexOf(l) < LADDER.indexOf(lo) ? l : lo);      // the least mature area decides
-  homeMd.ours.push(`- [${t.title}](${/^https:/.test(t.href) ? t.href : ORIGIN + pageURL(t.href)}) (${level}): ${t.does}`);
-  const step = LADDER.indexOf(level);
-  return `<li class="fit-tile"><a href="${esc(homeHref(t.href, at))}">${t.img ? `<span class="fit-media">${await homeImg(t.img, at, ' alt="" loading="lazy" decoding="async"')}</span>`
-  : t.cmd ? `<span class="fit-media fit-cmd"><code>$ ${esc(t.cmd)}</code></span>`
-  : step === 0 ? '<span class="fit-media fit-empty">not built yet</span>' : (() => { throw new Error(`docs/home.yaml ${at}: a built block needs an img or a cmd`); })()}
-<span class="fit-title">${esc(t.title)}</span></a><p>${esc(t.does)}</p>
-<p class="ladder" title="${esc(t.why || `the least mature of: ${t.areas.join(', ')}`)}"><span class="visually-hidden">Maturity: </span>${LADDER.map((l, k) => `<span class="rung${k <= step ? ' on' : ''}${k === step ? ' here' : ''}"${k === step ? '' : ' aria-hidden="true"'}>${k === step ? esc(l) : ''}</span>`).join('')}</p></li>`;
+// A /toolkit link names one of that page's examples, which carry these ids (tools/site/compiler/site-toolkit.mjs).
+const toolkitCards = new Map(toolkitCapabilities(scada, { catalog: catalog.items, has: f => tracked.includes(f) }).map(c => [c.id, c]));
+const stackHref = (h, at) => {
+  const m = h.match(/^\/toolkit(?:#([\w-]+))?$/);
+  // A generated site route (/references, /catalog) must already be in the output; an outside link must be plain https.
+  if (!m && /^\/[a-z][\w/-]*$/.test(h)) {
+    if (![h.slice(1) + '.html', h.slice(1) + '/index.html'].some(f => existsSync(path.join(out, f)))) throw new Error(`docs/home.yaml ${at}: ${h} is not a page this build writes`);
+    return h;
+  }
+  if (/^https:/.test(h)) { let u; try { u = new URL(h); } catch { u = null; } if (!u || u.username || u.password || u.protocol !== 'https:') throw new Error(`docs/home.yaml ${at}: ${h} is not a plain https link`); return h; }
+  if (!m) return homeHref(h, at);
+  if (m[1] && !toolkitCards.has(m[1])) throw new Error(`docs/home.yaml ${at}: /toolkit has no example #${m[1]}`);
+  return h;
 };
-const upstreamByName = new Map(upstreams.map(u => [u.name, u]));
-const makeChip = (m, i) => {
-  const u = m.upstream && upstreamByName.get(m.upstream);
-  if (m.upstream && !u) throw new Error(`docs/home.yaml fits.make[${i}]: ${m.upstream} is not in software/vendor/upstreams/registry.yaml`);
-  return `<li><span class="make-name"><a href="${esc(homeHref(m.href, `fits.make[${i}]`))}"><b>${esc(m.name)}</b></a>${u ? ` <span class="pill pill-${esc(u.status)}">${esc(STATUS_NOTE[u.status] || u.status)}</span><span class="pill">${esc(u.license)}</span><span class="pill" title="GitHub stars when surveyed">★ ${Number(u.stars).toLocaleString('en-US')}</span>` : ''}</span><span>${esc(m.does)}</span>${m.note ? `<small>${esc(m.note)}</small>` : ''}</li>`;
+const absolute = h => /^https:/.test(h) ? h : h.startsWith('/') ? ORIGIN + h : ORIGIN + pageURL(h.split('#')[0]) + (h.includes('#') ? '#' + h.split('#')[1] : '');
+// What is in cad-agent (#748): a layer cake, top layer first. A block is in the repo today unless it is `planned:`
+// with an issue (drawn dashed, linking the issue). Every count is computed here from the repo, never typed.
+const trackedText = async f => (await readBuf(f)).toString('utf8');
+const countLines = async (files, re) => (await Promise.all(files.map(async f => ((await trackedText(f)).match(re) || []).length))).reduce((a, b) => a + b, 0);
+const processProfiles = YAML.parse(await read('docs/research/process-profiles.yaml'));
+const evalCandidates = YAML.parse(await read('tests/fixtures/evaluation/candidates.yaml'));
+const COUNTS = {
+  skills: pages.filter(p => p.section === 'skills').length,
+  agents: pages.filter(p => p.section === 'agents').length,
+  'eval-jobs': new Set(tracked.filter(f => /^tests\/fixtures\/evaluation\/jobs\/[^/]+\/job\.json$/.test(f))).size,
+  'eval-tasks': (evalCandidates.tasks || evalCandidates.candidates || []).length,
+  guides: pages.filter(p => p.section === 'docs').length,
+  lessons: lessonCount,
+  references: refModel.refs.records.size,
+  // Read at source or better (read, verified-at-source, encoded); the rest are catalogued from a search snippet only.
+  'sources-read': [...refModel.refs.records.values()].filter(r => r.status === 'source').length,
+  catalogue: catalog.items.length,
+  commands: commands.length,
+  formulas: await countLines(tracked.filter(f => /^software\/cadagent\/formulas\/[^/]+\.py$/.test(f)), /^@formula\(/gm),
+  'process-rules': (processProfiles.rules || []).length,
+  // Test functions: pytest `def test_` and node:test `test(`; browser scripts are counted as none.
+  tests: await countLines(tracked.filter(f => /^tests\/.*(?:\/test_[^/]+\.py|\.test\.mjs)$/.test(f)), /^\s*(?:async\s+)?def test_\w+|^test\(/gm),
 };
-const testCount = git('grep', '-c', '-E', '^\\s*def test_', 'HEAD', '--', 'tests/*.py').split('\n').filter(Boolean)
-  .reduce((n, l) => n + Number(l.split(':').pop()), 0);
+for (const [k, v] of Object.entries(COUNTS)) if (!Number.isInteger(v) || v <= 0) throw new Error(`home page count ${k} is ${v}: fix its source or drop the count`);
+const ISSUES = `${REPO}/issues/`;
+homeMd.cake = [];
+const seenBlocks = new Set();
+const cakeLayers = home.stack.map((layer, li) => {
+  const at = `stack[${li}]`;
+  if (!layer.layer || !layer.caption || !layer.blocks?.length) throw new Error(`docs/home.yaml ${at}: a layer has a name, a caption and blocks`);
+  if (layer.caption.split(/\s+/).length > 8) throw new Error(`docs/home.yaml ${at}: keep the caption to eight words`);
+  const md = [];
+  const blocks = layer.blocks.map((b, bi) => {
+    const bat = `${at}.blocks[${bi}]`;
+    if (!b.label) throw new Error(`docs/home.yaml ${bat} has no label`);
+    if (seenBlocks.has(b.label.toLowerCase())) throw new Error(`docs/home.yaml ${bat}: ${b.label} is already a block`);
+    seenBlocks.add(b.label.toLowerCase());
+    if (b.planned) {
+      if (!Number.isInteger(b.planned) || b.href || b.count) throw new Error(`docs/home.yaml ${bat}: a planned block names only its open issue`);
+      // `until:` names the file that will exist once the work lands: then the block must become solid.
+      if (b.until && tracked.includes(b.until)) throw new Error(`docs/home.yaml ${bat}: ${b.until} now exists, so ${b.label} is built: make it a solid block with its page`);
+      md.push(`${b.label} (planned, [#${b.planned}](${ISSUES}${b.planned}))`);
+      return `<li><a class="cake-block cake-planned" href="${ISSUES}${b.planned}"><span class="cake-name">${esc(b.label)}</span><span class="cake-count">#${b.planned}</span></a></li>`;
+    }
+    if (!b.href) throw new Error(`docs/home.yaml ${bat}: a block in the repo today links its page`);
+    let n = null;
+    if (b.count) { if (!(b.count in COUNTS)) throw new Error(`docs/home.yaml ${bat}: count ${b.count} is not one the build computes (${Object.keys(COUNTS).join(', ')})`); n = COUNTS[b.count]; }
+    if (b.commands) {
+      const missing = b.commands.filter(c => !commandNames.has(c));
+      if (missing.length) throw new Error(`docs/home.yaml ${bat}: ${missing.join(', ')} not cad-agent commands`);
+      n = b.commands.length;
+    }
+    const href = stackHref(b.href, bat);
+    md.push(`[${b.label}${n != null ? ` (${n.toLocaleString('en-US')})` : ''}](${absolute(b.href)})`);
+    return `<li${b.commands ? ' class="cake-family"' : ''}><a class="cake-block" href="${esc(href)}"${b.commands ? ` title="${esc(b.commands.map(c => 'cad-agent ' + c).join(', '))}"` : ''}><span class="cake-name">${esc(b.label)}</span>${b.note ? `<span class="cake-note">${esc(b.note)}</span>` : ''}${n != null ? `<span class="cake-count">${n.toLocaleString('en-US')}</span>` : ''}</a></li>`;
+  }).join('');
+  homeMd.cake.push(`- **${layer.layer}** (${layer.caption}): ${md.join(' · ')}`);
+  return `<div class="cake-layer" data-layer="${li}"><div class="cake-head"><h3>${esc(layer.layer)}</h3><p>${esc(layer.caption)}</p></div><ul>${blocks}</ul></div>`;
+}).join('');
+// See it run: the turret recording quotes its own SOURCE.json record, so a new capture cannot leave an old caption.
+const turret = home.showcase.turret, turretRec = gyropupSource.pictures['turret-playground'];
+if (!turretRec || `docs/img/gyropup/${turretRec.file}` !== turret.img || `docs/img/gyropup/${turretRec.still.file}` !== turret.still)
+  throw new Error('docs/home.yaml showcase.turret: its picture and still are the ones recorded in docs/img/gyropup/SOURCE.json');
+if (!/work-in-progress/.test(turret.caption) || !/not physics validation/.test(turret.caption)) throw new Error('docs/home.yaml showcase.turret: the caption states it is a work-in-progress playground, not physics validation');
+const turretCaption = turret.caption.replace('{revision}', turretRec.revision.slice(0, 7));
+// The hero shows the recording beside the headline (#748), so a first-time visitor sees a real running example on the
+// first screen. The 9 KB still is the image the page loads and paints; once the page has loaded, web/site.js swaps in
+// the 324 KB animation from data-motion-src (not under reduced motion, and never without script), at the same
+// explicit size, so it neither delays the first paint nor shifts anything.
+if (!/work-in-progress/.test(turret.hero_caption || '') || !/not physics validation/.test(turret.hero_caption)) throw new Error('docs/home.yaml showcase.turret.hero_caption: one line that states it is a work-in-progress prototype, not physics validation');
+const turretSize = imageSize(await readBuf(turret.img), turret.img);
+await homeImg(turret.img, 'showcase.turret');
+const turretStill = await homeImg(turret.still, 'showcase.turret.still', ` alt="" fetchpriority="high" decoding="async" data-motion-src="/${esc(turret.img)}"`);
+if (!turretStill.includes(` width="${turretSize.width}" height="${turretSize.height}"`)) throw new Error('docs/home.yaml showcase.turret: the still and the animation must be the same size, so the swap moves nothing');
+// The links open the recorded model (#804: without ?design= the playground opens on its default robot).
+if (turret.href !== turretRec.public) throw new Error(`docs/home.yaml showcase.turret.href is ${turret.href}, not the recording's ${turretRec.public} (docs/img/gyropup/SOURCE.json)`);
+const turretHero = `<figure class="hero-run"><a class="run-media" href="${esc(homeHref(turret.href, 'showcase.turret'))}" tabindex="-1" aria-hidden="true"><picture><source media="(prefers-reduced-motion: reduce)" srcset="/${esc(turret.still)}">${turretStill}</picture></a><figcaption><p class="run-kicker">Recorded in the browser · work in progress</p><h2 class="hero-run-title"><a href="${esc(turret.href)}">${esc(turret.title)} ↗</a></h2><p>${esc(turret.hero_caption)}</p><p class="run-links"><a href="${esc(turretRec.public)}">Open the playground</a> · <a href="https://github.com/${esc(turretRec.project)}/tree/${esc(turretRec.revision)}">Recorded from ${esc(turretRec.revision.slice(0, 7))}</a> · <a href="${REPO}/blob/dev/docs/img/gyropup/SOURCE.json">Recording record</a></p></figcaption><span class="visually-hidden">${esc(turret.alt)}</span></figure>`;
+const turretMd = `- [${turret.title}](${turret.href}): ${turretCaption}`;
+homeMd.run = [];
+const runCards = home.showcase.cards.map((c, i) => {
+  const card = toolkitCards.get(c.toolkit);
+  if (!card) throw new Error(`docs/home.yaml showcase.cards[${i}]: ${c.toolkit} is not a /toolkit example`);
+  if (!c.caption) throw new Error(`docs/home.yaml showcase.cards[${i}] has no caption`);
+  // A card that moves (#798) says what the motion is: recorded solver output of a dated work-in-progress snapshot,
+  // replayed and not recomputed, and not a validation of hardware. Its still loads lazily; web/site.js swaps the
+  // animation in only once the card comes near the screen, never under reduced motion or Save-Data.
+  if (card.motion) for (const phrase of ['recorded solver output', 'dated', 'snapshot', 'work-in-progress', 'replayed, not recomputed', 'not a validation of hardware'])
+    if (!c.caption.includes(phrase)) throw new Error(`docs/home.yaml showcase.cards[${i}]: an animated card's caption says "${phrase}"`);
+  if (c.toolkit === 'assembly') for (const phrase of buildGuideCaptionMissing(c.caption))
+    throw new Error(`docs/home.yaml showcase.cards[${i}]: the build-guide card's caption says "${phrase}"`);
+  homeMd.run.push(`- [${card.title}](${ORIGIN}/toolkit#${card.id}): ${c.caption}`);
+  return `<li class="run-mini"><a class="run-mini-media" href="/toolkit#${esc(card.id)}" tabindex="-1" aria-hidden="true"><img src="${esc(card.image)}" alt="" width="800" height="500" loading="lazy" decoding="async"${card.motion ? ` data-motion-src="${esc(card.motion)}"` : ''}></a><div><h3><a href="/toolkit#${esc(card.id)}">${esc(card.title)}</a></h3><p>${esc(c.caption)}</p></div></li>`;
+}).join('');
+// More checks: results that stay one click away as text (their animated figures live on the linked pages).
+const moreChecks = home.more_checks.map((m, i) => {
+  const at = `more_checks[${i}]`;
+  for (const k of ['title', 'tool', 'href', 'caption']) if (!m[k]) throw new Error(`docs/home.yaml ${at} has no ${k}`);
+  homeMd.reel.push(`- [${m.title}](${absolute(m.href)}): ${m.caption} (\`${m.tool}\`)`);
+  return `<li><a href="${esc(homeHref(m.href, at))}">${esc(m.title)}</a> <code>${esc(realTool(m.tool, at))}</code></li>`;
+}).join('');
+// The loop as a figure: the steps in order and the way back to the start (the cards below say how far each has got).
+const ARC_SUB = ['frontier models, real builds', 'reviewed PRs with tests', 'references, checks, tools', 'free, open and local models'];
+const arcLoop = `<svg class="arc-loop" viewBox="0 0 800 132" role="img" aria-label="The loop: people on frontier models use cad-agent on real projects, improve it, the project gathers the best references, checks and tools, and evals measure whether smaller, open and local models can do the same work; then the next round begins">
+<defs><marker id="arc-arrow" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path class="tip" d="M0 0L8 4L0 8z"/></marker></defs>
+${home.arc.map((st, i) => `<g transform="translate(${8 + i * 198} 8)"><rect class="box${i === 3 ? ' out' : ''}" width="178" height="74" rx="12"/><text class="num" x="14" y="24" font-size="16" font-weight="750">${i + 1}</text><text class="name" x="14" y="45" font-size="12.5" font-weight="700">${esc(st.title)}</text><text class="sub" x="14" y="63" font-size="10.5">${esc(ARC_SUB[i])}</text></g>${i < 3 ? `<path class="flow" d="M${188 + i * 198} 45h16" stroke-width="2" marker-end="url(#arc-arrow)"/>` : ''}`).join('')}
+<path class="flow" d="M700 84v20a8 8 0 0 1-8 8H105a8 8 0 0 1-8-8v-14" fill="none" stroke-width="2" stroke-dasharray="4 4" marker-end="url(#arc-arrow)"/>
+<text class="sub" x="400" y="128" text-anchor="middle" font-size="11">what the evals show feeds the next round</text></svg>`;
+if (home.arc.length !== ARC_SUB.length) throw new Error('docs/home.yaml arc: four steps, as the loop figure draws them');
+// From frontier to local: each step says what holds today and what is next.
+homeMd.arc = [];
+const arcSteps = home.arc.map((s, i) => {
+  const at = `arc[${i}]`;
+  for (const k of ['title', 'today', 'next', 'href']) if (!s[k]) throw new Error(`docs/home.yaml ${at} has no ${k}`);
+  const today = s.today.replace(/\{([\w-]+)\}/g, (all, k) => k === 'catalog' ? catalog.items.length.toLocaleString('en-US')
+    : k in COUNTS ? COUNTS[k].toLocaleString('en-US') : (() => { throw new Error(`docs/home.yaml ${at}: no count ${k}`); })());
+  homeMd.arc.push(`${i + 1}. [${s.title}](${absolute(s.href)}). Today: ${today} Next: ${s.next}`);
+  return `<li class="arc-step"><span class="arc-num" aria-hidden="true">${i + 1}</span><h3><a href="${esc(homeHref(s.href, at))}">${esc(s.title)}</a></h3><p><b>Today.</b> ${esc(today)}</p><p class="arc-next"><b>Next.</b> ${esc(s.next)}</p></li>`;
+}).join('');
 // The hero model (web/models/, from tools/gyropup_showcase.py) and its still poster (tools/site/figures/site-model-poster.mjs).
 const heroModel = JSON.parse(await read(ASSETS + '/models/gyropup.json'));
+const j501Model = JSON.parse(await read(ASSETS + '/models/j501.json'));
 const poster = imageSize(await readBuf(ASSETS + '/models/gyropup.webp'), 'gyropup.webp');
 if (!poster) throw new Error('web/models/gyropup.webp: run node tools/site/figures/site-model-poster.mjs');
 // One checked installation guide per platform, or one line to paste into an agent. Keep checksum/immutable-source
@@ -517,56 +671,98 @@ const useCard = `<section class="use-band" id="use-it" aria-labelledby="use-titl
 <div class="os-tabs">${INSTALL.map(([id], i) => `<input type="radio" name="install-os" id="os-${id}" class="visually-hidden"${i === 0 ? ' checked' : ''}>`).join('')}
 <div class="os-tab-row" aria-hidden="true">${INSTALL.map(([id, name]) => `<label for="os-${id}" class="os-tab tab-${id}">${esc(name)}</label>`).join('')}</div>
 ${INSTALL.map(([id, name, href]) => `<div class="os-panel panel-${id}"><a class="install-guide" href="${esc(href)}">Install on ${esc(name)} →</a></div>`).join('')}</div>
-<p class="use-lead">Then ask your agent for a part, check or simulation.</p>
+<p class="use-lead">Use the knowledge with hosted agents or local/open models.</p>
 <ul class="agent-badges" aria-label="Agents it works with">${AGENTS.map(([name, mark]) => `<li><span class="agent-badge"><span class="agent-mark" aria-hidden="true">${esc(mark)}</span>${esc(name)}</span></li>`).join('')}</ul></div>
-<div class="use-paste"><p class="paste-title">Or paste this into your agent:</p>
+<div class="use-paste"><p class="paste-title">Or paste this, then name what to build:</p>
 <cad-copy class="agent-copy" label="Copy prompt"><pre class="agent-box" aria-label="The line to paste into your agent">${esc(pasteLine)}</pre></cad-copy>
 ${useLoop}
 <p class="use-note">No telemetry. Your agent sends what it learns as a pull request or issue, only when you say yes. <a href="/docs/agent-workflow#install">Install by hand</a> · Names belong to their owners; no endorsement implied.</p></div>
 </div></div></section>`;
-const landing = `<div class="wrap"><section class="hero hero-3d">
-<div class="hero-head"><p class="eyebrow"><span class="status-dot"></span>Open source · for agents and people</p>
-<h1>Your one stop shop for <span>agentic CAD.</span></h1>
-<p class="intro">AI helping AI build anything you want.</p>
-<p class="intro-sub">cad-agent is a free toolkit your AI assistant installs in one line. It helps the AI design real, physical things, check them for problems before anything is made, and, with your OK, share what it learns as a pull request, so every AI that uses it gets better at building for people.</p></div>
-<figure class="hero-model"><cad-model src="/web/models/gyropup.json" label="Gyropup" style="aspect-ratio:${poster.width}/${poster.height}"><img class="cad-model-poster" src="/web/models/gyropup.webp" width="${poster.width}" height="${poster.height}" fetchpriority="high" alt="Gyropup, a wheel-legged robot with a foam-ball turret"></cad-model>
-<figcaption><span><b>Gyropup</b>, the current CAD assembly${heroModel.source?.left_out?.length ? ' (internal parts and fasteners hidden)' : ''}.</span><span><a href="https://gyropup.com">gyropup.com</a> · <a href="${esc(heroModel.source.repo + '/tree/' + heroModel.source.revision)}">CAD source</a> · MIT · drag to turn</span></figcaption></figure>
-<div class="hero-actions"><div class="actions"><a class="button primary" href="#use-it">Copy this to your agent <span>↓</span></a><a class="button" href="/catalog">Browse the catalogue</a><a class="button quiet" href="${REPO}">GitHub ↗</a></div>
+// Original five-by-seven title lettering; no web font or third-party game assets.
+const titlePixels = {
+  A:['01110','10001','10001','11111','10001','10001','10001'],
+  B:['11110','10001','10001','11110','10001','10001','11110'],
+  C:['01111','10000','10000','10000','10000','10000','01111'],
+  D:['11110','10001','10001','10001','10001','10001','11110'],
+  E:['11111','10000','10000','11110','10000','10000','11111'],
+  G:['01111','10000','10000','10111','10001','10001','01111'],
+  H:['10001','10001','10001','11111','10001','10001','10001'],
+  I:['11111','00100','00100','00100','00100','00100','11111'],
+  L:['10000','10000','10000','10000','10000','10000','11111'],
+  M:['10001','11011','10101','10101','10001','10001','10001'],
+  N:['10001','11001','10101','10011','10001','10001','10001'],
+  S:['01111','10000','10000','01110','00001','00001','11110'],
+  U:['10001','10001','10001','10001','10001','10001','01110'],
+};
+function titlePixelLine(label, y=0) {
+  return [...label].map((letter, i) => {
+    const cells = (titlePixels[letter] || []).flatMap((row, j) => [...row].flatMap((bit, k) =>
+      bit === '1' ? [`M${i*6+k} ${y+j}h1v1h-1z`] : []));
+    return cells.join('');
+  }).join('');
+}
+const titleWide = titlePixelLine('MACHINES BUILDING MACHINES');
+const titleNarrow = titlePixelLine('MACHINES') + titlePixelLine('BUILDING MACHINES', 10);
+const pixelHeading = `<h1 class="pixel-title"><span class="pixel-title-text">Machines building machines</span><svg class="pixel-title-wide" viewBox="0 0 155 9" aria-hidden="true" focusable="false" shape-rendering="crispEdges"><path class="pixel-title-shadow" transform="translate(0 1)" d="${titleWide}"/><path fill="currentColor" d="${titleWide}"/></svg><svg class="pixel-title-narrow" viewBox="0 0 101 19" aria-hidden="true" focusable="false" shape-rendering="crispEdges"><path class="pixel-title-shadow" transform="translate(0 1)" d="${titleNarrow}"/><path fill="currentColor" d="${titleNarrow}"/></svg></h1>`;
+// The home page's lede says what cad-agent is and where it is headed (#748); the title and description say the same.
+const HOME_LEDE = ['An open-source stack of CAD libraries, simulators, deterministic checks, web widgets and command-line tools, with knowledge and an agent kit on top.',
+  'Frontier models use it for CAD work today; it is headed toward free, open and local ones.'];
+const HOME_TITLE = 'cad-agent · Open-source CAD libraries, simulators, checks and tools for agents';
+const HOME_DESCRIPTION = 'An open-source stack of CAD libraries, simulators, deterministic checks, web widgets and command-line tools, with knowledge and an agent kit on top.';
+const landing = `<div class="wrap"><section class="hero learning-hero">
+<div class="hero-head"><p class="eyebrow"><span class="status-dot" aria-hidden="true"></span>Shared knowledge. Better things.</p>
+${pixelHeading}
+<p class="intro">${HOME_LEDE.map(esc).join(' ')}</p></div>
+<div class="hero-actions"><div class="actions"><a class="button primary" href="#use-it">Build with your agent ↓</a><a class="button" href="/explore">Explore the knowledge</a><a class="button quiet" href="${REPO}">GitHub ↗</a></div></div>
+${turretHero}
+</section>
+<figure class="learning-art learning-band"><picture><source media="(prefers-reduced-motion: reduce) and (max-width:600px)" srcset="/docs/img/hero/learning-loop-mobile-still.svg" width="956" height="710"><source media="(prefers-reduced-motion: reduce)" srcset="/docs/img/hero/learning-loop-still.svg" width="1536" height="768"><source media="(max-width:600px)" srcset="/docs/img/hero/learning-loop-mobile.svg" width="956" height="710"><img src="/docs/img/hero/learning-loop.svg" width="1536" height="768" decoding="async" alt="An original pixel-art orbital workshop: robots assemble, test and teach a new robot, which joins the builders as the next chassis arrives"></picture><figcaption>Every build can improve the shared knowledge and checks behind the next one.</figcaption></figure>
+<section class="section built-with" id="built-with" aria-labelledby="run-title"><div class="lead"><h2 id="run-title">See it <span>run.</span></h2><p>Two real projects you can turn in the browser, then replays, connected systems and build guides from the toolkit. Each says what it is and what it does not prove.</p></div>
+<div class="project-viewers">
+<article><h3>Gyropup</h3><cad-model src="/web/models/gyropup.json" label="Gyropup" loading="scroll" style="aspect-ratio:1"><img class="cad-model-poster" src="/web/models/gyropup.webp" width="1200" height="1200" loading="lazy" alt="Current collected Gyropup assembly"></cad-model><p>A wheel-legged robot that brings mechanical design, motion and electronics together. This simplified view leaves out interior hardware.</p><p><a href="${esc(heroModel.source.repo + '/tree/' + heroModel.source.revision)}">Exact CAD source</a> · <a href="https://gyropup.com">Project</a></p></article>
+<article><h3>J501 AGX Orin enclosure</h3><cad-model src="/web/models/j501.json" label="J501 enclosure with real carrier board" loading="scroll" style="aspect-ratio:1"><img class="cad-model-poster" src="/web/models/j501.webp" width="1200" height="1200" loading="lazy" alt="J501 enclosure and real carrier board, assembled from exported CAD"></cad-model><p>A printed home for a Jetson AGX Orin computer, shown with its real carrier board. A fit-check prototype, not a physically qualified enclosure.</p><p><a href="${esc(j501Model.source.repo + '/tree/' + j501Model.source.revision)}">Exact CAD snapshot</a> · <a href="https://github.com/mvalancy/j501-agx-orin">Project and evidence</a> · <a href="/web/models/j501-source.json">Model provenance</a></p></article>
 </div>
-</section></div>
+<ul class="run-minis">${runCards}</ul></section>
+<section class="section stack" id="stack" aria-labelledby="stack-title"><div class="lead"><h2 id="stack-title">What is in <span>cad-agent.</span></h2><p>Everything above is built from this stack: open source underneath, our libraries and tools in the middle, knowledge and an agent kit on top. Each block opens its page.</p></div>
+<ul class="cake-legend"><li><span class="cake-key"></span>In cad-agent today</li><li><span class="cake-key cake-key-planned"></span>Where we are headed (its issue)</li></ul>
+<a class="cake-skip" href="#use-it">Skip the stack</a><div class="cake" role="figure" aria-labelledby="stack-title" data-visual>${cakeLayers}</div></section></div>
 ${useCard}
-<section class="reel-band" id="outputs"><div class="wrap"><div class="lead"><h2>What the code <span>computes.</span></h2><p>Outputs of cad-agent's tools with the numbers they computed: on Gyropup, on a printed enclosure, on this repo's test fixtures and on worked examples. Each tile says which, and opens the page that explains it.</p></div>
-<ul class="reel">${reel.join('')}</ul></div></section>
-<div class="wrap"><section class="section fits" aria-labelledby="fits-title"><div class="lead"><h2 id="fits-title">Where cad-agent <span>fits.</span></h2><p>Other people's tools make the model. text-to-cad, which we are trialling, writes and exports models, but <a href="/research/landscape#2-deep-dive-earthtojaketext-to-cad-v0726-2026-10-20">its code computes no stress, fatigue or safety factor</a>. cad-agent's engineering is Python with ${testCount.toLocaleString('en-US')} test functions in CI. Each block shows how far it has got.</p></div>
-<div class="fits-make"><p class="fits-label">Make: other people's tools we build on or are trialling, credited</p><ul>${home.fits.make.map(makeChip).join('')}</ul></div>
-<p class="fits-arrow" aria-hidden="true"><span>STEP, 3MF, boards</span></p>
-<div class="fits-ours"><p class="fits-label">Check, simulate, explain, measure: cad-agent</p><ul>${(await Promise.all(home.fits.ours.map(fitsTile))).join('')}</ul>
-<p class="fits-key">Maturity: ${areasTree.maturity.map(m => `<b>${esc(m.level)}</b> ${esc(m.means)}`).join('; ')}. From <a href="${REPO}/blob/dev/docs/areas.yaml">docs/areas.yaml</a>.</p></div></section>
-<section class="section" style="padding-top:0"><div class="missions">
-<a class="mission mission-blue" href="/research/landscape"><span class="mission-tag">Map</span><span class="mission-num">${(counts.upstream || 0) + (counts.library || 0) + (counts.benchmark || 0)}</span><p>Agentic-CAD projects, libraries and benchmarks, checked with dates and licences.</p><span class="go">See the landscape <span>→</span></span></a>
-<a class="mission mission-yellow" href="/docs/toolkit"><span class="mission-tag">Demonstrate</span><span class="mission-num">${counts.tool || 0}</span><p>Commands that run on real projects: gates, holes, FEA, CFD, topology, slicing, the 3D viewer.</p><span class="go">Open the tools <span>→</span></span></a>
-<a class="mission mission-orange" href="/docs/common-issues"><span class="mission-tag">Fill the gaps</span><span class="mission-num">${lessonCount}</span><p>Lessons from real builds, each with the incident behind it and the check that catches it.</p><span class="go">Read the pitfalls <span>→</span></span></a>
-</div></section>
-<section class="section built-with" style="padding-top:0"><div class="lead"><h2>Built with <span>cad-agent.</span></h2><p>Real projects are the test bench: every tool here was needed by one of them first.</p></div>
-<ul class="projects"><li><a href="https://gyropup.com">${await homeImg('docs/img/gyropup.jpg', 'projects', ' alt="Gyropup, a wheel-legged robot with a turret, rendered" loading="lazy" decoding="async"')}<b>Gyropup</b></a><p>A wheel-legged foam-ball battle robot, designed, simulated and documented by agents with this toolkit. MIT.</p></li>
-<li><a href="https://github.com/mvalancy/j501-agx-orin">${await homeImg('docs/img/viewer.jpg', 'projects', ' alt="The J501 enclosure in the kit\'s 3D viewer, with its parts list" loading="lazy" decoding="async"')}<b>J501 AGX Orin enclosure</b></a><p>A printed enclosure and cooler for a Jetson AGX Orin carrier, where most of the lessons came from.</p></li></ul></section>
-
-<section class="section skills-row" style="padding-top:0"><div class="lead"><h2>Skills your agents <span>can load.</span></h2><p>The installer puts them where Claude Code, Codex and the other agents look (<code>~/.claude/skills</code>, <code>~/.agents/skills</code>). <a href="/docs/agent-workflow">How they work together →</a></p></div>
-<ul class="skill-chips">${skillCards.map(p => `<li><a href="${esc(pageURL(p.file))}"><b>${esc(p.title)}</b><span class="pill">${p.section === 'agents' ? 'subagent' : 'skill'}</span></a><a class="skill-md" href="/${esc(publicPath(p.file))}" aria-label="${esc(p.title)} as Markdown">.md</a></li>`).join('')}</ul></section>
+<section class="reel-band" id="outputs"><div class="wrap"><div class="lead"><h2>What the checks <span>compute.</span></h2><p>Outputs of cad-agent's tools with the numbers they computed: on this repo's test fixtures and on worked examples. Each tile says which, and opens the page that explains it.</p></div>
+<ul class="reel">${reel.join('')}</ul>
+<div class="more-checks"><p>More checks</p><ul>${moreChecks}</ul></div></div></section>
+<div class="wrap"><section class="section arc" id="frontier-to-local" aria-labelledby="arc-title"><div class="lead"><h2 id="arc-title">From frontier <span>to local.</span></h2><p>The plan, and how far it has got. People on frontier models improve cad-agent on real work; evals will show when cheaper and local models can do the same. <a href="${esc(homeHref('docs/vision.md', 'arc'))}">The vision</a> · <a href="${esc(homeHref('docs/practice/standard-evaluation.md', 'arc'))}">What the evals measure</a></p></div>
+${arcLoop}<ol class="arc-steps">${arcSteps}</ol></section>
 <section class="section help-band"><div class="lead"><h2>Help us <span>improve!</span></h2><p>Found a mistake, a better tool, or a page that wasted your time? It takes a minute, and ideas we use are credited by name.</p></div>
 <div class="help-actions"><a class="button primary" href="${esc(feedbackURL('home page', '/'))}">Give feedback</a><a class="button" href="${REPO}/issues">See open issues</a><a class="button" href="/CONTRIBUTING">How to contribute</a></div></section></div>`;
-await writeFile(path.join(out, 'index.html'), frame({ title: TAGLINE, body: landing, md: '/index.md', current: '/', page: 'landing', css: ['/web/snap-demo.css', '/kit/model.css'] }));
+await writeFile(path.join(out, 'index.html'), frame({ title: TAGLINE, fullTitle: HOME_TITLE, description: HOME_DESCRIPTION, body: landing, md: '/index.md', current: '/', page: 'landing', css: ['/web/snap-demo.css', '/kit/model/model.css', '/web/home.css'] }));
 
 // ----------------------------------------------------------------------------- agent files
 const bySection = id => pages.filter(p => p.section === id);
+// See it run and What is in cad-agent, in llms.txt after its preamble in the page's order; index.md moves both into
+// its own outline, where the turret recording sits with the headline as the page shows it.
+const VIEWERS_MD = [`- [Gyropup](${heroModel.source.repo}/tree/${heroModel.source.revision}): a wheel-legged robot in an interactive 3D viewer; the web assembly omits interior hardware.`,
+  `- [J501 project](https://github.com/mvalancy/j501-agx-orin): an enclosure around a real carrier board in an interactive 3D viewer; [model provenance](${ORIGIN}/web/models/j501-source.json) records this prototype's captured inputs and display-only simplification. Physical qualification and final current-source adoption remain separate.`];
+const RUN_MD = `## See it run
+
+Recorded and live examples from the home page. Each says what it is and what it does not prove.
+
+${[turretMd, ...VIEWERS_MD, ...homeMd.run].join('\n')}
+`;
+const CAKE_MD = `## What is in cad-agent
+
+Top layer first. Planned blocks name their issue.
+
+${homeMd.cake.join('\n')}
+`;
 const llms = `# cad-agent
 
 > ${TAGLINE}. ${LEDE}
 
-cad-agent is an open-source toolkit and knowledge base for AI agents that design hardware: CAD models, assemblies,
-simulation and print releases. It maps the best free tools, demonstrates them on real projects and fills the gaps with
+${HOME_LEDE.join(' ')} It maps the best free tools, demonstrates them on real projects and fills the gaps with
 tested tools of its own. Every page on this site has a Markdown twin at the same path with a .md extension.
 
+${RUN_MD}
+${CAKE_MD}
 - Source: ${REPO} (MIT). Install and use: the checked guide below (then \`cad-agent update\` to update).
   cad-agent collects no telemetry.
 - Machine-readable catalogue: ${ORIGIN}/catalog.json (schema ${catalog.schema}; ${catalog.items.length} entries, each with an id, kind,
@@ -601,6 +797,9 @@ ${agentGuide}
 ## Start here
 
 - [README](${ORIGIN}/README.md): what cad-agent is and how it grows
+- [Engineering toolkit](${ORIGIN}/toolkit.md): viewers, SCADA elements, simulations and build/review capabilities
+- [SCADA elements](${ORIGIN}/toolkit/scada/elements.md): animated equipment, variants and editable visual states
+- [SCADA simulations](${ORIGIN}/toolkit/scada/simulations.md): target-owned process examples, including wastewater digestion
 - [Tools](${ORIGIN}/docs/toolkit.md): every command, the project contract and the Python API
 - [Agent workflow](${ORIGIN}/${publicPath("docs/practice/agent-workflow.md")}): skills, subagents, work claims and crash-safe work
 - [Common issues](${ORIGIN}/${publicPath("docs/practice/common-issues.md")}): recurring CAD mistakes and the checks that catch them
@@ -615,27 +814,34 @@ ${commands.map(c => `- \`cad-agent ${c.name}\`: ${c.help}`).join('\n')}
 ${refSite.llms}
 `;
 await writeFile(path.join(out, 'llms.txt'), llms);
-// The home page's twin: llms.txt, then what the page shows beside it (the reel and where cad-agent fits), in words.
-const fitsMake = home.fits.make.map(m => { const u = m.upstream && upstreamByName.get(m.upstream); return `- ${m.name}${u ? ` (${u.license}, ${STATUS_NOTE[u.status] || u.status})` : ''}: ${m.does}`; });
-await writeFile(path.join(out, 'index.md'), `${llms.replace(/\n*$/, '\n')}
-## On the home page
+// The homepage twin keeps the same current story and evidenced examples as the rendered entrance.
+await writeFile(path.join(out, 'index.md'), `${llms.replace(RUN_MD + '\n', '').replace(CAKE_MD, '').replace(/\n*$/, '\n')}
+## Machines building machines
 
-### What the code computes
+${HOME_LEDE.join(' ')}
+
+Running beside the headline:
+
+${turretMd}
+
+[The original learning illustration](${ORIGIN}/docs/img/hero/learning-loop.svg) is conceptual process artwork, not an engineering result or a claim of automatic model training.
+
+### See it run
+
+${[...VIEWERS_MD, ...homeMd.run].join('\n')}
+
+${CAKE_MD.replace('## What is in cad-agent', '### What is in cad-agent')}
+### What the checks compute
 
 ${homeMd.reel.join('\n')}
 
-### Where cad-agent fits
+### From frontier to local
 
-Other people's tools make the model (we build on them or are trialling them):
-
-${fitsMake.join('\n')}
-
-cad-agent checks, simulates, explains and measures around it (maturity: ${LADDER.join(' → ')}, from docs/areas.yaml):
-
-${homeMd.ours.join('\n')}
+${homeMd.arc.join('\n')}
 `);
 await writeFile(path.join(out, 'llms-full.txt'), `# cad-agent: full text\n\n> ${TAGLINE}. ${LEDE}\n\n` +
-  pages.map(p => `\n\n---\n\nSource: ${ORIGIN}/${publicPath(p.file)}\n\n${twinMd(p.file, p.body, true).trim()}\n`).join(''));
+  pages.map(p => `\n\n---\n\nSource: ${ORIGIN}/${publicPath(p.file)}\n\n${twinMd(p.file, p.body, true).trim()}\n`).join('') +
+  toolkitFullText(toolkit.pages, ORIGIN));
 // Cloudflare Pages joins the values of a header set by more than one matching rule, so each header is set by one rule
 // only: security headers on /*, Cache-Control only on /kit/vendor/*. Those stable URLs can change between releases,
 // so they revalidate, like the Pages default for everything else. The site's own pages have no inline script;
@@ -665,9 +871,9 @@ export const CSP = `default-src 'self'; script-src 'self' ${[...inlineHashes].so
 // Cloudflare Pages redirects: each moved page and its Markdown twin, to the new path.
 await writeFile(path.join(out, '_redirects'), redirects.flatMap(([from, to]) =>
   [`/${from.replace(/\.md$/, '')} /${publicPath(to).replace(/\.md$/, '')} 301`, `/${from} /${publicPath(to)} 301`]).join('\n') + (redirects.length ? '\n' : ''));
-// The kit's own pages (kit/*.html) are copied byte for byte from the kit, so they cannot carry a canonical <link>;
-// Pages sends it as a Link header instead, at the pretty URL Pages serves them on (/kit/viewer, not /kit/viewer.html).
-const kitPages = (await readdir(path.join(out, 'kit'))).filter(f => f.endsWith('.html')).sort().map(f => '/kit/' + f.replace(/\.html$/, ''));
+// Copied kit pages keep their source bytes. Pages sends their canonical address as a Link header, including
+// nested applications: x.html serves at /x and an index.html serves at its containing directory.
+const kitPages = (await htmlFiles(path.join(out, 'kit'))).sort().map(f => '/' + path.relative(out,f).split(path.sep).join('/').replace(/\/index\.html$/, '/').replace(/\.html$/, ''));
 await writeFile(path.join(out, '_headers'), [
   '/*', '  X-Content-Type-Options: nosniff', '  Referrer-Policy: strict-origin-when-cross-origin', `  Content-Security-Policy: ${CSP}`,
   '  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()', '  Cross-Origin-Opener-Policy: same-origin',
@@ -678,9 +884,32 @@ await writeFile(path.join(out, '_headers'), [
   ...kitPages.flatMap(u => [u, `  Link: <${ORIGIN}${u}>; rel="canonical"`]), ''].join('\n'));
 await writeFile(path.join(out, 'robots.txt'), `User-agent: *\nAllow: /\nSitemap: ${ORIGIN}/sitemap.xml\n`);
 await writeFile(path.join(out, 'sitemap.xml'), '<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' +
-  ['/', '/catalog', ...allPages.map(p => pageURL(p.file)), ...refSite.urls].map(u => `<url><loc>${ORIGIN}${u}</loc></url>`).join('') + '</urlset>\n');
-await writeFile(path.join(out, '404.html'), frame({ title: 'Not found', body: '<h1>Not here.</h1><p>Try the <a href="/catalog">catalogue</a> or <a href="/llms.txt">llms.txt</a>.</p>' }));
+  ['/', '/explore', '/catalog', ...TOOLKIT_ROUTES, ...allPages.map(p => pageURL(p.file)), ...refSite.urls].map(u => `<url><loc>${ORIGIN}${u}</loc></url>`).join('') + '</urlset>\n');
+await writeFile(path.join(out, '404.html'), frame({ title: 'Not found', missing: true, url: null, body: '<h1>Not here.</h1><p>Try the <a href="/explore">Explore search</a> or <a href="/llms.txt">llms.txt</a>.</p>' }));
+// The kit's standalone viewers (model, file, FEA) look for their host site's top bar at <root>/site/nav.json and link
+// <root>/site/ (webkit/ui/appnav.js), the layout `cad-agent site` writes in a project. The kit is at /kit/ here, so
+// that is /site/: the site's own destinations, and its home for the link (#804: the demo pages had no way back).
+await mkdir(path.join(out, 'site'), { recursive: true });
+// The bar's name links <root>/site/ (redirected home below), so its tabs are the header's three destinations.
+await writeFile(path.join(out, 'site', 'nav.json'), JSON.stringify({ title: 'cad-agent', nav: NAV.map(([h, t]) => ({ id: h.slice(1), title: t, href: h.slice(1) })) }, null, 1) + '\n');
+await writeFile(path.join(out, '_redirects'), (await readFile(path.join(out, '_redirects'), 'utf8')) + '/site / 302\n/site/ / 302\n');
 await writeFile(path.join(out, 'version.json'), JSON.stringify({ revision, built: catalog.built, pages: pages.length, folder_maps: folderMapPages.length, items: catalog.items.length }, null, 2) + '\n');
+// What a shared link and an agent's first fetch need (#804, tools/site/compiler/site-checks.mjs): every page's card
+// tags are its own, the card picture is the size its tags say, and every address on this site in llms.txt is served.
+{
+  const card = imageSize(await readFile(path.join(out, CARD.file)), CARD.file);
+  if (card?.width !== CARD.width || card?.height !== CARD.height) throw new Error(`${CARD.file} is ${card?.width}x${card?.height}, not ${CARD.width}x${CARD.height}: run node tools/site/figures/social-card.mjs`);
+  const found = [];
+  for (const f of await htmlFiles(out)) {
+    const where = path.relative(out, f);
+    if (where.split(path.sep)[0] === 'kit') continue;     // the kit's own pages are copied byte for byte
+    for (const p of socialProblems(await readFile(f, 'utf8'), { origin: ORIGIN })) found.push(`${where}: ${p}`);
+  }
+  for (const f of ['llms.txt', 'llms-full.txt'])
+    for (const p of llmsProblems(await readFile(path.join(out, f), 'utf8'), ORIGIN, pathname => servedFiles(pathname).some(x => existsSync(path.join(out, x)))))
+      found.push(`${f}: ${p}`);
+  if (found.length) throw new Error(`the built site:\n  ${found.slice(0, 40).join('\n  ')}${found.length > 40 ? `\n  … and ${found.length - 40} more` : ''}`);
+}
 // For agents and the tests: which pages still have nothing to look at.
 const noVisual = [...visuals].filter(([, n]) => !n).map(([f]) => f).sort();
 await writeFile(path.join(out, 'visuals.json'), JSON.stringify({ pages: Object.fromEntries([...visuals].sort()), without: noVisual }, null, 2) + '\n');

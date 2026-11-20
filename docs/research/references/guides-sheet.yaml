@@ -7,12 +7,14 @@ schema: 2
 title: 'Manufacturing and design guides: Sheet metal and laser'
 sources:
 - id: sendcutsend-designing-for-online-sheet-metal-bending
+  aliases:
+  - scs-bend-files
   kind: guide
   category: manufacturing-guides
   title: Designing for Online Sheet Metal Bending Services
   authors: []
   org: SendCutSend
-  year: null
+  year: 2022
   url: https://sendcutsend.com/blog/designing-for-bending-and-forming/
   access: free
   terms: cited and summarised, never copied
@@ -32,25 +34,37 @@ sources:
   process_groups:
   - sheet
   evidence:
-    class: snippet-only
+    class: read
     numbers: some
-    tested: unknown
+    tested: 'no'
     authority: primary
   confidence:
     level: low
     estimate: 0.4
     sources: 1
-  summary: 'Bending design guidance from an online laser and bending service; snippet showed title only. Note: Content not
-    shown; title-level read.'
-  used_for: []
+  summary: Supplier bend-angle convention, file preparation and material-specific air-bend setup; angle examples are not enclosed-angle
+    callouts or universal bend limits.
+  used_for:
+  - docs/research/manufacturing/sheet-metal-file-and-hole-review.md
+  - .agents/skills/sheet-metal-hardware/SKILL.md
   imported: 6494949c1148bd68
+  verified: '2026-11-11: read the complete 2022-11-01 article through its preflight checklist; visually inspected the supplier
+    angle and flat-pattern diagrams. HTML SHA256 2b44274e65f01072cd227a57ac2c41ac0831ea99096371b22400fe75ad02537b. Linked
+    calculators/material tables and embedded videos not claimed read.'
+  archive:
+    sha256: a166516de31876bec108fd8c870f9aca929eacad5616824bb047f3b185d8b589
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
 - id: sendcutsend-step-by-step-guide-to-sheet-metal-bending
+  aliases:
+  - scs-bend-steps
   kind: guide
   category: manufacturing-guides
   title: Step By Step Guide To Sheet Metal Bending
   authors: []
   org: SendCutSend
-  year: null
+  year: 2024
   url: https://sendcutsend.com/blog/step-by-step-guide-to-sheet-metal-bending/
   access: free
   terms: cited and summarised, never copied
@@ -70,23 +84,28 @@ sources:
   process_groups:
   - sheet
   evidence:
-    class: snippet-only
+    class: read
     numbers: some
-    tested: unknown
+    tested: 'no'
     authority: primary
   confidence:
     level: low
     estimate: 0.4
     sources: 1
-  claims:
-  - text: Minimum flange 0.500 in or 4x material thickness, whichever is greater
-    status: corroborated
-    evidence: A fabrication guide (Fabcon-type result) says start at 4x thickness; other sources say 2-4x depending on material.
-      0.500 in figure not seen elsewhere.
-  summary: 'Step-by-step bending guide; snippets cite minimum flange and fixed per-material bend radius and K-factor. Note:
-    Snippet came via search summary, not page text.'
-  used_for: []
+  summary: Supplier-specific bend-file conventions and review sequence; flange limits, radius and K-factor require the chosen
+    material/thickness data, not a universal flange formula.
+  used_for:
+  - docs/research/manufacturing/sheet-metal-file-and-hole-review.md
+  - .agents/skills/sheet-metal-hardware/SKILL.md
   imported: 2071fc0e28348484
+  verified: '2026-11-11: read the complete four-stage 2024-05-31 article, software/format table and preflight checklist; visually
+    checked corner-relief image and table text. HTML SHA256 29d55858f6814ef608ff7aeb6e4c1c66702d7012446ff12f55dbb40b09c4d478.
+    Linked pages/videos not claimed read. Imported universal flange claim absent from this article; removed.'
+  archive:
+    sha256: 7a19eee411ad6bda6f41d65ee95e5a4d08e7cd1ca50ab433818d01a208699ba0
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
 - id: sendcutsend-can-sendcutsend-bend-parts-with-a-custom-bend
   kind: guide
   category: manufacturing-guides
@@ -127,6 +146,11 @@ sources:
     evidence: No second source checked.
   summary: 'No custom bend radius; radius and K-factor fixed per material and thickness; use their specs or bending calculator.
     Note: FAQ; inside radius after 90 degree bend.'
+  archive:
+    sha256: 875f50051d8b0e41cb2e895ec288500b84bd45fca62846d02035d6640f3ef14e
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: 1945801b4d6f7808
 - id: sendcutsend-guidelines-for-hardware-insertion
@@ -174,6 +198,11 @@ sources:
       from an independent publisher.
   summary: 'PEM hardware placement: minimum hole centre to edge or bend per SKU, hole-to-hole spacing, resized mount holes.
     Note: Values per SKU in catalog; check part.'
+  archive:
+    sha256: 2697beddf14bb3a76f8e14ebdeea9cc8bf272e26087b5eee11a5efa771d5b027
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: bb19e01c00a74fa4
 - id: sendcutsend-how-to-save-time-with-locating-features-for
@@ -216,6 +245,11 @@ sources:
     slot as wide as the plate.'
   summary: 'Tabs and slots that locate laser-cut weldment parts without fixtures: each slot as wide as the plate thickness,
     the tab short of the far face where it must not show.'
+  archive:
+    sha256: bc7f0a39514d95e98404263e5aa733615442c019bc2e2b79b362ab73f1722bb8
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
 - id: sendcutsend-do-i-need-to-compensate-for-kerf-in-my-design
   kind: guide
@@ -257,6 +291,11 @@ sources:
     status: unconfirmed
     evidence: No second source checked.
   summary: 'No kerf compensation needed in design; the service accounts for kerf on its end. Note: Short FAQ.'
+  archive:
+    sha256: 2066c49be4f3ffaa2bac09edd528b6726e657998c8531fa96052c076ee6ac266
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: b1762fd5499865b6
 - id: sendcutsend-waterjet-cutting-design-guidelines
@@ -295,6 +334,11 @@ sources:
     estimate: 0.4
     sources: 1
   summary: 'Minimum hole or cutout size for waterjet varies with material thickness and type. Note: Snippet gave no numbers.'
+  archive:
+    sha256: 2066c49be4f3ffaa2bac09edd528b6726e657998c8531fa96052c076ee6ac266
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: bf33535322af8469
 - id: xometry-design-guide-laser-and-sheet-cutting
@@ -334,6 +378,11 @@ sources:
     estimate: 0.4
     sources: 1
   summary: 'Xometry design guide for laser and sheet cutting; title only seen. Note: Title-level read only.'
+  archive:
+    sha256: 87ae2bb11e11e3c85c358ebf794ae3f0f31b3cc35333c116ddf151c90f0f4f09
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: 0abd49b2adde1d81
 - id: xometry-tolerances-of-machined-and-sheet-metal-parts
@@ -374,6 +423,11 @@ sources:
     sources: 1
   summary: 'Knowledge-base article on tolerances of machined and sheet metal parts; no figures seen. Note: Title-level read
     only.'
+  archive:
+    sha256: 5903238040db021c89335fda7098477803ff06a1a58ced2cd59e7a6081b6b2e8
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: cedf50c9c52be6da
 - id: xometry-5-ways-to-reduce-costs-on-sheet-metal-fabrication
@@ -415,6 +469,11 @@ sources:
     evidence: No second source checked.
   summary: 'Cost-cutting tips for sheet metal: standard thickness and materials, fewer bends, bend radius at least thickness,
     nesting. Note: Snippet is a cross-source summary.'
+  archive:
+    sha256: 4fd681c6e2034f69a4341e53793cf2dfed55fa8a53cf89b74c629abb239cbb83
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: afaa4b237490dfa2
 - id: protolabs-design-for-sheet-metal-fabrication-toolkit
@@ -455,6 +514,11 @@ sources:
     sources: 1
   summary: 'Toolkit; flange length and hole-to-bend limits depend on material, thickness and bend radius. Note: Tables not
     visible in snippet.'
+  archive:
+    sha256: f7c2ee0fcfc6fe8bb3ecf22412aca92f55ca7db09e706c7cfc68eb9be19d556a
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: 76cb921dd0ed7736
 - id: protolabs-7-ways-to-improve-sheet-metal-parts
@@ -492,6 +556,11 @@ sources:
     estimate: 0.4
     sources: 1
   summary: 'Protolabs design tips for sheet metal parts; title only seen. Note: Title-level read only.'
+  archive:
+    sha256: b72035754c523d11491d2ec46e720d5b796b0f1c16640086720f73bb6467066d
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: c38bcda9a51eae0d
 - id: protolabs-designing-sheet-metal-enclosures
@@ -528,6 +597,11 @@ sources:
     estimate: 0.4
     sources: 1
   summary: 'Protolabs enclosure design tips; title only seen. Note: Title-level read only.'
+  archive:
+    sha256: d16fbc3b4a2545f67482ede2de969555f856d6ea176ec44b8057ebdb9c4a1847
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: 3467cc744652a6c5
 - id: geomiq-sheet-metal-fabrication-design-guide
@@ -565,6 +639,11 @@ sources:
     estimate: 0.4
     sources: 1
   summary: 'Geomiq sheet metal design guide; title only seen. Note: Title-level read only.'
+  archive:
+    sha256: 3e1e6182d00465b6e8243eda7aa9d5b7095cbe78664758cbf58063ab65821540
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: 1a92314b67137406
 - id: geomiq-how-to-reduce-sheet-metal-fabrication-costs
@@ -601,6 +680,11 @@ sources:
     estimate: 0.4
     sources: 1
   summary: 'Geomiq article on lowering sheet metal fabrication cost; details not shown. Note: Title-level read only.'
+  archive:
+    sha256: 383d05e7cc9a50fee2988561bfff36143453b7806ef9a572ebd84b2ad143a168
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: 8effc056779e7249
 - id: protocase-tech-tips
@@ -638,6 +722,11 @@ sources:
     estimate: 0.4
     sources: 1
   summary: 'Index of tips: minimum bend dimensions, countersinking, gauge choice, ventilation, thermal. Note: Index only.'
+  archive:
+    sha256: 910f1d1d9b645df2c9f6d5724efee831e712a15fc3686e71935b6d2bfaaea4e4
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: 25216b2df639dc06
 - id: pennengineering-pem-self-clinching-blind-fasteners-b-bs
@@ -685,6 +774,11 @@ sources:
       hole diameter from PCBWay. No independent .19 in match.
   summary: 'Catalog datasheet gives hole centre to edge and sheet hardness limits for self-clinching blind fasteners. Note:
     Per-part datasheet, not a design guide.'
+  archive:
+    sha256: d113c3c8abff389be1cfbb796a50f0a7ab4d406b44cbf92de49529376733ae50
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: b526be6734a32add
 - id: the-fabricator-analyzing-the-k-factor-in-sheet-metal-bending
@@ -767,6 +861,11 @@ sources:
       not found; bend-to-hole +/-0.012 in elsewhere.
   summary: 'Laser metal machine tolerance and single-bend tolerance; metals auto-offset for kerf. Note: Rule values came via
     search summary.'
+  archive:
+    sha256: 319d7d549ebe4ccfc720b3ec3fc4f911d78baad7c09f702c5fa971d5a761aa09
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: 09448dc27715ceee
 - id: mfgrobots-sheet-metal-design-basics-mfgrobots-precision
@@ -804,6 +903,11 @@ sources:
     estimate: 0.4
     sources: 1
   summary: 'Hole near bend can distort within about 2.5x thickness plus bend radius. Note: Aggregator-style site.'
+  archive:
+    sha256: c9168e69427a6218a302050714e7c148ff080f164a8d0624a00cef88adf60ea2
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: 5d90d1ecad9e880e
 - id: uc-berkeley-mechanical-engineering-waterjet-omax-abrasive
@@ -844,6 +948,11 @@ sources:
     status: unconfirmed
     evidence: No second source checked.
   summary: 'Lab protocol: minimum hole 0.06 in; taper tied to thickness and hardness. Note: Lab-specific, not a general guide.'
+  archive:
+    sha256: d090184541412b77944c990bd5eaea3cda7787d5ade5df0d2883619cd4a8d112
+    kind: pdf
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: 41c5620653fd2541
 - id: fabcon-sheet-metal-laser-cutting-tolerances-complete-guide
@@ -883,6 +992,11 @@ sources:
     estimate: 0.4
     sources: 1
   summary: 'Laser cutting tolerances; cites ISO 9013 as the governing standard. Note: Shop blog; figures via summary.'
+  archive:
+    sha256: b832e447ec6cef04aa596144b242f893a21f9f68d5103cc7e05153b5ddf1d303
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: 01fc1809af0c18ba
 - id: pcbway-welded-sheet-metal-parts-design-guidelines
@@ -929,6 +1043,11 @@ sources:
     evidence: '2026-11-04: read on the page. No second source checked.'
   summary: 'PCBWay on welded sheet-metal parts: weld types, bend before welding, tabs 3-5 times the thickness with 0.1-0.15
     mm clearance per side (0.05-0.1 mm per side for powder coat).'
+  archive:
+    sha256: e8898ab38a5a701235688ea919dff79b11df902e4877b858f48b8977352e85c4
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
 - id: pcbway-hardware-installation-design-guidelines
   kind: guide
@@ -973,6 +1092,11 @@ sources:
     evidence: '2026-11-04: read on the page. SendCutSend''s per-part catalogue distances differ (the map''s note)'
   summary: 'PCBWay on installing hardware in sheet metal: hole centre at least 1.5 hole diameters from an edge, and from a
     bend tangent at least R + t plus a margin (2t + R + 3 mm).'
+  archive:
+    sha256: 8bf8f714973d2b787f2a1aace6dfc545d97632b16c1e7a7a57a5cc852ae269b0
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
 - id: sendcutsend-5052-h32-aluminum-sheet-metal
   kind: guide
@@ -1000,17 +1124,32 @@ sources:
   process_groups:
   - sheet
   evidence:
-    class: snippet-only
-    numbers: unknown
+    class: read
+    numbers: claimed
     tested: 'no'
     authority: primary
   confidence:
     level: low
     estimate: 0.4
     sources: 1
-  summary: 'Material page for 5052-H32 with bend data; contents not shown. Note: Title-level read only.'
-  used_for: []
-  imported: f20ad86fde1f2e88
+  summary: Thickness-specific 5052-H32 service listings and temper-dependent bending advice. A cutting listing is not a bending
+    tooling specification; current main-list and FAQ thickness counts disagree.
+  used_for:
+  - docs/research/manufacturing/sheet-metal-file-and-hole-review.md
+  - docs/research/manufacturing/process-profiles.md
+  verified: '2026-11-12: Read substantive material article, per-thickness service listings and FAQ; undated HTML, no numbered
+    edition/pages. Direct HTTP 200, no redirect; 611090 bytes, SHA-256 9ff54e9519003deeae40fe837fb96154e2f52c0b4aab8d42aaa1b601af781026.
+    Interactive bending specifications, artwork, linked certificates and physical bends not inspected.'
+  archive:
+    sha256: c421ec68eeed2298a9c78e314ab8474539b1478119b210c095471c6696f47455
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
+  claims:
+  - text: Choose the exact thickness and its bending service specification before setting a bracket radius or flange.
+    status: unconfirmed
+    evidence: Available Service Specifications are thickness-specific; broad bending-radius prose depends on temper and does
+      not supply a selected stock tooling row. Main thickness listing and FAQ counts disagree; no total count adopted.
 - id: osh-cut-aluminum-6061-t6-bending-terms
   kind: guide
   category: manufacturing-guides
@@ -1046,6 +1185,11 @@ sources:
     estimate: 0.4
     sources: 1
   summary: 'OSH Cut material page for 6061-T6 with bending terms; contents not shown. Note: Title-level read only.'
+  archive:
+    sha256: 0f138b0ff97bb574d7696f8152c9e8c337d9401a694574b5df6a94f207199266
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: 944cc0611de9e591
 - id: osh-cut-aluminum-5052-h32-bending-terms
@@ -1083,6 +1227,11 @@ sources:
     estimate: 0.4
     sources: 1
   summary: 'OSH Cut material page for 5052-H32 with bending terms; contents not shown. Note: Title-level read only.'
+  archive:
+    sha256: b6761f2af416a4c48365f50a0b130a5e9367f4f3e33a6c2ad6b1d1cf20ee7f56
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: c1e8b6267fd993ca
 - id: hmaking-aluminum-5052-vs-6061-differences-strength-corrosion
@@ -1119,6 +1268,11 @@ sources:
     estimate: 0.4
     sources: 1
   summary: 'Comparison; 5052 favored for bending, 6061 for strength. Note: Aggregator-style supplier blog.'
+  archive:
+    sha256: 00b51050ac3c8823bbb8bb529df5c35b6c2fd6fcb75f149b5ccf638399136443
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: 781afeb51e929f75
 - id: pennengineering-pem-self-clinching-nuts-bulletin-cl-pem
@@ -1165,6 +1319,11 @@ sources:
     evidence: '2026-11-04: read in the PDF. No second source checked.'
   summary: 'PEM''s self-clinching nut bulletin: nut types, the sheet hardness each takes (CLA aluminium nuts: HRB 50 / HB
     82 or less) and the mounting-hole tables (+.003/-.000 in).'
+  archive:
+    sha256: 542b10bc4cdf6c5ec1193245e79be09f49074ac1627d41e2dde3ab8be6167a2c
+    kind: pdf
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
 - id: pennengineering-pem-pem-blind-fastener-bulletin-b-mouser
   kind: guide
@@ -1241,6 +1400,11 @@ sources:
     estimate: 0.4
     sources: 1
   summary: 'Vendor sheet metal bending guidelines; only title seen. Note: Content not visible in snippet'
+  archive:
+    sha256: ab57bd85ab394249400ee0c37d3b0b8f87bec86526079c4ffefe1ca10a309666
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: eb63354b2e6e6302
 - id: alexneufeld-youcannotunfold
@@ -1520,3 +1684,125 @@ sources:
     sources: 1
   summary: 'FreeCAD sheet metal workbench: bends and unfolding to flat pattern.'
   imported: c429ce58ac3d361e
+- id: pem-fastener-guide
+  extends: true
+  kind: guide
+  category: manufacturing-guides
+  licence:
+    spdx: null
+    class: proprietary
+    read: false
+    note: Copyrighted manufacturer guide; no redistribution permission established. Cited and summarised only.
+  reuse:
+    text: cite-only
+    geometry: none
+  processes:
+  - fasteners
+  process_groups:
+  - sheet
+  - inserts
+  evidence:
+    class: read
+    numbers: some
+    tested: 'no'
+    authority: primary
+  confidence:
+    level: low
+    estimate: 0.4
+    sources: 1
+  summary: Industry overview separating self-clinching, broaching, flaring, plastic inserts and surface mount attachment;
+    application examples do not replace exact family drawings.
+- id: pem-consumer-electronics-design-guide-2021
+  aliases:
+  - pem-ce-guide-2021
+  kind: guide
+  category: manufacturing-guides
+  title: PEM Consumer Electronics Fastening Design Standards
+  authors: []
+  org: PennEngineering (PEM)
+  year: 2021
+  url: https://info.pemnet.com/hubfs/CE%20Design%20Guide/Consumer%20Electronics%20Fastening%20Design%20Guide%20Oct%202021.pdf
+  access: free
+  terms: cited and summarised, never copied
+  licence:
+    spdx: null
+    class: proprietary
+    read: false
+    note: Copyrighted manufacturer guide; no redistribution permission established. Cited and summarised only.
+  reuse:
+    text: cite-only
+    geometry: none
+  areas:
+  - fasteners-and-hardware
+  - sheet-metal
+  processes:
+  - fasteners
+  process_groups:
+  - sheet
+  - inserts
+  evidence:
+    class: encoded
+    numbers: some
+    tested: 'yes'
+    authority: primary
+  confidence:
+    level: medium
+    estimate: 0.7
+    sources: 1
+  used_for:
+  - docs/research/manufacturing/pem-micro-fasteners.md
+  - .agents/skills/pem-fastener-selection/SKILL.md
+  - docs/research/process-profiles.yaml
+  - tests/manufacturing/test_cards.py
+  verified: '2026-11-11: downloaded and read all 16 PDF pages (printed pp.1-31), including family tables, installation and
+    performance qualifications. Visually inspected PDF spreads 7,10,12,14 (printed pp.12-13,18-19,22-23,26-27). Filename Oct2021;
+    final footer July2021. SHA256 396c9d3c1172c2d0bda54e2ac9fc452798febaa5551b28aa37030f8db4c1c2f7. Linked videos/current
+    drawings not read; no application validation. 2026-11-11 scoped encoding audit: exact listed MSO4/MSOFS M2, MSIA/MSIB
+    M2-length300 and TKA/TK4-10-150 geometry only, with source-table golden boundaries, tolerance corners and planted dimension/family/process
+    defects in tests/manufacturing/test_cards.py. These reproduce software screens, not installation, strength or physical
+    retention. Additional visual checks printed pp.15,18,24,30. The 30-test-point average footnote on p.30 is for SMTSO, not
+    MSIA/MSIB. 2026-11-11 review correction: independently checked magnified printed p.15/PDF p.8 signed headers. TKA/TK4
+    top 1.3 ±0.05 mm is 1.25–1.35; base 1.0 -0.05 mm is 0.95–1.00. Earlier unpublished intervals incorrectly transferred/omitted
+    header tolerances; their matching tests were insufficient. Corrected source-header fixtures accept both lower corners
+    and reject oversize/wrong-family TS4 cases. No physical qualification follows.'
+  summary: Family-specific microPEM guide. Exact named geometry is encoded with applied software tests; performance tables
+    and installation outcomes remain unqualified for an application. No general printed-material, joint-strength or physical
+    validation.
+  archive:
+    sha256: 396c9d3c1172c2d0bda54e2ac9fc452798febaa5551b28aa37030f8db4c1c2f7
+    kind: pdf
+    fetched: '2026-11-14'
+    redistribute: false
+  claims:
+  - text: MSOFS standard metric rows list 0.2-0.3 mm sheet despite a no-minimum-thickness headline
+    status: conflicting
+    evidence: '2026-11-11: visually read printed p.19 headline, metric table and alternative thinner-sheet illustrations.
+      Keep standard rows scoped; consult PEM for thinner/custom solutions.'
+  - text: Only the rules-listed exact-family geometry and tolerance calculations are software encoded.
+    status: encoded
+    evidence: CE printed pp.12,15,18,19 and named applied cases in tests/manufacturing/test_cards.py; boundary and planted-defect
+      controls use manufacturing.cards.card. This does not encode every guide claim.
+  - text: Manufacturer performance tables do not establish application strength or physical qualification.
+    status: unconfirmed
+    evidence: Material, setup and family-specific footnotes remain governing; installation forces are not retention allowables
+      and p.30 torque-out is measured without clamp load.
+  rules:
+  - sm-pem-mso4-m2-sheet
+  - sm-pem-mso4-m2-hole
+  - sm-pem-mso4-m2-edge
+  - sm-pem-msofs-m2-sheet
+  - sm-pem-msofs-m2-hole
+  - sm-pem-msofs-m2-edge
+  - im-pem-msia-msib-m2-300-hole
+  - im-pem-msia-msib-m2-300-depth
+  - im-pem-msia-msib-m2-300-wall
+  - cnc-pem-tka-tk4-10-150-base-hole
+  - cnc-pem-tka-tk4-10-150-top-hole
+  - cnc-pem-tka-tk4-10-150-edge
+  - cnc-pem-tka-tk4-10-150-boss
+  - cnc-pem-tka-tk4-10-150-length
+  - cnc-pem-tka-tk4-10-150-top-stack
+  - cnc-pem-tka-tk4-10-150-engagement
+  - cnc-pem-tka-tk4-10-150-blind-depth
+  checks:
+  - manufacturing.cards.card

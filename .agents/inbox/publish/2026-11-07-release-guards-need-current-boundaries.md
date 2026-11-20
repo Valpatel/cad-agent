@@ -1,5 +1,28 @@
 # Validate every current check instance and the actual topic delta
 
+## Documentation changes still need the release parser
+
+2026-11-12 UTC: PR636 at `ea38ded5720538cbb773b8ae9afad6b45dd27037` passed its focused content checks,
+but normal [core 3.12 job 131442108262](https://github.com/Valpatel/cad-agent/actions/runs/43292456383/job/131442108262)
+reported 1 failed, 3548 passed and 369 skipped. The failure was `test_this_repo_can_be_released`: the authored
+fragment used `### Changed`, while `cut_release.read_fragment` requires `**Changed**`. The exact local command
+`PYTHONPATH=software python -m pytest -q tests/repo/test_cut_release.py::test_this_repo_can_be_released`
+also failed before correction. The content-test selection omitted the existing release parser; this was an author
+error that CI correctly blocked, not a flaky test. Change the fragment, not the parser.
+
+The initial draft's supply-chain job separately rejected a pending report row. Its log named the missing pinned
+Anthropic URL; one finalized body edit supplied the completed online row, and replacement job 131442108235 passed.
+The [receipt](https://github.com/Valpatel/cad-agent/pull/636#issuecomment-6834091302) preserves that earlier failure
+and cancellation. Neither it nor the later parser defect may be counted as a successful superseded run.
+
+**Rule:** even a prose-only change must exercise the actual parser for every new release fragment, alongside its
+content checks. Use the existing [fragment format](../../../docs/changelog.d/README.md) and finish required audit
+rows before waiting for final CI. Extend the existing publication procedure, not the acceptance rules.
+
+**Limits:** these are release-input and description defects. No upstream plugin execution, compatibility test or
+physical CAD claim follows from fixing them. Existing parser tests already cover malformed headings; another
+test mirroring this typo would add no coverage. Fresh exact-head review and normal CI remain required.
+
 ## Start idle reviewers instead of queueing another message
 
 On 2026-11-08 UTC, a CAD release owner sent a new retirement-review request with `collaboration.send_message`.
@@ -37,6 +60,9 @@ attempt and correction. The subsequent dev-to-main PR443 also displayed separate
 contract; neither is taking one green row per name while ignoring another running or failing instance. Investigate
 non-success and superseded runs under the repository's rules, retain their scope, and run the live review gates
 again immediately before a merge. This was a local guard error, not a failing CI test, and no CI result was waived.
+
+
+On 2026-11-12, a PR #616 body edit at unchanged `fed30ca4` intentionally triggered the workflow's `pull_request: edited` handling: CI run `43272837046` was superseded by normal run `43272914888`. `gh api repos/Valpatel/cad-agent/actions/runs/43272837046/jobs` retained five cancelled instances: mermaid-provenance `131373537135`, core (3.10) `131373537435`, installer-windows `131373537437`, core (3.12) `131373539656`, and full `131373540239`—all **NOT PASS**. The sixth listed job, supply-chain `131373539604`, succeeded and must not be relabelled cancelled. A separate generic gates wrapper job `131373883532` in run `43272915120` was cancelled and superseded by normal dispatch `43272998465`; it is also NOT PASS. The earlier gates workflow `43272830997` was cancelled overall, but its completed job `131373495524` was SUCCESS and retains that result. These are five CI-job cancellations plus one separate gate-wrapper cancellation, not six cancelled CI jobs. The replacement core 3.12 then found a real canonical-shard defect; its core 3.10 peer was fail-fast cancelled. Preserve the supersession and the separate defect, require complete new ordinary checks on the concrete fix, and finish description edits before starting acceptance observation. A body edit is not evidence that a cancelled check passed, nor permission to retry or waive a failure.
 
 ## Compare an integration repair to the current accepted base
 
@@ -140,3 +166,262 @@ and byte equality requirements.
 prove fresh-user agent discovery, every browser interaction or physical CAD quality. The ordinary 18-asset cache
 policy receipt remains separate from the route/header smoke; no new source/provider behavior was needed to fix
 the false H1 assertion.
+
+## A feature matrix must stay a table in the actual Markdown consumer
+
+On 2026-11-10 UTC, independent review of PR #509 source `a259f46c` found a blank line between three new
+requirement rows and the retained guide matrix. The source still contained every requirement. The installed
+locked Marked 16.4.1 consumer, under Node 22.23.4, emitted only four `<tr>` rows (header plus three new rows);
+`Strict guide schema` was instead in a `<p>| ...` pipe-text paragraph. `strictSchemaIsPipeParagraph` was true
+and `strictSchemaIsTableCell` false. This was a documentation publication regression, not a viewer failure.
+
+The focused command used `createRequire(.../tools/site/package.json)('marked').marked.parse(...)` on
+`docs/practice/assembly-guide-testing.md`, counted emitted rows, and inspected actual table-cell membership.
+Removing the blank separator restored one contiguous matrix: the same consumer emitted 20 `<tr>` rows,
+`strictSchemaIsPipeParagraph: false`, and `strictSchemaIsTableCell: true`. Orthogonal-plane, hover, playback,
+strict-schema, resource-teardown and portable-ZIP requirements all appeared as table cells. The retained old
+HTML fails that same membership check; the corrected output passes. No rendering threshold or framework changed.
+
+**Rule:** when extending a GFM matrix, keep its rows contiguous and verify semantic membership through the
+repository's locked Markdown consumer. Presence in source and a few surviving rows do not prove the retained
+requirements are still cells. **Limits:** this focused parser proof does not establish browser table layout,
+responsive overflow, full-page rendering, current CI or product feature acceptance; those keep their own checks.
+
+The same review round caught a broad documentation replacement that retargeted a historical 18-case paragraph
+from `cdbee23b` to the newer `a259f46c` 26-case label. The original 18-case attribution was restored; the new
+26-case result stays in its separate dated paragraph. Keep counts paired with their actual source receipts;
+updating a current coverage matrix must not relabel historical runs.
+
+## Judge CI deferral by the actual event and current checks
+
+On 2026-11-10 UTC, PR #509 deferred draft CI with WIP commit markers. Before its final source push, the owner
+read GitHub's [documented skip behavior](https://github.blog/changelog/github-actions-skip-pull-request-and-push-workflows-with-skip-ci/)
+and raised an unproved concern about a later normal-merge push. The coordinator checked an actual counterexample:
+Gyropup main `6a026434f9002d1aecbcea860983fb322e372158` normally incorporated ancestor
+`ea521b0453387a3d6254d121f65dc203b74eca52`, whose subject ends with the skip marker, while that main's ordinary
+push workflows ran. `gh api .../compare/ea521b04...6a026434` reported `status: ahead` and the exact ancestor as
+merge base; [one actual push workflow](https://github.com/Valpatel/gyropup/actions/runs/42785495381) completed
+successfully, while the presentation workflow was still running at the readback.
+
+**Rule:** preserve the WIP history and its exact-source evidence; keep the final head and merge message free of
+skip instructions, and inspect actual push/PR events plus every required current check before integration.
+Do not rewrite source history or invent a CI waiver from a hypothetical event interpretation. **Limits:** this
+normal-merge counterexample does not establish how every direct push behaves, turn a skipped/pending check into
+a pass, or permit integration without the repository's current complete CI and live gates.
+
+## Required project changes determine the release level before cutting
+
+2026-11-10 UTC: `tools/cut_release.py --patch` produced candidate `821625fe` with version `0.32.1`,
+while its folded #520 fragment explicitly contained **Projects must change**: current flagged slices now make
+`check`, `report` and `all` exit 1. Independent PR #530 review `5849100011` blocked the candidate under
+CONTRIBUTING's minor-release policy. The initial patch instruction was mistaken; the producer accepted the
+requested bump and did not decide semantic release policy. No v0.32.1 tag or production release was created.
+
+Corrective rule: read the complete pending fragments before selecting the bump. Required project changes or a
+new feature select minor even when another included change is a model/site fix. Correct a pre-publication
+candidate with a normal follow-up commit, preserve its original attempt and all previously released history,
+and compare against the existing producer's pure minor result from the exact pre-cut inputs. Do not rerun a cut
+on the already dated candidate and manufacture a phantom released version.
+
+The corrected v0.33.0 metadata matches that pure pre-cut minor projection; the folded bullets, v0.32.0 history,
+source and five adopted model assets remain unchanged. This comparison and focused release checks do not
+replace fresh exact-head CI/review, nor lift the separate accepted-Gyropup-CAD protected-main production hold.
+
+## Enforce retirement boundaries under optimized Python
+
+On 2026-11-11 UTC, independent review rejected the first v0.36.0 retirement operator before any deletion:
+its read-only preflight included `git fetch`, which could update local tracking refs/tags, and mandatory
+checks used Python `assert`, which optimization can remove. The initial operator SHA-256 was
+`c81c831e999180bea59be8c4da93ad99d0c6d3b20831d5ed2907fbff50e3bda7`.
+The [preserved incident](https://github.com/Valpatel/cad-agent/issues/575#issuecomment-6804632248)
+records the command/output evidence and correction. Only preflight ran; no remote deletion was attempted.
+
+**Cause:** debug assertions stood in for runtime enforcement, and a broad ref refresh crossed the declared
+remote-only boundary. Treat fetch as a local ref mutation even when it is routine preparation elsewhere.
+
+**Correction:** use explicit raise-based runtime checks, existing local objects for ancestry and fresh read-only
+remote-tip queries. The corrected operator SHA-256 was
+`3706174cc37f6f71ff9f70d9be6546a37c85191a1abe2cfc76ae8edcfd7eb2e4`.
+`python3 -O <operator>` passed read-only preflight; an optimized wrong-main control raised
+`Remote main/tag/tips changed` before creating an attempt marker or making a mutation. Review then
+[passed the exact corrected operator](https://github.com/Valpatel/cad-agent/pull/585#issuecomment-6804642460).
+A private exclusive-create attempt marker was flushed and fsynced before the single network attempt.
+Atomic exact-tip deletion leases used the verified anonymous repository URL to preserve local tracking refs.
+The [completed receipt](https://github.com/Valpatel/cad-agent/issues/575#issuecomment-6804679296)
+records four retired refs; unrelated refs and every local worktree/provider remained intact.
+
+**Rule:** mandatory operational checks must survive `-O` and `PYTHONOPTIMIZE`. Exercise optimized negative
+controls without an operational write path. Declare the mutation boundary, reserve one attempt durably, and
+use atomic compare-and-swap leases against the reviewed exact remote tips. An attempted or uncertain result
+spends the marker; inspect actual remote state and obtain a fresh disposition rather than blindly retrying.
+
+**Limits:** these controls establish only that operator's preflight and bounded retirement, not a reusable
+retirement tool, current remote state or public-site acceptance. Do not rerun the completed operator. No local
+cleanup, credential expansion, unrelated branch deletion or later publication follows from that receipt.
+
+## Inspect actual startup annotations before a bounded recovery
+
+2026-11-11 UTC: Gates runs 43096357358 and 43095592509 ended `startup_failure` with zero jobs/check-runs.
+`gh run view` suggested a likely workflow-file issue; actual GitHub annotations instead reported internal
+platform errors on unchanged dev workflow `958199ca`. That CLI explanation was a heuristic, not a diagnosis.
+[Independent review](https://github.com/Valpatel/cad-agent/issues/323#issuecomment-6806750962) authorized one
+recovery request per exact existing run. Both requests were accepted at 20:49 UTC. Fresh API and uncached page
+reads at 20:55:21 showed startup failure again, updated at 20:53:08 and 20:52:32, with zero jobs. The API still
+reported `run_attempt: 1`; an incremented attempt number was not observed. Fresh annotation request IDs were
+`EDA8:4FD43:5E98E3:6526A6:6AF4D4D6` and `EDAC:1AB973:5F4BB7:65D6ED:6AF4D4D8`; cached reads showed old IDs.
+No further retry occurred. No source tests were retried by this recovery or claimed to have passed.
+
+**Rule:** inspect the actual annotation and exact run/workflow/head identity before classifying a startup
+failure. Preserve original and recovery outcomes separately. A bounded infrastructure recovery does not
+authorize repeated retries or waive normal checks. Fresh evidence matters when cached annotation IDs lag.
+
+**Limits:** these annotations establish those startup errors, not the cause of all queued workflows or a general
+service diagnosis. Later necessary source integrations and their new CI runs were separate work.
+
+## Local live verification must not post Actions-owned statuses
+
+2026-11-11 UTC: all source checks for PR592 passed and local live gates recognized the exact-head independent
+review. The coordinator incorrectly ran local `all --post` to refresh a stale review status. GitHub rejected
+the merge: required `cad-gates/dev/branch-flow` and `cad-gates/dev/review` were not set by the expected app.
+No merge or ruleset change occurred at that rejection. The existing `tools/ci_gates.py` docstring already says
+the local just-before-merge invocation runs **without `--post`**; the workflow owns posting.
+
+One normal review-state Actions refresh, run43102319513, passed. The final preflight checked all current
+checks, exact remote dev/head, resolved threads and live gates without `--post`; PR592 then merged at
+`219766e8`. The rejection and correction are retained in the
+[delivery checkpoint](https://github.com/Valpatel/cad-agent/issues/323#issuecomment-6807390375).
+
+**Rule:** run local live verification without `--post`; use the existing Actions review refresh for app-bound
+statuses. A locally posted success cannot satisfy that expected-app requirement. Preserve a rejected merge as
+a rejection rather than treating later success as proof that the first preflight was sufficient.
+
+**Limits:** this was an operator invocation error. The expected-app rule correctly prevented the merge; no
+source defect, new automation feature or policy exception was needed.
+
+## Deployment completion needs structured stage status
+
+2026-11-11 UTC: a v0.36.2 pre-HTTP guard expected the literal `Active` in Wrangler 4.86.0's JSON deployment
+table and stopped when it became `10 minutes ago`. No official-domain request had run. Inspection of the
+installed CLI showed that `Active` title-cases an active stage; a relative age is returned only for a successful
+stage with `ended_on`. The table is a presentation view, not the structured API schema. A read-only request
+using the same refreshed credentials confirmed the exact main commit, production environment and completed
+`deploy` stage (`success`, ended 22:37:54 UTC) before the approved readback
+([checkpoint](https://github.com/Valpatel/cad-agent/issues/323#issuecomment-6809109150)).
+
+**Rule:** bind deployment readiness to structured commit, environment, stage status and completion fields.
+Do not infer completion from a presentation label or parse its age as a new status vocabulary.
+
+**Limits:** this corrected a preflight assumption; no failed public verification was waived, and no account,
+permission or deployment setting changed. It does not replace normal CI or the actual publication readback.
+
+## Retain reader navigation evidence before closing a failed page
+
+**Evidence, 2026-11-12 UTC, #625 / release #623:** WebKit job 131388834790/run 43277252434 at
+`bae1820c` passed 103 component tests, then `site-outline.mjs:149` timed out after 30000 ms in
+`page.goto('/docs/toolkit', {waitUntil: 'networkidle'})`. Later reader/layout cases did not run.
+Independent inspection of artifact 13971626851 (SHA256
+`0590eca06bedce050975bbc444ffc1cb2e23e9513cefa1d1732134da5f81c85a`) found 248 files but no
+reader-boundary receipt, trace or network state. The failing viewport, HTTP status, pending requests
+and DOM state are unknown. Identical reader/toolkit/runtime source at accepted 616ab and main 6e8 is
+not evidence of a transient cause; the failed generated toolkit HTML was not retained.
+
+**Cause and corrective rule:** the reader probe wrote its receipt only after every viewport, while
+`finally` closed each failed page first. Preserve bounded observations and partial states before close,
+then rethrow the original error. Keep the existing navigation wait/timeout and every readiness/geometry
+predicate. The targeted repair records 24 samples per event kind, 300-character redacted URL/text
+fields, 12 stylesheet entries, at most a 2 MiB viewport screenshot and 1000 ms per diagnostic capture.
+Inert controls exercise success-without-capture, partial receipt before close, truncation/redaction,
+failed/stalled capture and unavailable output without replacing the original error. These are simulated
+page controls, not a browser reproduction or diagnosis of the old failure. Obtain exact-source review
+before a normal diagnostic CI checkpoint; never relabel the original failed job or its skipped parts as passes.
+
+
+## Count current names after reviewed historical exclusions
+
+2026-11-12 UTC: independent review of #643's exact four-instance supersession guard
+found `names.add(name)` before the historical-cancellation skip. No merge had occurred; the
+optimized preflight still rejected the pending browser workflow. The [corrected guard](https://github.com/Valpatel/cad-agent/pull/643#issuecomment-6835704052)
+adds a name only after excluding those exact reviewed historical instances, and independently
+requires the complete replacement CI and original browser job sets to succeed.
+
+**Rule and limits:** a historical canceled wrapper must never satisfy current required-name
+presence. Scope any disposition to immutable head/name/job identities, retain cancellations as
+NOT PASS, and require every other current instance. This was a temporary local guard correction,
+not a CI waiver or permission for a general cancellation filter.
+
+The #643 body edit at `20:40:57Z` restarted source CI: its trigger includes `edited`, not
+`ready_for_review`. Readiness at `20:40:58Z` contributed only to Gates concurrency, which
+handles both events. Keep the three superseded source jobs distinct from the separate canceled
+Gates wrapper; readiness alone did not restart source CI. #644 similarly had one canceled
+Gates wrapper (`131494029147`), separately from its real folded-link failure below.
+
+## Read back the verdict's last non-empty line
+
+2026-11-12 UTC: `gh api repos/Valpatel/cad-agent/pulls/643/reviews` showed review
+`5881799653` starting with its PASS marker and ending with prose. The existing
+`tools/ci_gates.py:marker` contract therefore ignored it. Review `5881856490` repeated the
+unchanged exact-head findings with the marker last, and the normal Actions gate accepted it.
+The same placement mistake affected #636 review `5881697816` at `00f0a4eb`; its later
+exact-head renewal `5881875427` at `d7e572b9` used a parser-validated final marker.
+
+**Cause and rule:** human-readable PASS prose is not a machine-readable verdict. End the posted
+summary with the exact forty-character-head marker as its last non-empty line, read the created
+review back, and validate it with the existing parser before requesting the ordinary Actions
+refresh. `tests/repo/test_ci_gates.py::test_the_marker_must_be_the_last_line` already protects
+this behavior; no new gate or parser relaxation is needed.
+
+**Limits:** the first-marker reviews remain ignored, not retroactive passes. The correction
+changes review formatting, not source, runtime evidence, independent-review scope or required CI.
+
+## Preserve the actual predecessor state after an ancestry merge
+
+2026-11-12 UTC: after corrected #632 merged as `764a73b4`,
+`gh pr view 580 --json state,headRefOid,mergeCommit` reported MERGED with that same merge commit
+and unchanged original tip `a5a1455d`. After corrected #634 merged as `86920258`, #582 likewise
+reported MERGED with unchanged tip `3f6781b6`. Both original tips are ancestors of their accepted
+replacement merges. GitHub had recognized the preserved contribution ancestry automatically.
+An OPEN-only supersession check rejected #580's new state; a subsequent close attempt returned
+"already merged" and made no closure change.
+
+**Rule:** re-read the original PR's exact tip, state and merge commit before supersession work.
+Verify ancestry and record where its blocking findings were corrected; do not reopen or relabel
+an automatically merged predecessor to force an expected workflow. Keep dependent mutations in
+the checked program, or execute them only after inspecting a successful preflight receipt
+([existing fail-closed procedure](../2026-11-06-failed-prechecks-must-stop-mutations.md)).
+
+**Limits:** preserving ancestry is not accepting the original blocked implementation unchanged.
+Remote retirement still requires actual released-main incorporation, fresh exact tips, explicit
+scope and independent review. Local branches, worktrees and providers remain intact.
+
+## Check release links after moving their Markdown consumer
+
+2026-11-12 UTC: #644 Chromium job `131493215897` failed the existing repository-map consumer:
+`CHANGELOG.md: broken relative link ../toolkit.md#parts-that-are-not-printed`.
+The link was valid in accepted `docs/changelog.d/577-part-process.md`, but the unchanged
+canonical cutter copies fragment text into root `CHANGELOG.md`. The destination then escaped
+the repository. The earlier 139 release/parser/layout tests did not exercise this link consumer.
+
+**Correction:** immutable input commit `8cf9c33f45dc6ef2983d5999e2137478cebbe60c` changes only that
+fragment link to `https://cad-agent.valpatel.com/docs/toolkit#parts-that-are-not-printed`.
+The unchanged cutter regenerates all three metadata files from that input. The existing
+`checkMap`/`createPublication` consumer, using `gitFiles`' NUL-delimited inventory and actual
+corrected folded Markdown, returns no problems; planting the original relative destination back
+into that output reproduces exactly the one broken-link error. Failed release tip `3fb7f88e`
+remains ancestry, and the consumed fragment stays deleted.
+
+**Rule:** validate the folded release with the existing structural consumer before pushing:
+`node --test tests/site/website-repo-map.test.mjs` (bind the repository's supported Node runtime;
+the separate owned-diagram rendering check remains CI-only). Use a stable canonical destination
+when a fragment will move; do not repair historical changelog entries or add a broad link rewriter.
+
+During the v0.40.0 cut on 2026-11-12 UTC, the first local map run produced two `ENOENT`
+failures for consumed `docs/changelog.d/542-serial-assembly-plan.md`: the cutter had deleted it
+from the working tree, but it remained in `git ls-files --cached`. Stage only the owned canonical
+cut paths, including consumed-fragment deletions, before this cached-inventory consumer (or use
+an explicitly coherent projected inventory). Do not restore a consumed fragment or ignore
+arbitrary missing files to make the check pass. The original failed TAP remains separate from
+the staged-state result; this is index/working-tree coherency, not a source-link or CI failure.
+
+**Limits:** this preflight establishes source-link validity, not a public HTTP response, rendered
+browser pass or diagnosis of unrelated failures. The failed source CI and canceled Gates wrapper
+remain separate evidence; corrected exact-head review and all new normal CI are still required.

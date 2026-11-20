@@ -1,0 +1,2512 @@
+{
+  "$schema": "../../../scada-ui/schema/scada-system.schema.json",
+  "format": "scada-system",
+  "version": 1,
+  "system": {
+    "id": "biopharma-fermentation",
+    "label": "Biopharma fermentation",
+    "description": "Demonstrate media preparation, conditioning, fermentation vessels, harvest separation and membrane processing. Biology, sterility and product quality are outside this placeholder model."
+  },
+  "components": [
+    {
+      "id": "mediaFeed",
+      "type": "tank",
+      "label": "Demonstration media feed",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "level": 55,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/mediaFeed/active",
+        "running": "/components/mediaFeed/running",
+        "fault": "/components/mediaFeed/fault",
+        "status": "/components/mediaFeed/status",
+        "level": "/components/mediaFeed/level",
+        "damage": "/components/mediaFeed/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "mediaBlend",
+      "type": "mixing-tank",
+      "label": "Media preparation vessel",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "level": 55,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/mediaBlend/active",
+        "running": "/components/mediaBlend/running",
+        "fault": "/components/mediaBlend/fault",
+        "status": "/components/mediaBlend/status",
+        "level": "/components/mediaBlend/level",
+        "damage": "/components/mediaBlend/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "drive",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "conditioning",
+      "type": "heat-exchanger",
+      "label": "Media conditioning exchanger",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "temperature": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/conditioning/active",
+        "running": "/components/conditioning/running",
+        "fault": "/components/conditioning/fault",
+        "status": "/components/conditioning/status",
+        "load": "/components/conditioning/load",
+        "temperature": "/components/conditioning/temperature",
+        "damage": "/components/conditioning/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "hot-in",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "hot-out",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "cold-in",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "cold-out",
+          "side": "right",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "fermenter",
+      "type": "reactor",
+      "label": "Fermentation vessel",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "level": 55,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/fermenter/active",
+        "running": "/components/fermenter/running",
+        "fault": "/components/fermenter/fault",
+        "status": "/components/fermenter/status",
+        "level": "/components/fermenter/level",
+        "damage": "/components/fermenter/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "vent",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "gas-inlet",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "harvestPump",
+      "type": "pump",
+      "label": "Harvest transfer pump",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/harvestPump/active",
+        "running": "/components/harvestPump/running",
+        "fault": "/components/harvestPump/fault",
+        "status": "/components/harvestPump/status",
+        "load": "/components/harvestPump/load",
+        "speed": "/components/harvestPump/speed",
+        "damage": "/components/harvestPump/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "drive",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "harvestHold",
+      "type": "tank",
+      "label": "Harvest holding tank",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "level": 55,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/harvestHold/active",
+        "running": "/components/harvestHold/running",
+        "fault": "/components/harvestHold/fault",
+        "status": "/components/harvestHold/status",
+        "level": "/components/harvestHold/level",
+        "damage": "/components/harvestHold/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "separator",
+      "type": "centrifuge",
+      "label": "Harvest separation",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/separator/active",
+        "running": "/components/separator/running",
+        "fault": "/components/separator/fault",
+        "status": "/components/separator/status",
+        "load": "/components/separator/load",
+        "speed": "/components/separator/speed",
+        "damage": "/components/separator/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "supply",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "reject",
+          "side": "right",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "membranes",
+      "type": "membrane-filter",
+      "label": "Membrane processing",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/membranes/active",
+        "running": "/components/membranes/running",
+        "fault": "/components/membranes/fault",
+        "status": "/components/membranes/status",
+        "load": "/components/membranes/load",
+        "damage": "/components/membranes/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "supply",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "reject",
+          "side": "right",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "bulk",
+      "type": "tank",
+      "label": "Product bulk hold",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "level": 55,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/bulk/active",
+        "running": "/components/bulk/running",
+        "fault": "/components/bulk/fault",
+        "status": "/components/bulk/status",
+        "level": "/components/bulk/level",
+        "damage": "/components/bulk/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "air",
+      "type": "blower",
+      "label": "Illustrative air supply",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/air/active",
+        "running": "/components/air/running",
+        "fault": "/components/air/fault",
+        "status": "/components/air/status",
+        "load": "/components/air/load",
+        "speed": "/components/air/speed",
+        "damage": "/components/air/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "intake",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "discharge",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "drive",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "offgas",
+      "type": "gas-analyzer",
+      "label": "Illustrative off-gas monitor",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "value": 42,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/offgas/active",
+        "running": "/components/offgas/running",
+        "fault": "/components/offgas/fault",
+        "status": "/components/offgas/status",
+        "value": "/components/offgas/value",
+        "damage": "/components/offgas/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "process",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "signal",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "power",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "power",
+      "type": "generator",
+      "label": "Demonstration site power",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/power/active",
+        "running": "/components/power/running",
+        "fault": "/components/power/fault",
+        "status": "/components/power/status",
+        "load": "/components/power/load",
+        "speed": "/components/power/speed",
+        "damage": "/components/power/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "fuel",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "output",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "exhaust",
+          "side": "right",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "controller",
+      "type": "plc-rack",
+      "label": "Fermentation controller",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "connected": true,
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/controller/active",
+        "running": "/components/controller/running",
+        "fault": "/components/controller/fault",
+        "status": "/components/controller/status",
+        "connected": "/components/controller/connected",
+        "load": "/components/controller/load",
+        "damage": "/components/controller/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "power",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "network",
+      "type": "network-switch",
+      "label": "Control network switch",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "connected": true,
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/network/active",
+        "running": "/components/network/running",
+        "fault": "/components/network/fault",
+        "status": "/components/network/status",
+        "connected": "/components/network/connected",
+        "load": "/components/network/load",
+        "damage": "/components/network/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "power",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "mediaFeed-to-mediaBlend",
+      "from": {
+        "component": "mediaFeed",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "mediaBlend",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "flowBinding": "/flows/mediaFeed-to-mediaBlend",
+      "label": "Demonstration media feed \u2192 Media preparation vessel"
+    },
+    {
+      "id": "mediaBlend-to-conditioning",
+      "from": {
+        "component": "mediaBlend",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "conditioning",
+        "port": "hot-in"
+      },
+      "medium": "liquid",
+      "flowBinding": "/flows/mediaBlend-to-conditioning",
+      "label": "Media preparation vessel \u2192 Media conditioning exchanger"
+    },
+    {
+      "id": "conditioning-to-fermenter",
+      "from": {
+        "component": "conditioning",
+        "port": "hot-out"
+      },
+      "to": {
+        "component": "fermenter",
+        "port": "inlet"
+      },
+      "medium": "thermal-fluid",
+      "flowBinding": "/flows/conditioning-to-fermenter",
+      "label": "Media conditioning exchanger \u2192 Fermentation vessel"
+    },
+    {
+      "id": "fermenter-to-harvestPump",
+      "from": {
+        "component": "fermenter",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "harvestPump",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "flowBinding": "/flows/fermenter-to-harvestPump",
+      "label": "Fermentation vessel \u2192 Harvest transfer pump"
+    },
+    {
+      "id": "harvestPump-to-harvestHold",
+      "from": {
+        "component": "harvestPump",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "harvestHold",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "flowBinding": "/flows/harvestPump-to-harvestHold",
+      "label": "Harvest transfer pump \u2192 Harvest holding tank"
+    },
+    {
+      "id": "harvestHold-to-separator",
+      "from": {
+        "component": "harvestHold",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "separator",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "flowBinding": "/flows/harvestHold-to-separator",
+      "label": "Harvest holding tank \u2192 Harvest separation"
+    },
+    {
+      "id": "separator-to-membranes",
+      "from": {
+        "component": "separator",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "membranes",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "flowBinding": "/flows/separator-to-membranes",
+      "label": "Harvest separation \u2192 Membrane processing"
+    },
+    {
+      "id": "membranes-to-bulk",
+      "from": {
+        "component": "membranes",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "bulk",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "flowBinding": "/flows/membranes-to-bulk",
+      "label": "Membrane processing \u2192 Product bulk hold"
+    },
+    {
+      "id": "air-to-fermenter",
+      "from": {
+        "component": "air",
+        "port": "discharge"
+      },
+      "to": {
+        "component": "fermenter",
+        "port": "gas-inlet"
+      },
+      "medium": "air",
+      "flowBinding": "/flows/air-to-fermenter",
+      "label": "Illustrative air supply \u2192 Fermentation vessel"
+    },
+    {
+      "id": "fermenter-to-offgas",
+      "from": {
+        "component": "fermenter",
+        "port": "vent"
+      },
+      "to": {
+        "component": "offgas",
+        "port": "process"
+      },
+      "medium": "measurement",
+      "flowBinding": "/flows/fermenter-to-offgas",
+      "label": "Fermentation vessel \u2192 Illustrative off-gas monitor"
+    },
+    {
+      "id": "power-to-mediaBlend",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "mediaBlend",
+        "port": "drive"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-mediaBlend",
+      "label": "Demonstration site power \u2192 Media preparation vessel"
+    },
+    {
+      "id": "power-to-harvestPump",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "harvestPump",
+        "port": "drive"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-harvestPump",
+      "label": "Demonstration site power \u2192 Harvest transfer pump"
+    },
+    {
+      "id": "power-to-separator",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "separator",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-separator",
+      "label": "Demonstration site power \u2192 Harvest separation"
+    },
+    {
+      "id": "power-to-membranes",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "membranes",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-membranes",
+      "label": "Demonstration site power \u2192 Membrane processing"
+    },
+    {
+      "id": "power-to-air",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "air",
+        "port": "drive"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-air",
+      "label": "Demonstration site power \u2192 Illustrative air supply"
+    },
+    {
+      "id": "power-to-offgas",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "offgas",
+        "port": "power"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-offgas",
+      "label": "Demonstration site power \u2192 Illustrative off-gas monitor"
+    },
+    {
+      "id": "power-to-controller",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "controller",
+        "port": "power"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-controller",
+      "label": "Demonstration site power \u2192 Fermentation controller"
+    },
+    {
+      "id": "power-to-network",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "network",
+        "port": "power"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-network",
+      "label": "Demonstration site power \u2192 Control network switch"
+    },
+    {
+      "id": "network-to-controller",
+      "from": {
+        "component": "network",
+        "port": "uplink"
+      },
+      "to": {
+        "component": "controller",
+        "port": "network"
+      },
+      "medium": "data",
+      "flowBinding": "/flows/network-to-controller",
+      "label": "Control network switch \u2192 Fermentation controller"
+    },
+    {
+      "id": "offgas-to-controller",
+      "from": {
+        "component": "offgas",
+        "port": "signal"
+      },
+      "to": {
+        "component": "controller",
+        "port": "network"
+      },
+      "medium": "data",
+      "flowBinding": "/flows/offgas-to-controller",
+      "label": "Illustrative off-gas monitor \u2192 Fermentation controller"
+    }
+  ],
+  "views": [
+    {
+      "id": "process",
+      "label": "Main process",
+      "canvas": {
+        "width": 1280,
+        "height": 940
+      },
+      "placements": [
+        {
+          "component": "mediaFeed",
+          "x": 60,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "mediaBlend",
+          "x": 360,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "conditioning",
+          "x": 660,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "fermenter",
+          "x": 960,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "harvestPump",
+          "x": 960,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "harvestHold",
+          "x": 660,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "separator",
+          "x": 360,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "membranes",
+          "x": 60,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "bulk",
+          "x": 60,
+          "y": 620,
+          "width": 200,
+          "height": 190
+        }
+      ],
+      "routes": [
+        {
+          "connection": "mediaFeed-to-mediaBlend",
+          "points": [
+            {
+              "x": 260,
+              "y": 155
+            },
+            {
+              "x": 360,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "mediaBlend-to-conditioning",
+          "points": [
+            {
+              "x": 560,
+              "y": 155
+            },
+            {
+              "x": 660,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "conditioning-to-fermenter",
+          "points": [
+            {
+              "x": 860,
+              "y": 155
+            },
+            {
+              "x": 960,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "fermenter-to-harvestPump",
+          "points": [
+            {
+              "x": 1060,
+              "y": 250
+            },
+            {
+              "x": 1060,
+              "y": 340
+            }
+          ]
+        },
+        {
+          "connection": "harvestPump-to-harvestHold",
+          "points": [
+            {
+              "x": 960,
+              "y": 435
+            },
+            {
+              "x": 860,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "harvestHold-to-separator",
+          "points": [
+            {
+              "x": 660,
+              "y": 435
+            },
+            {
+              "x": 560,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "separator-to-membranes",
+          "points": [
+            {
+              "x": 360,
+              "y": 435
+            },
+            {
+              "x": 260,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "membranes-to-bulk",
+          "points": [
+            {
+              "x": 160,
+              "y": 530
+            },
+            {
+              "x": 160,
+              "y": 620
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "utilities",
+      "label": "Utilities & control",
+      "canvas": {
+        "width": 980,
+        "height": 940
+      },
+      "placements": [
+        {
+          "component": "air",
+          "x": 60,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "offgas",
+          "x": 360,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "power",
+          "x": 660,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "controller",
+          "x": 660,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "network",
+          "x": 360,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "fermenter",
+          "x": 60,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "membranes",
+          "x": 60,
+          "y": 620,
+          "width": 200,
+          "height": 190
+        }
+      ],
+      "routes": [
+        {
+          "connection": "air-to-fermenter",
+          "points": [
+            {
+              "x": 160,
+              "y": 250
+            },
+            {
+              "x": 160,
+              "y": 340
+            }
+          ]
+        },
+        {
+          "connection": "fermenter-to-offgas",
+          "points": [
+            {
+              "x": 260,
+              "y": 435
+            },
+            {
+              "x": 284,
+              "y": 435
+            },
+            {
+              "x": 284,
+              "y": 274
+            },
+            {
+              "x": 336,
+              "y": 274
+            },
+            {
+              "x": 336,
+              "y": 155
+            },
+            {
+              "x": 360,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "power-to-membranes",
+          "points": [
+            {
+              "x": 660,
+              "y": 155
+            },
+            {
+              "x": 636,
+              "y": 155
+            },
+            {
+              "x": 636,
+              "y": 596
+            },
+            {
+              "x": 284,
+              "y": 596
+            },
+            {
+              "x": 284,
+              "y": 715
+            },
+            {
+              "x": 260,
+              "y": 715
+            }
+          ]
+        },
+        {
+          "connection": "power-to-air",
+          "points": [
+            {
+              "x": 660,
+              "y": 155
+            },
+            {
+              "x": 584,
+              "y": 155
+            },
+            {
+              "x": 584,
+              "y": 36
+            },
+            {
+              "x": 284,
+              "y": 36
+            },
+            {
+              "x": 284,
+              "y": 155
+            },
+            {
+              "x": 260,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "power-to-offgas",
+          "points": [
+            {
+              "x": 660,
+              "y": 155
+            },
+            {
+              "x": 560,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "power-to-controller",
+          "points": [
+            {
+              "x": 760,
+              "y": 250
+            },
+            {
+              "x": 760,
+              "y": 340
+            }
+          ]
+        },
+        {
+          "connection": "power-to-network",
+          "points": [
+            {
+              "x": 660,
+              "y": 155
+            },
+            {
+              "x": 636,
+              "y": 155
+            },
+            {
+              "x": 636,
+              "y": 316
+            },
+            {
+              "x": 584,
+              "y": 316
+            },
+            {
+              "x": 584,
+              "y": 435
+            },
+            {
+              "x": 560,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "network-to-controller",
+          "points": [
+            {
+              "x": 560,
+              "y": 435
+            },
+            {
+              "x": 660,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "offgas-to-controller",
+          "points": [
+            {
+              "x": 560,
+              "y": 155
+            },
+            {
+              "x": 584,
+              "y": 155
+            },
+            {
+              "x": 584,
+              "y": 316
+            },
+            {
+              "x": 636,
+              "y": 316
+            },
+            {
+              "x": 636,
+              "y": 435
+            },
+            {
+              "x": 660,
+              "y": 435
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "finishing",
+      "label": "Finishing & storage",
+      "canvas": {
+        "width": 980,
+        "height": 940
+      },
+      "placements": [
+        {
+          "component": "harvestPump",
+          "x": 60,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "harvestHold",
+          "x": 360,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "separator",
+          "x": 660,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "membranes",
+          "x": 660,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "bulk",
+          "x": 360,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "offgas",
+          "x": 60,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "controller",
+          "x": 60,
+          "y": 620,
+          "width": 200,
+          "height": 190
+        }
+      ],
+      "routes": [
+        {
+          "connection": "harvestPump-to-harvestHold",
+          "points": [
+            {
+              "x": 260,
+              "y": 155
+            },
+            {
+              "x": 360,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "harvestHold-to-separator",
+          "points": [
+            {
+              "x": 560,
+              "y": 155
+            },
+            {
+              "x": 660,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "separator-to-membranes",
+          "points": [
+            {
+              "x": 760,
+              "y": 250
+            },
+            {
+              "x": 760,
+              "y": 340
+            }
+          ]
+        },
+        {
+          "connection": "membranes-to-bulk",
+          "points": [
+            {
+              "x": 660,
+              "y": 435
+            },
+            {
+              "x": 560,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "offgas-to-controller",
+          "points": [
+            {
+              "x": 160,
+              "y": 530
+            },
+            {
+              "x": 160,
+              "y": 620
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "commands": [
+    {
+      "id": "mediaFeed-enabled",
+      "label": "Demonstration media feed \u00b7 Enabled",
+      "component": "mediaFeed",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "mediaFeed"
+      }
+    },
+    {
+      "id": "mediaFeed-load",
+      "label": "Demonstration media feed \u00b7 Requested load",
+      "component": "mediaFeed",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "mediaFeed"
+      }
+    },
+    {
+      "id": "mediaFeed-fault",
+      "label": "Demonstration media feed \u00b7 Injected failure",
+      "component": "mediaFeed",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "mediaFeed"
+      }
+    },
+    {
+      "id": "mediaFeed-repair",
+      "label": "Repair Demonstration media feed",
+      "component": "mediaFeed",
+      "action": "repair",
+      "arguments": {
+        "equipment": "mediaFeed"
+      }
+    },
+    {
+      "id": "mediaBlend-enabled",
+      "label": "Media preparation vessel \u00b7 Enabled",
+      "component": "mediaBlend",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "mediaBlend"
+      }
+    },
+    {
+      "id": "mediaBlend-load",
+      "label": "Media preparation vessel \u00b7 Requested load",
+      "component": "mediaBlend",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "mediaBlend"
+      }
+    },
+    {
+      "id": "mediaBlend-fault",
+      "label": "Media preparation vessel \u00b7 Injected failure",
+      "component": "mediaBlend",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "mediaBlend"
+      }
+    },
+    {
+      "id": "mediaBlend-repair",
+      "label": "Repair Media preparation vessel",
+      "component": "mediaBlend",
+      "action": "repair",
+      "arguments": {
+        "equipment": "mediaBlend"
+      }
+    },
+    {
+      "id": "conditioning-enabled",
+      "label": "Media conditioning exchanger \u00b7 Enabled",
+      "component": "conditioning",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "conditioning"
+      }
+    },
+    {
+      "id": "conditioning-load",
+      "label": "Media conditioning exchanger \u00b7 Requested load",
+      "component": "conditioning",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "conditioning"
+      }
+    },
+    {
+      "id": "conditioning-fault",
+      "label": "Media conditioning exchanger \u00b7 Injected failure",
+      "component": "conditioning",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "conditioning"
+      }
+    },
+    {
+      "id": "conditioning-repair",
+      "label": "Repair Media conditioning exchanger",
+      "component": "conditioning",
+      "action": "repair",
+      "arguments": {
+        "equipment": "conditioning"
+      }
+    },
+    {
+      "id": "fermenter-enabled",
+      "label": "Fermentation vessel \u00b7 Enabled",
+      "component": "fermenter",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "fermenter"
+      }
+    },
+    {
+      "id": "fermenter-load",
+      "label": "Fermentation vessel \u00b7 Requested load",
+      "component": "fermenter",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "fermenter"
+      }
+    },
+    {
+      "id": "fermenter-fault",
+      "label": "Fermentation vessel \u00b7 Injected failure",
+      "component": "fermenter",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "fermenter"
+      }
+    },
+    {
+      "id": "fermenter-repair",
+      "label": "Repair Fermentation vessel",
+      "component": "fermenter",
+      "action": "repair",
+      "arguments": {
+        "equipment": "fermenter"
+      }
+    },
+    {
+      "id": "harvestPump-enabled",
+      "label": "Harvest transfer pump \u00b7 Enabled",
+      "component": "harvestPump",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "harvestPump"
+      }
+    },
+    {
+      "id": "harvestPump-load",
+      "label": "Harvest transfer pump \u00b7 Requested load",
+      "component": "harvestPump",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "harvestPump"
+      }
+    },
+    {
+      "id": "harvestPump-fault",
+      "label": "Harvest transfer pump \u00b7 Injected failure",
+      "component": "harvestPump",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "harvestPump"
+      }
+    },
+    {
+      "id": "harvestPump-repair",
+      "label": "Repair Harvest transfer pump",
+      "component": "harvestPump",
+      "action": "repair",
+      "arguments": {
+        "equipment": "harvestPump"
+      }
+    },
+    {
+      "id": "harvestHold-enabled",
+      "label": "Harvest holding tank \u00b7 Enabled",
+      "component": "harvestHold",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "harvestHold"
+      }
+    },
+    {
+      "id": "harvestHold-load",
+      "label": "Harvest holding tank \u00b7 Requested load",
+      "component": "harvestHold",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "harvestHold"
+      }
+    },
+    {
+      "id": "harvestHold-fault",
+      "label": "Harvest holding tank \u00b7 Injected failure",
+      "component": "harvestHold",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "harvestHold"
+      }
+    },
+    {
+      "id": "harvestHold-repair",
+      "label": "Repair Harvest holding tank",
+      "component": "harvestHold",
+      "action": "repair",
+      "arguments": {
+        "equipment": "harvestHold"
+      }
+    },
+    {
+      "id": "separator-enabled",
+      "label": "Harvest separation \u00b7 Enabled",
+      "component": "separator",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "separator"
+      }
+    },
+    {
+      "id": "separator-load",
+      "label": "Harvest separation \u00b7 Requested load",
+      "component": "separator",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "separator"
+      }
+    },
+    {
+      "id": "separator-fault",
+      "label": "Harvest separation \u00b7 Injected failure",
+      "component": "separator",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "separator"
+      }
+    },
+    {
+      "id": "separator-repair",
+      "label": "Repair Harvest separation",
+      "component": "separator",
+      "action": "repair",
+      "arguments": {
+        "equipment": "separator"
+      }
+    },
+    {
+      "id": "membranes-enabled",
+      "label": "Membrane processing \u00b7 Enabled",
+      "component": "membranes",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "membranes"
+      }
+    },
+    {
+      "id": "membranes-load",
+      "label": "Membrane processing \u00b7 Requested load",
+      "component": "membranes",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "membranes"
+      }
+    },
+    {
+      "id": "membranes-fault",
+      "label": "Membrane processing \u00b7 Injected failure",
+      "component": "membranes",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "membranes"
+      }
+    },
+    {
+      "id": "membranes-repair",
+      "label": "Repair Membrane processing",
+      "component": "membranes",
+      "action": "repair",
+      "arguments": {
+        "equipment": "membranes"
+      }
+    },
+    {
+      "id": "bulk-enabled",
+      "label": "Product bulk hold \u00b7 Enabled",
+      "component": "bulk",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "bulk"
+      }
+    },
+    {
+      "id": "bulk-load",
+      "label": "Product bulk hold \u00b7 Requested load",
+      "component": "bulk",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "bulk"
+      }
+    },
+    {
+      "id": "bulk-fault",
+      "label": "Product bulk hold \u00b7 Injected failure",
+      "component": "bulk",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "bulk"
+      }
+    },
+    {
+      "id": "bulk-repair",
+      "label": "Repair Product bulk hold",
+      "component": "bulk",
+      "action": "repair",
+      "arguments": {
+        "equipment": "bulk"
+      }
+    },
+    {
+      "id": "air-enabled",
+      "label": "Illustrative air supply \u00b7 Enabled",
+      "component": "air",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "air"
+      }
+    },
+    {
+      "id": "air-load",
+      "label": "Illustrative air supply \u00b7 Requested load",
+      "component": "air",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "air"
+      }
+    },
+    {
+      "id": "air-fault",
+      "label": "Illustrative air supply \u00b7 Injected failure",
+      "component": "air",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "air"
+      }
+    },
+    {
+      "id": "air-repair",
+      "label": "Repair Illustrative air supply",
+      "component": "air",
+      "action": "repair",
+      "arguments": {
+        "equipment": "air"
+      }
+    },
+    {
+      "id": "offgas-enabled",
+      "label": "Illustrative off-gas monitor \u00b7 Enabled",
+      "component": "offgas",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "offgas"
+      }
+    },
+    {
+      "id": "offgas-load",
+      "label": "Illustrative off-gas monitor \u00b7 Requested load",
+      "component": "offgas",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "offgas"
+      }
+    },
+    {
+      "id": "offgas-fault",
+      "label": "Illustrative off-gas monitor \u00b7 Injected failure",
+      "component": "offgas",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "offgas"
+      }
+    },
+    {
+      "id": "offgas-repair",
+      "label": "Repair Illustrative off-gas monitor",
+      "component": "offgas",
+      "action": "repair",
+      "arguments": {
+        "equipment": "offgas"
+      }
+    },
+    {
+      "id": "power-enabled",
+      "label": "Demonstration site power \u00b7 Enabled",
+      "component": "power",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "power"
+      }
+    },
+    {
+      "id": "power-load",
+      "label": "Demonstration site power \u00b7 Requested load",
+      "component": "power",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "power"
+      }
+    },
+    {
+      "id": "power-fault",
+      "label": "Demonstration site power \u00b7 Injected failure",
+      "component": "power",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "power"
+      }
+    },
+    {
+      "id": "power-repair",
+      "label": "Repair Demonstration site power",
+      "component": "power",
+      "action": "repair",
+      "arguments": {
+        "equipment": "power"
+      }
+    },
+    {
+      "id": "controller-enabled",
+      "label": "Fermentation controller \u00b7 Enabled",
+      "component": "controller",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "controller"
+      }
+    },
+    {
+      "id": "controller-load",
+      "label": "Fermentation controller \u00b7 Requested load",
+      "component": "controller",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "controller"
+      }
+    },
+    {
+      "id": "controller-fault",
+      "label": "Fermentation controller \u00b7 Injected failure",
+      "component": "controller",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "controller"
+      }
+    },
+    {
+      "id": "controller-repair",
+      "label": "Repair Fermentation controller",
+      "component": "controller",
+      "action": "repair",
+      "arguments": {
+        "equipment": "controller"
+      }
+    },
+    {
+      "id": "network-enabled",
+      "label": "Control network switch \u00b7 Enabled",
+      "component": "network",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "network"
+      }
+    },
+    {
+      "id": "network-load",
+      "label": "Control network switch \u00b7 Requested load",
+      "component": "network",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "network"
+      }
+    },
+    {
+      "id": "network-fault",
+      "label": "Control network switch \u00b7 Injected failure",
+      "component": "network",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "network"
+      }
+    },
+    {
+      "id": "network-repair",
+      "label": "Repair Control network switch",
+      "component": "network",
+      "action": "repair",
+      "arguments": {
+        "equipment": "network"
+      }
+    },
+    {
+      "id": "plant-setRunning",
+      "label": "Run the shared plant",
+      "action": "setRunning",
+      "arguments": {}
+    },
+    {
+      "id": "plant-step",
+      "label": "Advance one model step",
+      "action": "step",
+      "arguments": {
+        "value": 1
+      }
+    },
+    {
+      "id": "plant-reset",
+      "label": "Reset dynamics \u00b7 keep edited parameters",
+      "action": "reset",
+      "arguments": {}
+    }
+  ],
+  "controls": [
+    {
+      "id": "mediaFeed-enabled-control",
+      "label": "Enabled",
+      "component": "mediaFeed",
+      "kind": "toggle",
+      "command": "mediaFeed-enabled",
+      "binding": "/controls/mediaFeed/enabled"
+    },
+    {
+      "id": "mediaFeed-load-control",
+      "label": "Requested load",
+      "component": "mediaFeed",
+      "kind": "range",
+      "command": "mediaFeed-load",
+      "binding": "/controls/mediaFeed/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "mediaFeed-fault-control",
+      "label": "Injected failure",
+      "component": "mediaFeed",
+      "kind": "toggle",
+      "command": "mediaFeed-fault",
+      "binding": "/controls/mediaFeed/fault"
+    },
+    {
+      "id": "mediaFeed-repair-control",
+      "label": "Repair component",
+      "component": "mediaFeed",
+      "kind": "button",
+      "command": "mediaFeed-repair"
+    },
+    {
+      "id": "mediaBlend-enabled-control",
+      "label": "Enabled",
+      "component": "mediaBlend",
+      "kind": "toggle",
+      "command": "mediaBlend-enabled",
+      "binding": "/controls/mediaBlend/enabled"
+    },
+    {
+      "id": "mediaBlend-load-control",
+      "label": "Requested load",
+      "component": "mediaBlend",
+      "kind": "range",
+      "command": "mediaBlend-load",
+      "binding": "/controls/mediaBlend/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "mediaBlend-fault-control",
+      "label": "Injected failure",
+      "component": "mediaBlend",
+      "kind": "toggle",
+      "command": "mediaBlend-fault",
+      "binding": "/controls/mediaBlend/fault"
+    },
+    {
+      "id": "mediaBlend-repair-control",
+      "label": "Repair component",
+      "component": "mediaBlend",
+      "kind": "button",
+      "command": "mediaBlend-repair"
+    },
+    {
+      "id": "conditioning-enabled-control",
+      "label": "Enabled",
+      "component": "conditioning",
+      "kind": "toggle",
+      "command": "conditioning-enabled",
+      "binding": "/controls/conditioning/enabled"
+    },
+    {
+      "id": "conditioning-load-control",
+      "label": "Requested load",
+      "component": "conditioning",
+      "kind": "range",
+      "command": "conditioning-load",
+      "binding": "/controls/conditioning/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "conditioning-fault-control",
+      "label": "Injected failure",
+      "component": "conditioning",
+      "kind": "toggle",
+      "command": "conditioning-fault",
+      "binding": "/controls/conditioning/fault"
+    },
+    {
+      "id": "conditioning-repair-control",
+      "label": "Repair component",
+      "component": "conditioning",
+      "kind": "button",
+      "command": "conditioning-repair"
+    },
+    {
+      "id": "fermenter-enabled-control",
+      "label": "Enabled",
+      "component": "fermenter",
+      "kind": "toggle",
+      "command": "fermenter-enabled",
+      "binding": "/controls/fermenter/enabled"
+    },
+    {
+      "id": "fermenter-load-control",
+      "label": "Requested load",
+      "component": "fermenter",
+      "kind": "range",
+      "command": "fermenter-load",
+      "binding": "/controls/fermenter/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "fermenter-fault-control",
+      "label": "Injected failure",
+      "component": "fermenter",
+      "kind": "toggle",
+      "command": "fermenter-fault",
+      "binding": "/controls/fermenter/fault"
+    },
+    {
+      "id": "fermenter-repair-control",
+      "label": "Repair component",
+      "component": "fermenter",
+      "kind": "button",
+      "command": "fermenter-repair"
+    },
+    {
+      "id": "harvestPump-enabled-control",
+      "label": "Enabled",
+      "component": "harvestPump",
+      "kind": "toggle",
+      "command": "harvestPump-enabled",
+      "binding": "/controls/harvestPump/enabled"
+    },
+    {
+      "id": "harvestPump-load-control",
+      "label": "Requested load",
+      "component": "harvestPump",
+      "kind": "range",
+      "command": "harvestPump-load",
+      "binding": "/controls/harvestPump/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "harvestPump-fault-control",
+      "label": "Injected failure",
+      "component": "harvestPump",
+      "kind": "toggle",
+      "command": "harvestPump-fault",
+      "binding": "/controls/harvestPump/fault"
+    },
+    {
+      "id": "harvestPump-repair-control",
+      "label": "Repair component",
+      "component": "harvestPump",
+      "kind": "button",
+      "command": "harvestPump-repair"
+    },
+    {
+      "id": "harvestHold-enabled-control",
+      "label": "Enabled",
+      "component": "harvestHold",
+      "kind": "toggle",
+      "command": "harvestHold-enabled",
+      "binding": "/controls/harvestHold/enabled"
+    },
+    {
+      "id": "harvestHold-load-control",
+      "label": "Requested load",
+      "component": "harvestHold",
+      "kind": "range",
+      "command": "harvestHold-load",
+      "binding": "/controls/harvestHold/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "harvestHold-fault-control",
+      "label": "Injected failure",
+      "component": "harvestHold",
+      "kind": "toggle",
+      "command": "harvestHold-fault",
+      "binding": "/controls/harvestHold/fault"
+    },
+    {
+      "id": "harvestHold-repair-control",
+      "label": "Repair component",
+      "component": "harvestHold",
+      "kind": "button",
+      "command": "harvestHold-repair"
+    },
+    {
+      "id": "separator-enabled-control",
+      "label": "Enabled",
+      "component": "separator",
+      "kind": "toggle",
+      "command": "separator-enabled",
+      "binding": "/controls/separator/enabled"
+    },
+    {
+      "id": "separator-load-control",
+      "label": "Requested load",
+      "component": "separator",
+      "kind": "range",
+      "command": "separator-load",
+      "binding": "/controls/separator/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "separator-fault-control",
+      "label": "Injected failure",
+      "component": "separator",
+      "kind": "toggle",
+      "command": "separator-fault",
+      "binding": "/controls/separator/fault"
+    },
+    {
+      "id": "separator-repair-control",
+      "label": "Repair component",
+      "component": "separator",
+      "kind": "button",
+      "command": "separator-repair"
+    },
+    {
+      "id": "membranes-enabled-control",
+      "label": "Enabled",
+      "component": "membranes",
+      "kind": "toggle",
+      "command": "membranes-enabled",
+      "binding": "/controls/membranes/enabled"
+    },
+    {
+      "id": "membranes-load-control",
+      "label": "Requested load",
+      "component": "membranes",
+      "kind": "range",
+      "command": "membranes-load",
+      "binding": "/controls/membranes/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "membranes-fault-control",
+      "label": "Injected failure",
+      "component": "membranes",
+      "kind": "toggle",
+      "command": "membranes-fault",
+      "binding": "/controls/membranes/fault"
+    },
+    {
+      "id": "membranes-repair-control",
+      "label": "Repair component",
+      "component": "membranes",
+      "kind": "button",
+      "command": "membranes-repair"
+    },
+    {
+      "id": "bulk-enabled-control",
+      "label": "Enabled",
+      "component": "bulk",
+      "kind": "toggle",
+      "command": "bulk-enabled",
+      "binding": "/controls/bulk/enabled"
+    },
+    {
+      "id": "bulk-load-control",
+      "label": "Requested load",
+      "component": "bulk",
+      "kind": "range",
+      "command": "bulk-load",
+      "binding": "/controls/bulk/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "bulk-fault-control",
+      "label": "Injected failure",
+      "component": "bulk",
+      "kind": "toggle",
+      "command": "bulk-fault",
+      "binding": "/controls/bulk/fault"
+    },
+    {
+      "id": "bulk-repair-control",
+      "label": "Repair component",
+      "component": "bulk",
+      "kind": "button",
+      "command": "bulk-repair"
+    },
+    {
+      "id": "air-enabled-control",
+      "label": "Enabled",
+      "component": "air",
+      "kind": "toggle",
+      "command": "air-enabled",
+      "binding": "/controls/air/enabled"
+    },
+    {
+      "id": "air-load-control",
+      "label": "Requested load",
+      "component": "air",
+      "kind": "range",
+      "command": "air-load",
+      "binding": "/controls/air/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "air-fault-control",
+      "label": "Injected failure",
+      "component": "air",
+      "kind": "toggle",
+      "command": "air-fault",
+      "binding": "/controls/air/fault"
+    },
+    {
+      "id": "air-repair-control",
+      "label": "Repair component",
+      "component": "air",
+      "kind": "button",
+      "command": "air-repair"
+    },
+    {
+      "id": "offgas-enabled-control",
+      "label": "Enabled",
+      "component": "offgas",
+      "kind": "toggle",
+      "command": "offgas-enabled",
+      "binding": "/controls/offgas/enabled"
+    },
+    {
+      "id": "offgas-load-control",
+      "label": "Requested load",
+      "component": "offgas",
+      "kind": "range",
+      "command": "offgas-load",
+      "binding": "/controls/offgas/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "offgas-fault-control",
+      "label": "Injected failure",
+      "component": "offgas",
+      "kind": "toggle",
+      "command": "offgas-fault",
+      "binding": "/controls/offgas/fault"
+    },
+    {
+      "id": "offgas-repair-control",
+      "label": "Repair component",
+      "component": "offgas",
+      "kind": "button",
+      "command": "offgas-repair"
+    },
+    {
+      "id": "power-enabled-control",
+      "label": "Enabled",
+      "component": "power",
+      "kind": "toggle",
+      "command": "power-enabled",
+      "binding": "/controls/power/enabled"
+    },
+    {
+      "id": "power-load-control",
+      "label": "Requested load",
+      "component": "power",
+      "kind": "range",
+      "command": "power-load",
+      "binding": "/controls/power/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "power-fault-control",
+      "label": "Injected failure",
+      "component": "power",
+      "kind": "toggle",
+      "command": "power-fault",
+      "binding": "/controls/power/fault"
+    },
+    {
+      "id": "power-repair-control",
+      "label": "Repair component",
+      "component": "power",
+      "kind": "button",
+      "command": "power-repair"
+    },
+    {
+      "id": "controller-enabled-control",
+      "label": "Enabled",
+      "component": "controller",
+      "kind": "toggle",
+      "command": "controller-enabled",
+      "binding": "/controls/controller/enabled"
+    },
+    {
+      "id": "controller-load-control",
+      "label": "Requested load",
+      "component": "controller",
+      "kind": "range",
+      "command": "controller-load",
+      "binding": "/controls/controller/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "controller-fault-control",
+      "label": "Injected failure",
+      "component": "controller",
+      "kind": "toggle",
+      "command": "controller-fault",
+      "binding": "/controls/controller/fault"
+    },
+    {
+      "id": "controller-repair-control",
+      "label": "Repair component",
+      "component": "controller",
+      "kind": "button",
+      "command": "controller-repair"
+    },
+    {
+      "id": "network-enabled-control",
+      "label": "Enabled",
+      "component": "network",
+      "kind": "toggle",
+      "command": "network-enabled",
+      "binding": "/controls/network/enabled"
+    },
+    {
+      "id": "network-load-control",
+      "label": "Requested load",
+      "component": "network",
+      "kind": "range",
+      "command": "network-load",
+      "binding": "/controls/network/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "network-fault-control",
+      "label": "Injected failure",
+      "component": "network",
+      "kind": "toggle",
+      "command": "network-fault",
+      "binding": "/controls/network/fault"
+    },
+    {
+      "id": "network-repair-control",
+      "label": "Repair component",
+      "component": "network",
+      "kind": "button",
+      "command": "network-repair"
+    },
+    {
+      "id": "plant-setRunning-control",
+      "label": "Run the shared plant",
+      "kind": "toggle",
+      "command": "plant-setRunning",
+      "binding": "/running"
+    },
+    {
+      "id": "plant-step-control",
+      "label": "Advance one model step",
+      "kind": "button",
+      "command": "plant-step"
+    },
+    {
+      "id": "plant-reset-control",
+      "label": "Reset dynamics \u00b7 keep edited parameters",
+      "kind": "button",
+      "command": "plant-reset"
+    }
+  ],
+  "units": {
+    "flow": "normalized flow units",
+    "inventory": "normalized inventory units",
+    "load": "% requested demonstration load",
+    "pressure": "normalized pressure index",
+    "temperature": "normalized model thermal index; artwork displays an illustrative range"
+  },
+  "provenance": [
+    {
+      "id": "demo-model",
+      "label": "Editable placeholder model",
+      "kind": "assumed",
+      "description": "Family-level normalized behavior for UI experimentation; no calibrated industry process, safety envelope or recipe."
+    },
+    {
+      "id": "assumed-topology",
+      "label": "Illustrative editable routing",
+      "kind": "illustrative",
+      "description": "Industry-inspired stage names and interfaces. This is not a verified plant P&ID, wiring diagram or production design."
+    }
+  ],
+  "assumptions": [
+    {
+      "id": "nominalCapacity",
+      "label": "Default normalized stage capacity",
+      "value": 75,
+      "unit": "normalized units",
+      "provenance": "demo-model"
+    },
+    {
+      "id": "warningIndex",
+      "label": "Demonstration warning threshold",
+      "value": 78,
+      "unit": "normalized index",
+      "provenance": "demo-model"
+    },
+    {
+      "id": "optionalUtilities",
+      "label": "Utility equipment is illustrative and may be optional",
+      "value": true,
+      "provenance": "assumed-topology"
+    }
+  ]
+}

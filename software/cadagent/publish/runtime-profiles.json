@@ -1,0 +1,160 @@
+{
+  "profiles": {
+    "assembly-reader": {
+      "entrypoints": [
+        "model/viewer.html"
+      ],
+      "files": {
+        "assembly/NOTICE.txt": {
+          "requires": [],
+          "sha256": "2a56932d6d0173cac37d2fcbc91e95e59a1de23641901109940bbd27f21fe202"
+        },
+        "assembly/guide.js": {
+          "requires": [
+            "assembly/playback.js",
+            "model/viewer.js"
+          ],
+          "sha256": "4028c17a333b31504888e6123e9e2f12782760ec167f88e8b0f50c80936da394"
+        },
+        "assembly/playback.js": {
+          "requires": [],
+          "sha256": "dd575ce02567129d9aa28376d3455f7e352118609cb30ae7dfe89066d17048d7"
+        },
+        "files/file-geometry.js": {
+          "requires": [],
+          "sha256": "1f503af4149f96624ecaba68043ea44eaaa68503988646c5139edb482ab922fd"
+        },
+        "model/model.js": {
+          "requires": [
+            "assembly/playback.js",
+            "assembly/guide.js",
+            "vendor/three/three.module.min.js"
+          ],
+          "sha256": "42a17fd2a2384807233683f01b988e7e98ab52c438726f5eebc3baa7e6e41aec"
+        },
+        "model/stage.js": {
+          "requires": [
+            "vendor/three/three.module.min.js",
+            "vendor/three/addons/controls/OrbitControls.js"
+          ],
+          "sha256": "f62b95e16a99e06686d32454397948fd50a67a973736ffc76a03b82f5e54b486"
+        },
+        "model/viewer.html": {
+          "requires": [
+            "ui/theme.js",
+            "ui/hud.css",
+            "model/viewer.js",
+            "assembly/guide.js",
+            "vendor/three/three.module.min.js",
+            "ui/appnav.js"
+          ],
+          "sha256": "c6ac7505f61a3da42266031eb6ebe6494b7108edca6f7e92256b7c5759ba7a8b"
+        },
+        "model/viewer.js": {
+          "requires": [
+            "vendor/three/three.module.min.js",
+            "assembly/playback.js",
+            "vendor/three/addons/loaders/STLLoader.js",
+            "model/stage.js",
+            "ui/panel.js",
+            "assembly/guide.js",
+            "files/file-geometry.js",
+            "model/model.js"
+          ],
+          "sha256": "7d16b34671951c0ffa69f202783419afaf5c0b0fada49ace55fe1c7062a7041b"
+        },
+        "package.json": {
+          "requires": [],
+          "sha256": "3ca9d4afd21425087cf31893b8f9f63c81b0b8408db5e343ca76e5f8aa26ab9a"
+        },
+        "ui/appnav.js": {
+          "requires": [],
+          "sha256": "ab5bee7e0a0fdab55fd50a30eaf3e2a15a1deb40d0c944890b9f21f00ff701eb"
+        },
+        "ui/hud.css": {
+          "requires": [
+            "ui/theme.css"
+          ],
+          "sha256": "0a1fbf7e9e796c7bf5d7cb9062b34374da937975e851ad2cce6b8cdb1827325a"
+        },
+        "ui/panel.js": {
+          "requires": [],
+          "sha256": "94c7a99a7d2d0fbf6305b77d0211487453994b5d5426aacc3f1d01d3020a7d9b"
+        },
+        "ui/theme.css": {
+          "requires": [
+            "vendor/fonts/fonts.css"
+          ],
+          "sha256": "370dfb29b28c760d48332316651492d0853c3e3aa9bc355e8a7edb1a4b12cf47"
+        },
+        "ui/theme.js": {
+          "requires": [],
+          "sha256": "bec818983711f705b48f9df993ed4ee53a82093f1f750252103d0c1f8366b0e2"
+        },
+        "vendor/file-parsers/THREE-LICENSE.txt": {
+          "requires": [],
+          "sha256": "852e0e8699169bf9f6fdc6bda3e682d078dcbc738b5d33e74df594721bff271d"
+        },
+        "vendor/fonts/OFL-Inter.txt": {
+          "requires": [],
+          "sha256": "262481e844521b326f5ecd053e59b98c8b2da78c8ee1bdbb6e8174305e54935a"
+        },
+        "vendor/fonts/OFL-JetBrainsMono.txt": {
+          "requires": [],
+          "sha256": "a76abf002c49097d146e86740a3105a5d00450b1592e820a1109a8c5680cd697"
+        },
+        "vendor/fonts/SOURCE.json": {
+          "requires": [],
+          "sha256": "d7ab379b752f78ec529c1f5f4072ac659842d143b2f288212f5c75123f4939df"
+        },
+        "vendor/fonts/fonts.css": {
+          "requires": [
+            "vendor/fonts/inter.woff2",
+            "vendor/fonts/jetbrains-mono.woff2"
+          ],
+          "sha256": "8d4d4568d1e6d4942045dadc47aae800a5cc759245bdd3c742e665072865afd4"
+        },
+        "vendor/fonts/inter.woff2": {
+          "requires": [],
+          "sha256": "3100e775e8616cd2611beecfa23a4263d7037586789b43f035236a2e6fbd4c62"
+        },
+        "vendor/fonts/jetbrains-mono.woff2": {
+          "requires": [],
+          "sha256": "83c005d49d8a6a50474c73a5a36ac0468076e9c4a29da7bdb14995d80560a5be"
+        },
+        "vendor/three/SOURCE.json": {
+          "requires": [],
+          "sha256": "a9e994c36cf9afda1bc0fc5ca72b19449654d98afdba1687d671873270008dbf"
+        },
+        "vendor/three/addons/controls/OrbitControls.js": {
+          "requires": [
+            "vendor/three/three.module.min.js"
+          ],
+          "sha256": "a861339c938d6ce76a8bd37d0b66679ba296be3de930811e864a041768bac9fe"
+        },
+        "vendor/three/addons/loaders/STLLoader.js": {
+          "requires": [
+            "vendor/three/three.module.min.js"
+          ],
+          "sha256": "896d006a48b8f125385a485ccae154dadee801a953f0b45ceffe7ddd8a29ca93"
+        },
+        "vendor/three/three.module.min.js": {
+          "requires": [],
+          "sha256": "3e690ac7d180b0aadf0891bea39eec643e29e2d3e75c99b18689518665f69ba6"
+        }
+      },
+      "notices": [
+        "assembly/NOTICE.txt",
+        "vendor/fonts/OFL-Inter.txt",
+        "vendor/fonts/OFL-JetBrainsMono.txt",
+        "vendor/file-parsers/THREE-LICENSE.txt"
+      ],
+      "resources": [
+        "package.json",
+        "vendor/fonts/SOURCE.json",
+        "vendor/three/SOURCE.json"
+      ]
+    }
+  },
+  "schema": "cad-agent.runtime-profiles/1"
+}

@@ -6,17 +6,26 @@ on:
 jobs:
   browser:
     runs-on: ubuntu-24.04
-    # About 7 minutes (#315). Most of it is the site's pages in a real browser (website-browser.mjs, whose page checks
-    # the dark theme, #306, doubled: both themes, more widths) and, in the Chromium job, the build's own tests. Building
-    # the site is a few seconds once the diagram cache below is warm. 15 leaves room for a cold cache and a slow runner;
-    # a hung step must not hold a PR for hours.
-    timeout-minutes: 15
+    # Same Playwright release as tools/site/package-lock.json; browsers and Noble system dependencies are baked in.
+    # Pin the registry manifest, not a mutable tag; the image avoids repeated browser and apt provisioning.
+    container:
+      image: mcr.microsoft.com/playwright:v1.56.1-noble@sha256:f1e7e01021efd65dd1a2c56064be399f3e4de00fd021ac561325f2bfbb2b837a
+      options: --init --ipc=host
+    defaults:
+      run:
+        shell: bash
+    # The complete site now includes 704 folder maps. Both engines still visit every applicable page/theme/width;
+    # allow that expanded coverage plus the build and component suites without changing per-action timeouts.
+    timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:
         engine: [chromium, webkit]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1   # v7.0.1
+      # The hosted checkout is mounted into a root-owned test container; trust this exact CI workspace only.
+      - name: Trust the checked-out workspace in the test container
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1   # v7.1.0
         with:
           node-version: 22
@@ -28,19 +37,17 @@ jobs:
         working-directory: tools/site
       - run: npm ci --ignore-scripts
         working-directory: tools/mermaid
-      # The site build draws its diagrams in headless Chromium (tools/site/compiler/site-diagrams.mjs, #132), so both engines' jobs
-      # need it: the WebKit job then tests the drawn pages in WebKit.
-      - run: npx playwright install --with-deps chromium ${{ matrix.engine == 'webkit' && 'webkit' || '' }}
-        working-directory: tools/site
+      # The matching pinned image already contains Chromium, WebKit and their system dependencies.
+      # npm ci still installs the exact locked Playwright library; no browser/apt install is needed here.
       # The site's Mermaid diagrams as earlier runs drew them (tools/site/compiler/site-diagrams.mjs: .cache/site-diagrams/, one file per
       # drawing, named by a hash of its source, theme, Mermaid, the kit, the font and the drawing code, so a changed
       # diagram is drawn again and a stale one never used). The key adds what that hash leaves out: the browser that draws
-      # and the font packages `--with-deps` installs for it (both follow Playwright's version, in package-lock.json), and
-      # the runner image with its other fonts (a new image draws everything once). It also names the files in that hash,
+      # and the font packages baked into the matching container (both follow Playwright's version), and
+      # the pinned container image with its other fonts (a new image draws everything once). It also names the files in that hash,
       # so a change to them starts an empty cache instead of carrying every old drawing along.
       - name: Key the diagram cache
         id: diagrams
-        run: echo "key=site-diagrams-$ImageOS-$ImageVersion-${{ hashFiles('tools/site/package-lock.json', 'tools/site/compiler/site-diagrams.mjs', 'tools/site/assets/site.css', 'software/cadagent/webkit/diagrams.*', 'software/cadagent/webkit/vendor/mermaid/**', 'software/cadagent/webkit/vendor/fonts/**') }}" >> "$GITHUB_OUTPUT"
+        run: echo "key=site-diagrams-playwright-1.56.1-noble-f1e7e01021efd65dd1a2c56064be399f3e4de00fd021ac561325f2bfbb2b837a-${{ hashFiles('tools/site/package-lock.json', 'tools/site/compiler/site-diagrams.mjs', 'tools/site/assets/site.css', 'software/cadagent/webkit/documents/diagrams.*', 'software/cadagent/webkit/vendor/mermaid/**', 'software/cadagent/webkit/vendor/fonts/**') }}" >> "$GITHUB_OUTPUT"
       - uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9   # v6.1.0
         with:
           path: .cache/site-diagrams
@@ -72,17 +79,43 @@ jobs:
         working-directory: tools/site
       # The build's own tests do not depend on the engine (their diagrams are drawn in Chromium either way), so they run
       # once, in the Chromium job.
-      - run: node --test tests/site/website-*.test.mjs
+      - run: node --test tests/site/website-*.test.mjs tests/site/toolkit/website-*.test.mjs
         if: matrix.engine == 'chromium'
       - run: node tests/site/website-browser.mjs
         env:
           PLAYWRIGHT_CHANNEL: chromium
           PLAYWRIGHT_BROWSER: ${{ matrix.engine }}
-      - run: node tests/site/website-catalog-browser.mjs
+      - run: node tests/site/toolkit/website-catalog-browser.mjs
+        env:
+          PLAYWRIGHT_CHANNEL: chromium
+          PLAYWRIGHT_BROWSER: ${{ matrix.engine }}
+      - run: npm run test:assembly-guide
+        working-directory: tools/site
+        env:
+          PLAYWRIGHT_CHANNEL: chromium
+          PLAYWRIGHT_BROWSER: ${{ matrix.engine }}
+      - run: npm run test:fea
+        working-directory: tools/site
+        env:
+          PLAYWRIGHT_CHANNEL: chromium
+          PLAYWRIGHT_BROWSER: ${{ matrix.engine }}
+      - run: npm run test:stage
+        working-directory: tools/site
+        env:
+          PLAYWRIGHT_CHANNEL: chromium
+          PLAYWRIGHT_BROWSER: ${{ matrix.engine }}
+          TEST_SOURCE_REVISION: ${{ github.sha }}
+      - run: npm run test:model-explode
+        working-directory: tools/site
         env:
           PLAYWRIGHT_CHANNEL: chromium
           PLAYWRIGHT_BROWSER: ${{ matrix.engine }}
       - run: npm run test:part-table
+        working-directory: tools/site
+        env:
+          PLAYWRIGHT_CHANNEL: chromium
+          PLAYWRIGHT_BROWSER: ${{ matrix.engine }}
+      - run: npm run test:model-touch
         working-directory: tools/site
         env:
           PLAYWRIGHT_CHANNEL: chromium
@@ -95,7 +128,13 @@ jobs:
       - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0   # v7.1.0
         with:
           python-version: '3.12'
-      - run: pip install -e ".[site]"
+      # Invoke pip through setup-python's interpreter; cached script launchers can contain host-only paths.
+      - run: python -m pip install -e ".[site]"
+      - run: npm run test:assembly-release
+        working-directory: tools/site
+        env:
+          PLAYWRIGHT_CHANNEL: chromium
+          PLAYWRIGHT_BROWSER: ${{ matrix.engine }}
       - run: npm run test:diagrams
         working-directory: tools/site
         env:
@@ -106,3 +145,85 @@ jobs:
         with:
           name: webkit-${{ matrix.engine }}
           path: /tmp/cad-agent-*
+  scada:
+    runs-on: ubuntu-24.04
+    container:
+      image: mcr.microsoft.com/playwright:v1.56.1-noble@sha256:f1e7e01021efd65dd1a2c56064be399f3e4de00fd021ac561325f2bfbb2b837a
+      options: --init --ipc=host
+    defaults:
+      run:
+        shell: bash
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        engine: [chromium, webkit]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            tools/site/package-lock.json
+            tools/webkit/scada/package-lock.json
+      - run: npm ci --ignore-scripts
+        working-directory: tools/site
+      - run: npm ci --ignore-scripts
+        working-directory: tools/webkit/scada
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        if: matrix.engine == 'chromium'
+        with:
+          python-version: '3.12'
+      - name: Check SCADA models, contracts and generated registries
+        if: matrix.engine == 'chromium'
+        working-directory: tools/webkit/scada
+        run: |
+          npm test
+          npm run check:schema
+          npm run check:metadata
+          npm run check:default-baseline
+      - name: Check SCADA gallery and scenario provenance
+        id: scada_provenance
+        if: matrix.engine == 'chromium'
+        working-directory: tools/webkit/scada
+        env:
+          PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/scada-python-browsers
+        run: |
+          python -m pip install -r ui/requirements.txt
+          # Python capture tooling has its own pinned Playwright release; the
+          # container's browsers belong to the separate Node browser test suite.
+          python -m playwright install chromium --only-shell
+          npm run gallery:check
+          npm run thumbnails:check
+          npm run topologies:check
+          npm run docs:scenarios:check
+          npm run thumbnails:scenarios:check
+      # Only after that step failed: regenerate what is stale on the same pinned shell and offer it as an artifact,
+      # so an author without that shell can commit a real capture (tools/webkit/scada/README.md). The job still fails;
+      # nothing is committed, and the script stages only files its generators own (never the frozen baseline).
+      - name: Recapture stale SCADA provenance on the pinned shell
+        id: scada_recapture
+        if: failure() && steps.scada_provenance.outcome == 'failure'
+        env:
+          PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/scada-python-browsers
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: python tools/webkit/scada/recapture.py --out "$RUNNER_TEMP/scada-recapture"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: failure() && steps.scada_recapture.outcome == 'success'
+        with:
+          name: scada-recapture-${{ github.event.pull_request.head.sha || github.sha }}
+          path: ${{ runner.temp }}/scada-recapture/
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 14
+      - name: Exercise shared SCADA simulation controls
+        run: node tests/webkit/scada/explorer/browser.mjs
+        env:
+          PLAYWRIGHT_CHANNEL: chromium
+          PLAYWRIGHT_BROWSER: ${{ matrix.engine }}
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: scada-${{ matrix.engine }}
+          path: /tmp/cad-agent-scada-explorer

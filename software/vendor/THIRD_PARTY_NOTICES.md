@@ -75,12 +75,13 @@ The simulation modules and the site build use these at run time. None of their c
 | JetBrains Mono | SIL Open Font License 1.1 | 2.211, variable, Latin subset from Google Fonts (sources in `fonts/SOURCE.json`) | `fonts/OFL-JetBrainsMono.txt` |
 
 <details>
-<summary>Retained STEP preview parser (maintenance checked 2026-11-07)</summary>
+<summary>Retained STEP preview parser (maintenance checked 2026-11-20)</summary>
 
-occt-import-js last pushed 2024-12-03; ongoing maintenance is unverified. Retain the existing 0.0.23 parser at
+occt-import-js last pushed 2024-12-03; ongoing maintenance is unverified. The 0.0.23 parser uses importer
 commit `c2148e54b456b571238d35cac037d304053d64b2`, with OCCT source commit
 `d2abb6d844231cb8f29be6894440874a4700e4a5`, the four licence files and corresponding sources above. The
-`file-viewer-sources.json` receipt pins npm integrity and every retained file hash. No parser bytes change here.
+`file-viewer-sources.json` receipt records the original npm integrity and distribution hashes, the build settings for the shipped static bindings,
+and every retained file hash. The [rebuild instructions](../cadagent/webkit/vendor/FILE-VIEWER-NOTICES.md) use the same C++ sources.
 
 The actual loader permits same-origin STL, STEP and 3MF URLs, rejects redirects, caps a download at 128 MiB,
 and terminates its worker on cancellation or the 120-second parse deadline. Existing browser fixtures exercise

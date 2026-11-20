@@ -13,8 +13,8 @@ vendored files. No project-specific CAD models are bundled here.
   https://github.com/Open-Cascade-SAS/OCCT/tree/d2abb6d844231cb8f29be6894440874a4700e4a5
 - Exact OCCT source archive: https://github.com/Open-Cascade-SAS/OCCT/archive/d2abb6d844231cb8f29be6894440874a4700e4a5.tar.gz
 
-`occt-import-js/occt-import-js.js` and `.wasm` are unmodified npm distribution
-binaries. The importer is licensed under LGPL 2.1. OCCT is licensed under LGPL 2.1
+`occt-import-js/occt-import-js.js` and `.wasm` were built from the pinned importer and OCCT sources with static JavaScript bindings.
+The receipt records the shipped hashes and the original npm distribution hashes. The importer is licensed under LGPL 2.1. OCCT is licensed under LGPL 2.1
 with its additional exception. Full texts are beside the binaries:
 `license.occt-import-js.txt`, `license.occt.txt`, `LICENSE_LGPL_21.txt`, and
 `OCCT_LGPL_EXCEPTION.txt`. Importer C++ sources, CMake configuration, submodule
@@ -23,14 +23,24 @@ The complete corresponding OCCT source is available from the exact archive above
 it is not a runtime dependency and is not embedded into the static site's assets.
 
 The library runs in a separate, dedicated classic worker. Users may inspect,
-modify and replace it: rebuild the exact source using its documented Emscripten
-and CMake setup, then replace the adjacent `occt-import-js.js` and
-`occt-import-js.wasm` files together. Preserve the `occtimportjs` factory and
+modify and replace it. To reproduce the Linux build, copy the bundled `occt-import-js/source/`
+directory to a build workspace. Check out the OCCT revision above into its `occt/` subdirectory.
+Install and activate Emscripten 3.1.69 with emsdk at `a36df02dc438e8b02f91122a4c62eeecb6784272`.
+With its environment active, CMake 3.31.6 and Ninja (Python distribution 1.11.1.4), run from the copied source:
+
+```sh
+emcmake cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXE_LINKER_FLAGS=-sDYNAMIC_EXECUTION=0
+cmake --build build --target OcctImportJS
+```
+
+This keeps the upstream reader, tessellation and Embind interface. The linker emits static bindings so
+workers can use the site's existing script policy. To replace the reader, copy the two
+`build/Release/occt-import-js.{js,wasm}` files together. Preserve the `occtimportjs` factory and
 `ReadStepFile` interface, or adapt `file-step-worker.js` to the replacement's API.
 No application relink, account, remote service or proprietary decoder is required.
 Serve the replacement with JavaScript and `application/wasm` MIME types and clear
 or change the deployment cache version. The worker locates the WASM beside the JS.
-The runtime WASM is 7,604,031 bytes, below Cloudflare's 25 MB per-asset limit.
+The runtime WASM is 7,591,804 bytes, below Cloudflare's 25 MB per-asset limit.
 
 The application does not restrict debugging or reverse engineering needed to
 modify these libraries. These source and replacement details apply to this pinned

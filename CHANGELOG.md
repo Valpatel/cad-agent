@@ -9,6 +9,11 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
 
 ## Unreleased
 
+## v0.50.2 (2026-11-20)
+
+**Fixed**
+- The inline model viewer names its pause and resume actions and keeps phone controls clear of the model. The assembly reader shows touch gestures below the canvas on phones (#806).
+
 ## v0.50.1 (2026-11-20)
 
 **Fixed**

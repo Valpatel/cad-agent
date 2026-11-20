@@ -140,9 +140,13 @@ source tables and model limits in the guide instead of duplicating them in the c
 different colours on one plate), write the PrusaSlicer project with
 `cadagent.manufacturing.prusa3mf.write_project`: one object per part, a volume per colour on its tool, and the wipe
 tower's place in the file ([PrusaSlicer projects](../../../docs/toolkit.md#prusaslicer-projects-cadagentmanufacturingprusa3mf)).
-Slice that file with `cadagent.manufacturing.slicer.slice_part` and `engine='prusa'`, which keeps what PrusaSlicer
-said ([Real grams](../../../docs/toolkit.md#real-grams-cadagentmanufacturingslicer-cad-agent-slice)), and look at it
-with `cad-agent prusa-view` rather than a renderer of your own. A result that is not `ok` is a finding. Locate each
+[Slice the file](../../../docs/toolkit.md#real-grams-cadagentmanufacturingslicer-cad-agent-slice) with
+`cad-agent slice` or `slice_part`. Set the Prusa engine and the named machine’s printer, nozzle, process and filament
+presets. Check the resolved settings against the requested machine before using the slice as evidence. The wrapper
+takes one filament preset. If tools need different material settings, configure each tool in PrusaSlicer and verify
+the resulting slice against the spool mapping. Open the project with the slice’s configuration in
+[`cad-agent prusa-view`](../../../docs/toolkit.md#looking-at-a-model-in-prusaslicer-cad-agent-prusa-view).
+A result that is not `ok` is a finding. Locate each
 "long bridging" or "floating bridge anchors" note with `cadagent.manufacturing.gcode.bridge_report`
 ([lesson](../../../docs/lessons/mechanical/printing-without-supports.md#find-a-long-bridging-warning-in-the-g-code-before-changing-the-geometry))
 before calling it intended; an intended one (a sealed void, a blind pocket) becomes a decision with its reason. Shape

@@ -373,8 +373,10 @@ def cleanup(work, attempt, owner, docker):
 
 
 def project_resources(docker, project):
-    return {kind: docker.call(kind, 'ls', '-aq' if kind == 'container' else '-q', '--filter', f'label=com.docker.compose.project={project}').split()
-            for kind in ('container', 'network', 'volume')}
+    label = f'label=com.docker.compose.project={project}'
+    return dict(container=docker.call('container', 'ls', '-aq', '--no-trunc', '--filter', label).split(),
+                network=docker.call('network', 'ls', '-q', '--filter', label).split(),
+                volume=docker.call('volume', 'ls', '-q', '--filter', label).split())
 
 
 def collect(work, image, source, case='normal'):
@@ -505,7 +507,7 @@ def finalize(work, unit):
     before, start = receipt['memory_events_before_stop'], receipt['memory_events_at_start']
     oom_observed = before['oom_kill'] > start['oom_kill'] if before is not None and start is not None else None
     passed = (not errors and not recovered and unit_state['unit_success'] and not receipt['oom_killed']
-              and oom_observed is False and collection.get('status') == 'success' and attempt['case'] in ('normal', 'detached'))
+              and oom_observed is False and collection.get('status') == 'success' and attempt['case'] in ('normal', 'detached', 'wrong'))
     tool_events = collection.get('tool_events', [])
     passed = passed and len(tool_events) == 1 and tool_events[0].get('completed') is not None and tool_events[0].get('error') is None
     if passed:

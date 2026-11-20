@@ -115,7 +115,10 @@ class FakeDocker:
         if args[0] == 'compose':
             self.ids = []
         if len(args) > 1 and args[1] == 'ls':
-            return '\n'.join((self.ids if args[0] == 'container' else []) + (self.remaining if not self.ids else []))
+            ids = self.ids if args[0] == 'container' else []
+            if '--no-trunc' not in args:
+                ids = [container[:12] for container in ids]
+            return '\n'.join(ids + (self.remaining if not self.ids else []))
         return ''
 
     def guard(self, data):
@@ -182,7 +185,7 @@ def test_cleanup_success_exit_is_not_resource_absence_receipt(tmp_path):
     with pytest.raises(ValueError, match='resources remain'):
         adapter.cleanup(work, data, owner, docker)
     assert ('compose', '--project-name', 'inspect-inert-1', '--file', str(work / 'compose.json'), 'down', '--timeout', '2') in docker.calls
-    assert ('container', 'ls', '-aq', '--filter', 'label=com.docker.compose.project=inspect-inert-1') in docker.calls
+    assert ('container', 'ls', '-aq', '--no-trunc', '--filter', 'label=com.docker.compose.project=inspect-inert-1') in docker.calls
 
 
 def test_host_settlement_must_precede_any_docker_or_artifact_access(tmp_path, monkeypatch):
@@ -196,13 +199,14 @@ def test_host_settlement_must_precede_any_docker_or_artifact_access(tmp_path, mo
     assert not (work / 'seal.json').exists()
 
 
-@pytest.mark.parametrize('payload,unit_success,remaining,expected', [
-    (b'qualified', True, [], True), (b'wrong', True, [], False),
-    (b'qualified', False, [], False), (b'qualified', True, ['leftover'], False),
+@pytest.mark.parametrize('case,payload,unit_success,remaining,expected', [
+    ('normal', b'qualified', True, [], True), ('normal', b'wrong', True, [], False),
+    ('normal', b'qualified', False, [], False), ('normal', b'qualified', True, ['leftover'], False),
+    ('wrong', b'wrong', True, [], False), ('wrong', b'qualified', True, [], True),
 ])
-def test_finalize_accepts_only_settled_correct_cleaned_bytes(tmp_path, monkeypatch, payload, unit_success, remaining, expected):
+def test_finalize_accepts_only_settled_correct_cleaned_bytes(tmp_path, monkeypatch, case, payload, unit_success, remaining, expected):
     work, data = attempt(tmp_path)
-    data.update(schema='cadagent.inspect-qualification/1', case='normal')
+    data.update(schema='cadagent.inspect-qualification/1', case=case)
     (work / 'attempt.json').write_text(json.dumps(data))
     docker = FakeDocker(work, data)
     docker.remaining = remaining

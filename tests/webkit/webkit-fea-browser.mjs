@@ -101,8 +101,10 @@ try{
     page.on('pageerror',error=>errors.push(error.message));
     try{
       await openFixture(page, site.url, '/fixture.json', mark);
+      mark('fitting top view');
       await page.evaluate(()=>window.__fea.fit('top'));
       // Finish a real paint before the native pointer enters the projected surface.
+      mark('capturing ready surface');
       await page.screenshot({path:out+'/'+engine.name()+'-'+theme+'-ready.png'});
       const hover=async()=>{
         const point=await page.evaluate(async()=>{

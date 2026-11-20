@@ -1,0 +1,29 @@
+{
+  "schema": "cad-agent.social-card/1",
+  "made": "node tools/site/figures/social-card.mjs: the link card and touch icon, drawn in headless Chrome from the site's own emblem, fonts and model poster",
+  "scope": "A picture for shared links and home-screen icons; it shows the project, not a result.",
+  "browser": "153.0.8010.12",
+  "inputs": {
+    "tools/site/figures/social-card.mjs": "5b561d2fe1a2d17954447f4127bd12990b8b861222426911b094d51576183fe4",
+    "tools/site/assets/icon.svg": "f2f1a9718e5a89a1f0c47b704eb2335b2e4de7c4e902256150c2be98a20ca14f",
+    "tools/site/assets/models/gyropup.webp": "9317c738f6a7919c3acca5dae2321e71461b86713f7169fc6fe7973a384c2829",
+    "software/cadagent/webkit/vendor/fonts/inter.woff2": "3100e775e8616cd2611beecfa23a4263d7037586789b43f035236a2e6fbd4c62",
+    "software/cadagent/webkit/vendor/fonts/jetbrains-mono.woff2": "83c005d49d8a6a50474c73a5a36ac0468076e9c4a29da7bdb14995d80560a5be"
+  },
+  "outputs": {
+    "card": {
+      "file": "tools/site/assets/social-card.png",
+      "width": 1200,
+      "height": 630,
+      "sha256": "8156d19122b21ead9f3ad5241c1451329e65b455bc9922af7b046a14c38ab66f",
+      "bytes": 311588
+    },
+    "icon": {
+      "file": "tools/site/assets/apple-touch-icon.png",
+      "width": 180,
+      "height": 180,
+      "sha256": "2d16a47821f338af002c91e5f337ac3591450d18fed5109c2804903db8335cfd",
+      "bytes": 8994
+    }
+  }
+}

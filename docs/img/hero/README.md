@@ -42,9 +42,12 @@ flowchart TD
 
 ## Homepage assets
 
-The current hero is an original looping pixel adventure: robots build, test and
-share knowledge. It is conceptual artwork. Recorded result figures and CAD views
-keep their own source evidence and engineering limits.
+The home page's first screen shows the headline beside a recorded running example,
+Gyropup's turret playground ([`../gyropup/SOURCE.json`](../gyropup/SOURCE.json), #748).
+The original looping pixel adventure (robots build, test and share knowledge) stays
+as brand: a slim band, cropped to its robots, between the hero and "See it run". It
+is conceptual artwork. Recorded result figures and CAD views keep their own source
+evidence and engineering limits.
 
 <details>
 <summary>Accepted scene, original asset audit and delivery checks</summary>

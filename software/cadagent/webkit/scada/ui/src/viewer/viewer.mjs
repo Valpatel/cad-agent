@@ -125,31 +125,49 @@ export function renderScadaDiagram({view, equipment = [], snapshot = {}, selecte
   return `<div class="${esc(classes.scroll)}" data-scada-scroll tabindex="0" aria-label="${esc(view.ariaLabel ?? `${view.label ?? view.title ?? view.id} diagram. Drag to pan, wheel or pinch to zoom. Arrow keys pan; Home fits the diagram.`)}"${htmlAttributes(attributes.scroll)}><div class="${esc(classes.stage)}" data-scada-stage style="${zoomProperty}:${zoom};--scada-canvas-width:${width}px;--scada-canvas-height:${height}px;width:100%;height:100%"${htmlAttributes(attributes.stage)}><div class="${esc(classes.canvas)}" data-scada-canvas data-scada-view="${esc(view.id ?? "")}" data-scada-width="${width}" data-scada-height="${height}" style="${zoomProperty}:${zoom};width:${width}px;min-width:${width}px;height:${height}px;transform:scale(var(${zoomProperty}));transform-origin:top left"${htmlAttributes(attributes.canvas)}><svg class="${esc(classes.svg)}" viewBox="0 0 ${width} ${height}" role="img" aria-label="${esc(view.ariaLabel ?? view.label ?? view.title ?? view.id)}"${htmlAttributes(attributes.svg)}>${renderBackground(context)}<g class="${esc(classes.edges)}">${edgeMarkup}</g><g class="${esc(classes.labels)}">${(view.labels ?? []).map(label => renderLabel(label, context)).join('')}</g><g class="${esc(classes.junctions)}">${(view.junctions ?? []).map(junction => renderJunction(junction, context)).join('')}</g><g class="${esc(classes.ports)}">${portMarkup}</g></svg>${nodes.map(node => renderNode(node, context)).join('')}${(view.portals ?? view.overlays ?? []).map(overlay => renderOverlay(overlay, context)).join('')}</div></div></div>`;
 }
 
+// After mount the camera owns inline style and data-camera-* on its viewport, stage and canvas, so the
+// live DOM never equals the rendered markup there. Compare those with the markup last rendered instead:
+// restoring them on every tick and letting the camera re-apply them rewrote the diagram twice per tick (#761).
+const cameraElements = '[data-scada-scroll],[data-scada-stage],[data-scada-canvas]';
+const renderedStyles = new WeakMap();
+const cameraAttribute = name => name === 'style' || name === 'data-scada-camera' || name.startsWith('data-camera-');
+function adopt(source) {
+  const clone = source.cloneNode(true);
+  if (clone.nodeType === 1) for (const element of [clone, ...clone.querySelectorAll(cameraElements)]) {
+    if (element.matches(cameraElements)) renderedStyles.set(element, element.getAttribute('style'));
+  }
+  return clone;
+}
+const scaleNote = zoom => zoom < .8 ? 'Overview scale · use 100% for details · drag or pinch to explore' : 'Drag to pan · wheel or pinch to zoom · Home to fit';
 function patchElement(target, source, document) {
-  if (target.nodeType !== source.nodeType || target.nodeName !== source.nodeName) { target.replaceWith(source.cloneNode(true)); return; }
+  if (target.nodeType !== source.nodeType || target.nodeName !== source.nodeName) { target.replaceWith(adopt(source)); return; }
   // A different view owns a different equipment/gradient tree. Mount it atomically:
   // morphing equipment by position can leave WebKit's URL paint servers bound to removed defs.
   // Same-view snapshots still patch in place, preserving animation and command focus.
   if (target.nodeType === 1 && target.hasAttribute('data-scada-canvas') &&
       target.getAttribute('data-scada-view') !== source.getAttribute('data-scada-view')) {
-    target.replaceWith(source.cloneNode(true)); return;
+    target.replaceWith(adopt(source)); return;
   }
   // A different asset must never inherit the previous asset's unfinished input.
   if (target.nodeType === 1 && target.hasAttribute('data-scada-inspection-equipment') &&
       target.getAttribute('data-scada-inspection-equipment') !== source.getAttribute('data-scada-inspection-equipment')) {
-    target.replaceWith(source.cloneNode(true)); return;
+    target.replaceWith(adopt(source)); return;
   }
   if (target.nodeType === 3) { if (target.nodeValue !== source.nodeValue) target.nodeValue = source.nodeValue; return; }
   if (target.nodeType !== 1) return;
   const editing = target === document.activeElement && /^(INPUT|SELECT|TEXTAREA)$/.test(target.tagName);
   const modalAttribute = name => target.tagName === 'DIALOG' && target.hasAttribute('open') && ['open','role','aria-modal','data-scada-fallback','style'].includes(name);
   const popoverAttribute = name => target.dataset.scadaPopoverOpen === 'true' && ['hidden','style','popover','data-scada-popover-open'].includes(name);
+  const camera = target.matches(cameraElements), rendered = renderedStyles.get(target) ?? null;
+  // An unchanged rendered style stays as the camera left it; a changed one is written for the camera to re-apply.
+  const cameraOwned = name => camera && cameraAttribute(name) && (name !== 'style' || source.getAttribute('style') === rendered);
+  if (camera) renderedStyles.set(target, source.getAttribute('style'));
   for (const attribute of [...target.attributes]) {
-    if (modalAttribute(attribute.name) || popoverAttribute(attribute.name) || (editing && attribute.name === 'value')) continue;
+    if (modalAttribute(attribute.name) || popoverAttribute(attribute.name) || cameraOwned(attribute.name) || (editing && attribute.name === 'value')) continue;
     if (!source.hasAttribute(attribute.name)) target.removeAttribute(attribute.name);
   }
   for (const attribute of [...source.attributes]) {
-    if (modalAttribute(attribute.name) || popoverAttribute(attribute.name) || (editing && attribute.name === 'value')) continue;
+    if (modalAttribute(attribute.name) || popoverAttribute(attribute.name) || cameraOwned(attribute.name) || (editing && attribute.name === 'value')) continue;
     if (target.getAttribute(attribute.name) !== attribute.value) target.setAttribute(attribute.name, attribute.value);
   }
   if (!editing && 'value' in target && target.value !== source.value) target.value = source.value;
@@ -158,7 +176,7 @@ function patchElement(target, source, document) {
   const oldChildren = [...target.childNodes].filter(child => !child.hasAttribute?.('data-scada-camera-controls')), newChildren = [...source.childNodes];
   for (let index = 0; index < Math.max(oldChildren.length, newChildren.length); index++) {
     if (!newChildren[index]) oldChildren[index]?.remove();
-    else if (!oldChildren[index]) target.append(newChildren[index].cloneNode(true));
+    else if (!oldChildren[index]) target.append(adopt(newChildren[index]));
     else patchElement(oldChildren[index], newChildren[index], document);
   }
 }
@@ -293,7 +311,7 @@ export class ScadaViewer {
     const context = this.#context(), component = this.#equipment.find(item => item.id === this.#selected);
     if (this.#options.renderShell) return this.#options.renderShell(context);
     const diagram = renderScadaDiagram({view:this.view, equipment:this.#equipment, snapshot:this.#snapshot, selected:this.#selected, zoom:this.#zoom, scope:this.#scope, ...this.#options.diagram, renderNode:(node, itemContext) => this.#node(node, itemContext)});
-    return `<section class="scada-viewer" data-scada-viewer="${this.#scope}" data-readonly="${this.readOnly}" data-running="${this.#snapshot?.running !== false}"><header class="scada-viewer-header"><div><span class="scada-viewer-eyebrow">${this.readOnly ? 'READ-ONLY SCADA VIEW' : 'CONNECTED SCADA VIEW'}</span><h2>${esc(this.#options.system?.label ?? 'System viewer')}</h2></div><p>${esc(this.#options.system?.description ?? 'Select equipment to inspect its state and available commands.')}</p></header><nav class="scada-viewer-tabs" aria-label="System views">${this.#views.map(view => `<button type="button" data-scada-view-choice="${esc(view.id)}"${view.id === this.#viewId ? ' aria-current="page"' : ''}>${esc(view.label ?? view.shortTitle ?? view.title ?? view.id)}</button>`).join('')}</nav><div class="scada-viewer-toolbar"><label>Equipment <select data-scada-picker>${this.#equipment.map(item => `<option value="${esc(item.id)}"${item.id === this.#selected ? ' selected' : ''}>${esc(item.id)} · ${esc(item.label ?? item.id)}</option>`).join('')}</select></label></div>${diagram}<footer class="scada-viewer-status"><span data-scada-scale-note>${this.#zoom < .8 ? 'Overview scale · use 100% for details' : 'Drag to pan · wheel or pinch to zoom · Home to fit'}</span><span>Equipment: <strong>${esc(component.id)} · ${esc(component.label ?? component.id)}</strong></span><button type="button" data-scada-inspect>Equipment controls</button></footer><p class="scada-viewer-error" data-scada-viewer-error role="alert"${this.#error ? '' : ' hidden'}>${esc(this.#error)}</p>${this.#quickPanel(component)}${renderScadaDialog({id:'inspector', title:`${component.id} · ${component.label ?? component.id}`, scope:this.#scope, kind:'equipment', body:this.#detailsOpen ? `<div data-scada-inspection-equipment="${esc(component.id)}"><p id="${this.#scope}-inspector-error" class="scada-viewer-error" data-scada-viewer-dialog-error role="alert"${this.#error ? '' : ' hidden'}>${esc(this.#error)}</p>${this.#inspector()}</div>` : ''})}</section>`;
+    return `<section class="scada-viewer" data-scada-viewer="${this.#scope}" data-readonly="${this.readOnly}" data-running="${this.#snapshot?.running !== false}"><header class="scada-viewer-header"><div><span class="scada-viewer-eyebrow">${this.readOnly ? 'READ-ONLY SCADA VIEW' : 'CONNECTED SCADA VIEW'}</span><h2>${esc(this.#options.system?.label ?? 'System viewer')}</h2></div><p>${esc(this.#options.system?.description ?? 'Select equipment to inspect its state and available commands.')}</p></header><nav class="scada-viewer-tabs" aria-label="System views">${this.#views.map(view => `<button type="button" data-scada-view-choice="${esc(view.id)}"${view.id === this.#viewId ? ' aria-current="page"' : ''}>${esc(view.label ?? view.shortTitle ?? view.title ?? view.id)}</button>`).join('')}</nav><div class="scada-viewer-toolbar"><label>Equipment <select data-scada-picker>${this.#equipment.map(item => `<option value="${esc(item.id)}"${item.id === this.#selected ? ' selected' : ''}>${esc(item.id)} · ${esc(item.label ?? item.id)}</option>`).join('')}</select></label></div>${diagram}<footer class="scada-viewer-status"><span data-scada-scale-note>${scaleNote(this.#zoom)}</span><span>Equipment: <strong>${esc(component.id)} · ${esc(component.label ?? component.id)}</strong></span><button type="button" data-scada-inspect>Equipment controls</button></footer><p class="scada-viewer-error" data-scada-viewer-error role="alert"${this.#error ? '' : ' hidden'}>${esc(this.#error)}</p>${this.#quickPanel(component)}${renderScadaDialog({id:'inspector', title:`${component.id} · ${component.label ?? component.id}`, scope:this.#scope, kind:'equipment', body:this.#detailsOpen ? `<div data-scada-inspection-equipment="${esc(component.id)}"><p id="${this.#scope}-inspector-error" class="scada-viewer-error" data-scada-viewer-dialog-error role="alert"${this.#error ? '' : ' hidden'}>${esc(this.#error)}</p>${this.#inspector()}</div>` : ''})}</section>`;
   }
   #paint() {
     if (!this.#root || !this.#managed) return;
@@ -306,7 +324,7 @@ export class ScadaViewer {
   }
   #cameraStatus() {
     const note = this.#root?.querySelector('[data-scada-scale-note]');
-    if (note) note.textContent = this.#zoom < .8 ? 'Overview scale · use 100% for details · drag or pinch to explore' : 'Drag to pan · wheel or pinch to zoom · Home to fit';
+    if (note && note.textContent !== scaleNote(this.#zoom)) note.textContent = scaleNote(this.#zoom);
   }
   #syncCamera() {
     const viewport = this.#root.querySelector('[data-scada-scroll]'), canvas = viewport?.querySelector('[data-scada-canvas]');

@@ -6,6 +6,28 @@ bring that work in, keep the structure clean as it grows, and publish it, so the
 This page sets out that long-term loop first. Below it is the structure that makes the loop work: a topic tree,
 maturity levels, confidence, evaluation, discovery and folders. Tracking: #139.
 
+## From frontier to local
+
+People using frontier models on real projects use cad-agent and improve it. The project gathers the best references,
+design guides, design checks, procedures, open-source tools and current agent systems. Evals then measure whether
+cheaper, open and local models can do the same work with that help (#748).
+
+- **Use it on real projects.**
+  - Today: frontier-model agents use it on real builds such as Gyropup and the J501 enclosure.
+  - Next: more outside projects, so gaps show up beyond our own.
+- **Improve it.**
+  - Today: a gap becomes a reviewed PR with tests, sources and stated limits, merged under the gates.
+  - Next: skills for triaging and integrating outside contributions.
+- **Gather the best.**
+  - Today: the catalogue, cited references, process profiles and skills, each area with its maturity.
+  - Next: a confidence level on every rule and tool (#143).
+- **Measure smaller models.**
+  - Today: three analytical jobs with independent graders and a 28-entry candidate catalogue
+    ([standard evaluation](practice/standard-evaluation.md)). Three recorded attempts passed, all on one hosted
+    frontier model; two CLI attempts produced no artifact. No baseline without cad-agent.
+  - Next: paired trials with and without cad-agent on a local model first, then a lower-cost hosted one (#142). No
+    local or open model has been measured yet.
+
 ## The long-term loop
 
 ```mermaid
@@ -218,7 +240,8 @@ flowchart TD
     classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
 ```
 
-Nothing here exists yet: no `evals/` folder and no runner. This is the plan #142 builds from.
+A first slice exists: three analytical jobs in `tests/fixtures/evaluation/jobs/`, their graders and a CLI collector in
+[`tools/evaluation/`](../tools/evaluation/README.md) ([what they prove](practice/standard-evaluation.md)). The rest below is the plan #142 builds from.
 
 - **Survey first.** Before building a runner, #142 will survey existing evaluation harnesses and CAD benchmarks (some
   are already listed in `docs/research/landscape.json`) and record adopt-vs-build, as for any new capability.

@@ -4,7 +4,7 @@ These repository scripts draw committed diagrams from the toolkit's equations, f
 
 ```mermaid
 flowchart TD
-    C["../../software/cadagent/<br/>model calculations"] --> G["tools/figures/<br/>eight generators"]
+    C["../../software/cadagent/<br/>model calculations"] --> G["tools/figures/<br/>nine generators"]
     D["../../docs/research/<br/>process data + sources"] --> G
     G --> O["../../docs/img/<br/>committed SVGs"]
     O --> T["../../tests/<br/>parity + model checks"]
@@ -14,7 +14,7 @@ flowchart TD
     class C,D,O,T near
 ```
 
-Run from the repository root with its dependencies available. For example, `PYTHONPATH=software python tools/figures/bearing_figures.py --check` compares the current calculation to its committed SVGs. The seven checkable generators return failure on stale figures; omit `--check` to regenerate them. `snapfit_figures.py` only regenerates its two guide figures and needs `PYTHONPATH=software` or an installed toolkit.
+Run from the repository root with its dependencies available. For example, `PYTHONPATH=software python tools/figures/bearing_figures.py --check` compares the current calculation to its committed SVGs. The seven checkable generators return failure on stale figures; omit `--check` to regenerate them. `snapfit_figures.py` only regenerates its two guide figures and needs `PYTHONPATH=software` or an installed toolkit; `plates_figure.py` only regenerates its figure from a clean Gyropup checkout (`--gyropup <checkout>`).
 
 | Script | Output under docs/img/ | Existing checks |
 |---|---|---|
@@ -25,6 +25,7 @@ Run from the repository root with its dependencies available. For example, `PYTH
 | [printed_joint_figures.py](printed_joint_figures.py) | joints: eye, peel and coupon examples | [printed joints](../../tests/mechanical/test_printed_joints.py) |
 | [snapfit_figures.py](snapfit_figures.py) | compliant: the guide's two cantilever examples | [snap-fit and generator checks](../../tests/mechanical/test_snapfit.py) |
 | [process_figures.py](process_figures.py) | process: walls, layers, bends and hardware prices | [process figures](../../tests/manufacturing/test_process_figures.py) |
+| [plates_figure.py](plates_figure.py) | plates: Gyropup build plates from its print plan | [figure provenance](../../docs/img/plates/SOURCE.json) |
 | [process_profile_figures.py](process_profile_figures.py) | research and sheet-metal: cited rule charts | [process profiles](../../tests/manufacturing/test_process_profiles.py) |
 
 [Repository tools](../README.md) · [Animated scene inputs](../anim/) · [Site figure tools](../site/figures/README.md)

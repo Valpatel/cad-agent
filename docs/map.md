@@ -412,7 +412,7 @@ Guides explain how to use the toolkit. Folder maps lead into its code, tests and
 </details>
 
 <details>
-<summary>docs — 54 folders</summary>
+<summary>docs — 55 folders</summary>
 
 <details>
 <summary><code>docs/README.md</code> — 1 folders</summary>
@@ -450,6 +450,19 @@ Guides explain how to use the toolkit. Folder maps lead into its code, tests and
 | Folder |
 |---|
 | `docs/examples` |
+
+</details>
+
+<details>
+<summary><code>docs/examples/build-guide/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-docs/d-examples/d-build-guide/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/docs/examples/build-guide/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `docs/examples/build-guide` |
 
 </details>
 
@@ -1119,7 +1132,7 @@ Guides explain how to use the toolkit. Folder maps lead into its code, tests and
 </details>
 
 <details>
-<summary>software — 1185 folders</summary>
+<summary>software — 1188 folders</summary>
 
 <details>
 <summary><code>software/README.md</code> — 1 folders</summary>
@@ -1391,6 +1404,32 @@ Guides explain how to use the toolkit. Folder maps lead into its code, tests and
 | Folder |
 |---|
 | `software/cadagent/webkit/assembly` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/assembly/examples/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-assembly/d-examples/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/assembly/examples/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/assembly/examples` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/assembly/examples/gyropup-turret/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-assembly/d-examples/d-gyropup-turret/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/assembly/examples/gyropup-turret/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/assembly/examples/gyropup-turret` |
 
 </details>
 
@@ -8818,6 +8857,19 @@ Guides explain how to use the toolkit. Folder maps lead into its code, tests and
 </details>
 
 <details>
+<summary><code>software/cadagent/webkit/simulation/examples/gyropup-v2/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-simulation/d-examples/d-gyropup-v2/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/simulation/examples/gyropup-v2/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/simulation/examples/gyropup-v2` |
+
+</details>
+
+<details>
 <summary><code>software/cadagent/webkit/simulation/examples/two-link-arm/README.md</code> — 1 folders</summary>
 
 [Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-simulation/d-examples/d-two-link-arm/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/simulation/examples/two-link-arm/README.md)
@@ -9528,7 +9580,7 @@ Guides explain how to use the toolkit. Folder maps lead into its code, tests and
 </details>
 
 <details>
-<summary>tests — 364 folders</summary>
+<summary>tests — 365 folders</summary>
 
 <details>
 <summary><code>tests/README.md</code> — 1 folders</summary>
@@ -10006,6 +10058,19 @@ Guides explain how to use the toolkit. Folder maps lead into its code, tests and
 | Folder |
 |---|
 | `tests/repo` |
+
+</details>
+
+<details>
+<summary><code>tests/repo/ci/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-tests/d-repo/d-ci/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/tests/repo/ci/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `tests/repo/ci` |
 
 </details>
 

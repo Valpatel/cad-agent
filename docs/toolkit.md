@@ -273,7 +273,7 @@ boom = robust_cut(robust_union(*plates), *pin_holes, report=notes)
 `export-3mf` also writes `exports/<name>-plates.3mf`: one Bambu Studio project that holds every printed part, at its
 quantity and in its print orientation, packed onto as many plates as the printer's bed needs. Open it, check each
 plate and slice. This is Gyropup's print set, from its committed STLs and print plan
-(`tools/plates_figure.py` makes it; `docs/img/plates/SOURCE.json` records the revision and settings):
+(`tools/figures/plates_figure.py` makes it; `docs/img/plates/SOURCE.json` records the revision and settings):
 
 ![Gyropup's 45 printed parts on 19 Bambu Studio plates of 256 mm, grouped by filament: 14 plates of PA6-CF, 3 of PETG and 2 of TPU. The long shins and thighs lie diagonally; small parts fill the space beside large ones; every plate keeps the printer's wiper corner clear.](img/plates/gyropup-plates.svg)
 
@@ -628,6 +628,7 @@ after that every step runs, and the exit code says whether anything failed.*
 
 | Command | Does | Exit code |
 |---------|------|-----------|
+| `cad-agent --version` | prints the version and the package folder this cad-agent runs from | |
 | `cad-agent init [DIR] [--force]` | copies the starter project ([`docs/examples/starter-box`](examples/starter-box/README.md): a box and lid on four M3 heat-set inserts, `cad-agent.yaml`, `cad/build.py`, `tools/checks.py`) into `DIR` (default: here) and prints the next commands; from a wheel, the copy installed under `<prefix>/share/cad-agent/` | 2 if `DIR` is not empty (`--force` writes the starter's files over it) |
 | `cad-agent build [--from STEP] [--only STEP ...]` | runs steps in order with the project python; per-step timing; stops at the first failure and prints the log tail | 1 on a failed step |
 | `cad-agent export-3mf` | `<part>.stl` -> verified, bed-centred `<part>.3mf` for every printed part in the parts file ([parts that are not printed](#parts-that-are-not-printed) are left out), then every printed part on [build plates](#build-plates-cadagentmanufacturingplates) in `<name>-plates.3mf` | 1 on a read-back mismatch, or when the parts cannot be laid out |

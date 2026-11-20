@@ -7,6 +7,7 @@ printed part fits, prints without support, or survives load.
 from __future__ import annotations
 
 import datetime
+import hashlib
 import logging
 import os
 import re
@@ -328,7 +329,8 @@ def export_print_stl(
 
     The report adds ``vertices_welded`` and the mesh volume before and after the
     weld (``mesh_volume_before_weld_mm3``, ``mesh_volume_mm3``), so a weld that
-    changed more than a sliver shows.
+    changed more than a sliver shows. ``stl_sha256`` binds these recorded checks
+    to the final written STL bytes, including any weld or face-removal rewrite.
     """
     cq = require("cadquery", "STL export")
     trimesh = require("trimesh", "STL watertight check")
@@ -350,6 +352,7 @@ def export_print_stl(
         mesh.remove_unreferenced_vertices()
         mesh.export(path)
     report = {
+        "stl_sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
         "degenerate_tessellation_faces_removed": removed,
         "vertices_welded": welded,
         "cad_valid": bool(shape.isValid()),

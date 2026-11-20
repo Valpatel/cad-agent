@@ -30,7 +30,10 @@ def hashes_are_current(root: Path, data: dict) -> bool:
             if not isinstance(values, dict) or not values:
                 return False
             for relative, expected in values.items():
-                path = (root / relative).resolve()
+                try:
+                    path = (root / relative).resolve()
+                except RuntimeError:  # pathlib raises this for symlink loops before Python 3.13
+                    return False
                 if root not in path.parents or not path.is_file():
                     return False
                 if hashlib.sha256(path.read_bytes()).hexdigest() != expected:

@@ -40,14 +40,18 @@ _READER_ERRORS = frozenset({
 })
 
 
-def _media_path(path: Path) -> Path:
+def _media_bytes(path: Path) -> bytes:
+    limit = 32 * 1024 * 1024
     try:
-        path = Path(path).resolve(strict=True)
-        if not path.is_file() or not 0 < path.stat().st_size <= 32 * 1024 * 1024:
-            raise cloud.CloudError("media library must be a regular file within the size limit")
-        if hashlib.sha256(path.read_bytes()).hexdigest() != MEDIA_SHA256:
+        fd = os.open(path, os.O_RDONLY | os.O_NONBLOCK)
+        with os.fdopen(fd, "rb") as handle:
+            info = os.fstat(handle.fileno())
+            if not stat.S_ISREG(info.st_mode) or not 0 < info.st_size <= limit:
+                raise cloud.CloudError("media library must be a regular file within the size limit")
+            data = handle.read(limit + 1)
+        if len(data) > limit or hashlib.sha256(data).hexdigest() != MEDIA_SHA256:
             raise cloud.CloudError("installed media library does not match the reviewed runtime digest")
-        return path
+        return data
     except OSError:
         raise cloud.CloudError("cannot read the installed media library") from None
 
@@ -118,7 +122,7 @@ def _private_bytes(path: Path, limit: int) -> bytes:
             os.close(fd)
 
 
-def _read_jpeg(reader: Path, library: Path, url: str, *, seconds: float = 45) -> tuple[bytes, tuple[int, int]]:
+def _read_jpeg(reader: Path, media: bytes, url: str, *, seconds: float = 45) -> tuple[bytes, tuple[int, int]]:
     """Bound and reap the external process group, then independently decode its JPEG."""
     from PIL import Image
 
@@ -131,6 +135,10 @@ def _read_jpeg(reader: Path, library: Path, url: str, *, seconds: float = 45) ->
         fd = os.open(script, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
         with os.fdopen(fd, "wb") as handle:
             handle.write(_reader_bytes(reader))
+        library = folder / "libBambuSource.so"
+        fd = os.open(library, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+        with os.fdopen(fd, "wb") as handle:
+            handle.write(media)
         process = None
         try:
             # An unlinked private file avoids blocking on a child that never reads its input pipe.
@@ -218,7 +226,7 @@ def capture(session: cloud.CloudSession, device_id: str, *, media_library: Path,
         raise cloud.CloudError("camera capture needs Pillow 13+ (cad-agent[bambu-camera])") from None
     if Version(PIL.__version__) < Version("13.0"):
         raise cloud.CloudError("camera capture needs Pillow 13+ (cad-agent[bambu-camera])")
-    library = _media_path(media_library)
+    _media_bytes(media_library)  # reject an unsupported runtime before any device query
     reader = Path(media_reader).absolute()
     _reader_bytes(reader)  # fail before any account/device request; reread and snapshot before execution
     output = Path(output)
@@ -246,8 +254,7 @@ def capture(session: cloud.CloudSession, device_id: str, *, media_library: Path,
                 or not isinstance(firmware[0], str) or not _FIRMWARE.fullmatch(firmware[0])):
             raise cloud.CloudError("camera capture needs one fresh matched firmware version")
         url = _grant(session, device_id, firmware[0])
-        _media_path(library)  # an app update between preparation and launch must not change the pinned runtime
-        data, dimensions = _read_jpeg(reader, library, url)
+        data, dimensions = _read_jpeg(reader, _media_bytes(media_library), url)
         staging = ".cad-agent-frame-" + uuid.uuid4().hex
         fd = os.open(staging, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600, dir_fd=directory)
         try:

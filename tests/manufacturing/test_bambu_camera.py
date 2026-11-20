@@ -176,7 +176,7 @@ def scripted_reader(tmp_path, jpeg, monkeypatch, fault=""):
 
 @pytest.mark.skipif(not LINUX, reason="Linux waitid/process groups")
 def test_parent_reopens_and_fully_decodes_the_external_reader_output(tmp_path, jpeg, monkeypatch):
-    data, size = K._read_jpeg(scripted_reader(tmp_path, jpeg, monkeypatch), Path("unused"), "TEST-PRIVATE-URL")
+    data, size = K._read_jpeg(scripted_reader(tmp_path, jpeg, monkeypatch), b"fixture library", "TEST-PRIVATE-URL")
     assert data == jpeg and size == (64, 32)
 
 
@@ -184,7 +184,7 @@ def test_parent_reopens_and_fully_decodes_the_external_reader_output(tmp_path, j
 @pytest.mark.parametrize("fault", ["corrupt", "bomb", "dimensions", "public", "exit"])
 def test_native_success_or_jpeg_markers_alone_are_not_a_verified_frame(tmp_path, jpeg, fault, monkeypatch):
     with pytest.raises(cloud.CloudError):
-        K._read_jpeg(scripted_reader(tmp_path, jpeg, monkeypatch, fault), Path("unused"), "TEST-PRIVATE-URL")
+        K._read_jpeg(scripted_reader(tmp_path, jpeg, monkeypatch, fault), b"fixture library", "TEST-PRIVATE-URL")
 
 
 @pytest.mark.skipif(not LINUX, reason="Linux waitid/process groups")
@@ -199,7 +199,7 @@ def test_native_group_is_stopped_on_timeout_and_when_leader_exits_first(tmp_path
     monkeypatch.setattr(K, "READER_SHA256", hashlib.sha256(reader.read_bytes()).hexdigest())
     start = time.monotonic()
     with pytest.raises(cloud.CloudError):
-        K._read_jpeg(reader, Path("unused"), "TEST-PRIVATE-URL", seconds=.4)
+        K._read_jpeg(reader, b"fixture library", "TEST-PRIVATE-URL", seconds=.4)
     assert time.monotonic() - start < 5
     pid = int(pidfile.read_text())
     proc = Path(f"/proc/{pid}/stat")
@@ -207,6 +207,27 @@ def test_native_group_is_stopped_on_timeout_and_when_leader_exits_first(tmp_path
     while proc.exists() and proc.read_text().split(")", 1)[1].split()[0] != "Z" and time.monotonic() < deadline:
         time.sleep(.01)
     assert not proc.exists() or proc.read_text().split(")", 1)[1].split()[0] == "Z"
+
+
+@pytest.mark.skipif(not LINUX, reason="pinned Linux media snapshot")
+def test_reader_loads_verified_media_bytes_across_an_sdk_update(tmp_path, jpeg, monkeypatch):
+    media = tmp_path / "installed.so"
+    reviewed = b"first version of the fixture"
+    media.write_bytes(reviewed)
+    monkeypatch.setattr(K, "MEDIA_SHA256", hashlib.sha256(reviewed).hexdigest())
+    reader = scripted_reader(tmp_path, jpeg, monkeypatch)
+    popen = K.subprocess.Popen
+
+    def update_sdk_then_launch(args, **kwargs):
+        media.write_bytes(b"updated fixture")
+        private_media = Path(args[2])
+        assert private_media.read_bytes() == reviewed
+        assert private_media.stat().st_mode & 0o777 == 0o600
+        return popen(args, **kwargs)
+
+    monkeypatch.setattr(K.subprocess, "Popen", update_sdk_then_launch)
+    data, size = K._read_jpeg(reader, K._media_bytes(media), "TEST-PRIVATE-URL")
+    assert data == jpeg and size == (64, 32)
 
 
 @pytest.mark.skipif(not LINUX, reason="Linux private reader snapshot")
@@ -219,7 +240,7 @@ def test_reader_substitution_after_validation_cannot_receive_the_grant(tmp_path,
         assert Path(args[1]).stat().st_mode & 0o777 == 0o600
         return popen(args, **kwargs)
     monkeypatch.setattr(K.subprocess, "Popen", replace_source_then_launch)
-    data, size = K._read_jpeg(reader, Path("unused"), "TEST-PRIVATE-URL")
+    data, size = K._read_jpeg(reader, b"fixture library", "TEST-PRIVATE-URL")
     assert data == jpeg and size == (64, 32)
 
 
@@ -315,6 +336,6 @@ def test_failed_reader_exposes_only_allowlisted_stage_and_integer(tmp_path, monk
                       "raise SystemExit(1)\n")
     monkeypatch.setattr(K, "READER_SHA256", hashlib.sha256(reader.read_bytes()).hexdigest())
     with pytest.raises(cloud.CloudError) as failure:
-        K._read_jpeg(reader, Path("unused"), "TEST-PRIVATE-URL")
+        K._read_jpeg(reader, b"fixture library", "TEST-PRIVATE-URL")
     assert expected in str(failure.value)
     assert "SECRET" not in str(failure.value) and "PRIVATE" not in str(failure.value)

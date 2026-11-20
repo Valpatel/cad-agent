@@ -1,7 +1,7 @@
 {
   "schema": "cad-agent.toolkit-examples/1",
   "scope": "Actual viewer previews of the featured build guide and the original-file example, and the byte-identical synthetic assembly fixture kept at its published URL; no physical or project qualification.",
-  "sourceHead": "d5f4a3e68595bd6903103fa9d763267d11292fe8",
+  "sourceHead": "5e42a439326465a8efea8e34126b197b2b763e4b",
   "generator": {
     "path": "tools/site/figures/toolkit-examples.mjs",
     "sha256": "adb57f2114345917e8129ea67df154bccda24e174b374d3688aa15a76ea2f3a5"
@@ -161,7 +161,7 @@
         "software/cadagent/webkit/assembly/guide.js": "4028c17a333b31504888e6123e9e2f12782760ec167f88e8b0f50c80936da394",
         "software/cadagent/webkit/assembly/playback.js": "dd575ce02567129d9aa28376d3455f7e352118609cb30ae7dfe89066d17048d7",
         "software/cadagent/webkit/files/file-geometry.js": "1f503af4149f96624ecaba68043ea44eaaa68503988646c5139edb482ab922fd",
-        "software/cadagent/webkit/model/model.js": "42a17fd2a2384807233683f01b988e7e98ab52c438726f5eebc3baa7e6e41aec",
+        "software/cadagent/webkit/model/model.js": "dbf0bd3648b8fca30185202bb90e34c5fb8c240b2d2ab936e7f9596b72cea2a8",
         "software/cadagent/webkit/model/stage.js": "ae62937d56c0acdbcfdce4c163276d835ff653f75d6263d579c24eb4fdf56af4",
         "software/cadagent/webkit/model/viewer.html": "c6ac7505f61a3da42266031eb6ebe6494b7108edca6f7e92256b7c5759ba7a8b",
         "software/cadagent/webkit/model/viewer.js": "814bde1fd3c17a1f5e75a18d4aaa8356c46f202de4b3213b6c7ec816935e2a99",

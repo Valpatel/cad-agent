@@ -9,6 +9,13 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
 
 ## Unreleased
 
+## v0.50.1 (2026-11-20)
+
+**Fixed**
+- The Explore gallery finishes revealing filtered results immediately, so the filter chip stays under the pointer when the reader changes the sort.
+- The SCADA component tests now check each equipment state without creating a browser window for every case. Contributors can run the suite with a smaller Node.js heap (#787).
+- When keyboard focus starts a homepage 3D viewer, focus moves to its first control and the viewer stops adding an extra tab stop. An explicit tabindex on the viewer is preserved (#794).
+
 ## v0.50.0 (2026-11-20)
 
 **New**

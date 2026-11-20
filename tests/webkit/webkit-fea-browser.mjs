@@ -17,6 +17,15 @@ function contrast(foreground,background){
   const a=luminance(fg),b=luminance(bg.slice(0,3).map((n,i)=>n*alpha+[10,10,15][i]*(1-alpha)));
   return(Math.max(a,b)+.05)/(Math.min(a,b)+.05);
 }
+async function rethrowWithScreenshot(original, label, takeScreenshot) {
+  try {
+    await takeScreenshot();
+  } catch (captureError) {
+    throw new AggregateError([original, captureError], `FEA ${label} failed and its screenshot could not be saved`, { cause: original });
+  }
+  throw original;
+}
+
 const site=await serveWebkit(new Map([
   ['/fixture.json',(_req,res)=>res.writeHead(200,{'Content-Type':'application/json'}).end(JSON.stringify(fixture))],
   ['/favicon.ico',(_req,res)=>res.writeHead(204).end()],
@@ -26,6 +35,12 @@ const browser=await engine.launch(engine===chromium?{headless:true,channel:proce
 const out=process.env.TEST_OUTPUT||'/tmp/cad-agent-fea';await mkdir(out,{recursive:true});
 const cases=[],errors=[];
 try{
+  const primary = new Error('planted FEA failure'), secondary = new Error('planted capture failure');
+  await assert.rejects(rethrowWithScreenshot(primary, 'control', async () => {}), error => error === primary);
+  await assert.rejects(rethrowWithScreenshot(primary, 'control', async () => { throw secondary; }),
+    error => error instanceof AggregateError && error.cause === primary &&
+      error.errors[0] === primary && error.errors[1] === secondary);
+  cases.push({ failureEvidence: 'original preserved with a successful or failed screenshot' });
   for(const theme of ['light','dark']){
     const context=await browser.newContext({viewport:{width:1366,height:900},colorScheme:theme}),page=await context.newPage();
     page.on('pageerror',error=>errors.push(error.message));
@@ -77,7 +92,12 @@ try{
           cases.push({rejectedMixedPaletteTooltip:defective});
         }
       }
-    }catch(error){await page.screenshot({path:out+'/'+engine.name()+'-'+theme+'-failure.png'});throw error;}
+    } catch (error) {
+      const label = `${engine.name()} ${theme}`;
+      // A slow or cancelled diagnostic capture must not hide the first failing assertion or browser action.
+      console.error(`FEA ${label} failed`, error);
+      await rethrowWithScreenshot(error, label, () => page.screenshot({ path: `${out}/${engine.name()}-${theme}-failure.png` }));
+    }
     finally{await context.close();}
   }
   assert.deepEqual(errors,[]);

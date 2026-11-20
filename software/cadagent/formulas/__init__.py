@@ -9,6 +9,7 @@
                         allowable_strain=0.0095, lever=0.010, bars=2)   # shear strain, torque, force at the lever
     fx.rating_life(dynamic_rating=7280, load=600)           # a 6201's L10 at 600 N, millions of revolutions
     fx.weld_group_stress(fx.weld_line_box(0.0508, 0.0508), leg=3e-3, shear_y=1500, moment_x=400)   # throat stress, Pa
+    fx.bevel_tooth_bending(torque=2.0, module=2e-3, teeth=18, mate_teeth=36, face_width=0.012)     # Lewis stress, Pa
     fx.catalogue()                                          # every formula: units, limits, source
 
 Agents call these instead of re-deriving them; the website's demonstrations call the browser port of the same
@@ -28,6 +29,15 @@ from cadagent.formulas.beams import (DESIGNS, SUPPORTS, beam_stiffness, cantilev
                                      hollow_rect_second_moment, hollow_rect_section_modulus, rect_second_moment,
                                      round_tube_second_moment, round_tube_section_modulus, snap_arm,
                                      snap_deflection_force, snap_root_strain)
+from cadagent.formulas.gears import (LEWIS_FORM_FACTORS, MIN_CONTACT_RATIO, VELOCITY_PROFILES, bevel_cone_distance,
+                                     bevel_cone_factor, bevel_face_width_limits, bevel_gear_forces, bevel_mean_radius,
+                                     bevel_pitch_angles, bevel_tooth_bending, bevel_virtual_teeth,
+                                     diametral_pitch_from_module, gear_base_diameter, gear_centre_distance,
+                                     gear_contact_ratio, gear_max_mate_teeth, gear_min_teeth, gear_pitch_diameter,
+                                     gear_root_diameter, gear_tangential_force, gear_tip_diameter,
+                                     gear_velocity_factor, lewis_bending_stress, lewis_bevel_bending_stress,
+                                     lewis_form_factor, module_from_diametral_pitch, spur_gear_forces,
+                                     spur_tooth_bending)
 from cadagent.formulas.inserts import (arc_path_radius, arc_printed_diameter, facet_diameter, insert_clamp_path,
                                        insert_displaced_volume, insert_limited_torque, insert_shear_force,
                                        insert_shear_torque, overflow_volume, polyhole)
@@ -55,4 +65,5 @@ from cadagent.formulas.welds import (METHODS, base_metal_shear_strength, fillet_
 
 __all__ = sorted(REGISTRY) + ["CLEARANCES", "DEEP_GROOVE_TABLE", "RELIABILITY_TABLE", "life_exponent", "BOSS_ENGAGEMENT", "BOSS_HOLE", "BOSS_OUTSIDE", "DESIGNS", "NUT_FACTORS", "PRELOAD_SHARE", "REGISTRY",
                               "SMALL_TWIST_TRAPEZE", "SOURCES", "SUPPORTS", "TIGHTEN_OVER_DRIVE", "TIGHTEN_OVER_STRIP",
-                              "Formula", "METHODS", "catalogue"]
+                              "Formula", "METHODS", "catalogue", "LEWIS_FORM_FACTORS", "MIN_CONTACT_RATIO",
+                              "VELOCITY_PROFILES"]

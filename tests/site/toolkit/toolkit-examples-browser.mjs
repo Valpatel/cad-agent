@@ -1,3 +1,7 @@
+import {createHash} from 'node:crypto';
+import {readFileSync} from 'node:fs';
+const fileHash=path=>createHash('sha256').update(readFileSync(new URL('../../../'+path,import.meta.url))).digest('hex');
+
 /** Real capability cards and their existing viewer/calculator consumers; reuse the suite's error recorder. */
 /** The featured build guide (#811) on step 11: Gyropup's turret under a real source revision, every part its packed
  * model binds, the barrel drawn back along its way in, earlier parts ghosted and the step's new parts solid. */
@@ -16,7 +20,61 @@ const featuredGuideProblems=page=>page.evaluate(async()=>{
   return problems;
 });
 
+/** Open the Toolkit's original STEP under the same headers as a Pages deployment. */
+async function hostedStepCheck(open, fail) {
+  const where = 'Original STEP under the published site policy';
+  const { page, done } = await open('/toolkit', { width: 1366, color: 'light' });
+  try {
+    const card = page.locator('#files');
+    const file = await card.getByRole('link', { name: 'Download STEP', exact: true }).getAttribute('href');
+    const viewer = new URL(await card.locator('[data-toolkit-launch]').getAttribute('href'), page.url());
+    viewer.searchParams.set('file', file);
+    const response = await page.goto(viewer.href);
+    const policy = await response.headerValue('content-security-policy') || '';
+    if (!policy.includes("'wasm-unsafe-eval'") || policy.includes("'unsafe-eval'")) fail(where, 'unexpected script policy');
+
+    await page.waitForFunction(() => ['ready', 'error'].includes(window.__fileViewer?.root.dataset.state));
+    const model = await page.evaluate(() => {
+      const viewer = window.__fileViewer;
+      return { state: viewer.root.dataset.state, message: viewer.root.querySelector('.file-status')?.innerText,
+        format: viewer.info?.format, bounds: viewer.info?.boundsMm, triangles: viewer.info?.triangles };
+    });
+    if (model.state !== 'ready') {
+      fail(where, model.message || 'STEP parser failed');
+      return;
+    }
+    // These mesh dimensions and triangle count were measured with the upstream 0.0.23 reader.
+    const expected = [114.300, 114.197, 83.185];
+    if (model.format !== 'STEP' || model.triangles !== 9518 || model.bounds?.length !== 3 ||
+        !model.bounds.every((size, i) => Math.abs(size - expected[i]) < .001)) fail(where, 'unexpected manifold geometry');
+    const picture = await page.evaluate(async () => {
+      const { model, stage } = window.__fileViewer;
+      const painted = () => new Promise(done => requestAnimationFrame(() => requestAnimationFrame(done)));
+      await painted();
+      const shown = stage.renderer.info.render.triangles, wasVisible = model.visible;
+      let hidden;
+      try {
+        model.visible = false;
+        await painted();
+        hidden = stage.renderer.info.render.triangles;
+      } finally {
+        model.visible = wasVisible;
+        await painted();
+      }
+      return { shown, hidden, restored: stage.renderer.info.render.triangles };
+    });
+    if (picture.shown - picture.hidden !== model.triangles || picture.restored !== picture.shown) {
+      fail(where, `expected the manifold's ${model.triangles} triangles to disappear and return: ${JSON.stringify(picture)}`);
+    }
+    const original = await page.getByRole('link', { name: 'Download original', exact: true }).getAttribute('href');
+    const download = await page.request.get(new URL(original, page.url()).href);
+    if (!download.ok() || createHash('sha256').update(await download.body()).digest('hex') !==
+        fileHash('software/vendor/agentcad/tests/fixtures/real_world/pump_manifold.step')) fail(where, 'original STEP bytes changed');
+  } finally { await done(); }
+}
+
 export async function toolkitExampleChecks({open,fail}) {
+  await hostedStepCheck(open, fail);
   const ids=['scada-elements','scada-simulations','models','robot-replay','files','assembly','mechanisms','calculators'];
   for(const width of [320,1366,1920,3440]) for(const color of ['light','dark']) for(const js of [true,false]) {
     const {page,done}=await open('/toolkit',{width,color,js,motion:'reduce'});
@@ -64,6 +122,13 @@ export async function toolkitExampleChecks({open,fail}) {
     try {
       const launch=page.locator(`[data-toolkit-capability="${id}"] [data-toolkit-launch]`),href=await launch.getAttribute('href');
       const destination=new URL(href,page.url());
+      if(id==='files') {
+        const source=page.locator('#files').getByRole('link',{name:'Download STEP',exact:true});
+        const download=await source.getAttribute('href');
+        const response=await page.request.get(new URL(download,page.url()).href);
+        if(!response.ok()||createHash('sha256').update(await response.body()).digest('hex')!==fileHash('software/vendor/agentcad/tests/fixtures/real_world/pump_manifold.step'))
+          fail(where,'STEP download differs from the original pump manifold');
+      }
       await launch.scrollIntoViewIfNeeded();await launch.focus();
       await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
       if(!await launch.evaluate(link=>link===document.activeElement))fail(where,'native launch could not receive keyboard focus');
@@ -101,8 +166,8 @@ export async function toolkitExampleChecks({open,fail}) {
         await page.waitForFunction(()=>window.__replay.playback.state().time>.1);
         await page.getByRole('button',{name:'Pause recording',exact:true}).click();
         await page.waitForFunction(()=>!window.__replay.playback.state().playing);
-        const paused=await page.evaluate(()=>({time:window.__replay.playback.state().time,frame:window.__replay.stage.renderer.info.render.frame}));
-        await page.waitForFunction(frame=>window.__replay.stage.renderer.info.render.frame>frame+1,paused.frame);
+        const paused=await page.evaluate(()=>({time:window.__replay.playback.state().time,frame:window.__replay.stage.frames}));
+        await page.waitForFunction(frame=>window.__replay.stage.frames>frame+1,paused.frame);
         if(await page.evaluate(()=>window.__replay.playback.state().time)!==paused.time)fail(where,'paused recording advanced while the stage rendered');
         await page.getByRole('combobox',{name:'Playback speed',exact:true}).selectOption('2');
         if(await page.evaluate(()=>window.__replay.playback.state().speed)!==2)fail(where,'speed control did not update the playback clock');
@@ -111,13 +176,13 @@ export async function toolkitExampleChecks({open,fail}) {
         await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
         if(!await slider.evaluate(input=>input===document.activeElement))fail(where,'recording time could not receive keyboard focus');
         await slider.press('Home');await page.waitForFunction(()=>window.__replay.playback.state().time===0);
-        const before=await page.evaluate(()=>({matrix:window.__replay.scene.groups.find(group=>group.name==='base').matrixWorld.toArray(),frame:window.__replay.stage.renderer.info.render.frame}));
-        await page.waitForFunction(frame=>window.__replay.stage.renderer.info.render.frame>frame+1,before.frame);
+        const before=await page.evaluate(()=>({matrix:window.__replay.scene.groups.find(group=>group.name==='base').matrixWorld.toArray(),frame:window.__replay.stage.frames}));
+        await page.waitForFunction(frame=>window.__replay.stage.frames>frame+1,before.frame);
         const canvas=page.locator('#replay canvas'),image=await canvas.screenshot();
         await slider.scrollIntoViewIfNeeded();await slider.focus();await slider.press('End');
         await page.waitForFunction(()=>window.__replay.playback.state().time===window.__replay.playback.state().duration);
-        const after=await page.evaluate(()=>({matrix:window.__replay.scene.groups.find(group=>group.name==='base').matrixWorld.toArray(),frame:window.__replay.stage.renderer.info.render.frame}));
-        await page.waitForFunction(frame=>window.__replay.stage.renderer.info.render.frame>frame+1,after.frame);
+        const after=await page.evaluate(()=>({matrix:window.__replay.scene.groups.find(group=>group.name==='base').matrixWorld.toArray(),frame:window.__replay.stage.frames}));
+        await page.waitForFunction(frame=>window.__replay.stage.frames>frame+1,after.frame);
         if(JSON.stringify(after.matrix)===JSON.stringify(before.matrix)||image.equals(await canvas.screenshot()))fail(where,'scrubbing changed time without changing the actual rendered robot');
         // Fonts can reflow the phone controls after mount; Fit is defined for the current viewport.
         await page.evaluate(()=>document.fonts.ready);
@@ -130,13 +195,18 @@ export async function toolkitExampleChecks({open,fail}) {
       } else if(id==='files') {
         await page.waitForFunction(()=>window.__fileViewer?.root.dataset.state==='ready'&&window.__fileViewer.stage.renderer.info.render.triangles>0);
         const before=await page.evaluate(()=>({camera:window.__fileViewer.stage.camera.position.toArray(),source:window.__fileViewer.info.sourceName}));
-        if(before.source!=='example.stl')fail(where,`wrong source loaded: ${before.source}`);
+        if(before.source!=='pump-manifold.stl')fail(where,`wrong source loaded: ${before.source}`);
         await page.getByRole('button',{name:'Front',exact:true}).click();
         await page.waitForFunction(before=>JSON.stringify(window.__fileViewer.stage.camera.position.toArray())!==JSON.stringify(before),before.camera);
         await page.getByRole('button',{name:'Fit',exact:true}).click();
         const target=await page.getByRole('link',{name:'Download original',exact:true}).getAttribute('href');
-        if(new URL(target,page.url()).pathname!=='/kit/host/example.stl')fail(where,'download is not the loaded original');
+        if(new URL(target,page.url()).pathname!=='/web/toolkit/pump-manifold.stl')fail(where,'download is not the loaded original');
         if(!await page.getByRole('combobox',{name:'STL units',exact:true}).isVisible())fail(where,'STL units control is missing');
+        const digest=await page.evaluate(async url=>{
+          const bytes=await (await fetch(url)).arrayBuffer();
+          return Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',bytes)),n=>n.toString(16).padStart(2,'0')).join('');
+        },target);
+        if(digest!==fileHash('tools/site/assets/toolkit/pump-manifold.stl'))fail(where,'viewer download differs from the displayed manifold STL');
       } else if(id==='assembly') {
         await page.waitForFunction(()=>document.body.dataset.ready==='1'&&window.__viewer?.stage.renderer.info.render.triangles>0);
         await page.getByRole('combobox',{name:'Instruction step',exact:true}).selectOption('step-11');

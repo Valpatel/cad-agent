@@ -40,6 +40,8 @@ test('only committed files are published, byte for byte', async () => {
   const owned = git('ls-tree', '-r', '-z', '--name-only', 'HEAD', prefix).split('\0').filter(Boolean);
   const sources = owned.filter(f => !f.endsWith('/README.md'));
   const assets = new Map(sources.map(f => ['web/' + f.slice(prefix.length), f]));
+  assets.set('web/toolkit/pump-manifold.step', 'software/vendor/agentcad/tests/fixtures/real_world/pump_manifold.step');
+  assets.set('web/toolkit/agentcad-license.txt', 'software/vendor/agentcad/LICENSE');
   const generated=new Map([['web/topic-icons.svg',topicSprite(YAML.parse(git('show','HEAD:docs/areas.yaml')))]]);
   for(const [file,expected] of generated)assert.equal(await readFile(path.join(out,file),'utf8'),expected,'generated topic art matches committed taxonomy');
   const webOut = files.filter(f => f.startsWith('web/') && f !== 'web/snap-demo.css' && !generated.has(f));

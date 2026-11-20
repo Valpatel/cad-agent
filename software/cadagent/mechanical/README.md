@@ -30,7 +30,7 @@ Inputs to a project build
 ```mermaid
 flowchart LR
     MC["mcmaster.py<br/>bought parts"]
-    FK["fasteners.py · bosses.py<br/>inserts.py · rivets.py<br/>clinch.py · sheet_hardware.py<br/>bearings.py · markings.py"]
+    FK["fasteners.py · bosses.py<br/>inserts.py · rivets.py<br/>clinch.py · sheet_hardware.py<br/>bearings.py · markings.py<br/>gears.py"]
     CC["connectors.py<br/>compliant/"]
     B["build script<br/>the project's CadQuery"]
     MC & FK & CC --> B
@@ -91,6 +91,7 @@ flowchart TD
 | `sheet_hardware.py` | The bought clinch parts and rivets: dated prices, stock and sellers from `docs/research/sheet-hardware.yaml` (the part-catalogue layout), joined to the parts `clinch` and `rivets` check; `choose_clinch` and `choose_rivet` rank the parts the checks accept by price, `cost` totals pieces, packs and a shop's price to press them in ([page](../../../docs/sheet-metal-hardware.md)) |
 | `inserts.py` | Heat-set inserts and compression limiters in printed parts: the makers' hole and boss, where the screw's clamp goes, pull-out, torque-out and the insert's thread calibrated to published tests, the plastic under the head, limiters (catalogue or your own) and the preload kept; `cad-agent inserts` checks a file of joints, and the coupon plan says what to print and measure ([threaded inserts](../../../docs/mechanical/inserts.md)); a starting point to test, not a rating |
 | `bearings.py` | Rolling bearings: SKF and Koyo catalogue bearings with their sources, and one check of a bearing's ISO 281 life (turning or oscillating, under a load or a duty cycle), ISO 76 static safety against SKF's guideline s0, axial load, load range, minimum load and speed; for a swinging joint, the critical amplitude and the false-brinelling risk; `cad-agent bearings` checks a file of bearings ([rolling bearings](../../../docs/mechanical/bearings.md)); a basic rating life, not a promise |
+| `gears.py` | Involute gear solids as the basic rack cuts them: external spur gears, the same teeth on a ring and straight bevel gears for 90° shafts (Tredgold), with true involute flanks, the trochoid root fillet, undercut drawn and reported, backlash, clearance and profile shift; `spur_gear_dimensions`, `gear_pair_dimensions` and `bevel_gear_dimensions` give the diameters, centre distance and contact ratio to place them by ([gears](../../../docs/mechanical/gears.md)); geometry only, no strength check |
 | `mcmaster.py` | McMaster-Carr parts: the manufacturer's STEP and product data for a part number, normalised into a known frame |
 | `connectors.py` | Mating-connector envelopes: panel windows from the plug, then proof that the plug fits and that its cable can bend behind it at the data sheet's radius |
 | `markings.py` | One XY drawing for engraved markings and a matching SVG proof |

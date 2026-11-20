@@ -99,17 +99,17 @@
 
 - check: repo-stale
   subject: webkit:occt-import-js
-  fp: eae928e0832442e4
+  fp: 05fb9809cc9cad4c
   reason: >-
-    Retain the existing STEP preview runtime 0.0.23 at c2148e54b456b571238d35cac037d304053d64b2, with OCCT
-    source d2abb6d844231cb8f29be6894440874a4700e4a5, exact npm integrity/file hashes and corresponding LGPL/exception
-    sources recorded in file-viewer-sources.json. Upstream last push 2024-12-03 and unverified maintenance are
-    visible in THIRD_PARTY_NOTICES.md. Same-origin/redirect/download limits, worker deadlines/cancellation and
-    existing real STEP/browser fixtures support bounded retention, not proof of safety or complete native advisory
-    coverage. No code change or advisory waiver. Prefer disabling affected preview with the original desktop-CAD
-    download route if a future security fix cannot be qualified. This age-only fingerprint binds package versions
-    and all recorded component file hashes; a changed runtime must be reviewed again.
-  accepted: 2026-11-07
+    The 0.0.23 reader retains the original npm WASM. Static JavaScript bindings were built with Emscripten
+    3.1.69 from importer c2148e54b456b571238d35cac037d304053d64b2 and OCCT d2abb6d844231cb8f29be6894440874a4700e4a5 (#828).
+    Two builds produced identical JavaScript. The receipt pins each shipped file, npm integrity and build inputs.
+    Both binding sets produced identical complete mesh data on the STEP block and pump manifold. The viewer renders
+    the manifold in Chromium and WebKit with the published policy. Upstream last pushed 2024-12-03 and ongoing
+    maintenance is unverified. The LGPL sources, exceptions, replacement route, same-origin download limits and
+    worker deadlines are documented. This acceptance is for upstream age on these exact files. Native advisory
+    coverage remains incomplete. A runtime change or advisory needs fresh review.
+  accepted: 2026-11-20
 
 - check: repo-stale
   subject: url:https://github.com/AutodeskAILab/JoinABLe

@@ -1,15 +1,15 @@
 {
   "schema": "cad-agent.toolkit-examples/1",
   "scope": "Actual viewer previews of the featured build guide and the original-file example, and the byte-identical synthetic assembly fixture kept at its published URL; no physical or project qualification.",
-  "sourceHead": "cc7cdd113b0ec17c774fcb557b6ade328a94ae2a",
+  "sourceHead": "d5f4a3e68595bd6903103fa9d763267d11292fe8",
   "generator": {
     "path": "tools/site/figures/toolkit-examples.mjs",
-    "sha256": "1aed01617853f40b47d3684d5aab41b871a913724985ee657076e620f2014463"
+    "sha256": "adb57f2114345917e8129ea67df154bccda24e174b374d3688aa15a76ea2f3a5"
   },
   "browser": {
     "engine": "chromium",
-    "version": "153.0.8010.12",
-    "selection": "executable:chrome"
+    "version": "141.0.7390.37",
+    "selection": "installed-playwright-chromium"
   },
   "featured": {
     "path": "software/cadagent/webkit/assembly/examples/gyropup-turret",
@@ -19,6 +19,12 @@
     "parts": 55,
     "guide": "0adebf6c791a551a1a3ed1cf63dfc325e56f839a35379c1299a5f2e6e90680ca",
     "view": "0bb171c10c3bd48578a1ca4fa1757817dc0375a9031d396d036533d5bd02f937"
+  },
+  "fileModel": {
+    "source": "software/vendor/agentcad/tests/fixtures/real_world/pump_manifold.step",
+    "sourceSha256": "8596ec93c6b3fa01e907806204e8f30e1c0e4210988a5b86e237c7ac667edac6",
+    "mesh": "tools/site/assets/toolkit/pump-manifold.stl",
+    "meshSha256": "ea7841bcb0aee232d83c2af31b2155b3de70cfd51baae0ab4a62ba810a579c65"
   },
   "copies": {
     "guide.json": {
@@ -66,8 +72,8 @@
     "assembly": {
       "file": "assembly.webp",
       "route": "/kit/model/viewer.html?guide=/kit/assembly/examples/gyropup-turret/guide.json",
-      "sha256": "ded5a9319bbef73db8dc23a671d7b6aa5c03cfe08b8870d76ec572ec141888eb",
-      "bytes": 53418,
+      "sha256": "688fe2aa37ee9a45b28b4dc8c02e61d4c11fdd89e99dd528e38242ed4859b92a",
+      "bytes": 53274,
       "webpQuality": 0.8,
       "viewport": {
         "width": 960,
@@ -156,9 +162,9 @@
         "software/cadagent/webkit/assembly/playback.js": "dd575ce02567129d9aa28376d3455f7e352118609cb30ae7dfe89066d17048d7",
         "software/cadagent/webkit/files/file-geometry.js": "1f503af4149f96624ecaba68043ea44eaaa68503988646c5139edb482ab922fd",
         "software/cadagent/webkit/model/model.js": "42a17fd2a2384807233683f01b988e7e98ab52c438726f5eebc3baa7e6e41aec",
-        "software/cadagent/webkit/model/stage.js": "f62b95e16a99e06686d32454397948fd50a67a973736ffc76a03b82f5e54b486",
+        "software/cadagent/webkit/model/stage.js": "ae62937d56c0acdbcfdce4c163276d835ff653f75d6263d579c24eb4fdf56af4",
         "software/cadagent/webkit/model/viewer.html": "c6ac7505f61a3da42266031eb6ebe6494b7108edca6f7e92256b7c5759ba7a8b",
-        "software/cadagent/webkit/model/viewer.js": "7d16b34671951c0ffa69f202783419afaf5c0b0fada49ace55fe1c7062a7041b",
+        "software/cadagent/webkit/model/viewer.js": "814bde1fd3c17a1f5e75a18d4aaa8356c46f202de4b3213b6c7ec816935e2a99",
         "software/cadagent/webkit/ui/hud.css": "0a1fbf7e9e796c7bf5d7cb9062b34374da937975e851ad2cce6b8cdb1827325a",
         "software/cadagent/webkit/ui/panel.js": "94c7a99a7d2d0fbf6305b77d0211487453994b5d5426aacc3f1d01d3020a7d9b",
         "software/cadagent/webkit/ui/theme.css": "370dfb29b28c760d48332316651492d0853c3e3aa9bc355e8a7edb1a4b12cf47",
@@ -173,30 +179,36 @@
     },
     "file-review": {
       "file": "file-review.webp",
-      "route": "/kit/files/file-viewer.html?file=/kit/host/example.stl",
-      "sha256": "e5d2e720afcdce8d5da2e7fd9e34f9e5e29fecad7d86ff1527a6162597b14e78",
-      "bytes": 45700,
+      "route": "/kit/files/file-viewer.html?file=/web/toolkit/pump-manifold.stl",
+      "sha256": "4a6048a4786f4e3d9d355d7c7ff65e11cbc2102d72c28d37151cc85dd1359c1d",
+      "bytes": 14330,
       "webpQuality": 0.9,
       "viewport": {
         "width": 960,
         "height": 640
       },
+      "clip": {
+        "x": 224,
+        "y": 145,
+        "width": 512,
+        "height": 320
+      },
       "deviceScaleFactor": 1,
       "colorScheme": "dark",
       "reducedMotion": "reduce",
       "scene": {
-        "triangles": 126,
+        "triangles": 9096,
         "camera": [
-          0.03701358065828023,
-          0.03490950646079616,
-          0.048117654855764316
+          0.16274529383447348,
+          0.15551420446342834,
+          0.21156888198481547
         ],
         "target": [
           0,
-          0.009000000000000005,
-          -1.734723475976807e-18
+          0.04159249877929689,
+          0
         ],
-        "source": "example.stl"
+        "source": "pump-manifold.stl"
       },
       "runtimeInputs": {
         "software/cadagent/webkit/files/file-geometry.js": "1f503af4149f96624ecaba68043ea44eaaa68503988646c5139edb482ab922fd",
@@ -205,18 +217,18 @@
         "software/cadagent/webkit/files/file-viewer-theme.js": "36ac086d6f6d439a6b9f35f449d82bf5e3bc5ec984f7a2eb6d95f348e75ad8b5",
         "software/cadagent/webkit/files/file-viewer.css": "3b82348293bba0a214ecec2b31ce2830ef3044f4454ffcdc188012857bd87963",
         "software/cadagent/webkit/files/file-viewer.html": "921d4a195713d54f49bd4f015b7c4f06bc2858a83184f563833399b6a4bbe869",
-        "software/cadagent/webkit/files/file-viewer.js": "7e6c3a1bdcf18574af036ac2399382bd620ca057491f6433ca5565b2ae693f37",
+        "software/cadagent/webkit/files/file-viewer.js": "b2e1c35aaa6763fa48bf3235b767adbab3bc559136e9ab573b18205da5301a8e",
         "software/cadagent/webkit/files/page.css": "6eeb92c7185e6ae0c43d2eb6bcb11540921b0dca78846aab161af5fbac540d0b",
         "software/cadagent/webkit/files/viewer.css": "62ab9439282d6aa2b0bc0e739f1b80d2084942da46e7c47e5e011be19c629168",
-        "software/cadagent/webkit/host/example.stl": "6ebc1638b6e3839f620f0dc9e84f819c7dc15f66a9e27d14a72b48a749c60a7d",
-        "software/cadagent/webkit/model/stage.js": "f62b95e16a99e06686d32454397948fd50a67a973736ffc76a03b82f5e54b486",
+        "software/cadagent/webkit/model/stage.js": "ae62937d56c0acdbcfdce4c163276d835ff653f75d6263d579c24eb4fdf56af4",
         "software/cadagent/webkit/ui/theme.css": "370dfb29b28c760d48332316651492d0853c3e3aa9bc355e8a7edb1a4b12cf47",
         "software/cadagent/webkit/ui/theme.js": "bec818983711f705b48f9df993ed4ee53a82093f1f750252103d0c1f8366b0e2",
         "software/cadagent/webkit/vendor/file-parsers/STLLoader.js": "5008202cece503fd1ba8c04c0dd9000f6c311e19391b10d6390b90ac42235d6d",
         "software/cadagent/webkit/vendor/fonts/fonts.css": "8d4d4568d1e6d4942045dadc47aae800a5cc759245bdd3c742e665072865afd4",
         "software/cadagent/webkit/vendor/fonts/inter.woff2": "3100e775e8616cd2611beecfa23a4263d7037586789b43f035236a2e6fbd4c62",
         "software/cadagent/webkit/vendor/three/addons/controls/OrbitControls.js": "a861339c938d6ce76a8bd37d0b66679ba296be3de930811e864a041768bac9fe",
-        "software/cadagent/webkit/vendor/three/three.module.min.js": "3e690ac7d180b0aadf0891bea39eec643e29e2d3e75c99b18689518665f69ba6"
+        "software/cadagent/webkit/vendor/three/three.module.min.js": "3e690ac7d180b0aadf0891bea39eec643e29e2d3e75c99b18689518665f69ba6",
+        "tools/site/assets/toolkit/pump-manifold.stl": "ea7841bcb0aee232d83c2af31b2155b3de70cfd51baae0ab4a62ba810a579c65"
       }
     }
   }

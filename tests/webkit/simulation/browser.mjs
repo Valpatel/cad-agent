@@ -88,8 +88,13 @@ try{
     assert.notEqual(toggled.color,geom.background);assert.equal(toggled.pressed,String(theme==='light'));
     await page.getByRole('button',{name:'Toggle dark theme',exact:true}).click();
     await page.waitForFunction(color=>__replay.stage.scene.background.getHexString()===color,geom.background);
-    const rendered=await page.evaluate(()=>{__replay.playback.seek(3.2);return __replay.stage.renderer.info.render.frame;});
-    await page.waitForFunction(frame=>__replay.stage.renderer.info.render.frame>frame+1,rendered);
+    await page.locator('#replay canvas').scrollIntoViewIfNeeded();
+    const rendered=await page.evaluate(()=>{
+      const frame=__replay.stage.renderer.info.render.frame;
+      __replay.playback.seek(3.2);
+      return frame;
+    });
+    await page.waitForFunction(frame=>__replay.stage.renderer.info.render.frame>frame,rendered);
     const stagePng=await page.locator('.cad-viewer-viewport').screenshot();
     const pixel=await page.evaluate(async url=>{const img=new Image();img.src=url;await img.decode();const c=document.createElement('canvas');c.width=img.width;c.height=img.height;const ctx=c.getContext('2d');ctx.drawImage(img,0,0);return [...ctx.getImageData(8,8,1,1).data];},'data:image/png;base64,'+stagePng.toString('base64'));
     const brightness=(pixel[0]+pixel[1]+pixel[2])/3;assert.ok(theme==='dark'?brightness<80:brightness>170,`${theme} stage pixel ${pixel}`);

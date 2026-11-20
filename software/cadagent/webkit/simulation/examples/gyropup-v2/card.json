@@ -66,14 +66,14 @@
  },
  "browser": {
   "engine": "chromium",
-  "version": "153.0.8010.12"
+  "version": "156.0.8078.79"
  },
  "generator": {
   "path": "docs/examples/robot-replay/capture-gyropup.mjs",
-  "sha256": "6e7cd295988d14715f48545b2dfa4dcd704d99b352c859654dc26afc37cb27f6"
+  "sha256": "a5b0f72e47295f0284315dea78724ad9c1b662f67d64af0e170d5cf583e3dcae"
  },
  "sources": {
-  "docs/examples/robot-replay/capture-gyropup.mjs": "6e7cd295988d14715f48545b2dfa4dcd704d99b352c859654dc26afc37cb27f6",
+  "docs/examples/robot-replay/capture-gyropup.mjs": "a5b0f72e47295f0284315dea78724ad9c1b662f67d64af0e170d5cf583e3dcae",
   "software/cadagent/webkit/simulation/replay.js": "3f26ccc0548150a48b1f502bf393a357742f943853f2faabb4dc6d96034c8160",
   "software/cadagent/webkit/simulation/viewer.js": "b7090a16448ee62c9baffa1056968ead8146635530d06a0cfc9e8a2360d976ec",
   "software/cadagent/webkit/simulation/scene.js": "a389129289744583d1b5b6aacdf8fb01370235ed76a6fe7372d15dabe9540287",
@@ -84,7 +84,7 @@
   "software/cadagent/webkit/simulation/examples/gyropup-v2/robot.json": "3f1cfd02367d22adf242bb9cf7887f83e12be6c5897eb34aa8092d33c82f8314",
   "software/cadagent/webkit/simulation/examples/gyropup-v2/robot.bin": "45c516c47b12bffd6235e721ee86704661d668a196fb7c52a1837b1435837951",
   "software/cadagent/webkit/simulation/examples/gyropup-v2/kerb_drop.json": "d4120f00df7f89d020442891eb482d07810e69403244839b5221533423596ec1",
-  "software/cadagent/webkit/model/stage.js": "f62b95e16a99e06686d32454397948fd50a67a973736ffc76a03b82f5e54b486",
+  "software/cadagent/webkit/model/stage.js": "b9bcfa27196e982953f145099b1ce83c8d6d5b973075d8bd8c997e8c152f3d79",
   "software/cadagent/webkit/model/model.js": "42a17fd2a2384807233683f01b988e7e98ab52c438726f5eebc3baa7e6e41aec",
   "software/cadagent/webkit/host/viewer-host.js": "2a1f42a3f86c33932b1c423bb4f9b503c940a657513ae5c9e015b5aff9f9f619",
   "software/cadagent/webkit/host/viewer-host.css": "53f17e42664222f055707daa0e16b7a8ebb3d5e199a4ebfa5098c3d56454972d",

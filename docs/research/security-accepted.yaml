@@ -99,12 +99,12 @@
 
 - check: repo-stale
   subject: webkit:occt-import-js
-  fp: b41a813f687b838c
+  fp: 05fb9809cc9cad4c
   reason: >-
-    The 0.0.23 importer at c2148e54b456b571238d35cac037d304053d64b2 and OCCT at
-    d2abb6d844231cb8f29be6894440874a4700e4a5 were rebuilt with Emscripten 3.1.69 static bindings (#828).
-    The receipt binds the rebuilt runtime bytes, and records the original distribution hashes and rebuild inputs.
-    Both builds produced identical complete mesh data on the STEP block and pump manifold. The new build renders
+    The 0.0.23 reader retains the original npm WASM. Static JavaScript bindings were built with Emscripten
+    3.1.69 from importer c2148e54b456b571238d35cac037d304053d64b2 and OCCT d2abb6d844231cb8f29be6894440874a4700e4a5 (#828).
+    Two builds produced identical JavaScript. The receipt pins each shipped file, npm integrity and build inputs.
+    Both binding sets produced identical complete mesh data on the STEP block and pump manifold. The viewer renders
     the manifold in Chromium and WebKit with the published policy. Upstream last pushed 2024-12-03 and ongoing
     maintenance is unverified. The LGPL sources, exceptions, replacement route, same-origin download limits and
     worker deadlines are documented. This acceptance is for upstream age on these exact files. Native advisory

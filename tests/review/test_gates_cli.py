@@ -931,6 +931,12 @@ def test_the_real_gates_say_what_is_not_drawn_and_change_nothing_else(tmp_path, 
             ("PASS" if before["pass"] else "FAIL")
         assert "## Not in the model" in (declared / "exports" / "gates" / f"{gate}.md").read_text()
         before["inputs"]["geometry"].pop("digest")
+        if gate == "motion" and "symmetry_seconds" in before["stats"]:
+            # Measuring the same solids twice can take different amounts of wall-clock time.
+            for verdict in (before, data):
+                elapsed = verdict["stats"]["symmetry_seconds"]
+                assert isinstance(elapsed, (float, int)) and elapsed >= 0
+                verdict["stats"]["symmetry_seconds"] = 0
         assert json.dumps(_timeless(_without_the_statement(data)), indent=2) == \
             json.dumps(_timeless(before), indent=2), gate
 

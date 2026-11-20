@@ -668,10 +668,47 @@ def test_nothing_is_bound_to_a_record_with_declarations_without_the_statement():
     assert is_not_drawn_check({"id": "not-drawn@cad/build.py:4", "evidence": {"code": "not-drawn"}})   # the lint's
 
 
-def test_many_components_are_counted_in_the_summary_line():
+@pytest.mark.parametrize("updated", [
+    {"spring": {"reason": "revised clearance", "near": ["lid"]}},
+    {},
+])
+def test_bound_custom_verdict_requires_fresh_result_for_changed_omissions(updated):
+    first = geometry_with({"spring": {"reason": "spring pending", "near": ["hopper"]}})
+    next_record = dict(first, not_drawn=updated)
+    original = gr.bind_inputs(passing("custom"), first)
+    before = copy.deepcopy(original)
+    with pytest.raises(ValueError, match="rerun"):
+        gr.bind_inputs(original, next_record)
+    assert original == before
+    fresh = gr.bind_inputs(passing("custom"), next_record)
+    assert stale_reason(fresh, next_record) is None
+    # An old writer may have stamped the new geometry digest onto obsolete caveats.
+    damaged = dict(original, inputs=fresh["inputs"])
+    assert stale_reason(damaged, next_record)
+
+
+def test_binding_first_declaration_adds_current_caveats_only_once():
+    earlier = gr.bind_inputs(passing("custom"), base_geometry())
+    updated = geometry_with()
+    result = gr.bind_inputs(earlier, updated)
+    assert result["not_drawn"] == not_drawn_of(updated)
+    assert result["status"] == "warn" and result["counts"]["warn"] == 1
+    assert stale_reason(gr.bind_inputs(result, updated), updated) is None
+    assert result["counts"]["warn"] == 1
+
+
+def test_check_reports_all_declared_component_names(tmp_path, capsys):
     table = {f"part_{i}": {"reason": "later", "near": []} for i in range(5)}
     data = note_not_drawn(passing("motion"), geometry_with(table))
-    assert gr._summary(data) == "2 checks, 1 warning(s); 5 not drawn, not seen: part_0, part_1, part_2 and 2 more"
+    assert gr._summary(data) == "2 checks, 1 warning(s); 5 not drawn, not seen: part_0, part_1, part_2, part_3, part_4"
+    rec = geometry_with(table)
+    root = make_project(tmp_path / "project", geometry=_record(rec), gates=())
+    own = gr.bind_inputs(passing("custom"), rec)
+    (root / "exports/gates").mkdir(exist_ok=True)
+    (root / "exports/gates/custom.json").write_text(json.dumps(own))
+    row = _results(root, capsys)["gate custom"]
+    assert row["status"] == "pass"
+    assert all(name in row["message"] for name in table)
     assert gr._summary(passing("motion")) == "1 checks, 0 warning(s)"
 
 

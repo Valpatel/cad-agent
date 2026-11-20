@@ -790,6 +790,8 @@ def test_a_component_declared_not_drawn_after_a_sign_off_voids_it(project):
     root = Path(project.root)
     old = fill(template(project))
     assert "not_drawn" not in old                                       # nothing declared: the record as before
+    path, _, problems = submit_record(project, "S1", dict(old, not_drawn=["spring"]), reviewer="reviewer")
+    assert path is None and "stale-not-drawn" in codes(problems)
     path, _, problems = submit_record(project, "S1", old, reviewer="reviewer")
     assert problems == [] and lint_project(project).sections["S1"]["status"] == "signed_off"
 

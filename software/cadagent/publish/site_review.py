@@ -499,9 +499,9 @@ def _banners(data: ReviewData, links: _Links) -> str:
                    f'<code>cad-agent dossier</code> to recompute the statuses.</div>')
     missing = not_drawn_of(data.geometry)
     if missing:                 # on every review page: no gate status below is read without what no gate saw
-        out.append(f'<div class="banner">Not in the model: {_e(not_drawn_summary(missing))}. A gate that passes '
-                   'says nothing about them: each such gate reads <b>warn</b> (<code>&lt;gate&gt;:not-drawn</code>), '
-                   'and the warning is listed on every section.</div>')
+        out.append(f'<div class="banner">Not in the model: {_e(not_drawn_summary(missing))}. '
+                   'The wall gate keeps its measured status and lists the missing components. Other gates add '
+                   'a <code>&lt;gate&gt;:not-drawn</code> warning, listed on every section.</div>')
     if data.dossier_error:
         out.append(f'<div class="banner bad">The YAML dossier did not load: {_e(data.dossier_error)}</div>')
     bad = [r for r in data.rows if not str(r.get("name", "")).startswith("gate ")]

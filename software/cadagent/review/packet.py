@@ -424,7 +424,7 @@ def plan_packet(section: str, record: Mapping[str, Any], dossier: Any = None,
     (``lint_current``: it was computed now, from this dossier, record and verdicts, not read from a file);
     ``expected``: ``{gate: {declarations, options}}`` to judge staleness as ``cad-agent check`` does (else the
     geometry only)."""
-    from cadagent.review.gates.verdict import geometry_digest, stale_reason
+    from cadagent.review.gates.verdict import geometry_digest, not_drawn_of, stale_reason
 
     if context not in CONTEXT_MODES:
         raise PacketError(f"context must be one of {CONTEXT_MODES}, got {context!r}")
@@ -797,6 +797,9 @@ def plan_packet(section: str, record: Mapping[str, Any], dossier: Any = None,
         "limits": list(LIMITS),
         "physical_fit_verified": False,
     }
+    omitted = not_drawn_of(record)
+    if omitted:
+        manifest["geometry"]["not_drawn"] = omitted
     for f in findings:
         f["views"] = ["findings"] if any(c["finding"] == f["id"] for c in callouts) else []
     manifest["dossier_digest"] = dossier_digest(manifest)
@@ -994,7 +997,7 @@ def packet_stale(manifest: Mapping[str, Any], record: Optional[Mapping[str, Any]
     them) and the current ``lint`` verdict, when any of them differs from what it quoted or is stale now; and,
     given ``current`` (the packet planned again now), when the dossier text it quotes changed (``dossier_digest``).
     ``project_packet_stale`` gathers all of these for a project."""
-    from cadagent.review.gates.verdict import geometry_digest, stale_reason
+    from cadagent.review.gates.verdict import geometry_digest, not_drawn_of, stale_reason
     if record is None:
         return "no geometry record to compare with"
     geo = manifest.get("geometry") if isinstance(manifest, Mapping) else None
@@ -1002,6 +1005,8 @@ def packet_stale(manifest: Mapping[str, Any], record: Optional[Mapping[str, Any]
         return "the packet records no geometry digest"
     if geo["digest"] != geometry_digest(record):
         return "the geometry changed since the packet was rendered: render it again"
+    if geo.get("not_drawn", []) != not_drawn_of(record):
+        return "the packet does not match the components declared not drawn: render it again"
     m = manifest.get("measurements") or {}
     quoted = m.get("gates") or {}
     was = sorted(g for g, row in quoted.items() if row.get("stale"))

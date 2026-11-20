@@ -489,6 +489,31 @@ def make_project(root: Path) -> Path:
     return root
 
 
+def test_wall_only_project_packet_carries_declared_components(tmp_path):
+    from cadagent.project import load_project
+    from cadagent.review.gates import run as gr
+
+    (tmp_path / "cad-agent.yaml").write_text("cad:\n  name: demo\n")
+    gates = tmp_path / "exports/gates"
+    gates.mkdir(parents=True)
+    rec = record()
+    rec["not_drawn"] = {"spring": {"reason": "spring pending", "near": ["hopper"]}}
+    (gates.parent / "dossier-geometry.json").write_text(json.dumps(rec))
+    cfg = gr.gates_config(load_project(tmp_path))
+    wall = gr.verdict("wall", [gr.Check("wall:hopper", "pass", "wall measured", parts=["hopper"])],
+                      assumptions=["drawn parts"])
+    gr.bind_inputs(wall, rec, **gr.expected_inputs("wall", cfg, None, gr.load_extra(cfg)))
+    (gates / "wall.json").write_text(json.dumps(wall))
+
+    manifest, _ = pk.plan_project_packet("S1", root=tmp_path)
+    wall_row = manifest["measurements"]["gates"]["wall"]
+    assert wall_row["status"] == "pass" and not wall_row.get("stale")
+    assert manifest["geometry"]["not_drawn"] == [{"name": "spring", "reason": "spring pending", "near": ["hopper"]}]
+    assert pk.packet_stale(manifest, rec) is None
+    del manifest["geometry"]["not_drawn"]
+    assert "not drawn" in pk.packet_stale(manifest, rec)
+
+
 def test_cli_lists_the_views_without_rendering(tmp_path, capsys):
     root = make_project(tmp_path)
     assert main(["review-packet", "--project", str(root), "--list"]) == 0

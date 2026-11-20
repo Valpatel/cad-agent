@@ -181,13 +181,15 @@ def is_not_drawn_check(check: Mapping[str, Any]) -> bool:
 def note_not_drawn(data: Dict[str, Any], record: Any) -> Dict[str, Any]:
     """State in a verdict (in place, and returned) which components of the design the geometry record declares not
     drawn. ``record`` is the geometry record, or the list ``not_drawn_of`` made from it (``Assembly.not_drawn``).
-    Without any, or on a verdict that already carries ``not_drawn``, nothing changes.
+    An existing verdict may be bound again only if its list still matches the record.
 
     Adds ``not_drawn``, one assumption, and (unless the gate is in ``NOT_DRAWN_NOTE_ONLY``) a ``<gate>:not-drawn``
     check with status ``warn`` whose ``parts`` are the declared neighbours. A ``pass`` status becomes ``warn``; a
     ``fail`` stays a fail, and ``pass`` (the boolean) never changes. The warning is not limited to the declared
     neighbours: the gate has no geometry for the component, so it cannot tell what the component would reach."""
     items = [dict(i) for i in record] if isinstance(record, (list, tuple)) else not_drawn_of(record)
+    if "not_drawn" in data and data["not_drawn"] != items:
+        raise ValueError("components declared not drawn changed: rerun the gate before binding its verdict")
     if not items or "not_drawn" in data:
         return data
     gate = str(data.get("gate") or "")
@@ -343,6 +345,8 @@ def stale_reason(data: Mapping[str, Any], record: Optional[Mapping[str, Any]], *
             return ("does not name the component(s) the record declares not drawn "
                     f"({', '.join(unnamed[:6])}{' ...' if len(unnamed) > 6 else ''}): apply note_not_drawn, or "
                     "rerun cad-agent gates")
+    if data.get("not_drawn", []) != declared:
+        return "the verdict describes different components declared not drawn: rerun the gate"
     if declarations is not None and inputs.get("declarations") != digest_of(declarations):
         return "the gate's declarations changed since this verdict"
     if options is not None and inputs.get("options") != digest_of(options):

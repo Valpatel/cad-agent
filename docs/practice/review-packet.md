@@ -162,6 +162,8 @@ root. The file has no timestamp: an unchanged packet writes identical JSON.
 
 Field notes:
 
+- When the build declares components it does not draw, `geometry.not_drawn` lists their names, reasons and
+  neighbours in every section packet. This includes projects with only a wall measurement and no YAML dossier.
 - **`parts`** holds the section's parts and the placed fasteners that clamp or thread into them. `sha256` is the
   hash the geometry record holds for the part (`parts.<name>.sha256`, a hash of its instance hashes; for a
   fastener, of its placed instances): the same hash a reviewer record (`dossier/reviews/*.json`, T11) binds in its

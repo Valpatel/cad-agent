@@ -417,7 +417,12 @@ def check_record(data: Mapping[str, Any], *, dossier: Any, geometry: Optional[Ma
     if extra:
         bad("stale-hashes", f"`hashes` names {', '.join(extra)}, which are not parts of section {sid}")
     listed = data.get("not_drawn") if _str_list(data.get("not_drawn")) else []
-    unseen = [n for n in section_not_drawn(dossier, sid, geometry) if n not in listed]
+    declared = set(section_not_drawn(dossier, sid, geometry))
+    unseen = sorted(declared.difference(listed))
+    unknown = sorted(set(listed).difference(declared))
+    if unknown:
+        bad("stale-not-drawn", f"the record lists {', '.join(unknown)} under `not_drawn`, but the current geometry "
+                               f"does not declare them near parts of section {sid}; write a new bundle and review it")
     if unseen:
         bad("stale-not-drawn", f"component(s) {', '.join(unseen)} are declared not drawn near parts of section {sid} "
                                "and the record does not list them under `not_drawn`: they were declared since the "

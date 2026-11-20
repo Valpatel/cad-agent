@@ -640,7 +640,7 @@ def _summary(data: Mapping[str, Any]) -> str:
         text = f"{len(fails)} failed: {', '.join(fails[:3])}" + (" ..." if len(fails) > 3 else "") + f" ({text})"
     missing = data.get("not_drawn") or []
     if missing:
-        text += f"; {len(missing)} not drawn, not seen: {not_drawn_names(missing, 3)}"
+        text += f"; {len(missing)} not drawn, not seen: {not_drawn_names(missing)}"
     return text
 
 

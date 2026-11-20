@@ -328,7 +328,7 @@ appears in the places this table names, and nowhere else:
 | `<gate>.md` | a "Not in the model" section above the findings |
 | `cad-agent gates`, each row | `WARN` in place of `PASS` for a passing gate with the `<gate>:not-drawn` check (`FAIL` stays `FAIL`; the wall row stays `PASS`), and the row ends "N not drawn, not seen: ..." |
 | `cad-agent gates`, the counts line | `2 pass (2 components not drawn), ...`: a `WARN` row still counts as a pass, and the count says so; then a "not in the model" line names the components |
-| `cad-agent check` and the report | the row stays `PASS` (the report has no warn status) and ends "N not drawn, not seen: ..." |
+| `cad-agent check` and the report | the row stays `PASS` (the report has no warn status) and lists every declared component |
 | the review site | a banner on every review page naming the components; the gate's pill reads `warn`; the `<gate>:not-drawn` row is listed on the gates page and in the findings of **every** section page; the counts ("gates pass", "integrity gates pass") end "N components not drawn, not seen by any gate" |
 | the section review packet | the `<gate>:not-drawn` rows and the lint's `not-drawn` warnings are in the `findings` and the `section_checks` of every section's packet |
 | the dossier lint | one `not-drawn` warning per component ([dossier.md](dossier.md#joining-cards-and-geometry)) |
@@ -342,7 +342,8 @@ component, or rewording a reason, makes the verdicts stale until the gates run a
 is not part of it). To clear the warning, draw the component and remove the declaration.
 
 **Sign-off.** A reviewer record lists the components declared not drawn near the parts of its section
-(`not_drawn`, filled in by the bundle's template). A component declared later near one of those parts voids the
+(`not_drawn`, filled in by the bundle's template). Submission checks that these names match the current section.
+A component declared later near one of those parts voids the
 review (`review-stale`), as a changed shape does, and a record written before the declaration is refused at
 submission (`stale-not-drawn`). A declaration without `near` names no section and voids no review; it still
 reaches every packet written after it.
@@ -376,7 +377,8 @@ flowchart TD
   its verdict.
 - **A project's own gate** gets the statement from `bind_inputs(data, record)`, which applies
   `note_not_drawn(data, record)` first; a gate name outside `NOT_DRAWN_NOTE_ONLY` gets the warning. A verdict
-  bound to the record some other way that does not name the declared components is stale (`stale_reason`), so
+  carrying earlier declarations must be recomputed before rebinding. A verdict bound some other way with
+  missing, outdated or extra declarations is stale (`stale_reason`), so
   `check`, the lint and the site never count it as current.
 - **`near` is not checked against the design.** It must name registered parts; nothing tells whether the component
   really sits there, or what else it reaches.

@@ -481,6 +481,7 @@ def test_components_declared_not_drawn_are_stated_on_every_review_page(bench):
         assert "flap_spring" in findings and "vent_plug" in findings and "bought part, model not imported" in findings
         assert "No gate or lint finding names this section" not in findings
     gates = _read(bench, "review/gates.html")
+    assert "The wall gate keeps its measured status" in gates
     assert gates.count('<span class="pill warn">warn</span>') >= 5 and "not in the model: flap_spring" in gates
     index = _read(bench, "review/index.html")
     assert "gates pass on the current geometry · 2 components not drawn, not seen by any gate" in index

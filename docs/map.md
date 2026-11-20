@@ -9580,7 +9580,7 @@ Guides explain how to use the toolkit. Folder maps lead into its code, tests and
 </details>
 
 <details>
-<summary>tests — 365 folders</summary>
+<summary>tests — 366 folders</summary>
 
 <details>
 <summary><code>tests/README.md</code> — 1 folders</summary>
@@ -10071,6 +10071,19 @@ Guides explain how to use the toolkit. Folder maps lead into its code, tests and
 | Folder |
 |---|
 | `tests/repo/ci` |
+
+</details>
+
+<details>
+<summary><code>tests/repo/evaluation/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-tests/d-repo/d-evaluation/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/tests/repo/evaluation/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `tests/repo/evaluation` |
 
 </details>
 

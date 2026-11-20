@@ -21,7 +21,7 @@ from urllib.request import HTTPRedirectHandler, HTTPSHandler, Request, build_ope
 
 INSPECT_REVISION = 'ff0acb3de3cb2fec0b1b35d0f46d40e234289dc8'
 HELPER_HASHES = {
-    'runner.py': 'c20a2799749e3bb56951fb31555c0f29f3052b12b6cbbfc9ac769389669af5bc',
+    'runner.py': 'c7b4c303f7f5b655be6bfefec12324cf6e2e02ba8cbbe7bfe443439e726e3f94',  # reviewed in #666
     'standard_eval.py': '289dc3b4dd30ed403432ae84f0be01da91ea7713f361a04fb5f033766a13bfa8',
 }
 for name, expected in HELPER_HASHES.items():

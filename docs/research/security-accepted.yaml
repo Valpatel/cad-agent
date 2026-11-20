@@ -99,7 +99,7 @@
 
 - check: repo-stale
   subject: webkit:occt-import-js
-  fp: 61923863ff1cdb72
+  fp: b41a813f687b838c
   reason: >-
     The 0.0.23 importer at c2148e54b456b571238d35cac037d304053d64b2 and OCCT at
     d2abb6d844231cb8f29be6894440874a4700e4a5 were rebuilt with Emscripten 3.1.69 static bindings (#828).

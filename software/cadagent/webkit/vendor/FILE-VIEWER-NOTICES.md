@@ -26,21 +26,26 @@ The library runs in a separate, dedicated classic worker. Users may inspect,
 modify and replace it. To reproduce the Linux build, copy the bundled `occt-import-js/source/`
 directory to a build workspace. Check out the OCCT revision above into its `occt/` subdirectory.
 Install and activate Emscripten 3.1.69 with emsdk at `a36df02dc438e8b02f91122a4c62eeecb6784272`.
-With its environment active, CMake 3.31.6 and Ninja (Python distribution 1.11.1.4), run from the copied source:
+The Linux build uses CMake 3.31.6 and Ninja (Python distribution 1.11.1.4). With the SDK environment active, run these commands from the copied source directory.
 
 ```sh
-emcmake cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXE_LINKER_FLAGS=-sDYNAMIC_EXECUTION=0
+source_dir="$(pwd -P)"
+emcmake cmake -S "$source_dir" -B build -G Ninja -DCMAKE_BUILD_TYPE=Release \
+  "-DCMAKE_C_FLAGS=-ffile-prefix-map=$source_dir=." \
+  "-DCMAKE_CXX_FLAGS=-ffile-prefix-map=$source_dir=." \
+  -DCMAKE_EXE_LINKER_FLAGS=-sDYNAMIC_EXECUTION=0
 cmake --build build --target OcctImportJS
 ```
 
 This keeps the upstream reader, tessellation and Embind interface. The linker emits static bindings so
-workers can use the site's existing script policy. To replace the reader, copy the two
+workers can use the site's existing script policy. The compiler maps the source directory to `.` in
+OCCT diagnostic strings, so the build location does not enter the distributed WASM. To replace the reader, copy the two
 `build/Release/occt-import-js.{js,wasm}` files together. Preserve the `occtimportjs` factory and
 `ReadStepFile` interface, or adapt `file-step-worker.js` to the replacement's API.
 No application relink, account, remote service or proprietary decoder is required.
 Serve the replacement with JavaScript and `application/wasm` MIME types and clear
 or change the deployment cache version. The worker locates the WASM beside the JS.
-The runtime WASM is 7,591,804 bytes, below Cloudflare's 25 MB per-asset limit.
+The runtime WASM is 7,591,693 bytes, below Cloudflare's 25 MB per-asset limit.
 
 The application does not restrict debugging or reverse engineering needed to
 modify these libraries. These source and replacement details apply to this pinned

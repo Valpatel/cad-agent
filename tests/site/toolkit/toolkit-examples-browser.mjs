@@ -47,7 +47,25 @@ async function hostedStepCheck(open, fail) {
     const expected = [114.300, 114.197, 83.185];
     if (model.format !== 'STEP' || model.triangles !== 9518 || model.bounds?.length !== 3 ||
         !model.bounds.every((size, i) => Math.abs(size - expected[i]) < .001)) fail(where, 'unexpected manifold geometry');
-    await page.waitForFunction(() => window.__fileViewer.stage.renderer.info.render.triangles > 0);
+    const picture = await page.evaluate(async () => {
+      const { model, stage } = window.__fileViewer;
+      const painted = () => new Promise(done => requestAnimationFrame(() => requestAnimationFrame(done)));
+      await painted();
+      const shown = stage.renderer.info.render.triangles, wasVisible = model.visible;
+      let hidden;
+      try {
+        model.visible = false;
+        await painted();
+        hidden = stage.renderer.info.render.triangles;
+      } finally {
+        model.visible = wasVisible;
+        await painted();
+      }
+      return { shown, hidden, restored: stage.renderer.info.render.triangles };
+    });
+    if (picture.shown - picture.hidden !== model.triangles || picture.restored !== picture.shown) {
+      fail(where, `expected the manifold's ${model.triangles} triangles to disappear and return: ${JSON.stringify(picture)}`);
+    }
     const original = await page.getByRole('link', { name: 'Download original', exact: true }).getAttribute('href');
     const download = await page.request.get(new URL(original, page.url()).href);
     if (!download.ok() || createHash('sha256').update(await download.body()).digest('hex') !==

@@ -30,6 +30,8 @@ test('every vendored file matches the SHA-256 in its receipt, and every vendored
   const hashes = await recordedHashes();
   for (const [rel, want] of Object.entries(hashes)) assert.equal(await sha256(path.join(vendor, rel)), want, rel);
   const viewer = await json('file-viewer-sources.json');
+  assert.equal(viewer.sha256['occt-import-js/occt-import-js.wasm'], viewer.occt.build.upstream_dist_sha256['occt-import-js.wasm'],
+    'the viewer ships the original npm OCCT WebAssembly reader');
   assert.ok(viewer.sha256['file-parsers/fflate.module.js'] && viewer.sha256['file-parsers/FFLATE-LICENSE.txt']);
   const records = new Set(['file-viewer-sources.json', 'FILE-VIEWER-NOTICES.md']);
   const files = (await readdir(vendor, { recursive: true, withFileTypes: true })).filter((e) => e.isFile())

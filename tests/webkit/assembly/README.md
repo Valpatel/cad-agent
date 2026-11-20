@@ -14,6 +14,7 @@ flowchart TD
 | `__init__.py` | Empty test-package marker |
 | `guide.test.mjs` | Pure validator/controller and bounded request counterexamples |
 | `playback.test.mjs` | Explicit order, absolute authored poses, bounded timing, pause/loop/navigation and ownership rejection |
+| `box-fixture.mjs` | Binary STL and matching bounds for assembly and stage browser tests |
 | `browser.mjs` | Real scene/material/coordinate/loading/lifecycle controls; stored/system theme contrast, phone HUD geometry, loading/errors, native toggle preservation of guide, selection, materials and camera; actual browser history restoration |
 | `example-browser.mjs` | The featured Gyropup turret guide in the shipped reader: step membership, highlight, ghosting and authored offsets, the guide's qualification, phone layout with labelled 44 px controls; planted faults for each check |
 | `test_gyropup_turret_guide.py` | The guide's converter and committed bytes: receipt, cross-group geometry, synthetic-checkout conversion and refusals |

@@ -134,6 +134,11 @@ test('capabilities open owned working examples, with real previews and explicit 
   assert.equal(cards.find(card=>card.id==='mechanisms').href,'/docs/linkages#try-it-the-four-bar-animator');
   assert.throws(()=>toolkitCapabilities(model,{catalog:[{id:'demo-fourbar-animator',url:'https://external.invalid/demo'}]}),/must be locally published/);
   assert.deepEqual(cards.map(card=>card.id),['scada-elements','scada-simulations','models','robot-replay','files','assembly','mechanisms','calculators']);
+  const file=cards.find(card=>card.id==='files');
+  const capture=read('tools/site/assets/toolkit/SOURCE.json').captures['file-review'];
+  assert.equal(file.href, capture.route + '&nav=1', 'the photo and card open the same original file');
+  assert.equal(capture.scene.source, 'pump-manifold.stl');
+  assert.equal(file.sourceDownload, '/web/toolkit/pump-manifold.step');
   const replay=cards.find(card=>card.id==='robot-replay');
   assert.match(replay.description,/Gyropup, a work-in-progress wheel-legged robot, in recorded MuJoCo runs from its dated snapshot/);
   for (const phrase of ["Recorded solver output", "replayed, not recomputed", "not a validation of hardware"]) assert.ok(replay.description.includes(phrase), phrase);

@@ -2,6 +2,9 @@
 import * as THREE from 'three';
 import {creasedNormals} from '../model/model.js';
 
+// The most box corners Fit projects for a recording framed whole: above the shipped examples' counts (the Gyropup
+// landing's 152 frames x 13 bodies x 8 = 15,808; the two-link arm's 501 x 3 x 8 = 12,024), so their frames stay exact.
+export const FIT_POINTS=20000;
 const toStage=(point,out=new THREE.Vector3())=>out.set(point.x,point.z,-point.y);
 
 /** `meshes` is a mesh library from loadMeshLibrary (part -> metres); a recording's mesh parts draw from it. */
@@ -40,31 +43,44 @@ export function createPoseScene(stage,recording,{meshes}={}) {
   const fixed=new THREE.Group();fixed.name='recorded-scenery';root.add(fixed);
   for(const g of recording.scenery??[])fixed.add(primitive(g));
   // Fit the complete recorded motion, including geometry; moving links stay in view after Fit.
-  const bounds=new THREE.Box3(),point=new THREE.Vector3(),rotation=new THREE.Quaternion(),position=new THREE.Vector3();
-  const bodyBounds=groups.map(()=>new THREE.Box3()),padding=groups.map(()=>0),radii=localCorners.map(corners=>Math.max(...corners.map(p=>p.length())));
-  for(const [frameIndex,frame] of recording.frames.entries())frame.poses.forEach((pose,i)=>{
-    rotation.fromArray(pose.quaternion);position.fromArray(pose.position);
-    for(const corner of localCorners[i]){point.copy(corner).applyQuaternion(rotation).add(position);const {x,y,z}=point;bodyBounds[i].expandByPoint(point.set(x,z,-y));}
-    if(frameIndex){
-      const previous=recording.frames[frameIndex-1].poses[i].quaternion;
-      const dot=Math.min(1,Math.abs(previous.reduce((sum,n,k)=>sum+n*pose.quaternion[k],0))),theta=2*Math.acos(dot);
-      // Rotation R(t)p has |f''(t)| <= radius*theta^2. Linear interpolation's remainder is
-      // <= max|f''|/8 on [0,1]; translation is already linear. Expand endpoint bounds by
-      // that conservative error so sparse rotations cannot escape Fit between samples.
-      padding[i]=Math.max(padding[i],radii[i]*(theta*theta/8+1e-10)); // unit-normalization/near-coincident roundoff margin
-    }
-  });
-  bodyBounds.forEach((box,i)=>bounds.union(box.expandByScalar(padding[i])));
-  root.updateMatrixWorld(true);
-  const size=bounds.getSize(new THREE.Vector3());
   // A followed body (a robot driving metres): Fit frames every body where it is now, and playback carries the camera
   // with that body across the floor, so it stays the size the reader chose. Height changes are not followed.
   const view=recording.view,follow=view?.follow?recording.bodies.findIndex(b=>b.id===view.follow):-1;
+  // Otherwise Fit frames the points the bodies reach, not the corners of one box around them all: a box's far corners
+  // lie well outside an oblique view's silhouette, so fitting them leaves the subject small (#809). Each body's box is
+  // kept per window of consecutive frames, grown by that body's interpolation margin; the view frustum is convex, so
+  // holding every corner holds every pose between two recorded frames too. A long recording merges frames into fewer,
+  // larger windows (a union of boxes stays conservative), so Fit never projects more than FIT_POINTS corners.
+  const frameCount=recording.frames.length,bodyCount=groups.length;
+  const windows=follow>=0?0:Math.max(1,Math.min(frameCount,Math.floor(FIT_POINTS/(8*bodyCount))));
+  const bounds=new THREE.Box3(),point=new THREE.Vector3(),rotation=new THREE.Quaternion(),position=new THREE.Vector3();
+  const bodyBounds=groups.map(()=>new THREE.Box3()),windowBounds=Array.from({length:windows},()=>groups.map(()=>new THREE.Box3()));
+  const padding=groups.map(()=>0),radii=localCorners.map(corners=>Math.max(...corners.map(p=>p.length())));
+  for(const [frameIndex,frame] of recording.frames.entries()){
+    const slot=windows?windowBounds[Math.floor(frameIndex*windows/frameCount)]:null;
+    frame.poses.forEach((pose,i)=>{
+      rotation.fromArray(pose.quaternion);position.fromArray(pose.position);
+      for(const corner of localCorners[i]){point.copy(corner).applyQuaternion(rotation).add(position);const {x,y,z}=point;point.set(x,z,-y);bodyBounds[i].expandByPoint(point);slot?.[i].expandByPoint(point);}
+      if(frameIndex){
+        const previous=recording.frames[frameIndex-1].poses[i].quaternion;
+        const dot=Math.min(1,Math.abs(previous.reduce((sum,n,k)=>sum+n*pose.quaternion[k],0))),theta=2*Math.acos(dot);
+        // Rotation R(t)p has |f''(t)| <= radius*theta^2. Linear interpolation's remainder is
+        // <= max|f''|/8 on [0,1]; translation is already linear. Expand endpoint bounds by
+        // that conservative error so sparse rotations cannot escape Fit between samples.
+        padding[i]=Math.max(padding[i],radii[i]*(theta*theta/8+1e-10)); // unit-normalization/near-coincident roundoff margin
+      }
+    });
+  }
+  bodyBounds.forEach((box,i)=>bounds.union(box.expandByScalar(padding[i])));
+  const corners=box=>[0,1,2,3,4,5,6,7].map(i=>new THREE.Vector3(i&1?box.max.x:box.min.x,i&2?box.max.y:box.min.y,i&4?box.max.z:box.min.z));
+  const reached=windowBounds.flatMap(boxes=>boxes.flatMap((box,i)=>corners(box.expandByScalar(padding[i]))));
+  root.updateMatrixWorld(true);
+  const size=bounds.getSize(new THREE.Vector3());
   const direction=view?.direction?toStage({x:view.direction[0],y:view.direction[1],z:view.direction[2]}).normalize():new THREE.Vector3(1,.7,1.8);
   const tracked=new THREE.Vector3(),moved=new THREE.Vector3();let trackedSet=false;
   const reach=follow<0?null:Math.max(...localCorners.flatMap(corners=>corners.map(p=>p.length())));
-  const current=()=>{const box=new THREE.Box3();root.updateMatrixWorld(true);for(const group of groups)for(const mesh of group.children){if(!mesh.geometry.boundingBox)mesh.geometry.computeBoundingBox();box.union(mesh.geometry.boundingBox.clone().applyMatrix4(mesh.matrixWorld));}return box;};
-  return {root,groups,bounds,height:Math.max(.01,size.x,size.y,size.z),follow:follow<0?null:recording.bodies[follow].id,reach,
+  const current=()=>{const points=[];root.updateMatrixWorld(true);for(const group of groups)for(const mesh of group.children){if(!mesh.geometry.boundingBox)mesh.geometry.computeBoundingBox();for(const p of corners(mesh.geometry.boundingBox))points.push(p.applyMatrix4(mesh.matrixWorld));}return points;};
+  return {root,groups,bounds,fitPoints:reached.length,height:Math.max(.01,size.x,size.y,size.z),follow:follow<0?null:recording.bodies[follow].id,reach,
     apply(poses){
       if(disposed)throw new Error('Pose scene is disposed');
       poses.forEach((pose,i)=>{groups[i].position.fromArray(pose.position);groups[i].quaternion.fromArray(pose.quaternion);});root.updateMatrixWorld(true);
@@ -74,7 +90,7 @@ export function createPoseScene(stage,recording,{meshes}={}) {
         tracked.copy(at);trackedSet=true;
       }
     },
-    fit(){if(disposed)throw new Error('Pose scene is disposed');stage.fitView(follow>=0?current():bounds,{margin:1.12,direction});},
+    fit(){if(disposed)throw new Error('Pose scene is disposed');stage.fitView(follow>=0?current():reached,{margin:1.12,direction});},
     dispose(){if(disposed)return;disposed=true;root.removeFromParent();const seen=new Set();root.traverse(object=>{if(object.geometry&&!seen.has(object.geometry)){seen.add(object.geometry);object.geometry.dispose();}object.material?.dispose();});},
   };
 }

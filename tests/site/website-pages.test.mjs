@@ -665,7 +665,7 @@ const wideFixture = (route, extra = {}) => ({
 });
 test('wide geometry accepts a flexible shell with readable cards, bounded prose and a broad visual column', () => {
   for (const m of [
-    wideFixture('/', { hero: { width: 1560, height: 780, loaded: true } }),
+    wideFixture('/', { hero: { width: 3200, height: 646, loaded: true } }),
     wideFixture('/toolkit/scada/elements', { cards: Array.from({ length: 7 }, (_, i) => ({ x: i * 450, y: 400, width: 430 })) }),
     wideFixture('/docs/toolkit', { document: { width: 2600 }, paragraphs: [{ width: 760 }, { width: 120 }], table: { width: 2600 } }),
     wideFixture('/explore', { groupArea: { width: 3000 }, groups: Array.from({ length: 4 }, (_, i) => ({ x: i * 750, y: 400, width: 730 })) }),
@@ -677,6 +677,7 @@ test('wide geometry rejects the old narrow shell, three giant cards and a vertic
   const gallery = wideGeometryProblems(wideFixture('/toolkit/scada/elements', { cards })).join(';');
   assert.match(gallery, /gallery has 3 columns/);
   assert.match(gallery, /card widths/);
+  assert.match(wideGeometryProblems(wideFixture('/', { hero: { width: 1486, height: 300, loaded: true } })).join(';'), /stops short/);
   assert.match(wideGeometryProblems(wideFixture('/', { hero: { width: 3344, height: 1672, loaded: true } })).join(';'), /artwork is/);
 });
 test('wide geometry rejects stretched prose, capped document visuals, overflow and missing measurements', () => {

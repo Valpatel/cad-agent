@@ -48,7 +48,7 @@
             "vendor/three/three.module.min.js",
             "ui/appnav.js"
           ],
-          "sha256": "80d918a7ea42aeea7181cb48471c9b3cf3709b45618d2865c1e863d9fb9e59df"
+          "sha256": "f2eeb46f5cf7f7f346cb98de8729d58388839a0d2ceff96611ae259e38970c7b"
         },
         "model/viewer.js": {
           "requires": [

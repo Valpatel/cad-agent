@@ -75,7 +75,7 @@ def test_the_module_is_in_metres_and_every_function_that_takes_one_says_so():
     assert "metres, not millimetres" in fx.REGISTRY["module_from_diametral_pitch"].returns
     assert "METRES" in fx.module_from_diametral_pitch.__doc__
     module_doc = " ".join(gears.__doc__.split())
-    assert "The module is in metres" in module_doc and "cadagent.mechanical.gears" in module_doc
+    assert "The module is in metres" in module_doc and "Divide a module in millimetres by 1000" in module_doc
     assert "millimetres" in module_doc
 
 
@@ -738,3 +738,9 @@ def test_module_constants_are_the_standard_full_depth_proportions():
     assert (gears.ADDENDUM, gears.DEDENDUM) == (1.0, 1.25)
     assert gears.PRESSURE_ANGLE == pytest.approx(math.radians(20))
     assert set(fx.VELOCITY_PROFILES) == {"cast", "cut", "hobbed", "ground"}
+
+
+def test_gear_dimensions_accept_real_array_scalars():
+    import numpy as np
+
+    assert fx.gear_pitch_diameter(np.float32(0.002), np.int64(20)) == pytest.approx(0.04)

@@ -8,10 +8,8 @@
 
 Lengths in metres, forces in newtons, torques in newton metres, stresses in pascals and angles in radians.
 
-**The module is in metres**: a 2 mm module is ``2e-3``, and ``module_from_diametral_pitch`` returns metres. This is
-not the convention of the gear solids in ``cadagent.mechanical.gears``, which, like the rest of cad-agent's CAD
-geometry, take the module and every length in millimetres: divide a module in millimetres by 1000 before it comes
-here. Nothing checks the magnitude, because a module of 2 m is a valid input, so a module passed in millimetres
+**The module is in metres**: a 2 mm module is ``2e-3``, and ``module_from_diametral_pitch`` returns metres. CAD geometry uses millimetres.
+Divide a module in millimetres by 1000 before passing it to these formulas. Nothing checks the magnitude, because a module of 2 m is a valid input, so a module passed in millimetres
 gives a stress a million times too low (megapascals read as pascals) without an error.
 
 Teeth are standard full depth without profile shift: addendum one module, dedendum 1.25 modules. Bevel gears are
@@ -41,6 +39,7 @@ Helical, spiral bevel, hypoid and worm gears, profile-shifted teeth and internal
 from __future__ import annotations
 
 import math
+from numbers import Real
 from typing import Any, Dict, Optional, Tuple
 
 from cadagent.formulas._registry import cite, formula
@@ -107,19 +106,19 @@ _RACK_RATIO = 1e150       # a finite ratio above this is a rack: its square woul
 
 
 def _positive(name: str, v: Any) -> float:
-    if isinstance(v, bool) or not isinstance(v, (int, float)) or not math.isfinite(v) or v <= 0:
+    if isinstance(v, bool) or not isinstance(v, Real) or not math.isfinite(v) or v <= 0:
         raise ValueError(f"{name} must be a finite number above 0, not {v!r}")
     return float(v)
 
 
 def _number(name: str, v: Any) -> float:
-    if isinstance(v, bool) or not isinstance(v, (int, float)) or not math.isfinite(v):
+    if isinstance(v, bool) or not isinstance(v, Real) or not math.isfinite(v):
         raise ValueError(f"{name} must be a finite number, not {v!r}")
     return float(v)
 
 
 def _teeth(name: str, v: Any) -> int:
-    if isinstance(v, bool) or not isinstance(v, (int, float)) or not math.isfinite(v) or v != int(v) or v < 3:
+    if isinstance(v, bool) or not isinstance(v, Real) or not math.isfinite(v) or v != int(v) or v < 3:
         raise ValueError(f"{name} must be a whole number of teeth, 3 or more, not {v!r}")
     return int(v)
 
@@ -157,8 +156,7 @@ def _face_on_cone(face_width: Any, cone_distance: Any) -> Tuple[float, float]:
                      + _SLIDES))
 def module_from_diametral_pitch(diametral_pitch: float) -> float:
     """Module of a gear from its diametral pitch: m = 0.0254 / P. The result is in METRES (P = 12 gives 0.0021167,
-    which is 2.1167 mm), the unit every function of this module takes; the gear solids of
-    ``cadagent.mechanical.gears`` take millimetres instead, so multiply by 1000 for them."""
+    which is 2.1167 mm), the unit every function of this module takes; multiply by 1000 to obtain millimetres for CAD geometry."""
     return INCH / _positive("diametral_pitch", diametral_pitch)
 
 
@@ -285,7 +283,7 @@ def gear_min_teeth(pressure_angle: float = PRESSURE_ANGLE, ratio: float = math.i
     rack."""
     s2 = math.sin(_pressure_angle(pressure_angle)) ** 2
     k = _positive("addendum", addendum)
-    if isinstance(ratio, bool) or not isinstance(ratio, (int, float)) or math.isnan(ratio) or ratio < 1:
+    if isinstance(ratio, bool) or not isinstance(ratio, Real) or math.isnan(ratio) or ratio < 1:
         raise ValueError(f"ratio is the mate's teeth over the pinion's, 1 or more (math.inf for a rack), not {ratio!r}")
     if ratio > _RACK_RATIO:          # math.inf, or a finite ratio whose square would overflow: the rack limit
         bound = 2 * k / s2
@@ -488,7 +486,7 @@ def lewis_form_factor(teeth: float, pressure_angle: float = PRESSURE_ANGLE, tabl
     """Lewis form factor Y of a full-depth involute tooth, from a published table, interpolated between its tooth
     counts."""
     _, _, rows = _table_for(pressure_angle, table)
-    if isinstance(teeth, bool) or not isinstance(teeth, (int, float)) or math.isnan(teeth) or teeth <= 0:
+    if isinstance(teeth, bool) or not isinstance(teeth, Real) or math.isnan(teeth) or teeth <= 0:
         raise ValueError(f"teeth must be a number above 0 (math.inf for a rack), not {teeth!r}")
     if teeth < rows[0][0]:
         raise ValueError(f"the table starts at {rows[0][0]} teeth; {teeth!r} is below it (undercut teeth are not "
@@ -520,7 +518,7 @@ def gear_velocity_factor(speed: float, profile: str = "cut") -> float:
     """Velocity (Barth) factor Kv for the Lewis equation, by how the teeth were made: (3.05 + V) / 3.05 cast,
     (6.1 + V) / 6.1 cut or milled, (3.56 + sqrt V) / 3.56 hobbed or shaped, sqrt((5.56 + sqrt V) / 5.56) shaved or
     ground, with V in m/s."""
-    if isinstance(speed, bool) or not isinstance(speed, (int, float)) or not math.isfinite(speed) or speed < 0:
+    if isinstance(speed, bool) or not isinstance(speed, Real) or not math.isfinite(speed) or speed < 0:
         raise ValueError(f"speed must be a finite number, 0 or more, not {speed!r}")
     if not isinstance(profile, str) or profile not in VELOCITY_PROFILES:
         raise ValueError(f"profile must be one of {sorted(VELOCITY_PROFILES)}: {VELOCITY_PROFILES}")
@@ -614,7 +612,7 @@ def spur_tooth_bending(torque: float, module: float, teeth: int, face_width: flo
                        table: Optional[str] = None) -> Dict[str, float]:
     """Lewis bending stress of a spur gear tooth from the torque on the gear: the force at the pitch circle, the
     tabulated form factor, and sigma = Kv Wt / (b m Y). ``module`` and ``face_width`` are in metres (a 2 mm module
-    is ``2e-3``): passed in millimetres, as the gear solids of ``cadagent.mechanical.gears`` take them, the stress
+    is ``2e-3``): passed in millimetres, as used in CAD geometry, the stress
     comes out a million times too low and nothing raises."""
     d = gear_pitch_diameter(module, teeth)
     forces = spur_gear_forces(torque, d, pressure_angle)

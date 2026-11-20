@@ -255,8 +255,7 @@ flowchart TD
 ```
 
 **The module is in metres here**, like every other length: a 2 mm module is `0.002`, and
-`module_from_diametral_pitch` returns metres (a diametral pitch of 12 gives 0.0021167). The gear solids of
-`cadagent.mechanical` take the module in millimetres, as the rest of the CAD geometry does, so divide by 1000 on the
+`module_from_diametral_pitch` returns metres (a diametral pitch of 12 gives 0.0021167). CAD geometry uses millimetres, so divide a module measured in millimetres by 1000 on the
 way from a drawn gear to these formulas. Nothing checks the magnitude, because a 2 m module is a valid input: a
 module passed in millimetres gives a stress a million times too low, megapascals read as pascals, with no error.
 

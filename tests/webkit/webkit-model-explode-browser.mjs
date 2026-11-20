@@ -23,6 +23,14 @@ const routes = new Map([
   ['/favicon.ico', (_, res) => res.writeHead(204).end()],
   ['/m/two-parts.json', (_, res) => res.end(json)],
   ['/m/two-parts.bin', (_, res) => res.end(bin)],
+  ['/shadow.html', (_, res) => {
+    res.setHeader('Content-Type', 'text/html');
+    res.end(`<!doctype html><script type="module" src="/kit/model/model.js"></script>
+      <button id="before">Before model</button><div id="host"><template shadowrootmode="open">
+      <link rel="stylesheet" href="/kit/model/model.css">
+      <cad-model style="display:block;width:400px;height:250px" src="/m/two-parts.json" loading="scroll"></cad-model>
+      </template></div>`);
+  }],
   ['/index.html', (req, res) => { res.setHeader('Content-Type', 'text/html'); res.end(`<!doctype html><meta name="viewport" content="width=device-width"><link rel="stylesheet" href="/kit/model/model.css"><style>body{margin:0}cad-model{display:block;width:100%;height:60vh;min-height:230px}#spacer{height:300vh}</style><script type="module" src="/kit/model/model.js"></script><cad-model src="/m/two-parts.json" loading="eager" turn="${req.url.includes('turn') ? 30 : 0}" label="Fixture"></cad-model><div id="spacer"></div>`); }],
 ]);
 /** Replace performance.now and requestAnimationFrame with a frozen clock and a manual frame queue (window.__clock). */
@@ -48,6 +56,25 @@ const gap = (a, b) => Math.max(...a.map((n, i) => Math.abs(n - b[i])));
 let passed = 0;
 
 try {
+  // Document.activeElement sees the outer host. The reader's real Tab must reach Explode inside the shadow tree.
+  {
+    const page = await browser.newPage();
+    try {
+      await page.goto(`${site.url}/shadow.html`);
+      const model = page.locator('cad-model');
+      await model.waitFor({state:'attached'});
+      await page.waitForFunction(() => document.querySelector('#host').shadowRoot.querySelector('cad-model').dataset.state === 'poster');
+      await page.locator('#before').focus();
+      await page.keyboard.press('Tab');
+      await page.waitForFunction(() => ['ready','error'].includes(document.querySelector('#host').shadowRoot.querySelector('cad-model').dataset.state));
+      const focus = await model.evaluate(el => ({
+        state: el.dataset.state, tabindex: el.getAttribute('tabindex'),
+        control: el.getRootNode().activeElement?.textContent,
+      }));
+      assert.deepEqual(focus, {state:'ready', tabindex:null, control:'Explode'});
+      console.log('ok Tab hands focus to Explode inside a shadow tree');
+    } finally { await page.close(); }
+  }
   for (const input of ['pointer', 'keyboard']) for (const motion of ['no-preference', 'reduce']) {
     const name = `${input}/${motion}`, errors = [];
     const context = await browser.newContext({ viewport: { width: 900, height: 700 }, reducedMotion: motion });

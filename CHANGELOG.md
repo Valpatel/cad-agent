@@ -9,6 +9,27 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
 
 ## Unreleased
 
+## v0.49.0 (2026-11-20)
+
+**New**
+- `cadagent.mechanical.gears`: gear solids a build script can place, check and export. `spur_gear` and `external_ring_gear` make external involute gears from module in mm (25.4 / P for an inch gear of diametral pitch P), tooth count, face width and pressure angle (20° by default, 14.5° works), with optional bore, backlash allowance, clearance, root fillet and profile shift; `bevel_gear` makes a straight bevel gear for 90° shafts by Tredgold's approximation. Teeth are drawn as the basic rack cuts them: true involute flanks, the trochoid root fillet, and undercut on low tooth counts drawn and reported (`undercut`, a `UserWarning`). `spur_gear_dimensions`, `gear_pair_dimensions` and `bevel_gear_dimensions` return the diameters, tooth thickness, centre distance, contact ratio and mesh rotation to place a pair by. Lengths are in mm, where `cadagent.formulas` is in SI. Geometry only: no helical or internal gears, no tip relief, no strength check, and printed gears need their backlash and clearance tuned to the printer (`docs/mechanical/gears.md`, #723).
+
+**Changed**
+- `cadagent.review.gates.motion`: a revolute joint that carries no other joint, and whose moving parts each measure as a body of revolution or an N-fold pattern about the joint axis, has each distinct pose queried once: one pose for a shaft, one period for a lugged wheel. The symmetry is measured from the solids (`cadagent.review.gates.symmetry.measure_symmetry`) and held tighter than anything the gate reports: between two poses treated as one, each solid's boundary (every vertex, points inside every edge and every face) moves by no more than `touch_mm / 20` and no more than `overlap_mm3 / 4` of its volume changes place, so a pair's gap differs by no more than `touch_mm / 10` and its shared volume by no more than `overlap_mm3 / 2` even when both of its parts are symmetric bodies. A body is measured after the broad phase and only when a pair comes near it in poses that could be one pose, so a wheel nothing comes near costs nothing. A part that is not symmetric, or that cannot be measured that closely (a free-form face, a large sphere or torus, more than 20000 boundary points), is queried at every sample as before, and a refusal is named in the verdict. A two-joint example at `max_step_deg=2` went from 700 kernel queries to 32 (#724).
+- The motion verdict gains `density[].symmetry`, `density[].symmetry_not_measured`, `stats.symmetric_joints`, `stats.symmetry_not_measured`, `stats.symmetry_queries`, `stats.symmetry_seconds`, `limits.symmetry` and, where a joint's poses were queried once, one assumption line; `symmetry=False` (`cad: gates: motion: {symmetry: false}`) restores the old behaviour (#724).
+- Replay viewer: Fit frames the points the robot's bodies reach rather than the corners of one box around the whole run, so the subject fills more of an oblique view. It projects at most 20,000 corners (a long recording merges consecutive frames): about 30 ms per Fit at 30,001 frames × 6 bodies in Chromium, against under 1 ms before, and none for a followed recording; the two-link arm's thumbnail and the Gyropup cards are recaptured (#809).
+- Gyropup replay: the camera follows the robot in every run that travels more than 0.1 m from its start, so the push run now follows its base like the kerb runs and the robot fills a phone's view in all four scenarios; the landing stays framed whole (#809).
+- The Toolkit file viewer opens the pump manifold’s STL and offers the original STEP for download (#826).
+
+**Fixed**
+- Printed-part checks verify a declared `stl_sha256` against the current STL and fail with a rebuild action when it cannot be verified. `export_print_stl` records the digest after any mesh rewrite; legacy records keep their status with an explicit freshness-not-recorded note (#746). This checks byte drift, not geometry correctness or physical print quality.
+- Replay viewer: the Play/Pause button is rewritten only when the playing state changes (and the custom speed option only when the speed does). It was rewritten every frame, and in WebKit (the engine Safari uses) a press that spans a frame then did not pause, most likely because WebKit drops a click whose pressed text node is replaced before the release. A proof run with the rewrite put back failed a 150 ms press in WebKit and passed it in Chromium (#809, #820).
+- Gyropup replay: the landing scenario shows its recorded largest fore-aft lean, 0.04°, instead of "0.0°". Every lean is shown to the two decimals Gyropup's summary records and labelled fore-aft (the pitch of the axle-to-centre-of-mass line, not sideways tilt); a run whose summary has none shows none. The receipt states how each shown figure is taken from the summary (#809).
+- The homepage workshop illustration follows the content width on wide displays and when zooming out (#826).
+
+**Projects must change**
+- Nothing is required. A project that shortened a full-turn range by hand to one period because the motion gate was slow can declare the real range again: the gate now measures the symmetry itself and says so in the verdict (#724).
+
 ## v0.48.0 (2026-11-17)
 
 **New**

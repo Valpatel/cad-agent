@@ -114,6 +114,19 @@ def test_an_undercut_pinion_shortens_the_contact():
     assert p['contact_ratio'] < full
 
 
+@pytest.mark.parametrize('teeth,angle', [(4, 20), (12, 10)])
+def test_disjoint_active_profiles_have_zero_contact(teeth, angle):
+    pair = gear_pair_dimensions(1, teeth, teeth, pressure_angle=angle)
+    assert pair['contact_ratio'] == 0
+    assert any('No involute contact' in note for note in pair['notes'])
+
+
+def test_nominal_zero_tip_clearance_has_no_interference_warning():
+    pair = gear_pair_dimensions(1, 24, 32, clearance=0)
+    assert pair['tip_clearance_mm'] == 0
+    assert not any('opposite roots' in note for note in pair['notes'])
+
+
 def test_profile_shift_moves_the_centre_distance_to_the_working_pressure_angle():
     p = gear_pair_dimensions(2, 16, 48, pressure_angle=14.5, profile_shift_a=0.5)
     a, w = math.radians(14.5), math.radians(p['working_pressure_angle_deg'])

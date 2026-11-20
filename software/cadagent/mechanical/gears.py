@@ -342,10 +342,16 @@ def gear_pair_dimensions(module: float, teeth_a: int, teeth_b: int, *, pressure_
                 notes.append(f'the tip of the other gear works inside the involute of gear {name}, on its root '
                              'fillet: check for interference')
         lengths.append(tooth.rb * math.tan(working) - max(reach, start))
-    contact = sum(lengths) / (math.pi * ta.m * math.cos(a))
-    if contact < 1.2:
+    # The signed overlap of the two active flanks is negative when their intervals are disjoint.
+    contact = max(0.0, sum(lengths)) / (math.pi * ta.m * math.cos(a))
+    if contact == 0:
+        notes.append('No involute contact: the active tooth profiles do not overlap along the line of action')
+    elif contact < 1.2:
         notes.append(f'contact ratio {contact:.2f} is below 1.2: the mesh will run unevenly')
     tip_clearance = min(centre - ta.ra - tb.rf, centre - tb.ra - ta.rf)
+    # Subtracting two radii from the centre distance can leave a few ulps at nominal zero clearance.
+    if abs(tip_clearance) <= 4 * math.ulp(centre):
+        tip_clearance = 0.0
     if tip_clearance < 0:
         notes.append(f"The tips reach into the opposite roots by up to {-tip_clearance:.3f} mm: "
                      "shorten the tips or reduce the profile shifts")

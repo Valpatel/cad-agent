@@ -87,7 +87,7 @@ default: a drawing floor, not a strength rating). It is not an internal gear.
 
 | Field | Meaning |
 |---|---|
-| `contact_ratio` | Counts contact on involute only, so an undercut gear lowers it; `contact_shortened` says when. Below 1.2 it adds a note. |
+| `contact_ratio` | Counts contact on involute only, so an undercut gear lowers it; `contact_shortened` says when. Below 1.2 it adds a note. Disjoint active profiles have zero involute contact. |
 | `tip_past_involute` | A tip works inside the start of the other gear's involute, on its root fillet. This is the usual interference check, and it is cautious: in the cases tried, the solids showed no measurable overlap. |
 | `tip_clearance_mm` | The smaller gap between a tip and the opposite root. Unbalanced profile shifts reduce it; the tips are not shortened to restore it. |
 

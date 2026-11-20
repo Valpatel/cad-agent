@@ -19,11 +19,21 @@ const errors=[],cases=[];
 const expectedMatrix=({position:[px,py,pz],quaternion:q})=>{const n=Math.hypot(...q),[x,y,z,w]=q.map(c=>c/n);return [1-2*(y*y+z*z),2*(x*z-y*w),-2*(x*y+z*w),0,2*(x*y-z*w),2*(y*z+x*w),-(1-2*(x*x+z*z)),0,2*(x*z+y*w),1-2*(x*x+y*y),-2*(y*z-x*w),0,px,pz,-py,1];};
 const mismatch=(actual,pose)=>Math.max(...expectedMatrix(pose).map((n,k)=>Math.abs(actual[k]-n)));
 const frameAt=(id,t)=>recordings[id].frames.find(f=>Math.abs(f.time_s-t)<1e-9);
-const seekAndRead=(page,t)=>page.evaluate(async t=>{
-  __replay.playback.seek(t);const frame=__replay.stage.frames;
-  await new Promise(resolve=>{const wait=()=>__replay.stage.frames>frame+1?resolve():requestAnimationFrame(wait);wait();});
-  return {matrices:__replay.scene.groups.map(g=>g.matrixWorld.toArray()),target:__replay.stage.controls.target.toArray(),camera:__replay.stage.camera.position.toArray()};
-},t);
+const seekAndRead = async (page, time) => {
+  await page.locator('#replay canvas').scrollIntoViewIfNeeded();
+  const previousDraw = await page.evaluate(time => {
+    const frame = __replay.stage.renderer.info.render.frame;
+    __replay.playback.seek(time);
+    return frame;
+  }, time);
+  // Each test seek selects a different recorded pose. Verify that Three.js actually painted it.
+  await page.waitForFunction(frame => __replay.stage.renderer.info.render.frame > frame, previousDraw);
+  return page.evaluate(() => ({
+    matrices: __replay.scene.groups.map(group => group.matrixWorld.toArray()),
+    target: __replay.stage.controls.target.toArray(),
+    camera: __replay.stage.camera.position.toArray(),
+  }));
+};
 const summaryText=page=>page.locator('.replay-summary').innerText();
 // The robot's on-screen size across its run: every rendered vertex (one in five) projected through the camera at 13
 // recorded times. Returns the smallest share of the 3D view's height it spans and whether it ever leaves the view.

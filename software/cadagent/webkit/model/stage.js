@@ -122,6 +122,7 @@ function pushMaterial(out, material, seen) {
 }
 function pushGeometry(out, geometry) {
   out.push(geometry.id, geometry.index, geometry.index ? geometry.index.version : -1, geometry.drawRange.start, geometry.drawRange.count, geometry.groups.length);
+  for (const group of geometry.groups) out.push(group.start, group.count, group.materialIndex);
   for (const name in geometry.attributes) {
     const attribute = geometry.attributes[name];
     out.push(name, attribute, attribute.isInterleavedBufferAttribute ? attribute.data.version : attribute.version, attribute.count);
@@ -196,7 +197,8 @@ export function createStage(container, opts = {}) {
   const accent = opts.accent ?? 0x00f0ff;
 
   const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: !!opts.screenshots });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  let deviceScale = window.devicePixelRatio;
+  renderer.setPixelRatio(Math.min(deviceScale, 2));
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -401,6 +403,12 @@ export function createStage(container, opts = {}) {
     controls.update();
     diagnostics.frames++;
     if ((onScreen ?? inViewport(renderer.domElement)) && !document.hidden) {
+      // Moving a window between monitors can change DPR without resizing its CSS box.
+      if (deviceScale !== window.devicePixelRatio) {
+        deviceScale = window.devicePixelRatio;
+        const scale = Math.min(deviceScale, 2);
+        if (renderer.getPixelRatio() !== scale) renderer.setPixelRatio(scale);
+      }
       pending = sceneSignature(renderer, scene, camera, pending);
       if (needsDraw || stageDiagnostics.alwaysDraw || !sameSignature(pending, drawn)) {
         needsDraw = false;

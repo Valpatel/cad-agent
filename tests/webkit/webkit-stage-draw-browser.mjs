@@ -14,19 +14,17 @@
 import assert from 'node:assert/strict';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { chromium, webkit } from '../site/npm-context.mjs';
+import { cube } from './assembly/box-fixture.mjs';
 import { serveWebkit } from './webkit-server.mjs';
 
 // Two boxes as binary STL parts, side by side, so explode, visibility and colour each show.
-function boxSTL([x0, y0, z0], [sx, sy, sz]) {
-  const v = [[0, 0, 0], [1, 0, 0], [1, 1, 0], [0, 1, 0], [0, 0, 1], [1, 0, 1], [1, 1, 1], [0, 1, 1]].map(([a, b, c]) => [x0 + a * sx, y0 + b * sy, z0 + c * sz]);
-  const faces = [[0, 2, 1], [0, 3, 2], [4, 5, 6], [4, 6, 7], [0, 1, 5], [0, 5, 4], [1, 2, 6], [1, 6, 5], [2, 3, 7], [2, 7, 6], [3, 0, 4], [3, 4, 7]];
-  const bytes = new Uint8Array(84 + faces.length * 50), view = new DataView(bytes.buffer);
-  view.setUint32(80, faces.length, true);
-  faces.forEach((face, i) => face.forEach((corner, j) => v[corner].forEach((n, k) => view.setFloat32(84 + i * 50 + 12 + j * 12 + k * 4, n, true))));
-  return bytes;
-}
-const parts = [['left box', [0, 0, 0], [20, 30, 40], '#4bb9cc'], ['right box', [30, 0, 0], [20, 20, 25], '#d98b3a']];
-const manifest = { parts: parts.map(([name, at, size, color]) => ({ name, file: `${name.replace(' ', '-')}.stl`, color, bounds_mm: [...at, ...at.map((n, i) => n + size[i])] })) };
+const parts = [
+  { name: 'left box', color: '#4bb9cc', ...cube([0, 0, 0], [20, 30, 40]) },
+  { name: 'right box', color: '#d98b3a', ...cube([30, 0, 0], [20, 20, 25]) },
+];
+const manifest = { parts: parts.map(({ name, color, bounds }) => ({
+  name, color, file: `${name.replace(' ', '-')}.stl`, bounds_mm: bounds,
+})) };
 const bare = `<!doctype html><html lang="en"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Stage draws</title>
 <style>body{margin:0;background:#0b1018}#stage{width:100vw;height:70vh}#below{height:300vh}</style>
 <script type="importmap">{"imports":{"three":"/kit/vendor/three/three.module.min.js","three/addons/":"/kit/vendor/three/addons/"}}</script>
@@ -53,9 +51,9 @@ const routes = new Map([
   ['/bare.html', (_, res) => res.writeHead(200, { 'Content-Type': 'text/html' }).end(bare)],
   ['/red.png', (_, res) => setTimeout(() => res.writeHead(200, { 'Content-Type': 'image/png' }).end(png), 300)],
   ['/m/view.json', (_, res) => res.end(JSON.stringify(manifest))],
-  ['/block.stl', (_, res) => res.end(boxSTL([0, 0, 0], [10, 20, 30]))],
-  ['/wide.stl', (_, res) => res.end(boxSTL([0, 0, 0], [60, 10, 15]))],
-  ...parts.map(([name, at, size]) => [`/m/${name.replace(' ', '-')}.stl`, (_, res) => res.end(boxSTL(at, size))]),
+  ['/block.stl', (_, res) => res.end(cube([0, 0, 0], [10, 20, 30]).bytes)],
+  ['/wide.stl', (_, res) => res.end(cube([0, 0, 0], [60, 10, 15]).bytes)],
+  ...parts.map(({ name, bytes }) => [`/m/${name.replace(' ', '-')}.stl`, (_, res) => res.end(bytes)]),
 ]);
 const site = await serveWebkit(routes);
 const engine = process.env.PLAYWRIGHT_BROWSER === 'webkit' ? webkit : chromium;
@@ -149,7 +147,28 @@ try {
     await check(page, V, 'resize', () => page.setViewportSize({ width: 700, height: 560 }));
     if (engine === chromium) {
       const cdp = await context.newCDPSession(page);
-      await check(page, V, 'device pixel ratio', () => cdp.send('Emulation.setDeviceMetricsOverride', { width: 700, height: 560, deviceScaleFactor: 2, mobile: false }), { changes: false });
+      const css = await onStage(page, V, stage => {
+        const canvas = stage.renderer.domElement;
+        return { width: canvas.clientWidth, height: canvas.clientHeight };
+      });
+      // Playwright restores the context's device metrics when it takes a screenshot. Observe both
+      // density transitions before the final screenshot, so that the change back to 1 is a real one.
+      await check(page, V, 'device pixel ratio round trip', async () => {
+        for (const scale of [2, 1]) {
+          const previous = await onStage(page, V, stage => stage.renderer.info.render.frame);
+          await cdp.send('Emulation.setDeviceMetricsOverride', {
+            width: 700, height: 560, deviceScaleFactor: scale, mobile: false,
+          });
+          await page.waitForFunction(({ css, scale, previous }) => {
+            const renderer = __viewer.stage.renderer, canvas = renderer.domElement;
+            return devicePixelRatio === scale && renderer.getPixelRatio() === scale &&
+              canvas.clientWidth === css.width && canvas.clientHeight === css.height &&
+              canvas.width === css.width * scale && canvas.height === css.height * scale &&
+              renderer.info.render.frame > previous;
+          }, { css, scale, previous });
+          cases.push({ devicePixelRatio: scale });
+        }
+      }, { changes: false }); // The round trip returns to the original CSS-sized picture.
       await cdp.send('Emulation.clearDeviceMetricsOverride'); await cdp.detach();
     }
     await check(page, V, 'reset', () => page.evaluate(() => __viewer.reset()));
@@ -235,6 +254,24 @@ try {
       for (let i = 0; i < positions.count; i++) positions.setX(i, positions.getX(i) * 1.5);
       box.geometry.setAttribute('position', positions);
     }));
+    // Change the values of existing groups without changing the number of groups or the materials.
+    await page.evaluate(() => {
+      box.material = [box.material, new THREE.MeshBasicMaterial({ color: '#ff2255' })];
+      for (const group of box.geometry.groups) group.materialIndex = 0;
+    });
+    await check(page, S, 'reassign geometry groups', () => page.evaluate(() => {
+      for (const group of box.geometry.groups) group.materialIndex = 1;
+    }));
+    await check(page, S, 'shorten existing geometry groups', () => page.evaluate(() => {
+      for (const group of box.geometry.groups) group.count = 3;
+    }));
+    await check(page, S, 'move existing geometry groups', () => page.evaluate(() => {
+      for (const group of box.geometry.groups) group.start += 3;
+    }));
+    await page.evaluate(() => {
+      box.material[1].dispose();
+      box.material = box.material[0];
+    });
     // Off screen: a change draws nothing; coming back draws once, and shows the change.
     await settle(page, S);
     await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));

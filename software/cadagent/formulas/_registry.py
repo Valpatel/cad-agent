@@ -51,6 +51,8 @@ SOURCES: Dict[str, str] = {
                    "Buildings, edition 2016-07-07",
     "hamrock-brewe": "B. J. Hamrock and D. E. Brewe, Simplified solution for stresses and deformations, Journal of "
                      "Lubrication Technology, Transactions of the ASME 105 (1983) 171-177",
+    "boston-gear-spur": "Boston Gear (Altra Industrial Motion), Engineering Information: Spur Gears, catalogue "
+                        "P-1930-BG, edition 2019-04",
 }
 
 

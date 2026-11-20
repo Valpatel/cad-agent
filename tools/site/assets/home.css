@@ -38,9 +38,9 @@
    After the 700px rule, which it refines. */
 @media(max-width:480px){.learning-hero{gap:12px}.learning-hero .pixel-title{margin:10px 0}.learning-hero .intro{font-size:15px;line-height:1.5}.learning-hero .actions{row-gap:10px;column-gap:12px}.learning-hero .actions .button{padding-top:13px;padding-bottom:13px}}
 /* The pixel-art workshop stays as brand: a slim cropped band between the hero and the examples, its robots in frame.
-   The crop keeps one aspect ratio, so the same part of the scene shows at every width. */
+   The artwork spans the content width. Bound its height on very wide or shallow viewports. */
 .learning-band{margin:0 0 6px}
-.learning-band picture{display:block;aspect-ratio:1536/310;max-height:300px;overflow:hidden;border-radius:calc(14px*var(--round));background:var(--image)}
+.learning-band picture{display:block;width:100%;aspect-ratio:1536/310;max-height:min(900px,85vh);overflow:hidden;border-radius:calc(14px*var(--round));background:var(--image)}
 .learning-band img{display:block;width:100%;height:100%;object-fit:cover;object-position:50% 70%;image-rendering:pixelated}
 .learning-band figcaption{font-size:12px;line-height:1.6;color:var(--muted);margin-top:8px;max-width:850px}
 @media(max-width:600px){.learning-band picture{aspect-ratio:956/380;border-radius:10px}}

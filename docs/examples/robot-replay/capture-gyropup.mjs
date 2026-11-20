@@ -58,8 +58,8 @@ try{
     await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
     await document.fonts.ready;
   },{size:SIZE});
-  const seek=t=>page.evaluate(async t=>{__replay.playback.pause();__replay.playback.seek(t);const frame=__replay.stage.renderer.info.render.frame;
-    await new Promise(resolve=>{const wait=()=>__replay.stage.renderer.info.render.frame>frame+1?resolve():requestAnimationFrame(wait);wait();});},t);
+  const seek=t=>page.evaluate(async t=>{__replay.playback.pause();__replay.playback.seek(t);const frame=__replay.stage.frames;
+    await new Promise(resolve=>{const wait=()=>__replay.stage.frames>frame+1?resolve():requestAnimationFrame(wait);wait();});},t);
   await seek(START);await page.evaluate(k=>{__replay.fit();const {camera,controls}=__replay.stage;camera.position.lerp(controls.target,1-k.closer);camera.position.y-=k.lower;controls.target.y-=k.lower;controls.update?.();},{closer:CLOSER,lower:LOWER});await seek(START);
   const viewport=page.locator('.cad-viewer-viewport'),times=[];
   for(let i=0;START+i/FPS<=END+1e-9;i++)times.push(+(START+i/FPS).toFixed(6));

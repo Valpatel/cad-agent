@@ -252,7 +252,7 @@
   {
    "id": "stage",
    "title": "Shared 3D stage pixels in a browser",
-   "paths": ["software/cadagent/webkit/**", "tests/webkit/webkit-stage-browser.mjs", "tools/site/package.json", "tools/site/package-lock.json", "tests/webkit/webkit-server.mjs", "tests/site/npm-context.mjs"],
+   "paths": ["software/cadagent/webkit/**", "tests/webkit/webkit-stage-browser.mjs", "tests/webkit/webkit-stage-draw-browser.mjs", "tests/webkit/assembly/box-fixture.mjs", "tools/site/package.json", "tools/site/package-lock.json", "tests/webkit/webkit-server.mjs", "tests/site/npm-context.mjs"],
    "exclude": ["software/cadagent/webkit/scada/**"],
    "command": "npm run test:stage",
    "cwd": "tools/site",

@@ -4,7 +4,8 @@ The first half runs the gate's core (``run_motion``) on a box world with no CAD 
 for sampling, chains, intended contacts, witnesses and density, in core CI. The second half runs
 ``motion_gate`` on CadQuery solids (skipped without the ``cad`` extra): the plan's flap that clears
 at 0 deg and hits a wall, a stop contact at the range end, the pair cache, containment per pose, and a
-parallelogram lift whose upper arm and cradle follow its lower arm (driven joints, issue #581).
+parallelogram lift whose upper arm and cradle follow its lower arm (driven joints, issue #581). The last section is
+repeating poses (#724): a shaft and a lugged wheel measured from their solids, and the wheels that only look symmetric.
 """
 
 from __future__ import annotations
@@ -14,7 +15,9 @@ import math
 import pytest
 
 from cadagent.review.gates import Relation
-from cadagent.review.gates.motion import (IDENTITY, Closure, Follow, Joint, World, box_distance, moved_box,
+from cadagent.review.gates.cache import matrix_key
+from cadagent.review.gates.motion import (ASSUMPTIONS, IDENTITY, SYMMETRY_ASSUMPTION, Closure, Follow, Joint, World,
+                                          _phase, _repeating_orders, box_distance, moved_box,
                                           resolve_follows, rotation, run_motion, translation)
 
 
@@ -834,3 +837,854 @@ def test_containment_keeps_other_groups_follower_home_offset():
                     containment_options={"support": "off"})
     checks = [c for c in v["checks"] if c["id"].startswith("containment@C/") and c["id"].endswith(":inside")]
     assert len(checks) == 2 and all(c["status"] == "pass" for c in checks), checks
+
+
+# ----------------------------------------------------------------------------- repeating poses (#724)
+#
+# A body that a turn about its joint axis leaves unchanged. First the rule on a recording world with no CAD kernel:
+# which joints may be shortened, how parts of one body combine, and that the kernel is asked at the equivalent pose.
+# Then real solids: a shaft, a lugged wheel, and the wheels that only look symmetric, where a collision at one angle
+# of the turn must still be found.
+
+class Sym:
+    def __init__(self, order, reason="", refused=False, failed=False, **measured):
+        self.order, self.reason, self.refused, self.failed = order, reason, refused, failed
+        self.measured = measured
+
+    def to_dict(self):
+        return {"order": self.order, "difference_mm3": 0.0002, "boundary_mm": 0.0003, "limit_mm3": 0.0005,
+                "limit_mm": 0.001, "points": 40, **self.measured}
+
+
+class TurnWorld(World):
+    """Every part is a box of half-width ``size`` around the origin (so every pair passes the broad phase while
+    the boxes still meet; ``boxes`` places a part elsewhere) and every pair is apart. ``orders`` is each part's
+    symmetry (absent: none); ``posed`` records the transform each relate was asked at per body, and ``asked``
+    the parts whose symmetry was measured."""
+
+    def __init__(self, names, orders=None, bodies=None, size=5, boxes=None):
+        self.names = list(names)
+        self.size, self.boxes = size, dict(boxes or {})
+        self.orders = dict(orders or {})
+        self.bodies = dict(bodies or {})
+        self.posed = {}
+        self.asked = []
+        self.orders_asked = {}
+        self.relations = 0
+
+    def body(self, key):
+        return self.bodies.get(key, key)
+
+    def box(self, key):
+        return self.boxes.get(key, (-self.size,) * 3 + (self.size,) * 3)
+
+    def relate(self, mats, a, b):
+        self.relations += 1
+        for body, m in mats.items():
+            self.posed.setdefault(body, set()).add(matrix_key(m))
+        return Relation(a, b, "apart", gap_mm=0.5, witness={"point_a": [0, 0, 0], "point_b": [0, 0, 0.5]})
+
+    def symmetry(self, key, origin, direction, orders=None):
+        self.asked.append(key)
+        self.orders_asked[key] = orders
+        found = self.orders.get(key)
+        return found if isinstance(found, Sym) else None if found is None else Sym(found)
+
+
+def turn(moving, fixed, rng=(-180, 180), origin=(0, 0, 0), **kw):
+    return {"kind": "revolute", "moving": moving, "fixed": fixed, "axis": {"origin": origin, "direction": (0, 0, 1)},
+            "range": list(rng) if rng is not None else None, "unit": "deg", **kw}
+
+
+def group(v, gid):
+    return next(g for g in v["groups"] if g["id"] == gid)
+
+
+def test_a_phase_is_the_angle_inside_the_first_period():
+    assert _phase(75.0, 30.0) == 15.0 and _phase(-30.0, 30.0) == 0.0 and _phase(-10.0, 30.0) == 20.0
+    assert _phase(360 / 7 * 3, 360 / 7) == 0.0 and _phase(29.9999999999, 30.0) == 0.0     # float noise at a wrap
+    assert _phase(123.4, None) == 0.0                                                    # any angle is the same pose
+
+
+def test_a_body_of_revolution_is_queried_at_one_pose_and_the_verdict_says_so():
+    w = TurnWorld(["frame", "shaft"], {"shaft": 0})
+    v = run_motion(w, {"J": turn("shaft", "frame")}, max_step_deg=2)
+    assert v["pass"] and v["stats"]["poses"] == 181 and v["stats"]["symmetric_joints"] == 1
+    assert w.posed["shaft"] == {matrix_key(IDENTITY)}            # the pose the model was built in
+    row = group(v, "J")["density"][0]
+    assert row["samples"] == 181 and row["range"] == [-180, 180]                # the sampling itself is unchanged
+    assert row["symmetry"]["kind"] == "revolution" and row["symmetry"]["distinct_poses"] == 1
+    assert row["symmetry"]["parts"]["shaft"]["difference_mm3"] == 0.0002
+    msg = next(c for c in v["checks"] if c["id"] == "motion:J")["message"]
+    assert "measures as a body of revolution about the joint axis" in msg
+    # the differences are stated with what they were held to and how many points were compared, and for a body of
+    # revolution as the maximum over the three test angles
+    assert ("the largest difference over the three test angles is 0.0002 mm3 of volume (limit 0.0005) and 0.0003 mm "
+            "at 40 boundary points (limit 0.001)") in msg
+    assert "its 181 samples are one pose, queried once" in msg
+
+
+def test_an_n_fold_body_is_queried_over_one_period():
+    w = TurnWorld(["frame", "wheel"], {"wheel": 12})
+    v = run_motion(w, {"J": turn("wheel", "frame")}, max_step_deg=2)
+    want = {matrix_key(rotation((0, 0, 0), (0, 0, 1), a)) for a in range(0, 30, 2)}
+    assert w.posed["wheel"] == want                                             # 0, 2 .. 28 deg: one period
+    sym = group(v, "J")["density"][0]["symmetry"]
+    assert sym["kind"] == "periodic" and sym["period_deg"] == 30 and sym["distinct_poses"] == 15
+    msg = next(c for c in v["checks"] if c["id"] == "motion:J")["message"]
+    assert "repeating every 30 deg about the joint axis" in msg
+    assert "its 181 samples are 15 distinct poses of one period, each queried once" in msg
+
+
+def test_samples_that_do_not_divide_the_period_keep_every_distinct_phase():
+    """13 samples over a turn are 30 deg apart: on a 7-fold part no two of them are the same pose but the two ends,
+    so nothing is dropped. The shortcut only merges poses that are the same."""
+    w = TurnWorld(["frame", "wheel"], {"wheel": 7})
+    v = run_motion(w, {"J": turn("wheel", "frame")}, default_samples=13)
+    assert len(w.posed["wheel"]) == 12 == group(v, "J")["density"][0]["symmetry"]["distinct_poses"]
+
+
+def test_every_part_of_the_body_has_to_repeat_and_the_period_is_the_one_they_share():
+    def distinct(orders):
+        w = TurnWorld(["frame", "hub", "rim"], orders, {"hub": "rotor", "rim": "rotor"})
+        v = run_motion(w, {"J": turn("hub", "frame")}, max_step_deg=5)
+        return len(w.posed["rotor"]), v["stats"]["symmetric_joints"], group(v, "J")["density"][0].get("symmetry")
+
+    assert distinct({"hub": 0, "rim": 0})[0] == 1
+    n, joints, sym = distinct({"hub": 0, "rim": 12})                 # a round hub in a 12-lug rim: 30 deg
+    assert n == 6 and sym["period_deg"] == 30
+    n, joints, sym = distinct({"hub": 8, "rim": 12})                 # 45 and 30 deg repeat together every 90
+    assert n == 18 and sym["period_deg"] == 90 and sym["order"] == 4
+    assert distinct({"hub": 3, "rim": 2}) == (72, 0, None)           # 120 and 180 deg share only the full turn
+    assert distinct({"hub": 0}) == (72, 0, None)                     # the rim is not symmetric: every sample
+    assert distinct({}) == (72, 0, None)
+
+
+def test_parts_that_repeat_at_different_turns_are_reported_each_at_its_own_period():
+    """A hub repeating every 45 deg in a rim repeating every 30 deg repeat together every 90 deg. Each was
+    measured after one step of its own period and held to its own limit: the message says so per part, and the
+    joint's row carries the tightest limits, not the loosest."""
+    hub = Sym(8, difference_mm3=0.00005, boundary_mm=0.0001, limit_mm3=0.0000625, limit_mm=0.000125, points=30)
+    rim = Sym(12, difference_mm3=0.00001, boundary_mm=0.00002, limit_mm3=0.0000417, limit_mm=0.0000833, points=50)
+    w = TurnWorld(["frame", "hub", "rim"], {"hub": hub, "rim": rim}, {"hub": "rotor", "rim": "rotor"})
+    v = run_motion(w, {"J": turn("hub", "frame")}, max_step_deg=5)
+    sym = group(v, "J")["density"][0]["symmetry"]
+    assert sym["period_deg"] == 90 and sym["points"] == 80
+    assert (sym["difference_mm3"], sym["boundary_mm"]) == (0.00005, 0.0001)             # the largest differences
+    assert (sym["limit_mm3"], sym["limit_mm"]) == (0.0000417, 0.0000833)                # the tightest limits
+    assert sym["parts"]["hub"]["limit_mm"] == 0.000125 and sym["parts"]["rim"]["limit_mm"] == 0.0000833
+    msg = next(c for c in v["checks"] if c["id"] == "motion:J")["message"]
+    assert ("J's moving body (2 parts) measures as repeating every 90 deg about the joint axis (each part's "
+            "difference after one step of its own period, against its own limits: "
+            "hub, every 45 deg: 5e-05 mm3 of volume (limit 6.25e-05) and 0.0001 mm at 30 boundary points "
+            "(limit 0.000125); "
+            "rim, every 30 deg: 1e-05 mm3 of volume (limit 4.17e-05) and 2e-05 mm at 50 boundary points "
+            "(limit 8.33e-05)): its 73 samples are 18 distinct poses of one period, each queried once") in msg
+    assert "after one such step" not in msg
+    # a round hub in the same rim: the hub's numbers are those of the three test angles
+    w = TurnWorld(["frame", "hub", "rim"], {"hub": 0, "rim": rim}, {"hub": "rotor", "rim": "rotor"})
+    msg = next(c for c in run_motion(w, {"J": turn("hub", "frame")}, max_step_deg=5)["checks"]
+               if c["id"] == "motion:J")["message"]
+    assert "repeating every 30 deg" in msg
+    assert "hub, a body of revolution, over the three test angles: 0.0002 mm3" in msg
+    # more parts than the message names: the rest are in the evidence
+    names = ["frame"] + [f"p{i}" for i in range(6)]
+    w = TurnWorld(names, {n: (4 if n == "p0" else 12) for n in names[1:]}, {n: "rotor" for n in names[1:]})
+    msg = next(c for c in run_motion(w, {"J": turn("p0", "frame")}, max_step_deg=5)["checks"]
+               if c["id"] == "motion:J")["message"]
+    assert "p3, every 30 deg" in msg and "p4," not in msg and "; 2 more in the evidence)" in msg
+
+
+def test_a_joint_that_carries_another_is_never_shortened_and_its_leaf_is():
+    """The turret carries the arm joint: turning the turret moves the arm's axis, so every turret sample is its own
+    pose even if the turret part were round. The arm's own round tool is still one pose per turret pose."""
+    w = TurnWorld(["frame", "turret", "tool"], {"turret": 0, "tool": 0}, size=40)
+    joints = {"T": turn("turret", "frame", (0, 90)), "A": turn("tool", "turret", (0, 90), origin=(20, 0, 0))}
+    v = run_motion(w, joints, default_samples=4)
+    assert "turret" not in w.asked and "tool" in w.asked
+    assert v["stats"]["poses"] == 16 and v["stats"]["symmetric_joints"] == 1
+    assert len(w.posed["turret"]) == 4 and len(w.posed["tool"]) == 4       # the tool: carried by T, not turned by A
+    rows = {r["joint"]: r for r in group(v, "T+A")["density"]}
+    assert "symmetry" not in rows["T"] and rows["A"]["symmetry"]["distinct_poses"] == 1
+
+
+def test_a_follower_and_its_driver_are_each_judged_on_their_own_body():
+    joints = {"A": turn("gear_a", "frame", (0, 360)),
+              "B": turn("gear_b", "frame", None, origin=(30, 0, 0), follows=("A", -2.0))}
+    w = TurnWorld(["frame", "gear_a", "gear_b"], {"gear_b": 0})          # the driven gear is round, the driver is not
+    v = run_motion(w, joints, default_samples=13)
+    assert len(w.posed["gear_a"]) == 12 and len(w.posed["gear_b"]) == 1
+    assert v["stats"]["symmetric_joints"] == 1
+    drives = group(v, "A+B")["density"][0]["drives"][0]
+    assert drives["joint"] == "B" and drives["symmetry"]["distinct_poses"] == 1 and drives["symmetry"]["samples"] == 13
+    assert "B's moving body (1 part) measures as a body of revolution" in \
+        next(c for c in v["checks"] if c["id"] == "motion:A+B")["message"]
+    w = TurnWorld(["frame", "gear_a", "gear_b"], {"gear_a": 0})          # the other way round
+    run_motion(w, joints, default_samples=13)
+    assert len(w.posed["gear_a"]) == 1 and len(w.posed["gear_b"]) == 6    # B still takes -2 x A's real value
+
+
+def test_a_closes_point_on_a_round_body_is_still_measured_at_the_sampled_angle():
+    """The kernel is asked about the round crank at one pose, but a point it carries still moves with the turn."""
+    w = TurnWorld(["frame", "crank"], {"crank": 0})
+    joints = {"J": turn("crank", "frame", (0, 90), closes={"parts": ("crank", "frame"), "at": (10, 0, 0)})}
+    v = run_motion(w, joints, default_samples=4)
+    closure = v["closures"][0]
+    assert closure["status"] == "fail" and closure["max_apart_mm"] == pytest.approx(10 * math.sqrt(2), abs=1e-5)
+    assert closure["worst_pose"] == "J=90deg" and len(w.posed["crank"]) == 1
+
+
+def test_sliders_and_cylindrical_joints_are_not_measured_and_symmetry_can_be_turned_off():
+    w = TurnWorld(["frame", "rod", "plunger"], {"rod": 0, "plunger": 0})
+    joints = {"S": {"kind": "slider", "moving": "rod", "fixed": "frame", "axis": ((0, 0, 0), (0, 0, 1)),
+                    "range": [0, 5], "unit": "mm"},
+              "C": {"kind": "cylindrical", "moving": "plunger", "fixed": "frame", "axis": ((0, 0, 0), (0, 0, 1)),
+                    "range_deg": [0, 90], "range_mm": [0, 5]}}
+    v = run_motion(w, joints, default_samples=3)
+    assert w.asked == [] and v["stats"]["symmetric_joints"] == 0 and v["limits"]["symmetry"] is True
+    assert v["assumptions"] == ASSUMPTIONS               # nothing was queried once, so the verdict does not say so
+    w = TurnWorld(["frame", "shaft"], {"shaft": 0})
+    v = run_motion(w, {"J": turn("shaft", "frame")}, default_samples=13, symmetry=False)
+    assert w.asked == [] and len(w.posed["shaft"]) == 12 and v["limits"]["symmetry"] is False
+    assert v["assumptions"] == ASSUMPTIONS
+    on = run_motion(TurnWorld(["frame", "shaft"], {"shaft": 0}), {"J": turn("shaft", "frame")}, default_samples=13)
+    assert [a for a in on["assumptions"] if a not in ASSUMPTIONS] == [SYMMETRY_ASSUMPTION]
+    assert "touch_mm/20" in SYMMETRY_ASSUMPTION and "overlap_mm3/4" in SYMMETRY_ASSUMPTION
+    assert "symmetry" not in group(v, "J")["density"][0]
+    assert "revolution" not in next(c for c in v["checks"] if c["id"] == "motion:J")["message"]
+
+
+def test_nothing_is_measured_where_it_could_save_nothing():
+    """Two samples, or a range shorter than every period that could repeat: there is no pose to drop."""
+    w = TurnWorld(["frame", "shaft"], {"shaft": 0})
+    v = run_motion(w, {"J": turn("shaft", "frame", (0, 90))}, default_samples=2)
+    assert w.asked == [] and v["stats"]["symmetric_joints"] == 0
+    # 0..20 deg in 5 deg steps: two samples are 5, 10, 15 or 20 deg apart, so only a period that divides one of
+    # those (an order that is a multiple of 18 or 24) puts two of them in the same place; a 12-lug wheel cannot
+    w = TurnWorld(["frame", "wheel"], {"wheel": 12})
+    v = run_motion(w, {"J": turn("wheel", "frame", (0, 20))}, default_samples=5)
+    assert w.orders_asked["wheel"] == [n for n in range(2, 361) if n % 18 == 0 or n % 24 == 0]
+    assert v["stats"]["symmetric_joints"] == 0
+    assert len(w.posed["wheel"]) == 5 and "symmetry" not in group(v, "J")["density"][0]
+    # a full turn in 30 deg steps: every order whose period divides a multiple of 30 deg within the turn
+    assert _repeating_orders([0, 30, 60, 90], 0)[:4] == [4, 6, 8, 12] and 5 not in _repeating_orders([0, 30, 60, 90], 0)
+    assert _repeating_orders([0, 30], 0) is None and _repeating_orders([0, 0.7, 1.4], 0) == []
+
+
+def test_a_body_is_measured_only_where_a_pair_comes_near_at_angles_that_could_be_one_pose():
+    """The broad phase runs first. A wheel nothing comes near has no kernel query to save, so it is not measured
+    (a 120-lug wheel alone took 14 to 22 s to measure for nothing). Near at one angle only: nothing to save
+    either. Near at four angles of a turn: measured, for the periods that put two of those four in one place."""
+    far = {"frame": (100, 100, 100, 110, 110, 110)}
+    w = TurnWorld(["frame", "wheel"], {"wheel": 12}, boxes=far)
+    v = run_motion(w, {"J": turn("wheel", "frame")}, max_step_deg=2)
+    assert w.asked == [] and w.relations == 0
+    assert v["stats"]["pair_queries"] == 0 and v["stats"]["symmetric_joints"] == 0 and v["assumptions"] == ASSUMPTIONS
+    assert "symmetry" not in group(v, "J")["density"][0]
+    # the wheel's box is 5 mm either side of the axis when square to it and 7.07 mm at 45 deg; the frame starts
+    # 7.5 mm out, so the boxes come within near_mm (1 mm) at 45, 135, 225 and 315 deg only
+    beside = {"frame": (7.5, -5, -5, 10, 5, 5)}
+    w = TurnWorld(["frame", "wheel"], {"wheel": 12}, boxes=beside)
+    v = run_motion(w, {"J": turn("wheel", "frame", (0, 90))}, default_samples=3)        # 0, 45, 90 deg
+    assert v["stats"]["pair_queries"] == 1 and w.asked == [] and w.relations == 1
+    w = TurnWorld(["frame", "wheel"], {"wheel": 12}, boxes=beside)
+    v = run_motion(w, {"J": turn("wheel", "frame", (0, 360))}, default_samples=9)       # every 45 deg
+    assert v["stats"]["pair_queries"] == 4 and w.asked == ["wheel"]
+    assert w.orders_asked["wheel"] == _repeating_orders([45, 135, 225, 315], 0)         # not those of all 9 samples
+    assert 3 in _repeating_orders([0, 45, 90, 135, 180, 225, 270, 315, 360], 0) and 3 not in w.orders_asked["wheel"]
+    assert w.posed["wheel"] == {matrix_key(rotation((0, 0, 0), (0, 0, 1), 15))}       # four queries, one pose
+    assert group(v, "J")["density"][0]["symmetry"]["distinct_poses"] == 2          # of the 9 samples: 0 and 15 deg
+
+
+def test_poses_that_differ_in_another_joint_too_are_not_one_pose_to_save():
+    """A fork steers about z and carries a lug that spins about the same line, so the lug stands at steer + spin.
+    The frame is at 60 deg: the lug is near it at (steer, spin) = (0, 60), (30, 30) and (60, 0). Three spin
+    angles 30 deg apart, but each at another steering angle, so no two are one pose of the pair whatever the
+    lug's period: nothing could be saved and the lug is not measured."""
+    boxes = {"lug": (9, -1, -1, 11, 1, 1), "fork": (-1, -1, 100, 1, 1, 101),
+             "frame": (4, 7.66, -1, 6, 9.66, 1)}                                # around (10 cos 60, 10 sin 60)
+    joints = {"steer": turn("fork", "frame", (0, 60)), "spin": turn("lug", "fork", (0, 60))}
+    w = TurnWorld(["frame", "fork", "lug"], {"lug": 12}, boxes=boxes)
+    v = run_motion(w, joints, default_samples=3)
+    assert v["stats"]["poses"] == 9 and v["stats"]["pair_queries"] == 3 == w.relations
+    assert w.asked == [] and v["stats"]["symmetric_joints"] == 0
+    # the control: a frame all round the axis is near the lug at every angle, so at each steering angle three
+    # poses differ in the spin angle only: measured
+    boxes["frame"] = (-12, -12, -1, 12, 12, 1)
+    w = TurnWorld(["frame", "fork", "lug"], {"lug": 12}, boxes=boxes)
+    v = run_motion(w, joints, default_samples=3)
+    assert w.asked == ["lug"] and v["stats"]["pair_queries"] == 9
+    assert len(w.posed["lug"]) == 3                 # one pose per steering angle: its spin samples are one period apart
+
+
+def test_the_first_part_that_does_not_repeat_ends_the_measuring():
+    w = TurnWorld(["frame", "hub", "rim", "tyre"], {"rim": 12, "tyre": 0},
+                  {"hub": "rotor", "rim": "rotor", "tyre": "rotor"})
+    run_motion(w, {"J": turn("hub", "frame")}, max_step_deg=5)
+    assert w.asked == ["hub"]                        # hub has no symmetry: rim and tyre are not measured
+
+
+def test_a_part_that_was_refused_is_named_with_the_reason():
+    class Refusing(TurnWorld):
+        def symmetry(self, key, origin, direction, orders=None):
+            self.asked.append(key)
+            return Sym(1, "more than 20000 boundary points to compare (the work limit)", refused=True)
+
+    w = Refusing(["frame", "wheel"])
+    v = run_motion(w, {"J": turn("wheel", "frame")}, default_samples=13)
+    assert v["stats"]["symmetric_joints"] == 0 and v["stats"]["symmetry_not_measured"] == 1
+    assert len(w.posed["wheel"]) == 12                                          # every distinct sample is queried
+    msg = next(c for c in v["checks"] if c["id"] == "motion:J")["message"]
+    assert ("J is queried at every sample: the symmetry of wheel was not measured (more than 20000 boundary points "
+            "to compare (the work limit))") in msg
+    assert group(v, "J")["density"][0]["symmetry_not_measured"]["part"] == "wheel"
+
+
+def test_samples_that_are_all_one_pose_of_a_period_read_as_one_pose():
+    w = TurnWorld(["frame", "wheel"], {"wheel": 12})
+    v = run_motion(w, {"J": turn("wheel", "frame", (0, 60))}, default_samples=3)        # 0, 30, 60 deg
+    msg = next(c for c in v["checks"] if c["id"] == "motion:J")["message"]
+    assert "its 3 samples are one pose, queried once" in msg and "distinct pose" not in msg
+    assert "the difference after one such step is 0.0002 mm3 of volume (limit 0.0005)" in msg
+
+
+def test_the_gates_command_accepts_the_option():
+    from cadagent.review.gates.run import options_allowed
+    assert "symmetry" in options_allowed("motion")
+
+
+# ----------------------------------------------------------------------------- repeating poses on CadQuery solids
+
+SHAFT_AXIS = ((-50, 0, 0), (0, 0, 1))
+WHEEL_AXIS = ((50, 0, 0), (0, 0, 1))
+
+
+def _shaft(cq):
+    """A shaft with a gear drawn as a chamfered disc: a body of revolution about z."""
+    body = cq.Workplane("XY").circle(5.0).extrude(40).translate((0, 0, -10))
+    return body.union(cq.Workplane("XY").circle(25).extrude(8).translate((0, 0, 2)).edges().chamfer(1))
+
+
+def _wheel(cq, lugs=12, missing=0, long_lug=False):
+    """A hub with ``lugs`` places for a lug reaching 26 mm; ``missing`` leaves the last ones empty, and ``long_lug``
+    makes the first reach 29 mm."""
+    body = cq.Workplane("XY").circle(5.0).extrude(40).translate((0, 0, -10))
+    body = body.union(cq.Workplane("XY").circle(20).extrude(8).translate((0, 0, 2)))
+    for i in range(lugs - missing):
+        length = 11 if long_lug and i == 0 else 8
+        lug = cq.Workplane("XY").box(length, 4, 8, centered=(False, True, False)).translate((18, 0, 2))
+        body = body.union(lug.rotate((0, 0, 0), (0, 0, 1), 360 / lugs * i))
+    return body
+
+
+def _machine(cq, wheel, peg_radius=None, peg_deg=200.0):
+    """A plate with two bores, the shaft and the wheel in them, a guard 0.5 mm from each, and an optional peg
+    ``peg_radius`` from the wheel axis at ``peg_deg``."""
+    from cadagent.review.gates import Assembly
+    plate = cq.Workplane("XY").box(200, 80, 10, centered=(True, True, False)).translate((0, 0, -10))
+    for x in (-50, 50):
+        plate = plate.cut(cq.Workplane("XY").circle(5.0).extrude(10).translate((x, 0, -10)))
+    asm = Assembly()
+    asm.add("housing", plate.val())
+    asm.add("shaft", _shaft(cq).translate((-50, 0, 0)).val())
+    asm.add("wheel", wheel.translate((50, 0, 0)).val())
+    guard = cq.Workplane("XY").box(4, 30, 12, centered=(False, True, False))
+    asm.add("guard", guard.translate((-50 - 25.5 - 4, 0, 0)).val())
+    asm.add("fender", guard.translate((50 + 29.5, 0, 0)).val())
+    if peg_radius is not None:
+        t = math.radians(peg_deg)
+        asm.add("peg", cq.Workplane("XY").circle(1).extrude(12)
+                .translate((50 + peg_radius * math.cos(t), peg_radius * math.sin(t), 0)).val())
+    joints = {"shaft": {"kind": "revolute", "moving": "shaft", "fixed": "housing", "axis": SHAFT_AXIS,
+                        "range": [-180, 180], "unit": "deg"},
+              "wheel": {"kind": "revolute", "moving": "wheel", "fixed": "housing", "axis": WHEEL_AXIS,
+                        "range": [-180, 180], "unit": "deg"}}
+    return asm, joints
+
+
+def test_symmetry_is_measured_from_the_solid():
+    cq = _cq()
+    from cadagent.review.gates import Tolerances, symmetry
+    from cadagent.review.gates.symmetry import Symmetry, rotational_symmetry
+    z = ((0, 0, 0), (0, 0, 1))
+    shaft = rotational_symmetry(_shaft(cq).val(), *z)
+    assert shaft.order == 0 and shaft.period_deg == 0 and len(shaft.angles_deg) == 3
+    # held under what the gate reports (touch_mm 0.01, overlap_mm3 0.001): each solid to touch_mm / 20 and
+    # overlap_mm3 / 4, so that two symmetric bodies in one pair stay within touch_mm / 10 and overlap_mm3 / 2
+    # together; tighter again for a body of revolution
+    assert symmetry.boundary_limit_mm(Tolerances()) == pytest.approx(0.0005)
+    assert symmetry.volume_limit_mm3(Tolerances()) == pytest.approx(0.00025)
+    assert shaft.difference_mm3 <= shaft.limit_mm3 == pytest.approx(0.00025 * 0.04)
+    assert shaft.boundary_mm <= shaft.limit_mm == pytest.approx(0.0005 * 0.04)
+    wheel = rotational_symmetry(_wheel(cq).val(), *z)
+    assert wheel.order == 12 and wheel.period_deg == 30 and wheel.points > 1000      # points inside every face too
+    # one 30 deg step is held to the limits over the 6 steps a pose can be from a queried one
+    assert wheel.limit_mm3 == pytest.approx(0.00025 / 6, rel=1e-5)
+    assert wheel.limit_mm == pytest.approx(0.0005 / 6, rel=1e-5)
+    assert rotational_symmetry(_wheel(cq, lugs=7).val(), *z).order == 7
+    assert rotational_symmetry(cq.Workplane("XY").box(10, 12, 5).val(), *z).order == 2
+    assert rotational_symmetry(cq.Solid.makeSphere(10), *z).order == 0
+    # the same solids about another axis, or moved off the axis, are not symmetric
+    assert rotational_symmetry(_shaft(cq).val(), (0, 0, 0), (1, 0, 0)) is None
+    assert rotational_symmetry(_shaft(cq).translate((0.5, 0, 0)).val(), *z) is None
+    assert Symmetry.from_dict(wheel.to_dict()) == wheel
+
+
+def test_solids_that_only_look_symmetric_are_not():
+    cq = _cq()
+    from cadagent.review.gates.symmetry import rotational_symmetry
+    z = ((0, 0, 0), (0, 0, 1))
+    disc = cq.Workplane("XY").circle(20).extrude(5)
+    assert rotational_symmetry(_wheel(cq, missing=1).val(), *z) is None                  # one lug missing
+    assert rotational_symmetry(_wheel(cq, long_lug=True).val(), *z) is None              # one lug 3 mm longer
+    hole = disc.cut(cq.Workplane("XY").circle(1).extrude(5).translate((10, 0, 0)))
+    assert rotational_symmetry(hole.val(), *z) is None                                   # an off-axis hole
+    keyway = cq.Workplane("XY").circle(5).extrude(30).cut(
+        cq.Workplane("XY").box(2, 2, 30, centered=(True, True, False)).translate((5, 0, 0)))
+    assert rotational_symmetry(keyway.val(), *z) is None                                 # a shaft with a keyway
+    # two opposite flats: a half turn, not a body of revolution (its corners stay on the cylinder at any angle)
+    flats = cq.Workplane("XY").circle(5).extrude(30).cut(cq.Workplane("XY").box(12, 2, 30, centered=(True, True, False)))
+    assert rotational_symmetry(flats.val(), *z).order == 2
+    # two opposite nicks of 0.05 mm: 0.000125 mm3 each, less than the gate calls an overlap, balanced on the axis.
+    # It is a half turn and not a body of revolution
+    nick = cq.Workplane("XY").box(0.05, 0.05, 0.05)
+    nicked = disc.cut(nick.translate((20, 0, 2.5))).cut(nick.translate((-20, 0, 2.5)))
+    assert rotational_symmetry(nicked.val(), *z).order == 2
+
+
+def test_a_shaft_is_queried_once_and_a_lugged_wheel_over_one_period():
+    cq = _cq()
+    from cadagent.review.gates.motion import motion_gate
+    asm, joints = _machine(cq, _wheel(cq))
+    full = motion_gate(asm, joints, max_step_deg=10, symmetry=False)
+    v = motion_gate(asm, joints, max_step_deg=10)
+    assert full["pass"] and v["pass"], v["findings"]
+    assert full["stats"]["poses"] == v["stats"]["poses"] == 74 and v["stats"]["symmetric_joints"] == 2
+    # each joint's body meets two parts (its bore and its guard). Without the shortcut every pose that passes the
+    # broad phase is a kernel query (36 distinct poses per joint); with it, one pose of the shaft and three
+    # (0, 10, 20 deg) of the wheel
+    assert full["stats"]["pair_queries"] == v["stats"]["pair_queries"]            # the broad phase is unchanged
+    assert full["stats"]["kernel_queries"] >= 130 and full["stats"]["symmetry_queries"] == 0
+    assert v["stats"]["kernel_queries"] == 2 * 1 + 2 * 3 and v["stats"]["symmetry_queries"] == 2
+    shaft, wheel = (group(v, g)["density"][0]["symmetry"] for g in ("shaft", "wheel"))
+    assert shaft["kind"] == "revolution" and shaft["distinct_poses"] == 1 and shaft["samples"] == 37
+    assert wheel["period_deg"] == 30 and wheel["distinct_poses"] == 3
+    assert group(v, "wheel")["min_clearance_mm"] == pytest.approx(group(full, "wheel")["min_clearance_mm"], abs=1e-6)
+    msg = next(c for c in v["checks"] if c["id"] == "motion:shaft")["message"]
+    assert "measures as a body of revolution about the joint axis" in msg and "queried once" in msg
+    assert any("measure as unchanged by a rotation" in a for a in v["assumptions"])
+
+
+def test_a_collision_at_one_angle_of_the_turn_is_found_on_a_wheel_that_only_looks_symmetric():
+    """Eleven lugs reach 26 mm and one reaches 29 mm. A peg 28 mm out at 200 deg clears the eleven and is hit only
+    when the long lug comes round to it. Sampling one 30 deg period would never turn the long lug that far: the
+    wheel must not be taken for a 12-fold part."""
+    cq = _cq()
+    from cadagent.review.gates.motion import motion_gate
+    asm, joints = _machine(cq, _wheel(cq, long_lug=True), peg_radius=28.0)
+    v = motion_gate(asm, {"wheel": joints["wheel"]}, max_step_deg=10)
+    assert not v["pass"] and v["stats"]["symmetric_joints"] == 0
+    assert "symmetry" not in group(v, "wheel")["density"][0]
+    hit = next(c for c in v["checks"] if c["id"] == "collision:peg|wheel")
+    assert hit["evidence"]["first_pose"] == "wheel=-160deg" and hit["evidence"]["colliding_poses"] == 1
+    assert v["stats"]["kernel_queries"] >= 36                    # every distinct pose of the turn was queried
+    # the control: with twelve equal lugs the same peg is clear at every angle, and one period is enough to say so
+    asm, joints = _machine(cq, _wheel(cq), peg_radius=28.0)
+    ok = motion_gate(asm, {"wheel": joints["wheel"]}, max_step_deg=10)
+    assert ok["pass"] and group(ok, "wheel")["density"][0]["symmetry"]["distinct_poses"] == 3
+
+
+def test_a_missing_lug_is_sampled_over_the_full_turn():
+    cq = _cq()
+    from cadagent.review.gates.motion import motion_gate
+    asm, joints = _machine(cq, _wheel(cq, missing=1))
+    v = motion_gate(asm, {"wheel": joints["wheel"]}, max_step_deg=10)
+    assert v["pass"] and v["stats"]["symmetric_joints"] == 0 and v["stats"]["kernel_queries"] >= 60
+    density = group(v, "wheel")["density"][0]
+    assert density["symmetry_full_sampling"]["part"] == "wheel"
+    assert density["symmetry_full_sampling"]["reason"]
+    message = next(c for c in v["checks"] if c["id"] == "motion:wheel")["message"]
+    assert "repeating" not in message
+    assert "wheel is queried at every sample" in message
+
+
+def test_a_collision_on_a_symmetric_wheel_reads_the_same_with_and_without_the_shortcut():
+    """A peg in the lugs' path is hit by every lug. The shortcut asks the kernel about one period only, and every
+    sampled pose still gets its answer: the same poses collide and the same one is reported first."""
+    cq = _cq()
+    from cadagent.review.gates.motion import motion_gate
+    asm, joints = _machine(cq, _wheel(cq), peg_radius=25.0)
+    joints = {"wheel": joints["wheel"]}
+    full = motion_gate(asm, joints, max_step_deg=10, symmetry=False)
+    v = motion_gate(asm, joints, max_step_deg=10)
+    a, b = (next(c for c in x["checks"] if c["id"] == "collision:peg|wheel")["evidence"] for x in (full, v))
+    assert a["colliding_poses"] == b["colliding_poses"] > 3
+    assert a["first_pose"] == b["first_pose"] and a["worst_pose"] == b["worst_pose"]
+    assert a["overlap_mm3"] == pytest.approx(b["overlap_mm3"], abs=1e-3)
+    assert a["onset"]["clear"] == pytest.approx(b["onset"]["clear"]) and a["onset"]["hit"] == pytest.approx(b["onset"]["hit"])
+    assert v["stats"]["kernel_queries"] < full["stats"]["kernel_queries"] / 4
+
+
+def test_the_measurement_is_kept_in_the_pair_cache(tmp_path):
+    cq = _cq()
+    from cadagent.review.gates import PairCache
+    from cadagent.review.gates.motion import motion_gate
+    asm, joints = _machine(cq, _wheel(cq))
+    cold = motion_gate(asm, joints, cache=PairCache(tmp_path))
+    warm = motion_gate(asm, joints, cache=PairCache(tmp_path))
+    assert cold["stats"]["symmetry_queries"] == 2 and warm["stats"]["symmetry_queries"] == 0
+    assert warm["stats"]["kernel_queries"] == 0 and warm["stats"]["symmetric_joints"] == 2
+    strip = lambda x: {k: x[k] for k in ("checks", "groups", "pass")}          # noqa: E731
+    assert strip(cold) == strip(warm)
+
+
+# ----------------------------------------------------------------------------- the shortcut never hides a finding
+#
+# The property: a run with the shortcut and a run with symmetry=False give the same checks. Each case below is a
+# body that is almost symmetric, with a neighbour placed where only the asymmetry reaches it. The first three were
+# reproduced against an earlier version of the test (PR #726), whose tolerances were looser than the gate's own.
+
+def _same_checks(asm, joints, **kw):
+    """Run the gate with and without the shortcut and require the same checks: every id and status, and every
+    message but the ``motion:<group>`` summary's (which names the symmetry that was used)."""
+    from cadagent.review.gates.motion import motion_gate
+    v, full = motion_gate(asm, joints, **kw), motion_gate(asm, joints, symmetry=False, **kw)
+
+    def rows(x):
+        return [(c["id"], c["status"], None if c["id"].startswith("motion:") else c["message"]) for c in x["checks"]]
+
+    assert rows(v) == rows(full)
+    return v, full
+
+
+def _on_frame(cq, moving, neighbour, name, frame_z):
+    from cadagent.review.gates import Assembly
+    asm = Assembly()
+    asm.add("frame", cq.Workplane("XY").box(10, 10, 2).translate((0, 0, frame_z)).val())
+    asm.add(name, neighbour, body="frame")
+    asm.add("rotor", moving)
+    return asm
+
+
+def _lugged(cq, extra=0.0):
+    """An 80 mm wheel with twelve 2 x 3 mm lugs to a tip circle of 83 mm; the lug at 150 deg is ``extra`` longer."""
+    w = cq.Workplane("XY").cylinder(30, 80)
+    for i in range(12):
+        length = 4 + (extra if i == 5 else 0)
+        lug = cq.Workplane("XY").box(length, 2, 3).translate((79 + length / 2, 0, 0))
+        w = w.union(lug.rotate((0, 0, 0), (0, 0, 1), i * 30))
+    return w.val()
+
+
+@pytest.mark.parametrize("radius, finding", [(0.25, "collision:block|rotor"), (0.15, "contact:block|rotor")])
+def test_a_smooth_bump_with_no_edge_in_view_is_not_taken_for_a_shaft(radius, finding):
+    """A sphere of 0.25 mm sunk into a 20 mm cylinder until its seam is buried: no vertex and no edge of the bump
+    is outside the cylinder, and its volume (0.013 mm3) is 13 times what the gate calls an overlap. A block 0.1 mm
+    from the cylinder is hit by the bump alone. With 0.15 mm the bump only touches it (a contact warning)."""
+    cq = _cq()
+    from cadagent.review.gates.symmetry import measure_symmetry
+    part = cq.Workplane("XY").cylinder(20, 20).union(cq.Workplane("XY").sphere(radius).translate((-19.98, 0, 0))).val()
+    found = measure_symmetry(part, (0, 0, 0), (0, 0, 1))
+    assert found.order == 1 and not found.refused            # measured, and not symmetric: the bump's face is sampled
+    block = cq.Workplane("XY").box(6, 6, 6).translate((0, 20 + 0.1 + 3, 0)).val()
+    asm = _on_frame(cq, part, block, "block", -12.5)
+    joints = {"J": turn("rotor", "frame", (-100, -70))}       # the bump passes the block at -90 deg
+    v, full = _same_checks(asm, joints, max_step_deg=0.5)
+    assert v["stats"]["symmetric_joints"] == 0 and any(c["id"] == finding for c in v["checks"])
+    assert v["pass"] is (finding.startswith("contact"))
+
+
+def test_smooth_features_on_a_large_part_are_seen():
+    cq = _cq()
+    from cadagent.review.gates.symmetry import measure_symmetry
+    z = ((0, 0, 0), (0, 0, 1))
+    cyl = cq.Workplane("XY").cylinder(100, 60)
+    assert measure_symmetry(cyl.val(), *z).order == 0
+    dome = cyl.union(cq.Workplane("XY").sphere(0.75).translate((30, 0, 50 - 0.02)))      # on the end face, off axis
+    dimple = cyl.cut(cq.Workplane("XY").sphere(0.75).translate((60.02, 0, 0)))            # 0.73 mm deep in the side
+    for part in (dome, dimple):
+        assert measure_symmetry(part.val(), *z).order == 1
+
+
+@pytest.mark.parametrize("extra, gap, finding", [(0.009, 0.004, "collision:pad|rotor"),
+                                                 (0.002, 0.011, "contact:pad|rotor")])
+def test_a_lug_longer_by_less_than_touch_mm_is_not_taken_for_a_repeat(extra, gap, finding):
+    """One lug of twelve is 0.009 mm longer, less than ``touch_mm``, and a pad sits 0.004 mm from the tip circle:
+    the eleven touch it and the long one cuts into it. At 0.002 mm longer and 0.011 mm away, the eleven are apart
+    and the long one touches. Either way the wheel is not a 12-fold part to the gate."""
+    cq = _cq()
+    from cadagent.review.gates.symmetry import measure_symmetry
+    wheel = _lugged(cq, extra)
+    assert measure_symmetry(_lugged(cq), (0, 0, 0), (0, 0, 1)).order == 12          # the control
+    assert measure_symmetry(wheel, (0, 0, 0), (0, 0, 1)).order == 1
+    pad = cq.Workplane("XY").box(4, 6, 6).translate((83 + gap + 2, 0, 0)).val()
+    asm = _on_frame(cq, wheel, pad, "pad", -16.5)
+    joints = {"J": turn("rotor", "frame", (-180, -120), intended_contacts=[["rotor", "pad"]] if gap < 0.01 else [])}
+    v, full = _same_checks(asm, joints, max_step_deg=5)        # the long lug meets the pad at -150 deg
+    assert v["stats"]["symmetric_joints"] == 0 and any(c["id"] == finding for c in v["checks"])
+
+
+def test_a_joint_axis_a_few_microns_off_the_shaft_is_not_a_fine_repeat():
+    """A 1 mm shaft whose joint axis is 0.008 mm off its own: after one degree it has moved 0.00014 mm and looks
+    the same; after a half turn it is 0.016 mm away and in the block 0.012 mm from it. One step is held to the
+    limit divided by the steps the drift adds up over, so no order is accepted."""
+    cq = _cq()
+    from cadagent.review.gates.symmetry import measure_symmetry
+    shaft = cq.Workplane("XY").cylinder(5, 1).val()
+    assert measure_symmetry(shaft, (0, 0, 0), (0, 0, 1)).order == 0
+    for offset in (0.008, 0.002, 0.0005):
+        assert measure_symmetry(shaft, (offset, 0, 0), (0, 0, 1)).order == 1
+    block = cq.Workplane("XY").box(2, 2, 4).translate((1 + 0.012 + 1, 0, 0)).val()
+    asm = _on_frame(cq, shaft, block, "block", -3.5)
+    joints = {"J": turn("rotor", "frame", origin=(0.008, 0, 0))}
+    v, full = _same_checks(asm, joints, max_step_deg=10)
+    assert not v["pass"] and v["stats"]["symmetric_joints"] == 0
+    assert any(c["id"] == "collision:block|rotor" for c in v["checks"])
+
+
+def test_a_collision_on_a_leaf_joint_under_a_carrying_joint_reads_the_same():
+    """A fork steers about z and carries a 12-lug wheel spinning about y. A post stands in the lugs' path at some
+    steering angles. The wheel is the leaf: it is queried over one period at each steering angle, and the same
+    poses collide as when every sample is queried."""
+    cq = _cq()
+    from cadagent.review.gates import Assembly
+    w = cq.Workplane("XY").cylinder(6, 10)
+    for i in range(12):
+        w = w.union(cq.Workplane("XY").box(4, 2, 6).translate((11, 0, 0)).rotate((0, 0, 0), (0, 0, 1), i * 30))
+    asm = Assembly()
+    asm.add("frame", cq.Workplane("XY").box(10, 10, 2).translate((0, 0, -20)).val())
+    asm.add("post", cq.Workplane("XY").box(2, 2, 30).translate((42.5, 0, 0)).val(), body="frame")
+    asm.add("fork", cq.Workplane("XY").box(40, 3, 3).translate((15, 8, 0)).val())
+    asm.add("wheel", w.rotate((0, 0, 0), (1, 0, 0), 90).translate((30, 0, 0)).val())
+    joints = {"steer": turn("fork", "frame", (-30, 30)),
+              "spin": {"kind": "revolute", "moving": "wheel", "fixed": "fork", "range": [-180, 180], "unit": "deg",
+                       "axis": {"origin": (30, 0, 0), "direction": (0, 1, 0)}}}
+    v, full = _same_checks(asm, joints, samples={"steer": 3}, max_step_deg=15)
+    assert not v["pass"] and v["stats"]["symmetric_joints"] == 1
+    a, b = (next(c for c in x["checks"] if c["id"] == "collision:post|wheel")["evidence"] for x in (v, full))
+    assert a["colliding_poses"] == b["colliding_poses"] > 0 and a["first_pose"] == b["first_pose"]
+    assert a["worst_pose"] == b["worst_pose"] and a["overlap_mm3"] == pytest.approx(b["overlap_mm3"], abs=1e-3)
+    assert v["stats"]["kernel_queries"] < full["stats"]["kernel_queries"] / 3
+
+
+def test_the_three_test_angles_show_a_fixed_share_of_any_lobed_difference():
+    """A difference with m lobes shows ``|sin(m * angle / 2)|`` of its largest value at one angle. The limits of a
+    body of revolution are multiplied by the least share the best of the three angles shows."""
+    from cadagent.review.gates.symmetry import _GENERIC_SHARE, GENERIC_DEG
+    share = min(max(abs(math.sin(math.radians(m * a / 2))) for a in GENERIC_DEG) for m in range(1, 20001))
+    assert _GENERIC_SHARE <= share < 0.05
+
+
+def test_solids_that_cannot_be_measured_closely_enough_are_refused_with_the_reason(monkeypatch):
+    cq = _cq()
+    from cadagent.review.gates import symmetry
+    from cadagent.review.gates.motion import motion_gate
+    z = ((0, 0, 0), (0, 0, 1))
+    # a spline turned about the axis is a body of revolution, but a spline face can hide a feature between points
+    vase = cq.Workplane("XZ").spline([(5, 0), (7, 5), (5, 10)]).lineTo(3, 10).lineTo(3, 0).close() \
+        .revolve(360, (0, 0, 0), (0, 1, 0)).val()
+    found = symmetry.measure_symmetry(vase, *z)
+    assert found.order == 1 and found.refused and not found.failed and "free-form face" in found.reason
+    assert symmetry.rotational_symmetry(vase, *z) is None
+    # a 50 mm ball: the kernel's own error estimate for its volume is larger than the volume limit
+    ball = symmetry.measure_symmetry(cq.Workplane("XY").sphere(50).val(), *z)
+    assert ball.order == 1 and ball.refused and "integration error estimate" in ball.reason
+    # the work limit, and the verdict saying so
+    monkeypatch.setattr(symmetry, "MAX_POINTS", 200)
+    capped = symmetry.measure_symmetry(_wheel(cq).val(), *z)
+    assert capped.order == 1 and capped.refused and "more than 200 boundary points" in capped.reason
+    asm, joints = _machine(cq, _wheel(cq))
+    v = motion_gate(asm, {"wheel": joints["wheel"]}, max_step_deg=30)
+    assert v["stats"]["symmetric_joints"] == 0 and v["stats"]["symmetry_not_measured"] == 1
+    assert "the symmetry of wheel was not measured (more than 200 boundary points" in \
+        next(c for c in v["checks"] if c["id"] == "motion:wheel")["message"]
+
+
+def test_a_kernel_failure_is_not_kept_and_the_cache_follows_the_relation_version(tmp_path, monkeypatch):
+    cq = _cq()
+    from cadagent.review.gates import PairCache, relations, symmetry
+    from cadagent.review.gates.motion import motion_gate
+    asm, joints = _machine(cq, _wheel(cq))
+    joints = {"shaft": joints["shaft"]}
+
+    def broken(*a, **k):
+        raise RuntimeError("no volume today")
+
+    with monkeypatch.context() as m:
+        m.setattr(symmetry, "_volume", broken)
+        failed = motion_gate(asm, joints, max_step_deg=30, cache=PairCache(tmp_path))
+    assert failed["stats"]["symmetric_joints"] == 0 and failed["stats"]["symmetry_queries"] == 1
+    row = group(failed, "shaft")["density"][0]["symmetry_not_measured"]
+    assert "the kernel failed while measuring: RuntimeError: no volume today" in row["reason"]
+    assert row["retried"] == "on the next run"
+    again = motion_gate(asm, joints, max_step_deg=30, cache=PairCache(tmp_path))       # measured again, and kept
+    assert again["stats"]["symmetry_queries"] == 1 and again["stats"]["symmetric_joints"] == 1
+    assert motion_gate(asm, joints, max_step_deg=30, cache=PairCache(tmp_path))["stats"]["symmetry_queries"] == 0
+    monkeypatch.setattr(relations, "RELATIONS_VERSION", relations.RELATIONS_VERSION + "-next")
+    assert motion_gate(asm, joints, max_step_deg=30, cache=PairCache(tmp_path))["stats"]["symmetry_queries"] == 1
+
+
+# ----------------------------------------------------------------------------- second review of PR #726
+
+def _bar(cq, extra=0.0, side=0.7):
+    """A 20 mm bar of square section ``side`` across the axis, unchanged by a half turn; ``extra`` lengthens its
+    +x end."""
+    return cq.Workplane("XY").box(20 + extra, side, side).translate((extra / 2, 0, 0)).val()
+
+
+def test_each_solid_is_held_to_half_of_what_a_pair_may_differ_by():
+    """The boundary limit and the volume limit each decide on their own. A 0.3 mm bar with one end 0.0009 mm
+    longer differs by 0.00008 mm3, far under the volume limit: the boundary limit (0.0005 mm) refuses it. A 1 mm
+    bar with one end 0.0004 mm longer is inside the boundary limit and differs by 0.0004 mm3: the volume limit
+    (0.00025 mm3) refuses it."""
+    cq = _cq()
+    from cadagent.review.gates.symmetry import measure_symmetry
+    z = ((0, 0, 0), (0, 0, 1))
+    order = lambda extra, side: measure_symmetry(_bar(cq, extra, side), *z, orders=[2]).order       # noqa: E731
+    assert order(0.0009, 0.3) == 1 and order(0.0004, 0.3) == 2
+    assert order(0.0004, 1.0) == 1 and order(0.0002, 1.0) == 2
+
+
+@pytest.mark.parametrize("extra, symmetric, passes", [(0.0009, 0, False), (0.0004, 2, True)])
+def test_two_symmetric_bodies_in_one_pair_stay_inside_the_band_together(extra, symmetric, passes):
+    """Two bars tip to tip, each on its own joint, each with one end ``extra`` longer; the short ends are
+    0.0115 mm apart at home and the long ends meet after a half turn of both. What each body's measurement
+    ignores adds up in the pair (case 13b of the second review, on 0.3 mm bars so that the boundary limit
+    decides and not the volume). At 0.0009 mm each (under ``touch_mm / 10``, over ``touch_mm / 20``) the long ends
+    are 0.0097 mm apart, a contact: taking both bars for half-turn parts hid it (the shortcut passed and full
+    sampling failed). Each solid is held to ``touch_mm / 20``, so those bars are not symmetric. At 0.0004 mm each
+    they are, and the two together move the gap by 0.0008 mm, inside ``touch_mm / 10``."""
+    cq = _cq()
+    from cadagent.review.gates import Assembly
+    from cadagent.review.gates.symmetry import measure_symmetry
+    gap = 0.0115
+    assert measure_symmetry(_bar(cq, extra, 0.3), (0, 0, 0), (0, 0, 1), orders=[2]).order == (2 if symmetric else 1)
+    asm = Assembly()
+    asm.add("frame", cq.Workplane("XY").box(10, 10, 4).translate((0, 0, -200)).val())
+    asm.add("b1", _bar(cq, extra, 0.3))
+    asm.add("b2", _bar(cq, extra, 0.3).mirror("YZ").moved(cq.Location(cq.Vector(-20 - gap, 0, 0))))
+    joints = {"J1": turn("b1", "frame", (0, 360)), "J2": turn("b2", "frame", (0, 360), origin=(-20 - gap, 0, 0))}
+    v, full = _same_checks(asm, joints, combine=[["J1", "J2"]], samples={"J1": 5, "J2": 5}, strict_contacts=True)
+    assert v["stats"]["symmetric_joints"] == symmetric and v["pass"] is passes
+    assert any(c["id"] == "contact:b1|b2" for c in full["checks"]) is not passes
+
+
+def test_a_wheel_nothing_comes_near_is_not_measured():
+    """The symmetry measurement runs after the broad phase, and only for a body with kernel queries to save."""
+    cq = _cq()
+    from cadagent.review.gates import Assembly
+    from cadagent.review.gates.motion import motion_gate
+    asm = Assembly()
+    asm.add("frame", cq.Workplane("XY").box(10, 10, 4).translate((0, 0, -200)).val())
+    asm.add("wheel", _wheel(cq).val())
+    joints = {"J": turn("wheel", "frame", (0, 360))}
+    v, full = motion_gate(asm, joints, max_step_deg=2), motion_gate(asm, joints, max_step_deg=2, symmetry=False)
+    assert v["stats"]["pair_queries"] == 0 and v["stats"]["symmetry_queries"] == 0
+    assert v["stats"]["symmetry_seconds"] == 0 and v["stats"]["symmetric_joints"] == 0
+    assert v["checks"] == full["checks"] and v["assumptions"] == full["assumptions"] == ASSUMPTIONS
+    # a pad beside one lug's path: now there are queries to save, and the wheel is measured
+    asm.add("pad", cq.Workplane("XY").box(2, 2, 2).translate((27.5, 0, 6)).val(), body="frame")
+    v = motion_gate(asm, joints, max_step_deg=2)
+    assert v["stats"]["symmetry_queries"] == 1 and v["stats"]["symmetric_joints"] == 1
+    assert SYMMETRY_ASSUMPTION in v["assumptions"]
+
+
+def test_a_cached_measurement_is_for_its_axis_and_its_tolerances(tmp_path):
+    """The cache key carries the axis and the tolerances. A bar measured as a half-turn part about its own axis
+    is not one about an axis 0.004 mm away (its ends are 0.008 mm elsewhere after the turn), and is one again
+    under tolerances loose enough to ignore that."""
+    cq = _cq()
+    from cadagent.review.gates import Assembly, PairCache, Tolerances
+    from cadagent.review.gates.motion import motion_gate
+    asm = Assembly()
+    asm.add("frame", cq.Workplane("XY").box(10, 10, 4).translate((0, 0, -200)).val())
+    asm.add("pad", cq.Workplane("XY").box(2, 2, 2).translate((-10 - 0.8 - 1, 0, 0)).val(), body="frame")
+    asm.add("bar", _bar(cq))
+
+    def run(origin=(0, 0, 0), tol=Tolerances()):
+        stats = motion_gate(asm, {"J": turn("bar", "frame", (0, 360), origin=origin)}, samples={"J": 5},
+                            cache=PairCache(tmp_path), tol=tol)["stats"]
+        return stats["symmetry_queries"], stats["symmetric_joints"]
+
+    loose = Tolerances(touch_mm=0.5, overlap_mm3=1.0)
+    assert run() == (1, 1) and run() == (0, 1)                      # measured, then read from the cache
+    assert run(origin=(0.004, 0, 0)) == (1, 0)                      # another axis: measured again, not symmetric
+    assert run(origin=(0.004, 0, 0), tol=loose) == (1, 1)           # other tolerances: measured again, symmetric
+    assert run(origin=(0.004, 0, 0)) == (0, 0) and run() == (0, 1)  # each answer is kept under its own key
+    assert run(origin=(0.004, 0, 0), tol=loose) == (0, 1)
+
+
+def test_an_accepted_period_was_also_compared_at_the_turn_nearest_a_half_turn(monkeypatch):
+    """One step of 360/N is held to the limit over N/2, which already bounds the drift at any multiple for the
+    points compared; no solid is known on which the half-turn comparison decides (see the module docstring of
+    ``symmetry``). So this checks that the comparison is made, not that it changes an answer."""
+    cq = _cq()
+    import cadagent.review.gates.motion as motion
+    from cadagent.review.gates.symmetry import measure_symmetry
+    real, turned = motion.rotation, []
+
+    def spy(origin, direction, degrees):
+        turned.append(round(abs(degrees), 6))
+        return real(origin, direction, degrees)
+
+    monkeypatch.setattr(motion, "rotation", spy)
+    z = ((0, 0, 0), (0, 0, 1))
+    assert measure_symmetry(_wheel(cq).val(), *z, orders=[12]).order == 12
+    assert {30.0, 180.0} <= set(turned)                  # one step, and six of them
+    turned.clear()
+    assert measure_symmetry(_wheel(cq, lugs=7).val(), *z, orders=[7]).order == 7
+    assert {round(360 / 7, 6), round(360 / 7 * 3, 6)} <= set(turned)
+    turned.clear()
+    assert measure_symmetry(cq.Workplane("XY").box(10, 12, 5).val(), *z, orders=[2]).order == 2
+    assert 180.0 in turned and 360.0 not in turned       # order 2: the step is the half turn, compared once
+
+
+@pytest.mark.parametrize("wrong", ["common", "cut"])
+def test_each_volume_test_refuses_alone_when_the_other_boolean_is_wrong(monkeypatch, wrong):
+    """The volume outside the turned copy is measured twice: the cut, and the solid less the common. On a solid
+    both booleans get right the two are the same number, so no real part makes one decide without the other.
+    They are two tests for the case of a boolean that returns a wrong result: here one of them reports no
+    difference whatever it is given, and the other reports a 1 mm3 one. The period is not accepted."""
+    cq = _cq()
+    from cadagent.review.gates import symmetry
+    real = symmetry._boolean
+    wheel = _wheel(cq).val()
+    z = ((0, 0, 0), (0, 0, 1))
+    assert symmetry.measure_symmetry(wheel, *z, orders=[12]).order == 12
+    chip = cq.Workplane("XY").box(1, 1, 1).translate((0, 0, 5)).val().wrapped        # 1 mm3 inside the hub
+
+    def boolean(kind, a, b):
+        if kind == wrong:                       # "nothing lies outside the copy" / "everything is shared"
+            return real("cut", a, a) if kind == "cut" else a
+        return chip if kind == "cut" else real("cut", a, chip)          # 1 mm3 outside / 1 mm3 not shared
+
+    monkeypatch.setattr(symmetry, "_boolean", boolean)
+    found = symmetry.measure_symmetry(wheel, *z, orders=[12])
+    assert found.order == 1 and not found.refused
+
+
+def test_half_turn_checks_real_pose_at_the_collision_threshold():
+    from cadagent.review.gates import Assembly
+    cq = _cq()
+    asm = Assembly()
+    asm.add("bar", _bar(cq, extra=0.0004, side=0.3))
+    asm.add("pad", cq.Workplane("XY").box(2, 2, 2).translate((-11 + 0.0109, 0, 0)).val())
+    joints = {"J": turn("bar", "pad", (0, 360))}
+    result, full = _same_checks(asm, joints, samples={"J": 5})
+    assert result["stats"]["symmetric_joints"] == 1
+    assert not full["pass"] and any(c["id"] == "collision:bar|pad" for c in result["checks"])
+    message = next(row["message"] for row in result["checks"] if row["id"] == "motion:J")
+    assert "near-threshold pairs rechecked at their sampled poses" in message
+
+
+def test_body_of_revolution_reports_threshold_rechecks_at_sampled_poses():
+    from cadagent.review.gates import Assembly
+
+    cq = _cq()
+    asm = Assembly()
+    asm.add("shaft", cq.Workplane("XY").cylinder(1, 3).val())
+    asm.add("pad", cq.Workplane("XY").box(2, 2, 2).translate((4.01, 0, 0)).val())
+    result, _ = _same_checks(asm, {"J": turn("shaft", "pad", (0, 360))}, samples={"J": 5}, refine_steps=0)
+    message = next(row["message"] for row in result["checks"] if row["id"] == "motion:J")
+    assert result["stats"]["kernel_queries"] > 1
+    assert "5 samples are one pose, with near-threshold pairs rechecked at their sampled poses" in message

@@ -67,6 +67,10 @@ def test_the_module_is_in_metres_and_every_function_that_takes_one_says_so():
     assert m == pytest.approx(2.1167e-3, rel=1e-4)
     assert fx.spur_tooth_bending(2.0, m, 18, 0.012)["stress"] == pytest.approx(13.38e6, rel=1e-3)
     assert fx.spur_tooth_bending(2.0, m * 1000, 18, 0.012)["stress"] == pytest.approx(13.38, rel=1e-3)   # the trap
+    for bending, extra in ((fx.spur_tooth_bending, {}), (fx.bevel_tooth_bending, {"mate_teeth": 36})):
+        metric = bending(torque=2.0, module=m, teeth=18, face_width=0.012, **extra)
+        mixed = bending(torque=2.0, module=m * 1000, teeth=18, face_width=12, **extra)
+        assert metric["stress"] / mixed["stress"] == pytest.approx(1e9)
     takes_a_module = [n for n in GEAR_FORMULAS if "module" in fx.REGISTRY[n].units]
     assert len(takes_a_module) == 13
     for name in takes_a_module:
@@ -744,3 +748,8 @@ def test_gear_dimensions_accept_real_array_scalars():
     import numpy as np
 
     assert fx.gear_pitch_diameter(np.float32(0.002), np.int64(20)) == pytest.approx(0.04)
+
+    for dtype in (np.int8, np.uint8, np.float32):
+        with np.errstate(over="raise"):
+            assert fx.gear_min_teeth(ratio=dtype(20)) == fx.gear_min_teeth(ratio=20)
+    assert fx.lewis_form_factor(np.float16(40)) == fx.lewis_form_factor(40)

@@ -256,8 +256,8 @@ flowchart TD
 
 **The module is in metres here**, like every other length: a 2 mm module is `0.002`, and
 `module_from_diametral_pitch` returns metres (a diametral pitch of 12 gives 0.0021167). CAD geometry uses millimetres, so divide a module measured in millimetres by 1000 on the
-way from a drawn gear to these formulas. Nothing checks the magnitude, because a 2 m module is a valid input: a
-module passed in millimetres gives a stress a million times too low, megapascals read as pascals, with no error.
+way from a drawn gear to these formulas. If both module and face width are entered in millimetres, the calculated Lewis stress is too low by a factor of
+10⁶ at fixed force. At fixed torque the larger pitch radius also reduces the calculated tooth force, giving a factor of 10⁹.
 
 Angles are in radians. Teeth are standard full depth: addendum one module, dedendum 1.25 modules, no profile shift.
 A bevel gear's module, pitch diameter and cone distance are those of the large end of its teeth.

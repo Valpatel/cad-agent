@@ -9,8 +9,8 @@
 Lengths in metres, forces in newtons, torques in newton metres, stresses in pascals and angles in radians.
 
 **The module is in metres**: a 2 mm module is ``2e-3``, and ``module_from_diametral_pitch`` returns metres. CAD geometry uses millimetres.
-Divide a module in millimetres by 1000 before passing it to these formulas. Nothing checks the magnitude, because a module of 2 m is a valid input, so a module passed in millimetres
-gives a stress a million times too low (megapascals read as pascals) without an error.
+Divide a module in millimetres by 1000 before passing it to these formulas. When both module and face width are supplied in millimetres,
+the calculated Lewis stress is too low by a factor of 10^6 at fixed force, or 10^9 at fixed torque.
 
 Teeth are standard full depth without profile shift: addendum one module, dedendum 1.25 modules. Bevel gears are
 straight-toothed on shafts at 90 degrees, with the module, the pitch diameter and the cone distance all measured at
@@ -285,6 +285,7 @@ def gear_min_teeth(pressure_angle: float = PRESSURE_ANGLE, ratio: float = math.i
     k = _positive("addendum", addendum)
     if isinstance(ratio, bool) or not isinstance(ratio, Real) or math.isnan(ratio) or ratio < 1:
         raise ValueError(f"ratio is the mate's teeth over the pinion's, 1 or more (math.inf for a rack), not {ratio!r}")
+    ratio = float(ratio)
     if ratio > _RACK_RATIO:          # math.inf, or a finite ratio whose square would overflow: the rack limit
         bound = 2 * k / s2
     else:
@@ -491,7 +492,7 @@ def lewis_form_factor(teeth: float, pressure_angle: float = PRESSURE_ANGLE, tabl
     if teeth < rows[0][0]:
         raise ValueError(f"the table starts at {rows[0][0]} teeth; {teeth!r} is below it (undercut teeth are not "
                          "tabulated)")
-    x = 0.0 if math.isinf(teeth) else 1.0 / teeth
+    x = 1.0 / float(teeth)   # the rack (math.inf) has reciprocal zero
     for (n0, y0), (n1, y1) in zip(rows, rows[1:]):
         x0, x1 = 1.0 / n0, (0.0 if math.isinf(n1) else 1.0 / n1)
         if x1 <= x <= x0:
@@ -612,8 +613,7 @@ def spur_tooth_bending(torque: float, module: float, teeth: int, face_width: flo
                        table: Optional[str] = None) -> Dict[str, float]:
     """Lewis bending stress of a spur gear tooth from the torque on the gear: the force at the pitch circle, the
     tabulated form factor, and sigma = Kv Wt / (b m Y). ``module`` and ``face_width`` are in metres (a 2 mm module
-    is ``2e-3``): passed in millimetres, as used in CAD geometry, the stress
-    comes out a million times too low and nothing raises."""
+    is ``2e-3``). Entering both lengths in millimetres at fixed torque understates stress by a factor of 10^9."""
     d = gear_pitch_diameter(module, teeth)
     forces = spur_gear_forces(torque, d, pressure_angle)
     y = lewis_form_factor(teeth, pressure_angle, table)
@@ -647,8 +647,8 @@ def bevel_tooth_bending(torque: float, module: float, teeth: int, mate_teeth: in
     """Lewis bending stress of a straight bevel gear tooth from the torque on the gear, with every radius kept
     apart: the force at the large-end pitch radius, the form factor at the virtual tooth number and the cone factor
     give the stress; the forces at the mean radius are returned for the shaft and its bearings. ``module`` and
-    ``face_width`` are in metres (a 2 mm module is ``2e-3``): passed in millimetres the stress comes out a million
-    times too low and nothing raises. ``face_width_limit`` is Shigley's min(0.3 L, 10 m)."""
+    ``face_width`` are in metres (a 2 mm module is ``2e-3``). Entering both lengths in millimetres at fixed torque
+    understates stress by a factor of 10^9. ``face_width_limit`` is Shigley's min(0.3 L, 10 m)."""
     d = gear_pitch_diameter(module, teeth)
     gamma = bevel_pitch_angles(teeth, mate_teeth)["pinion"]         # this gear's own angle: atan(teeth / mate_teeth)
     cone = bevel_cone_distance(module, teeth, mate_teeth)

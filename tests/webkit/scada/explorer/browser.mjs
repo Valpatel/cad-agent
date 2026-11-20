@@ -455,6 +455,33 @@ try{
         await target.focus();const handle=await target.elementHandle();await tick();
         assert.equal(await live.evaluate(element=>document.activeElement===element,handle),true,'Keyboard focus must survive a tick');
       }
+      // A live panel stays anchored and keeps its controls while a user presses Close (#785).
+      await equipment.click();
+      const panel = viewer.locator('[data-scada-popover-open=true]');
+      await expect(panel).toBeVisible();
+      await tick();
+      const panelButtons = await panel.evaluateHandle(node => Array.from(node.querySelectorAll('button')));
+      const closeBox = await panel.locator('[data-scada-popover-close]').boundingBox();
+      await live.mouse.move(closeBox.x + closeBox.width / 2, closeBox.y + closeBox.height / 2);
+      await live.mouse.down();
+      const styleChanges = await panel.evaluateHandle(node => {
+        const records = [];
+        // Collect delivered records as well as any queued at the assertion.
+        const watchStyle = new MutationObserver(changes => records.push(...changes));
+        watchStyle.observe(node, {attributes:true, attributeFilter:['style']});
+        return {observer:watchStyle, records};
+      });
+      await tick();
+      const writes = await styleChanges.evaluate(({observer, records}) => {
+        records.push(...observer.takeRecords());
+        observer.disconnect();
+        return records.length;
+      });
+      assert.equal(writes, 0, 'A stationary quick panel must not rewrite its position on a tick');
+      assert.ok(await panel.evaluate((node, buttons) => buttons.length > 0 &&
+        buttons.every(button => node.contains(button)), panelButtons), 'A tick must preserve the pressed panel controls');
+      await live.mouse.up();
+      await expect(panel).toHaveCount(0);
       // 5. The Explorer's sound controls (#753): a tick keeps their text nodes when the text is unchanged.
       await live.locator('[data-scada-open="sound"]').click();await expect(live.locator('#industry-sound-dialog')).toBeVisible();
       const soundNodes=['[data-action="sound-enabled"]','[data-sound-label]','[data-sound-volume-label]'];

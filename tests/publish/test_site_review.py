@@ -485,7 +485,7 @@ def test_components_declared_not_drawn_are_stated_on_every_review_page(bench):
     assert gates.count('<span class="pill warn">warn</span>') >= 5 and "not in the model: flap_spring" in gates
     index = _read(bench, "review/index.html")
     assert "gates pass on the current geometry · 2 components not drawn, not seen by any gate" in index
-    assert ("<b>6 / 6</b><span>integrity gates pass · 2 components not drawn, not seen by any gate</span>"
+    assert ("<b>6 / 6</b><span>integrity gates pass · 2 components not drawn, not seen by any gate: flap_spring, vent_plug</span>"
             in _read(bench, "index.html"))
 
 

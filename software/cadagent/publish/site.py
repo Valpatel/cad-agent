@@ -337,7 +337,9 @@ def _gates_stat(exports_dir: Optional[Path], href: str = "") -> str:
         return ""
     stale = f" ({c['stale']} stale)" if c["stale"] else ""
     n = c.get("not_drawn", 0)       # a pass says nothing about a component that is declared not drawn
-    stale += f" · {n} component{'s' if n != 1 else ''} not drawn, not seen by any gate" if n else ""
+    if n:
+        names = _e(", ".join(c["not_drawn_names"]))
+        stale += f" · {n} component{'s' if n != 1 else ''} not drawn, not seen by any gate: {names}"
     inner = f'<b>{c["pass"]} / {c["total"]}</b><span>integrity gates pass{stale}</span>'
     return f'<a class="stat" href="{_e(href)}">{inner}</a>' if href else f'<div class="stat">{inner}</div>'
 

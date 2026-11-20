@@ -190,16 +190,19 @@ def note_not_drawn(data: Dict[str, Any], record: Any) -> Dict[str, Any]:
     items = [dict(i) for i in record] if isinstance(record, (list, tuple)) else not_drawn_of(record)
     if "not_drawn" in data and data["not_drawn"] != items:
         raise ValueError("components declared not drawn changed: rerun the gate before binding its verdict")
-    if not items or "not_drawn" in data:
+    if not items:
         return data
     gate = str(data.get("gate") or "")
     names = not_drawn_names(items)
     n = len(items)
     data["not_drawn"] = items
-    data["assumptions"] = list(data.get("assumptions") or []) + [
+    assumption = (
         f"{n} component{'s' if n != 1 else ''} of the design {'are' if n != 1 else 'is'} declared not drawn "
         f"({names}): this gate did not see {'them' if n != 1 else 'it'}, and its result says nothing about "
-        f"{'them' if n != 1 else 'it'} or about what {'they' if n != 1 else 'it'} would touch, block, carry or fill"]
+        f"{'them' if n != 1 else 'it'} or about what {'they' if n != 1 else 'it'} would touch, block, carry or fill")
+    assumptions = data.get("assumptions") or []
+    if assumption not in assumptions:
+        data["assumptions"] = [*assumptions, assumption]
     if gate in NOT_DRAWN_NOTE_ONLY:
         return data
     near = sorted({p for i in items for p in i["near"]})
@@ -208,10 +211,13 @@ def note_not_drawn(data: Dict[str, Any], record: Any) -> Dict[str, Any]:
                   f"{'these components' if n != 1 else 'this component'}. Draw {'them' if n != 1 else 'it'} and "
                   "remove the not_drawn declaration to clear this warning",
                   parts=near, evidence={"not_drawn": items}).to_dict()
-    data["checks"] = list(data.get("checks") or []) + [check]
-    data["findings"] = list(data.get("findings") or []) + [check]
+    for field in ("checks", "findings"):
+        rows = data.get(field) or []
+        matching = [row for row in rows if row.get("id") == check["id"]]
+        if matching != [check]:
+            data[field] = [row for row in rows if row.get("id") != check["id"]] + [check]
     counts = dict(data.get("counts") or {})
-    counts["warn"] = int(counts.get("warn", 0)) + 1
+    counts["warn"] = sum(row.get("status") == "warn" for row in data["checks"])
     data["counts"] = counts
     if data.get("status") == "pass":
         data["status"] = "warn"
@@ -347,6 +353,14 @@ def stale_reason(data: Mapping[str, Any], record: Optional[Mapping[str, Any]], *
                     "rerun cad-agent gates")
     if data.get("not_drawn", []) != declared:
         return "the verdict describes different components declared not drawn: rerun the gate"
+    if declared:
+        # A custom writer can supply the list and digest without the warning that readers rely on.
+        try:
+            annotated = note_not_drawn(dict(data), declared)
+        except (AttributeError, TypeError, ValueError):
+            return "invalid gate evidence for the components declared not drawn: rerun the gate"
+        if annotated != data:
+            return "incomplete gate evidence for the components declared not drawn: rerun the gate"
     if declarations is not None and inputs.get("declarations") != digest_of(declarations):
         return "the gate's declarations changed since this verdict"
     if options is not None and inputs.get("options") != digest_of(options):

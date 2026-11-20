@@ -687,6 +687,25 @@ def test_bound_custom_verdict_requires_fresh_result_for_changed_omissions(update
     assert stale_reason(damaged, next_record)
 
 
+def test_custom_gate_cannot_publish_only_the_declaration_list():
+    record = geometry_with()
+    supplied = verdict("custom", [Check("shape", "pass", "measured")], assumptions=["drawn shapes"],
+                       extra={"not_drawn": not_drawn_of(record)})
+    original = copy.deepcopy(supplied)
+    bound = gr.bind_inputs(supplied, record)
+    assert bound["status"] == "warn" and bound["counts"]["warn"] == 1
+    assert "bevel_pinion" in bound["assumptions"][-1]
+    assert bound["checks"][-1]["id"] == bound["findings"][-1]["id"] == "custom:not-drawn"
+    assert stale_reason(bound, record) is None
+    # Historical records can already contain a matching digest and the list alone.
+    original["inputs"] = bound["inputs"]
+    incomplete = copy.deepcopy(original)
+    assert stale_reason(original, record)
+    assert original == incomplete
+    before = copy.deepcopy(bound)
+    assert gr.bind_inputs(bound, record) == before
+
+
 def test_binding_first_declaration_adds_current_caveats_only_once():
     earlier = gr.bind_inputs(passing("custom"), base_geometry())
     updated = geometry_with()
@@ -757,13 +776,15 @@ def test_a_project_s_own_gate_is_never_shown_as_a_bare_pass(tmp_path, capsys):
     main(["check", "--project", str(root)])
     line = next(ln for ln in capsys.readouterr().out.splitlines() if "gate thermal" in ln)
     assert "PASS" in line and "2 not drawn, not seen" in line
-    assert gr.site_counts(root / "exports") == {"pass": 5, "total": 5, "stale": 0, "not_drawn": 2}
+    assert gr.site_counts(root / "exports") == {"pass": 5, "total": 5, "stale": 0, "not_drawn": 2,
+                                               "not_drawn_names": ["bevel_pinion", "motor_shaft"]}
     bare = passing("thermal")                                           # the statement left out
     bare["inputs"] = json.loads(own.read_text())["inputs"]
     own.write_text(json.dumps(bare))
     row = {r["name"]: r for r in gr.gate_rows(project)}["gate thermal"]
     assert row["status"] == "fail" and "stale: does not name the component(s)" in row["message"]
-    assert gr.site_counts(root / "exports") == {"pass": 4, "total": 5, "stale": 1, "not_drawn": 2}
+    assert gr.site_counts(root / "exports") == {"pass": 4, "total": 5, "stale": 1, "not_drawn": 2,
+                                               "not_drawn_names": ["bevel_pinion", "motor_shaft"]}
     plain = make_project(tmp_path / "q")
     assert gr.site_counts(plain / "exports") == {"pass": 4, "total": 4, "stale": 0}     # the key only when declared
 
@@ -772,7 +793,7 @@ def test_the_site_overview_stat_says_what_no_gate_saw(tmp_path):
     from cadagent.publish.site import build_site
     root = make_project(tmp_path / "p", geometry=geometry_with())
     build_site(root, {}, "Demo", gates_exports=root / "exports")
-    assert ("<b>4 / 4</b><span>integrity gates pass · 2 components not drawn, not seen by any gate</span>"
+    assert ("<b>4 / 4</b><span>integrity gates pass · 2 components not drawn, not seen by any gate: bevel_pinion, motor_shaft</span>"
             in (root / "site" / "index.html").read_text())
     plain = make_project(tmp_path / "q")
     build_site(plain, {}, "Demo", gates_exports=plain / "exports")

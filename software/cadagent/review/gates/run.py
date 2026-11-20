@@ -814,11 +814,10 @@ def _verdict_row(name: str, path: Path, record: Mapping[str, Any], expected: Map
     return {"name": name, "status": "pass", "message": msg, "file": str(path)}
 
 
-def site_counts(exports_dir: Path) -> Optional[Dict[str, int]]:
+def site_counts(exports_dir: Path) -> Optional[Dict[str, Any]]:
     """``{"pass", "total", "stale"}`` over the gate verdicts in ``<exports_dir>/gates/`` (the lint's left out):
     a verdict counts as passing only when it passes and its geometry matches the current record. None when there
-    are no verdicts. For the site overview, which reads files only. ``not_drawn`` (how many components the record
-    declares not drawn) is added when there are any: a pass counted here says nothing about them."""
+    are no verdicts. The site overview gets both the count and names of any components declared not drawn."""
     exports = Path(exports_dir)
     gates_dir = exports / "gates"
     paths = [p for p in sorted(gates_dir.glob("*.json")) if p.stem != LINT] if gates_dir.is_dir() else []
@@ -828,7 +827,7 @@ def site_counts(exports_dir: Path) -> Optional[Dict[str, int]]:
         record = json.loads((exports / GEOMETRY_FILE).read_text())
     except (OSError, ValueError):
         record = None
-    out = {"pass": 0, "total": 0, "stale": 0}
+    out: Dict[str, Any] = {"pass": 0, "total": 0, "stale": 0}
     for path in paths:
         try:
             data = json.loads(path.read_text())
@@ -839,8 +838,10 @@ def site_counts(exports_dir: Path) -> Optional[Dict[str, int]]:
             out["stale"] += 1
         elif data.get("pass") is True:
             out["pass"] += 1
-    if not_drawn_of(record):
-        out["not_drawn"] = len(not_drawn_of(record))
+    missing = not_drawn_of(record)
+    if missing:
+        out["not_drawn"] = len(missing)
+        out["not_drawn_names"] = [item["name"] for item in missing]
     return out
 
 

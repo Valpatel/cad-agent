@@ -1,4 +1,5 @@
 """The SCADA recapture step's file list, ownership and manifest logic, without a browser."""
+from fnmatch import fnmatchcase
 import importlib.util
 import json
 import re
@@ -63,6 +64,22 @@ class PureLogicTests(unittest.TestCase):
         tracked = subprocess.check_output(['git', '-C', str(ROOT), 'ls-files', '-z', '--', UI, SIM],
                                           text=True).split('\0')
         samples = set()
+        # Expected outputs are independent of the generator's ownership rules. A lost
+        # rule must still fail this test, even when another branch of its regex matches.
+        expected = {
+            'gallery:generate': [UI + path for path in ('img/symbols/*.svg', 'img/states/*.svg', 'img/README.md',
+                                                       'img/gallery-map.svg', 'metadata/gallery.json')],
+            'thumbnails': [UI + path for path in ('img/thumbnails/*.jpg', 'metadata/thumbnails.json', 'docs/VARIANTS.md')],
+            'topologies:generate': [SIM + path for path in ('img/topologies/*/topology.svg', 'metadata/topologies.json')],
+            'docs:scenarios': [SIM + 'scenarios/README.md', SIM + 'scenarios/*/README.md'],
+            'thumbnails:scenarios': [SIM + path for path in ('img/thumbnails/*/preview.jpg', 'img/README.md',
+                                                            'metadata/thumbnails.json', 'docs/scenario-gallery.md')],
+        }
+        for generator, families in expected.items():
+            for family in families:
+                members = [path for path in tracked if fnmatchcase(path, family)]
+                self.assertTrue(members, f'No tracked sample for {family}')
+                self.assertEqual(recapture.unowned(members, [generator]), [], family)
         for _, _, patterns in recapture.PAIRS:
             for pattern in patterns:
                 matches = [path for path in tracked if re.fullmatch(pattern, path)]

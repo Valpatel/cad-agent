@@ -162,6 +162,7 @@ const BUTTON = (label, pressed) => {
 // Node (the decoder's tests) has no HTMLElement: the element is only defined in a browser.
 class CadModel extends (typeof HTMLElement === 'undefined' ? class {} : HTMLElement) {
   #started = false;
+  #addedTabStop = false;
   #resolve;
   #status;
   #meter;
@@ -186,7 +187,10 @@ class CadModel extends (typeof HTMLElement === 'undefined' ? class {} : HTMLElem
     // loading="scroll": nothing starts until the reader scrolls the page or reaches the element (focus, pointer). The
     // element joins the tab order, so a keyboard reader can start a viewer that is already on screen without scrolling.
     if (this.getAttribute('loading') === 'scroll') {
-      if (!this.hasAttribute('tabindex')) this.tabIndex = 0;
+      if (!this.hasAttribute('tabindex')) {
+        this.tabIndex = 0;
+        this.#addedTabStop = true;
+      }
       if (!this.hasAttribute('role')) this.setAttribute('role', 'group');
       if (!this.hasAttribute('aria-label')) this.setAttribute('aria-label', `${this.getAttribute('label') || 'Model'}, 3D view`);
     }
@@ -578,6 +582,11 @@ class CadModel extends (typeof HTMLElement === 'undefined' ? class {} : HTMLElem
       })) };
     };
     this.stats = { parts: meshes.length, triangles: model.triangles, bytes: model.bytes };
+    if (this.#addedTabStop && this.getAttribute('tabindex') === '0') {
+      if (this.getRootNode().activeElement === this) apart.focus({ preventScroll: true });
+      this.removeAttribute('tabindex');
+    }
+    this.#addedTabStop = false;
   }
 }
 

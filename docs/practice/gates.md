@@ -764,8 +764,9 @@ flowchart TD
 It is not applied where it would not hold: a joint that carries another joint (turning it moves the child's axis),
 a slider or cylindrical joint, and any body with one part that does not measure symmetric (a missing lug, one lug
 longer by more than the limit, a keyway, an off-axis hole, a joint axis a few microns off the shaft's own) are
-queried at every sample. A follower or a joint in a `combine` grid is judged on its own body like any other leaf
-joint.
+queried at every sample. In that case, `density[].symmetry_full_sampling` names the measured part and gives the
+reason. If the parts have no shared period within the sampled angles, the reason applies to the whole joint. A follower
+or a joint in a `combine` grid is judged on its own body like any other leaf joint.
 
 A body is measured after its group's broad phase, and only when that could save a kernel query. Some pair with a part
 of the body has to pass the broad phase in more than two poses that differ in this joint's angle alone. Only periods

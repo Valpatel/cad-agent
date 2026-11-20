@@ -887,12 +887,16 @@ def run_motion(world: World, joints: Mapping[str, Any], *, tol: Tolerances = Tol
             if getattr(last, "refused", False):
                 unmeasured[jid] = {"joint": jid, "part": k, "reason": str(getattr(last, "reason", "")),
                                    "retried": "on the next run" if getattr(last, "failed", False) else "no"}
+            elif last is not None:
+                full_sampling[jid] = {"part": k, "reason": getattr(last, "reason", "") or
+                                      "no rotational symmetry measured at the tested angles"}
             return
         order = 0
         for f in found.values():        # the turn every part repeats at: gcd(0, n) = n, and 0 is any angle
             order = math.gcd(order, int(f.order))
         if order == 1 or (order and order not in orders):
-            return                      # the period the parts share puts no two of those poses in the same place
+            full_sampling[jid] = {"reason": "no shared period repeats within the sampled angles"}
+            return
         rows = {k: f.to_dict() for k, f in found.items()}
         # each part was measured at its own period (or, a body of revolution, at the three test angles) and held
         # to its own limits (``parts``); the joint's row carries the largest differences and the tightest limits
@@ -947,6 +951,7 @@ def run_motion(world: World, joints: Mapping[str, Any], *, tol: Tolerances = Tol
     swept: Dict[str, Dict[str, Tuple[float, ...]]] = {}
     poses_total = candidates_total = 0
     for g in groups:
+        full_sampling: Dict[str, Dict[str, str]] = {}  # measurement found no usable period in this group
         moving_bodies_g = sorted({b for j in g.joints for b in body_of_joint[j]})
         moving_keys = [k for b in moving_bodies_g for k in body_keys.get(b, [])]
         others = [k for k in names if world.body(k) not in moving_bodies_g]
@@ -1146,6 +1151,11 @@ def run_motion(world: World, joints: Mapping[str, Any], *, tol: Tolerances = Tol
                 d["symmetry_not_measured"] = unmeasured[d["joint"]]
                 text += (f"; {d['joint']} is queried at every sample: the symmetry of {unmeasured[d['joint']]['part']} "
                          f"was not measured ({unmeasured[d['joint']]['reason']})")
+            elif d["joint"] in full_sampling:
+                measurement = full_sampling[d["joint"]]
+                d["symmetry_full_sampling"] = measurement
+                part = f"{measurement['part']}: " if "part" in measurement else ""
+                text += f"; {d['joint']} is queried at every sample ({part}{measurement['reason']})"
         closure_rows = []
         for jid, n, c in closures_g:
             worst, pose = apart_g[(jid, n)]

@@ -1300,7 +1300,12 @@ def test_a_missing_lug_is_sampled_over_the_full_turn():
     asm, joints = _machine(cq, _wheel(cq, missing=1))
     v = motion_gate(asm, {"wheel": joints["wheel"]}, max_step_deg=10)
     assert v["pass"] and v["stats"]["symmetric_joints"] == 0 and v["stats"]["kernel_queries"] >= 60
-    assert "repeating" not in next(c for c in v["checks"] if c["id"] == "motion:wheel")["message"]
+    density = group(v, "wheel")["density"][0]
+    assert density["symmetry_full_sampling"]["part"] == "wheel"
+    assert density["symmetry_full_sampling"]["reason"]
+    message = next(c for c in v["checks"] if c["id"] == "motion:wheel")["message"]
+    assert "repeating" not in message
+    assert "wheel is queried at every sample" in message
 
 
 def test_a_collision_on_a_symmetric_wheel_reads_the_same_with_and_without_the_shortcut():

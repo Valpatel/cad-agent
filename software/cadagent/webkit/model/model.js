@@ -394,7 +394,7 @@ class CadModel extends (typeof HTMLElement === 'undefined' ? class {} : HTMLElem
     const label = document.createElement('p');
     label.className = 'cad-model-label';
     label.textContent = 'Drag to turn';
-    const pause = BUTTON('Pause'), apart = BUTTON('Explode', false);   // Pause's label changes; Explode is a toggle
+    const pause = BUTTON('Pause turning', false), apart = BUTTON('Explode', false);
     if (!turning) pause.hidden = true;
     ui.append(label, apart, pause);
     const ray = new THREE.Raycaster(), pointer = new THREE.Vector2();
@@ -410,6 +410,7 @@ class CadModel extends (typeof HTMLElement === 'undefined' ? class {} : HTMLElem
       hovered = mesh;
       if (mesh) mesh.material.emissive.setHex(0x3a2008);
       label.textContent = mesh ? partLabel(mesh.userData.part.name) : 'Drag to turn';
+      label.toggleAttribute('data-part', Boolean(mesh));
       request();
     };
     // Touch (#650, #769): one finger turns the model both ways without scrolling the page; two fingers still zoom the page.
@@ -484,7 +485,8 @@ class CadModel extends (typeof HTMLElement === 'undefined' ? class {} : HTMLElem
     canvas.addEventListener('pointerleave', e => { if (e.pointerType === 'mouse' && !drag) highlight(null); });
     pause.addEventListener('click', () => {
       paused = !paused;
-      pause.textContent = paused ? 'Turn' : 'Pause';
+      pause.textContent = paused ? 'Resume turning' : 'Pause turning';
+      pause.setAttribute('aria-pressed', String(paused));
       lastInput = -1e9;
       request();
     });

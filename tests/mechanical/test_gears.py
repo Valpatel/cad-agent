@@ -125,6 +125,12 @@ def test_profile_shift_moves_the_centre_distance_to_the_working_pressure_angle()
     assert balanced['centre_distance_mm'] == pytest.approx(64) and balanced['backlash_mm'] == pytest.approx(0.08)
 
 
+def test_negative_tip_clearance_warns_about_root_interference():
+    pair = gear_pair_dimensions(2, 12, 12, profile_shift_a=0.7, profile_shift_b=0.7)
+    assert pair['tip_clearance_mm'] == pytest.approx(-0.097, abs=0.001)
+    assert any('opposite roots' in note for note in pair['notes'])
+
+
 def test_a_tip_that_works_inside_the_involute_is_flagged():
     # A nearly full root round ends the cutter's straight side 0.94 modules down, so the involute starts higher than
     # the tip of a large mate reaches: gear a's active profile must start at
@@ -200,7 +206,9 @@ def test_bevel_face_width_and_tooth_count_limits_are_named():
             bevel_gear_dimensions(2, 16, 32, width)
     with pytest.raises(ValueError, match='4-tooth bevel gear with a 40-tooth mate'):
         bevel_gear_dimensions(2, 4, 40, 10)                       # no room for a back face under the root
-    assert bevel_gear_dimensions(2, 4, 40, 10, backing=0)['teeth'] == 4
+    assert bevel_gear_dimensions(2, 4, 40, 10, backing=0.01)['teeth'] == 4
+    with pytest.raises(ValueError, match='Backing under the root must be positive'):
+        bevel_gear_dimensions(2, 16, 32, 8, backing=0)
 
 
 def test_bevel_reference_dimensions():
@@ -601,3 +609,8 @@ def test_public_names():
     assert set(gears.__all__) == {'spur_gear_dimensions', 'gear_pair_dimensions', 'spur_gear', 'external_ring_gear',
                                   'bevel_gear_dimensions', 'bevel_gear'}
     assert not hasattr(gears, 'module_from_diametral_pitch')       # one home for it: cadagent.formulas, in metres
+
+
+def test_bevel_with_thin_positive_backing(cq):
+    gear = bevel_gear(2, 16, 32, 8, backing=0.01)
+    assert gear.isValid() and len(gear.Solids()) == 1

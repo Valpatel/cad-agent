@@ -130,7 +130,7 @@ flowchart TD
 ```
 
 A gear with too few teeth for a back face (4 teeth against 40, say) is refused with a `ValueError` that names the
-tooth counts; a smaller `backing` may fit.
+tooth counts; a smaller positive `backing` may fit.
 
 **Backlash shrinks toward the apex.** `backlash` thins the large-end tooth, and the allowance scales with the tooth
 along the face. A pair has the same angular play all along the tooth, but the gap between the flanks is smaller at the

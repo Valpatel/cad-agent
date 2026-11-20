@@ -345,12 +345,16 @@ def gear_pair_dimensions(module: float, teeth_a: int, teeth_b: int, *, pressure_
     contact = sum(lengths) / (math.pi * ta.m * math.cos(a))
     if contact < 1.2:
         notes.append(f'contact ratio {contact:.2f} is below 1.2: the mesh will run unevenly')
+    tip_clearance = min(centre - ta.ra - tb.rf, centre - tb.ra - ta.rf)
+    if tip_clearance < 0:
+        notes.append(f"The tips reach into the opposite roots by up to {-tip_clearance:.3f} mm: "
+                     "shorten the tips or reduce the profile shifts")
     odd = tb.z % 2
     return {
         'centre_distance_mm': centre, 'working_pressure_angle_deg': math.degrees(working),
         'ratio': tb.z / ta.z, 'contact_ratio': contact, 'contact_shortened': shortened,
         'tip_past_involute': past,
-        'tip_clearance_mm': min(centre - ta.ra - tb.rf, centre - tb.ra - ta.rf),
+        'tip_clearance_mm': tip_clearance,
         'backlash_mm': 2 * backlash if abs(ta.x + tb.x) < 1e-12 else None,
         'mesh_rotation_b_deg': 0.0 if odd else 180.0 / tb.z,
         'a': spur_gear_dimensions(module, teeth_a, profile_shift=profile_shift_a, **args),
@@ -411,7 +415,7 @@ def external_ring_gear(module: float, teeth: int, face_width: float, inner_diame
 
     This is an external gear with a large bore (a toothed ring to bolt or press onto a drum or a turntable), not an
     internal gear. The rim between the bore and the root circle must be at least ``min_rim`` mm, by default one
-    module: a floor that keeps the ring in one piece when drawn, not a strength rating. A thin rim bends under the
+    module. Its thickness is (root diameter minus inner diameter) / 2. The minimum is a floor that keeps the ring in one piece when drawn, not a strength rating. A thin rim bends under the
     tooth load and nothing here checks that. The other arguments are those of :func:`spur_gear`; the hole is
     ``inner_diameter``, so there is no ``bore``.
     """
@@ -451,8 +455,8 @@ class _Bevel:
         self.backing = module if backing is None else backing
         self.rk = t.rf - self.backing                   # back-cone radius where the flat back face starts
         self.ro = t.ra + module                         # back-cone radius where the blank ends, beyond the tips
-        if not self.backing >= 0:
-            raise ValueError('Backing under the root cannot be negative')
+        if self.backing <= 0:
+            raise ValueError('Backing under the root must be positive to form a back face')
         if not self.rk > 0:
             raise ValueError(f'A {z}-tooth bevel gear with a {mate}-tooth mate is too small for a back face: its '
                              f'root is {t.rf:.3f} mm from the back-cone apex (a virtual spur gear of '

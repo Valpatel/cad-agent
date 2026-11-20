@@ -1,6 +1,6 @@
 {
   "name": "cad-agent",
-  "version": "0.49.0",
+  "version": "0.50.0",
   "description": "Engineering workflows, reusable viewers, SCADA models and independent review agents",
   "license": "MIT",
   "skills": [

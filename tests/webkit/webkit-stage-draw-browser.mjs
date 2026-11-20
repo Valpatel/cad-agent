@@ -324,6 +324,22 @@ try {
     await settle(page, S);
     const requested = await page.evaluate(async () => { const draws = stage.draws; stage.invalidate(); await new Promise(done => setTimeout(done, 600)); return stage.draws - draws; });
     assert.equal(requested, 1, 'invalidate() draws once'); cases.push({ invalidateDraws: requested });
+    await page.evaluate(() => {
+      const canvas = document.createElement('canvas');
+      canvas.width = canvas.height = 4;
+      const pixels = canvas.getContext('2d');
+      pixels.fillStyle = 'red';
+      pixels.fillRect(0, 0, canvas.width, canvas.height);
+      box.material.color.set('white');
+      box.material.map = new THREE.CanvasTexture(canvas);
+      box.material.needsUpdate = true;
+    });
+    await check(page, S, 'canvas texture pixel upload', () => page.evaluate(() => {
+      const texture = box.material.map, canvas = texture.image, pixels = canvas.getContext('2d');
+      pixels.fillStyle = 'blue';
+      pixels.fillRect(0, 0, canvas.width, canvas.height);
+      texture.needsUpdate = true;
+    }));
     await page.close();
   }
   assert.deepEqual(errors, []);

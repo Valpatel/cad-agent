@@ -358,7 +358,7 @@ export async function createViewer({ app, panel, title, manifestUrl, manifest: s
   updateInsets(); frameParts(state.visible);
   opening.position.copy(stage.camera.position); opening.target.copy(stage.controls.target);
   window.addEventListener('resize', () => { if (!disposed) { updateInsets(); if (!embedded) frameParts(state.visible); } }, { signal: events.signal });
-  stage.start(); stage.renderer.render(stage.scene, stage.camera);
+  stage.start();
   await new Promise((resolve, reject) => {
     let frame;
     const aborted = () => { cancelAnimationFrame(frame); reject(lifetime.signal.reason); };

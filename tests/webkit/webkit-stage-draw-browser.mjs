@@ -124,9 +124,19 @@ try {
   // colour, ghosting, light dimmer, palette, resize, device pixel ratio and reset.
   {
     const page = await context.newPage(); page.on('pageerror', e => errors.push(e.message));
+    await page.addInitScript(() => document.addEventListener('DOMContentLoaded', () => {
+      const style = document.createElement('style');
+      style.id = 'off-screen-assembly';
+      style.textContent = 'canvas { transform: translateY(200vh) }';
+      document.head.append(style);
+    }));
     await page.goto(`${site.url}/kit/model/viewer.html?manifest=/m/view.json`);
     await page.waitForFunction(() => document.body.dataset.ready === '1');
     const V = '__viewer.stage';
+    assert.equal(await onStage(page, V, stage => stage.renderer.info.render.frame), 0, 'starting an off-screen assembly drew a WebGL frame');
+    await page.evaluate(() => document.getElementById('off-screen-assembly').remove());
+    await page.waitForFunction(() => __viewer.stage.renderer.info.render.frame > 0);
+    cases.push({ offScreenAssemblyStartDraws: 0 });
     await settle(page, V);
     const idle = await idleDraws(page, V);
     assert.equal(idle, 0, `an idle assembly viewer drew ${idle} frames in 2 s`); cases.push({ idleAssemblyDraws: idle });
@@ -196,6 +206,25 @@ try {
     await check(page, F, 'model load', async () => { await page.evaluate(() => window.__fileViewer.load('/wide.stl')); });
     await check(page, F, 'STL unit change', async () => { await page.getByLabel('STL units', { exact: true }).selectOption('inch'); await page.waitForFunction(() => window.__fileViewer.root.dataset.state === 'ready'); });
     await check(page, F, 'theme change', () => page.evaluate(() => window.__fileViewer.setTheme('light')));
+    // Loading off screen must not make an uncounted, direct WebGL draw.
+    const frame = await onStage(page, F, async stage => {
+      const canvas = stage.renderer.domElement;
+      canvas.style.transform = 'translateY(200vh)';
+      await new Promise(resolve => {
+        const observer = new IntersectionObserver(([entry]) => {
+          if (!entry.isIntersecting) { observer.disconnect(); resolve(); }
+        });
+        observer.observe(canvas);
+      });
+      return stage.renderer.info.render.frame;
+    });
+    assert.equal(await page.evaluate(() => __fileViewer.load('/block.stl')), true);
+    assert.equal(await onStage(page, F, stage => stage.renderer.info.render.frame), frame, 'loading an off-screen file drew a WebGL frame');
+    await onStage(page, F, stage => { stage.renderer.domElement.style.transform = ''; });
+    await page.waitForFunction(previous => __fileViewer.stage.renderer.info.render.frame > previous, frame);
+    const returned = await pictures(page, F);
+    assert.ok(returned.shown.equals(returned.fresh), 'the newly loaded file is drawn when it comes into view');
+    cases.push({ offScreenFileLoadDraws: 0 });
     await page.close();
   }
 

@@ -906,7 +906,7 @@ async function phoneFirstScreenProblems() {
  * gets no bar. */
 async function demoWayBackProblems() {
   const problems = [];
-  const DEMOS = { 'build guide': ['/kit/model/viewer.html?guide=/web/toolkit/assembly/guide.json', '#hud'], 'file viewer': ['/kit/files/file-viewer.html?file=/kit/host/example.stl', '#file-viewer'],
+  const DEMOS = { 'build guide': ['/kit/model/viewer.html?guide=/web/toolkit/assembly/guide.json', '#hud'], 'file viewer': ['/kit/files/file-viewer.html?file=/web/toolkit/pump-manifold.step', '#file-viewer'],
     // #798; its first element is the page header, so the header (not the stage below it) must clear the bar (#809).
     'robot replay': ['/kit/simulation/examples/gyropup-v2/viewer.html', '.replay-page-header'] };
   // #811: the cards link the featured turret guide; the rail bench keeps its published URL, unlinked, and still gets

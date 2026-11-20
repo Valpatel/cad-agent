@@ -22,16 +22,26 @@ flowchart TD
 | [assembly/](assembly/README.md) | The synthetic rail fixture, copied byte for byte and kept at its published URL; unlinked, not featured. |
 | [assembly.webp](assembly.webp) | Actual assembly reader on step 11 of Gyropup's turret guide: the barrel, hopper and lid arrive over the ghosted turret. |
 | [file-review.webp](file-review.webp) | Original-file viewer showing the pump manifold in isometric view. |
+| [pump-manifold.stl](pump-manifold.stl) | Display mesh exported in millimetres from the original pump manifold STEP. |
 | [SOURCE.json](SOURCE.json) | The featured guide's revision and hashes, generator and runtime hashes, preview hashes; browser version, route and controlled scene state. |
 
 ![Assembly reader on step 11 of Gyropup's turret guide](assembly.webp)
 
 The site copies these bytes to `/web/toolkit/`. Open the [build guide](https://cad-agent.valpatel.com/kit/model/viewer.html?guide=/kit/assembly/examples/gyropup-turret/guide.json)
-or the [original-file example](https://cad-agent.valpatel.com/kit/files/file-viewer.html?file=/web/toolkit/pump-manifold.step).
-The pump manifold is the byte-for-byte [AgentCAD Fusion 360 export](../../../../software/vendor/agentcad/tests/fixtures/real_world/README.md). The [Apache 2.0 licence](../../../../software/vendor/agentcad/LICENSE) ships alongside the public STEP file.
+or the [original-file example](https://cad-agent.valpatel.com/kit/files/file-viewer.html?file=/web/toolkit/pump-manifold.stl).
+The Toolkit card also offers the byte-for-byte [AgentCAD Fusion 360 export](../../../../software/vendor/agentcad/tests/fixtures/real_world/README.md). The [Apache 2.0 licence](../../../../software/vendor/agentcad/LICENSE) ships alongside the public STEP file.
 The guide is an example sequence from a work-in-progress prototype, not a verified build procedure; a CAD step order
 does not prove the parts can physically be assembled in that order. These previews demonstrate viewer controls, not
 physical fit, hardware design, or simulation accuracy.
+
+Reproduce the display mesh from the repository root with CadQuery 2.7.0. Both source and mesh hashes are recorded in the receipt.
+
+```python
+import cadquery as cq
+
+part = cq.importers.importStep("software/vendor/agentcad/tests/fixtures/real_world/pump_manifold.step")
+cq.exporters.export(part, "tools/site/assets/toolkit/pump-manifold.stl", tolerance=0.1, angularTolerance=0.2)
+```
 
 With the existing site Node dependencies and a locally installed browser, reproduce from the repository root:
 

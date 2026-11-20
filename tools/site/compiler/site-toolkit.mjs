@@ -11,6 +11,7 @@ const ownerPage = file => '/' + folderMapPath(file).replace(/\.md$/,'');
 export const manifoldFile = {
   source: 'software/vendor/agentcad/tests/fixtures/real_world/pump_manifold.step',
   path: '/web/toolkit/pump-manifold.step',
+  mesh: '/web/toolkit/pump-manifold.stl',
 };
 const scadaDocs = {
   owner:ownerPage('software/cadagent/webkit/scada/README.md'),
@@ -158,9 +159,9 @@ export function toolkitCapabilities(m, {catalog = [], has} = {}) {
       alt:'Gyropup, a wheel-legged robot, driving off a kerb in the recorded-simulation viewer',
       href:'/kit/simulation/examples/gyropup-v2/viewer.html?nav=1', action:'Play robot recording', docs:'/'+folderMapPath('docs/examples/robot-replay/README.md').replace(/\.md$/,'')},
     {id:'files', title:'Inspect a pump manifold', kind:'File viewer',
-      description:'Orbit this Fusion 360 STEP model to see the angled ports and the bolt holes around its mounting flange.',
+      description:'Orbit the manifold to see its angled ports and mounting holes. Download the Fusion 360 STEP file to inspect the original surfaces.',
       image:'/web/toolkit/file-review.webp', alt:'Pump manifold with angled ports above a drilled mounting flange, shown in isometric view',
-      href:`/kit/files/file-viewer.html?file=${manifoldFile.path}&nav=1`, action:'Open pump manifold', docs:'/docs/file-viewer'},
+      href:`/kit/files/file-viewer.html?file=${manifoldFile.mesh}&nav=1`, sourceDownload:manifoldFile.path, action:'Open pump manifold', docs:'/docs/file-viewer'},
     {id:'assembly', title:'Assembly & build guides', kind:'Step-by-step instructions',
       description:'Step through Gyropup\'s turret, a work-in-progress prototype, in its own authored assembly order: twelve steps, each step\'s new parts highlighted and drawn back along the way they go in, earlier parts ghosted. An example sequence, not a verified build procedure; a CAD step order does not prove the parts can physically go together.',
       image:'/web/toolkit/assembly.webp', alt:'The build-guide viewer on step 11 of Gyropup\'s turret: the barrel, hopper and lid arrive over the ghosted turret, beside the step\'s instructions',
@@ -188,7 +189,7 @@ export function toolkitCapabilities(m, {catalog = [], has} = {}) {
   return cards;
 }
 
-const capabilityCard = c => `<article class="toolkit-card toolkit-capability" id="${esc(c.id)}" data-toolkit-capability="${esc(c.id)}"><a class="toolkit-image-link" href="${esc(c.href)}" tabindex="-1"><img src="${esc(c.image)}" alt="${esc(c.alt)}" width="800" height="500" loading="lazy"${c.motion?` data-motion-src="${esc(c.motion)}"`:''}${c.fit==='contain'?' class="toolkit-contain"':''}></a><div class="toolkit-card-body"><p class="toolkit-card-kicker">${esc(c.kind)}</p><h2>${esc(c.title)}</h2><p>${esc(c.description)}</p><div class="toolkit-card-actions"><a class="button" data-toolkit-launch href="${esc(c.href)}">${esc(c.action)}</a><a href="${esc(c.docs)}">${c.id==='scada-simulations'?'All simulations':'Guide'}</a></div></div></article>`;
+const capabilityCard = c => `<article class="toolkit-card toolkit-capability" id="${esc(c.id)}" data-toolkit-capability="${esc(c.id)}"><a class="toolkit-image-link" href="${esc(c.href)}" tabindex="-1"><img src="${esc(c.image)}" alt="${esc(c.alt)}" width="800" height="500" loading="lazy"${c.motion?` data-motion-src="${esc(c.motion)}"`:''}${c.fit==='contain'?' class="toolkit-contain"':''}></a><div class="toolkit-card-body"><p class="toolkit-card-kicker">${esc(c.kind)}</p><h2>${esc(c.title)}</h2><p>${esc(c.description)}</p><div class="toolkit-card-actions"><a class="button" data-toolkit-launch href="${esc(c.href)}">${esc(c.action)}</a>${c.sourceDownload?`<a href="${esc(c.sourceDownload)}" download>Download STEP</a>`:''}<a href="${esc(c.docs)}">${c.id==='scada-simulations'?'All simulations':'Guide'}</a></div></div></article>`;
 
 /** Generated routes remain in the existing site frame, with Markdown twins and a machine-readable index. */
 export function toolkitPages(m, {catalog = [], has} = {}) {
@@ -199,7 +200,7 @@ export function toolkitPages(m, {catalog = [], has} = {}) {
     {url:'/toolkit',title:'Engineering toolkit',description:'Reusable viewers, SCADA elements, simulations, build instructions and agent workflows.',
       body:body(heading('Tools that make designs understandable.','Open a working example, explore its controls, then use the same components in your own project.','cad-agent toolkit')+
         `<div class="toolkit-grid toolkit-capabilities">${capabilities.map(capabilityCard).join('')}</div><section class="toolkit-roadmap"><h2>Connect the work</h2><p>Keep assumptions, checks and instructions with the source that produced them.</p><div class="toolkit-actions"><a href="/docs/review-packet">Review packets</a><a href="/docs/agent-workflow">Agent skills & workflows</a><a href="/docs/toolkit">Command & Python reference</a></div></section><section class="toolkit-roadmap"><h2>Growing the workbench</h2><p>PCB layer review, electrical-panel diagrams and harness views are planned extensions. Existing <a href="/docs/toolkit">electrical checks</a> remain available; KiCad stays the PCB editor.</p><a href="/explore">Explore designs, guides and evidence →</a></section>`),
-      markdown:'# Engineering toolkit\n\nOpen working examples of reusable viewers, simulation and build instructions.\n\n'+capabilities.map(c=>`- [${c.title}: ${c.action}](${c.href}) — ${c.description} [Guide](${c.docs})`).join('\n')+'\n\n[Agent workflows](/docs/agent-workflow) · [Review packets](/docs/review-packet) · [Command and Python reference](/docs/toolkit)\n\nPCB, panel and harness viewers are planned, not launched capabilities.\n'},
+      markdown:'# Engineering toolkit\n\nOpen working examples of reusable viewers, simulation and build instructions.\n\n'+capabilities.map(c=>`- [${c.title}: ${c.action}](${c.href}) — ${c.description}${c.sourceDownload?` [Download STEP](${c.sourceDownload})`:''} [Guide](${c.docs})`).join('\n')+'\n\n[Agent workflows](/docs/agent-workflow) · [Review packets](/docs/review-packet) · [Command and Python reference](/docs/toolkit)\n\nPCB, panel and harness viewers are planned, not launched capabilities.\n'},
     {url:'/toolkit/scada',title:'SCADA toolkit',description:'Animated process diagrams and shared simulation models within the cad-agent toolkit.',
       body:body(tabs('overview')+heading('Build a living system.','Animated SCADA elements and shared simulation models for process, energy, manufacturing and growing systems.')+stats(m)+actions+
         `<section class="toolkit-feature-row"><a href="${esc(feature.href)}"><img src="${esc(feature.image)}" alt="${esc(feature.title)} diagram" width="960" height="640"></a><div><p class="eyebrow">Start with a system</p><h2>${esc(feature.title)}</h2><p>${esc(feature.description)}</p><p>Open equipment, change operating values, close valves and inject faults. Every layout observes the same session.</p><a class="button" href="${esc(feature.href)}">Open simulation ↗</a></div></section>`+limits+

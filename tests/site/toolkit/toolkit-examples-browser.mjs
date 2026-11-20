@@ -1,3 +1,7 @@
+import {createHash} from 'node:crypto';
+import {readFileSync} from 'node:fs';
+const fileHash=path=>createHash('sha256').update(readFileSync(new URL('../../../'+path,import.meta.url))).digest('hex');
+
 /** Real capability cards and their existing viewer/calculator consumers; reuse the suite's error recorder. */
 /** The featured build guide (#811) on step 11: Gyropup's turret under a real source revision, every part its packed
  * model binds, the barrel drawn back along its way in, earlier parts ghosted and the step's new parts solid. */
@@ -64,6 +68,13 @@ export async function toolkitExampleChecks({open,fail}) {
     try {
       const launch=page.locator(`[data-toolkit-capability="${id}"] [data-toolkit-launch]`),href=await launch.getAttribute('href');
       const destination=new URL(href,page.url());
+      if(id==='files') {
+        const source=page.locator('#files').getByRole('link',{name:'Download STEP',exact:true});
+        const download=await source.getAttribute('href');
+        const response=await page.request.get(new URL(download,page.url()).href);
+        if(!response.ok()||createHash('sha256').update(await response.body()).digest('hex')!==fileHash('software/vendor/agentcad/tests/fixtures/real_world/pump_manifold.step'))
+          fail(where,'STEP download differs from the original pump manifold');
+      }
       await launch.scrollIntoViewIfNeeded();await launch.focus();
       await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
       if(!await launch.evaluate(link=>link===document.activeElement))fail(where,'native launch could not receive keyboard focus');
@@ -130,18 +141,18 @@ export async function toolkitExampleChecks({open,fail}) {
       } else if(id==='files') {
         await page.waitForFunction(()=>window.__fileViewer?.root.dataset.state==='ready'&&window.__fileViewer.stage.renderer.info.render.triangles>0);
         const before=await page.evaluate(()=>({camera:window.__fileViewer.stage.camera.position.toArray(),source:window.__fileViewer.info.sourceName}));
-        if(before.source!=='pump-manifold.step')fail(where,`wrong source loaded: ${before.source}`);
+        if(before.source!=='pump-manifold.stl')fail(where,`wrong source loaded: ${before.source}`);
         await page.getByRole('button',{name:'Front',exact:true}).click();
         await page.waitForFunction(before=>JSON.stringify(window.__fileViewer.stage.camera.position.toArray())!==JSON.stringify(before),before.camera);
         await page.getByRole('button',{name:'Fit',exact:true}).click();
         const target=await page.getByRole('link',{name:'Download original',exact:true}).getAttribute('href');
-        if(new URL(target,page.url()).pathname!=='/web/toolkit/pump-manifold.step')fail(where,'download is not the loaded original');
-        if(await page.getByRole('combobox',{name:'STL units',exact:true}).isVisible())fail(where,'STEP file offers an STL unit override');
+        if(new URL(target,page.url()).pathname!=='/web/toolkit/pump-manifold.stl')fail(where,'download is not the loaded original');
+        if(!await page.getByRole('combobox',{name:'STL units',exact:true}).isVisible())fail(where,'STL units control is missing');
         const digest=await page.evaluate(async url=>{
           const bytes=await (await fetch(url)).arrayBuffer();
           return Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',bytes)),n=>n.toString(16).padStart(2,'0')).join('');
         },target);
-        if(digest!=='8596ec93c6b3fa01e907806204e8f30e1c0e4210988a5b86e237c7ac667edac6')fail(where,'downloaded STEP differs from the original pump manifold');
+        if(digest!==fileHash('tools/site/assets/toolkit/pump-manifold.stl'))fail(where,'viewer download differs from the displayed manifold STL');
       } else if(id==='assembly') {
         await page.waitForFunction(()=>document.body.dataset.ready==='1'&&window.__viewer?.stage.renderer.info.render.triangles>0);
         await page.getByRole('combobox',{name:'Instruction step',exact:true}).selectOption('step-11');

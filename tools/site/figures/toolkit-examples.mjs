@@ -20,6 +20,7 @@ const exampleRoute = '/kit/assembly/examples/gyropup-turret/guide.json';
 const previewStep = 'step-11';          // barrel, hopper and lid arriving over the ghosted turret
 const output = 'tools/site/assets/toolkit';
 const generator = 'tools/site/figures/toolkit-examples.mjs';
+const manifoldMesh = `${output}/pump-manifold.stl`;
 const hash = bytes => createHash('sha256').update(bytes).digest('hex');
 const bytesAt = name => readFile(path.join(root, name));
 const args = process.argv.slice(2), check = args.includes('--check');
@@ -29,6 +30,8 @@ assert(args.every((arg, i) => arg === '--check' || arg === '--chromium' || arg =
 assert(check || Boolean(executablePath) !== args.includes('--chromium'), 'Capture requires exactly one explicit browser selection');
 if (executableIndex >= 0) assert(executablePath && !executablePath.startsWith('--'), '--executable needs a browser path');
 
+const fileModel = { source: manifoldFile.source, sourceSha256: hash(await bytesAt(manifoldFile.source)),
+  mesh: manifoldMesh, meshSha256: hash(await bytesAt(manifoldMesh)) };
 const inputs = new Map(await Promise.all(names.map(async name => [name, await bytesAt(`${source}/${name}`)])));
 {
   const railGuide = JSON.parse(inputs.get('guide.json')), railView = JSON.parse(inputs.get('view.json')), plan = JSON.parse(inputs.get('plan.json'));
@@ -58,8 +61,9 @@ const featured = { path: example, route: exampleRoute, revision: receipt.revisio
 if (check) {
   const record = JSON.parse(await bytesAt(`${output}/SOURCE.json`));
   const card = record.captures['file-review'];
-  assert.equal(card.route, `/kit/files/file-viewer.html?file=${manifoldFile.path}`);
-  assert.equal(card.runtimeInputs[manifoldFile.source], hash(await bytesAt(manifoldFile.source)));
+  assert.deepEqual(record.fileModel, fileModel, 'Check the STEP source and regenerate its STL before recapturing');
+  assert.equal(card.route, `/kit/files/file-viewer.html?file=${manifoldFile.mesh}`);
+  assert.equal(card.runtimeInputs[manifoldMesh], fileModel.meshSha256);
   assert.deepEqual(record.featured, featured, 'Recapture after the featured example changes');
   assert.deepEqual(record.copies, copies);
   for (const [name, bytes] of inputs) assert.deepEqual(await bytesAt(`${output}/assembly/${name}`), bytes, `Changed bundle: ${name}`);
@@ -79,9 +83,9 @@ const served = new Map();
 const server = http.createServer(async (req, res) => {
   try {
     const pathname = decodeURIComponent(new URL(req.url, 'http://localhost').pathname);
-    if (pathname === manifoldFile.path) {
-      const bytes = await bytesAt(manifoldFile.source);
-      served.set(manifoldFile.source, hash(bytes));
+    if (pathname === manifoldFile.mesh) {
+      const bytes = await bytesAt(manifoldMesh);
+      served.set(manifoldMesh, hash(bytes));
       res.writeHead(200, { 'Content-Type': 'application/octet-stream' }).end(bytes);
       return;
     }
@@ -107,7 +111,7 @@ try {
     page.on('pageerror', error => errors.push(error.message));
     page.on('response', response => { if (response.status() >= 400) errors.push(`${response.status()} ${new URL(response.url()).pathname}`); });
     await page.route('**/*', route => new URL(route.request().url()).origin === origin ? route.continue() : route.abort());
-    const route = kind === 'assembly' ? `/kit/model/viewer.html?guide=${exampleRoute}` : `/kit/files/file-viewer.html?file=${manifoldFile.path}`;
+    const route = kind === 'assembly' ? `/kit/model/viewer.html?guide=${exampleRoute}` : `/kit/files/file-viewer.html?file=${manifoldFile.mesh}`;
     await page.goto(origin + route);
     await page.waitForFunction(kind => kind === 'assembly' ? document.body.dataset.ready === '1' : window.__fileViewer?.root.dataset.state === 'ready', kind);
     if (kind === 'assembly') await page.getByRole('combobox', { name: 'Instruction step', exact: true }).selectOption(previewStep);
@@ -152,7 +156,7 @@ try {
     sourceHead: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim(),
     generator: { path: generator, sha256: hash(await bytesAt(generator)) },
     browser: { engine: 'chromium', version: browser.version(), selection: executablePath ? `executable:${path.basename(executablePath)}` : 'installed-playwright-chromium' },
-    featured, copies, captures
+    featured, fileModel, copies, captures
   };
   await writeFile(path.join(root, output, 'SOURCE.json'), JSON.stringify(receipt, null, 2) + '\n');
   console.log(`Wrote ${output}: 8 unchanged fixture inputs, 2 actual viewer previews; featured guide ${featured.revision.slice(0, 7)}.`);

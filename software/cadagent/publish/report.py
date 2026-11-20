@@ -106,7 +106,7 @@ def _part_row(project: CadProject, part: str, info: Dict[str, Any], report_dir: 
     facts = []
     if "stl_sha256" in info:
         stl = project.exports_dir / f"{part}.stl"
-        binding = {"artifact_sha256": {_rel(stl, project.root): info["stl_sha256"]}}
+        binding = {"artifact_sha256": {os.path.relpath(stl, project.root): info["stl_sha256"]}}
         if hashes_are_current(project.root, binding):
             facts.append("STL bytes match recorded build checks")
         else:

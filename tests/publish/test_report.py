@@ -576,13 +576,16 @@ def test_malformed_or_wrong_declared_stl_hash_fails(tmp_path, digest):
     assert "freshness not recorded" not in row["message"]
 
 
-@pytest.mark.parametrize("failure", ["missing", "unreadable", "outside-project"])
+@pytest.mark.parametrize("failure", ["missing", "unreadable", "outside-project", "symlink-cycle"])
 def test_declared_stl_binding_cannot_verify_missing_or_unreadable_file(tmp_path, monkeypatch, failure):
     root = make_project(tmp_path / "project", parts={"box": {
         **GOOD, "stl_sha256": hashlib.sha256(b"x").hexdigest()}})
     stl = root / "exports" / "box.stl"
     if failure == "missing":
         stl.unlink()
+    elif failure == "symlink-cycle":
+        stl.unlink()
+        stl.symlink_to(stl.name)
     elif failure == "unreadable":
         read_bytes = Path.read_bytes
         def denied(path):

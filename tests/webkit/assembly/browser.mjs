@@ -573,17 +573,26 @@ routes.set('/legacy/redirect.json', (_, res) => res.end(encode({ parts: [{ name:
   assert.match(await hint.innerText(), /RIGHT-DRAG/);
   await oldHint.evaluate(el => el.remove());
   assert.equal(await hint.innerText(), gestureText);
-  const placement = await hint.evaluate(el => {
-    const range = document.createRange();
-    range.selectNodeContents(el.querySelector('.touch-hint'));
-    const lines = [...range.getClientRects()];
-    return { lines:lines.length, top:lines[0].top, bottom:lines.at(-1).bottom,
-      canvasBottom:document.querySelector('#app canvas').getBoundingClientRect().bottom,
-      panelTop:document.querySelector('#panel').getBoundingClientRect().top };
-  });
-  assert.equal(placement.lines, 1, JSON.stringify(placement));
-  assert.ok(placement.top >= placement.canvasBottom && placement.bottom <= placement.panelTop, JSON.stringify(placement));
-  await touchPage.setViewportSize({ width:1100, height:800 });
+  for (const [width,height] of [[360,640], [640,360], [768,1024], [1100,800]]) {
+    await touchPage.setViewportSize({ width, height });
+    // The real renderer resizes its canvas in response to a ResizeObserver delivery.
+    await touchPage.waitForFunction(() => {
+      const app = document.querySelector('#app'), canvas = app.querySelector('canvas');
+      return Math.abs(app.getBoundingClientRect().height - canvas.getBoundingClientRect().height) <= 1;
+    });
+    const placement = await hint.evaluate(el => {
+      const range = document.createRange();
+      range.selectNodeContents(el.querySelector('.touch-hint'));
+      const lines = [...range.getClientRects()], text = range.getBoundingClientRect();
+      const panel = document.querySelector('#panel').getBoundingClientRect();
+      return { lines:lines.length, top:text.top, bottom:text.bottom, right:text.right,
+        canvasBottom:document.querySelector('#app canvas').getBoundingClientRect().bottom,
+        panelTop:panel.top, panelLeft:panel.left };
+    });
+    assert.equal(placement.lines, 1, JSON.stringify({ width,height,placement }));
+    assert.ok(placement.top >= placement.canvasBottom &&
+      (placement.bottom <= placement.panelTop || placement.right <= placement.panelLeft), JSON.stringify({ width,height,placement }));
+  }
   const touchPoint = await touchPage.evaluate(async () => {
     const loaded = window.__guide; loaded.dispose();
     const { createViewer } = await import('/kit/model/viewer.js'); window.__touchSelections = []; window.__touchHovers = [];

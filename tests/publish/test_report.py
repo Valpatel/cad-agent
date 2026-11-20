@@ -602,6 +602,27 @@ def test_declared_stl_binding_cannot_verify_missing_or_unreadable_file(tmp_path,
     assert row["status"] == "fail" and "rebuild" in row["error"]
 
 
+def test_stl_binding_follows_configured_build_directory(tmp_path):
+    from shutil import copytree
+
+    root = make_project(tmp_path, parts={"box": {**GOOD, "stl_sha256": hashlib.sha256(b"x").hexdigest()}},
+                        checks_yaml="  exports_dir: current/../exports\n")
+    build = root / "builds" / "v2"
+    model = build / "model"
+    model.mkdir(parents=True)
+    (root / "current").symlink_to(model, target_is_directory=True)
+    copytree(root / "exports", build / "exports")
+    # The previous build and selected build have different STL bytes.
+    (root / "exports" / "box.stl").write_bytes(b"previous build")
+    project = load_project(root)
+    assert project.exports_dir.resolve() == build / "exports"
+    assert report.collect(project)["pass"] is True
+    (build / "exports" / "box.stl").write_bytes(b"new revision")
+    result = report.collect(project)
+    assert result["pass"] is False
+    assert "rebuild" in rows(result, "cad-parts")["P1 · box"]["error"]
+
+
 def test_hashless_legacy_parts_keep_status_with_unbound_note(tmp_path):
     root = make_project(tmp_path)
     result = report.collect(load_project(root))

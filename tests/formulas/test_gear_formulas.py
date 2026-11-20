@@ -1,12 +1,11 @@
 """cadagent.formulas.gears: spur and straight bevel geometry, tooth forces and Lewis bending.
 
 Each test says what it stands on: a published value (Shigley's Examples 13-1, 13-8 and 14-1 and its tables, Boston
-Gear's Table I, Khurmi and Gupta's Sections 30.6 to 30.8) or a derivation written out here (the path of contact from
+Gear's Table I) or a derivation written out here (the path of contact from
 the tip circles, slices of a tapered bevel tooth, the statics of the tooth forces).
 
 Where they were read: Shigley's examples, equations and Table 14-2 in the publisher's lecture slides for the 9th
-edition (Chapters 13, 14 and 15), not in the book; Boston Gear's own PDF; Khurmi and Gupta's 14th edition as the OCR
-text of a scan, not in a printed copy. docs/research/references.yaml records each reading.
+edition (Chapters 13, 14 and 15), and Boston Gear's table in its own PDF. docs/research/references.yaml records each reading.
 
 Lengths are in metres here, the module too: ``2e-3`` is a 2 mm module.
 """
@@ -262,7 +261,7 @@ def test_bevel_pitch_angles_of_shigley_example_13_8():
 
 
 def test_cone_distance_from_either_gear_and_the_mean_radius_of_example_13_8():
-    """Khurmi's L = sqrt((DG/2)^2 + (DP/2)^2) is Shigley's A0 = dP / (2 sin gamma) = dG / (2 sin Gamma) (Eq. 15-25).
+    """The pitch radii form a right triangle, giving L = hypot(DG/2, DP/2). Compare Shigley's A0 = dP / (2 sin gamma) = dG / (2 sin Gamma) (Eq. 15-25).
 
     Example 13-8's figure: P = 5 teeth/in, 15 and 45 teeth, so the pitch radii are 1.5 and 4.5 in; it dimensions
     the average pitch radii as 1.293 in (pinion) and 3.88 in (gear). Those fix the face width the figure does not
@@ -299,10 +298,7 @@ def test_mean_radius_refuses_a_pitch_radius_above_the_cone_distance():
 
 def test_bevel_face_width_limits():
     """Shigley Eq. (15-24): F = min(0.3 A0, 10 / Pd), and 10 / Pd is ten modules. A 2 mm module, 18 and 36 teeth:
-    L = 40.25 mm, 0.3 of it is 12.07 mm, ten modules are 20 mm; a mitre pair of 60 teeth is limited by the modules.
-
-    Khurmi and Gupta's sentence on the same ratio ('the ratio L / b should not exceed 3') reads the other way round
-    as printed, so the function does not cite it for this limit and uses Shigley's 0.3, not one third."""
+    L = 40.25 mm, 0.3 of it is 12.07 mm, ten modules are 20 mm; a mitre pair of 60 teeth is limited by the modules."""
     limits = fx.bevel_face_width_limits(fx.bevel_cone_distance(2e-3, 18, 36), 2e-3)
     assert limits == {"three_tenths_of_cone": pytest.approx(0.0120748, abs=5e-8), "ten_modules": pytest.approx(0.020),
                       "maximum": pytest.approx(0.0120748, abs=5e-8)}
@@ -317,10 +313,12 @@ def test_bevel_face_width_limits():
     assert inch_pair["maximum"] / INCH == pytest.approx(0.3 * 4.743, abs=5e-4)
     source = fx.REGISTRY["bevel_face_width_limits"].source
     assert "Shigley" in source and "15-24" in source and "Khurmi" not in source
+    assert all("Khurmi" not in fx.REGISTRY[name].source for name in GEAR_FORMULAS)
+    assert "Project derivation" in fx.REGISTRY["lewis_bevel_bending_stress"].source
 
 
 def test_virtual_teeth_are_the_teeth_of_the_developed_back_cone():
-    """Shigley Eq. (13-15): N' = 2 pi rb / p with rb the back-cone radius; Khurmi: TE = T sec(theta). The back cone
+    """Shigley Eq. (13-15): N' = 2 pi rb / p with rb the back-cone radius. The back cone
     is square to the pitch cone at the large end, so its radius is (d / 2) / cos(gamma)."""
     m, n = 2e-3, 18
     gamma = fx.bevel_pitch_angles(18, 36)["pinion"]
@@ -561,7 +559,7 @@ def _bevel_capacity_by_slices(stress, module, form_factor, cone, face, slices=20
 
 @pytest.mark.parametrize("face_over_cone", [0.05, 0.2, 0.3, 1 / 3])
 def test_bevel_cone_factor_against_slices_of_the_tapered_tooth(face_over_cone):
-    """Khurmi's bevel factor (L - b) / L is the sliced tooth's 1 - b/L + b^2 / (3 L^2) without its last term, so it
+    """The first-order bevel factor (L - b) / L is the sliced tooth's 1 - b/L + b^2 / (3 L^2) without its last term, so it
     reads a little low: by 4.1 % at the recommended limit of 0.3 of the cone distance, by 5.3 % at a third, less on
     a shorter face."""
     stress, m, y, cone = 50e6, 2e-3, 0.32, 0.040

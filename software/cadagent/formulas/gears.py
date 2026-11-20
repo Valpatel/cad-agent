@@ -100,6 +100,12 @@ _NO_ALLOWABLE = ("the result is a stress, not a verdict: the allowable is the ca
 _TREDGOLD = ("Tredgold's approximation: the tooth form at the large end is that of a spur gear on the developed "
              "back cone")
 _SLIDES = " (equation, table and example numbers as the 9th edition prints them)"
+_BEVEL_LEWIS_DERIVATION = (
+    cite("shigley", "Chapter 14, Eq. (14-8), Lewis bending stress for a spur tooth" + _SLIDES)
+    + ". Project derivation for a tapered tooth: module and lever arm each scale as x / L along the cone. "
+      "Integrating their product over the face gives 1 - b/L + b²/(3L²). Dropping the quadratic term gives "
+      "the first-order cone factor. See docs/formulas.md and the tapered-slice test."
+)
 _M = "m (metres, not millimetres: a 2 mm module is 2e-3)"
 _M_LARGE_END = "m (metres, not millimetres: a 2 mm module is 2e-3; at the large end)"
 _RACK_RATIO = 1e150       # a finite ratio above this is a rack: its square would overflow a float
@@ -326,9 +332,7 @@ def gear_max_mate_teeth(teeth_pinion: int, pressure_angle: float = PRESSURE_ANGL
          returns="dict: pinion and gear (their pitch cone angles, rad; they add to pi/2)",
          limits=(_RIGHT_ANGLE,),
          source=cite("shigley", "Chapter 13, 'Straight Bevel Gears': Eq. (13-14), tan(gamma) = NP / NG and "
-                     "tan(Gamma) = NG / NP" + _SLIDES) + "; "
-                + cite("khurmi", "Section 30.4 (determination of pitch angle for bevel gears), the note for a shaft "
-                       "angle of 90 degrees"))
+                     "tan(Gamma) = NG / NP" + _SLIDES))
 def bevel_pitch_angles(teeth_pinion: int, teeth_gear: int) -> Dict[str, float]:
     """Pitch cone angles of a straight bevel pair on shafts at 90 degrees: tan(gamma) = NP / NG for the pinion and
     tan(Gamma) = NG / NP for the gear."""
@@ -338,8 +342,7 @@ def bevel_pitch_angles(teeth_pinion: int, teeth_gear: int) -> Dict[str, float]:
 
 @formula(units={"module": _M_LARGE_END, "teeth_pinion": "count", "teeth_gear": "count"},
          returns="cone distance (the slant height of the pitch cone), m", limits=(_RIGHT_ANGLE, _LARGE_END),
-         source=cite("khurmi", "Section 30.7 (strength of bevel gears): L = sqrt((DG / 2)^2 + (DP / 2)^2)") + "; "
-                + cite("shigley", "Chapter 15, Eq. (15-25), A0 = dP / (2 sin(gamma))" + _SLIDES))
+         source=cite("shigley", "Chapter 15, Eq. (15-25), A0 = dP / (2 sin(gamma))" + _SLIDES))
 def bevel_cone_distance(module: float, teeth_pinion: int, teeth_gear: int) -> float:
     """Cone distance of a straight bevel pair on shafts at 90 degrees, from the apex to the large end of the teeth:
     L = (m / 2) sqrt(NP^2 + NG^2). ``module`` is in metres (2 mm is ``2e-3``), not millimetres."""
@@ -354,7 +357,8 @@ def bevel_cone_distance(module: float, teeth_pinion: int, teeth_gear: int) -> fl
                  "true resultant of a load spread along a tapered tooth sits slightly further out",
                  "the pitch radius d / 2 is L sin(gamma), so it cannot exceed the cone distance: a larger one "
                  "raises"),
-         source=cite("khurmi", "Section 30.8 (forces acting on a bevel gear): Rm = (L - b / 2) DP / (2 L)"))
+         source=cite("shigley", "Chapter 15, Eq. (15-25), pitch radius and cone distance" + _SLIDES)
+                + ". By similar triangles, the radius halfway along the face is (d / 2) (L - b / 2) / L.")
 def bevel_mean_radius(pitch_diameter: float, face_width: float, cone_distance: float) -> float:
     """Mean pitch radius of a straight bevel gear: Rm = (L - b / 2) d / (2 L), which is d / 2 - (b / 2) sin(gamma)."""
     d = _positive("pitch_diameter", pitch_diameter)
@@ -372,11 +376,7 @@ def bevel_mean_radius(pitch_diameter: float, face_width: float, cone_distance: f
          limits=("recommendations, not limits of strength: past them the added face is at the small end, where the "
                  "teeth are small, hard to cut and carry little, and the Lewis cone factor's dropped term grows",
                  "Shigley's rule as printed: 0.3 of the cone distance (not one third) and 10 / Pd, which is ten "
-                 "modules",
-                 "Khurmi and Gupta (Section 30.7, note 2) give 6.3 to 9.5 modules as the usual face width; their "
-                 "sentence on the cone distance, 'the ratio L / b should not exceed 3', reads as printed the "
-                 "other way round from this limit (a face of at least a third of the cone), so it is not used "
-                 "here"),
+                 "modules"),
          source=cite("shigley", "Chapter 15, Eq. (15-24), F = min(0.3 A0, 10 / Pd)" + _SLIDES))
 def bevel_face_width_limits(cone_distance: float, module: float) -> Dict[str, float]:
     """Largest face width commonly recommended for a straight bevel gear, by Shigley's rule: 0.3 of the cone
@@ -389,9 +389,7 @@ def bevel_face_width_limits(cone_distance: float, module: float) -> Dict[str, fl
 @formula(units={"teeth": "count", "pitch_angle": "rad (the gear's own pitch cone angle)"},
          returns="virtual (formative, equivalent) number of teeth, not a whole number",
          limits=(_TREDGOLD, "the pitch angle is this gear's own, from bevel_pitch_angles"),
-         source=cite("shigley", "Chapter 13, 'Straight Bevel Gears': Eq. (13-15), N' = 2 pi rb / p" + _SLIDES) + "; "
-                + cite("khurmi", "Section 30.6 (formative or equivalent number of teeth for bevel gears, Tredgold's "
-                       "approximation): TE = T sec(theta_P)"))
+         source=cite("shigley", "Chapter 13, 'Straight Bevel Gears': Eq. (13-15), N' = 2 pi rb / p" + _SLIDES))
 def bevel_virtual_teeth(teeth: int, pitch_angle: float) -> float:
     """Virtual number of teeth of a straight bevel gear, the teeth of the spur gear its back cone develops into:
     N' = N / cos(gamma). The Lewis form factor of a bevel tooth is read at this number."""
@@ -437,8 +435,7 @@ def spur_gear_forces(torque: float, pitch_diameter: float, pressure_angle: float
                  "large-end pitch radius instead (bevel_tooth_bending returns both)",
                  "on shafts at 90 degrees the pinion's axial force is the gear's radial force and the reverse"),
          source=cite("shigley", "Chapter 13, 'Force Analysis: Bevel Gearing': Eqs. (13-37) and (13-38), checked on "
-                     "Example 13-8" + _SLIDES) + "; "
-                + cite("khurmi", "Section 30.8 (forces acting on a bevel gear)"))
+                     "Example 13-8" + _SLIDES))
 def bevel_gear_forces(torque: float, mean_radius: float, pitch_angle: float,
                       pressure_angle: float = PRESSURE_ANGLE) -> Dict[str, float]:
     """Tooth forces on a straight bevel gear, at its mean pitch radius: tangential Wt = T / rav, radial Wr = Wt
@@ -512,9 +509,7 @@ def lewis_form_factor(teeth: float, pressure_angle: float = PRESSURE_ANGLE, tabl
                  "metal teeth: nothing here was fitted to plastic or printed gears",
                  "Boston Gear rates its cut gears with 600 / (600 + V), V in ft/min, the reciprocal of the 'cast' "
                  "form, and only to 1500 ft/min (7.6 m/s)"),
-         source=cite("shigley", "Chapter 14, 'Dynamic Effects': Eqs. (14-6a) to (14-6d), V in m/s" + _SLIDES) + "; "
-                + cite("khurmi", "Section 28.18 (permissible working stress for gear teeth in the Lewis equation): "
-                       "the Barth formula, a velocity factor on the allowable stress"))
+         source=cite("shigley", "Chapter 14, 'Dynamic Effects': Eqs. (14-6a) to (14-6d), V in m/s" + _SLIDES))
 def gear_velocity_factor(speed: float, profile: str = "cut") -> float:
     """Velocity (Barth) factor Kv for the Lewis equation, by how the teeth were made: (3.05 + V) / 3.05 cast,
     (6.1 + V) / 6.1 cut or milled, (3.56 + sqrt V) / 3.56 hobbed or shaped, sqrt((5.56 + sqrt V) / 5.56) shaved or
@@ -566,8 +561,7 @@ def lewis_bending_stress(force: float, face_width: float, module: float, form_fa
                  "bevel_face_width_limits), by 5.3 % at a third, and grows fast past that",
                  "every slice at the same root stress, which needs the mounting to keep the teeth in line along "
                  "the whole face"),
-         source=cite("khurmi", "Section 30.7 (strength of bevel gears), note 1: the factor (L - b) / L, the bevel "
-                     "factor"))
+         source=_BEVEL_LEWIS_DERIVATION)
 def bevel_cone_factor(face_width: float, cone_distance: float) -> float:
     """Cone (bevel) factor of a straight bevel tooth, the share of a spur tooth's Lewis strength its taper leaves:
     (L - b) / L."""
@@ -588,8 +582,7 @@ def bevel_cone_factor(face_width: float, cone_distance: float) -> float:
                  "the two usual mistakes",
                  "a face width within the recommended limits (bevel_face_width_limits), where the cone factor's "
                  "dropped term is small"),
-         source=cite("khurmi", "Section 30.7 (strength of bevel gears): WT = (sigma_o Cv) b pi m y' (L - b) / L, with "
-                     "y' at the equivalent number of teeth"))
+         source=_BEVEL_LEWIS_DERIVATION)
 def lewis_bevel_bending_stress(force: float, face_width: float, module: float, form_factor: float,
                                cone_distance: float, velocity_factor: float = 1.0) -> float:
     """Lewis bending stress of a straight bevel gear tooth: sigma = Kv Wt L / (b m Y' (L - b)), the spur equation
@@ -637,8 +630,7 @@ def spur_tooth_bending(torque: float, module: float, teeth: int, face_width: flo
                  "pinion, whose form factor the makers tabulate separately and which this does not use",
                  "the virtual tooth number must reach the table's first row",
                  "check both gears of a pair, each with its own torque, tooth count and material"),
-         source=cite("khurmi", "Sections 30.6 to 30.8: the equivalent number of teeth, the strength of bevel gears "
-                     "and the forces acting on a bevel gear") + "; "
+         source=_BEVEL_LEWIS_DERIVATION + "; "
                 + cite("shigley", "Chapter 13, Eqs. (13-14), (13-15), (13-37) and (13-38), and Chapter 14, Table 14-2"
                        + _SLIDES))
 def bevel_tooth_bending(torque: float, module: float, teeth: int, mate_teeth: int, face_width: float,

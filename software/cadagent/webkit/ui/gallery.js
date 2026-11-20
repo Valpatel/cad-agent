@@ -269,7 +269,8 @@ export class CadGallery extends Base {
 
   /** After a choice, bring the results' top into view if the reader had scrolled past it (the list above them changed). */
   #reveal() {
-    if (this.results && this.results.getBoundingClientRect().top < 0) this.results.scrollIntoView({ block: 'start' });
+    // Moving the controls after this handler returns can send the reader's next click to the panel behind them.
+    if (this.results && this.results.getBoundingClientRect().top < 0) this.results.scrollIntoView({ block: 'start', behavior: 'instant' });
   }
 
   #setupTabs(signal) {

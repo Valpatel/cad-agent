@@ -66,7 +66,7 @@
  },
  "browser": {
   "engine": "chromium",
-  "version": "156.0.8078.79"
+  "version": "141.0.7390.37"
  },
  "generator": {
   "path": "docs/examples/robot-replay/capture-gyropup.mjs",
@@ -85,7 +85,7 @@
   "software/cadagent/webkit/simulation/examples/gyropup-v2/robot.bin": "45c516c47b12bffd6235e721ee86704661d668a196fb7c52a1837b1435837951",
   "software/cadagent/webkit/simulation/examples/gyropup-v2/kerb_drop.json": "d4120f00df7f89d020442891eb482d07810e69403244839b5221533423596ec1",
   "software/cadagent/webkit/model/stage.js": "ae62937d56c0acdbcfdce4c163276d835ff653f75d6263d579c24eb4fdf56af4",
-  "software/cadagent/webkit/model/model.js": "42a17fd2a2384807233683f01b988e7e98ab52c438726f5eebc3baa7e6e41aec",
+  "software/cadagent/webkit/model/model.js": "dbf0bd3648b8fca30185202bb90e34c5fb8c240b2d2ab936e7f9596b72cea2a8",
   "software/cadagent/webkit/host/viewer-host.js": "2a1f42a3f86c33932b1c423bb4f9b503c940a657513ae5c9e015b5aff9f9f619",
   "software/cadagent/webkit/host/viewer-host.css": "53f17e42664222f055707daa0e16b7a8ebb3d5e199a4ebfa5098c3d56454972d",
   "software/cadagent/webkit/host/stage-controls.js": "557891644146253c768531caedd79bc9909f36fee6538902018f601a9a54836d",

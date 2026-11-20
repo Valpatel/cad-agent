@@ -201,51 +201,122 @@ export async function homepageModelProblems(browser, base) {
 const MODEL_DATA = /three\.module|\/web\/models\/.*\.(json|bin)/;
 const HERO_SIZES = [{width:390,height:844},{width:1280,height:720},{width:1440,height:900}];
 
-/** The home viewers (loading="scroll", #748): no three.js and no model data until the reader scrolls or reaches a
- * viewer, at every size, though on a desktop screen they sit inside the viewer's 300px look-ahead. Then a little scroll
- * starts them, and so does keyboard focus alone (no scroll). A planted control serves the page with the viewers made
- * eager, and the same check must catch it at each size. */
+// Record when the actual lazy-loading observer has evaluated both models after a scroll.
+function observePhoneLookahead() {
+  window.__homeLookahead = new Map();
+  window.IntersectionObserver = class extends IntersectionObserver {
+    constructor(callback, options) {
+      super((entries, observer) => {
+        if (options?.rootMargin) for (const entry of entries) {
+          if (entry.target.matches('cad-model[loading="scroll"]')) {
+            window.__homeLookahead.set(entry.target, entry.isIntersecting);
+          }
+        }
+        callback(entries, observer);
+      }, options);
+    }
+  };
+}
+
+async function waitForModelResource(page) {
+  await page.waitForFunction(pattern => performance.getEntriesByType('resource').some(entry =>
+    new RegExp(pattern).test(entry.name)), MODEL_DATA.source, {timeout:20000});
+}
+
+async function checkPhoneScroll(page, label, wide, requests, out) {
+  await page.mouse.wheel(0, 120);
+  await page.waitForFunction(() => scrollY > 0 && window.__homeLookahead.size === 2, null, {timeout:20000});
+  const models = await page.locator('cad-model').evaluateAll(elements => elements.map(el => ({
+    gap: el.getBoundingClientRect().top - innerHeight,
+    intersecting: window.__homeLookahead.get(el),
+  })));
+  if (models.length !== 2 || models.some(model => model.gap <= 300)) {
+    out.push(label + ': scroll did not leave both models beyond 300 px: ' + JSON.stringify(models));
+    return;
+  }
+  if (wide) {
+    // The widened look-ahead must really start a distant model for this control to exercise the regression.
+    await page.waitForFunction(() => [...document.querySelectorAll('cad-model')].some(el =>
+      ['loading','ready'].includes(el.dataset.state)), null, {timeout:20000});
+    await waitForModelResource(page);
+  }
+  const started = models.some(model => model.intersecting) || requests.length > 0;
+  if (started !== wide) out.push(label + (wide ? ': widened look-ahead went undetected' : ': loaded a distant model'));
+}
+
+/** No model or three.js before the reader reaches the homepage viewers. A small desktop scroll starts
+ * nearby viewers. The same scroll on a phone leaves both outside their 300 px look-ahead. */
 export async function homepageViewerGateProblems(browser, base, receipt = {}) {
   const out = [];
   receipt.sizes = [];
   const fetched = page => page.evaluate(re => performance.getEntriesByType('resource').filter(r => new RegExp(re).test(r.name)).map(r => new URL(r.name).pathname), MODEL_DATA.source);
-  for (const viewport of HERO_SIZES) for (const planted of [false, true]) {
-    const label = `${viewport.width}x${viewport.height}${planted ? ' planted eager control' : ''}`;
+  for (const viewport of HERO_SIZES) for (const control of (viewport.width === 390 ? ['normal','eager','wide'] : ['normal','eager'])) {
+    const label = `${viewport.width}x${viewport.height} ${control}`;
     const ctx = await browser.newContext({viewport, reducedMotion:'reduce'});
     const page = await ctx.newPage();
     try {
-      if (planted) await page.route(base + '/', partHandler(async route => {
+      const requests = [];
+      page.on('request', request => { if (MODEL_DATA.test(request.url())) requests.push(request.url()); });
+      if (viewport.width === 390 && control !== 'eager') await page.addInitScript(observePhoneLookahead);
+      if (control === 'eager') await page.route(base + '/', partHandler(async route => {
         const response = await fetchThrough(route);
         await route.fulfill({ response, body: (await response.text()).replaceAll('loading="scroll"', 'loading="eager"') });
       }));
+      if (control === 'wide') await page.route(base + '/kit/model/model.js', partHandler(async route => {
+        const response = await fetchThrough(route);
+        await route.fulfill({ response, body: (await response.text()).replace("rootMargin: '300px'", "rootMargin: '100000px'") });
+      }));
       await navigate(page, base + '/', {waitUntil:'networkidle'});
+      if (control === 'eager') await waitForModelResource(page);
+      else await page.waitForFunction(() => {
+        const models = [...document.querySelectorAll('cad-model')];
+        return models.length === 2 && models.every(el => el.dataset.state === 'poster');
+      }, null, {timeout:20000});
       const before = await fetched(page);
-      receipt.sizes.push({ label, beforeScroll: before.length });
-      if (planted) { if (!before.length) out.push(label + ': the eager control fetched nothing, so the check cannot tell'); continue; }
-      if (before.length) out.push(`${label}: fetched before any scroll: ${before.join(', ')}`);
+      receipt.sizes.push({label, beforeScroll: before.length});
+      if (control === 'eager') { if (!before.length) out.push(label + ': the eager control fetched nothing'); continue; }
+      if (requests.length) out.push(`${label}: fetched before any scroll: ${requests.join(', ')}`);
       if (await page.evaluate(() => scrollY) !== 0) out.push(label + ': the page opened scrolled');
-      if (viewport.width >= 1000) {
-        // A small scroll, the viewers still below the fold but inside the look-ahead: they start.
+      if (viewport.width === 390) {
+        await checkPhoneScroll(page, label, control === 'wide', requests, out);
+      } else {
         await page.mouse.wheel(0, 120);
-        await page.waitForFunction(() => [...document.querySelectorAll('cad-model')].every(el => el.dataset.state !== 'poster'), null, {timeout:20000})
+        await page.waitForFunction(() => {
+          const models = [...document.querySelectorAll('cad-model')];
+          return models.length === 2 && models.every(el => ['loading','ready'].includes(el.dataset.state));
+        }, null, {timeout:20000})
           .catch(() => out.push(label + ': a small scroll did not start the viewers inside the look-ahead'));
       }
     } catch (error) { out.push(label + ': ' + error.message); }
     finally { await ctx.close(); }
   }
-  // Keyboard: focus alone (no scroll) starts a viewer.
-  const ctx = await browser.newContext({viewport:{width:1440,height:900}, reducedMotion:'reduce'});
-  const page = await ctx.newPage();
-  try {
-    await navigate(page, base + '/', {waitUntil:'networkidle'});
-    const viewer = page.locator('cad-model[src$="gyropup.json"]');
-    if (await viewer.getAttribute('tabindex') !== '0') out.push('a waiting home viewer is not in the tab order');
-    await viewer.evaluate(el => el.focus({ preventScroll: true }));
-    await page.waitForFunction(() => document.querySelector('cad-model[src$="gyropup.json"]').dataset.state !== 'poster', null, {timeout:20000})
-      .catch(() => out.push('focus did not start the home viewer'));
-    if (await page.evaluate(() => scrollY) !== 0) out.push('the focus check scrolled the page, so it did not test focus alone');
-  } catch (error) { out.push('viewer focus: ' + error.message); }
-  finally { await ctx.close(); }
+
+  for (const authored of [false, true]) {
+    const ctx = await browser.newContext({viewport:{width:1440,height:900}, reducedMotion:'reduce'});
+    const page = await ctx.newPage();
+    try {
+      if (authored) await page.route(base + '/', partHandler(async route => {
+        const response = await fetchThrough(route);
+        await route.fulfill({response, body:(await response.text()).replace('<cad-model src="/web/models/gyropup.json"', '<cad-model tabindex="-1" src="/web/models/gyropup.json"')});
+      }));
+      await navigate(page, base + '/', {waitUntil:'networkidle'});
+      const viewer = page.locator('cad-model[src$="gyropup.json"]');
+      await page.waitForFunction(() => customElements.get('cad-model') &&
+        document.querySelector('cad-model[src$="gyropup.json"]')?.dataset.state === 'poster', null, {timeout:20000});
+      if (await viewer.getAttribute('tabindex') !== (authored ? '-1' : '0')) out.push('unexpected waiting viewer tabindex');
+      await viewer.evaluate(el => el.focus({preventScroll:true}));
+      await page.waitForFunction(() => ['ready','error'].includes(document.querySelector('cad-model[src$="gyropup.json"]').dataset.state), null, {timeout:30000});
+      const result = await viewer.evaluate(el => ({
+        state:el.dataset.state, index:el.getAttribute('tabindex'),
+        focus:document.activeElement === (el.querySelector('.cad-model-ui button:not([hidden])')),
+        hostFocus:document.activeElement === el, scroll:scrollY,
+      }));
+      if (result.state !== 'ready' || result.scroll !== 0 || (authored ? result.index !== '-1' || !result.hostFocus : result.index !== null || !result.focus)) {
+        out.push(`keyboard viewer (authored tabindex: ${authored}): ${JSON.stringify(result)}`);
+      }
+    } catch (error) { out.push('viewer focus: ' + error.message); }
+    finally { await ctx.close(); }
+  }
   return out;
 }
 

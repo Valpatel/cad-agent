@@ -30,4 +30,4 @@ flowchart TD
 
 </details>
 
-[Figure index](../README.md) · [Captions and tool inputs](https://github.com/Valpatel/cad-agent/blob/dev/docs/pages.yaml) · [plates_figure.py](https://github.com/Valpatel/cad-agent/blob/dev/tools/plates_figure.py)
+[Figure index](../README.md) · [Captions and tool inputs](https://github.com/Valpatel/cad-agent/blob/dev/docs/pages.yaml) · [plates_figure.py](https://github.com/Valpatel/cad-agent/blob/dev/tools/figures/plates_figure.py)

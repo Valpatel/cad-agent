@@ -310,6 +310,13 @@ test('Toolkit working-example cards resolve to published local pages and complet
     const bytes=await readFile(path.join(out,'web/toolkit/assembly',binding.file));
     assert.equal(createHash('sha256').update(bytes).digest('hex'),binding.sha256,binding.file);
   }
+  // The featured build guide (#811) is published with every byte its guide binds; the rail above keeps its URL, unlinked.
+  const featured='kit/assembly/examples/gyropup-turret';
+  const turret=await json(`${featured}/guide.json`),packed=await json(`${featured}/${turret.model.file}`);
+  for(const binding of [turret.model,{file:packed.bin,sha256:packed.sha256}]) {
+    const bytes=await readFile(path.join(out,featured,binding.file));
+    assert.equal(createHash('sha256').update(bytes).digest('hex'),binding.sha256,binding.file);
+  }
   const model=await readFile(path.join(out,'toolkit/models.html'),'utf8');
   assert.match(model,/href="\/kit\/model\/model.css"/);
   assert.match(model,/<cad-model[^>]*src="\/web\/models\/gyropup.json"/);

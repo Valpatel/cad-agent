@@ -21,7 +21,7 @@ flowchart TD
 | [equipment-model.test.mjs](equipment-model.test.mjs) | Active equation source, provider identity, equipment tags and accepted configuration |
 | [inspection-browser.mjs](inspection-browser.mjs) | Equipment IDs, quick controls, camera anchors, drafts and detailed settings |
 | [wastewater.test.mjs](wastewater.test.mjs) | Connected pump/valve/generator faults, repair, readonly adapter, overload and deterministic snapshot replay |
-| [browser.mjs](browser.mjs) | Real controls, independent views, direct v2 read-only command capability, observer lifetime, sound, imports and contained viewport behavior |
+| [browser.mjs](browser.mjs) | Real controls, independent views, direct v2 read-only command capability, observer lifetime, sound, imports, fake-clock pause and session restore boundaries, live ticks that leave unchanged viewer and sound controls, focus, hover and live regions untouched, and contained viewport behavior |
 
 Run the Node checks from the repository root:
 

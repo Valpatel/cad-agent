@@ -1287,6 +1287,11 @@ sources:
     estimate: 0.4
     sources: 1
   summary: Two QDD designs under $200 with thermal and endurance data.
+  archive:
+    sha256: 389be7c89de14af2cd19f1556650a17ddfe342c466b57ef2439dc381a9ace949
+    kind: pdf
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: 2c8f35b2ab961cff
 - id: katz-thesis-low-cost-modular-actuator
@@ -1319,6 +1324,11 @@ sources:
     estimate: 0.4
     sources: 1
   summary: Mini Cheetah actuator rationale. Handle and the 17 N·m figure not confirmed.
+  archive:
+    sha256: f58db7cdff66936fc33a59b8106e7d1c17b1851994311a890869a42cfe787fb1
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: b1cf4c9d501f574b
 - id: opentorque-hackaday-log
@@ -1351,6 +1361,11 @@ sources:
     estimate: 0.4
     sources: 1
   summary: FET heating and bearing cost notes.
+  archive:
+    sha256: e5bc26f2423e5bada2bc9d1a78430052552bb81ceb4781278823125a8dd76d7d
+    kind: html
+    fetched: '2026-11-14'
+    redistribute: false
   used_for: []
   imported: 948613566071bcb2
 - id: timxuti-integrated-joint-actuator

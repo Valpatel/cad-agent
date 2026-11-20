@@ -5,7 +5,8 @@ import {lowContrast} from '../layout/outline.mjs';
  */
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
-import { readFile } from 'node:fs/promises';
+import { mkdtemp, readFile, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { chromium, webkit } from '../npm-context.mjs';
 import { builtSite } from '../built-site.mjs';
@@ -28,7 +29,9 @@ const fail = (where, what) => problems.push(`${where}: ${what}`);
 
 // `init`: a script to run before the page's own (to break something on purpose); `fails`: a page error it causes;
 // `forced`: 'active' emulates forced colours (Windows High Contrast and the like).
-async function open(route, { width = 1366, height = 900, js = true, motion = 'no-preference', block = null, init = null, fails = null, forced = 'none', color = 'light' } = {}) {
+// `trace`: keep a navigation trail (main-frame navigations, load events, the page's own history writes and clicks),
+// written out only by `evidence` when a step fails (#754).
+async function open(route, { width = 1366, height = 900, js = true, motion = 'no-preference', block = null, init = null, fails = null, forced = 'none', color = 'light', trace = false } = {}) {
   const context = await browser.newContext({ viewport: { width, height }, javaScriptEnabled: js, reducedMotion: motion, forcedColors: forced, colorScheme: color });
   const page = await context.newPage();
   const seen = [];
@@ -40,10 +43,51 @@ async function open(route, { width = 1366, height = 900, js = true, motion = 'no
   page.on('request', r => { if (!r.url().startsWith(base) && !/^(data|blob):/.test(r.url())) seen.push(`third party: ${r.url()}`); });
   if (js) await page.addInitScript(() => document.addEventListener('securitypolicyviolation', e => console.error(`CSP ${e.violatedDirective} ${e.blockedURI}`)));
   if (init) await page.addInitScript(init);
+  // One clock (Date.now()) for the Node trail and the page's own log, so each pushState pairs with its framenavigated.
+  const trail = [];
+  if (trace) {
+    const note = what => trail.push(`${Date.now()} ${what}`);
+    page.on('framenavigated', f => { if (f === page.mainFrame()) note(`framenavigated ${f.url()}`); });
+    page.on('domcontentloaded', () => note('domcontentloaded'));
+    page.on('load', () => note('load'));
+    await page.addInitScript(() => {
+      const log = window.__catalogTrace = [], note = what => log.push(`${Date.now()} ${what}`);
+      for (const name of ['pushState', 'replaceState']) {
+        const write = history[name];
+        history[name] = function (state, title, url) { note(`${name} ${url}`); return write.apply(this, arguments); };
+      }
+      addEventListener('popstate', () => note(`popstate ${location.href}`));
+      // Capture phase: the click arrived (and on what); bubble phase: it got past the page's handlers, and whether one prevented it.
+      const what = e => e.target?.getAttribute?.('aria-label') || e.target?.localName;
+      addEventListener('click', e => note(`click ${what(e)}`), true);
+      addEventListener('click', e => note(`click handled ${what(e)} defaultPrevented=${e.defaultPrevented}`));
+      addEventListener('pageshow', () => note(`pageshow ${location.href}`));
+    });
+  }
   await page.goto(base + route, { waitUntil: 'networkidle' });
   if (js && !block && !fails && /^\/(?:explore|catalog)(?:[?#]|$)/.test(route)) await page.waitForSelector('cad-gallery[data-ready]', { timeout: 10000 }).catch(() => seen.push('the gallery did not start'));
   const done = async () => { for (const s of seen) fail(`${route} @${width}${js ? '' : ' no-JS'}`, s); await context.close(); };
-  return { page, done };
+  // On a failed step only: what the client believes the URL is, what the document says, its load state, the trail and a picture.
+  // Readings it separates: a click that missed (no `click` entry, or another target); a handler that failed (click, no
+  // pushState, a page error in `seen`) or wrote nothing because the URL was unchanged (`chips`/`checked` show the state);
+  // the engine not reporting (a pushState and `inPage.href` without the change, `playwrightUrl` still with it); and a page
+  // that stopped responding (`inPage.unavailable`). The page reads are bounded, so a hung page still fails in about 30 s.
+  const evidence = async (where, error) => {
+    const out = await mkdtemp(path.join(tmpdir(), 'cad-agent-catalog-wait-'));
+    const record = inPage => writeFile(path.join(out, 'state.json'), JSON.stringify({ where, error: String(error?.message || error), route, playwrightUrl: page.url(), inPage, trail, seen }, null, 2) + '\n');
+    await record({ unavailable: 'not read yet' });   // the Node-side facts need no page
+    let timer;
+    const timedOut = new Promise(ok => { timer = setTimeout(() => ok({ unavailable: 'timed out after 5 s: the page did not answer' }), 5000); });
+    const inPage = await Promise.race([timedOut, page.evaluate(() => ({ href: location.href, readyState: document.readyState, history: history.length, trace: window.__catalogTrace || null,
+      chips: [...document.querySelectorAll('[data-gallery-chips] button')].map(b => b.getAttribute('aria-label')),
+      checked: [...document.querySelectorAll('cad-gallery input:checked')].map(b => `${b.name}=${b.value}`),
+      focus: document.activeElement?.getAttribute('aria-label') || document.activeElement?.localName })).catch(e => ({ unavailable: String(e) }))]);
+    clearTimeout(timer);
+    await record(inPage);
+    if (!inPage.unavailable) await page.screenshot({ path: path.join(out, 'page.png'), fullPage: true, timeout: 5000 }).catch(() => {});
+    console.error(`${where}: failure evidence in ${out}`);
+  };
+  return { page, done, evidence };
 }
 // Hidden from view but kept for screen readers (gallery.css: a 1 px clipped box), or not shown at all.
 const offScreen = loc => loc.evaluate(el => { const r = el.getBoundingClientRect(); return !el.checkVisibility() || (r.width <= 1 && r.height <= 1); });
@@ -189,7 +233,7 @@ async function lifecycleChecks(){
  }
 }
 async function interactionChecks(){
- const {page,done}=await open('/explore');try{
+ const {page,done,evidence}=await open('/explore',{trace:true});try{
   const tabs=page.locator('[data-gallery-tabs] [data-tab]');await tabs.first().focus();await page.keyboard.press('ArrowRight');await page.waitForURL(u=>u.searchParams.get('kind')==='guides');
   if(await page.locator('[data-gallery-tabs] [aria-selected=true]').getAttribute('data-tab')!=='guides')fail('keyboard tabs','ArrowRight does not select guides');
   await page.keyboard.press('End');await page.waitForURL(u=>u.searchParams.get('kind')==='demos');await page.keyboard.press('Home');await page.waitForURL(u=>!u.searchParams.has('kind'));
@@ -205,7 +249,7 @@ async function interactionChecks(){
   if(JSON.stringify(titles)!==JSON.stringify(expected))fail('sort/filter','A–Z tool results disagree with catalogue');
   const projection=JSON.parse(await readFile(path.join(dir,'discovery.json'),'utf8')),total=projection.items.filter(x=>x.group==='guides').length;
   const line=await page.locator('[data-gallery-status]').textContent();if(line!==`${expected.length} of ${total} tools & guides`)fail('filtered count',line);
- }finally{await done();}
+ }catch(error){await evidence('interaction',error).catch(e=>console.error('interaction: evidence not written: '+e.message));throw error;}finally{await done();}
 }
 async function detailsChecks(){
  for(const badRevision of [false,true]){
@@ -261,6 +305,7 @@ async function outlineThemeChecks(){
  }
 }
 try{await sharedDiscoveryChecks();await legacyChecks();await lifecycleChecks();await interactionChecks();await detailsChecks();await readerChecks();await outlineThemeChecks();await toolkitBrowserChecks({open,fail});}
+catch(error){if(problems.length)console.error(`Findings before the error:\n${problems.join('\n')}`);throw error;}   // a thrown step would otherwise hide them
 finally{await browser.close();server.kill();await site.done();}
 assert.deepEqual(problems,[],problems.join('\n'));
 console.log(`Explore/catalogue/readers OK in ${engine.name()}`);

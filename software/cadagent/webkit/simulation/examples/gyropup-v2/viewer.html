@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Gyropup recorded scenarios · cad-agent</title>
+<meta name="description" content="Recorded MuJoCo runs of Gyropup, a work-in-progress wheel-legged robot, replayed in 3D from a dated snapshot.">
+<script src="../../../ui/theme.js"></script>
+<link rel="stylesheet" href="../../../ui/theme.css"><link rel="stylesheet" href="../../../host/viewer-host.css"><link rel="stylesheet" href="../../viewer.css">
+<script type="importmap">{"imports":{"three":"../../../vendor/three/three.module.min.js","three/addons/":"../../../vendor/three/addons/"}}</script>
+</head>
+<body>
+<header class="replay-page-header"><div><p class="replay-eyebrow"><a href="https://cad-agent.valpatel.com/toolkit">← CAD-AGENT TOOLKIT</a> · RECORDED SIMULATION</p><h1>Gyropup, a wheel-legged robot</h1></div>
+<button class="theme-toggle" type="button" aria-label="Toggle dark theme" aria-pressed="false" hidden><svg class="sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/></svg><svg class="moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 15A8 8 0 0 1 9 4a8 8 0 1 0 11 11Z"/></svg></button></header>
+<main>
+<div id="replay" class="replay-stage replay-stage-tall" data-replay-index="index.json" aria-label="Recorded robot simulation"></div>
+<p class="replay-after">Recorded MuJoCo runs from Gyropup's dated snapshot. Choose a scenario; it plays and loops. Pause, scrub time and orbit.</p>
+<p class="replay-assumption">A work-in-progress prototype. These are recorded solver poses from a historical snapshot (October 2026), replayed, not recomputed; they predate Gyropup's current CAD and do not validate hardware. Verdicts and torques are the snapshot's own numbers.</p>
+<p id="receipt-status" role="status">Checking the recording index…</p>
+<details class="replay-evidence"><summary>Source, method and limits</summary><p>Gyropup's recorded MuJoCo joint frames (one every 33 solver steps of 1 ms) are posed through the rig's own five-bar and turret kinematics, and the rig's meshes are packed for the browser. No physics runs here; playback interpolates between recorded frames and does not enforce contacts or joint constraints between them. CAD and simulation do not prove physical fit, strength or control safety.</p>
+<nav aria-label="Recording evidence"><a href="receipt.json">Source revision, hashes and limits</a><a href="index.json">Scenarios and the snapshot's summaries</a><a href="robot.json">Packed rig meshes</a><a href="LICENSE.txt">Gyropup licence (MIT)</a><a href="https://github.com/Valpatel/gyropup">Gyropup project</a><a href="https://github.com/Valpatel/cad-agent/tree/main/docs/examples/robot-replay">Converter and editable two-link example</a><a href="../../README.md">Reusable playback API</a></nav></details>
+</main>
+<footer><a href="https://cad-agent.valpatel.com/toolkit">Explore the toolkit</a><a href="https://valpatel.com">Created by Valpatel Software LLC</a></footer>
+<script type="module" src="../../scenarios.js"></script>
+</body></html>

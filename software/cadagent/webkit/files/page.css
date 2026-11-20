@@ -5,3 +5,5 @@
 :root:not([data-file-theme]),:root[data-file-shared-theme]{--file-background:var(--cream);--file-text:var(--ink);--file-font:var(--font)}
 .file-bootstrap [hidden]{display:none!important}.file-bootstrap :focus-visible{outline:3px solid var(--file-focus);outline-offset:2px}
 *{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden}#file-viewer{width:100%;height:100%;position:relative;min-width:0}noscript{padding:16px}
+/* Under the host site's top bar (ui/appnav.js), when the site has one. */
+body.has-appnav #file-viewer{height:calc(100% - var(--appnav-h,46px));margin-top:var(--appnav-h,46px)}

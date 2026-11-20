@@ -1,0 +1,909 @@
+{
+ "schema": "cad-agent-model/1",
+ "title": "Gyropup turret",
+ "units": "mm",
+ "up": "z",
+ "box_mm": [
+  -101.6,
+  -118.0,
+  0.0,
+  150.0,
+  112.81,
+  234.0
+ ],
+ "quant": 65535,
+ "bin": "model.bin",
+ "encoding": "gzip",
+ "bytes": 306424,
+ "raw_bytes": 790596,
+ "sha256": "58c31a0d74bf760779b34b6fda334a4b7472d213241611843c421ec8b694575e",
+ "triangles": 87980,
+ "source": {
+  "project": "Valpatel/gyropup",
+  "revision": "41c5c266569d6141ecda28711188343b54ab43d8",
+  "license": "MIT",
+  "converter": "docs/examples/build-guide/gyropup_turret.py"
+ },
+ "parts": [
+  {
+   "name": "pan_base",
+   "bounds_mm": [
+    -78.7772,
+    -73.0,
+    0.0,
+    78.7772,
+    87.5,
+    47.0
+   ],
+   "color": "#4c5259",
+   "vertices": 4971,
+   "triangles": 10026,
+   "offset": 0,
+   "index_bits": 16
+  },
+  {
+   "name": "pan_servo",
+   "bounds_mm": [
+    -65.0,
+    -10.11,
+    5.0,
+    -40.3,
+    35.09,
+    52.0
+   ],
+   "color": "#1f1f24",
+   "vertices": 208,
+   "triangles": 412,
+   "offset": 89982,
+   "index_bits": 16
+  },
+  {
+   "name": "pan_pinion",
+   "bounds_mm": [
+    -66.9131,
+    -14.357,
+    52.0,
+    -38.2794,
+    14.357,
+    69.0
+   ],
+   "color": "#f29e4c",
+   "vertices": 1638,
+   "triangles": 3292,
+   "offset": 93702,
+   "index_bits": 16
+  },
+  {
+   "name": "dt_receptacle",
+   "bounds_mm": [
+    -27.56,
+    -97.89,
+    1.22,
+    27.56,
+    -52.0,
+    36.78
+   ],
+   "color": "#8c8c33",
+   "vertices": 24,
+   "triangles": 44,
+   "offset": 123282,
+   "index_bits": 16
+  },
+  {
+   "name": "base_board_carrier",
+   "bounds_mm": [
+    48.0,
+    -35.0,
+    5.5,
+    56.0,
+    35.0,
+    37.5
+   ],
+   "color": "#4c596b",
+   "vertices": 1130,
+   "triangles": 2284,
+   "offset": 123690,
+   "index_bits": 16
+  },
+  {
+   "name": "base_board",
+   "bounds_mm": [
+    36.9,
+    -25.4,
+    6.0,
+    48.0,
+    25.4,
+    36.0
+   ],
+   "color": "#1a7333",
+   "vertices": 400,
+   "triangles": 812,
+   "offset": 144174,
+   "index_bits": 16
+  },
+  {
+   "name": "base_board_inserts",
+   "bounds_mm": [
+    48.0,
+    -24.7534,
+    6.64,
+    53.74,
+    24.7534,
+    35.36
+   ],
+   "color": "#b88233",
+   "vertices": 672,
+   "triangles": 1344,
+   "offset": 151446,
+   "index_bits": 16
+  },
+  {
+   "name": "base_board_screws",
+   "bounds_mm": [
+    43.4,
+    -25.1423,
+    6.25,
+    52.4,
+    25.1423,
+    35.75
+   ],
+   "color": "#404047",
+   "vertices": 720,
+   "triangles": 1424,
+   "offset": 163542,
+   "index_bits": 16
+  },
+  {
+   "name": "base_carrier_inserts",
+   "bounds_mm": [
+    47.26,
+    -33.3534,
+    6.64,
+    53.0,
+    33.3534,
+    35.36
+   ],
+   "color": "#b88233",
+   "vertices": 672,
+   "triangles": 1344,
+   "offset": 176406,
+   "index_bits": 16
+  },
+  {
+   "name": "base_carrier_screws",
+   "bounds_mm": [
+    48.0,
+    -33.7423,
+    6.25,
+    59.0,
+    33.7423,
+    35.75
+   ],
+   "color": "#404047",
+   "vertices": 720,
+   "triangles": 1424,
+   "offset": 188502,
+   "index_bits": 16
+  },
+  {
+   "name": "index_magnet",
+   "bounds_mm": [
+    32.62,
+    -2.3733,
+    47.0,
+    37.38,
+    2.3733,
+    50.18
+   ],
+   "color": "#9999a6",
+   "vertices": 84,
+   "triangles": 164,
+   "offset": 201366,
+   "index_bits": 16
+  },
+  {
+   "name": "pan_bearing",
+   "bounds_mm": [
+    -32.5,
+    -32.4091,
+    40.0,
+    32.5,
+    32.4091,
+    47.0
+   ],
+   "color": "#bfbfc7",
+   "vertices": 336,
+   "triangles": 672,
+   "offset": 202854,
+   "index_bits": 16
+  },
+  {
+   "name": "pan_bearing_inner",
+   "bounds_mm": [
+    -26.5,
+    -26.4259,
+    40.0,
+    26.5,
+    26.4259,
+    47.0
+   ],
+   "color": "#ccccd4",
+   "vertices": 168,
+   "triangles": 336,
+   "offset": 208902,
+   "index_bits": 16
+  },
+  {
+   "name": "pan_clamp",
+   "bounds_mm": [
+    -37.0,
+    -43.373,
+    47.0,
+    48.9808,
+    43.373,
+    50.175
+   ],
+   "color": "#666b73",
+   "vertices": 822,
+   "triangles": 1668,
+   "offset": 211926,
+   "index_bits": 16
+  },
+  {
+   "name": "pan_ring",
+   "bounds_mm": [
+    -40.5931,
+    -40.6206,
+    27.85,
+    40.6229,
+    40.6206,
+    69.0
+   ],
+   "color": "#d96b1a",
+   "vertices": 3738,
+   "triangles": 7480,
+   "offset": 226866,
+   "index_bits": 16
+  },
+  {
+   "name": "hall_switch",
+   "bounds_mm": [
+    32.95,
+    -1.5,
+    53.1,
+    37.05,
+    1.5,
+    54.7
+   ],
+   "color": "#1a1a1a",
+   "vertices": 8,
+   "triangles": 12,
+   "offset": 294174,
+   "index_bits": 16
+  },
+  {
+   "name": "pan_spacer",
+   "bounds_mm": [
+    -29.5,
+    -29.4175,
+    36.0,
+    29.5,
+    29.4175,
+    40.0
+   ],
+   "color": "#d96b1a",
+   "vertices": 252,
+   "triangles": 504,
+   "offset": 294294,
+   "index_bits": 16
+  },
+  {
+   "name": "circlip_50",
+   "bounds_mm": [
+    -28.5942,
+    -28.5221,
+    34.0,
+    28.5942,
+    30.4,
+    36.0
+   ],
+   "color": "#1a1a1c",
+   "vertices": 224,
+   "triangles": 448,
+   "offset": 298830,
+   "index_bits": 16
+  },
+  {
+   "name": "ring_driver",
+   "bounds_mm": [
+    -19.6642,
+    -20.2,
+    55.0,
+    19.6642,
+    19.7,
+    69.0
+   ],
+   "color": "#d96b1a",
+   "vertices": 452,
+   "triangles": 904,
+   "offset": 302862,
+   "index_bits": 16
+  },
+  {
+   "name": "slip_ring",
+   "bounds_mm": [
+    -22.25,
+    -22.1878,
+    9.4,
+    22.25,
+    22.1878,
+    35.9
+   ],
+   "color": "#cca633",
+   "vertices": 168,
+   "triangles": 332,
+   "offset": 310998,
+   "index_bits": 16
+  },
+  {
+   "name": "slip_ring_rotor",
+   "bounds_mm": [
+    -3.0,
+    -2.9916,
+    35.89,
+    3.0,
+    2.9916,
+    40.9
+   ],
+   "color": "#cca633",
+   "vertices": 84,
+   "triangles": 164,
+   "offset": 313998,
+   "index_bits": 16
+  },
+  {
+   "name": "ring_coupling",
+   "bounds_mm": [
+    -4.37,
+    -4.3577,
+    36.2,
+    4.37,
+    4.3577,
+    61.0
+   ],
+   "color": "#f2f2e6",
+   "vertices": 336,
+   "triangles": 672,
+   "offset": 315486,
+   "index_bits": 16
+  },
+  {
+   "name": "ring_carrier",
+   "bounds_mm": [
+    -32.2888,
+    -36.6157,
+    0.0,
+    32.25,
+    36.6157,
+    12.0
+   ],
+   "color": "#4c5259",
+   "vertices": 1224,
+   "triangles": 2464,
+   "offset": 321534,
+   "index_bits": 16
+  },
+  {
+   "name": "tilt_yoke",
+   "bounds_mm": [
+    -20.0,
+    -68.81,
+    69.0,
+    20.0,
+    103.71,
+    160.0
+   ],
+   "color": "#595e66",
+   "vertices": 3063,
+   "triangles": 6162,
+   "offset": 343662,
+   "index_bits": 16
+  },
+  {
+   "name": "ring_leads_rotor",
+   "bounds_mm": [
+    -3.75,
+    -71.81,
+    36.2,
+    3.75,
+    -9.2605,
+    92.75
+   ],
+   "color": "#bf2626",
+   "vertices": 253,
+   "triangles": 502,
+   "offset": 399012,
+   "index_bits": 16
+  },
+  {
+   "name": "board_bay",
+   "bounds_mm": [
+    -29.0,
+    -118.0,
+    69.81,
+    29.0,
+    -68.81,
+    129.19
+   ],
+   "color": "#8c99a6",
+   "vertices": 1368,
+   "triangles": 2752,
+   "offset": 403542,
+   "index_bits": 16
+  },
+  {
+   "name": "turret_board",
+   "bounds_mm": [
+    -26.0,
+    -116.11,
+    74.5,
+    26.0,
+    -76.81,
+    124.5
+   ],
+   "color": "#1a7333",
+   "vertices": 696,
+   "triangles": 1380,
+   "offset": 428262,
+   "index_bits": 16
+  },
+  {
+   "name": "tilt_servo",
+   "bounds_mm": [
+    -12.35,
+    65.81,
+    104.91,
+    12.35,
+    112.81,
+    150.11
+   ],
+   "color": "#1f1f24",
+   "vertices": 208,
+   "triangles": 412,
+   "offset": 440718,
+   "index_bits": 16
+  },
+  {
+   "name": "tilt_bearing",
+   "bounds_mm": [
+    -6.0,
+    -64.81,
+    134.0168,
+    6.0,
+    -60.81,
+    145.9832
+   ],
+   "color": "#bfbfc7",
+   "vertices": 336,
+   "triangles": 672,
+   "offset": 444438,
+   "index_bits": 16
+  },
+  {
+   "name": "tilt_bearing_inner",
+   "bounds_mm": [
+    -3.6,
+    -64.81,
+    136.4101,
+    3.6,
+    -60.81,
+    143.5899
+   ],
+   "color": "#ccccd4",
+   "vertices": 168,
+   "triangles": 336,
+   "offset": 450486,
+   "index_bits": 16
+  },
+  {
+   "name": "cradle",
+   "bounds_mm": [
+    -101.6,
+    -56.81,
+    99.9,
+    48.0,
+    56.81,
+    109.9
+   ],
+   "color": "#3373bf",
+   "vertices": 1158,
+   "triangles": 2332,
+   "offset": 453510,
+   "index_bits": 16
+  },
+  {
+   "name": "cradle_plate_l",
+   "bounds_mm": [
+    -58.0,
+    53.61,
+    99.9,
+    36.0,
+    56.785,
+    161.9385
+   ],
+   "color": "#bdc2cc",
+   "vertices": 1196,
+   "triangles": 2424,
+   "offset": 474450,
+   "index_bits": 16
+  },
+  {
+   "name": "cradle_plate_r",
+   "bounds_mm": [
+    -58.0,
+    -56.785,
+    99.9,
+    36.0,
+    -53.61,
+    161.9385
+   ],
+   "color": "#bdc2cc",
+   "vertices": 858,
+   "triangles": 1740,
+   "offset": 496170,
+   "index_bits": 16
+  },
+  {
+   "name": "stop_lug",
+   "bounds_mm": [
+    -11.9232,
+    -59.325,
+    108.0541,
+    11.9232,
+    -56.785,
+    130.6715
+   ],
+   "color": "#9ea3ad",
+   "vertices": 254,
+   "triangles": 512,
+   "offset": 511758,
+   "index_bits": 16
+  },
+  {
+   "name": "horn_boss",
+   "bounds_mm": [
+    -10.0,
+    56.785,
+    130.028,
+    10.0,
+    65.81,
+    149.972
+   ],
+   "color": "#3373bf",
+   "vertices": 504,
+   "triangles": 1024,
+   "offset": 516354,
+   "index_bits": 16
+  },
+  {
+   "name": "pivot_spacer",
+   "bounds_mm": [
+    -9.0,
+    -60.81,
+    131.0252,
+    9.0,
+    -56.785,
+    148.9748
+   ],
+   "color": "#3373bf",
+   "vertices": 252,
+   "triangles": 504,
+   "offset": 525522,
+   "index_bits": 16
+  },
+  {
+   "name": "shoulder_screw",
+   "bounds_mm": [
+    -5.0,
+    -77.81,
+    135.014,
+    5.0,
+    -50.81,
+    144.986
+   ],
+   "color": "#1a1a1c",
+   "vertices": 252,
+   "triangles": 500,
+   "offset": 530058,
+   "index_bits": 16
+  },
+  {
+   "name": "laser_mount",
+   "bounds_mm": [
+    51.0,
+    -12.5,
+    145.5,
+    84.0,
+    12.5,
+    163.5
+   ],
+   "color": "#4ca659",
+   "vertices": 1033,
+   "triangles": 2094,
+   "offset": 534570,
+   "index_bits": 16
+  },
+  {
+   "name": "laser",
+   "bounds_mm": [
+    62.0,
+    -3.5,
+    151.0098,
+    84.5,
+    3.5,
+    157.9902
+   ],
+   "color": "#269926",
+   "vertices": 84,
+   "triangles": 164,
+   "offset": 553332,
+   "index_bits": 16
+  },
+  {
+   "name": "cartridge_body",
+   "bounds_mm": [
+    -101.6,
+    -51.6,
+    106.9,
+    64.0,
+    51.6,
+    188.5
+   ],
+   "color": "#737880",
+   "vertices": 6280,
+   "triangles": 12672,
+   "offset": 554820,
+   "index_bits": 16
+  },
+  {
+   "name": "feed_motor",
+   "bounds_mm": [
+    -83.09,
+    -12.35,
+    88.75,
+    -37.89,
+    12.35,
+    135.75
+   ],
+   "color": "#1f1f24",
+   "vertices": 208,
+   "triangles": 412,
+   "offset": 668532,
+   "index_bits": 16
+  },
+  {
+   "name": "dial",
+   "bounds_mm": [
+    -93.4349,
+    -45.4349,
+    135.75,
+    -2.5651,
+    45.4349,
+    179.75
+   ],
+   "color": "#f2cc33",
+   "vertices": 1242,
+   "triangles": 2496,
+   "offset": 672252,
+   "index_bits": 16
+  },
+  {
+   "name": "flywheel_motor_l",
+   "bounds_mm": [
+    11.15,
+    11.9987,
+    112.5,
+    38.85,
+    39.6213,
+    169.5
+   ],
+   "color": "#a62626",
+   "vertices": 672,
+   "triangles": 1340,
+   "offset": 694680,
+   "index_bits": 16
+  },
+  {
+   "name": "flywheel_motor_r",
+   "bounds_mm": [
+    11.15,
+    -39.6213,
+    112.5,
+    38.85,
+    -11.9987,
+    169.5
+   ],
+   "color": "#a62626",
+   "vertices": 672,
+   "triangles": 1340,
+   "offset": 706752,
+   "index_bits": 16
+  },
+  {
+   "name": "flywheel",
+   "bounds_mm": [
+    10.0,
+    10.8519,
+    119.0,
+    40.0,
+    40.7681,
+    131.0
+   ],
+   "color": "#404045",
+   "vertices": 294,
+   "triangles": 588,
+   "offset": 718824,
+   "index_bits": 16
+  },
+  {
+   "name": "flywheel_m",
+   "bounds_mm": [
+    10.0,
+    -40.7681,
+    119.0,
+    40.0,
+    -10.8519,
+    131.0
+   ],
+   "color": "#404045",
+   "vertices": 294,
+   "triangles": 588,
+   "offset": 724116,
+   "index_bits": 16
+  },
+  {
+   "name": "flywheel_tyre",
+   "bounds_mm": [
+    6.0,
+    6.8631,
+    119.0,
+    44.0,
+    44.7569,
+    131.0
+   ],
+   "color": "#1a1a1a",
+   "vertices": 168,
+   "triangles": 336,
+   "offset": 729408,
+   "index_bits": 16
+  },
+  {
+   "name": "flywheel_tyre_m",
+   "bounds_mm": [
+    6.0,
+    -44.7569,
+    119.0,
+    44.0,
+    -6.8631,
+    131.0
+   ],
+   "color": "#1a1a1a",
+   "vertices": 168,
+   "triangles": 336,
+   "offset": 732432,
+   "index_bits": 16
+  },
+  {
+   "name": "cartridge_board",
+   "bounds_mm": [
+    6.0,
+    -22.0,
+    188.5,
+    56.0,
+    22.0,
+    211.1
+   ],
+   "color": "#1a7333",
+   "vertices": 16,
+   "triangles": 28,
+   "offset": 735456,
+   "index_bits": 16
+  },
+  {
+   "name": "esc_l",
+   "bounds_mm": [
+    14.0,
+    1.5,
+    170.49,
+    40.0,
+    14.5,
+    175.5
+   ],
+   "color": "#1a5926",
+   "vertices": 8,
+   "triangles": 12,
+   "offset": 735720,
+   "index_bits": 16
+  },
+  {
+   "name": "esc_r",
+   "bounds_mm": [
+    14.0,
+    -14.5,
+    170.49,
+    40.0,
+    -1.5,
+    175.5
+   ],
+   "color": "#1a5926",
+   "vertices": 8,
+   "triangles": 12,
+   "offset": 735840,
+   "index_bits": 16
+  },
+  {
+   "name": "barrel",
+   "bounds_mm": [
+    50.0,
+    -17.5,
+    110.0419,
+    150.0,
+    17.5,
+    139.9581
+   ],
+   "color": "#f2731a",
+   "vertices": 959,
+   "triangles": 1934,
+   "offset": 735960,
+   "index_bits": 16
+  },
+  {
+   "name": "hopper",
+   "bounds_mm": [
+    -100.718,
+    -51.2889,
+    160.0,
+    2.7,
+    50.6998,
+    225.0
+   ],
+   "color": "#b2d9f2",
+   "vertices": 907,
+   "triangles": 1834,
+   "offset": 753318,
+   "index_bits": 16
+  },
+  {
+   "name": "hopper_lid",
+   "bounds_mm": [
+    -99.0516,
+    -53.3189,
+    207.5,
+    8.1416,
+    56.2702,
+    234.0
+   ],
+   "color": "#b2d9f2",
+   "vertices": 988,
+   "triangles": 1984,
+   "offset": 769764,
+   "index_bits": 16
+  },
+  {
+   "name": "ct_thumbscrew",
+   "bounds_mm": [
+    35.0,
+    -51.2876,
+    93.4,
+    51.0,
+    -35.3324,
+    102.91
+   ],
+   "color": "#1a1a1c",
+   "vertices": 168,
+   "triangles": 332,
+   "offset": 787596,
+   "index_bits": 16
+  }
+ ]
+}

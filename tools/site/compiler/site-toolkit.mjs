@@ -8,6 +8,10 @@ const UI = 'software/cadagent/webkit/scada/ui/';
 const SIM = 'software/cadagent/webkit/scada/sim/';
 const documentPage = file => '/' + publicPath(file).replace(/\.md$/,'');
 const ownerPage = file => '/' + folderMapPath(file).replace(/\.md$/,'');
+export const manifoldFile = {
+  source: 'software/vendor/agentcad/tests/fixtures/real_world/pump_manifold.step',
+  path: '/web/toolkit/pump-manifold.step',
+};
 const scadaDocs = {
   owner:ownerPage('software/cadagent/webkit/scada/README.md'),
   ui:ownerPage(UI+'README.md'), sim:ownerPage(SIM+'README.md'), gallery:ownerPage(UI+'img/README.md'),
@@ -153,10 +157,10 @@ export function toolkitCapabilities(m, {catalog = [], has} = {}) {
       image:'/kit/simulation/examples/gyropup-v2/card-still.webp', motion:'/kit/simulation/examples/gyropup-v2/card.webp',
       alt:'Gyropup, a wheel-legged robot, driving off a kerb in the recorded-simulation viewer',
       href:'/kit/simulation/examples/gyropup-v2/viewer.html?nav=1', action:'Play robot recording', docs:'/'+folderMapPath('docs/examples/robot-replay/README.md').replace(/\.md$/,'')},
-    {id:'files', title:'Original CAD files', kind:'File viewer',
-      description:'Inspect an original STL with the shared camera and display tools. The viewer also supports STEP and other CAD formats.',
-      image:'/web/toolkit/file-review.webp', alt:'The original-file viewer displaying the example fixture STL',
-      href:'/kit/files/file-viewer.html?file=/kit/host/example.stl&nav=1', action:'Open file example', docs:'/docs/file-viewer'},
+    {id:'files', title:'Inspect a pump manifold', kind:'File viewer',
+      description:'Orbit this Fusion 360 STEP model to see the angled ports and the bolt holes around its mounting flange.',
+      image:'/web/toolkit/file-review.webp', alt:'Pump manifold with angled ports above a drilled mounting flange, shown in isometric view',
+      href:`/kit/files/file-viewer.html?file=${manifoldFile.path}&nav=1`, action:'Open pump manifold', docs:'/docs/file-viewer'},
     {id:'assembly', title:'Assembly & build guides', kind:'Step-by-step instructions',
       description:'Step through Gyropup\'s turret, a work-in-progress prototype, in its own authored assembly order: twelve steps, each step\'s new parts highlighted and drawn back along the way they go in, earlier parts ghosted. An example sequence, not a verified build procedure; a CAD step order does not prove the parts can physically go together.',
       image:'/web/toolkit/assembly.webp', alt:'The build-guide viewer on step 11 of Gyropup\'s turret: the barrel, hopper and lid arrive over the ghosted turret, beside the step\'s instructions',

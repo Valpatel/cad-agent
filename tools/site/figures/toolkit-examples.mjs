@@ -7,6 +7,7 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import http from 'node:http';
 import path from 'node:path';
 import { chromium } from '@playwright/test';
+import { manifoldFile } from '../compiler/site-toolkit.mjs';
 
 const root = path.resolve(import.meta.dirname, '../../..');
 // The featured build guide (#811): Gyropup's authored turret order, converted by docs/examples/build-guide/.
@@ -56,6 +57,9 @@ const featured = { path: example, route: exampleRoute, revision: receipt.revisio
   guide: hash(guideBytes), view: guide.model.sha256 };
 if (check) {
   const record = JSON.parse(await bytesAt(`${output}/SOURCE.json`));
+  const card = record.captures['file-review'];
+  assert.equal(card.route, `/kit/files/file-viewer.html?file=${manifoldFile.path}`);
+  assert.equal(card.runtimeInputs[manifoldFile.source], hash(await bytesAt(manifoldFile.source)));
   assert.deepEqual(record.featured, featured, 'Recapture after the featured example changes');
   assert.deepEqual(record.copies, copies);
   for (const [name, bytes] of inputs) assert.deepEqual(await bytesAt(`${output}/assembly/${name}`), bytes, `Changed bundle: ${name}`);
@@ -75,6 +79,12 @@ const served = new Map();
 const server = http.createServer(async (req, res) => {
   try {
     const pathname = decodeURIComponent(new URL(req.url, 'http://localhost').pathname);
+    if (pathname === manifoldFile.path) {
+      const bytes = await bytesAt(manifoldFile.source);
+      served.set(manifoldFile.source, hash(bytes));
+      res.writeHead(200, { 'Content-Type': 'application/octet-stream' }).end(bytes);
+      return;
+    }
     const base = pathname.startsWith('/kit/') ? 'software/cadagent/webkit' : null;
     if (!base) { res.writeHead(404).end(); return; }
     const owner = path.join(root, base), target = path.resolve(owner, '.' + pathname.slice(4));
@@ -97,7 +107,7 @@ try {
     page.on('pageerror', error => errors.push(error.message));
     page.on('response', response => { if (response.status() >= 400) errors.push(`${response.status()} ${new URL(response.url()).pathname}`); });
     await page.route('**/*', route => new URL(route.request().url()).origin === origin ? route.continue() : route.abort());
-    const route = kind === 'assembly' ? `/kit/model/viewer.html?guide=${exampleRoute}` : '/kit/files/file-viewer.html?file=/kit/host/example.stl';
+    const route = kind === 'assembly' ? `/kit/model/viewer.html?guide=${exampleRoute}` : `/kit/files/file-viewer.html?file=${manifoldFile.path}`;
     await page.goto(origin + route);
     await page.waitForFunction(kind => kind === 'assembly' ? document.body.dataset.ready === '1' : window.__fileViewer?.root.dataset.state === 'ready', kind);
     if (kind === 'assembly') await page.getByRole('combobox', { name: 'Instruction step', exact: true }).selectOption(previewStep);
@@ -119,9 +129,11 @@ try {
     assert.deepEqual(errors, [], `Viewer failed: ${kind}`);
     if (kind === 'assembly') assert.deepEqual(scene.parts.slice().sort(), view.parts.map(part => part.name).sort());
     if (kind === 'assembly') assert.deepEqual([scene.instruction, scene.display], [previewStep, 'ghost']);
-    const png = await page.screenshot({ type: 'png', animations: 'disabled' });
+    // The card shows the file's geometry. Crop the stable isometric view to the card's 8:5 frame.
+    const clip = kind === 'file-review' ? { x: 224, y: 145, width: 512, height: 320 } : undefined;
+    const png = await page.screenshot({ type: 'png', animations: 'disabled', clip });
     // The turret preview has far more detail than the old rail bench; a lower quality keeps the home page's lazy card
-    // within a small still of its former bytes (#811). The file-review preview keeps its quality and bytes.
+    // within a small still of its former bytes (#811). The file-review preview keeps its higher quality.
     const quality = kind === 'assembly' ? .8 : .9;
     const encoded = await page.evaluate(async ([png, quality]) => {
       const image = new Image(); image.src = `data:image/png;base64,${png}`; await image.decode();
@@ -131,7 +143,7 @@ try {
     }, [png.toString('base64'), quality]);
     const bytes = Buffer.from(encoded, 'base64'), file = `${kind}.webp`;
     await writeFile(path.join(root, output, file), bytes);
-    captures[kind] = { file, route, sha256: hash(bytes), bytes: bytes.length, webpQuality: quality, viewport: { width: 960, height: 640 }, deviceScaleFactor: 1, colorScheme: 'dark', reducedMotion: 'reduce', scene, runtimeInputs: Object.fromEntries([...served].sort(([a], [b]) => a.localeCompare(b))) };
+    captures[kind] = { file, route, sha256: hash(bytes), bytes: bytes.length, webpQuality: quality, viewport: { width: 960, height: 640 }, ...(clip ? { clip } : {}), deviceScaleFactor: 1, colorScheme: 'dark', reducedMotion: 'reduce', scene, runtimeInputs: Object.fromEntries([...served].sort(([a], [b]) => a.localeCompare(b))) };
     await page.close();
   }
   const receipt = {

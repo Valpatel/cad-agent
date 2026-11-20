@@ -130,13 +130,18 @@ export async function toolkitExampleChecks({open,fail}) {
       } else if(id==='files') {
         await page.waitForFunction(()=>window.__fileViewer?.root.dataset.state==='ready'&&window.__fileViewer.stage.renderer.info.render.triangles>0);
         const before=await page.evaluate(()=>({camera:window.__fileViewer.stage.camera.position.toArray(),source:window.__fileViewer.info.sourceName}));
-        if(before.source!=='example.stl')fail(where,`wrong source loaded: ${before.source}`);
+        if(before.source!=='pump-manifold.step')fail(where,`wrong source loaded: ${before.source}`);
         await page.getByRole('button',{name:'Front',exact:true}).click();
         await page.waitForFunction(before=>JSON.stringify(window.__fileViewer.stage.camera.position.toArray())!==JSON.stringify(before),before.camera);
         await page.getByRole('button',{name:'Fit',exact:true}).click();
         const target=await page.getByRole('link',{name:'Download original',exact:true}).getAttribute('href');
-        if(new URL(target,page.url()).pathname!=='/kit/host/example.stl')fail(where,'download is not the loaded original');
-        if(!await page.getByRole('combobox',{name:'STL units',exact:true}).isVisible())fail(where,'STL units control is missing');
+        if(new URL(target,page.url()).pathname!=='/web/toolkit/pump-manifold.step')fail(where,'download is not the loaded original');
+        if(await page.getByRole('combobox',{name:'STL units',exact:true}).isVisible())fail(where,'STEP file offers an STL unit override');
+        const digest=await page.evaluate(async url=>{
+          const bytes=await (await fetch(url)).arrayBuffer();
+          return Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',bytes)),n=>n.toString(16).padStart(2,'0')).join('');
+        },target);
+        if(digest!=='8596ec93c6b3fa01e907806204e8f30e1c0e4210988a5b86e237c7ac667edac6')fail(where,'downloaded STEP differs from the original pump manifold');
       } else if(id==='assembly') {
         await page.waitForFunction(()=>document.body.dataset.ready==='1'&&window.__viewer?.stage.renderer.info.render.triangles>0);
         await page.getByRole('combobox',{name:'Instruction step',exact:true}).selectOption('step-11');

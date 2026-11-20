@@ -41,7 +41,8 @@ export function wideGeometryProblems(m) {
   if (m.route === '/') {
     const limit = Math.min(900, height * .85);
     if (!m.hero?.loaded || !finite(m.hero.width) || !finite(m.hero.height)) problems.push('missing or unloaded homepage artwork');
-    else if (m.hero.height > limit) problems.push(`homepage artwork is ${m.hero.height.toFixed(1)}px tall; budget ${limit}px`);
+    else if (m.hero.width < m.shells?.main?.width - 1) problems.push('homepage artwork stops short of the content edge');
+    if (m.hero?.height > limit) problems.push(`homepage artwork is ${m.hero.height.toFixed(1)}px tall; budget ${limit}px`);
   }
   return problems;
 }

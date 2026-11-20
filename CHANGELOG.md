@@ -9,6 +9,18 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
 
 ## Unreleased
 
+## v0.50.0 (2026-11-20)
+
+**New**
+- `cadagent.formulas` has gears (`gears.py`): involute spur gears and straight bevel gears on 90 degree shafts, as a static or low-speed first check. The module is in metres, like every length in `cadagent.formulas` (a 2 mm module is `0.002`), not in the millimetres the CAD geometry uses. No AGMA factors, pitting, wear or fatigue, and no allowable stress for printed plastic gears: see `docs/formulas.md`, "Gears" (#721).
+- Gear geometry: `gear_pitch_diameter`, `gear_centre_distance`, `gear_tip_diameter`, `gear_root_diameter`, `gear_base_diameter`, `gear_contact_ratio`, `gear_min_teeth`, `gear_max_mate_teeth`, `module_from_diametral_pitch`, `diametral_pitch_from_module`; for bevels `bevel_pitch_angles`, `bevel_cone_distance`, `bevel_mean_radius`, `bevel_face_width_limits`, `bevel_virtual_teeth`. `gear_contact_ratio` cuts the path of contact off at the interference points, so a pair that interferes is not overstated; `bevel_face_width_limits` is Shigley's 0.3 of the cone distance and ten modules (#721).
+- Tooth forces: `gear_tangential_force`, `spur_gear_forces`, `bevel_gear_forces` (#721).
+- Lewis bending: `lewis_form_factor` (Shigley's Table 14-2 and Boston Gear's Table I, 14.5 and 20 degree full-depth teeth), `gear_velocity_factor`, `lewis_bending_stress`, `bevel_cone_factor`, `lewis_bevel_bending_stress`, and from a torque `spur_tooth_bending` and `bevel_tooth_bending`, which keeps the large-end force, the mean-radius force, the virtual tooth number and the cone factor apart (#721).
+
+**Changed**
+- The web kit's shared 3D stage (file, assembly, FEA, host and replay viewers) draws only when the picture would change, not on every animation frame. An idle viewer now costs almost no CPU, and on a machine without a GPU the page stops dropping to a few frames a second; the pictures are the same (#822).
+- `createStage` returns `invalidate()` to request a draw for changes outside the scene signature, plus `draws` and `frames` counters. After repainting a canvas texture, set `texture.needsUpdate = true` so three.js uploads the pixels and the stage redraws. Off-screen stages draw nothing until they come back into view (#822).
+
 ## v0.49.0 (2026-11-20)
 
 **New**

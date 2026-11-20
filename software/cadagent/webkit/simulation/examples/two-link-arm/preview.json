@@ -20,7 +20,7 @@
     "software/cadagent/webkit/simulation/viewer.css": "dab0c6bf8894a1d56dc6d48f932cc39b23460cef0adb8d81f382b0ea218582e7",
     "software/cadagent/webkit/simulation/examples/two-link-arm/recording.json": "c090649e245efee73d4f55a4a765cf691061833bbcc6bf211fde143e6ca3535a",
     "software/cadagent/webkit/simulation/examples/two-link-arm/receipt.json": "edbdcafba372773bb6228c5750e5200c0f051739e3ce44bd17f9e73229ebe2f5",
-    "software/cadagent/webkit/model/stage.js": "b9bcfa27196e982953f145099b1ce83c8d6d5b973075d8bd8c997e8c152f3d79",
+    "software/cadagent/webkit/model/stage.js": "ae62937d56c0acdbcfdce4c163276d835ff653f75d6263d579c24eb4fdf56af4",
     "software/cadagent/webkit/host/viewer-host.js": "2a1f42a3f86c33932b1c423bb4f9b503c940a657513ae5c9e015b5aff9f9f619",
     "software/cadagent/webkit/host/viewer-host.css": "53f17e42664222f055707daa0e16b7a8ebb3d5e199a4ebfa5098c3d56454972d",
     "software/cadagent/webkit/host/stage-controls.js": "557891644146253c768531caedd79bc9909f36fee6538902018f601a9a54836d",

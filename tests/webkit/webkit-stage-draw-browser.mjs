@@ -263,8 +263,18 @@ try {
     await check(page, E, 'FEA result field', () => page.evaluate(() => __fea.setField('disp')));
     await check(page, E, 'FEA deformation scale', () => page.evaluate(() => __fea.setExaggeration(5)));
     await check(page, E, 'FEA section clip', () => page.evaluate(() => __fea.setClip('x', 0.5, false)));
-    // Playback starts in the 0.8 s hold at the design load, so it runs long enough to ramp past it.
-    await check(page, E, 'FEA load playback', async () => { await page.evaluate(() => __fea.play(true)); await page.waitForTimeout(3000); await page.evaluate(() => __fea.play(false)); });
+    await check(page, E, 'FEA load playback', async () => {
+      const load = await page.getByRole('slider', { name: /^Load factor/ }).elementHandle();
+      await page.evaluate(() => __fea.play(true));
+      // Playback holds at design load before ramping. Freeze a visibly different load in the same frame we observe it.
+      await page.waitForFunction(slider => {
+        if (slider.valueAsNumber >= 1.2) {
+          __fea.play(false);
+          return true;
+        }
+        return false;
+      }, load, { timeout: 15000 });
+    });
     await page.close();
   }
 

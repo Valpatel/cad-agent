@@ -71,8 +71,9 @@ function floorGrid(accent, color) {
  * The stage draws on demand: each frame it compares what the renderer would read (sceneSignature) with what it read
  * at the last draw, and draws only on a difference, so an idle stage costs no GPU or rasteriser time. Code that moves,
  * shows, hides, recolours or replaces three.js objects, materials, textures, lights, the camera or the renderer's
- * size needs to do nothing more. `invalidate()` requests a draw for anything the signature cannot see (for example
- * a texture whose pixels change without `needsUpdate`, or a shader that reads time from outside its uniforms).
+ * size needs to do nothing more. After repainting a CanvasTexture's canvas, set `texture.needsUpdate = true`
+ * so three.js uploads its pixels. The stage sees the resulting texture version and draws. `invalidate()` requests
+ * a draw for a change in external state that the scene signature cannot see.
  * `draws` counts the frame loop's draws.
  */
 /**

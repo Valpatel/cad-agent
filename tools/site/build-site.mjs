@@ -25,7 +25,7 @@ import { ON, fold, pagePlacer } from './compiler/site-pages.mjs';    // docs/pag
 import { SECTIONS, createPublication, validateRedirects, folderMapSources } from './publication.mjs';
 import { loadReferences, referenceModel, referenceSite, linkTags, mdTags, healthOf } from './compiler/site-references.mjs';   // /references (#323)
 import { CARD, socialMeta, socialProblems, llmsProblems, servedFiles } from './compiler/site-checks.mjs';   // card tags and llms.txt links (#804)
-import {SCADA_INPUTS, TOOLKIT_ROUTES, scadaToolkitModel, toolkitPages, toolkitFullText, toolkitCapabilities, buildGuideCaptionMissing} from './compiler/site-toolkit.mjs';
+import {manifoldFile, SCADA_INPUTS, TOOLKIT_ROUTES, scadaToolkitModel, toolkitPages, toolkitFullText, toolkitCapabilities, buildGuideCaptionMissing} from './compiler/site-toolkit.mjs';
 
 // --root DIR builds another checkout of this repo (the tests use a scratch worktree); the build tools still run from here.
 const rootArg = process.argv.indexOf('--root');
@@ -87,6 +87,9 @@ const ASSETS = 'tools/site/assets';
 // Owner maps are compiled below with source-relative links; only runtime assets belong under /web/.
 for (const f of tracked.filter(f => f.startsWith(ASSETS + '/') && !folderPaths.has(f)))
   await copyTracked(f, path.join(out, 'web', f.slice(ASSETS.length + 1)));
+// Publish the original STEP and its upstream licence directly from the pinned AgentCAD tree.
+await copyTracked(manifoldFile.source, path.join(out, manifoldFile.path));
+await copyTracked('software/vendor/agentcad/LICENSE', path.join(out, 'web/toolkit/agentcad-license.txt'));
 // Browsers ask for /favicon.ico on pages without an icon link (llms.txt, the .md twins).
 if (tracked.includes(ASSETS + '/favicon.ico')) await copyTracked(ASSETS + '/favicon.ico', path.join(out, 'favicon.ico'));
 // iOS asks for /apple-touch-icon.png whatever the page says; every page also links it (tools/site/figures/social-card.mjs draws it).

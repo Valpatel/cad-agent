@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import textwrap
 from pathlib import Path
@@ -531,3 +532,115 @@ def test_downloads_show_a_dash_not_missing_for_a_part_that_is_not_printed(tmp_pa
     assert 'href="../exports/frame.step"' in page and "A dash marks a part that is not printed" in page
     assert "STEP missing" in page                       # the motor's STEP: for CAD review, whatever makes the part
     assert page.count('class="vcad-missing"') == 2 + 3  # that and the lid's STL (printed), three parts with no render
+
+
+# STL freshness is optional for legacy records, but a declared binding must verify (#746).
+
+def test_exported_stl_replacement_and_restoration_through_check_cli(tmp_path, capsys):
+    cq = pytest.importorskip("cadquery")
+    trimesh = pytest.importorskip("trimesh")
+    from cadagent.cli import main
+    from cadagent.geometry import export_print_stl
+
+    root = make_project(tmp_path, parts={"box": GOOD})
+    stl = root / "exports" / "box.stl"
+    receipt = export_print_stl(cq.Workplane().box(10, 20, 30).val(), stl)
+    original = stl.read_bytes()
+    assert receipt["stl_sha256"] == hashlib.sha256(original).hexdigest()
+    (root / "exports" / "geometry-checks.json").write_text(json.dumps({"box": receipt}))
+
+    def check(expected):
+        assert main(["--project", str(root), "check", "--json"]) == (0 if expected else 1)
+        result = json.loads(capsys.readouterr().out)
+        assert result["pass"] is expected
+        row = rows(result, "cad-parts")["P1 · box"]
+        assert row["status"] == ("pass" if expected else "fail")
+        return row
+
+    assert "STL bytes match" in check(True)["message"]
+    # An unrelated but watertight cube cannot inherit the old passing geometry report.
+    trimesh.creation.box(extents=(1, 1, 1)).export(stl)
+    assert trimesh.load_mesh(stl).is_watertight
+    assert "rebuild" in check(False)["error"]
+    stl.write_bytes(original)
+    check(True)
+
+
+@pytest.mark.parametrize("digest", [None, "", "bad", "0" * 64, 123, True, [], {}])
+def test_malformed_or_wrong_declared_stl_hash_fails(tmp_path, digest):
+    root = make_project(tmp_path, parts={"box": {**GOOD, "stl_sha256": digest}})
+    result = report.collect(load_project(root))
+    row = rows(result, "cad-parts")["P1 · box"]
+    assert result["pass"] is False and row["status"] == "fail"
+    assert "STL binding" in row["error"] and "rebuild" in row["error"]
+    assert "freshness not recorded" not in row["message"]
+
+
+@pytest.mark.parametrize("failure", ["missing", "unreadable", "outside-project", "symlink-cycle"])
+def test_declared_stl_binding_cannot_verify_missing_or_unreadable_file(tmp_path, monkeypatch, failure):
+    root = make_project(tmp_path / "project", parts={"box": {
+        **GOOD, "stl_sha256": hashlib.sha256(b"x").hexdigest()}})
+    stl = root / "exports" / "box.stl"
+    if failure == "missing":
+        stl.unlink()
+    elif failure == "symlink-cycle":
+        stl.unlink()
+        stl.symlink_to(stl.name)
+    elif failure == "unreadable":
+        read_bytes = Path.read_bytes
+        def denied(path):
+            if path == stl:
+                raise PermissionError("STL cannot be read")
+            return read_bytes(path)
+        monkeypatch.setattr(Path, "read_bytes", denied)
+    else:
+        outside = tmp_path / "outside.stl"
+        outside.write_bytes(b"x")
+        stl.unlink()
+        stl.symlink_to(outside)
+    row = rows(report.collect(load_project(root)), "cad-parts")["P1 · box"]
+    assert row["status"] == "fail" and "rebuild" in row["error"]
+
+
+def test_stl_binding_follows_configured_build_directory(tmp_path):
+    from shutil import copytree
+
+    root = make_project(tmp_path, parts={"box": {**GOOD, "stl_sha256": hashlib.sha256(b"x").hexdigest()}},
+                        checks_yaml="  exports_dir: current/../exports\n")
+    build = root / "builds" / "v2"
+    model = build / "model"
+    model.mkdir(parents=True)
+    (root / "current").symlink_to(model, target_is_directory=True)
+    copytree(root / "exports", build / "exports")
+    # The previous build and selected build have different STL bytes.
+    (root / "exports" / "box.stl").write_bytes(b"previous build")
+    project = load_project(root)
+    assert project.exports_dir.resolve() == build / "exports"
+    assert report.collect(project)["pass"] is True
+    (build / "exports" / "box.stl").write_bytes(b"new revision")
+    result = report.collect(project)
+    assert result["pass"] is False
+    assert "rebuild" in rows(result, "cad-parts")["P1 · box"]["error"]
+
+
+def test_hashless_legacy_parts_keep_status_with_unbound_note(tmp_path):
+    root = make_project(tmp_path)
+    result = report.collect(load_project(root))
+    assert result["pass"] is True
+    for row in rows(result, "cad-parts").values():
+        assert row["status"] == "pass"
+        assert "recorded build checks; STL freshness not recorded" in row["message"]
+
+
+def test_nonprinted_part_ignores_stale_or_malformed_stl_binding(tmp_path):
+    root = mixed_project(tmp_path)
+    parts_file = root / "exports" / "geometry-checks.json"
+    parts = json.loads(parts_file.read_text())
+    parts["frame"]["stl_sha256"] = None
+    parts["motor"]["stl_sha256"] = "0" * 64
+    parts_file.write_text(json.dumps(parts))
+    result = report.collect(load_project(root))
+    for name in ("frame", "motor"):
+        row = rows(result, "cad-parts")[name]
+        assert row["status"] == "skip" and "print pipeline" in row["message"]
+        assert "STL binding" not in row["message"]

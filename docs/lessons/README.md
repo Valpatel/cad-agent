@@ -41,6 +41,10 @@ Cat 323 excavator (46 parts for a Prusa XL 5T) and sliced every part with no sup
 (#253), contributed by Jeff Patrick (#260). That project is in his private repository; its Source lines name its
 files. It was not printed in the
 session either.
+The mechanical area's [multi-colour printing](mechanical/printing-without-supports.md#several-colours-on-a-tool-changer) lessons, and the
+[agent-process](process/agent-process.md) lessons on using the toolkit already there and on scoring panels, come
+from a Claude Code session of 2026-11-13 to 2026-11-18 that made two multi-colour printed objects for a Prusa XL 5T
+without cad-agent (#824). Its files are in a contributor's private project; nothing was printed.
 
 </details>
 

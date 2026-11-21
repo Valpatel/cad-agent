@@ -41,6 +41,9 @@ THUMBS = PACKAGE / 'img/thumbnails'
 MANIFEST = PACKAGE / 'metadata' / 'thumbnails.json'
 VARIANT_MAP = PACKAGE / 'docs' / 'VARIANTS.md'
 
+# The capture fixture supplies its own family to both the workspace controls and
+# the separately loaded viewer. The packaged viewer keeps its normal UI font.
+CAPTURE_FONT = 'Arial, sans-serif'
 STYLE = '''
 *{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Arial,sans-serif;color:#dcecf1;background:#08131d}
 body{width:480px;height:360px;overflow:hidden}.thumbnail-stage{height:100%;padding:18px;background:radial-gradient(ellipse at 45% 48%,#17525c44,transparent 70%),linear-gradient(140deg,#102635,#0b1724);border:1px solid #355665;border-radius:14px;position:relative;display:flex;flex-direction:column;gap:4px}
@@ -100,6 +103,55 @@ def serve(route):
     assert path.is_relative_to(PACKAGE), path
     assert path.is_file(), 'Missing canonical asset: ' + str(path)
     route.fulfill(status=200, body=path.read_bytes(), content_type='text/javascript' if path.suffix == '.mjs' else mimetypes.guess_type(path)[0] or 'application/octet-stream')
+
+
+def set_capture_font(locator):
+    locator.evaluate('''(element, family) => {
+        element.style.setProperty('--font', family);
+        element.style.fontFamily = family;
+    }''', CAPTURE_FONT)
+
+
+def check_bold_text(locator):
+    # A computed weight of 700 can still paint the same glyphs as 400 on CI.
+    sample = locator.evaluate("""element => {
+        const style = getComputedStyle(element);
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        function raster(weight) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.font = weight + ' ' + style.fontSize + ' ' + style.fontFamily;
+            ctx.fillText(element.textContent.trim(), 1, 60);
+            return canvas.toDataURL();
+        }
+        return {text: element.textContent.trim(), family: style.fontFamily, weight: style.fontWeight,
+                distinct: raster(style.fontWeight) !== raster('400')};
+    }""")
+    assert sample['family'] == CAPTURE_FONT and float(sample['weight']) > 400 and sample['distinct'], (
+        f"Expected visible bold thumbnail text: {sample}"
+    )
+
+
+def render_workspace(page, kind):
+    page.evaluate('kind => window.renderWorkspaceThumbnail(kind)', kind)
+    if kind == 'popover':
+        panel = page.locator('[data-scada-popover]')
+        set_capture_font(panel)
+        check_bold_text(panel.locator('#thumbnail-popover-title'))
+        check_bold_text(panel.locator('.scada-popover-footer button').first)
+
+
+def open_viewer(page):
+    path = (PACKAGE / args.viewer_path).resolve()
+    assert path.is_relative_to(PACKAGE) and path.is_file()
+    page.set_viewport_size({'width': 1280, 'height': 800})
+    page.goto(BASE + '/software/cadagent/webkit/scada/ui/' + path.relative_to(PACKAGE).as_posix(), wait_until='networkidle')
+    viewer = page.locator('#utility-viewer [data-scada-viewer]')
+    viewer.wait_for(state='visible')
+    set_capture_font(viewer)
+    check_bold_text(viewer.locator('.scada-viewer-header h2'))
+    check_bold_text(viewer.locator('[data-scada-zoom=fit]'))
+    return path
 
 
 def image_info(path):
@@ -213,10 +265,13 @@ with sync_playwright() as playwright:
     if args.check:
         manifest = json.loads(MANIFEST.read_text())
         check_manifest(manifest, registry)
+        render_workspace(page, 'popover')
+        if args.viewer_path:
+            open_viewer(page)
     else:
         THUMBS.mkdir(parents=True, exist_ok=True)
         manifest = {'format':'scada-ui-thumbnails','version':1,'package':'@valpatel/scada-ui',
-                    'source':'src/index.mjs','source_hashes':source_hashes(),'generator':{'path':'tools/webkit/scada/ui/generate-thumbnails.py','sha256':hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),'capture_helper_sha256':hashlib.sha256(CAPTURE_HELPER.read_bytes()).hexdigest()},'capture':{'renderer':'Chromium','format':'jpeg','quality':JPEG_QUALITY,'viewport':{'width':WIDTH,'height':HEIGHT},'device_scale_factor':1,'animation_frame_ms':FRAME_MS,'font':'Arial, sans-serif'},
+                    'source':'src/index.mjs','source_hashes':source_hashes(),'generator':{'path':'tools/webkit/scada/ui/generate-thumbnails.py','sha256':hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),'capture_helper_sha256':hashlib.sha256(CAPTURE_HELPER.read_bytes()).hexdigest()},'capture':{'renderer':'Chromium','format':'jpeg','quality':JPEG_QUALITY,'viewport':{'width':WIDTH,'height':HEIGHT},'device_scale_factor':1,'animation_frame_ms':FRAME_MS,'font':CAPTURE_FONT},
                     'components':[], 'variants':[], 'workspace':[], 'states':[]}
         for descriptor in registry['components']:
             kind = descriptor['type']
@@ -230,7 +285,7 @@ with sync_playwright() as playwright:
             info=capture(page,THUMBS/'equipment'/category/kind/(variant+'.jpg'))
             manifest['variants'].append({'type':kind,'variant':variant,'label':descriptor['label'],'componentLabel':descriptor['componentLabel'],'state':state,**info})
         for kind, exports in (('toolbar',['renderScadaToolbar']),('dialog',['renderScadaDialog','ScadaWorkspace']),('popover',['ScadaPopover']),('statusbar',[]),('buttons',[]),('panels',[]),('metrics',[])):
-            page.evaluate('kind=>window.renderWorkspaceThumbnail(kind)', kind)
+            render_workspace(page, kind)
             if kind == 'toolbar':
                 assert page.locator('.scada-toolbar').evaluate('el=>getComputedStyle(el).display') == 'flex', 'Toolbar CSS must work without an app-specific #main host.'
             if kind == 'statusbar':
@@ -262,11 +317,7 @@ with sync_playwright() as playwright:
         page.evaluate('async()=>Promise.all([...document.images].map(image=>image.decode()))')
         manifest['contact_sheet']=capture(page,THUMBS/'contact-sheet.jpg')
         if args.viewer_path:
-            viewer_path=(PACKAGE/args.viewer_path).resolve()
-            assert viewer_path.is_relative_to(PACKAGE) and viewer_path.is_file()
-            page.set_viewport_size({'width':1280,'height':800})
-            page.goto(BASE+'/software/cadagent/webkit/scada/ui/'+viewer_path.relative_to(PACKAGE).as_posix(),wait_until='networkidle')
-            page.locator('#utility-viewer [data-scada-viewer]').wait_for(state='visible')
+            viewer_path=open_viewer(page)
             page.evaluate("()=>{document.querySelector('[data-demo-action=reset]').click();document.querySelector('[data-demo-action=running]').click()}")
             assert page.locator('[data-demo-status]').inner_text().startswith('0 illustrative minutes · Paused')
             page.locator('#utility-viewer [data-scada-zoom=fit]').click()

@@ -44,15 +44,14 @@ VARIANT_MAP = PACKAGE / 'docs' / 'VARIANTS.md'
 # The capture fixture supplies its own family to both the workspace controls and
 # the separately loaded viewer. The packaged viewer keeps its normal UI font.
 CAPTURE_FONT = 'Arial, sans-serif'
-FONT_STYLE = ':root { --font: ' + CAPTURE_FONT + '; } .scada-viewer { font-family: var(--font); }'
-STYLE = FONT_STYLE + '''
-*{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:var(--font);color:#dcecf1;background:#08131d}
+STYLE = '''
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Arial,sans-serif;color:#dcecf1;background:#08131d}
 body{width:480px;height:360px;overflow:hidden}.thumbnail-stage{height:100%;padding:18px;background:radial-gradient(ellipse at 45% 48%,#17525c44,transparent 70%),linear-gradient(140deg,#102635,#0b1724);border:1px solid #355665;border-radius:14px;position:relative;display:flex;flex-direction:column;gap:4px}
 .thumb-heading{margin:0;min-height:55px;flex:0 0 auto}.thumb-family{font-size:10px;letter-spacing:1.1px;text-transform:uppercase;color:#7acfc9;margin-bottom:7px}.thumb-heading h1{font-size:22px;line-height:1.2;letter-spacing:-.3px;margin:0;font-weight:650}
 .thumb-art{display:flex;align-items:center;justify-content:center;flex:1;min-height:0;padding:7px 0 9px}.thumb-art>.scada-component{display:flex;width:330px;height:100%;max-height:220px;max-width:100%}.thumb-art>.scada-component[data-scada-host-state=false]>.twin-equipment-art{width:100%;height:100%;max-width:100%;max-height:100%}
 .thumb-caption{flex:0 0 auto;display:flex;justify-content:space-between;gap:12px;font-size:11px;line-height:1.4;color:#9dbcc7}.thumb-caption strong{color:#bdeee6;font-weight:550}.thumb-caption code{font-size:10px;color:#7ca4b6}
 .thumb-workspace{display:flex;align-items:center;justify-content:center;height:225px}.thumb-workspace>.scada-workspace{width:100%}.thumb-dialog-art{width:118px;height:78px;display:flex;align-items:center;justify-content:center}.thumb-dialog-art>.scada-component{width:100%;height:100%}.thumb-dialog-art .twin-equipment-art{width:100%!important;height:100%!important}.thumb-dialog-content{display:flex;align-items:center;justify-content:space-between;gap:18px}.thumb-dialog-control{display:grid;gap:6px;font-size:14px}.thumb-dialog-control span{color:#abc9d4}.thumb-dialog-control strong{font-size:22px;color:#7ff3d4}
-.scada-dialog .scada-dialog-header{padding:15px 18px 12px}.scada-dialog .scada-dialog-body{padding:13px 18px}.scada-dialog .scada-dialog-footer{padding:10px 18px}.scada-dialog .scada-dialog-heading h2{font-size:22px}.scada-dialog .scada-dialog-heading p{font-size:12px;margin-top:5px}.scada-dialog{max-height:calc(100vh - 24px)!important}.scada-workspace{font-family:var(--font)}
+.scada-dialog .scada-dialog-header{padding:15px 18px 12px}.scada-dialog .scada-dialog-body{padding:13px 18px}.scada-dialog .scada-dialog-footer{padding:10px 18px}.scada-dialog .scada-dialog-heading h2{font-size:22px}.scada-dialog .scada-dialog-heading p{font-size:12px;margin-top:5px}.scada-dialog{max-height:calc(100vh - 24px)!important}.scada-workspace{font-family:Arial,sans-serif}
 *,*::before,*::after{transition:none!important}
 '''
 FIXTURE = '''<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>SCADA package thumbnail renderer</title><link rel="stylesheet" href="/software/cadagent/webkit/scada/ui/src/styles.css"><style>''' + STYLE + '''</style><main class="thumbnail-stage"></main><script type="module">
@@ -106,6 +105,13 @@ def serve(route):
     route.fulfill(status=200, body=path.read_bytes(), content_type='text/javascript' if path.suffix == '.mjs' else mimetypes.guess_type(path)[0] or 'application/octet-stream')
 
 
+def set_capture_font(locator):
+    locator.evaluate('''(element, family) => {
+        element.style.setProperty('--font', family);
+        element.style.fontFamily = family;
+    }''', CAPTURE_FONT)
+
+
 def check_bold_text(locator):
     # A computed weight of 700 can still paint the same glyphs as 400 on CI.
     sample = locator.evaluate("""element => {
@@ -129,8 +135,10 @@ def check_bold_text(locator):
 def render_workspace(page, kind):
     page.evaluate('kind => window.renderWorkspaceThumbnail(kind)', kind)
     if kind == 'popover':
-        check_bold_text(page.locator('#thumbnail-popover-title'))
-        check_bold_text(page.locator('.scada-popover-footer button').first)
+        panel = page.locator('[data-scada-popover]')
+        set_capture_font(panel)
+        check_bold_text(panel.locator('#thumbnail-popover-title'))
+        check_bold_text(panel.locator('.scada-popover-footer button').first)
 
 
 def open_viewer(page):
@@ -138,9 +146,9 @@ def open_viewer(page):
     assert path.is_relative_to(PACKAGE) and path.is_file()
     page.set_viewport_size({'width': 1280, 'height': 800})
     page.goto(BASE + '/software/cadagent/webkit/scada/ui/' + path.relative_to(PACKAGE).as_posix(), wait_until='networkidle')
-    page.add_style_tag(content=FONT_STYLE)
     viewer = page.locator('#utility-viewer [data-scada-viewer]')
     viewer.wait_for(state='visible')
+    set_capture_font(viewer)
     check_bold_text(viewer.locator('.scada-viewer-header h2'))
     check_bold_text(viewer.locator('[data-scada-zoom=fit]'))
     return path

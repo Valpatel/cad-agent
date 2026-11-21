@@ -36,7 +36,7 @@ from functools import partial
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
-from urllib.parse import unquote
+from urllib.parse import parse_qs, unquote
 
 from cadagent._deps import require
 from cadagent.project import source_pathspecs, source_stamp
@@ -274,6 +274,8 @@ background:var(--accent);box-shadow:0 0 6px rgba(0,240,255,.3)}
 .card:hover{border-color:#0e7490}nav.links a.primary{color:#060609}
 """
 
+# The bar in the markup of the pages this module writes. Its phone rule (the @media block) is the same text as the one
+# in webkit/ui/appnav.js, which draws the bar on the project's other pages: tests/publish/test_site.py holds them equal.
 _NAV_CSS = """
 .appnav{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:4px;padding:0 16px;min-height:46px;
 background:rgba(6,6,9,.94);backdrop-filter:blur(10px);border-bottom:1px solid #2a303c;overflow-x:auto}
@@ -282,6 +284,9 @@ background:rgba(6,6,9,.94);backdrop-filter:blur(10px);border-bottom:1px solid #2
 .appnav a.tab{font:500 12px 'JetBrains Mono',ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:#8892a4;
 text-decoration:none;padding:6px 10px;border-radius:6px;white-space:nowrap}
 .appnav a.tab:hover{color:#00f0ff}.appnav a.tab.on{color:#00f0ff;background:rgba(0,240,255,.06);box-shadow:inset 0 -2px 0 #00f0ff}
+@media(max-width:600px){.appnav{padding:0 8px;gap:2px}.appnav .brand{margin-right:4px;font-size:14px}
+.appnav .brand,.appnav a.tab{min-height:44px;min-width:44px;box-sizing:border-box;display:inline-flex;align-items:center}
+.appnav a.tab{padding:0 7px;font-size:11px;letter-spacing:.04em}}
 """
 
 
@@ -545,8 +550,12 @@ _OPT_OUT = re.compile(rb'<meta[^>]+name=["\']cadagent-nav["\'][^>]+content=["\']
 
 def inject_nav(page: bytes, request_path: str, nav: List[Dict[str, str]]) -> bytes:
     """Add the app-wide top bar to an HTML page the local server sends (bytes in, bytes out, so any encoding
-    survives). Skipped when the page has a bar in its markup or opts out with <meta name="cadagent-nav" content="off">;
-    a bar a page mounts from its own script replaces the injected one in the browser (webkit/ui/appnav.js)."""
+    survives). Skipped when the page has a bar in its markup, opts out with <meta name="cadagent-nav" content="off">, or
+    is asked for with nav=0 in its address (the kit's pages read it so, e.g. fea/fea.html); a bar a page mounts from its
+    own script replaces the injected one in the browser (webkit/ui/appnav.js)."""
+    query = request_path.split("#")[0].partition("?")[2]
+    if parse_qs(query, keep_blank_values=True).get("nav", [""])[0] == "0":                # the first nav=, as URLSearchParams.get reads it
+        return page
     # a bar in the markup, not the word: the kit's viewers mention appnav.js (an opt-in import) and still get the bar
     if not nav or re.search(rb'class=["\']appnav\b', page) or _OPT_OUT.search(page):
         return page

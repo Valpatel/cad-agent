@@ -19,7 +19,7 @@ import { builtSite } from './built-site.mjs';
 import { configureNavigation, fetchThrough, inLanes, navigate, navigationFailure, ownContexts, partHandler, watchRoutes } from './navigation.mjs';
 import { folderMapPath } from '../../tools/site/publication.mjs';
 import { reducedHeroProblems, repositoryHeroProblems, homepageModelProblems, homepageViewerGateProblems, heroRecordingProblems, replayCardProblems, learningPictureProblems, homepageLateDrawProblems, resultImageMotionProblems } from './layout/motion.mjs';
-import { outlineEntryState, scrollOutline, sameSectionOutlineProblems, readerBoundaryProblems, readerOutlineClickProblems, readerOverflowProblems } from './layout/outline.mjs';
+import { outlineEntryState, scrollOutline, sameSectionOutlineProblems, readerBoundaryProblems, readerOutlineClickProblems, readerOverflowProblems, treeEdgeProblems } from './layout/outline.mjs';
 import { VIEWPORT, VISUAL, WALL_CLEARED, WALL_LIMIT, longestStretch, plantedScript, longCitationProblems } from './layout/walls.mjs';
 import { wideLayoutProblems } from './layout/wide.mjs';
 
@@ -118,6 +118,7 @@ try {
     ['cantilever', cantileverProblems],  // the snap-arm explorer on /docs/compliant (#137), below
     ['fold', foldProblems],              // the page tree's fold on phones, with and without nav.js (#134)
     ['outline visibility', () => sameSectionOutlineProblems(browser, base)],
+    ['tree edge', () => treeEdgeProblems(browser, base)],   // no half row above the tree's search; the rail from 1366 px (#807)
     ['reader scroll boundary', async () => [...await readerBoundaryProblems(browser, base),
       ...await readerOutlineClickProblems(browser, base), ...await readerOverflowProblems(browser, base)]],
     ['jump', jumpProblems],              // outline jumps: released by the reader's wheel, not by a stall
@@ -268,6 +269,8 @@ try {
           }));
           if (shift > 0.05) seen.push(`layout shifts while loading: ${shift.toFixed(3)}`);
           if (width >= 1100) {
+            // Exercise the tree's own outline at the last width before it moves to the right column.
+            await page.setViewportSize({ width: 1365, height: 800 });
             const outlineEvidence = await mkdtemp(path.join(tmpdir(), 'cad-agent-outline-'));
             // Bounded diagnostics only; mark/scroll readiness and assertions remain unchanged.
             await page.evaluate(() => {
@@ -335,6 +338,7 @@ try {
             await page.mouse.wheel(0, -back);
             await settle();
             if ((await middle.getAttribute('aria-current')) === 'location') seen.push(`"${await middle.textContent()}" stays marked after the reader scrolls back`);
+            await page.setViewportSize({ width, height: 800 });
             if (!(await nav.locator('.cad-nav-filter').isVisible())) seen.push('the filter is out of view');
             const filter = nav.locator('.cad-nav-filter');
             const beforeOpen=await nav.locator('details.cad-nav-group[open]').count();
@@ -741,8 +745,8 @@ try {
       if (atEnd.top < atEnd.stick - 1) problems.push(`2560px /docs/explore: at the page's end the page tree's panel slid up to ${Math.round(atEnd.top)}px, above where it sticks (${atEnd.stick}px)`);
       await big.close();
       // The same jumps through the tree's own outline, in a window tall enough that several sections cannot reach the
-      // reading line (review 3: at 1366x900 only the last one cannot, and the bottom rule marks it anyway).
-      const tall = await browser.newPage({ viewport: { width: 1366, height: 1600 } });
+      // reading line (review 3: at 1365x900 only the last one cannot, and the bottom rule marks it anyway).
+      const tall = await browser.newPage({ viewport: { width: 1365, height: 1600 } });
       await navigate(tall, base + '/docs/explore');
       await settled(tall);
       const unreachable = await tall.evaluate(() => {
@@ -750,7 +754,7 @@ try {
         return [...document.querySelectorAll('cad-nav .cad-nav-outline a')].map((a, i) => [i, document.getElementById(decodeURIComponent(a.hash.slice(1)))])
           .filter(([, h]) => h && h.getBoundingClientRect().top + scrollY - line > max).map(([i]) => i);
       });
-      if (unreachable.length < 2) problems.push(`1366x1600 /docs/explore: only ${unreachable.length} section(s) cannot reach the reading line; pick a page where several cannot`);
+      if (unreachable.length < 2) problems.push(`1365x1600 /docs/explore: only ${unreachable.length} section(s) cannot reach the reading line; pick a page where several cannot`);
       const outline = tall.locator('cad-nav .cad-nav-outline a');
       for (const i of unreachable) {
         await tall.evaluate(() => scrollTo({ top: 0, behavior: 'instant' }));
@@ -768,12 +772,12 @@ try {
           tick(); setTimeout(done, 10000);
         }));
         if ((await outline.nth(i).getAttribute('aria-current')) !== 'location')
-          problems.push(`1366x1600 /docs/explore: following "${await outline.nth(i).textContent()}" (smooth scroll) does not mark it`);
+          problems.push(`1365x1600 /docs/explore: following "${await outline.nth(i).textContent()}" (smooth scroll) does not mark it`);
       }
       await tall.close();
       // A wheel over the page tree scrolls the page when the tree has nothing to scroll (review 3: the panel trapped it).
       // Every group is folded first, so the panel is still a scroll container but has nothing to scroll whatever the
-      // number of pages. The open Docs group alone outgrew 1080 px when the vision page arrived (#148); from 1500 px the
+      // number of pages. The open Docs group alone outgrew 1080 px when the vision page arrived (#148); from 1366 px the
       // tree leaves out the page's outline.
       const desk = await browser.newPage({ viewport: { width: 1920, height: 1080 } });
       await navigate(desk, base + '/docs/toolkit');
@@ -856,6 +860,7 @@ async function installLinkProblems() {
       if ((await block(page, 'install-unix')).clear) problems.push('planted control: a 90 px scroll padding under the 97 px header was not caught, so the header check tests nothing');
     } finally { await page.close(); }
   }
+  problems.push(...await installBackProblems(), ...await installReloadProblems());
   const missing = await browser.newPage({ viewport: { width: 800, height: 600 } });
   try {
     await navigate(missing, base + '/no-such-page?x=1');
@@ -863,6 +868,147 @@ async function installLinkProblems() {
     const named = href && new URL(href).searchParams.get('page');
     if (named !== base + '/no-such-page?x=1') problems.push(`404 page: the feedback link names ${named}, not the missing address`);
   } finally { await missing.close(); }
+  return problems;
+}
+
+// The browser may animate its restore (the site scrolls smoothly): wait until 20 frames in a row hold still, and
+// past the 1.5 s hold.
+function settledPlace(page) {
+  return page.evaluate(() => new Promise(done => {
+    let last = -1, still = 0;
+    const start = performance.now();
+    const tick = () => { if (scrollY === last) { if (++still >= 20 && performance.now() - start > 1700) return done(scrollY); } else { still = 0; last = scrollY; } requestAnimationFrame(tick); };
+    tick(); setTimeout(() => done(scrollY), 5000);
+  }));
+}
+
+/** A reload requested as Page Down finishes should keep the settled reading position. */
+async function installReloadProblems() {
+  const problems = [];
+  const check = async planted => {
+    const page = await browser.newPage({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, reducedMotion: 'reduce' });
+    try {
+      await navigate(page, base + '/docs/agent-workflow#install-unix');
+      const block = page.locator('#install-unix[open]');
+      await block.waitFor();
+      await page.evaluate(() => document.fonts.ready);
+      const start = await settledPlace(page);
+      // Reload in the scrollend turn. Waiting for the test process here could give the
+      // old trailing 200 ms save time to run, even though the reader reloaded immediately.
+      await page.evaluate(({ start, planted }) => {
+        if (planted) addEventListener('pagehide', () => sessionStorage.removeItem('cad-agent:reader-reload'), { once: true });
+        document.addEventListener('scrollend', () => {
+          if (scrollY < start + 100) return;
+          sessionStorage.setItem('testInstallReloadY', String(scrollY));
+          location.reload();
+        });
+      }, { start, planted });
+      await Promise.all([page.waitForEvent('load'), page.keyboard.press('PageDown')]);
+      await block.waitFor();
+      const left = await page.evaluate(() => Number(sessionStorage.getItem('testInstallReloadY')));
+      if (left < start + 100) throw new Error(`Page Down did not move the reader before reload: ${start} → ${left}px`);
+      return { left, back: await settledPlace(page) };
+    } finally { await page.close(); }
+  };
+  const { left, back } = await check(false);
+  if (Math.abs(back - left) > 3) problems.push(`390px reload after Page Down: left at ${left}px, restored to ${back}px`);
+  // WebKit restored this sequence natively. Chromium reproduces the old history-only loss.
+  if (engine === chromium) {
+    const planted = await check(true);
+    if (Math.abs(planted.back - planted.left) <= 3) problems.push('Planted history-only control preserved the position, so the quick reload check tests nothing');
+  }
+  return problems;
+}
+
+/** Real Back trips must keep the reader's place within 3 px. Exercise restoration before
+ * the install handler separately by running both the current and old handlers in that order.
+ * A changed fragment during the hold must still take the reader to the new target. */
+async function installBackProblems() {
+  const problems = [];
+  const trip = async (id, delta, { variant = 'native', jump = null } = {}) => {
+    const restoreFirst = variant === 'restore-first' || variant === 'old-arrival';
+    const page = await browser.newPage({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+    try {
+      await navigate(page, `${base}/docs/agent-workflow#${id}`);
+      await page.locator(`#${id}[open]`).waitFor();
+      // Give the ordered controls a known starting block and a genuinely different departure
+      // position, even if the browser would still be smooth-scrolling to the initial fragment.
+      if (restoreFirst) await page.evaluate(async id => {
+        await document.fonts.ready;
+        document.documentElement.style.scrollBehavior = 'auto';
+        document.getElementById(id).scrollIntoView({ block: 'start', behavior: 'instant' });
+      }, id);
+      const start = await page.evaluate(d => {
+        const y = scrollY;
+        scrollBy({ top: d, behavior: 'instant' });
+        return y;
+      }, delta);
+      await page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
+      const left = await page.evaluate(() => scrollY);
+      if (restoreFirst && Math.abs(left - start - delta) > 3) {
+        throw new Error(`Install control (${variant}): expected to leave ${delta}px from ${start}px, got ${left}px`);
+      }
+      await navigate(page, base + '/toolkit');
+      if (variant !== 'native') await page.route(base + '/web/site.js', partHandler(async route => {
+        const response = await route.fetch();
+        let body = await response.text();
+        const replace = (from, to) => {
+          if (!body.includes(from)) throw new Error(`install control (${variant}): missing ${from}`);
+          body = body.replace(from, to);
+        };
+        if (restoreFirst) {
+          replace('\nopenTarget();', "\naddEventListener('pageshow', () => { window.__installArrival = openTarget; }, { once: true });");
+          if (variant === 'old-arrival') replace('history.state?.cadReaderY', 'undefined');
+        } else {
+          replace('location.hash !== at || ', '');
+        }
+        await route.fulfill({ response, body });
+      }));
+      await page.goBack({ waitUntil: 'load' });
+      let arrival;
+      if (restoreFirst) {
+        await page.waitForFunction(() => typeof window.__installArrival === 'function');
+        arrival = await page.evaluate(id => {
+          const target = document.getElementById(id), saved = history.state?.cadReaderY;
+          if (!Number.isFinite(saved) || target.open) throw new Error('Expected a saved place and a closed install block before arrival');
+          scrollTo({ top: saved, behavior: 'instant' });
+          const before = scrollY;
+          window.__installArrival();
+          return { before, after: scrollY, open: target.open };
+        }, id);
+      }
+      if (jump) await page.evaluate(to => { location.hash = to; }, jump);
+      const back = await settledPlace(page);
+      const open = await page.evaluate(id => document.getElementById(id)?.open, id);
+      const landed = jump ? await page.evaluate(to => {
+        const t = document.getElementById(to), s = (t?.matches('details') ? t.querySelector('summary') : t)?.getBoundingClientRect(), header = document.querySelector('.site-header').getBoundingClientRect().bottom;
+        return { top: s ? Math.round(s.top) : null, shown: !!s && s.top >= header - 0.5 && s.top < innerHeight - 60 };
+      }, jump) : null;
+      return { left, back, open, landed, arrival };
+    } finally { await page.close(); }
+  };
+  for (const id of ['install-unix', 'install-windows']) for (const delta of [300, -200]) {
+    const t = await trip(id, delta);
+    if (Math.abs(t.back - t.left) > 3) problems.push(`390px Back to #${id} (scrolled ${delta} px from arrival): back at ${t.back} px, left at ${t.left} px`);
+    if (!t.open) problems.push(`390px Back to #${id}: the block is closed again`);
+  }
+  for (const variant of ['restore-first', 'old-arrival']) {
+    const { left, back, arrival } = await trip('install-unix', 300, { variant });
+    if (Math.abs(arrival.before - left) > 3 || !arrival.open) {
+      problems.push(`390px Back (${variant}): did not open the block from the reader's restored place: ${JSON.stringify({ left, arrival })}`);
+    }
+    const heldAtArrival = Math.abs(arrival.after - left) <= 3, heldAfterSettling = Math.abs(back - left) <= 3;
+    const shouldHold = variant === 'restore-first';
+    if (heldAtArrival !== shouldHold || heldAfterSettling !== shouldHold) {
+      problems.push(`390px Back (${variant}): left at ${left}px, handler landed at ${arrival.after}px and settled at ${back}px`);
+    }
+  }
+  // A new # part right after Back (a link or a script, inside the 1.5 s hold) lands on its target; the hold lets go.
+  // #install is the section's heading, well above the place the reader left.
+  const jumped = await trip('install-unix', 300, { jump: 'install' });
+  if (!jumped.landed.shown) problems.push(`390px Back to #install-unix, then #install: the heading is at ${jumped.landed.top} px, not on the screen below the header (page at ${jumped.back} px)`);
+  const held = await trip('install-unix', 300, { variant: 'ignore-hash', jump: 'install' });
+  if (held.landed.shown) problems.push('planted control: a hold that ignores a new # part still let #install land, so the # check tests nothing');
   return problems;
 }
 
@@ -954,7 +1100,8 @@ async function demoWayBackProblems() {
     const nav = document.querySelector('nav.appnav');
     if (!nav) return null;
     const r = nav.getBoundingClientRect(), v = document.querySelector(viewer)?.getBoundingClientRect();
-    return { bottom: r.bottom, viewerTop: v ? v.top : null, links: [...nav.querySelectorAll('a')].map(a => new URL(a.href).pathname) };
+    return { bottom: r.bottom, viewerTop: v ? v.top : null, links: [...nav.querySelectorAll('a')].map(a => new URL(a.href).pathname),
+      themed: nav.classList.contains('themed'), inner: nav.scrollWidth - nav.clientWidth };
   }, viewer);
   const underBar = bar => bar.viewerTop === null || bar.viewerTop < bar.bottom - 1;
   for (const [name, [demo, viewer]] of Object.entries(DEMOS)) {
@@ -968,6 +1115,9 @@ async function demoWayBackProblems() {
         const resolved = await Promise.all(bar.links.map(async p => { const r = await page.request.get(base + p); return new URL(r.url()).pathname; }));
         if (JSON.stringify(resolved) !== JSON.stringify(WANT)) problems.push(`${name} ${width}px: the bar leads to ${resolved.join(', ')}, not ${WANT.join(', ')}`);
         if (underBar(bar)) problems.push(`${name} ${width}px: the viewer starts at ${bar.viewerTop} px, under the ${bar.bottom} px bar`);
+        // #807: the kit's pages carry its theme, so the bar takes its colours; at 390 px its tabs fit without scrolling.
+        if (!bar.themed) problems.push(`${name} ${width}px: the bar keeps its dark colours, not the page's theme`);
+        if (bar.inner > 0) problems.push(`${name} ${width}px: the bar's tabs scroll ${bar.inner} px sideways inside it`);
         if (bad.length) problems.push(`${name} ${width}px: ${[...new Set(bad)].join('; ')}`);
         // Planted control (#809): the replay page with no body padding under the bar must be reported.
         if (name === 'robot replay' && width === 390) {
@@ -989,11 +1139,18 @@ async function demoWayBackProblems() {
     }
     // A host without nav.json, opted in: no bar (its one 404 is the host's).
     {
-      const { page, answered } = await open(route, 1366, { noNavFile: true });
+      const { page, answered, bad } = await open(route, 1366, { noNavFile: true });
       try {
         await ready(page);
         await answered; await page.evaluate(() => new Promise(done => setTimeout(done, 0)));
         if (await page.locator('nav.appnav').count()) problems.push(`${name} with nav=1 on a host without site/nav.json: a top bar shows`);
+        // The one 404 for nav.json, and its one console line, are all that went wrong (#807). The line may come after
+        // the answer: wait for it (2 s at most), then a moment more for any other.
+        for (const end = Date.now() + 2000; !bad.some(b => b.startsWith('console: ')) && Date.now() < end;) await page.waitForTimeout(50);
+        await page.waitForTimeout(200);
+        const logged = bad.filter(b => b.startsWith('console: ')), other = bad.filter(b => !b.startsWith('console: ') && b !== '404 /site/nav.json');
+        if (other.length || logged.length !== 1 || !/404/.test(logged[0] || ''))
+          problems.push(`${name} with nav=1 on a host without site/nav.json: wanted only the nav.json 404 and its one console error, got ${JSON.stringify(bad)}`);
       } finally { await page.close(); }
     }
   }

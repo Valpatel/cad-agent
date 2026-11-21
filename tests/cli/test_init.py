@@ -113,7 +113,9 @@ def test_init_never_copies_a_runs_outputs(tmp_path, monkeypatch):
     """A starter that `cad-agent all` ran in where it lives (a checkout) still copies as the bare starter."""
     src = tmp_path / "starter-box"
     project.init_project(src)
-    for junk in ("exports/box.stl", "build/slicer/x.json", "docs/cad-agent-report.html", "cad/__pycache__/b.pyc"):
+    outputs = ("exports/box.stl", "build/slicer/x.json", "preview/index.html", "site/index.html",
+               "docs/cad-agent-report.html", "cad/__pycache__/b.pyc")
+    for junk in outputs:
         (src / junk).parent.mkdir(parents=True, exist_ok=True)
         (src / junk).write_text("x")
     monkeypatch.setattr(project, "starter_dir", lambda: src)
@@ -121,9 +123,10 @@ def test_init_never_copies_a_runs_outputs(tmp_path, monkeypatch):
     assert {f.relative_to(tmp_path / "copy").as_posix() for f in written} == starter_files()
     assert {f.relative_to(tmp_path / "copy").as_posix() for f in (tmp_path / "copy").rglob("*") if f.is_file()} \
         == starter_files()
-    ignored = (STARTER / ".gitignore").read_text().split()
-    for out in ("build/", "exports/", "preview/", "site/", "__pycache__/"):
-        assert out in ignored, f"the starter's .gitignore leaves {out} out of the user's repo"
+    subprocess.run(["git", "init", "--quiet"], cwd=src, check=True)
+    ignored = subprocess.run(["git", "-c", f"core.excludesFile={os.devnull}", "check-ignore", "--stdin"],
+                             cwd=src, input="\n".join(outputs), capture_output=True, text=True, check=True)
+    assert set(ignored.stdout.splitlines()) == set(outputs), "the starter's Git rules must ignore each generated file"
 
 
 def test_wheel_data_declarations_cover_the_starter():

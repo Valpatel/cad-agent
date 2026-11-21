@@ -399,6 +399,7 @@ PLACEHOLDERS = {"<feature>": ["wall"], "<command>": None}         # None: every 
 RUN_ELSEWHERE = {
     "cad-agent update": "changes the install: tests/cli/test_update.py and test_installer.py run it",
     "cad-agent all": "builds the starter with CadQuery: tests/cli/test_init.py runs it on what `init` copies",
+    "cad-agent gates": "needs the CAD starter: tests/cli/test_init.py::test_starter_gates_measure_the_edited_lid",
 }
 
 
@@ -412,7 +413,8 @@ def documented_commands():
 def test_every_documented_command_exits_0_as_printed(tmp_path, monkeypatch, capsys):
     from cadagent.cli import build_parser, main
     commands = documented_commands()
-    assert {"cad-agent --version", "cad-agent init my-part", "cad-agent update"} <= set(commands), commands
+    assert {"cad-agent --version", "cad-agent init my-part", "cad-agent update",
+            "cad-agent init my-box", "cad-agent gates"} <= set(commands), commands
     assert any(c.startswith("cad-agent choose joining") for c in commands)
     names = sorted(build_parser()._subparsers._group_actions[0].choices)
     monkeypatch.chdir(tmp_path)

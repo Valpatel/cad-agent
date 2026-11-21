@@ -871,32 +871,63 @@ async function installLinkProblems() {
   return problems;
 }
 
-/** Back to an install address on a phone (#807): the reader arrived on /docs/agent-workflow#install-…, scrolled on,
- * followed a link away and pressed Back. The page comes back where they left it (within 3 px), not where the arrival
- * scroll put the block (Chromium restored it first or last; WebKit landed on the # part). Planted control: web/site.js
- * without its kept place and served 600 ms late, so the browser restores first and the arrival scroll then moves it,
- * must be caught. A new # part right after Back (inside the 1.5 s hold) lands on its own block; planted control: the
- * hold without its # check keeps the old place, and is reported. */
+/** Real Back trips must keep the reader's place within 3 px. Exercise restoration before
+ * the install handler separately by running both the current and old handlers in that order.
+ * A changed fragment during the hold must still take the reader to the new target. */
 async function installBackProblems() {
   const problems = [];
-  // planted: 'late' serves site.js 600 ms late without its kept place; 'hash' serves it without the hold's # check.
-  // jump: an id to move the # part to right after Back, inside the hold.
-  const trip = async (id, delta, { planted = null, jump = null } = {}) => {
+  const trip = async (id, delta, { variant = 'native', jump = null } = {}) => {
+    const restoreFirst = variant === 'restore-first' || variant === 'old-arrival';
     const page = await browser.newPage({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
     try {
       await navigate(page, `${base}/docs/agent-workflow#${id}`);
-      await page.evaluate(d => scrollBy({ top: d, behavior: 'instant' }), delta);
+      await page.locator(`#${id}[open]`).waitFor();
+      // Give the ordered controls a known starting block and a genuinely different departure
+      // position, even if the browser would still be smooth-scrolling to the initial fragment.
+      if (restoreFirst) await page.evaluate(async id => {
+        await document.fonts.ready;
+        document.documentElement.style.scrollBehavior = 'auto';
+        document.getElementById(id).scrollIntoView({ block: 'start', behavior: 'instant' });
+      }, id);
+      const start = await page.evaluate(d => {
+        const y = scrollY;
+        scrollBy({ top: d, behavior: 'instant' });
+        return y;
+      }, delta);
       await page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
       const left = await page.evaluate(() => scrollY);
-      if (planted) await page.route(base + '/web/site.js', partHandler(async route => {
-        const response = await route.fetch(), text = await response.text();
-        const body = planted === 'late' ? text.replace('history.state?.cadReaderY', 'undefined') : text.replace('location.hash !== at || ', '');
-        if (body === text) throw new Error(`planted control (${planted}): web/site.js no longer has the code it removes`);
-        if (planted === 'late') await new Promise(r => setTimeout(r, 600));
+      if (restoreFirst && Math.abs(left - start - delta) > 3) {
+        throw new Error(`Install control (${variant}): expected to leave ${delta}px from ${start}px, got ${left}px`);
+      }
+      await navigate(page, base + '/toolkit');
+      if (variant !== 'native') await page.route(base + '/web/site.js', partHandler(async route => {
+        const response = await route.fetch();
+        let body = await response.text();
+        const replace = (from, to) => {
+          if (!body.includes(from)) throw new Error(`install control (${variant}): missing ${from}`);
+          body = body.replace(from, to);
+        };
+        if (restoreFirst) {
+          replace('\nopenTarget();', "\naddEventListener('pageshow', () => { window.__installArrival = openTarget; }, { once: true });");
+          if (variant === 'old-arrival') replace('history.state?.cadReaderY', 'undefined');
+        } else {
+          replace('location.hash !== at || ', '');
+        }
         await route.fulfill({ response, body });
       }));
-      await navigate(page, base + '/toolkit');
       await page.goBack({ waitUntil: 'load' });
+      let arrival;
+      if (restoreFirst) {
+        await page.waitForFunction(() => typeof window.__installArrival === 'function');
+        arrival = await page.evaluate(id => {
+          const target = document.getElementById(id), saved = history.state?.cadReaderY;
+          if (!Number.isFinite(saved) || target.open) throw new Error('Expected a saved place and a closed install block before arrival');
+          scrollTo({ top: saved, behavior: 'instant' });
+          const before = scrollY;
+          window.__installArrival();
+          return { before, after: scrollY, open: target.open };
+        }, id);
+      }
       if (jump) await page.evaluate(to => { location.hash = to; }, jump);
       // The browser may animate its restore (the site scrolls smoothly): wait until 20 frames in a row hold still, and
       // past the 1.5 s hold.
@@ -911,7 +942,7 @@ async function installBackProblems() {
         const t = document.getElementById(to), s = (t?.matches('details') ? t.querySelector('summary') : t)?.getBoundingClientRect(), header = document.querySelector('.site-header').getBoundingClientRect().bottom;
         return { top: s ? Math.round(s.top) : null, shown: !!s && s.top >= header - 0.5 && s.top < innerHeight - 60 };
       }, jump) : null;
-      return { left, back, open, landed };
+      return { left, back, open, landed, arrival };
     } finally { await page.close(); }
   };
   for (const id of ['install-unix', 'install-windows']) for (const delta of [300, -200]) {
@@ -919,13 +950,22 @@ async function installBackProblems() {
     if (Math.abs(t.back - t.left) > 3) problems.push(`390px Back to #${id} (scrolled ${delta} px from arrival): back at ${t.back} px, left at ${t.left} px`);
     if (!t.open) problems.push(`390px Back to #${id}: the block is closed again`);
   }
-  const control = await trip('install-unix', 300, { planted: 'late' });
-  if (Math.abs(control.back - control.left) <= 3) problems.push(`planted control: the old arrival scroll after a late restore came back at ${control.back} px, left at ${control.left} px, so the Back check tests nothing`);
+  for (const variant of ['restore-first', 'old-arrival']) {
+    const { left, back, arrival } = await trip('install-unix', 300, { variant });
+    if (Math.abs(arrival.before - left) > 3 || !arrival.open) {
+      problems.push(`390px Back (${variant}): did not open the block from the reader's restored place: ${JSON.stringify({ left, arrival })}`);
+    }
+    const heldAtArrival = Math.abs(arrival.after - left) <= 3, heldAfterSettling = Math.abs(back - left) <= 3;
+    const shouldHold = variant === 'restore-first';
+    if (heldAtArrival !== shouldHold || heldAfterSettling !== shouldHold) {
+      problems.push(`390px Back (${variant}): left at ${left}px, handler landed at ${arrival.after}px and settled at ${back}px`);
+    }
+  }
   // A new # part right after Back (a link or a script, inside the 1.5 s hold) lands on its target; the hold lets go.
   // #install is the section's heading, well above the place the reader left.
   const jumped = await trip('install-unix', 300, { jump: 'install' });
   if (!jumped.landed.shown) problems.push(`390px Back to #install-unix, then #install: the heading is at ${jumped.landed.top} px, not on the screen below the header (page at ${jumped.back} px)`);
-  const held = await trip('install-unix', 300, { planted: 'hash', jump: 'install' });
+  const held = await trip('install-unix', 300, { variant: 'ignore-hash', jump: 'install' });
   if (held.landed.shown) problems.push('planted control: a hold that ignores a new # part still let #install land, so the # check tests nothing');
   return problems;
 }

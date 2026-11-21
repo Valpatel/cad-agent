@@ -262,7 +262,7 @@ cad-nav,.doc-rail{--cad-nav-font:13px/1.5 var(--font);--cad-nav-fg:var(--ink);--
   body.doc-page .doc-main :is(cad-cantilever,cad-fourbar,cad-fan-curve,cad-torsion-snap,cad-printed-boss){max-width:1200px}
   body.doc-page:not([data-doc-outline]) .doc-layout{grid-template-columns:260px minmax(0,1fr)}}
 /* A page with no outline has no "On this page" column: the article keeps its width, not an empty column beside it. */
-@media(min-width:1500px){.doc-layout:not(:has(.doc-rail)){grid-template-columns:260px minmax(0,1fr)}}
+@media(min-width:1500px){body:not([data-doc-outline]) .doc-layout{grid-template-columns:260px minmax(0,1fr)}}
 /* On paper: no page tree (kit/documents/nav.css) and no right-hand outline, so the article keeps the whole width, not the tree's column */
 @media print{.doc-layout,body.doc-page .doc-layout{display:block}.doc-rail,body.doc-page .doc-rail{display:none}}
 .crumbs{font:11px/1.7 var(--mono);letter-spacing:.04em;color:var(--muted);margin:20px 0 0}

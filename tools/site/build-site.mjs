@@ -430,7 +430,7 @@ const refsUpdated = WORKTREE && git('status', '--porcelain', '--', ...REF_SOURCE
 for (const p of refSite.pages) {
   const outline=articleOutline(p.body),rail=outline?`<nav class="doc-rail" aria-labelledby="rail-title"><p class="doc-rail-title" id="rail-title">On this page</p>${outline.replace('class="cad-nav-outline"','class="cad-nav-outline cad-nav-rail"')}</nav>`:'';
   await mkdir(path.dirname(path.join(out, p.file)), { recursive: true });
-  await writeFile(path.join(out, p.file), frame({ title: p.title, body: `<div class="doc-layout explore-reader">${readerNav({areas:areaTree,pages,pageURL,current:p.url,outlineHTML:outline})}<div class="doc-main" id="main:content" tabindex="-1">${p.body}</div>${rail}</div>`, md: '/' + p.md, description: p.description, current: p.url,
+  await writeFile(path.join(out, p.file), frame({ title: p.title, hasDocOutline: Boolean(rail), body: `<div class="doc-layout explore-reader">${readerNav({areas:areaTree,pages,pageURL,current:p.url,outlineHTML:outline})}<div class="doc-main" id="main:content" tabindex="-1">${p.body}</div>${rail}</div>`, md: '/' + p.md, description: p.description, current: p.url,
     page: 'references', css: ['/web/references.css','/kit/documents/nav.css','/web/catalog.css','/web/discovery.css'], updated: refsUpdated }));
   await writeFile(path.join(out, p.md), p.markdown);
 }

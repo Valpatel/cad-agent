@@ -403,8 +403,9 @@ export async function treeEdgeProblems(browser, base) {
   }
   // A long response can paint the whole article before the trailing outline arrives.
   // Compare the partial and complete documents with the same CSS and no client script.
-  for (const route of ['/docs/toolkit', '/research/process-profiles']) {
-    const page = await browser.newPage({ viewport: { width: 1366, height: 800 }, javaScriptEnabled: false });
+  for (const [width, route] of [[1366, '/docs/toolkit'], [1366, '/research/process-profiles'],
+    [1440, '/docs/toolkit'], [1600, '/references/laser-cutting']]) {
+    const page = await browser.newPage({ viewport: { width, height: 800 }, javaScriptEnabled: false });
     const url = base + route;
     const columns = () => page.locator('main.wrap, .doc-layout > cad-nav, .doc-main').evaluateAll(nodes =>
       nodes.map(node => { const { x, width } = node.getBoundingClientRect(); return [x, width]; }));
@@ -423,7 +424,7 @@ export async function treeEdgeProblems(browser, base) {
       const after = await columns();
       if (partialRails !== 0 || await page.locator('.doc-rail').count() !== 1 || before.length !== 3 ||
           JSON.stringify(before) !== JSON.stringify(after)) {
-        problems.push(`1366px ${route}: columns moved when the outline arrived: ${JSON.stringify({ before, after })}`);
+        problems.push(`${width}px ${route}: columns moved when the outline arrived: ${JSON.stringify({ before, after })}`);
       }
     } finally { await page.close(); }
   }

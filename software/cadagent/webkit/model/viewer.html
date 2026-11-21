@@ -6,7 +6,18 @@
 <title>3D Model Viewer</title>
 <script src="../ui/theme.js"></script>
 <link rel="stylesheet" href="../ui/hud.css">
-<style>.guide-controls{padding:12px}.guide-controls select{max-width:100%;min-height:44px}.guide-controls button{min-height:44px}.guide-controls label{display:block;margin:8px 0}.guide-text{white-space:pre-wrap;line-height:1.5}.guide-controls label:has(>.guide-explode){display:flex;align-items:center;gap:8px;min-height:44px}@media(max-width:600px){.guide-controls{display:flex;flex-direction:column}.guide-controls>*{order:2}.guide-controls>h2,.guide-controls>label:has([aria-label="Instruction step"]),.guide-controls>.hud-chips,.guide-controls>.guide-text{order:0}.guide-controls>.guide-version,.guide-controls>.guide-qualification{order:1}#panel .hud-btn,#panel .hud-toggle,#panel input[type=range],#topbar a.hud-tag{min-height:44px;box-sizing:border-box}#topbar a.hud-tag{display:inline-flex;align-items:center}#topbar .theme-toggle{min-width:44px;min-height:44px}#topbar{flex-wrap:nowrap}#topbar .hud-tag:not(#back){display:none}#topbar h1{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}#panel input[type=color]{width:44px!important;height:44px!important}#panel input[type=checkbox]{width:22px;height:22px}#app{height:calc(55vh - var(--appnav-h,0px))!important}#panel{position:fixed;top:55vh;bottom:0;left:0;right:0;width:auto;height:auto;max-height:none;overflow:auto;box-sizing:border-box}}</style>
+<style>.guide-controls{padding:12px}.guide-controls select{max-width:100%;min-height:44px}.guide-controls button{min-height:44px}.guide-controls label{display:block;margin:8px 0}.guide-text{white-space:pre-wrap;line-height:1.5}.guide-controls label:has(>.guide-explode){display:flex;align-items:center;gap:8px;min-height:44px}@media(max-width:600px){.guide-controls{display:flex;flex-direction:column}.guide-controls>*{order:2}.guide-controls>h2,.guide-controls>label:has([aria-label="Instruction step"]),.guide-controls>.hud-chips,.guide-controls>.guide-text{order:0}.guide-controls>.guide-version,.guide-controls>.guide-qualification{order:1}#panel .hud-btn,#panel .hud-toggle,#panel input[type=range],#topbar a.hud-tag{min-height:44px;box-sizing:border-box}#topbar a.hud-tag{display:inline-flex;align-items:center}#topbar .theme-toggle{min-width:44px;min-height:44px}#topbar{flex-wrap:nowrap}#topbar .hud-tag:not(#back){display:none}#topbar h1{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}#panel input[type=color]{width:44px!important;height:44px!important}#panel input[type=checkbox]{width:22px;height:22px}#app{height:calc(55vh - var(--appnav-h,0px))!important}#panel{position:fixed;top:55vh;bottom:0;left:0;right:0;width:auto;height:auto;max-height:none;overflow:auto;box-sizing:border-box}}
+.touch-hint { display:none; }
+@media (pointer:coarse) {
+  .touch-hint { display:inline; }
+  .mouse-hint { display:none; }
+  /* Reserve a line just below the canvas, above a stacked panel or beside a side panel. */
+  #app { height:calc(100vh - var(--appnav-h,0px) - var(--stacked-panel-height,0px) - 24px)!important; }
+  #stage-overlay .hud-hint { position:fixed; bottom:var(--stacked-panel-height,0px); right:auto; max-width:calc(100% - 32px); line-height:24px; }
+}
+@media (max-width:820px) and (pointer:coarse) { :root { --stacked-panel-height:46vh; } }
+@media (max-width:600px) and (pointer:coarse) { :root { --stacked-panel-height:45vh; } }
+</style>
 <script type="importmap">{"imports": {"three": "../vendor/three/three.module.min.js", "three/addons/": "../vendor/three/addons/"}}</script>
 </head>
 <body>
@@ -15,7 +26,7 @@
   <header id="topbar"><span class="glyph"></span><h1 id="title">Model</h1><span class="hud-tag">3D view</span><span class="spacer"></span>
     <a class="hud-tag" id="back" href="../../../site/">Project site</a>
     <button class="theme-toggle" type="button" aria-label="Toggle color theme" title="Toggle color theme" hidden><svg class="sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/></svg><svg class="moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 15A9 9 0 0 1 9 4a9 9 0 1 0 11 11Z"/></svg></button></header>
-  <main id="stage-overlay"><div class="hud-hint">DRAG · ORBIT // SCROLL · ZOOM // RIGHT-DRAG · PAN</div></main>
+  <main id="stage-overlay"><div class="hud-hint"><span class="mouse-hint">DRAG · ORBIT // SCROLL · ZOOM // RIGHT-DRAG · PAN</span><span class="touch-hint">One finger to orbit · Two to pan and zoom</span></div></main>
   <aside id="panel"></aside>
 </div>
 <script type="module">

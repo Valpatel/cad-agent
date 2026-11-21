@@ -23,6 +23,14 @@ const routes = new Map([
   ['/favicon.ico', (_, res) => res.writeHead(204).end()],
   ['/m/two-parts.json', (_, res) => res.end(json)],
   ['/m/two-parts.bin', (_, res) => res.end(bin)],
+  ['/shadow.html', (_, res) => {
+    res.setHeader('Content-Type', 'text/html');
+    res.end(`<!doctype html><script type="module" src="/kit/model/model.js"></script>
+      <button id="before">Before model</button><div id="host"><template shadowrootmode="open">
+      <link rel="stylesheet" href="/kit/model/model.css">
+      <cad-model style="display:block;width:400px;height:250px" src="/m/two-parts.json" loading="scroll"></cad-model>
+      </template></div>`);
+  }],
   ['/index.html', (req, res) => { res.setHeader('Content-Type', 'text/html'); res.end(`<!doctype html><meta name="viewport" content="width=device-width"><link rel="stylesheet" href="/kit/model/model.css"><style>body{margin:0}cad-model{display:block;width:100%;height:60vh;min-height:230px}#spacer{height:300vh}</style><script type="module" src="/kit/model/model.js"></script><cad-model src="/m/two-parts.json" loading="eager" turn="${req.url.includes('turn') ? 30 : 0}" label="Fixture"></cad-model><div id="spacer"></div>`); }],
 ]);
 /** Replace performance.now and requestAnimationFrame with a frozen clock and a manual frame queue (window.__clock). */
@@ -48,6 +56,63 @@ const gap = (a, b) => Math.max(...a.map((n, i) => Math.abs(n - b[i])));
 let passed = 0;
 
 try {
+  // Document.activeElement sees the outer host. The reader's real Tab must reach Explode inside the shadow tree.
+  {
+    const page = await browser.newPage();
+    try {
+      await page.goto(`${site.url}/shadow.html`);
+      const model = page.locator('cad-model');
+      await model.waitFor({state:'attached'});
+      await page.waitForFunction(() => document.querySelector('#host').shadowRoot.querySelector('cad-model').dataset.state === 'poster');
+      await page.locator('#before').focus();
+      await page.keyboard.press('Tab');
+      await page.waitForFunction(() => ['ready','error'].includes(document.querySelector('#host').shadowRoot.querySelector('cad-model').dataset.state));
+      const focus = await model.evaluate(el => ({
+        state: el.dataset.state, tabindex: el.getAttribute('tabindex'),
+        control: el.getRootNode().activeElement?.textContent,
+      }));
+      assert.deepEqual(focus, {state:'ready', tabindex:null, control:'Explode'});
+      console.log('ok Tab hands focus to Explode inside a shadow tree'); passed++;
+    } finally { await page.close(); }
+  }
+  // #806: use the visible controls and their accessible state on a phone-sized touch screen.
+  {
+    const page = await browser.newPage({ viewport: { width:390, height:844 }, hasTouch:true, isMobile:true });
+    try {
+      await page.goto(site.url + '/index.html?turn');
+      const model = page.locator('cad-model[data-state=ready]');
+      await model.waitFor();
+      const pause = model.getByRole('button', { name:'Pause turning', exact:true, pressed:false });
+      await pause.tap();
+      const resume = model.getByRole('button', { name:'Resume turning', exact:true, pressed:true });
+      await resume.tap();
+      assert.ok(await pause.isVisible());
+      const explode = model.getByRole('button', { name:'Explode', exact:true });
+      const paint = () => explode.evaluate(b => getComputedStyle(b).backgroundColor);
+      const initialPaint = await paint();
+      await explode.tap();
+      assert.equal(await explode.getAttribute('aria-pressed'), 'true');
+      assert.notEqual(await paint(), initialPaint);
+      await explode.tap();
+      assert.equal(await explode.getAttribute('aria-pressed'), 'false');
+      assert.equal(await paint(), initialPaint);
+      assert.match(await model.getByRole('status').innerText(), /parts ready/);
+      assert.ok(await model.locator('.cad-model-label').isHidden(), 'Default phone hint should leave the model clear');
+      const status = model.getByRole('status');
+      const coverage = await status.evaluate(s => {
+        // Enable hit-testing just for this probe. A clipped live region still announces readiness.
+        s.style.pointerEvents = 'auto';
+        const r = s.getBoundingClientRect();
+        const coversModel = () => s.contains(document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2));
+        const ready = coversModel();
+        s.style.clipPath = 'none';  // planted control restores the old status chip
+        return { ready, visibleChip:coversModel() };
+      });
+      assert.deepEqual(coverage, { ready:false, visibleChip:true });
+      console.log('ok phone reader can pause, resume and explode with a visible state'); passed++;
+    } finally { await page.close(); }
+  }
+
   for (const input of ['pointer', 'keyboard']) for (const motion of ['no-preference', 'reduce']) {
     const name = `${input}/${motion}`, errors = [];
     const context = await browser.newContext({ viewport: { width: 900, height: 700 }, reducedMotion: motion });
@@ -184,4 +249,4 @@ try {
     } finally { await context.close(); }
   }
 } finally { await browser.close(); await site.close(); }
-console.log(`model explode first frame: ${passed}/5 cases passed in ${engine.name()}`);
+console.log(`model controls and first frame: ${passed} cases passed in ${engine.name()}`);

@@ -19,7 +19,7 @@ It is a pointer, never a path or a host: the manifest itself stays out of the re
   mismatch for a person (the page changed since, or the mirror holds other bytes);
 * a manifest line that is not valid (bad JSON, a non-http url, a sha256 that is not 64 hex digits, a date that is not
   ``YYYY-MM-DD``, a kind that is not a short lowercase word) is skipped and counted. Of two lines for one url the later
-  ``fetched`` wins; two different sha256 values on the same day are a conflict and neither is used;
+  ``fetched`` wins; two different sha256 values on the same day are a conflict and neither is used. Distinct usable URLs sharing a digest are listed for review;
 * the pointer goes right after the record's ``verified`` or ``summary`` (whichever comes later), else at its end, as
   the existing pointers sit;
 * schema-2 shards (``docs/research/references/*.yaml``) are rewritten through ``tools/import_refmap.py``'s ``dump``, so
@@ -44,6 +44,8 @@ import sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 from urllib.parse import urldefrag
+
+from yaml import YAMLError
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "software"))
@@ -80,7 +82,7 @@ def _entry(line: str) -> Optional[Dict[str, str]]:
     if not (isinstance(sha, str) and refs.SHA256.fullmatch(sha)):
         return None
     try:
-        if not (isinstance(fetched, str) and len(fetched) == 10 and dt.date.fromisoformat(fetched)):
+        if not (isinstance(fetched, str) and dt.date.fromisoformat(fetched).isoformat() == fetched):
             return None
     except ValueError:
         return None
@@ -237,7 +239,11 @@ def core_text(text: str, adds: Dict[str, Dict[str, Any]]) -> str:
         lines.insert(at, block)
     new = "".join(lines)
     # the proof: the new file parses to the old data with exactly these pointers added, at the right place
-    old_doc, new_doc = refs._yaml(text), refs._yaml(new)
+    old_doc = refs._yaml(text)
+    try:
+        new_doc = refs._yaml(new)
+    except YAMLError as err:
+        raise ValueError("inserting the pointers would produce invalid YAML") from err
     want = dict(old_doc)
     want["sources"] = [with_archive(r, adds[r["id"]]) if isinstance(r, dict) and r.get("id") in adds else r
                        for r in old_doc.get("sources") or []]
@@ -293,6 +299,12 @@ def main(argv: Optional[List[str]] = None) -> int:
           f"{len(counts['conflicting'])} with conflicting sha256 on one day (skipped)")
     for url in counts["conflicting"]:
         print(f"conflict: {url} has two sha256 values fetched on the same day; neither is used")
+    urls_by_sha: Dict[str, List[str]] = {}
+    for url, record in by_url.items():
+        urls_by_sha.setdefault(record["sha256"], []).append(url)
+    for sha, urls in sorted(urls_by_sha.items()):
+        if len(urls) > 1:
+            print(f"shared sha256 {sha}: {', '.join(sorted(urls))}")
     total = {"added": 0, "already": 0, "mismatch": 0}
     for f, row in sorted(rep.files.items()):
         print(f"{f}: {row['added']} added, {row['already']} already archived, {row['mismatch']} mismatched")

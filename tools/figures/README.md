@@ -25,7 +25,7 @@ Run from the repository root with its dependencies available. For example, `PYTH
 | [printed_joint_figures.py](printed_joint_figures.py) | joints: eye, peel and coupon examples | [printed joints](../../tests/mechanical/test_printed_joints.py) |
 | [snapfit_figures.py](snapfit_figures.py) | compliant: the guide's two cantilever examples | [snap-fit and generator checks](../../tests/mechanical/test_snapfit.py) |
 | [process_figures.py](process_figures.py) | process: walls, layers, bends and hardware prices | [process figures](../../tests/manufacturing/test_process_figures.py) |
-| [plates_figure.py](plates_figure.py) | plates: Gyropup build plates from its print plan | [figure provenance](../../docs/img/plates/SOURCE.json) |
 | [process_profile_figures.py](process_profile_figures.py) | research and sheet-metal: cited rule charts | [process profiles](../../tests/manufacturing/test_process_profiles.py) |
+| [plates_figure.py](plates_figure.py) | plates: Gyropup build plates from its print plan | [figure provenance](../../docs/img/plates/SOURCE.json) |
 
 [Repository tools](../README.md) · [Animated scene inputs](../anim/) · [Site figure tools](../site/figures/README.md)

@@ -50,7 +50,7 @@ export function enhanceComponentPreviews(documentRoot = document) {
   const title = dialog.querySelector('#scada-preview-title'), art = dialog.querySelector('[data-scada-preview-art]');
   const form = dialog.querySelector('[data-scada-state-fields]'), description = dialog.querySelector('[data-scada-preview-description]'), error = dialog.querySelector('[data-scada-preview-error]');
   const buttons = [...documentRoot.querySelectorAll('[data-scada-preview]')];
-  let task = 0, opener = null, payload, renderer;
+  let task = 0, opener = null, payload, renderer, rendererFailed = false;
   const load = async () => {
     payload ||= fetch('/toolkit/scada/catalog.json').then(async response => {
       if (!response.ok) throw new Error('Component metadata could not be loaded.');
@@ -58,7 +58,7 @@ export function enhanceComponentPreviews(documentRoot = document) {
       if (result.schema !== 'cad-agent-scada-browser/1' || !Array.isArray(result.elements)) throw new Error('Unsupported component metadata.');
       return result;
     }).catch(e => {payload = null; throw e;});
-    renderer ||= import('/kit/scada/ui/src/symbols/index.mjs').catch(e=>{renderer=null;throw e;});
+    renderer ||= import('/kit/scada/ui/src/symbols/index.mjs').catch(e => { rendererFailed = true; throw e; });
     return Promise.all([payload,renderer]);
   };
   const close = () => dialog.close();
@@ -72,7 +72,15 @@ export function enhanceComponentPreviews(documentRoot = document) {
     if (opener?.isConnected) opener.focus();
   };
   const click = async event => {
-    const button = event.currentTarget, serial = ++task; opener = button;
+    const button = event.currentTarget;
+    if (rendererFailed) {
+      // A failed import, including a static dependency, stays failed in this document's module map.
+      // Reload only on an explicit retry. Carry the choice in the existing entry and restore its previous state below.
+      history.replaceState({cadToolkitPreviewRetry:{id:button.dataset.scadaPreview, previous:history.state}}, '');
+      location.reload();
+      return;
+    }
+    const serial = ++task; opener = button;
     title.textContent = button.closest('article').querySelector('h2').textContent;
     art.textContent = 'Loading component…'; form.replaceChildren(); description.textContent=''; error.textContent=''; dialog.showModal();
     try {
@@ -116,6 +124,11 @@ export function enhanceComponentPreviews(documentRoot = document) {
   dialog.querySelector('[data-scada-close]').addEventListener('click',close);dialog.addEventListener('close',onClose);
   form.addEventListener('submit',submit);
   for(const button of buttons){button.addEventListener('click',click);button.hidden=false;}
+  const retry = history.state?.cadToolkitPreviewRetry;
+  if (retry) {
+    history.replaceState(retry.previous, '');
+    buttons.find(button => button.dataset.scadaPreview === retry.id)?.click();
+  }
   return()=>{task++;for(const button of buttons)button.removeEventListener('click',click);dialog.querySelector('[data-scada-close]').removeEventListener('click',close);dialog.removeEventListener('close',onClose);form.removeEventListener('submit',submit);if(dialog.open)dialog.close();};
 }
 

@@ -317,8 +317,13 @@ flowchart TD
     class W,V out
 ```
 
-Every verdict made for that build then states it (`cadagent.review.gates.verdict.note_not_drawn`). The word `warn`
-appears in the places this table names, and nowhere else:
+Every verdict for that build names the missing components. Spatial checks warn when geometry is missing.
+The wall gate lists the same components and keeps its measured result.
+
+<details>
+<summary>Where omission warnings appear in verdicts, reports and review packets</summary>
+
+`cadagent.review.gates.verdict.note_not_drawn` records the declaration in each output.
 
 | Where | What appears |
 |---|---|
@@ -336,6 +341,8 @@ appears in the places this table names, and nowhere else:
 If a project gate already uses `<gate>:not-drawn`, the toolkit leaves that check intact and numbers its own
 warning (`<gate>:1:not-drawn`, then `<gate>:2:not-drawn` if needed). Rerun any gate with an omission warning
 from an earlier draft of this feature. Its saved results cannot show whether it overwrote a project warning.
+
+</details>
 
 The site and the packets list the row on every section, not only on the sections of the `near` parts: a component
 declared without `near`, or near a part of another section, would otherwise reach no reviewer.

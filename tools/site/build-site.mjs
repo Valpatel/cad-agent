@@ -801,6 +801,7 @@ ${agentGuide}
 
 - [README](${ORIGIN}/README.md): what cad-agent is and how it grows
 - [Engineering toolkit](${ORIGIN}/toolkit.md): viewers, SCADA elements, simulations and build/review capabilities
+- Create a box with \`cad-agent init my-box\` and run \`cad-agent gates\` in it. [Try the starter box](${ORIGIN}/docs/gates#try-the-starter-box)
 - [SCADA elements](${ORIGIN}/toolkit/scada/elements.md): animated equipment, variants and editable visual states
 - [SCADA simulations](${ORIGIN}/toolkit/scada/simulations.md): target-owned process examples, including wastewater digestion
 - [Tools](${ORIGIN}/docs/toolkit.md): every command, the project contract and the Python API

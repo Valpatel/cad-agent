@@ -8,6 +8,9 @@ cad-agent init my-box && cd my-box
 cad-agent all          # build, print files, every check, report: docs/cad-agent-report.html
 ```
 
+To check just the assembled lid seat and lid thickness, run `cad-agent gates --build`. The guide shows how to change
+the lid thickness, read the failing measurement and restore the design. [Try the starter box](https://cad-agent.valpatel.com/docs/gates#try-the-starter-box)
+
 ```mermaid
 flowchart TD
     B["cad/build.py<br/>box + lid from the numbers at its top"] --> E["exports/<br/>STEP, STL, parts file, insert joints"]
@@ -24,6 +27,7 @@ flowchart TD
 | File | What it is |
 |---|---|
 | `cad/build.py` | the parts, from the numbers at its top; writes STEP, STL and the parts file to `exports/` |
+| `cad/gate_model.py` | registers the printed solids, their fixed seat and the omitted hardware for the integrity gates |
 | `tools/checks.py` | the insert joints and the overhang screen, each as `exports/<name>.json` with a `pass` |
 | `cad-agent.yaml` | the steps that run, the checks the report reads, the printer and the package |
 

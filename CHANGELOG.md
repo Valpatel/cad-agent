@@ -20,6 +20,12 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
 - A reviewer record lists the components declared not drawn near its section's parts (`not_drawn`). One declared after a review voids it (`review-stale`), and a record that leaves it out is refused at submission (`stale-not-drawn`) (#722).
 - A project that declares nothing gets the same record, the same verdicts and the same output as before (#722).
 - The FEA browser check records fixture requests and setup progress in CI and reports a failed viewer initialization before attempting its diagnostic screenshot (#845).
+- The box copied by `cad-agent init` runs integrity gates on its lid seat and thickness. The gates guide demonstrates a measured failure and repair on the starter (#800).
+- Wheel installs include the manufacturing profiles and their reference registry so the starter can build its insert geometry.
+- The FEA browser check records when it finishes receiving the case data and when the viewer sets its ready flag. These milestones help locate a stall even when the next animation frame or diagnostic screenshot never arrives (#845).
+
+**Fixed**
+- The FEA browser check recognizes viewer initialization even when animation frames stop. It requires a fresh surface draw after fitting the top view and reports which stage missed its 30-second deadline (#845).
 
 ## v0.50.3 (2026-11-20)
 

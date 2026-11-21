@@ -5,13 +5,182 @@
 #include "importer-iges.hpp"
 #include "importer-brep.hpp"
 #include <emscripten/bind.h>
+#include <cstdint>
+
+static emscripten::val CreateFloat32Array (const std::vector<float>& values)
+{
+    emscripten::val Float32Array = emscripten::val::global ("Float32Array");
+    if (values.empty ()) {
+        return Float32Array.new_ (0);
+    }
+
+    emscripten::val memoryView = emscripten::val (emscripten::typed_memory_view (values.size (), values.data ()));
+    return Float32Array.new_ (memoryView);
+}
+
+static emscripten::val CreateUint32Array (const std::vector<std::uint32_t>& values)
+{
+    emscripten::val Uint32Array = emscripten::val::global ("Uint32Array");
+    if (values.empty ()) {
+        return Uint32Array.new_ (0);
+    }
+
+    emscripten::val memoryView = emscripten::val (emscripten::typed_memory_view (values.size (), values.data ()));
+    return Uint32Array.new_ (memoryView);
+}
+
+static std::vector<std::uint8_t> CopyUint8Array (const emscripten::val& buffer)
+{
+    std::size_t bufferLength = 0;
+    emscripten::val byteLength = buffer["byteLength"];
+    if (!byteLength.isUndefined ()) {
+        bufferLength = byteLength.as<std::size_t> ();
+    } else {
+        bufferLength = buffer["length"].as<std::size_t> ();
+    }
+
+    std::vector<std::uint8_t> bufferArr (bufferLength);
+    if (bufferArr.empty ()) {
+        return bufferArr;
+    }
+
+    emscripten::val memoryView = emscripten::val (emscripten::typed_memory_view (bufferArr.size (), bufferArr.data ()));
+    memoryView.call<void> ("set", buffer);
+    return bufferArr;
+}
+
+static emscripten::val CreateColorArray (const Color& color)
+{
+    emscripten::val colorArr (emscripten::val::array ());
+    colorArr.set (0, color.r);
+    colorArr.set (1, color.g);
+    colorArr.set (2, color.b);
+    return colorArr;
+}
+
+static bool ColorsEqual (const Color& a, const Color& b)
+{
+    return a.r == b.r && a.g == b.g && a.b == b.b;
+}
+
+class MeshBounds
+{
+public:
+    MeshBounds () :
+        mHasValue (false),
+        mMin {0.0f, 0.0f, 0.0f},
+        mMax {0.0f, 0.0f, 0.0f}
+    {
+
+    }
+
+    void Add (float x, float y, float z)
+    {
+        float values[3] = {x, y, z};
+        if (!mHasValue) {
+            for (int axis = 0; axis < 3; axis++) {
+                mMin[axis] = values[axis];
+                mMax[axis] = values[axis];
+            }
+            mHasValue = true;
+            return;
+        }
+
+        for (int axis = 0; axis < 3; axis++) {
+            if (values[axis] < mMin[axis]) {
+                mMin[axis] = values[axis];
+            }
+            if (values[axis] > mMax[axis]) {
+                mMax[axis] = values[axis];
+            }
+        }
+    }
+
+    bool HasValue () const
+    {
+        return mHasValue;
+    }
+
+    float Min (int axis) const
+    {
+        return mMin[axis];
+    }
+
+    float Max (int axis) const
+    {
+        return mMax[axis];
+    }
+
+private:
+    bool mHasValue;
+    float mMin[3];
+    float mMax[3];
+};
+
+static emscripten::val CreateVector3Array (float x, float y, float z)
+{
+    emscripten::val values (emscripten::val::array ());
+    values.set (0, x);
+    values.set (1, y);
+    values.set (2, z);
+    return values;
+}
+
+static emscripten::val CreateBoundsObject (const MeshBounds& bounds)
+{
+    emscripten::val boundsObj (emscripten::val::object ());
+    boundsObj.set ("min", CreateVector3Array (bounds.Min (0), bounds.Min (1), bounds.Min (2)));
+    boundsObj.set ("max", CreateVector3Array (bounds.Max (0), bounds.Max (1), bounds.Max (2)));
+    boundsObj.set ("size", CreateVector3Array (
+        bounds.Max (0) - bounds.Min (0),
+        bounds.Max (1) - bounds.Min (1),
+        bounds.Max (2) - bounds.Min (2)
+    ));
+    return boundsObj;
+}
+
+class BrepFaceRun
+{
+public:
+    BrepFaceRun (int first, int last, const Color& color) :
+        first (first),
+        last (last),
+        hasColor (true),
+        color (color)
+    {
+
+    }
+
+    BrepFaceRun (int first, int last) :
+        first (first),
+        last (last),
+        hasColor (false),
+        color ()
+    {
+
+    }
+
+    bool CanExtend (int nextFirst, bool nextHasColor, const Color& nextColor) const
+    {
+        if (last + 1 != nextFirst || hasColor != nextHasColor) {
+            return false;
+        }
+        return !hasColor || ColorsEqual (color, nextColor);
+    }
+
+    int first;
+    int last;
+    bool hasColor;
+    Color color;
+};
 
 class HierarchyWriter
 {
 public:
-    HierarchyWriter (emscripten::val& meshesArr) :
+    HierarchyWriter (emscripten::val& meshesArr, const ImportParams& params) :
         mMeshesArr (meshesArr),
-        mMeshCount (0)
+        mMeshCount (0),
+        mParams (params)
     {
     }
 
@@ -50,78 +219,118 @@ private:
             int normalCount = 0;
             int triangleCount = 0;
             int brepFaceCount = 0;
+            int coloredBrepFaceCount = 0;
+            MeshBounds bounds;
 
-            emscripten::val positionArr (emscripten::val::array ());
-            emscripten::val normalArr (emscripten::val::array ());
-            emscripten::val indexArr (emscripten::val::array ());
+            std::vector<float> positionArr;
+            std::vector<float> normalArr;
+            std::vector<std::uint32_t> indexArr;
+            std::vector<BrepFaceRun> brepFaceRuns;
             emscripten::val brepFaceArr (emscripten::val::array ());
 
             mesh.EnumerateFaces ([&](const Face& face) {
                 int triangleOffset = triangleCount;
                 int vertexOffset = vertexCount;
                 face.EnumerateVertices ([&](double x, double y, double z) {
-                    positionArr.set (vertexCount * 3, x);
-                    positionArr.set (vertexCount * 3 + 1, y);
-                    positionArr.set (vertexCount * 3 + 2, z);
+                    float xf = static_cast<float> (x);
+                    float yf = static_cast<float> (y);
+                    float zf = static_cast<float> (z);
+                    positionArr.push_back (xf);
+                    positionArr.push_back (yf);
+                    positionArr.push_back (zf);
+                    bounds.Add (xf, yf, zf);
                     vertexCount += 1;
                 });
                 face.EnumerateNormals ([&](double x, double y, double z) {
-                    normalArr.set (normalCount * 3, x);
-                    normalArr.set (normalCount * 3 + 1, y);
-                    normalArr.set (normalCount * 3 + 2, z);
+                    normalArr.push_back (static_cast<float> (x));
+                    normalArr.push_back (static_cast<float> (y));
+                    normalArr.push_back (static_cast<float> (z));
                     normalCount += 1;
                 });
                 face.EnumerateTriangles ([&](int v0, int v1, int v2) {
-                    indexArr.set (triangleCount * 3, vertexOffset + v0);
-                    indexArr.set (triangleCount * 3 + 1, vertexOffset + v1);
-                    indexArr.set (triangleCount * 3 + 2, vertexOffset + v2);
+                    indexArr.push_back (static_cast<std::uint32_t> (vertexOffset + v0));
+                    indexArr.push_back (static_cast<std::uint32_t> (vertexOffset + v1));
+                    indexArr.push_back (static_cast<std::uint32_t> (vertexOffset + v2));
                     triangleCount += 1;
                 });
-                emscripten::val brepFaceObj (emscripten::val::object ());
-                brepFaceObj.set ("first", triangleOffset);
-                brepFaceObj.set ("last", triangleCount - 1);
                 Color faceColor;
-                if (face.GetColor (faceColor)) {
-                    emscripten::val colorArr (emscripten::val::array ());
-                    colorArr.set (0, faceColor.r);
-                    colorArr.set (1, faceColor.g);
-                    colorArr.set (2, faceColor.b);
-                    brepFaceObj.set ("color", colorArr);
-                } else {
-                    brepFaceObj.set ("color", emscripten::val::null ());
+                bool hasFaceColor = face.GetColor (faceColor);
+                if (hasFaceColor) {
+                    coloredBrepFaceCount += 1;
                 }
-                brepFaceArr.set (brepFaceCount, brepFaceObj);
+                if (mParams.includeBrepFaces) {
+                    emscripten::val brepFaceObj (emscripten::val::object ());
+                    brepFaceObj.set ("first", triangleOffset);
+                    brepFaceObj.set ("last", triangleCount - 1);
+                    if (hasFaceColor) {
+                        brepFaceObj.set ("color", CreateColorArray (faceColor));
+                    } else {
+                        brepFaceObj.set ("color", emscripten::val::null ());
+                    }
+                    brepFaceArr.set (brepFaceCount, brepFaceObj);
+                }
                 brepFaceCount += 1;
+
+                int triangleLast = triangleCount - 1;
+                if (triangleLast >= triangleOffset) {
+                    if (!brepFaceRuns.empty () && brepFaceRuns.back ().CanExtend (triangleOffset, hasFaceColor, faceColor)) {
+                        brepFaceRuns.back ().last = triangleLast;
+                    } else if (hasFaceColor) {
+                        brepFaceRuns.push_back (BrepFaceRun (triangleOffset, triangleLast, faceColor));
+                    } else {
+                        brepFaceRuns.push_back (BrepFaceRun (triangleOffset, triangleLast));
+                    }
+                }
             });
 
             emscripten::val attributesObj (emscripten::val::object ());
 
             emscripten::val positionObj (emscripten::val::object ());
-            positionObj.set ("array", positionArr);
+            positionObj.set ("array", CreateFloat32Array (positionArr));
             attributesObj.set ("position", positionObj);
 
             if (vertexCount == normalCount) {
                 emscripten::val normalObj (emscripten::val::object ());
-                normalObj.set ("array", normalArr);
+                normalObj.set ("array", CreateFloat32Array (normalArr));
                 attributesObj.set ("normal", normalObj);
             }
 
             emscripten::val indexObj (emscripten::val::object ());
-            indexObj.set ("array", indexArr);
+            indexObj.set ("array", CreateUint32Array (indexArr));
 
             meshObj.set ("attributes", attributesObj);
             meshObj.set ("index", indexObj);
+            meshObj.set ("vertex_count", vertexCount);
+            meshObj.set ("triangle_count", triangleCount);
+            if (bounds.HasValue ()) {
+                meshObj.set ("bounds", CreateBoundsObject (bounds));
+            }
 
             Color meshColor;
             if (mesh.GetColor (meshColor)) {
-                emscripten::val colorArr (emscripten::val::array ());
-                colorArr.set (0, meshColor.r);
-                colorArr.set (1, meshColor.g);
-                colorArr.set (2, meshColor.b);
-                meshObj.set ("color", colorArr);
+                meshObj.set ("color", CreateColorArray (meshColor));
             }
 
-            meshObj.set ("brep_faces", brepFaceArr);
+            meshObj.set ("brep_face_count", brepFaceCount);
+            meshObj.set ("colored_brep_face_count", coloredBrepFaceCount);
+            if (mParams.includeBrepFaces) {
+                meshObj.set ("brep_faces", brepFaceArr);
+            }
+
+            emscripten::val brepFaceRunArr (emscripten::val::array ());
+            for (int runIndex = 0; runIndex < brepFaceRuns.size (); runIndex++) {
+                const BrepFaceRun& run = brepFaceRuns[runIndex];
+                emscripten::val runObj (emscripten::val::object ());
+                runObj.set ("first", run.first);
+                runObj.set ("last", run.last);
+                if (run.hasColor) {
+                    runObj.set ("color", CreateColorArray (run.color));
+                } else {
+                    runObj.set ("color", emscripten::val::null ());
+                }
+                brepFaceRunArr.set (runIndex, runObj);
+            }
+            meshObj.set ("brep_face_runs", brepFaceRunArr);
 
             mMeshesArr.set (mMeshCount, meshObj);
             nodeMeshesArr.set (nodeMeshCount, mMeshCount);
@@ -132,6 +341,7 @@ private:
 
     emscripten::val& mMeshesArr;
     int mMeshCount;
+    const ImportParams& mParams;
 };
 
 static void EnumerateNodeMeshes (const NodePtr& node, const std::function<void (const Mesh&)>& onMesh)
@@ -149,7 +359,7 @@ static emscripten::val ImportFile (ImporterPtr importer, const emscripten::val& 
 {
     emscripten::val resultObj (emscripten::val::object ());
 
-    const std::vector<uint8_t>& bufferArr = emscripten::vecFromJSArray<std::uint8_t> (buffer);
+    std::vector<std::uint8_t> bufferArr = CopyUint8Array (buffer);
     Importer::Result importResult = importer->LoadFile (bufferArr, params);
     resultObj.set ("success", importResult == Importer::Result::Success);
     if (importResult != Importer::Result::Success) {
@@ -161,7 +371,7 @@ static emscripten::val ImportFile (ImporterPtr importer, const emscripten::val& 
     emscripten::val meshesArr (emscripten::val::array ());
     NodePtr rootNode = importer->GetRootNode ();
 
-    HierarchyWriter hierarchyWriter (meshesArr);
+    HierarchyWriter hierarchyWriter (meshesArr, params);
     hierarchyWriter.WriteNode (rootNode, rootNodeObj);
 
     resultObj.set ("root", rootNodeObj);
@@ -210,6 +420,11 @@ static ImportParams GetImportParams (const emscripten::val& paramsVal)
     if (paramsVal.hasOwnProperty ("angularDeflection")) {
         emscripten::val angularDeflection = paramsVal["angularDeflection"];
         params.angularDeflection = angularDeflection.as<double> ();
+    }
+
+    if (paramsVal.hasOwnProperty ("includeBrepFaces")) {
+        emscripten::val includeBrepFaces = paramsVal["includeBrepFaces"];
+        params.includeBrepFaces = includeBrepFaces.as<bool> ();
     }
 
     return params;

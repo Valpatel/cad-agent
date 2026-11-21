@@ -32,6 +32,8 @@ function progress(theme, step, detail) {
   console.log('FEA progress', JSON.stringify({ engine: engine.name(), theme, step, detail }));
 }
 
+const readyMessage = 'FEA fixture: body data-ready set';
+
 async function openFixture(page, siteUrl, file, mark) {
   const url = new URL(file, siteUrl).href;
   page.on('request', request => {
@@ -40,11 +42,26 @@ async function openFixture(page, siteUrl, file, mark) {
   page.on('response', response => {
     if (response.url() === url) mark('fixture response', response.status());
   });
+  page.on('requestfinished', request => {
+    if (request.url() === url) mark('fixture body received', file);
+  });
   page.on('requestfailed', request => {
     if (request.url() === url) mark('fixture request failed', request.failure()?.errorText);
   });
   page.on('pageerror', error => mark('page error', error.message));
   page.on('crash', () => mark('page crashed'));
+  page.on('console', message => {
+    if (message.type() === 'debug' && message.text() === readyMessage) mark('ready attribute set');
+  });
+  // A DOM mutation can reach Node before the next rendered frame or the waitForFunction poll.
+  await page.addInitScript(message => {
+    const observer = new MutationObserver(() => {
+      if (document.body?.dataset.ready !== '1') return;
+      observer.disconnect();
+      console.debug(message);
+    });
+    observer.observe(document, { subtree: true, attributes: true, attributeFilter: ['data-ready'] });
+  }, readyMessage);
   mark('navigating', file);
   await page.goto(siteUrl+'/kit/fea/fea.html?case='+file+'&nav=0&title=FEA%20fixture');
   mark('waiting for ready');
@@ -71,14 +88,58 @@ async function checkFailedInitialization(browser, siteUrl) {
       error.cause.message.includes('Could not load /missing-fixture.json: 404') && error.errors[1] === captureError);
     assert.ok(events.some(([step, file]) => step === 'fixture requested' && file === '/missing-fixture.json'));
     assert.ok(events.some(([step, status]) => step === 'fixture response' && status === 404));
+    assert.ok(!events.some(([step]) => step === 'ready attribute set'));
   } finally {
     await page.close();
   }
 }
 
+async function checkReadyBeforeFrame(browser, siteUrl, releaseBody) {
+  const page = await browser.newPage();
+  const file = '/held-fixture.json', url = siteUrl + file;
+  const events = [];
+  try {
+    await page.clock.install();
+    await page.clock.pauseAt(await page.evaluate(() => Date.now() + 1000));
+    const headers = page.waitForResponse(url, { timeout: 30000 });
+    await Promise.all([
+      openFixture(page, siteUrl, file, (step, detail) => events.push([step, detail])),
+      (async () => {
+        assert.equal((await headers).status(), 200);
+        assert.ok(!events.some(([step]) => step === 'fixture body received'), 'the server is still holding the body');
+        assert.ok(!events.some(([step]) => step === 'ready attribute set'));
+        const body = page.waitForEvent('requestfinished', { predicate: request => request.url() === url, timeout: 30000 });
+        const mutation = page.waitForEvent('console', {
+          predicate: message => message.type() === 'debug' && message.text() === readyMessage,
+          timeout: 30000,
+        });
+        releaseBody();
+        await Promise.all([body, mutation]);
+        assert.ok(events.some(([step, seen]) => step === 'fixture body received' && seen === file));
+        assert.ok(events.some(([step]) => step === 'ready attribute set'));
+        const frames = () => page.evaluate(() => window.__fea.stage.frames);
+        assert.equal(await frames(), 0, 'the ready message must arrive with the first stage frame still withheld');
+        await page.clock.runFor(64);
+        assert.ok(await frames() > 0, 'the mounted stage must run its frame loop after the clock advances');
+      })(),
+    ]);
+  } finally {
+    releaseBody();
+    await page.close();
+  }
+}
+
 progress(null, 'starting fixture server');
+const heldBody = Promise.withResolvers();
 const site=await serveWebkit(new Map([
   ['/fixture.json',(_req,res)=>res.writeHead(200,{'Content-Type':'application/json'}).end(JSON.stringify(fixture))],
+  ['/held-fixture.json', async (_req, res) => {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    const body = JSON.stringify(fixture);
+    res.write(body.slice(0, 1));
+    await heldBody.promise;
+    res.end(body.slice(1));
+  }],
   ['/favicon.ico',(_req,res)=>res.writeHead(204).end()],
 ]));
 progress(null, 'launching browser');
@@ -161,6 +222,9 @@ try{
     }
   }
   assert.deepEqual(errors,[]);
+  progress(null, 'checking ready before the first frame');
+  await checkReadyBeforeFrame(browser, site.url, heldBody.resolve);
+  cases.push({ deferredFrame: 'fixture body and ready mutation recorded before the first stage frame' });
   progress(null, 'checking failed initialization');
   await checkFailedInitialization(browser, site.url);
   cases.push({ failedInitialization: 'actual missing fixture retained before screenshot error' });

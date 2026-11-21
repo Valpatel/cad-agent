@@ -46,8 +46,74 @@ try{
   await page.evaluate(async()=>{window.__fileViewer.dispose();const{createFileViewer}=await import('/kit/files/file-viewer.js');window.__fileViewer=createFileViewer(document.querySelector('#file-viewer'),{file:'/stalled.stl',timeoutMs:1000});});await state('error');assert.match(await page.locator('.file-status p').innerText(),/timed out/);await page.getByRole('button',{name:'Retry file'}).click();await state('ready');assert.equal(stalledAttempts,2);cases.push({bodyTimeout:'retry recovered',stalledAttempts});
   // The page remains interactive while a worker is busy; Cancel terminates CPU work.
   await page.route('**/file-step-worker.js',route=>route.fulfill({contentType:'text/javascript',body:'onmessage=()=>{postMessage({phase:"Busy parser fixture"});const end=Date.now()+10000;while(Date.now()<end){};postMessage({error:"Too late"});};'}));
-  await page.evaluate(()=>{window.__nativeWorker=window.Worker;window.__terminated=0;window.Worker=class extends window.__nativeWorker{terminate(){window.__terminated++;return super.terminate();}};window.__frames=0;const tick=()=>{window.__frames++;if(window.__countFrames)requestAnimationFrame(tick);};window.__countFrames=true;requestAnimationFrame(tick);window.__fileViewer.load('/block.step');});
-  await page.getByText('Busy parser fixture',{exact:true}).waitFor();await page.waitForTimeout(300);assert.ok(await page.evaluate(()=>window.__frames)>3);const cancelAt=Date.now();await page.getByRole('button',{name:'Cancel',exact:true}).click();await state('cancelled');await page.waitForFunction(()=>window.__terminated>0);assert.ok(Date.now()-cancelAt<2000);await page.evaluate(()=>{window.__countFrames=false;window.Worker=window.__nativeWorker;});await page.unroute('**/file-step-worker.js');cases.push({cpuCancellation:'page rAF remained active; native Cancel terminated worker'});
+  const measurements=[];
+  for(const condition of [...Array(36).fill('ordinary'),'runner-stall','delayed-cancel','runner-stall','delayed-cancel']) {
+  await page.evaluate(()=>{
+    const nativeWorker=window.Worker, timing={};
+    window.__cancelTiming=timing;
+    window.Worker=class extends nativeWorker {
+      terminate(){
+        super.terminate();
+        timing.terminatedAt=performance.now();
+      }
+    };
+    const root=window.__fileViewer.root;
+    const observer=new MutationObserver(()=>{
+      if(root.dataset.state==='cancelled')timing.cancelledAt=performance.now();
+    });
+    observer.observe(root,{attributes:true,attributeFilter:['data-state']});
+    window.__frames=0;
+    let countFrames=true;
+    const tick=()=>{window.__frames++;if(countFrames)requestAnimationFrame(tick);};
+    requestAnimationFrame(tick);
+    window.__endCancelProbe=()=>{
+      countFrames=false;
+      observer.disconnect();
+      window.Worker=nativeWorker;
+    };
+    window.__fileViewer.load('/block.step');
+  });
+  await page.getByText('Busy parser fixture',{exact:true}).waitFor();
+  await page.waitForTimeout(300);
+  assert.ok(await page.evaluate(()=>window.__frames)>3);
+  const cancel=page.getByRole('button',{name:'Cancel',exact:true});
+  await cancel.evaluate(button=>button.addEventListener('pointerdown',event=>{
+    window.__cancelTiming.inputAt=event.timeStamp;
+  },{capture:true,once:true}));
+  if(condition==='delayed-cancel'){
+    await cancel.evaluate(button=>button.addEventListener('click',event=>{
+      event.stopImmediatePropagation();
+      event.preventDefault();
+      setTimeout(()=>button.click(),2500);
+    },{capture:true,once:true}));
+  }
+  const oldStart=Date.now();
+  await cancel.click();
+  if(condition==='runner-stall')Atomics.wait(new Int32Array(new SharedArrayBuffer(4)),0,0,3000);
+  await state('cancelled');
+  await page.waitForFunction(()=>window.__cancelTiming.terminatedAt!==undefined);
+  const processMs=Date.now()-oldStart;
+  const timing=await page.evaluate(()=>{window.__endCancelProbe();return window.__cancelTiming;});
+  const cancelledMs=timing.cancelledAt-timing.inputAt, terminatedMs=timing.terminatedAt-timing.inputAt;
+  const checkDeadline=()=>{
+  for(const [event,elapsed] of Object.entries({cancelledMs,terminatedMs})){
+    assert.ok(elapsed>=0&&elapsed<2000,`Cancel ${event} was ${elapsed} ms, expected [0, 2000) ms: ${JSON.stringify(timing)}`);
+  }
+  };
+  const result={condition,processMs,cancelledMs,terminatedMs,oldPass:processMs<2000,pagePass:true};
+  try { checkDeadline(); } catch(error) { result.pagePass=false;result.error=String(error); }
+  measurements.push(result);
+  console.log('CANCEL-TRIAL',JSON.stringify(result));
+  }
+  await page.unroute('**/file-step-worker.js');
+  await writeFile(out+'/'+engine.name()+'-cancel-trials.json', JSON.stringify(measurements,null,2));
+  for(const row of measurements){
+    assert.equal(row.pagePass,row.condition!=='delayed-cancel',JSON.stringify(row));
+    assert.ok(Number.isFinite(row.cancelledMs)&&Number.isFinite(row.terminatedMs),JSON.stringify(row));
+    if(row.condition==='delayed-cancel')assert.ok(row.cancelledMs>=2000&&row.terminatedMs>=2000,JSON.stringify(row));
+    if(row.condition!=='ordinary')assert.equal(row.oldPass,false,JSON.stringify(row));
+  }
+  cases.push({cancelTimingTrials:measurements.length});
   // Validate measured layout and actual projected model bounds on fresh pages.
   for(const viewport of [{width:320,height:568},{width:568,height:320},{width:390,height:844},{width:844,height:390}]){
     await visit('/block.stl',viewport);await state('ready');await page.waitForTimeout(100);

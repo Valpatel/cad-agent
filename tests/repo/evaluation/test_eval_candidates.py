@@ -7,7 +7,7 @@ import yaml
 
 from tests.repo.test_areas import load_areas
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = Path(__file__).resolve().parents[3]
 FIXTURES = ROOT / 'tests/fixtures/evaluation'
 FIELDS = {'id', 'version', 'status', 'domain', 'area', 'difficulty', 'job_manifest', 'prompt',
           'required_inputs', 'success_criteria', 'artifacts', 'limits', 'sources'}

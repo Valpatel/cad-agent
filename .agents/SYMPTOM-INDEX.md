@@ -2,6 +2,7 @@
 
 | Symptom | Guidance |
 | --- | --- |
+| A setup probe times out without a command receipt, or an archive payload cap misses repeated directory/header entries | [Retain failed phase evidence and bound decompressed metadata](inbox/agents/2026-11-06-agent-discovery-and-resource-boundaries.md#a-metadata-probe-must-retain-its-failures-and-bound-archive-metadata) |
 | A push or issue creation fails with "Claude doesn't have GitHub access to `<repo>` for your organization" while clone and read work | [Writes need the GitHub App on the organization](inbox/agents/2026-11-15-cloud-sessions-reach-github-through-mcp.md#push-and-issue-creation-return-403-while-clone-and-read-work) |
 | `gh` is missing or reports `The token in GH_TOKEN is invalid`, so `tools/ci_gates.py all` cannot run | [Use the GitHub MCP tools; the gate route without `gh` is #750](inbox/agents/2026-11-15-cloud-sessions-reach-github-through-mcp.md#no-usable-gh-so-the-local-live-gate-run-cannot-happen) |
 | `cad-gates/dev/review` says "no review verdict yet" after a pass review for the head was posted from a cloud session | [Fixed by #752: the gate reads a marker followed by one footer; check for other text after the marker, then re-run the gates](inbox/agents/2026-11-15-cloud-sessions-reach-github-through-mcp.md#a-pass-verdict-is-stored-but-the-review-gate-reports-no-review-verdict-yet) |

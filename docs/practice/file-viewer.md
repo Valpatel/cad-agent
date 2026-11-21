@@ -41,7 +41,7 @@ flowchart TD
 - Fit preserves the viewing direction. Isometric, Front, Side and Top select a
   standard view. The model is fitted into the actual canvas, outside the header
   and controls. All controls have at least 44px touch targets.
-- STEP uses pinned occt-import-js 0.0.23 in a dedicated worker. Open CASCADE
+- STEP uses `@sunbox/occt-import-js` 0.0.29 in a dedicated worker. Open CASCADE 8.0.0
   tessellates the requested STEP's surfaces with millimeter output,
   `bounding_box_ratio` linear deflection 0.001 and angular deflection 0.2 radians.
   This is a visual tessellation, not a manufacturing or topology validation.

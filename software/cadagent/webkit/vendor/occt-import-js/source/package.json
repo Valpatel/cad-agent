@@ -1,10 +1,13 @@
 {
-	"name": "occt-import-js",
-	"version": "0.0.23",
+	"name": "@sunbox/occt-import-js",
+	"version": "0.0.29",
 	"description": "Javascript interface for the occt library.",
 	"license": "LGPL-2.1",
 	"main": "./dist/occt-import-js.js",
-	"repository": "github:kovacsv/occt-import-js",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/SunboX/occt-import-js.git"
+	},
 	"keywords": [
 		"3d",
 		"model",
@@ -18,10 +21,18 @@
 	},
 	"scripts": {
 		"start": "http-server",
-		"test": "mocha test/test.js --timeout 20000"
+		"rebuild:dist": "node tools/rebuild_dist.js",
+		"example:esp12": "node examples/esp12_viewer/server.js",
+		"example:ft601q": "node examples/ft601q_viewer/server.js",
+		"test": "mocha test/test.js test/wasm_build_config.test.js test/rebuild_dist_script.test.js test/worker_contract.test.js --timeout 20000",
+		"test:esp12-server": "mocha test/esp12_example_server.test.js --timeout 10000",
+		"test:ft601q-server": "mocha test/ft601q_example_server.test.js --timeout 10000"
 	},
 	"dependencies": {},
 	"browser": {
 		"fs": false
+	},
+	"publishConfig": {
+		"registry": "https://npm.pkg.github.com"
 	}
 }

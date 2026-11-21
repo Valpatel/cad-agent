@@ -1132,7 +1132,7 @@ Guides explain how to use the toolkit. Folder maps lead into its code, tests and
 </details>
 
 <details>
-<summary>software — 1188 folders</summary>
+<summary>software — 1189 folders</summary>
 
 <details>
 <summary><code>software/README.md</code> — 1 folders</summary>
@@ -8896,7 +8896,7 @@ Guides explain how to use the toolkit. Folder maps lead into its code, tests and
 </details>
 
 <details>
-<summary><code>software/cadagent/webkit/vendor/README.md</code> — 17 folders</summary>
+<summary><code>software/cadagent/webkit/vendor/README.md</code> — 18 folders</summary>
 
 [Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-vendor/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/vendor/README.md)
 
@@ -8920,6 +8920,7 @@ Guides explain how to use the toolkit. Folder maps lead into its code, tests and
 | `software/cadagent/webkit/vendor/occt-import-js/source/occt-import-js` |
 | `software/cadagent/webkit/vendor/occt-import-js/source/occt-import-js/example` |
 | `software/cadagent/webkit/vendor/occt-import-js/source/occt-import-js/src` |
+| `software/cadagent/webkit/vendor/occt-import-js/source/src` |
 | `software/cadagent/webkit/vendor/occt-import-js/source/tools` |
 | `software/cadagent/webkit/vendor/three` |
 | `software/cadagent/webkit/vendor/three/addons` |

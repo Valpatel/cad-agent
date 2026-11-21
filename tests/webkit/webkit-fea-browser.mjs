@@ -135,9 +135,10 @@ const site=await serveWebkit(new Map([
   ['/fixture.json',(_req,res)=>res.writeHead(200,{'Content-Type':'application/json'}).end(JSON.stringify(fixture))],
   ['/held-fixture.json', async (_req, res) => {
     res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.flushHeaders();
+    const body = JSON.stringify(fixture);
+    res.write(body.slice(0, 1));
     await heldBody.promise;
-    res.end(JSON.stringify(fixture));
+    res.end(body.slice(1));
   }],
   ['/favicon.ico',(_req,res)=>res.writeHead(204).end()],
 ]));

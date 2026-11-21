@@ -14,6 +14,7 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
 **New**
 - `cadagent.review.dossier.not_drawn(name, reason=..., near=...)`: a build script declares a component that is part of the design and has no shape in the build (a gear that is only numbers in an analysis script). The geometry record lists it under `not_drawn`, and every verdict made for that build names it: `not_drawn`, an assumption, and a "Not in the model" section in `<gate>.md`. `cad-agent gates` prints `WARN` for a passing gate that carries the warning, ends each row "N not drawn, not seen: ...", counts `2 pass (2 components not drawn)` and adds a "not in the model" line. The review site shows a banner on every review page and lists the warning on every section page; every section's review packet has it in its findings. The dossier lint lists each component as a `not-drawn` warning (#722).
 - `cadagent.review.gates.verdict.note_not_drawn(data, record)` applies the statement to a verdict. A gate given a build (`<gate>_from_build(result, ..., out=...)`, `Assembly.from_build(result)`) applies it before it returns or writes, and `bind_inputs` applies it to whatever it binds, so a project's own gate gets it. A gate called on a hand-built `Assembly` is the one exception (#722).
+- Lessons on printing in several colours (inlay pockets, the wipe tower's place, sealed voids and their bridge notes), on using the toolkit already on the computer and on scoring panels (#824).
 
 **Changed**
 - With a `not_drawn` declaration, the verdicts of the connectivity, containment, fasteners, motion and assembly gates (and of a project's own gate bound with `bind_inputs`) get a `<gate>:not-drawn` check with status `warn`, so their `status` is `warn` where it was `pass`. `pass` stays true and no exit code changes; `cad-agent check` and the report still print `PASS` for the row, with the components named in it. A project check with the same ID keeps its findings and the toolkit numbers its warning. A verdict that does not name the components its record declares is stale (#722).
@@ -23,9 +24,22 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
 - The box copied by `cad-agent init` runs integrity gates on its lid seat and thickness. The gates guide demonstrates a measured failure and repair on the starter (#800).
 - Wheel installs include the manufacturing profiles and their reference registry so the starter can build its insert geometry.
 - The FEA browser check records when it finishes receiving the case data and when the viewer sets its ready flag. These milestones help locate a stall even when the next animation frame or diagnostic screenshot never arrives (#845).
+- Website: docs pages show “On this page” beside the article from 1366 px, keeping the topic tree available alongside it. At 1366 px the article keeps its previous reading width, and at 1400 px the navigation columns widen. Other pages retain the 1240 px shell until 1500 px, and articles without an outline use the available columns (#807).
+- Web kit `ui/appnav.js`: on a page that loads the kit's theme (`ui/theme.css`), the top bar takes its colours and follows the page's light or dark theme; other pages keep the dark bar (#807).
+- `design-process` skill: its description now matches a plain request to 3D print something for a named printer, it tells an agent to find the toolkit's owner before writing an export, slicing or rendering tool, and it routes a part printed in several colours on a tool changer to `prusa3mf.write_project`, the PrusaSlicer slice and `cad-agent prusa-view` (#824).
+- The original-file viewer reads STEP files with Open CASCADE 8.0.0 in its browser worker. The wheel includes the updated reader, license texts and rebuild instructions (#848).
 
 **Fixed**
 - The FEA browser check recognizes viewer initialization even when animation frames stop. It requires a fresh surface draw after fitting the top view and reports which stage missed its 30-second deadline (#845).
+- Removing an inline 3D model viewer releases its renderer, observers, and event handlers. Reattaching it restores the controls and adjusts touch gestures to its new scroll container (#771).
+- Web kit `documents/nav.css`: no half-cut tree row shows above a `<cad-nav>` panel's sticky controls (#807).
+- Website: Back, Forward or a reload to an install address (`/docs/agent-workflow#install-…`) keeps the reader's place instead of jumping back to the block (#807).
+- `cad-agent site --serve`: the kit's file viewer starts right under the injected top bar (it was a bar's height lower), `nav=0` in an address keeps the injected bar off, and the bar in the site's own pages gets the same 44 px phone targets as `ui/appnav.js` (#807).
+- `cadagent.publish.guides`: a packed model whose part is not an object is refused with `CadConfigError`, like every other fault, not an `AttributeError` (#807).
+- If the Toolkit SCADA preview's renderer or one of its dependencies fails to download, reopening a component reloads the library and restores that selection on the same filtered page (#863).
+
+**Projects must change**
+- Projects that load the vendored `occt-import-js.js` directly must import its default ES-module factory. The shared file viewer handles this import for applications that embed it.
 
 ## v0.50.3 (2026-11-20)
 

@@ -41,7 +41,7 @@ export async function sameSectionOutlineProblems(browser, base) {
   page.on('console', m => { if (m.type() === 'error') errors.push(m.text()); });
   try {
     await readerBoundaryGoto(page, base + '/docs/toolkit', { viewport: { width: 1365, height: 800 }, evidence, states, problems, probe: 'Outline control' });
-    await page.waitForFunction(() => customElements.get('cad-nav'), null, { timeout: 2000 });
+    await page.waitForSelector('cad-nav[data-ready]', { state: 'attached' });
     // Assemble a detached fixture before connecting it, so the real component sees its complete article and children.
     await page.evaluate(() => {
       const style = document.createElement('style');

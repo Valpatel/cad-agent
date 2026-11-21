@@ -224,9 +224,8 @@ border:1px solid var(--line-2);box-shadow:inset 0 1px 0 var(--hi),0 12px 24px rg
 /* catalogue: web/catalog.css (the page) and kit/ui/gallery.css (its behaviour) */
 /* documents */
 .doc{max-width:900px;padding:24px 0 40px}
-/* doc pages (kit <cad-nav>, kit/documents/nav.css): one column on phones, with a "Pages and contents" toggle; from 1100px the
-   page tree and this page's outline on the left; from 1400px also "On this page" on the right, the page wider (#807: a
-   1440px laptop reaches the outline without scrolling the tree; at 1400px the article column is still about 750px) */
+/* Phones fold the page tree. From 1100px it sits beside the article, and from 1366px
+   the article outline has its own column (kit <cad-nav>, kit/documents/nav.css). */
 .skip-link{position:absolute;left:12px;top:-60px;z-index:20;padding:10px 16px;border-radius:calc(10px*var(--round));background:var(--ink);color:var(--cream);font-weight:700}
 .skip-link:focus{top:12px}
 #main\:content:focus{outline:none}

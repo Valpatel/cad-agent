@@ -117,8 +117,25 @@ async function fitAndWaitForDraw(page, mark) {
 }
 
 async function freezeFrames(page) {
-  await page.clock.install();
-  await page.clock.pauseAt(await page.evaluate(() => Date.now() + 1000));
+  // Playwright's injected polling script can bypass its simulated clock. Withhold native RAF before page code loads.
+  await page.addInitScript(() => {
+    const request = window.requestAnimationFrame.bind(window);
+    const cancel = window.cancelAnimationFrame.bind(window);
+    const callbacks = new Map();
+    let id = 0;
+    window.requestAnimationFrame = callback => {
+      callbacks.set(++id, callback);
+      return id;
+    };
+    window.cancelAnimationFrame = handle => callbacks.delete(handle);
+    window.resumeFeaFrames = () => {
+      window.requestAnimationFrame = request;
+      window.cancelAnimationFrame = cancel;
+      for (const callback of callbacks.values()) request(callback);
+      callbacks.clear();
+      return new Promise(resolve => request(resolve));
+    };
+  });
 }
 
 async function checkStalledInitialization(browser, siteUrl) {
@@ -164,10 +181,16 @@ async function checkReadyBeforeFrame(browser, siteUrl, releaseBody) {
   try {
     await freezeFrames(page);
     const headers = page.waitForResponse(url, { timeout: timeoutMs });
+    const waiting = Promise.withResolvers();
     await Promise.all([
-      openFixture(page, siteUrl, file, (step, detail) => events.push([step, detail])),
+      openFixture(page, siteUrl, file, (step, detail) => {
+        events.push([step, detail]);
+        if (step === 'waiting for ready') waiting.resolve();
+      }),
       (async () => {
         assert.equal((await headers).status(), 200);
+        await withinDeadline(waiting.promise, 'control to begin waiting on the held fixture');
+        assert.equal(await page.evaluate(() => document.body.dataset.ready), undefined);
         assert.ok(!events.some(([step]) => step === 'fixture body received'), 'the server is still holding the body');
         assert.ok(!events.some(([step]) => step === 'ready attribute set'));
         const body = page.waitForEvent('requestfinished', { predicate: request => request.url() === url, timeout: timeoutMs });
@@ -181,8 +204,8 @@ async function checkReadyBeforeFrame(browser, siteUrl, releaseBody) {
     assert.equal(await page.evaluate(() => window.__fea.stage.frames), 0, 'startup must finish before the first frame');
     await assert.rejects(fitAndWaitForDraw(page, () => {}), /Timed out after 30000ms waiting for post-fit FEA surface draw/);
     assert.equal(await draws(), 0, 'a ready flag cannot pass the surface check with frames withheld');
-    await page.clock.runFor(64);
-    assert.ok(await draws() > 0, 'the mounted stage must draw after the clock advances');
+    await withinDeadline(page.evaluate(() => window.resumeFeaFrames()), 'control stage to resume frames');
+    assert.ok(await draws() > 0, 'the mounted stage must draw after frames resume');
   } finally {
     releaseBody();
     await page.close();

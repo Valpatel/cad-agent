@@ -174,8 +174,10 @@ def is_not_drawn_check(check: Mapping[str, Any]) -> bool:
     """Whether a check or finding is a gate's ``<gate>:not-drawn`` row or the lint's ``not-drawn`` warning. Such a
     row concerns every part and every section: the component has no extent, so nothing limits what it reaches."""
     ev = check.get("evidence") if isinstance(check.get("evidence"), Mapping) else {}
-    return (str(check.get("id") or "").endswith(f":{NOT_DRAWN_CHECK}") or ev.get("code") == NOT_DRAWN_CHECK
-            or check.get("code") == NOT_DRAWN_CHECK)
+    if ev.get("code") == NOT_DRAWN_CHECK or check.get("code") == NOT_DRAWN_CHECK:
+        return True
+    return (check.get("status") == "warn" and str(check.get("id") or "").endswith(f":{NOT_DRAWN_CHECK}")
+            and isinstance(ev.get("not_drawn"), list) and bool(ev["not_drawn"]))
 
 
 def note_not_drawn(data: Dict[str, Any], record: Any) -> Dict[str, Any]:
@@ -192,6 +194,12 @@ def note_not_drawn(data: Dict[str, Any], record: Any) -> Dict[str, Any]:
         raise ValueError("components declared not drawn changed: rerun the gate before binding its verdict")
     if not items:
         return data
+    if data.get("not_drawn") and data.get("counts"):
+        # Older omission rows could overwrite a project check while leaving its pass or fail in the totals.
+        for status in ("pass", "fail"):
+            actual = sum(row.get("status") == status for row in data.get("checks") or [])
+            if data["counts"].get(status, 0) != actual:
+                raise ValueError("verdict counts disagree with the retained checks: rerun the gate")
     gate = str(data.get("gate") or "")
     names = not_drawn_names(items)
     n = len(items)
@@ -211,6 +219,12 @@ def note_not_drawn(data: Dict[str, Any], record: Any) -> Dict[str, Any]:
                   f"{'these components' if n != 1 else 'this component'}. Draw {'them' if n != 1 else 'it'} and "
                   "remove the not_drawn declaration to clear this warning",
                   parts=near, evidence={"not_drawn": items}).to_dict()
+    # Project gates choose their own check IDs. Reuse an identical warning on rebind and keep any other row.
+    existing = [*(data.get("checks") or []), *(data.get("findings") or [])]
+    suffix = 0
+    while any(row.get("id") == check["id"] and row != check for row in existing):
+        suffix += 1
+        check["id"] = f"{gate}:{suffix}:{NOT_DRAWN_CHECK}"
     for field in ("checks", "findings"):
         rows = data.get(field) or []
         matching = [row for row in rows if row.get("id") == check["id"]]

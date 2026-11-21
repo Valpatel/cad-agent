@@ -706,6 +706,38 @@ def test_custom_gate_cannot_publish_only_the_declaration_list():
     assert gr.bind_inputs(bound, record) == before
 
 
+def test_custom_checks_keep_their_evidence_when_omission_warning_ids_collide():
+    record = geometry_with()
+    checks = [Check("custom:not-drawn", "fail", "The required lid is missing", parts=["lid"]),
+              Check("custom:1:not-drawn", "warn", "Inspect the hinge", parts=["hinge"])]
+    data = verdict("custom", checks, assumptions=["required parts inspected"])
+    original = copy.deepcopy(data["checks"])
+    bound = gr.bind_inputs(data, record)
+    for field in ("checks", "findings"):
+        assert bound[field][:-1] == original
+        warning = bound[field][-1]
+        assert warning["id"] == "custom:2:not-drawn" and is_not_drawn_check(warning)
+        assert not any(is_not_drawn_check(row) for row in bound[field][:-1])
+    assert bound["status"] == "fail" and not bound["pass"]
+    assert bound["counts"] == {"pass": 0, "warn": 2, "fail": 1}
+    before = copy.deepcopy(bound)
+    assert gr.bind_inputs(bound, record) == before and stale_reason(bound, record) is None
+
+
+def test_stored_verdict_that_lost_a_failed_check_must_be_rerun():
+    record = geometry_with()
+    data = gr.bind_inputs(verdict("custom", [Check("required", "fail", "Missing geometry")],
+                                  assumptions=["required geometry inspected"]), record)
+    # Earlier writers could replace a failed check with the warning, but keep the original fail count.
+    for field in ("checks", "findings"):
+        data[field] = [data[field][-1]]
+    before = copy.deepcopy(data)
+    assert stale_reason(data, record)
+    with pytest.raises(ValueError, match="rerun"):
+        gr.bind_inputs(data, record)
+    assert data == before
+
+
 def test_binding_first_declaration_adds_current_caveats_only_once():
     earlier = gr.bind_inputs(passing("custom"), base_geometry())
     updated = geometry_with()

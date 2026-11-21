@@ -241,7 +241,7 @@
   {
    "id": "fea",
    "title": "FEA view in a browser",
-   "paths": ["software/cadagent/webkit/**", "tests/webkit/webkit-fea-browser.mjs", "tools/site/package.json", "tools/site/package-lock.json", "tests/webkit/webkit-server.mjs", "tests/site/npm-context.mjs"],
+   "paths": ["software/cadagent/webkit/**", "tests/webkit/webkit-fea-browser.mjs", "tools/site/package.json", "tools/site/package-lock.json", "tests/webkit/webkit-server.mjs", "tests/site/npm-context.mjs", "tests/site/navigation.mjs"],
    "exclude": ["software/cadagent/webkit/scada/**"],
    "command": "npm run test:fea",
    "cwd": "tools/site",

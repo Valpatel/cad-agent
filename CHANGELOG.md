@@ -24,6 +24,9 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
 - Wheel installs include the manufacturing profiles and their reference registry so the starter can build its insert geometry.
 - The FEA browser check records when it finishes receiving the case data and when the viewer sets its ready flag. These milestones help locate a stall even when the next animation frame or diagnostic screenshot never arrives (#845).
 
+**Fixed**
+- The FEA browser check recognizes viewer initialization even when animation frames stop. It requires a fresh surface draw after fitting the top view and reports which stage missed its 30-second deadline (#845).
+
 ## v0.50.3 (2026-11-20)
 
 **Fixed**

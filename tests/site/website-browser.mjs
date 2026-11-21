@@ -860,7 +860,7 @@ async function installLinkProblems() {
       if ((await block(page, 'install-unix')).clear) problems.push('planted control: a 90 px scroll padding under the 97 px header was not caught, so the header check tests nothing');
     } finally { await page.close(); }
   }
-  problems.push(...await installBackProblems());
+  problems.push(...await installBackProblems(), ...await installReloadProblems());
   const missing = await browser.newPage({ viewport: { width: 800, height: 600 } });
   try {
     await navigate(missing, base + '/no-such-page?x=1');
@@ -868,6 +868,55 @@ async function installLinkProblems() {
     const named = href && new URL(href).searchParams.get('page');
     if (named !== base + '/no-such-page?x=1') problems.push(`404 page: the feedback link names ${named}, not the missing address`);
   } finally { await missing.close(); }
+  return problems;
+}
+
+// The browser may animate its restore (the site scrolls smoothly): wait until 20 frames in a row hold still, and
+// past the 1.5 s hold.
+function settledPlace(page) {
+  return page.evaluate(() => new Promise(done => {
+    let last = -1, still = 0;
+    const start = performance.now();
+    const tick = () => { if (scrollY === last) { if (++still >= 20 && performance.now() - start > 1700) return done(scrollY); } else { still = 0; last = scrollY; } requestAnimationFrame(tick); };
+    tick(); setTimeout(() => done(scrollY), 5000);
+  }));
+}
+
+/** A reload requested as Page Down finishes should keep the settled reading position. */
+async function installReloadProblems() {
+  const problems = [];
+  const check = async planted => {
+    const page = await browser.newPage({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, reducedMotion: 'reduce' });
+    try {
+      await navigate(page, base + '/docs/agent-workflow#install-unix');
+      const block = page.locator('#install-unix[open]');
+      await block.waitFor();
+      await page.evaluate(() => document.fonts.ready);
+      const start = await settledPlace(page);
+      // Reload in the scrollend turn. Waiting for the test process here could give the
+      // old trailing 200 ms save time to run, even though the reader reloaded immediately.
+      await page.evaluate(({ start, planted }) => {
+        if (planted) addEventListener('pagehide', () => sessionStorage.removeItem('cad-agent:reader-reload'), { once: true });
+        document.addEventListener('scrollend', () => {
+          if (scrollY < start + 100) return;
+          sessionStorage.setItem('testInstallReloadY', String(scrollY));
+          location.reload();
+        });
+      }, { start, planted });
+      await Promise.all([page.waitForEvent('load'), page.keyboard.press('PageDown')]);
+      await block.waitFor();
+      const left = await page.evaluate(() => Number(sessionStorage.getItem('testInstallReloadY')));
+      if (left < start + 100) throw new Error(`Page Down did not move the reader before reload: ${start} → ${left}px`);
+      return { left, back: await settledPlace(page) };
+    } finally { await page.close(); }
+  };
+  const { left, back } = await check(false);
+  if (Math.abs(back - left) > 3) problems.push(`390px reload after Page Down: left at ${left}px, restored to ${back}px`);
+  // WebKit restored this sequence natively. Chromium reproduces the old history-only loss.
+  if (engine === chromium) {
+    const planted = await check(true);
+    if (Math.abs(planted.back - planted.left) <= 3) problems.push('Planted history-only control preserved the position, so the quick reload check tests nothing');
+  }
   return problems;
 }
 
@@ -929,14 +978,7 @@ async function installBackProblems() {
         }, id);
       }
       if (jump) await page.evaluate(to => { location.hash = to; }, jump);
-      // The browser may animate its restore (the site scrolls smoothly): wait until 20 frames in a row hold still, and
-      // past the 1.5 s hold.
-      const back = await page.evaluate(() => new Promise(done => {
-        let last = -1, still = 0;
-        const start = performance.now();
-        const tick = () => { if (scrollY === last) { if (++still >= 20 && performance.now() - start > 1700) return done(scrollY); } else { still = 0; last = scrollY; } requestAnimationFrame(tick); };
-        tick(); setTimeout(() => done(scrollY), 5000);
-      }));
+      const back = await settledPlace(page);
       const open = await page.evaluate(id => document.getElementById(id)?.open, id);
       const landed = jump ? await page.evaluate(to => {
         const t = document.getElementById(to), s = (t?.matches('details') ? t.querySelector('summary') : t)?.getBoundingClientRect(), header = document.querySelector('.site-header').getBoundingClientRect().bottom;

@@ -61,7 +61,16 @@ for (const img of document.querySelectorAll('img[data-motion-src]')) {
 // while such a page is read, its place is kept in its own history entry (history.state, which a fresh link to it does
 // not have). Back there, the block opens without scroll anchoring and the page goes to that place, and keeps it
 // through the engine's own restore until the reader scrolls, taps or types, the # part changes, or 1.5 s pass.
-const saved = history.state?.cadReaderY;
+const reloadKey = 'cad-agent:reader-reload';
+let saved = history.state?.cadReaderY;
+// Reload can copy the entry before pagehide flushes the last scroll. The outgoing document leaves its final
+// position for this one reload in the same tab. History continues to own Back, Forward and direct links.
+try {
+  const departure = JSON.parse(sessionStorage.getItem(reloadKey));
+  sessionStorage.removeItem(reloadKey);
+  if (performance.getEntriesByType('navigation')[0]?.type === 'reload' &&
+      departure?.url === location.href && Number.isFinite(departure.y)) saved = departure.y;
+} catch { /* The entry's saved position is available when session storage is disabled. */ }
 let keeping = false;
 const keepPlace = () => {
   if (keeping) return;
@@ -69,7 +78,11 @@ const keepPlace = () => {
   let timer = 0;
   const save = () => { try { history.replaceState({ ...history.state, cadReaderY: scrollY }, ''); } catch { /* rate limit */ } };
   addEventListener('scroll', () => { clearTimeout(timer); timer = setTimeout(save, 200); }, { passive: true });
-  addEventListener('pagehide', save);
+  addEventListener('pagehide', () => {
+    save();
+    try { sessionStorage.setItem(reloadKey, JSON.stringify({ url: location.href, y: scrollY })); }
+    catch { /* Keep the history entry when session storage is disabled. */ }
+  });
   save();
 };
 const restorePlace = y => {

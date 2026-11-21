@@ -9,6 +9,24 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
 
 ## Unreleased
 
+## v0.51.0 (2026-11-21)
+
+**New**
+- `cadagent.review.dossier.not_drawn(name, reason=..., near=...)`: a build script declares a component that is part of the design and has no shape in the build (a gear that is only numbers in an analysis script). The geometry record lists it under `not_drawn`, and every verdict made for that build names it: `not_drawn`, an assumption, and a "Not in the model" section in `<gate>.md`. `cad-agent gates` prints `WARN` for a passing gate that carries the warning, ends each row "N not drawn, not seen: ...", counts `2 pass (2 components not drawn)` and adds a "not in the model" line. The review site shows a banner on every review page and lists the warning on every section page; every section's review packet has it in its findings. The dossier lint lists each component as a `not-drawn` warning (#722).
+- `cadagent.review.gates.verdict.note_not_drawn(data, record)` applies the statement to a verdict. A gate given a build (`<gate>_from_build(result, ..., out=...)`, `Assembly.from_build(result)`) applies it before it returns or writes, and `bind_inputs` applies it to whatever it binds, so a project's own gate gets it. A gate called on a hand-built `Assembly` is the one exception (#722).
+
+**Changed**
+- With a `not_drawn` declaration, the verdicts of the connectivity, containment, fasteners, motion and assembly gates (and of a project's own gate bound with `bind_inputs`) get a `<gate>:not-drawn` check with status `warn`, so their `status` is `warn` where it was `pass`. `pass` stays true and no exit code changes; `cad-agent check` and the report still print `PASS` for the row, with the components named in it. A project check with the same ID keeps its findings and the toolkit numbers its warning. A verdict that does not name the components its record declares is stale (#722).
+- A reviewer record lists the components declared not drawn near its section's parts (`not_drawn`). One declared after a review voids it (`review-stale`), and a record that leaves it out is refused at submission (`stale-not-drawn`) (#722).
+- A project that declares nothing gets the same record, the same verdicts and the same output as before (#722).
+- The FEA browser check records fixture requests and setup progress in CI and reports a failed viewer initialization before attempting its diagnostic screenshot (#845).
+- The box copied by `cad-agent init` runs integrity gates on its lid seat and thickness. The gates guide demonstrates a measured failure and repair on the starter (#800).
+- Wheel installs include the manufacturing profiles and their reference registry so the starter can build its insert geometry.
+- The FEA browser check records when it finishes receiving the case data and when the viewer sets its ready flag. These milestones help locate a stall even when the next animation frame or diagnostic screenshot never arrives (#845).
+
+**Fixed**
+- The FEA browser check recognizes viewer initialization even when animation frames stop. It requires a fresh surface draw after fitting the top view and reports which stage missed its 30-second deadline (#845).
+
 ## v0.50.3 (2026-11-20)
 
 **Fixed**

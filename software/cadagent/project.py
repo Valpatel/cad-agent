@@ -525,21 +525,37 @@ STARTER = "starter-box"
 STARTER_OUTPUTS = ("build", "exports", "preview", "site", "docs", "__pycache__", ".cadagent-cache")
 
 
-def starter_dir() -> Path:
-    """The starter project ``cad-agent init`` copies: ``docs/examples/starter-box`` in the checkout this package runs from
-    (the installer's editable install), else the copy a wheel installs as data (pyproject.toml's ``data-files``)."""
-    here = Path(__file__).resolve().parent
-    found = [here.parents[1] / "docs" / "examples" / STARTER]
+def installed_data_file(relative: str) -> Optional[Path]:
+    """Locate a share/cad-agent file belonging to the installed distribution that provides this module."""
+    from importlib import metadata
+
     try:
-        from importlib import metadata
         dist = metadata.distribution("cad-agent")
-        found += [Path(dist.locate_file(f)).resolve().parent for f in dist.files or ()
-                  if f.as_posix().endswith(f"share/cad-agent/{STARTER}/{CONFIG_NAME}")]
     except metadata.PackageNotFoundError:
-        pass
-    for folder in found:
-        if (folder / CONFIG_NAME).is_file():
-            return folder
+        return None
+    if Path(dist.locate_file("cadagent/project.py")).resolve() != Path(__file__).resolve():
+        return None
+    suffix = ("share", "cad-agent", *Path(relative).parts)
+    # pip --target places share/ beside the package. Its RECORD paths can still refer to pip's staging prefix.
+    beside_package = Path(dist.locate_file(Path(*suffix)))
+    if beside_package.is_file():
+        return beside_package.resolve()
+    for record in dist.files or ():
+        if record.parts[-len(suffix):] == suffix:
+            file = Path(dist.locate_file(record))
+            if file.is_file():
+                return file.resolve()
+    return None
+
+
+def starter_dir() -> Path:
+    """The starter project's directory in the checkout or in this wheel's installed data."""
+    checkout = Path(__file__).resolve().parents[2] / "docs" / "examples" / STARTER
+    if (checkout / CONFIG_NAME).is_file():
+        return checkout
+    config = installed_data_file(f"{STARTER}/{CONFIG_NAME}")
+    if config is not None:
+        return config.parent
     raise FileNotFoundError(f"the starter project ({STARTER}) is not installed with this cad-agent: reinstall it "
                             "with the one-line installer (docs/practice/agent-workflow.md#install)")
 

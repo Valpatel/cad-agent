@@ -2,11 +2,14 @@
 # the print files and runs every check below, plus the "Holes clear" check on every hole. See README.md.
 cad:                                  # name and title: the folder's name
   revision: A
-  cad-agent: "0.17"                   # the oldest cad-agent this builds with (insert checks write `pass`)
+  cad-agent: "0.51"                   # the gate model declares purchased parts without solids
   printer: {name: small printer, bed_mm: [180, 180, 180]}
   steps:
     - {name: build, run: cad/build.py, log: build.log}
     - {name: checks, run: tools/checks.py, log: checks.log, needs: [build]}
+  gates:
+    build: cad/gate_model.py
+    wall: {parts: {lid: 2.0}}          # this project requires a lid at least 2 mm thick
   checks:
     - {id: inserts, title: Insert joints, file: exports/inserts.json}
     - {id: overhangs, title: No overhangs to support, file: exports/overhangs.json}

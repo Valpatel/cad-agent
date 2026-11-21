@@ -138,6 +138,8 @@ int main (int argc, const char* argv[])
 
     DumpNode (importer->GetRootNode (), 0);
 
+#ifdef _WIN32
     system ("PAUSE");
+#endif
     return 0;
 }

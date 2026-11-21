@@ -95,7 +95,8 @@
   {
    "id": "wheel-smoke",
    "title": "The installed wheel's consumers outside the checkout",
-   "paths": ["software/**", "pyproject.toml", "tests/cli/test_init.py", "docs/examples/starter-box/**"],
+   "paths": ["software/**", "pyproject.toml", "tests/cli/test_init.py", "docs/examples/starter-box/**",
+             "docs/research/process-profiles.yaml", "docs/research/references.yaml", "docs/research/references/*.yaml"],
    "command": "python tests/cli/test_init.py --wheel-smoke",
    "needs": {"python": {"version": "3.12", "modules": ["pip"]}},
    "cost": "slow",
@@ -240,7 +241,7 @@
   {
    "id": "fea",
    "title": "FEA view in a browser",
-   "paths": ["software/cadagent/webkit/**", "tests/webkit/webkit-fea-browser.mjs", "tools/site/package.json", "tools/site/package-lock.json", "tests/webkit/webkit-server.mjs", "tests/site/npm-context.mjs"],
+   "paths": ["software/cadagent/webkit/**", "tests/webkit/webkit-fea-browser.mjs", "tools/site/package.json", "tools/site/package-lock.json", "tests/webkit/webkit-server.mjs", "tests/site/npm-context.mjs", "tests/site/navigation.mjs"],
    "exclude": ["software/cadagent/webkit/scada/**"],
    "command": "npm run test:fea",
    "cwd": "tools/site",

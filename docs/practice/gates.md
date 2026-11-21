@@ -39,6 +39,25 @@ the fastener gate (T6), the motion gate (T7), the assembly-access gate (T9), the
 (T14, [below](#running-the-gates-cad-agent-gates)) and the site's gates page with the connectivity graph (T15,
 [`dossier.md`](dossier.md#on-the-review-site)) are built.
 
+## Try the starter box
+
+After installing cad-agent with its CAD extra, create a project. [Installation instructions](agent-workflow.md#install)
+
+```bash
+cad-agent init my-box
+cd my-box
+cad-agent gates
+```
+
+The starter builds the box and lid and checks their shared seat. Connectivity reports `WARN` because the
+four lid screws and four threaded inserts have no solids. The wall gate reports `PASS` for the 3 mm lid
+against this project's 2 mm minimum. Four other gates have no applicable declarations.
+
+In `cad/build.py`, change `LID_MM = 3.0` to `LID_MM = 1.5`. Run `cad-agent gates --build` to measure
+the edited model. The command exits 1. Open `exports/gates/wall.md` and find `wall:lid`, which reports
+the thin lid. Restore `LID_MM = 3.0` and run `cad-agent gates --build` again. The wall check passes
+and the command exits 0. Physical fit still requires a printed test.
+
 ## The assembly and the relation table
 
 <details>

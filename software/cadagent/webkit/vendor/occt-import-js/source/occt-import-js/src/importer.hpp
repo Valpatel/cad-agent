@@ -83,6 +83,7 @@ public:
     LinearDeflectionType linearDeflectionType;
     double linearDeflection;
     double angularDeflection;
+    bool includeBrepFaces;
 };
 
 class Importer

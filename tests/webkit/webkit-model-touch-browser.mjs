@@ -19,7 +19,8 @@
  * and a 120 px viewer whose only wrapper is overflow-x:auto; it pins the threshold with a 422/423 px viewer at 390x844,
  * a pointer that went down without a lift that must not stop the next one-finger turn, and a viewer moved into the box
  * at the same size (re-decided after the move; in Chromium the element's ResizeObserver also fires on the move, so this
- * does not isolate the reconnect call).
+ * does not isolate the reconnect call). A separate lifecycle fixture observes both lazy and loaded viewers, counts
+ * active listeners, observers and pending frames across removal, and exercises a reattached viewer under a drag.
  *
  * Chromium gets real touch input through CDP Input.dispatchTouchEvent in a hasTouch/isMobile context, so the browser's
  * own touch-action and scroll arbitration decides the outcome. That is emulated touch in desktop Chromium: Safari's
@@ -69,6 +70,9 @@ ${viewer('big', 300)}<div class="pad"></div>${viewer('small', 120)}<div class="t
 const site = await serveWebkit(new Map([
   ['/', (_, res) => res.writeHead(200, { 'Content-Type': 'text/html' }).end(page)],
   ['/home', (_, res) => res.writeHead(200, { 'Content-Type': 'text/html' }).end(home)],
+  ['/lifecycle', (_, res) => res.writeHead(200, { 'Content-Type': 'text/html' }).end(`<!doctype html>
+    <meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/kit/model/model.css">
+    <div id="port" style="height:320px;overflow-y:auto"><aside style="height:500px"></aside></div><script type="module" src="/kit/model/model.js"></script>`)],
   ['/nested', (_, res) => res.writeHead(200, { 'Content-Type': 'text/html' }).end(nested)],
   ['/web/site.css', file(siteCss.href, 'text/css')],
   ['/web/home.css', file(homeCss.href, 'text/css')],
@@ -390,7 +394,155 @@ async function nestedBox() {
   await context.close();
 }
 
+// Measure real registrations on an otherwise empty page, including frames that have been requested but not drawn.
+function installLifecycleProbe() {
+  const observers = { ResizeObserver: new Set(), IntersectionObserver: new Set() };
+  for (const [name, active] of Object.entries(observers)) {
+    window[name] = class extends window[name] {
+      targets = new Set();
+      observe(target, options) { super.observe(target, options); this.targets.add(target); active.add(this); }
+      unobserve(target) { super.unobserve(target); this.targets.delete(target); if (!this.targets.size) active.delete(this); }
+      disconnect() { super.disconnect(); this.targets.clear(); active.delete(this); }
+    };
+  }
+
+  const listeners = new Map();
+  const listenerKey = (target, type) => {
+    if (target === window && ['resize', 'scroll'].includes(type)) return 'window.' + type;
+    if (target === visualViewport && type === 'resize') return 'visualViewport.resize';
+    if (target === document && type === 'visibilitychange') return 'document.visibilitychange';
+    if (target instanceof MediaQueryList && type === 'change') return 'media.change';
+  };
+  const { addEventListener, removeEventListener } = EventTarget.prototype;
+  EventTarget.prototype.addEventListener = function (type, fn, options) {
+    const key = listenerKey(this, type);
+    if (key && !options?.signal?.aborted) {
+      if (!listeners.has(key)) listeners.set(key, new Set());
+      const callbacks = listeners.get(key);
+      callbacks.add(fn);
+      options?.signal?.addEventListener('abort', () => callbacks.delete(fn), { once: true });
+    }
+    return addEventListener.call(this, type, fn, options);
+  };
+  EventTarget.prototype.removeEventListener = function (type, fn, options) {
+    listeners.get(listenerKey(this, type))?.delete(fn);
+    return removeEventListener.call(this, type, fn, options);
+  };
+  const frames = new Set();
+  const request = window.requestAnimationFrame.bind(window), cancel = window.cancelAnimationFrame.bind(window);
+  window.requestAnimationFrame = fn => {
+    const id = request(time => { frames.delete(id); fn(time); });
+    frames.add(id);
+    return id;
+  };
+  window.cancelAnimationFrame = id => { frames.delete(id); cancel(id); };
+  window.registrations = () => Object.fromEntries(Object.entries({
+    ResizeObserver: observers.ResizeObserver.size, IntersectionObserver: observers.IntersectionObserver.size,
+    frames: frames.size, ...Object.fromEntries([...listeners].map(([key, value]) => [key, value.size])),
+  }).filter(([, count]) => count));
+}
+
+async function lifecycle() {
+  const p = await browser.newPage({ viewport: { width: 390, height: 844 } });
+  try {
+    await p.goto(site.url + '/lifecycle');
+    await p.evaluate(installLifecycleProbe);
+    const ready = (selector = '#embed') => p.waitForFunction(selector => document.querySelector(selector)?.dataset.state === 'ready',
+      selector, { polling: 25, timeout: 15000 });
+    await p.evaluate(() => {
+      window.model = document.createElement('cad-model');
+      model.id = 'embed';
+      model.style.cssText = 'width:250px;height:300px';
+      model.setAttribute('src', '/m/two-parts.json');
+      model.setAttribute('loading', 'scroll');
+      model.setAttribute('turn', '0');
+      document.body.append(model);
+    });
+    assert.equal((await p.evaluate(() => registrations()))['window.scroll'], 1, 'waiting for the first scroll');
+    assert.deepEqual(await p.evaluate(() => { model.remove(); return registrations(); }), {}, 'detached scroll gate');
+
+    await p.evaluate(() => {
+      model.removeAttribute('loading');
+      model.style.marginTop = '2000px';
+      document.body.append(model);
+    });
+    await p.waitForFunction(() => registrations().IntersectionObserver > 0, null, { polling: 25, timeout: 15000 });
+    assert.deepEqual(await p.evaluate(() => { model.remove(); return registrations(); }), {}, 'detached offscreen poster');
+
+    await p.evaluate(() => {
+      model.style.marginTop = '';
+      model.setAttribute('loading', 'eager');
+      document.body.prepend(model);
+    });
+    await ready();
+    assert.equal(await p.locator('#embed canvas').evaluate(el => el.style.touchAction), 'pinch-zoom');
+    await p.evaluate(() => {
+      const second = model.cloneNode(false);
+      second.id = 'second';
+      document.body.append(second);
+    });
+    await ready('#second');
+    assert.deepEqual(await p.evaluate(() => {
+      const before = registrations()['window.resize'];
+      document.getElementById('second').remove();
+      return [before, registrations()['window.resize']];
+    }), [2, 1], 'each instance must release its own listener');
+    for (const parent of ['port', 'body']) {
+      // Queue a real draw, then remove the viewer before that frame can run.
+      const { before, after } = await p.evaluate(() => {
+        model.view(25, 15);
+        const before = registrations();
+        model.remove();
+        return { before, after: registrations() };
+      });
+      for (const kind of ['ResizeObserver', 'IntersectionObserver', 'window.resize', 'visualViewport.resize', 'frames'])
+        assert.ok(before[kind] > 0, `${kind} must be active before detaching: ${JSON.stringify(before)}`);
+      assert.deepEqual(after, {}, 'removed viewer must release every observed registration');
+      await p.evaluate(parent => {
+        const container = parent === 'port' ? document.getElementById('port') : document.body;
+        container.prepend(model);
+      }, parent);
+      await ready();
+      assert.equal(await p.locator('#embed canvas').evaluate(el => el.style.touchAction),
+        parent === 'port' ? 'pan-y pinch-zoom' : 'pinch-zoom', 'reconnected viewer must use its current scroll space');
+      assert.equal(await p.locator('#embed canvas').count(), 1);
+      const beforeTurn = await shot(p, 'embed');
+      const canvas = await p.locator('#embed canvas').boundingBox();
+      await p.mouse.move(canvas.x + 80, canvas.y + 80);
+      await p.mouse.down();
+      await p.mouse.move(canvas.x + 120, canvas.y + 100, { steps: 3 });
+      await p.mouse.up();
+      assert.notEqual(await shot(p, 'embed'), beforeTurn, 'reconnected viewer must still turn under a drag');
+    }
+    // Hold one ordinary geometry request across removal. Its late error must leave a newly attached viewer alone.
+    await p.evaluate(() => {
+      model.remove();
+      const fetch = window.fetch.bind(window);
+      window.fetch = async (...args) => {
+        if (String(args[0]).endsWith('/two-parts.bin')) {
+          window.fetch = fetch;
+          await new Promise((_, reject) => { window.finishOldRequest = () => reject(new Error('old request')); });
+        }
+        return fetch(...args);
+      };
+      document.body.prepend(model);
+    });
+    await p.waitForFunction(() => typeof window.finishOldRequest === 'function', null, { polling: 25, timeout: 15000 });
+    await p.evaluate(() => {
+      model.ready.then(() => { window.originalReadySettled = true; });
+      model.remove();
+    });
+    await p.evaluate(() => { document.body.prepend(model); });
+    await ready();
+    await p.waitForFunction(() => window.originalReadySettled, null, { polling: 25, timeout: 15000 });
+    await p.evaluate(async () => { finishOldRequest(); await new Promise(resolve => setTimeout(resolve, 0)); });
+    assert.equal(await p.locator('#embed').getAttribute('data-state'), 'ready', 'late request changed the current viewer');
+    assert.deepEqual(await p.evaluate(() => { model.remove(); return registrations(); }), {}, 'final detach');
+  } finally { await p.close(); }
+}
+
 try {
+  await lifecycle();
   await scenario('portrait', { width: 390, height: 844 });
   await scenario('landscape', { width: 844, height: 390 });
   if (engineName === 'chromium') { await share(); await nestedBox(); }
@@ -402,4 +554,4 @@ if (failures.length) {
   console.error(`${failures.length} of ${checks} touch checks failed (${engineName}):\n- ${failures.join('\n- ')}`);
   process.exit(1);
 }
-console.log(`cad-model touch arbitration: ${checks} checks passed (${engineName})`);
+console.log(`cad-model lifecycle and touch arbitration: teardown and reconnect passed; ${checks} touch checks passed (${engineName})`);

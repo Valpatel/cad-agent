@@ -758,24 +758,36 @@ def test_real_khroma_licence_exception_is_bound_to_the_read_archive_and_context(
 
 
 @pytest.mark.parametrize("change", [None, "version", "bytes"])
-def test_real_old_step_parser_retention_does_not_cover_a_different_runtime(tmp_path, change):
+def test_step_reader_stale_fingerprint_tracks_scoped_package_and_shipped_bytes(tmp_path, change):
     root = checkout(tmp_path)
     receipt = json.loads((ROOT / ra.KIT / ra.VIEWER_RECEIPT).read_text())
     shutil.copytree(ROOT / ra.KIT / "occt-import-js", root / ra.KIT / "occt-import-js")
+    name = receipt["occt"]["package"]
+    slug = ra.github_repo(receipt["occt"]["repository"])
+    assert (name, slug) == ("@sunbox/occt-import-js", "SunboX/occt-import-js")
+    write(root, f"{ra.KIT}/{ra.VIEWER_RECEIPT}", json.dumps(receipt))
+    component = ra.webkit_components(root)["occt-import-js"]
+    assert component["packages"] == [(name, receipt["occt"]["version"])]
+    assert component["repos"] == [slug]
+    net = online_net(tmp_path, gh={f"repos/{slug}": repo(
+        slug, pushed_at="2024-12-03T00:00:00Z", license={"spdx_id": "LGPL-2.1"})})
+
+    def stale(report):
+        return next(f for f in report["findings"] if (f["check"], f["subject"]) == ("repo-stale", "webkit:occt-import-js"))
+
+    baseline = stale(run(root, net))
+    assert baseline["fp"] != "05fb9809cc9cad4c"   # exception for the old unscoped package
     if change == "version":
-        receipt["occt"]["version"] = "0.0.24"
+        receipt["occt"]["version"] = "0.0.30"
     if change == "bytes":
         rel = "occt-import-js/occt-import-js.js"
         changed = root / ra.KIT / rel
         changed.write_bytes(changed.read_bytes() + b"\n// a different recorded runtime\n")
         receipt["sha256"][rel] = hashlib.sha256(changed.read_bytes()).hexdigest()
     write(root, f"{ra.KIT}/{ra.VIEWER_RECEIPT}", json.dumps(receipt))
-    net = online_net(tmp_path, gh={"repos/kovacsv/occt-import-js": repo(
-        "kovacsv/occt-import-js", pushed_at="2024-12-03T00:00:00Z", license={"spdx_id": "LGPL-2.1"})})
-    report = run(root, net, accepted=ra.load_accepted(ROOT / ra.ACCEPTED))
-    findings = [f for f in report["findings"] if f["check"] == "repo-stale" and f["subject"] == "webkit:occt-import-js"]
-    assert len(findings) == 1
-    assert bool(findings[0].get("accepted")) is (change is None)
+    accepted = [{**baseline, "reason": "Test acceptance for this exact fixture."}]
+    finding = stale(run(root, net, accepted=accepted))
+    assert bool(finding.get("accepted")) is (change is None)
 
 
 def test_dated_report_uses_its_recorded_registry_location(tmp_path):

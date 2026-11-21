@@ -5,8 +5,8 @@ onmessage=async({data})=>{
     const asset=path=>{const url=new URL(path,self.location.href);url.search=new URL(self.location.href).search;return url.href;};
     const {validateModel,transferBuffers,MAX_TRIANGLES}=await import(asset('./file-geometry.js'));
     postMessage({phase:'Loading the STEP reader…'});
-    importScripts(asset('../vendor/occt-import-js/occt-import-js.js'));
-    const occt=await occtimportjs({locateFile:name=>asset('../vendor/occt-import-js/'+name),print:()=>{},printErr:()=>{}});
+    const {default: createStepReader} = await import(asset('../vendor/occt-import-js/occt-import-js.js'));
+    const occt=await createStepReader({locateFile:name=>asset('../vendor/occt-import-js/'+name),print:()=>{},printErr:()=>{}});
     postMessage({phase:'Triangulating the original STEP surfaces…'});
     const result=occt.ReadStepFile(new Uint8Array(data.buffer),{linearUnit:'millimeter',linearDeflectionType:'bounding_box_ratio',linearDeflection:.001,angularDeflection:.2});
     if(!result?.success||!result.meshes?.length)throw new Error('The STEP reader could not find displayable surfaces in this file.');

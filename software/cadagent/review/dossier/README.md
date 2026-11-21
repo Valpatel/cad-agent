@@ -18,7 +18,7 @@ flowchart TD
 | [load.py](load.py) | YAML loading, item locations and identifier resolution. |
 | [plan.py](plan.py) | Canonical serial assembly-plan validation and absolute path evaluation. |
 | [model.py](model.py) | Plain dossier dataclasses and serialisation. |
-| [registry.py](registry.py) | CAD-side parts, cavities, axes, joints and assembly declarations. |
+| [registry.py](registry.py) | CAD-side parts, cavities, axes, joints, assembly declarations and components declared not drawn. |
 | [lint.py](lint.py) | Non-geometric dossier lint and status transitions. |
 | [review.py](review.py) | Reviewer packets and hash-bound section sign-off. |
 

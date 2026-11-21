@@ -48,7 +48,7 @@ from pathlib import Path
 from typing import Any, Callable, Dict, Iterable, List, Mapping, Optional, Sequence, Set, Tuple
 
 from cadagent.review.gates.relations import CONTACT_STATES, Relation, Tolerances
-from cadagent.review.gates.verdict import Check, verdict, write_verdict
+from cadagent.review.gates.verdict import Check, note_not_drawn, verdict, write_verdict
 
 GATE = "connectivity"
 STATIC = "static"
@@ -1138,6 +1138,7 @@ def connectivity_gate(assembly: Any, declarations: Optional[Declarations] = None
                    limits={"touch_mm": tol.touch_mm, "near_mm": tol.near_mm, "overlap_mm3": tol.overlap_mm3,
                            "max_joint_gap_mm": decl.max_joint_gap_mm, "strict_interfaces": decl.strict_interfaces,
                            "nearest_candidates": NEAREST_CANDIDATES})
+    note_not_drawn(data, getattr(assembly, "not_drawn", None) or [])     # a build's assembly says what it lacks
     if out is not None:
         write_verdict(out, data)
         if dot is None:

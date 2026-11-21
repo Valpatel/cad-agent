@@ -9,12 +9,14 @@ CadQuery.
 
 from __future__ import annotations
 
+import copy
 import json
 import shutil
 import subprocess
 import sys
 import textwrap
 import time
+import types
 from pathlib import Path
 from typing import Iterable, Optional
 
@@ -25,7 +27,8 @@ from cadagent.cli import main
 from cadagent.review.gates import run as gr
 from cadagent.project import load_project
 
-from .test_dossier_lint import make_project
+from . import test_dossier_registry as reg_fixture
+from .test_dossier_lint import base_geometry, make_project
 
 
 def bind_verdicts(root: Path, gates: Optional[Iterable[str]] = None, failing: Iterable[str] = ()) -> None:
@@ -539,3 +542,555 @@ def test_the_dossier_seed_fails_the_lint_through_the_cli(clean_bench, tmp_path, 
     assert named and "hopper" in named[0]["parts"], v["findings"]
     rows = _results(root, capsys)
     assert {r["status"] for r in rows.values()} == {"pass"}    # the geometric verdicts are still current
+
+# ------------------------------------------------------------------- components declared not drawn (#722)
+# What `not_drawn()` puts in the record (tests/review/test_dossier_registry.py) is stated in every verdict, the
+# summary and the lint. Kernel-free except the last test, which runs the real gates.
+
+from cadagent.review.dossier import join, load_dossier  # noqa: E402
+from cadagent.review.dossier.lint import lint_project  # noqa: E402
+from cadagent.review.gates.verdict import (NOT_DRAWN_NOTE_ONLY, Check, geometry_digest,  # noqa: E402
+                                           is_not_drawn_check, not_drawn_of, not_drawn_summary, note_not_drawn,
+                                           stale_reason, verdict)
+
+NOT_DRAWN = {"bevel_pinion": {"reason": "sized in analysis/gears.py; no solid yet", "near": ["hopper", "lid"],
+                              "declared_at": "cad/build.py:40"},
+             "motor_shaft": {"reason": "vendor STEP not imported", "near": [], "declared_at": "cad/build.py:41"}}
+
+
+def geometry_with(table=None):
+    geo = base_geometry()
+    geo["not_drawn"] = copy.deepcopy(NOT_DRAWN if table is None else table)
+    return geo
+
+
+def passing(gate: str):
+    return verdict(gate, [Check(f"{gate}:x", "pass", "ok")], assumptions=["a test verdict"])
+
+
+def test_a_record_without_declarations_leaves_every_verdict_byte_for_byte():
+    for record in (base_geometry(), {}, None, {"not_drawn": {}}, {"not_drawn": "nonsense"}):
+        for gate in gr.GATES:
+            data = passing(gate)
+            before = json.dumps(data, indent=2)
+            assert note_not_drawn(data, record) is data and json.dumps(data, indent=2) == before
+            assert gr.verdict_markdown(data) == gr.verdict_markdown(json.loads(before))
+        assert not_drawn_of(record) == [] and not_drawn_summary(not_drawn_of(record)) == ""
+
+
+@pytest.mark.parametrize("gate", gr.GATES)
+def test_every_gate_verdict_names_what_is_not_drawn(gate):
+    data = note_not_drawn(passing(gate), geometry_with())
+    assert [m["name"] for m in data["not_drawn"]] == ["bevel_pinion", "motor_shaft"]
+    assert data["not_drawn"][0] == {"name": "bevel_pinion", "reason": NOT_DRAWN["bevel_pinion"]["reason"],
+                                    "near": ["hopper", "lid"]}
+    said = data["assumptions"][-1]
+    assert "2 components of the design are declared not drawn" in said and "did not see them" in said
+    assert "bevel_pinion (near hopper, lid), motor_shaft" in said
+    assert data["pass"] is True and data["physical_fit_verified"] is False
+    row = [c for c in data["checks"] if c["id"] == f"{gate}:not-drawn"]
+    if gate in NOT_DRAWN_NOTE_ONLY:                 # the wall of a drawn part does not depend on an absent one
+        assert not row and data["status"] == "pass" and data["counts"] == {"pass": 1, "warn": 0, "fail": 0}
+        assert data["findings"] == []
+    else:
+        assert data["status"] == "warn" and data["counts"] == {"pass": 1, "warn": 1, "fail": 0}
+        assert row == data["findings"] and row[0]["status"] == "warn" and row[0]["parts"] == ["hopper", "lid"]
+        assert "not in the model: bevel_pinion (near hopper, lid), motor_shaft" in row[0]["message"]
+        assert row[0]["evidence"]["not_drawn"] == data["not_drawn"]
+    md = gr.verdict_markdown(data)
+    assert "## Not in the model" in md and md.index("## Not in the model") < md.index("## Findings")
+    assert "| `bevel_pinion` | hopper, lid | sized in analysis/gears.py; no solid yet |" in md
+    assert "| `motor_shaft` | - | vendor STEP not imported |" in md
+    again = json.dumps(data)
+    assert json.dumps(note_not_drawn(data, geometry_with())) == again          # stated once
+
+
+def test_one_component_reads_in_the_singular():
+    data = note_not_drawn(passing("motion"), geometry_with({"pinion": {"reason": "later", "near": ["hopper"]}}))
+    assert "1 component of the design is declared not drawn (pinion (near hopper)): this gate did not see it" in \
+        data["assumptions"][-1]
+    assert "does not cover this component" in data["findings"][0]["message"]
+    assert not_drawn_summary(data["not_drawn"]) == ("1 component of the design is declared not drawn, so no gate "
+                                                    "saw it: pinion (near hopper)")
+
+
+def test_a_declaration_never_turns_a_fail_into_anything_else():
+    failing = verdict("motion", [Check("motion:x", "fail", "collides")], assumptions=["a"])
+    data = note_not_drawn(failing, geometry_with())
+    assert (data["pass"], data["status"]) == (False, "fail") and data["counts"] == {"pass": 0, "warn": 1, "fail": 1}
+    assert [f["id"] for f in data["findings"]] == ["motion:x", "motion:not-drawn"]
+    empty = note_not_drawn(verdict("assembly", [], assumptions=["a"]), geometry_with())
+    assert (empty["pass"], empty["status"]) == (False, "fail")            # an empty gate still proves nothing
+    assert [f["id"] for f in empty["findings"]] == ["assembly:nothing-checked", "assembly:not-drawn"]
+
+
+def test_a_declaration_is_part_of_the_geometry_digest_but_not_its_line():
+    base, declared = base_geometry(), geometry_with()
+    assert geometry_digest(base) != geometry_digest(declared)
+    moved = geometry_with()
+    moved["not_drawn"]["bevel_pinion"]["declared_at"] = "cad/build.py:99"
+    assert geometry_digest(moved) == geometry_digest(declared)
+    reworded = geometry_with()
+    reworded["not_drawn"]["bevel_pinion"]["near"] = ["hopper"]
+    assert geometry_digest(reworded) != geometry_digest(declared)
+    bound = gr.bind_inputs(passing("motion"), base)
+    assert "components declared not drawn" in stale_reason(bound, declared)     # declared after the gates ran
+    reason = geometry_with()                                # the reason is part of the statement, so of the digest:
+    reason["not_drawn"]["bevel_pinion"]["reason"] += " (see gears.py)"         # rewording it makes verdicts stale
+    assert geometry_digest(reason) != geometry_digest(declared)
+    swapped = geometry_with()                               # the order of declarations is not: names are sorted
+    swapped["not_drawn"] = dict(reversed(list(swapped["not_drawn"].items())))
+    assert geometry_digest(swapped) == geometry_digest(declared)
+
+
+def test_nothing_is_bound_to_a_record_with_declarations_without_the_statement():
+    """``bind_inputs`` applies the statement, so a project's own gate gets it; a verdict that was bound some other
+    way and does not name the components is stale, never current."""
+    declared = geometry_with()
+    own = gr.bind_inputs(passing("my_gate"), declared)                  # a project's own gate: no note_not_drawn call
+    assert own["status"] == "warn" and own["pass"] is True and len(own["not_drawn"]) == 2
+    assert [f["id"] for f in own["findings"]] == ["my_gate:not-drawn"] and stale_reason(own, declared) is None
+    wall = gr.bind_inputs(passing("wall"), declared)
+    assert wall["status"] == "pass" and len(wall["not_drawn"]) == 2 and stale_reason(wall, declared) is None
+    bare = passing("my_gate")                                           # bound by hand, as if by an older toolkit
+    bare["inputs"] = copy.deepcopy(own["inputs"])
+    assert "does not name the component(s) the record declares not drawn (bevel_pinion, motor_shaft)" in \
+        stale_reason(bare, declared)
+    partly = dict(bare, not_drawn=[{"name": "bevel_pinion", "reason": "r", "near": []}])
+    assert "(motor_shaft)" in stale_reason(partly, declared)
+    plain = base_geometry()
+    data = passing("my_gate")
+    before = json.dumps(data, indent=2)
+    bound = gr.bind_inputs(data, plain)                                 # nothing declared: only `inputs` is added
+    assert json.dumps({k: v for k, v in bound.items() if k != "inputs"}, indent=2) == before
+    assert stale_reason(bound, plain) is None
+    assert is_not_drawn_check(own["findings"][0]) and not is_not_drawn_check(passing("x")["checks"][0])
+    assert is_not_drawn_check({"id": "not-drawn@cad/build.py:4", "evidence": {"code": "not-drawn"}})   # the lint's
+
+
+@pytest.mark.parametrize("updated", [
+    {"spring": {"reason": "revised clearance", "near": ["lid"]}},
+    {},
+])
+def test_bound_custom_verdict_requires_fresh_result_for_changed_omissions(updated):
+    first = geometry_with({"spring": {"reason": "spring pending", "near": ["hopper"]}})
+    next_record = dict(first, not_drawn=updated)
+    original = gr.bind_inputs(passing("custom"), first)
+    before = copy.deepcopy(original)
+    with pytest.raises(ValueError, match="rerun"):
+        gr.bind_inputs(original, next_record)
+    assert original == before
+    fresh = gr.bind_inputs(passing("custom"), next_record)
+    assert stale_reason(fresh, next_record) is None
+    # An old writer may have stamped the new geometry digest onto obsolete caveats.
+    damaged = dict(original, inputs=fresh["inputs"])
+    assert stale_reason(damaged, next_record)
+
+
+def test_custom_gate_cannot_publish_only_the_declaration_list():
+    record = geometry_with()
+    supplied = verdict("custom", [Check("shape", "pass", "measured")], assumptions=["drawn shapes"],
+                       extra={"not_drawn": not_drawn_of(record)})
+    original = copy.deepcopy(supplied)
+    bound = gr.bind_inputs(supplied, record)
+    assert bound["status"] == "warn" and bound["counts"]["warn"] == 1
+    assert "bevel_pinion" in bound["assumptions"][-1]
+    assert bound["checks"][-1]["id"] == bound["findings"][-1]["id"] == "custom:not-drawn"
+    assert stale_reason(bound, record) is None
+    # Historical records can already contain a matching digest and the list alone.
+    original["inputs"] = bound["inputs"]
+    incomplete = copy.deepcopy(original)
+    assert stale_reason(original, record)
+    assert original == incomplete
+    before = copy.deepcopy(bound)
+    assert gr.bind_inputs(bound, record) == before
+
+
+def test_custom_checks_keep_their_evidence_when_omission_warning_ids_collide():
+    record = geometry_with()
+    checks = [Check("custom:not-drawn", "fail", "The required lid is missing", parts=["lid"]),
+              Check("custom:1:not-drawn", "warn", "Inspect the hinge", parts=["hinge"])]
+    data = verdict("custom", checks, assumptions=["required parts inspected"])
+    original = copy.deepcopy(data["checks"])
+    bound = gr.bind_inputs(data, record)
+    for field in ("checks", "findings"):
+        assert bound[field][:-1] == original
+        warning = bound[field][-1]
+        assert warning["id"] == "custom:2:not-drawn" and is_not_drawn_check(warning)
+        assert not any(is_not_drawn_check(row) for row in bound[field][:-1])
+    assert bound["status"] == "fail" and not bound["pass"]
+    assert bound["counts"] == {"pass": 0, "warn": 2, "fail": 1}
+    before = copy.deepcopy(bound)
+    assert gr.bind_inputs(bound, record) == before and stale_reason(bound, record) is None
+
+
+def test_stored_verdict_that_lost_a_failed_check_must_be_rerun():
+    record = geometry_with()
+    data = gr.bind_inputs(verdict("custom", [Check("required", "fail", "Missing geometry")],
+                                  assumptions=["required geometry inspected"]), record)
+    # Earlier writers could replace a failed check with the warning, but keep the original fail count.
+    for field in ("checks", "findings"):
+        data[field] = [data[field][-1]]
+    before = copy.deepcopy(data)
+    assert stale_reason(data, record)
+    with pytest.raises(ValueError, match="rerun"):
+        gr.bind_inputs(data, record)
+    assert data == before
+
+
+def test_legacy_omission_warning_cannot_certify_a_custom_warning_survived():
+    record = geometry_with()
+    bound = gr.bind_inputs(passing("custom"), record)
+    legacy = json.loads(json.dumps(bound))
+    for field in ("checks", "findings"):
+        legacy[field][-1]["evidence"].pop("code", None)
+    # The old writer left these exact rows and totals when it overwrote a warning with the same ID.
+    before = copy.deepcopy(legacy)
+    assert stale_reason(legacy, record)
+    with pytest.raises(ValueError, match="rerun"):
+        gr.bind_inputs(legacy, record)
+    assert before == legacy
+    assert stale_reason(bound, record) is None
+
+
+def test_binding_first_declaration_adds_current_caveats_only_once():
+    earlier = gr.bind_inputs(passing("custom"), base_geometry())
+    updated = geometry_with()
+    result = gr.bind_inputs(earlier, updated)
+    assert result["not_drawn"] == not_drawn_of(updated)
+    assert result["status"] == "warn" and result["counts"]["warn"] == 1
+    assert stale_reason(gr.bind_inputs(result, updated), updated) is None
+    assert result["counts"]["warn"] == 1
+
+
+def test_check_reports_all_declared_component_names(tmp_path, capsys):
+    table = {f"part_{i}": {"reason": "later", "near": []} for i in range(5)}
+    data = note_not_drawn(passing("motion"), geometry_with(table))
+    assert gr._summary(data) == "2 checks, 1 warning(s); 5 not drawn, not seen: part_0, part_1, part_2, part_3, part_4"
+    rec = geometry_with(table)
+    root = make_project(tmp_path / "project", geometry=_record(rec), gates=())
+    own = gr.bind_inputs(passing("custom"), rec)
+    (root / "exports/gates").mkdir(exist_ok=True)
+    (root / "exports/gates/custom.json").write_text(json.dumps(own))
+    row = _results(root, capsys)["gate custom"]
+    assert row["status"] == "pass"
+    assert all(name in row["message"] for name in table)
+    assert gr._summary(passing("motion")) == "1 checks, 0 warning(s)"
+
+
+# ------------------------------------------------------------------------------- run_one and cad-agent gates
+
+def _fake_gates(monkeypatch):
+    """``run_one`` with the kernel left out: the record is read as JSON and every gate passes one check."""
+    from cadagent.review.dossier import registry
+    monkeypatch.setattr(registry, "load_geometry",
+                        lambda path, shapes=True: types.SimpleNamespace(geometry=json.loads(Path(path).read_text())))
+    monkeypatch.setattr(gr, "ADAPTERS", {g: (lambda g: lambda *a: passing(g))(g) for g in gr.GATES})
+
+
+def _record(geo):
+    return {**geo, "out_dir": "exports"}
+
+
+def test_run_one_writes_the_statement_into_every_gate_file(tmp_path, monkeypatch):
+    root = make_project(tmp_path / "p", geometry=_record(geometry_with()), gates=())
+    _fake_gates(monkeypatch)
+    project = load_project(root)
+    for gate in gr.GATES:
+        gr.run_one(project, gate, no_cache=True)
+        data = json.loads((root / "exports" / "gates" / f"{gate}.json").read_text())
+        assert len(data["not_drawn"]) == 2 and data["pass"] is True
+        assert data["status"] == ("pass" if gate in NOT_DRAWN_NOTE_ONLY else "warn"), gate
+        assert stale_reason(data, json.loads((root / "exports" / "dossier-geometry.json").read_text())) is None
+        assert "## Not in the model" in (root / "exports" / "gates" / f"{gate}.md").read_text()
+    rows = {r["name"]: r for r in gr.gate_rows(project)}                 # cad-agent check and the report
+    assert rows["gate connectivity"]["status"] == "pass"
+    assert "2 not drawn, not seen: bevel_pinion (near hopper, lid), motor_shaft" in rows["gate connectivity"]["message"]
+
+
+def test_a_project_s_own_gate_is_never_shown_as_a_bare_pass(tmp_path, capsys):
+    """A verdict a project writes itself into exports/gates/: bound with ``bind_inputs`` it names the components in
+    ``cad-agent check`` and counts on the site with the caveat; bound without the statement it is stale."""
+    root = make_project(tmp_path / "p", geometry=geometry_with())
+    project = load_project(root)
+    record = json.loads((root / "exports" / "dossier-geometry.json").read_text())
+    own = root / "exports" / "gates" / "thermal.json"
+    own.write_text(json.dumps(gr.bind_inputs(passing("thermal"), record)))
+    row = {r["name"]: r for r in gr.gate_rows(project)}["gate thermal"]
+    assert row["status"] == "pass" and "2 not drawn, not seen: bevel_pinion (near hopper, lid), motor_shaft" in \
+        row["message"]
+    capsys.readouterr()
+    main(["check", "--project", str(root)])
+    line = next(ln for ln in capsys.readouterr().out.splitlines() if "gate thermal" in ln)
+    assert "PASS" in line and "2 not drawn, not seen" in line
+    assert gr.site_counts(root / "exports") == {"pass": 5, "total": 5, "stale": 0, "not_drawn": 2,
+                                               "not_drawn_names": ["bevel_pinion", "motor_shaft"]}
+    bare = passing("thermal")                                           # the statement left out
+    bare["inputs"] = json.loads(own.read_text())["inputs"]
+    own.write_text(json.dumps(bare))
+    row = {r["name"]: r for r in gr.gate_rows(project)}["gate thermal"]
+    assert row["status"] == "fail" and "stale: does not name the component(s)" in row["message"]
+    assert gr.site_counts(root / "exports") == {"pass": 4, "total": 5, "stale": 1, "not_drawn": 2,
+                                               "not_drawn_names": ["bevel_pinion", "motor_shaft"]}
+    plain = make_project(tmp_path / "q")
+    assert gr.site_counts(plain / "exports") == {"pass": 4, "total": 4, "stale": 0}     # the key only when declared
+
+
+def test_the_site_overview_stat_says_what_no_gate_saw(tmp_path):
+    from cadagent.publish.site import build_site
+    root = make_project(tmp_path / "p", geometry=geometry_with())
+    build_site(root, {}, "Demo", gates_exports=root / "exports")
+    assert ("<b>4 / 4</b><span>integrity gates pass · 2 components not drawn, not seen by any gate: bevel_pinion, motor_shaft</span>"
+            in (root / "site" / "index.html").read_text())
+    plain = make_project(tmp_path / "q")
+    build_site(plain, {}, "Demo", gates_exports=plain / "exports")
+    assert "<b>4 / 4</b><span>integrity gates pass</span>" in (plain / "site" / "index.html").read_text()
+
+
+def test_run_one_without_declarations_writes_what_it_wrote_before(tmp_path, monkeypatch):
+    root = make_project(tmp_path / "p", geometry=_record(base_geometry()), gates=())
+    _fake_gates(monkeypatch)
+    project = load_project(root)
+    record = json.loads((root / "exports" / "dossier-geometry.json").read_text())
+    cfg = gr.gates_config(project)
+    for gate in gr.GATES:
+        gr.run_one(project, gate, no_cache=True)
+        expected = gr.bind_inputs(passing(gate), record, record_file="exports/dossier-geometry.json",
+                                  **gr.expected_inputs(gate, cfg, gr.load_dossier(project), {}))
+        assert (root / "exports" / "gates" / f"{gate}.json").read_text() == json.dumps(expected, indent=2) + "\n"
+        assert "Not in the model" not in (root / "exports" / "gates" / f"{gate}.md").read_text()
+
+
+@pytest.fixture
+def cli_project(tmp_path, monkeypatch):
+    def make(geometry):
+        root = make_project(tmp_path / "p", geometry=geometry, gates=())
+        script = tmp_path / "fake_worker.py"
+        script.write_text(FAKE_WORKER)
+        monkeypatch.setattr(gr, "worker_command", lambda r, g, no_cache=False: [sys.executable, str(script), str(r), g])
+        return root
+    return make
+
+
+def test_the_gates_summary_says_what_is_not_in_the_model(cli_project, capsys, monkeypatch):
+    root = cli_project(geometry_with())
+    assert main(["gates", "--project", str(root)]) == 0                # a declaration alone fails nothing
+    out = capsys.readouterr().out
+    rows = {ln.split()[1]: ln.split()[0] for ln in out.splitlines() if ln.startswith("  ") and len(ln.split()) > 1}
+    ran = [g for g in gr.GATES if rows.get(g) in ("PASS", "WARN")]
+    assert "wall" in ran and len(ran) > 2
+    for gate in ran:                                                   # the row says WARN where the verdict does
+        status = json.loads((root / "exports" / "gates" / f"{gate}.json").read_text())["status"]
+        assert (rows[gate], status) == (("PASS", "pass") if gate in NOT_DRAWN_NOTE_ONLY else ("WARN", "warn")), gate
+        assert "; 2 not drawn, not seen: bevel_pinion (near hopper, lid), motor_shaft" in \
+            next(ln for ln in out.splitlines() if ln.split()[:2] == [rows[gate], gate])
+    counts = next(ln for ln in out.splitlines() if ln.startswith("gates: "))
+    assert counts.startswith(f"gates: {len(ran) + 1} pass (2 components not drawn), 0 fail, ")   # + the lint
+    line = next(ln for ln in out.splitlines() if ln.startswith("not in the model:"))
+    assert "2 components of the design are declared not drawn, so no gate saw them: bevel_pinion (near hopper, " \
+           "lid), motor_shaft" in line and "does not cover what is not drawn" in line
+    assert out.index("gates: ") < out.index("not in the model:")
+    assert main(["gates", "--project", str(root), "--dry-run"]) == 0
+    assert "not in the model: 2 components" in capsys.readouterr().out
+    monkeypatch.setenv("FAKE_GATE_MODE", "crash")                      # a gate that died still names them
+    monkeypatch.setenv("FAKE_GATE_TARGET", "connectivity")
+    assert main(["gates", "--project", str(root)]) == 1
+    crashed = json.loads((root / "exports" / "gates" / "connectivity.json").read_text())
+    assert crashed["pass"] is False and len(crashed["not_drawn"]) == 2
+    assert "2 not drawn, not seen" in capsys.readouterr().out
+
+
+def test_the_gates_summary_is_unchanged_without_declarations(cli_project, capsys):
+    root = cli_project(None)
+    assert main(["gates", "--project", str(root)]) == 0
+    out = capsys.readouterr().out
+    assert "not in the model" not in out and "not drawn" not in out and "WARN" not in out
+    ran = [ln.split()[1] for ln in out.splitlines() if ln.startswith("  PASS")]
+    assert "wall" in ran and gr.LINT in ran
+    assert next(ln for ln in out.splitlines() if ln.startswith("gates: ")).startswith(f"gates: {len(ran)} pass, 0 fail, ")
+    assert main(["gates", "--project", str(root), "--dry-run"]) == 0
+    assert "not in the model" not in capsys.readouterr().out
+
+
+# ------------------------------------------------------------------------------------------------- the lint
+
+def test_the_lint_lists_each_component_as_a_warning_on_its_neighbours(tmp_path):
+    root = make_project(tmp_path, geometry=geometry_with())
+    res = lint_project(load_project(root))
+    found = [f for f in res.warnings if f.code == "not-drawn"]
+    assert res.passed and len(found) == 2, [f.code for f in res.errors]
+    pinion = next(f for f in found if "'bevel_pinion'" in f.message)
+    assert set(pinion.parts) == {"hopper", "lid"} and pinion.where.file == "cad/build.py" and pinion.where.line == 40
+    assert "No gate saw it" in pinion.message and "sized in analysis/gears.py" in pinion.message
+    assert not [f for f in lint_project(load_project(make_project(tmp_path / "q"))).warnings if f.code == "not-drawn"]
+
+
+def test_the_lint_takes_the_parts_from_the_declaration_not_from_the_words_of_its_reason(tmp_path):
+    """A reason that quotes a part name does not put the warning on that part: only ``near`` does."""
+    table = {"pinion": {"reason": "replaces the 'lid' latch; see the 'ball' note", "near": ["hopper"],
+                        "declared_at": "cad/build.py:40"},
+             "shaft": {"reason": "sits by the 'base'", "near": [], "declared_at": "cad/build.py:41"}}
+    root = make_project(tmp_path, geometry=geometry_with(table))
+    found = {f.message.split("'")[1]: f for f in lint_project(load_project(root)).warnings if f.code == "not-drawn"}
+    assert found["pinion"].parts == ("hopper",) and found["pinion"].item == "hopper"
+    assert found["shaft"].parts == () and found["shaft"].item == ""
+    issues = join(load_dossier(root / "dossier" / "project.yaml", strict=False), geometry_with(table))
+    assert {i.message.split("'")[1]: i.concerns for i in issues if i.code == "not-drawn"} == \
+        {"pinion": ("hopper",), "shaft": ()}
+    assert all(i.concerns is None for i in issues if i.code != "not-drawn")      # every other issue as before
+    assert "concerns" not in issues[0].to_dict()
+
+
+def test_the_join_refuses_a_name_that_something_else_uses(tmp_path):
+    root = make_project(tmp_path)
+    dossier = load_dossier(root / "dossier" / "project.yaml", strict=False)
+    interface = next(iter(dossier.interfaces))
+    for name, what in (("hopper", "part"), ("hopper_cavity", "cavity"), ("m3:lid-hopper", "fastener"),
+                       (interface, "interface")):
+        geo = geometry_with({name: {"reason": "later", "near": [], "declared_at": "cad/build.py:7"}})
+        clash = [i for i in join(dossier, geo) if i.code == "duplicate-id"]
+        assert len(clash) == 1 and clash[0].severity == "error" and f"also the id of a {what}" in clash[0].message
+    geo = geometry_with({"I-hinge": {"reason": "later", "near": [], "declared_at": "cad/build.py:7"}})
+    geo["joints"] = {"I-hinge": {"kind": "fixed", "moving": "lid", "fixed": "hopper"}}
+    assert "also the id of a joint" in next(i.message for i in join(dossier, geo) if i.code == "duplicate-id")
+    assert not [i for i in join(dossier, geometry_with()) if i.code == "duplicate-id"]
+
+
+def test_the_join_refuses_a_neighbour_that_is_not_a_part(tmp_path):
+    root = make_project(tmp_path)
+    geo = geometry_with({"pinion": {"reason": "later", "near": ["ghost"], "declared_at": "cad/build.py:7"}})
+    issues = join(load_dossier(root / "dossier" / "project.yaml", strict=False), geo)
+    assert [(i.code, i.severity) for i in issues if "pinion" in i.message] == [("not-drawn", "warning"),
+                                                                              ("unknown-part", "error")]
+
+
+REAL = ("connectivity", "containment", "fasteners", "motion", "assembly")
+
+
+def _real_project(root: Path, build: str) -> Path:
+    root = reg_fixture.make_project(root, build=build)
+    (root / "cad-agent.yaml").write_text("cad:\n  name: demo\n  dossier: dossier/project.yaml\n"
+                                         "  gates:\n    build: cad/build.py\n")
+    return root
+
+
+def _timeless(value):
+    """Without the wall-clock times a gate records in its statistics (``seconds`` and keys ending ``_s``)."""
+    if isinstance(value, dict):
+        return {k: _timeless(v) for k, v in value.items() if not (k.endswith("_s") or k == "seconds")}
+    return [_timeless(v) for v in value] if isinstance(value, list) else value
+
+
+def _without_the_statement(data):
+    """A verdict with exactly what ``note_not_drawn`` adds taken out again (and the geometry digest, which the
+    declaration is part of)."""
+    out = copy.deepcopy(data)
+    out.pop("not_drawn")
+    assert "declared not drawn" in out["assumptions"].pop()
+    out["inputs"]["geometry"].pop("digest")
+    if out["gate"] in NOT_DRAWN_NOTE_ONLY:
+        return out
+    for key in ("checks", "findings"):
+        assert is_not_drawn_check(out[key][-1])
+        out[key].pop()
+    out["counts"]["warn"] -= 1
+    out["status"] = "fail" if not out["pass"] else ("warn" if out["counts"]["warn"] else "pass")
+    return out
+
+
+def test_the_real_gates_say_what_is_not_drawn_and_change_nothing_else(tmp_path, capsys):
+    """The real gates on the same build with and without two declarations: the same exit code, the same rows but
+    for WARN and the statement, and verdicts that differ by the statement alone. Without a declaration no file and
+    no line mentions one."""
+    pytest.importorskip("cadquery")
+    pytest.importorskip("trimesh")
+    plain = _real_project(tmp_path / "plain", reg_fixture.BUILD)
+    declared = _real_project(tmp_path / "declared", reg_fixture.DECLARED)
+    args = ["--build", "--only", *REAL, "--jobs", "1", "--no-cache"]     # one at a time, uncached: the gates'
+                                                                         # cache statistics are then the same too
+    code_plain = main(["gates", "--project", str(plain), *args])
+    out_plain = capsys.readouterr().out
+    code = main(["gates", "--project", str(declared), *args])
+    out = capsys.readouterr().out
+    assert code == code_plain                                           # a declaration moves no exit code
+    assert "not drawn" not in out_plain and "not in the model" not in out_plain and "WARN" not in out_plain
+    assert "not in the model: 2 components of the design are declared not drawn" in out
+
+    def rows(text):
+        return {ln.split()[1]: ln.split()[0] for ln in text.splitlines()
+                if ln.startswith("  ") and len(ln.split()) > 1 and ln.split()[1] in REAL}
+    passed = sum(1 for word in rows(out_plain).values() if word == "PASS")
+    assert passed and f"gates: {passed} pass, " in out_plain
+    assert f"gates: {passed} pass (2 components not drawn), " in out
+    for gate in REAL:
+        before = json.loads((plain / "exports" / "gates" / f"{gate}.json").read_text())
+        data = json.loads((declared / "exports" / "gates" / f"{gate}.json").read_text())
+        assert "not_drawn" not in before and not any(is_not_drawn_check(c) for c in before["checks"]), gate
+        assert "Not in the model" not in (plain / "exports" / "gates" / f"{gate}.md").read_text()
+        assert all(c["id"] != f"{gate}:run" for c in data["checks"]), (gate, data["findings"])   # the gate ran
+        row = next(c for c in data["checks"] if c["id"] == f"{gate}:not-drawn")
+        assert row["status"] == "warn" and row["parts"] == ["hopper", "hopper_flap"]
+        assert data["status"] != "pass" and [m["name"] for m in data["not_drawn"]] == ["flap_spring", "vent_plug"]
+        assert data["pass"] is before["pass"]
+        assert rows(out)[gate] == ("WARN" if before["pass"] else "FAIL") and rows(out_plain)[gate] == \
+            ("PASS" if before["pass"] else "FAIL")
+        assert "## Not in the model" in (declared / "exports" / "gates" / f"{gate}.md").read_text()
+        before["inputs"]["geometry"].pop("digest")
+        if gate == "motion" and "symmetry_seconds" in before["stats"]:
+            # Measuring the same solids twice can take different amounts of wall-clock time.
+            for verdict in (before, data):
+                elapsed = verdict["stats"]["symmetry_seconds"]
+                assert isinstance(elapsed, (float, int)) and elapsed >= 0
+                verdict["stats"]["symmetry_seconds"] = 0
+        assert json.dumps(_timeless(_without_the_statement(data)), indent=2) == \
+            json.dumps(_timeless(before), indent=2), gate
+
+
+def test_a_gate_called_on_a_build_writes_the_statement_to_its_out_file(tmp_path):
+    """The documented direct call, ``<gate>_from_build(result, ..., out="exports/gates/<gate>.json")``: the verdict
+    returned and the file written both name what is not drawn; without a declaration neither changes."""
+    pytest.importorskip("cadquery")
+    pytest.importorskip("trimesh")
+    from cadagent.review.dossier import build_module
+    from cadagent.review.gates import Assembly
+    from cadagent.review.gates.assembly import assembly_from_build
+    from cadagent.review.gates.connectivity import connectivity_from_build
+    from cadagent.review.gates.containment import containment_gate
+    from cadagent.review.gates.fasteners import fastener_gate_from_build
+    from cadagent.review.gates.motion import motion_from_build
+
+    def run_all(root, result, dossier):
+        asm = Assembly.from_build(result)
+        out = {g: root / "direct" / f"{g}.json" for g in REAL}
+        returned = {
+            "connectivity": connectivity_from_build(result, dossier, out=out["connectivity"]),
+            "motion": motion_from_build(result, dossier, out=out["motion"]),
+            "assembly": assembly_from_build(result, dossier, out=out["assembly"]),
+            "fasteners": fastener_gate_from_build(result, dossier, out=out["fasteners"]),
+            "containment": containment_gate(asm, [{"container": "hopper", "cavity": "hopper_cavity", "what": "ball",
+                                                   "count": 8}], out=out["containment"])}
+        return asm, returned, {g: json.loads(path.read_text()) for g, path in out.items()}
+
+    root = reg_fixture.make_project(tmp_path / "declared", build=reg_fixture.DECLARED)
+    result = build_module(root / "cad" / "build.py", root=root)
+    dossier = load_dossier(root / "dossier" / "project.yaml", strict=False)
+    asm, returned, written = run_all(root, result, dossier)
+    assert [m["name"] for m in asm.not_drawn] == ["flap_spring", "vent_plug"]
+    assert asm.posed("hopper_flap", (0, 0, 1)).not_drawn == asm.not_drawn       # a posed copy keeps it
+    for gate in REAL:
+        assert written[gate] == json.loads(json.dumps(returned[gate])), gate
+        assert [m["name"] for m in written[gate]["not_drawn"]] == ["flap_spring", "vent_plug"], gate
+        assert written[gate]["status"] != "pass" and any(is_not_drawn_check(c) for c in written[gate]["findings"])
+        assert stale_reason(gr.bind_inputs(written[gate], result.geometry), result.geometry) is None
+    for gate in ("assembly", "fasteners"):                              # the tables these two write beside the file
+        assert "## Not in the model" in (root / "direct" / f"{gate}.md").read_text()
+    root = reg_fixture.make_project(tmp_path / "plain", build=reg_fixture.BUILD)
+    result = build_module(root / "cad" / "build.py", root=root)
+    asm, returned, written = run_all(root, result, load_dossier(root / "dossier" / "project.yaml", strict=False))
+    assert asm.not_drawn == []
+    for gate in REAL:
+        assert "not_drawn" not in written[gate] and not any(is_not_drawn_check(c) for c in written[gate]["checks"])
+    for gate in ("assembly", "fasteners"):
+        assert "Not in the model" not in (root / "direct" / f"{gate}.md").read_text()
+    hand = Assembly()                                                   # the one exception: no build, no record
+    assert hand.not_drawn == []

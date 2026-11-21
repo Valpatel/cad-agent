@@ -35,7 +35,7 @@ flowchart TD
 | `test_reproducible_outputs.py` | The review zip, report pages and the dates they record are byte-reproducible |
 | `test_site.py` | A project's site (`cadagent.publish.site`): milestones, decisions, designs, pages, history |
 | [served-browser.mjs](served-browser.mjs) | The top bar under `cad-agent site --serve` in a browser: phone targets, the file viewer's offset, `nav=0` and the theme (#807) |
-| `test_site_review.py` | The project site's review pages, built from the gate-bench fixture |
+| `test_site_review.py` | The project site's review pages, built from the gate-bench fixture; components declared not drawn on every review page |
 | `test_view.py` | `cadagent.publish.view`: STL round trips and the 3D view export, bad input refused before writing |
 
 Run: `pytest tests/publish` (with `PYTHONPATH=software`); the browser check: `npm run test:served-bar` in `tools/site` (CI runs it after `test:assembly-release`) (site npm dependencies, Python with the `site` extra).

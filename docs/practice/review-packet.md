@@ -162,6 +162,8 @@ root. The file has no timestamp: an unchanged packet writes identical JSON.
 
 Field notes:
 
+- When the build declares components it does not draw, `geometry.not_drawn` lists their names, reasons and
+  neighbours in every section packet. This includes projects with only a wall measurement and no YAML dossier.
 - **`parts`** holds the section's parts and the placed fasteners that clamp or thread into them. `sha256` is the
   hash the geometry record holds for the part (`parts.<name>.sha256`, a hash of its instance hashes; for a
   fastener, of its placed instances): the same hash a reviewer record (`dossier/reviews/*.json`, T11) binds in its
@@ -178,7 +180,9 @@ Field notes:
   stale, and makes the packet stale); its `section_checks` are only those that are not passing. `section.status` and `blocked_by` come from
   the same lint run.
 - **`findings`** are the failing and warning checks among them (and every failing check that names no known part,
-  with `scope: "unattributed"`, since it may concern any part). `stale` is the stale reason of the verdict it comes
+  with `scope: "unattributed"`, since it may concern any part). A gate's `<gate>:not-drawn` warning and the lint's
+  `not-drawn` warnings are in every section's packet, with `scope: "section"`, whatever parts they name: a
+  component declared not drawn has no extent ([gates: not in the model](gates.md#not-in-the-model-not_drawn)). `stale` is the stale reason of the verdict it comes
   from (null when current). `views` names the views that show it (`findings` when it has a callout). `witness` collects the 3D points in the check's
   evidence (keys containing `point` or `centroid`, nested witnesses included), at most four per finding. The
   `findings` view numbers them F1, F2, ... as callouts; a finding without a point is listed, not drawn.

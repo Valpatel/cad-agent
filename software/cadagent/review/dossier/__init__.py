@@ -16,12 +16,13 @@ __all__ = [
 # the build-script registry (docs/practice/dossier.md "Declaring geometry in the build script")
 from .registry import (  # noqa: E402
     HASH_RECIPE, REGISTRY, Axis, BuildResult, Registry, RegistryError, assembly, brep_sha256, build, build_module,
-    cavity, current_registry, fastener, join, joint, load_geometry, part, project_root, shape_sha256, use_registry,
+    cavity, current_registry, fastener, join, joint, load_geometry, not_drawn, part, project_root, shape_sha256,
+    use_registry,
 )
 from cadagent.review.evidence import shape_content_hash  # noqa: E402
 
 __all__ += [
     "HASH_RECIPE", "REGISTRY", "Axis", "BuildResult", "Registry", "RegistryError", "assembly", "brep_sha256", "build",
-    "build_module", "cavity", "current_registry", "fastener", "join", "joint", "load_geometry", "part",
+    "build_module", "cavity", "current_registry", "fastener", "join", "joint", "load_geometry", "not_drawn", "part",
     "project_root", "shape_content_hash", "shape_sha256", "use_registry",
 ]

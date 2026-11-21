@@ -36,8 +36,9 @@ from dataclasses import dataclass, field, fields
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Mapping, Optional, Sequence, Tuple
 
-from cadagent.review.gates.verdict import (SCHEMA, Check, bind_inputs, record_hashes, stale_reason, verdict,
-                                           write_verdict)
+from cadagent.review.gates.verdict import (SCHEMA, Check, bind_inputs, is_not_drawn_check, not_drawn_markdown,
+                                           not_drawn_names, not_drawn_of, note_not_drawn, record_hashes,
+                                           stale_reason, verdict, write_verdict)
 
 GATES = ("connectivity", "containment", "fasteners", "motion", "assembly", "wall")   # geometric gates, run order
 LINT = "dossier-lint"
@@ -389,6 +390,7 @@ def verdict_markdown(data: Mapping[str, Any]) -> str:
     if geo:
         lines += [f"Geometry: `{geo.get('file', '')}` digest `{str(geo.get('digest', ''))[:16]}`, "
                   f"{len(geo.get('hashes') or {})} shapes", ""]
+    lines += not_drawn_markdown(data)
     findings = data.get("findings") or []
     lines += ["## Findings", ""]
     if findings:
@@ -464,6 +466,7 @@ def run_one(project: Any, gate: str, *, no_cache: bool = False) -> Dict[str, Any
         _ensure_cache_ignored(cfg.root)
         cache = PairCache(cfg.cache)
     data = ADAPTERS[gate](result, dossier, extra, cache, kwargs, opts)
+    note_not_drawn(data, result.geometry)       # before the files are written: no pass without the caveat
     exp = expected_inputs(gate, cfg, dossier, extra)
     bind_inputs(data, result.geometry, record_file=cfg.rel(cfg.geometry), **exp)
     write_outputs(Path(project.exports_dir) / "gates", data)
@@ -554,13 +557,21 @@ def build_geometry(project: Any) -> Path:
 
 @dataclass
 class GateRun:
-    """The outcome of one gate in a run: ``status`` is ``pass``, ``fail``, ``na`` or ``skip``."""
+    """The outcome of one gate in a run: ``status`` is ``pass``, ``fail``, ``na`` or ``skip``. ``caveat`` is true
+    for a passing gate whose verdict warns that components of the design are not drawn (its ``<gate>:not-drawn``
+    check): ``word`` is then ``WARN``, and ``status`` stays ``pass``, so counts and exit codes do not move."""
     gate: str
     status: str
     message: str = ""
     seconds: float = 0.0
     log: str = ""
     counts: Dict[str, int] = field(default_factory=dict)
+    caveat: bool = False
+
+    @property
+    def word(self) -> str:
+        """The word printed for the row: ``WARN`` for a pass with the not-drawn warning, else the status."""
+        return "WARN" if self.caveat and self.status == "pass" else self.status.upper()
 
 
 @dataclass
@@ -569,6 +580,7 @@ class RunResult:
     seconds: float
     record: str = ""
     built: bool = False
+    not_drawn: List[Dict[str, Any]] = field(default_factory=list)   # verdict.not_drawn_of(the geometry record)
 
     @property
     def passed(self) -> bool:
@@ -626,6 +638,9 @@ def _summary(data: Mapping[str, Any]) -> str:
     fails = [f.get("id", "") for f in data.get("findings") or [] if f.get("status") == "fail"]
     if fails:
         text = f"{len(fails)} failed: {', '.join(fails[:3])}" + (" ..." if len(fails) > 3 else "") + f" ({text})"
+    missing = data.get("not_drawn") or []
+    if missing:
+        text += f"; {len(missing)} not drawn, not seen: {not_drawn_names(missing)}"
     return text
 
 
@@ -679,7 +694,7 @@ def run_gates(project: Any, *, only: Sequence[str] = (), skip: Sequence[str] = (
             rows[g] = GateRun(g, "run", "would run")
         if any(p.gate == LINT and p.state == "run" for p in planned):
             rows[LINT] = GateRun(LINT, "run", "would run")
-        return RunResult([rows[p.gate] for p in planned], 0.0, cfg.rel(cfg.geometry), built)
+        return RunResult([rows[p.gate] for p in planned], 0.0, cfg.rel(cfg.geometry), built, not_drawn_of(record))
     for g in todo:
         remove_outputs(gates_dir, g)
     jobs = max(1, int(jobs or cfg.jobs))
@@ -699,24 +714,26 @@ def run_gates(project: Any, *, only: Sequence[str] = (), skip: Sequence[str] = (
         if data is None or data.get("schema") != SCHEMA:
             why = reason or f"exit code {code}, no verdict written"
             data = crash_verdict(gate, f"{why}; log {log}: {_tail(cfg.root / log)}")
+            note_not_drawn(data, record)
             bind_inputs(data, record or {}, record_file=cfg.rel(cfg.geometry),
                         **expected_inputs(gate, cfg, dossier, extra))
             write_outputs(gates_dir, data)
         status = "pass" if data.get("pass") is True else "fail"
-        return GateRun(gate, status, _summary(data), secs, log, dict(data.get("counts") or {}))
+        caveat = any(isinstance(f, Mapping) and is_not_drawn_check(f) for f in data.get("findings") or [])
+        return GateRun(gate, status, _summary(data), secs, log, dict(data.get("counts") or {}), caveat)
 
     with ThreadPoolExecutor(max_workers=jobs) as pool:
         futures = {pool.submit(one, g): g for g in todo}
         for fut in as_completed(futures):
             row = fut.result()
             rows[row.gate] = row
-            progress(f"  {row.status.upper():<4} {row.gate:<13} {row.seconds:6.1f} s  {row.message}"
+            progress(f"  {row.word:<4} {row.gate:<13} {row.seconds:6.1f} s  {row.message}"
                      + (f" · log {row.log}" if row.status == "fail" and row.log else ""))
     if any(p.gate == LINT and p.state == "run" for p in planned):
         rows[LINT] = run_lint(project)
         progress(f"  {rows[LINT].status.upper():<4} {LINT:<13} {rows[LINT].seconds:6.1f} s  {rows[LINT].message}")
     return RunResult([rows[p.gate] for p in planned], round(time.monotonic() - started, 2),
-                     cfg.rel(cfg.geometry), built)
+                     cfg.rel(cfg.geometry), built, not_drawn_of(record))
 
 
 def run_lint(project: Any) -> GateRun:
@@ -797,10 +814,10 @@ def _verdict_row(name: str, path: Path, record: Mapping[str, Any], expected: Map
     return {"name": name, "status": "pass", "message": msg, "file": str(path)}
 
 
-def site_counts(exports_dir: Path) -> Optional[Dict[str, int]]:
+def site_counts(exports_dir: Path) -> Optional[Dict[str, Any]]:
     """``{"pass", "total", "stale"}`` over the gate verdicts in ``<exports_dir>/gates/`` (the lint's left out):
     a verdict counts as passing only when it passes and its geometry matches the current record. None when there
-    are no verdicts. For the site overview, which reads files only."""
+    are no verdicts. The site overview gets both the count and names of any components declared not drawn."""
     exports = Path(exports_dir)
     gates_dir = exports / "gates"
     paths = [p for p in sorted(gates_dir.glob("*.json")) if p.stem != LINT] if gates_dir.is_dir() else []
@@ -810,7 +827,7 @@ def site_counts(exports_dir: Path) -> Optional[Dict[str, int]]:
         record = json.loads((exports / GEOMETRY_FILE).read_text())
     except (OSError, ValueError):
         record = None
-    out = {"pass": 0, "total": 0, "stale": 0}
+    out: Dict[str, Any] = {"pass": 0, "total": 0, "stale": 0}
     for path in paths:
         try:
             data = json.loads(path.read_text())
@@ -821,6 +838,10 @@ def site_counts(exports_dir: Path) -> Optional[Dict[str, int]]:
             out["stale"] += 1
         elif data.get("pass") is True:
             out["pass"] += 1
+    missing = not_drawn_of(record)
+    if missing:
+        out["not_drawn"] = len(missing)
+        out["not_drawn_names"] = [item["name"] for item in missing]
     return out
 
 

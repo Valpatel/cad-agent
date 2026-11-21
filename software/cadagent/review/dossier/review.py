@@ -53,7 +53,7 @@ _SHA_RE = re.compile(r"^[0-9a-f]{64}$")
 # top-level keys of a record: the required ones, then those submit_record adds or a reviewer may add
 REQUIRED = ("schema", "section", "date", "timestamp", "actor", "verdict", "signed_off", "hashes", "checklist",
             "decisions", "requirements", "findings")
-OPTIONAL = ("build_actors", "commit", "packet", "bundle", "summary", "toolkit", "physical_fit_verified")
+OPTIONAL = ("build_actors", "commit", "packet", "bundle", "summary", "toolkit", "physical_fit_verified", "not_drawn")
 
 
 class ReviewError(ValueError):
@@ -124,6 +124,8 @@ def validate_record(data: Any) -> List[Problem]:
             wrong = sorted(str(k) for k, v in hashes.items() if not (isinstance(v, str) and _SHA_RE.match(v)))
             if wrong:
                 bad("hashes", f"`hashes` of {', '.join(wrong)} are not sha256 hex digests")
+    if "not_drawn" in data and not _str_list(data["not_drawn"]):
+        bad("type", "`not_drawn` must list the names of the components declared not drawn near the section's parts")
     if data.get("physical_fit_verified") not in (None, False):
         bad("overclaim", "`physical_fit_verified` must be false: a review of renders and gates does not verify fit")
     if "build_actors" in data and not isinstance(data["build_actors"], Mapping):
@@ -355,6 +357,16 @@ def current_hashes(dossier: Any, section: str, geometry: Optional[Mapping[str, A
             for c in sec.parts}
 
 
+def section_not_drawn(dossier: Any, section: str, geometry: Optional[Mapping[str, Any]]) -> List[str]:
+    """The components the geometry record declares not drawn (``not_drawn()``) whose ``near`` names a part of
+    ``section``, in name order. A reviewer record lists them (``not_drawn``), so a component declared after a
+    review voids it: the reviewer signed off without knowing that part of the design was missing beside these
+    parts. A declaration without ``near`` names no section and voids no review."""
+    from cadagent.review.gates.verdict import not_drawn_of
+    mine = {c.id for c in dossier.sections[section].parts}
+    return [i["name"] for i in not_drawn_of(geometry) if mine & set(i["near"])]
+
+
 # --------------------------------------------------------------------------------------------- the record in context
 
 def check_record(data: Mapping[str, Any], *, dossier: Any, geometry: Optional[Mapping[str, Any]],
@@ -367,6 +379,8 @@ def check_record(data: Mapping[str, Any], *, dossier: Any, geometry: Optional[Ma
 
     Refused for any record: a section the dossier does not have; ``hashes`` that are not exactly the current hash
     of every part of the section (**stale hashes never sign off**, nor request changes on geometry that is gone); a
+    record whose ``not_drawn`` leaves out a component declared not drawn near a part of the section
+    (``section_not_drawn``: it was declared after the bundle); a
     reviewer who built or wrote the section, or is unknown, while separate review is required (the dossier's
     ``gates: require_separate_reviewer``, default true); a checklist that does not answer exactly the packet's
     questions, with their text and bad answers (answers to questions it does not ask, decisions or requirements
@@ -402,6 +416,17 @@ def check_record(data: Mapping[str, Any], *, dossier: Any, geometry: Optional[Ma
     extra = sorted(set(map(str, given)) - set(now))
     if extra:
         bad("stale-hashes", f"`hashes` names {', '.join(extra)}, which are not parts of section {sid}")
+    listed = data.get("not_drawn") if _str_list(data.get("not_drawn")) else []
+    declared = set(section_not_drawn(dossier, sid, geometry))
+    unseen = sorted(declared.difference(listed))
+    unknown = sorted(set(listed).difference(declared))
+    if unknown:
+        bad("stale-not-drawn", f"the record lists {', '.join(unknown)} under `not_drawn`, but the current geometry "
+                               f"does not declare them near parts of section {sid}; write a new bundle and review it")
+    if unseen:
+        bad("stale-not-drawn", f"component(s) {', '.join(unseen)} are declared not drawn near parts of section {sid} "
+                               "and the record does not list them under `not_drawn`: they were declared since the "
+                               "bundle; write a new bundle and review that")
     separate = dossier.gates.require_separate_reviewer if require_separate_reviewer is None \
         else require_separate_reviewer
     actor = str(data.get("actor", "") or "")
@@ -712,6 +737,9 @@ def record_template(p: _Project, section: str, packet: Optional[Mapping[str, Any
     platform = record_hash_platform(p.geometry)
     if platform:                                     # where those hashes were made, kept through the submission
         out["bundle"] = {"hash_platform": platform}
+    missing = section_not_drawn(d, section, p.geometry)
+    if missing:                                      # what the reviewer was told is not in the model beside these parts
+        out["not_drawn"] = missing
     return out
 
 

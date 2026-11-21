@@ -307,6 +307,8 @@ class Issue:
     message: str
     where: Optional[Where] = None
     severity: str = "error"             # error | warning
+    concerns: Optional[Tuple[str, ...]] = None  # the parts it concerns, when its maker knows them (the lint
+                                                # otherwise works them out from ``where`` and the message)
 
     def __str__(self) -> str:
         return f"{self.where}: {self.message}" if self.where else self.message

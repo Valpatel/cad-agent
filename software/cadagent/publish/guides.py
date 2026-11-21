@@ -56,7 +56,9 @@ def _packed_model_problem(model: dict, packed: bytes) -> Optional[str]:
     except (OSError, EOFError, ValueError):
         return "the binary does not inflate"
     data = np.frombuffer(raw, dtype=np.uint8)
-    for part in model["parts"]:
+    for i, part in enumerate(model["parts"]):
+        if not isinstance(part, dict):                 # refused like every other fault, not an AttributeError (#807)
+            return f"part {i + 1}: not an object"
         name = part.get("name")
         counts = [part.get(k) for k in ("vertices", "triangles", "offset")]
         if not all(type(n) is int and n >= 0 for n in counts):

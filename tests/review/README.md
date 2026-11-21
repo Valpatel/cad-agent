@@ -24,8 +24,8 @@ flowchart TD
 | `__init__.py` | Empty: makes the folder a package, so a test here may share a file name with one in another folder |
 | `test_dossier_lint.py` | The dossier lint and status machine: a failing and a passing case per rule |
 | `test_dossier_load.py` | The design dossier's schema and loader |
-| `test_dossier_registry.py` | The build-script registry: `@part`, `@cavity`, `@joint`, `fastener()`, the geometry export |
-| `test_dossier_review.py` | The reviewer pass and its hash-bound sign-off |
+| `test_dossier_registry.py` | The build-script registry: `@part`, `@cavity`, `@joint`, `fastener()`, `not_drawn()`, the geometry export |
+| `test_dossier_review.py` | The reviewer pass and its hash-bound sign-off; a component declared not drawn after a sign-off voids it |
 | `test_gate_assembly.py` | Assembly access and finite source-bound guide playback/preflight/progress, on box worlds and real geometry |
 | `test_gate_bench.py` | The gate bench: the clean fixture and each seeded defect |
 | `test_gate_connectivity.py` | Connectivity and floating-parts gate |
@@ -35,9 +35,9 @@ flowchart TD
 | `test_gate_relations.py` | Gate machinery: `Assembly`, broad phase, pairwise relations, the pair cache, verdicts |
 | `test_gate_subassembly.py` | A rigid module passes its own sequence before it enters another assembly |
 | `test_gate_wall.py` | Minimum-wall gate: mesh rays and exact B-rep rays |
-| `test_gates_cli.py` | `cad-agent gates`: configuration, the plan, workers, verdict files, staleness |
+| `test_gates_cli.py` | `cad-agent gates`: configuration, the plan, workers, verdict files, staleness; components declared not drawn stated in every verdict (the workers', a direct `out=` call's, a project's own gate's), the rows and counts, and the lint; the real gates with and without a declaration |
 | `test_hash_platform.py` | Content hashes are bound to the platform that made them |
-| `test_packet.py` | The section review packet |
+| `test_packet.py` | The section review packet; a not-drawn warning reaches every section's packet |
 | `test_packet_pictures.py` | The review-packet pictures on the site stay tied to the run that drew them |
 | `test_references.py` | The reference registry (`docs/research/references.yaml`): entries well formed, every cited id resolves |
 | `test_review.py` | `review_html` and the review page: local assets, no pass without a current check |

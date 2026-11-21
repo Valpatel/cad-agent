@@ -1303,7 +1303,7 @@ def webkit_components(root):
         'file-parsers': dict(packages=[('three', three), ('fflate', entry('fflate').get('version'))],
                              repos=[three_repo, repo(entry('fflate'), 'fflate')], receipts=[('fflate', entry('fflate'))]),
         'linkedom': dict(packages=[('linkedom', entry('linkedom').get('version'))], repos=[repo(entry('linkedom'), 'linkedom')]),
-        'occt-import-js': dict(packages=[('occt-import-js', entry('occt').get('version'))],
+        'occt-import-js': dict(packages=[(entry('occt').get('package') or 'occt-import-js', entry('occt').get('version'))],
                                repos=[repo(entry('occt'), 'occt-import-js')]),
         'fonts': dict(packages=[], repos=[]),
     }

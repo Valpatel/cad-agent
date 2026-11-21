@@ -8,7 +8,10 @@ call npm run test || goto :error
 mkdir dist
 copy build\wasm\Release\occt-import-js.js dist\occt-import-js.js || goto :error
 copy build\wasm\Release\occt-import-js.wasm dist\occt-import-js.wasm || goto :error
+copy src\occt-import-js-worker.js dist\occt-import-js-worker.js || goto :error
+copy src\dist-package.json dist\package.json || goto :error
 copy occt\LICENSE_LGPL_21.txt dist\license.occt.txt || goto :error
+copy occt\OCCT_LGPL_EXCEPTION.txt dist\OCCT_LGPL_EXCEPTION.txt || goto :error
 copy LICENSE.md dist\license.occt-import-js.txt || goto :error
 
 popd

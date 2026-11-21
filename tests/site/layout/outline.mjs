@@ -35,13 +35,13 @@ export function scrollOutline(page, target) {
 /** Real component regression: a reader moves the panel, then scrolls within the SAME article section. */
 export async function sameSectionOutlineProblems(browser, base) {
   const problems = [], evidence = await mkdtemp(path.join(tmpdir(), 'cad-agent-outline-control-'));
-  const page = await browser.newPage({ viewport: { width: 1366, height: 800 } });
+  const page = await browser.newPage({ viewport: { width: 1365, height: 800 } });
   const errors = [], states = [];
   page.on('pageerror', e => errors.push(e.message));
   page.on('console', m => { if (m.type() === 'error') errors.push(m.text()); });
   try {
-    await readerBoundaryGoto(page, base + '/docs/toolkit', { viewport: { width: 1366, height: 800 }, evidence, states, problems, probe: 'Outline control' });
-    await page.waitForFunction(() => customElements.get('cad-nav'), null, { timeout: 2000 });
+    await readerBoundaryGoto(page, base + '/docs/toolkit', { viewport: { width: 1365, height: 800 }, evidence, states, problems, probe: 'Outline control' });
+    await page.waitForSelector('cad-nav[data-ready]', { state: 'attached' });
     // Assemble a detached fixture before connecting it, so the real component sees its complete article and children.
     await page.evaluate(() => {
       const style = document.createElement('style');
@@ -184,7 +184,7 @@ export async function readerBoundaryProblems(browser, base) {
     let prior='',same=0;const until=setTimeout(()=>resolve(false),2000);
     const tick=()=>{const p=document.querySelector('.cad-nav-panel'),now=scrollY+':'+p.scrollTop;if(now===prior)same++;else same=0;prior=now;if(same>=12){clearTimeout(until);resolve(true);}else requestAnimationFrame(tick);};requestAnimationFrame(tick);
   }));
-  for(const viewport of [{width:1440,height:900},{width:1440,height:600},{width:1600,height:900}]){
+  for(const viewport of [{width:1440,height:900},{width:1440,height:600},{width:1600,height:900},{width:1366,height:900},{width:1365,height:900}]){
     const page=await browser.newPage({viewport});
     try{
       await readerBoundaryGoto(page,base+'/docs/toolkit',{viewport,evidence,states,problems});await page.waitForSelector('cad-nav[data-ready]');
@@ -201,14 +201,27 @@ export async function readerBoundaryProblems(browser, base) {
       const labelExposed=await page.locator('label[for=explore-reader-search]').evaluate(el=>{const r=el.getBoundingClientRect();return el.contains(document.elementFromPoint(r.x+r.width/2,r.y+r.height/2));});
       if(!exposed||!labelExposed)problems.push('reader boundary: global search is covered');
       await search.click();await search.fill('counterbores');if(await search.inputValue()!=='counterbores')problems.push('reader boundary: search input inaccessible');
-      if(viewport.width===1440&&viewport.height===900){
+      // Plant the old search cover on laptops, then the old scroll chain with each outline placement.
+      if(viewport.height===900&&(viewport.width===1440||viewport.width===1366)){
         const cover=await page.addStyleTag({content:'cad-nav [data-nav-controls]{position:static!important}cad-nav .cad-nav-panel::before{display:block!important}'});
         const covered=await page.locator('label[for=explore-reader-search]').evaluate(el=>{const r=el.getBoundingClientRect();return !el.contains(document.elementFromPoint(r.x+r.width/2,r.y+r.height/2));});
-        states.push({legacyCoverRejected:covered});if(!covered)problems.push('reader boundary: old opaque cover control was not rejected');await cover.evaluate(el=>el.remove());
+        states.push({viewport,legacyCoverRejected:covered});if(!covered)problems.push('reader boundary: old opaque cover control was not rejected at '+viewport.width+'px');await cover.evaluate(el=>el.remove());
+      }
+      if(viewport.width===1365&&viewport.height===900){
         await page.addStyleTag({content:'cad-nav .cad-nav-panel{overscroll-behavior-y:auto!important}'});
         await page.mouse.move(box.x+box.width/2,box.y+150);await page.mouse.wheel(0,-300);await page.waitForFunction(y=>scrollY<y,before.article);await quiet(page);
         const negative=await snapshot(page);states.push({negative});
         if(!(negative.article<before.article&&negative.panel>0))problems.push('reader boundary: old scroll-chain control did not reproduce the trap');
+      }
+      // From 1366 px the trap itself cannot be planted (above), but the chain can: without the panel's containment the
+      // wheel at its top scrolls the article, which the boundary assertion's article clause must see (#807 review).
+      if((viewport.width===1366||viewport.width===1440)&&viewport.height===900){
+        const chain=await page.addStyleTag({content:'cad-nav .cad-nav-panel{overscroll-behavior-y:auto!important}'});
+        await page.mouse.move(box.x+box.width/2,box.y+150);await page.mouse.wheel(0,-300);
+        await page.waitForFunction(y=>scrollY<y,before.article,{timeout:3000}).catch(()=>{});await quiet(page);
+        const chained=await snapshot(page);states.push({viewport,chained});
+        if(!(chained.article<before.article))problems.push('reader boundary: old scroll-chain control did not scroll the article at '+viewport.width+'px');
+        await chain.evaluate(el=>el.remove());
       }
       await scrollOutline(page,await page.evaluate(()=>document.documentElement.scrollHeight));await quiet(page);
       const bottom=await page.evaluate(()=>{const rect=e=>{const r=e.getBoundingClientRect();return {top:r.top,bottom:r.bottom,height:r.height};};return {host:rect(document.querySelector('cad-nav')),panel:rect(document.querySelector('.cad-nav-panel')),controls:rect(document.querySelector('[data-nav-controls]')),header:rect(document.querySelector('.site-header'))};});states.push({viewport,bottom});
@@ -231,7 +244,7 @@ export async function readerBoundaryProblems(browser, base) {
  * Also align a link natively at the panel's start: its center must clear the real sticky header. */
 export async function readerOutlineClickProblems(browser, base) {
   const problems=[],states=[],evidence=await mkdtemp(path.join(tmpdir(),'cad-agent-reader-click-'));
-  const page=await browser.newPage({viewport:{width:1366,height:800}});
+  const page=await browser.newPage({viewport:{width:1365,height:800}});
   const settle=()=>page.evaluate(()=>new Promise(done=>{
     let last=-1,still=0;const tick=()=>{if(scrollY===last){if(++still>15)return done();}else{still=0;last=scrollY;}requestAnimationFrame(tick);};tick();setTimeout(done,10000);
   }));
@@ -244,7 +257,7 @@ export async function readerOutlineClickProblems(browser, base) {
     return {target:a.hash,article:scrollY,panel:p.scrollTop,padding:getComputedStyle(p).scrollPaddingTop,controlsHeight:c.height,top:r.top,bottom:r.bottom,controlsBottom:c.bottom,hit:a.contains(document.elementFromPoint(r.x+r.width/2,r.y+r.height/2))};
   },alignment);
   try{
-    await readerBoundaryGoto(page,base+'/docs/toolkit',{viewport:{width:1366,height:800},evidence,states,problems,probe:'Reader click'});await page.waitForSelector('cad-nav[data-ready]');
+    await readerBoundaryGoto(page,base+'/docs/toolkit',{viewport:{width:1365,height:800},evidence,states,problems,probe:'Reader click'});await page.waitForSelector('cad-nav[data-ready]');
     await scrollOutline(page,await page.evaluate(()=>document.body.scrollHeight/2));await page.locator('.cad-nav-panel').evaluate(p=>p.scrollTop=0);
     await scrollOutline(page,await page.evaluate(()=>document.body.scrollHeight*.85));
     await page.evaluate(()=>{document.documentElement.style.scrollBehavior='';scrollTo({top:0,behavior:'instant'});});
@@ -310,8 +323,136 @@ export async function readerOverflowProblems(browser, base) {
     const wheel=await state();states.push({wheel});if(wheel.article<100)problems.push('reader overflow: actual wheel over fitting tree does not scroll article');
     await panel.evaluate(p=>{for(const group of p.querySelectorAll('details'))group.open=true;});const expanded=await current({width:1920,height:1080,overflow:true,position:'sticky'});states.push({expanded});if(expanded.fits||expanded.contain!=='contain')problems.push('reader overflow: expanded tree does not contain its wheel');
     await page.getByRole('searchbox',{name:'Filter topic pages'}).fill('zzzz-no-such-page');const filtered=await current({width:1920,height:1080,overflow:false,position:'sticky'});states.push({filtered});if(!filtered.fits||filtered.contain!=='auto')problems.push('reader overflow: filtering leaves stale containment');
-    await page.setViewportSize({width:1440,height:600});const short=await current({width:1440,height:600,overflow:true,position:'sticky'});states.push({short});if(short.fits||short.contain!=='contain')problems.push('reader overflow: short left-outline layout does not regain containment');
+    // The filtered tree fits in a short window once the outline has its own column.
+    for (const width of [1440, 1366]) {
+      await page.setViewportSize({width,height:600});
+      const shortWide=await current({width,height:600,overflow:false,position:'sticky'});
+      states.push({width,shortWide});
+      if(!shortWide.fits||shortWide.contain!=='auto')problems.push('reader overflow: short '+width+'px layout traps wheel input');
+    }
+    await page.setViewportSize({width:1365,height:600});const short=await current({width:1365,height:600,overflow:true,position:'sticky'});states.push({short});if(short.fits||short.contain!=='contain')problems.push('reader overflow: short left-outline layout does not regain containment');
     await page.setViewportSize({width:390,height:844});const mobile=await current({width:390,height:844,overflow:false,position:'static'});states.push({mobile});if(mobile.position!=='static'||mobile.contain!=='auto')problems.push('reader overflow: mobile retains containment');
   }finally{await readerClose(page,states);await readerReceipt(evidence,states,problems);console.log('Reader overflow evidence: '+evidence);}
+  return problems;
+}
+
+/** Scroll a topic row to the panel's top edge and check the sticky controls cover it.
+ * Exercise both outline placements and the standard shell on adjacent routes. */
+export async function treeEdgeProblems(browser, base) {
+  const problems = [];
+  const measure = page => page.evaluate(() => {
+    const panel = document.querySelector('cad-nav .cad-nav-panel'), controls = panel.querySelector(':scope > [data-nav-controls]');
+    const rows = [...panel.querySelectorAll('.explore-tree a, .explore-tree summary')].filter(r => r.getClientRects().length);
+    const top = () => panel.getBoundingClientRect().top;
+    const row = rows[Math.floor(rows.length / 2)], r = row.getBoundingClientRect();
+    panel.scrollTop += r.top - top() + r.height / 2;               // the row's middle at the panel's top edge
+    const p = panel.getBoundingClientRect(), c = controls.getBoundingClientRect();
+    const showing = rows.map(e => [e, e.getBoundingClientRect()]).filter(([, q]) => Math.min(q.bottom, c.top) - Math.max(q.top, p.top) > 0.5)
+      .map(([e, q]) => `"${e.textContent.trim().slice(0, 30)}" ${Math.round(q.top)}-${Math.round(q.bottom)} px`);
+    const hits = [0.25, 0.5, 0.75].map(f => controls.contains(document.elementFromPoint(p.left + p.width * f, p.top + 1)));
+    const rail = document.querySelector('.doc-rail'), tree = panel.querySelector('.explore-mobile-outline');
+    return { showing, hits: hits.every(Boolean), panelTop: p.top, controlsTop: c.top,
+      rail: !!rail && rail.getClientRects().length > 0, treeOutline: !!tree && tree.getClientRects().length > 0 };
+  });
+  for (const width of [1280, 1365, 1366, 1440, 1600]) {
+    const page = await browser.newPage({ viewport: { width, height: 900 } });
+    try {
+      await navigate(page, base + '/docs/linkages');
+      await page.waitForSelector('cad-nav[data-ready]');
+      const m = await measure(page);
+      if (m.showing.length || !m.hits) problems.push(`${width}px /docs/linkages: tree rows show above the sticky search (panel ${Math.round(m.panelTop)} px, search ${Math.round(m.controlsTop)} px): ${m.showing.join('; ') || 'the panel\'s top strip does not hit the search'}`);
+      if (m.rail !== (width >= 1366)) problems.push(`${width}px /docs/linkages: the "On this page" column ${m.rail ? 'shows' : 'is missing'}`);
+      if (m.treeOutline === m.rail) problems.push(`${width}px /docs/linkages: the outline shows ${m.rail ? 'twice' : 'nowhere'}`);
+      if (width === 1440) {
+        await page.addStyleTag({ content: 'cad-nav .cad-nav-panel>[data-nav-controls]{top:0!important;margin-top:0!important;padding:4px 0!important}' });
+        const planted = await measure(page);
+        if (!planted.showing.length && planted.hits) problems.push('planted control: controls stuck at top:0 showed no row above the search, so the tree-edge check tests nothing');
+      }
+    } finally { await page.close(); }
+  }
+  // A reader landing on a common laptop screen can see both navigation choices and use them.
+  for (const route of ['/docs/linkages', '/docs/toolkit']) {
+    const page = await browser.newPage({ viewport: { width: 1366, height: 768 }, reducedMotion: 'reduce' });
+    try {
+      await navigate(page, base + route);
+      await page.waitForSelector('cad-nav[data-ready]');
+      const outline = page.locator('.doc-rail a').first();
+      const layout = await outline.evaluate(link => {
+        const rect = element => element.getBoundingClientRect();
+        const article = rect(document.querySelector('.doc-main'));
+        const panel = document.querySelector('.cad-nav-panel');
+        const controls = rect(panel.querySelector('[data-nav-controls]'));
+        const bounds = rect(link);
+        const topicVisible = [...panel.querySelectorAll('.cad-nav-group a')].some(topic => {
+          const row = rect(topic);
+          return row.height > 0 && row.top >= controls.bottom && row.bottom <= Math.min(innerHeight, rect(panel).bottom);
+        });
+        return { articleWidth: article.width, topicVisible, outlineVisible: bounds.left >= article.right &&
+          bounds.height > 0 && bounds.top >= 0 && bounds.bottom <= innerHeight &&
+          link.contains(document.elementFromPoint(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2)),
+          overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth };
+      });
+      if (!layout.topicVisible || !layout.outlineVisible || Math.abs(layout.articleWidth - 880) > 1 || layout.overflow > 0) {
+        problems.push(`1366px ${route}: topic tree, article and outline must fit together on arrival: ${JSON.stringify(layout)}`);
+      } else {
+        const hash = await outline.evaluate(link => link.hash);
+        await outline.click();
+        await page.waitForFunction(hash => location.hash === hash && document.getElementById(decodeURIComponent(hash.slice(1))), hash);
+      }
+    } finally { await page.close(); }
+  }
+  // A long response can paint the whole article before the trailing outline arrives.
+  // Compare the partial and complete documents with the same CSS and no client script.
+  for (const [width, route] of [[1366, '/docs/toolkit'], [1366, '/research/process-profiles'],
+    [1440, '/docs/toolkit'], [1600, '/references/laser-cutting']]) {
+    const page = await browser.newPage({ viewport: { width, height: 800 }, javaScriptEnabled: false });
+    const url = base + route;
+    const columns = () => page.locator('main.wrap, .doc-layout > cad-nav, .doc-main').evaluateAll(nodes =>
+      nodes.map(node => { const { x, width } = node.getBoundingClientRect(); return [x, width]; }));
+    try {
+      await page.route(url, async intercepted => {
+        const response = await intercepted.fetch();
+        const html = await response.text();
+        const rail = html.indexOf('<nav class="doc-rail"');
+        await intercepted.fulfill({ response, body: rail < 0 ? html : html.slice(0, rail) });
+      });
+      await navigate(page, url);
+      const before = await columns();
+      const partialRails = await page.locator('.doc-rail').count();
+      await page.unroute(url);
+      await navigate(page, url);
+      const after = await columns();
+      if (partialRails !== 0 || await page.locator('.doc-rail').count() !== 1 || before.length !== 3 ||
+          JSON.stringify(before) !== JSON.stringify(after)) {
+        problems.push(`${width}px ${route}: columns moved when the outline arrived: ${JSON.stringify({ before, after })}`);
+      }
+    } finally { await page.close(); }
+  }
+  // The wider shell from 1400 px is the docs pages' only: at 1440 px the other pages keep dev's 1240 px shell (#807
+  // review), and a docs page with no outline has no empty column (the article keeps the room). Planted control: the
+  // widening unscoped, as first written, is reported.
+  const shell = page => page.evaluate(() => Math.round(document.querySelector('main.wrap, main .wrap, .site-header .wrap').getBoundingClientRect().width));
+  for (const route of ['/', '/explore', '/toolkit', '/references/laser-cutting']) {
+    const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+    try {
+      await navigate(page, base + route);
+      const width = await shell(page);
+      if (width !== 1240) problems.push(`1440px ${route}: the page shell is ${width} px, not the 1240 px it is below 1500 px`);
+      if (route === '/') {
+        await page.addStyleTag({ content: '@media(min-width:1400px){.wrap{width:calc(100% - clamp(96px,6vw,192px))}}' });
+        if (await shell(page) === 1240) problems.push('planted control: an unscoped wider shell at 1440 px was not reported, so the shell check tests nothing');
+      }
+    } finally { await page.close(); }
+  }
+  {
+    const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+    try {
+      await navigate(page, base + '/docs/share-badge');
+      const m = await page.evaluate(() => ({ rail: !!document.querySelector('.doc-rail'), main: document.querySelector('.doc-main').getBoundingClientRect().right,
+        layout: document.querySelector('.doc-layout').getBoundingClientRect().right }));
+      if (m.rail) problems.push('1440px /docs/share-badge: it has an outline now; pick a docs page without one for this check');
+      else if (m.layout - m.main > 2) problems.push(`1440px /docs/share-badge: no outline, yet ${Math.round(m.layout - m.main)} px of empty column beside the article`);
+    } finally { await page.close(); }
+  }
   return problems;
 }

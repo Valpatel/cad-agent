@@ -67,18 +67,118 @@ export async function toolkitBrowserChecks({open,fail}) {
   try {
     if(await page.locator('[data-scada-card]').count()<239||await page.locator('[data-scada-preview]:visible').count())fail('Toolkit native assets','gallery fallback lost the symbols or exposes inert buttons');
   } finally {await done();}
-  const retry=await open('/toolkit/scada/elements?q=pump&kind=equipment');
+  await previewRetryCheck(open, fail);
+  await rendererRecoveryCheck(open);
+  await previewReopenCheck(open);
+}
+
+/** A failed module or one of its static imports can stay failed for the lifetime of a document. */
+async function rendererRecoveryCheck(open) {
+  for (const [file, failures] of [['index.mjs', 1], ['components.mjs', 2]]) {
+    const path = '/kit/scada/ui/src/symbols/' + file;
+    const {page, done} = await open('/toolkit/scada/elements?q=pump&kind=equipment#equipment--pump', {expected503:path});
+    try {
+      const url = page.url(), historyLength = await page.evaluate(() => {
+        history.replaceState({...history.state, readerBookmark:'pump check'}, '');
+        return history.length;
+      });
+      const card = page.locator('#equipment--pump'), button = card.getByRole('button', {name:'Try states'});
+      const dialog = page.locator('.toolkit-preview');
+      const error = dialog.locator('[data-scada-preview-error]');
+      const symbol = dialog.locator('[data-scada-preview-art] [data-scada-type="pump"]');
+      let requests = 0;
+      await page.route(url => url.pathname === path, route => {
+        if (++requests <= failures) return route.fulfill({
+          status:503, contentType:'text/plain', headers:{'Cache-Control':'no-store'}, body:'Temporarily unavailable'
+        });
+        return route.continue();
+      });
+      for (let attempt = 1; attempt <= failures; attempt++) {
+        const unavailable = page.waitForResponse(response => new URL(response.url()).pathname === path && response.status() === 503);
+        await Promise.all([unavailable, button.click()]);
+        await expect(dialog).toBeVisible();
+        await expect(error).toContainText('could not load');
+        await page.waitForLoadState('networkidle');
+        expect(requests, 'each user attempt makes one request for the unavailable module').toBe(attempt);
+        await expect(symbol).toHaveCount(0);
+        await page.keyboard.press('Escape');
+        await expect(dialog).not.toBeVisible();
+        await expect(card.getByRole('link', {name:'SVG asset'})).toBeVisible();
+      }
+      const healthy = page.waitForResponse(response => new URL(response.url()).pathname === path && response.status() === 200);
+      await Promise.all([healthy, button.click()]);
+      await expect(symbol).toBeVisible();
+      await dialog.locator('[name="running"]').uncheck();
+      await expect(symbol).toHaveAttribute('data-running', 'false');
+      expect(requests).toBe(failures + 1);
+      expect(page.url()).toBe(url);
+      expect(await page.evaluate(() => history.length)).toBe(historyLength);
+      expect(await page.evaluate(() => history.state.readerBookmark)).toBe('pump check');
+      await page.keyboard.press('Escape');
+      await expect(page.getByRole('searchbox')).toHaveValue('pump');
+    } finally {await done();}
+  }
+}
+
+async function previewRetryCheck(open, fail) {
+  const retry = await open('/toolkit/scada/elements?q=pump&kind=equipment', {trace:true});
+  const requests = new Map();
+  retry.page.on('request', request => {
+    const path = new URL(request.url()).pathname;
+    if (path === '/toolkit/scada/catalog.json' || path.startsWith('/kit/scada/ui/') && path.endsWith('.mjs'))
+      requests.set(request, {path, started:Date.now()});
+  });
+  retry.page.on('response', response => {
+    const entry = requests.get(response.request());
+    if (entry) entry.status = response.status();
+  });
+  retry.page.on('requestfinished', request => {
+    const entry = requests.get(request);
+    if (entry) entry.finished = Date.now();
+  });
+  retry.page.on('requestfailed', request => {
+    const entry = requests.get(request);
+    if (entry) entry.failure = request.failure()?.errorText;
+  });
   try {
     await retry.page.route('**/toolkit/scada/catalog.json',route=>route.fulfill({contentType:'application/json',body:'{"schema":"unsupported","elements":[]}'}));
+    const documentStart = await retry.page.evaluate(() => performance.timeOrigin);
     const pump=retry.page.locator('#equipment--pump'),button=pump.getByRole('button',{name:'Try states'});
     await button.click();await retry.page.locator('[data-scada-preview-error]').filter({hasText:'could not load'}).waitFor();
     await retry.page.keyboard.press('Escape');
     if(!await pump.getByRole('link',{name:'SVG asset'}).isVisible())fail('Toolkit preview failure','native asset link disappeared');
     await retry.page.unroute('**/toolkit/scada/catalog.json');
     await button.click();await retry.page.locator('[data-scada-preview-art] [data-scada-type="pump"]').waitFor();
+    if (await retry.page.evaluate(() => performance.timeOrigin) !== documentStart)
+      fail('Toolkit preview retry', 'recoverable metadata failure reloaded the document');
     await retry.page.keyboard.press('Escape');
+  } catch (error) {
+    // Freeze transport state at the deadline; read completed metadata bodies only while collecting evidence.
+    const atFailure = [...requests].map(([request, entry]) => [request, {...entry}]);
+    const readMetadata = () => Promise.all(atFailure.map(async ([request, entry]) => {
+      if (entry.path !== '/toolkit/scada/catalog.json' || !entry.finished) return;
+      try {
+        const response = await request.response();
+        const model = await response.json();
+        entry.schema = model.schema;
+        entry.pump = Array.isArray(model.elements) && model.elements.some(element => element.id === 'equipment--pump');
+      } catch (e) { entry.bodyError = String(e); }
+    }));
+    const inspectPage = () => {
+      const dialog = document.querySelector('.toolkit-preview');
+      const art = dialog.querySelector('[data-scada-preview-art]');
+      return {
+        open:dialog.open, title:dialog.querySelector('#scada-preview-title').textContent,
+        error:dialog.querySelector('[data-scada-preview-error]').textContent,
+        art:art.textContent.trim().slice(0, 200), symbol:art.querySelector('[data-scada-type]')?.dataset.scadaType,
+        fields:[...dialog.querySelectorAll('[data-scada-state-fields] [name]')].map(field => field.name),
+        focus:document.activeElement?.closest('[data-scada-preview]')?.dataset.scadaPreview || document.activeElement?.localName
+      };
+    };
+    await retry.evidence('Toolkit pump preview retry', error, {requests:atFailure.map(([, entry]) => entry), inspectPage, readMetadata})
+      .catch(e => console.error('Could not write pump retry evidence: ' + e.message));
+    throw error;
   } finally {await retry.done();}
-  await previewReopenCheck(open);
 }
 
 /** Delay the first selection's metadata until its close event has reached the reopened dialog. */

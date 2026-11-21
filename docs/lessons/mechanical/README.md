@@ -19,6 +19,6 @@ flowchart TD
 | [design-rules.md](design-rules.md) | Strength, printability, landings, reliefs, windows, grilles, shell |
 | [fasteners-and-assembly-access.md](fasteners-and-assembly-access.md) | Tool access, assembly order, screw length, inserts, drive screws |
 | [enclosure-features.md](enclosure-features.md) | Antennas, service pins, storage trays, mount plate, cap, power budget |
-| [printing-without-supports.md](printing-without-supports.md) | Teardrops, 45° cutter ends, print orientation, shells printed upside down, tangent faces, slicer warnings, slicing early |
+| [printing-without-supports.md](printing-without-supports.md) | Teardrops, 45° cutter ends, print orientation, shells printed upside down, tangent faces, slicer warnings, slicing early; several colours: inlay pockets, the wipe tower, sealed voids |
 
 Each lesson follows the [lesson format](../README.md#lesson-format): a rule, the incident, a check and its source. Back to [all lessons](../README.md).

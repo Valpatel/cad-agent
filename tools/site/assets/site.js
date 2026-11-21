@@ -56,13 +56,56 @@ for (const img of document.querySelectorAll('img[data-motion-src]')) {
 // A link to a closed <details> (or to something inside one), such as /docs/agent-workflow#install-unix, opens it on
 // arrival and when the address's #part changes, so the reader lands on the command, not on a closed toggle (#804).
 // Without script the browser still scrolls to the block's summary; one click opens it.
-const openTarget = () => {
+// On Back, Forward or a reload the reader goes back where they left, not to the block (#807: 434 px off on a phone).
+// Engines differ: Chromium restores the scroll before or after this script runs, WebKit lands on the # part again. So
+// while such a page is read, its place is kept in its own history entry (history.state, which a fresh link to it does
+// not have). Back there, the block opens without scroll anchoring and the page goes to that place, and keeps it
+// through the engine's own restore until the reader scrolls, taps or types, the # part changes, or 1.5 s pass.
+const reloadKey = 'cad-agent:reader-reload';
+let saved = history.state?.cadReaderY;
+// Reload can copy the entry before pagehide flushes the last scroll. The outgoing document leaves its final
+// position for this one reload in the same tab. History continues to own Back, Forward and direct links.
+try {
+  const departure = JSON.parse(sessionStorage.getItem(reloadKey));
+  sessionStorage.removeItem(reloadKey);
+  if (performance.getEntriesByType('navigation')[0]?.type === 'reload' &&
+      departure?.url === location.href && Number.isFinite(departure.y)) saved = departure.y;
+} catch { /* The entry's saved position is available when session storage is disabled. */ }
+let keeping = false;
+const keepPlace = () => {
+  if (keeping) return;
+  keeping = true;
+  let timer = 0;
+  const save = () => { try { history.replaceState({ ...history.state, cadReaderY: scrollY }, ''); } catch { /* rate limit */ } };
+  addEventListener('scroll', () => { clearTimeout(timer); timer = setTimeout(save, 200); }, { passive: true });
+  addEventListener('pagehide', () => {
+    save();
+    try { sessionStorage.setItem(reloadKey, JSON.stringify({ url: location.href, y: scrollY })); }
+    catch { /* Keep the history entry when session storage is disabled. */ }
+  });
+  save();
+};
+const restorePlace = y => {
+  const put = () => scrollTo({ top: y, behavior: 'instant' }), until = performance.now() + 1500, at = location.hash;
+  let reader = false;
+  for (const name of ['wheel', 'touchstart', 'pointerdown', 'keydown']) addEventListener(name, () => { reader = true; }, { once: true, passive: true, capture: true });
+  // A new # part (a link, a script, the browser's Back to another # of this page) ends the hold, checked in the frame
+  // itself: a hashchange listener can run after a frame has already put the page back. Another script's scroll cannot
+  // be told from the engine's own restore, which is what the hold outlasts, so it still waits out the 1.5 s.
+  const hold = () => { if (reader || location.hash !== at || performance.now() > until) return; if (Math.abs(scrollY - y) > 1) put(); requestAnimationFrame(hold); };
+  put(); requestAnimationFrame(hold);
+};
+const openTarget = event => {
   let id = '';
   try { id = decodeURIComponent(location.hash.slice(1)); } catch { return; }
-  const target = id && document.getElementById(id);
-  if (!target) return;
+  const target = id ? document.getElementById(id) : null;
+  if (!target?.closest('details')) return;
+  keepPlace();
+  const restore = !event && typeof saved === 'number', root = document.documentElement, anchor = root.style.overflowAnchor;
+  if (restore) root.style.overflowAnchor = 'none';
   let opened = false;
   for (let d = target.closest('details'); d; d = d.parentElement?.closest('details')) if (!d.open) { d.open = true; opened = true; }
+  if (restore) { root.getBoundingClientRect(); root.style.overflowAnchor = anchor; restorePlace(saved); return; }
   // At once, as the browser lands on any other # address: the page's smooth scrolling would leave the reader mid-way.
   if (opened) target.scrollIntoView({ block: 'start', behavior: 'instant' });
 };

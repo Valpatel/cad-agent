@@ -4,64 +4,45 @@ The viewer fetches no runtime CDN resources. `file-viewer-sources.json` records 
 versions, upstream revisions, npm package integrity and SHA-256 hashes of the
 vendored files. No project-specific CAD models are bundled here.
 
-## STEP: occt-import-js 0.0.23 and Open CASCADE Technology
+## STEP
 
-- Importer source and build instructions: https://github.com/kovacsv/occt-import-js/tree/c2148e54b456b571238d35cac037d304053d64b2
-- Exact importer source archive: https://github.com/kovacsv/occt-import-js/archive/c2148e54b456b571238d35cac037d304053d64b2.tar.gz
-- npm distribution: https://registry.npmjs.org/occt-import-js/-/occt-import-js-0.0.23.tgz
-- Its OCCT submodule is revision `d2abb6d844231cb8f29be6894440874a4700e4a5`:
-  https://github.com/Open-Cascade-SAS/OCCT/tree/d2abb6d844231cb8f29be6894440874a4700e4a5
-- Exact OCCT source archive: https://github.com/Open-Cascade-SAS/OCCT/archive/d2abb6d844231cb8f29be6894440874a4700e4a5.tar.gz
+The viewer uses `@sunbox/occt-import-js` 0.0.29 and Open CASCADE Technology (OCCT) 8.0.0. A dedicated worker imports
+the ES module, loads its WebAssembly file from the same directory and tessellates the requested STEP bytes.
 
-The viewer pairs static JavaScript bindings built from these pinned sources with the original 0.0.23 npm WebAssembly binary.
-The receipt records the shipped hashes and the original npm distribution hashes. The importer is licensed under LGPL 2.1. OCCT is licensed under LGPL 2.1
-with its additional exception. Full texts are beside the binaries:
-`license.occt-import-js.txt`, `license.occt.txt`, `LICENSE_LGPL_21.txt`, and
-`OCCT_LGPL_EXCEPTION.txt`. Importer C++ sources, CMake configuration, submodule
-reference (`SUBMODULES.gitconfig`, a visible copy of upstream `.gitmodules`) and upstream build scripts are also supplied in `occt-import-js/source/`.
-The complete corresponding OCCT source is available from the exact archive above;
-it is not a runtime dependency and is not embedded into the static site's assets.
+- Importer release 0.0.29 and its build. [Release](https://github.com/SunboX/occt-import-js/releases/tag/0.0.29) · [Upstream build](https://github.com/SunboX/occt-import-js/actions/runs/36069746500)
+- Importer source, commit `ba1decadb3d19e4585d2c54deb2c4325f64b9ae9`. [Source archive](https://github.com/SunboX/occt-import-js/archive/ba1decadb3d19e4585d2c54deb2c4325f64b9ae9.tar.gz)
+- OCCT submodule, commit `d3056ef80c9668f395da40f5fd7be186cae4501f`, also tagged `V8_0_0` by Open CASCADE. [Submodule](https://github.com/SunboX/OCCT/tree/d3056ef80c9668f395da40f5fd7be186cae4501f) · [Complete source archive](https://github.com/Open-Cascade-SAS/OCCT/archive/d3056ef80c9668f395da40f5fd7be186cae4501f.tar.gz)
 
-The library runs in a separate, dedicated classic worker. Users may inspect,
-modify and replace it. To reproduce the Linux build, copy the bundled `occt-import-js/source/`
-directory to a build workspace. Check out the OCCT revision above into its `occt/` subdirectory.
-Install and activate Emscripten 3.1.69 with emsdk at `a36df02dc438e8b02f91122a4c62eeecb6784272`.
-The Linux build uses CMake 3.31.6 and Ninja (Python distribution 1.11.1.4). With the SDK environment active, run these commands from the copied source directory.
+The importer is licensed under LGPL 2.1 (`license.occt-import-js.txt`). OCCT is licensed under LGPL 2.1
+(`LICENSE_LGPL_21.txt`, also distributed as `license.occt.txt`) with the Open CASCADE exception
+(`OCCT_LGPL_EXCEPTION.txt`). These texts accompany the reader. The wheel includes the importer's C++ sources,
+CMake configuration and build scripts under `occt-import-js/source/`.
+`SUBMODULES.gitconfig` is the visible copy of upstream's `.gitmodules`.
+
+### Build the browser reader
+
+Copy `occt-import-js/source/` into a build workspace and extract the exact OCCT source above into its `occt/` subdirectory.
+Activate Emscripten 3.1.69 with emsdk commit `a36df02dc438e8b02f91122a4c62eeecb6784272`. The recorded
+Linux build uses CMake 3.31.6 and GNU Make 4.4.1. From the copied source root run
 
 ```sh
 source_dir="$(pwd -P)"
-emcmake cmake -S "$source_dir" -B build -G Ninja -DCMAKE_BUILD_TYPE=Release \
+emcmake cmake -S "$source_dir" -B build -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release \
   "-DCMAKE_C_FLAGS=-ffile-prefix-map=\"$source_dir\"=." \
   "-DCMAKE_CXX_FLAGS=-ffile-prefix-map=\"$source_dir\"=." \
   -DCMAKE_EXE_LINKER_FLAGS=-sDYNAMIC_EXECUTION=0
 cmake --build build --target OcctImportJS
 ```
 
-The JavaScript delivered by the viewer is `build/Release/occt-import-js.js`. For the native reader, download the
-pinned npm archive linked above as `occt-import-js-0.0.23.tgz`. Assemble and verify the distributed pair:
+Both `build/Release/occt-import-js.js` and `build/Release/occt-import-js.wasm` come from this link step. Static bindings
+let the worker import the module under the site's script policy. `file-viewer-sources.json` records the hashes of both
+distributed files and the inputs used for this build. The public npm archive and the GitHub release for 0.0.29 contain
+different WASM bytes. The receipt records the original hashes for each pair separately. A second link from the same
+compiled objects produced identical JavaScript and WebAssembly in another output directory.
 
-```sh
-echo 'eaab9ca7bf02799360d8fc70468dc8bf78eb2073c3fafb1ff982006e558fc1f3  occt-import-js-0.0.23.tgz' | sha256sum -c -
-mkdir -p viewer-runtime
-cp build/Release/occt-import-js.js viewer-runtime/
-tar -xOf occt-import-js-0.0.23.tgz package/dist/occt-import-js.wasm > viewer-runtime/occt-import-js.wasm
-(cd viewer-runtime && echo 'a1e2cbdd350cef254b52e024f8e6376da4efea495933025fbab3162cba20d7a2  occt-import-js.js' | sha256sum -c -)
-(cd viewer-runtime && echo '33391fc9d94ea5c869a6718488bf0a9a464222bac9bdc764dfe1690cef281952  occt-import-js.wasm' | sha256sum -c -)
-```
-
-The static bindings let the worker use the published script policy. They retain the upstream JavaScript-to-WASM
-import and export mappings. Two builds in different directories produced identical JavaScript. The compiler can
-order native exception-handling instructions differently on successive compilations of the same input. The
-distributed native reader therefore comes directly from the verified archive. Its 7,604,031 bytes fit Cloudflare's 25 MB per-asset limit.
-
-To install a modified reader, replace the JavaScript and WASM together. Preserve the `occtimportjs` factory and
-`ReadStepFile` interface, or adapt `file-step-worker.js` to the replacement's API. No application relink, account,
-remote service or proprietary decoder is required. Serve JavaScript and `application/wasm` with their correct MIME
-types and update the deployment cache. The worker locates the WASM beside the JS.
-
-The application does not restrict debugging or reverse engineering needed to
-modify these libraries. These source and replacement details apply to this pinned
-build; an upgraded binary requires a fresh provenance and license review.
+To replace the reader, serve the two files together as JavaScript and `application/wasm` and update the deployment
+cache. The worker uses the module's default factory and its `ReadStepFile` interface. Users may modify, debug,
+reverse-engineer and replace the library independently of the application.
 
 ## STL and 3MF: Three.js r160
 

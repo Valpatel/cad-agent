@@ -2,6 +2,7 @@
 import assert from 'node:assert/strict';
 import {mkdir,writeFile} from 'node:fs/promises';
 import {chromium,webkit} from '../site/npm-context.mjs';
+import {bounded} from '../site/navigation.mjs';
 import {serveWebkit} from './webkit-server.mjs';
 
 const pack=(dtype,data)=>({dtype,b64:Buffer.from(new ({float32:Float32Array,uint32:Uint32Array,uint8:Uint8Array}[dtype])(data).buffer).toString('base64')});
@@ -26,11 +27,198 @@ async function rethrowWithScreenshot(original, label, takeScreenshot) {
   throw original;
 }
 
+// Stream milestones from Node so a stuck renderer or a cancelled job still leaves a partial log.
+const engine=process.env.PLAYWRIGHT_BROWSER==='webkit'?webkit:chromium;
+function progress(theme, step, detail) {
+  console.log('FEA progress', JSON.stringify({ engine: engine.name(), theme, step, detail }));
+}
+
+const readyMessage = 'FEA fixture: body data-ready set';
+const errorPrefix = 'FEA fixture initialization error: ';
+const timeoutMs = 30_000;
+
+async function openFixture(page, siteUrl, file, mark) {
+  const url = new URL(file, siteUrl).href;
+  // Buffer an early result across navigation. A failed navigation cannot leave a rejected promise behind.
+  const startup = Promise.withResolvers();
+  page.on('request', request => {
+    if (request.url() === url) mark('fixture requested', file);
+  });
+  page.on('response', response => {
+    if (response.url() === url) mark('fixture response', response.status());
+  });
+  page.on('requestfinished', request => {
+    if (request.url() === url) mark('fixture body received', file);
+  });
+  page.on('requestfailed', request => {
+    if (request.url() === url) mark('fixture request failed', request.failure()?.errorText);
+  });
+  page.on('pageerror', error => mark('page error', error.message));
+  page.once('crash', () => {
+    mark('page crashed');
+    startup.resolve('FEA fixture page crashed during initialization');
+  });
+  page.once('close', () => startup.resolve('FEA fixture page closed during initialization'));
+  page.on('console', message => {
+    if (message.type() !== 'debug') return;
+    const text = message.text();
+    if (text === readyMessage) {
+      mark('ready attribute set');
+      startup.resolve();
+    } else if (text.startsWith(errorPrefix)) {
+      startup.resolve(text.slice(errorPrefix.length));
+    }
+  });
+  await page.addInitScript(({ readyMessage, errorPrefix }) => {
+    const observer = new MutationObserver(() => {
+      const failure = document.querySelector('#stage-overlay .hud-card .hud-note')?.textContent;
+      if (failure?.startsWith('Could not load ')) console.debug(errorPrefix + failure);
+      else if (document.body?.dataset.ready === '1') console.debug(readyMessage);
+      else return;
+      observer.disconnect();
+    });
+    observer.observe(document, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ['data-ready'] });
+  }, { readyMessage, errorPrefix });
+  mark('navigating', file);
+  await page.goto(siteUrl+'/kit/fea/fea.html?case='+file+'&nav=0&title=FEA%20fixture');
+  mark('waiting for ready');
+  const failure = await bounded(() => startup.promise, timeoutMs, 'FEA initialization');
+  if (failure) throw new Error(failure);
+  mark('ready');
+}
+
+async function fitAndWaitForDraw(page, mark) {
+  mark('fitting top view');
+  // A ready flag means initialization finished. Require a new renderer.render() after the camera fit.
+  await bounded(() => page.evaluate(() => {
+    const { stage, fit } = window.__fea;
+    const before = stage.draws;
+    fit('top');
+    return new Promise(resolve => {
+      function checkDraw() {
+        if (stage.draws > before) resolve();
+        else requestAnimationFrame(checkDraw);
+      }
+      checkDraw();
+    });
+  }), timeoutMs, 'post-fit FEA surface draw');
+  mark('top view drawn');
+}
+
+async function freezeFrames(page) {
+  // Playwright's injected polling script can bypass its simulated clock. Withhold native RAF before page code loads.
+  await page.addInitScript(() => {
+    const request = window.requestAnimationFrame.bind(window);
+    const cancel = window.cancelAnimationFrame.bind(window);
+    const callbacks = new Map();
+    let id = 0;
+    window.requestAnimationFrame = callback => {
+      callbacks.set(++id, callback);
+      return id;
+    };
+    window.cancelAnimationFrame = handle => callbacks.delete(handle);
+    window.resumeFeaFrames = () => {
+      window.requestAnimationFrame = request;
+      window.cancelAnimationFrame = cancel;
+      for (const callback of callbacks.values()) request(callback);
+      callbacks.clear();
+      return new Promise(resolve => request(resolve));
+    };
+  });
+}
+
+async function checkStalledInitialization(browser, siteUrl) {
+  const page = await browser.newPage();
+  const events = [];
+  try {
+    await freezeFrames(page);
+    await assert.rejects(openFixture(page, siteUrl, '/stalled-fixture.json', (step, detail) => events.push([step, detail])),
+      /FEA initialization exceeded 30000 ms/);
+    assert.ok(events.some(([step, status]) => step === 'fixture response' && status === 200));
+    assert.ok(!events.some(([step]) => step === 'fixture body received' || step === 'ready attribute set'));
+  } finally {
+    await page.close();
+  }
+}
+
+async function checkFailedInitialization(browser, siteUrl) {
+  const page = await browser.newPage();
+  const events = [];
+  const captureError = new Error('planted screenshot failure');
+  try {
+    await freezeFrames(page);
+    await assert.rejects(async () => {
+      try {
+        await openFixture(page, siteUrl, '/missing-fixture.json', (step, detail) => events.push([step, detail]));
+      } catch (error) {
+        await rethrowWithScreenshot(error, 'missing fixture', async () => { throw captureError; });
+      }
+    }, error => error instanceof AggregateError && error.cause === error.errors[0] &&
+      error.cause.message.includes('Could not load /missing-fixture.json: 404') && error.errors[1] === captureError);
+    assert.ok(events.some(([step, file]) => step === 'fixture requested' && file === '/missing-fixture.json'));
+    assert.ok(events.some(([step, status]) => step === 'fixture response' && status === 404));
+    assert.ok(!events.some(([step]) => step === 'ready attribute set'));
+  } finally {
+    await page.close();
+  }
+}
+
+async function checkReadyBeforeFrame(browser, siteUrl, releaseBody) {
+  const page = await browser.newPage();
+  const file = '/held-fixture.json', url = siteUrl + file;
+  const events = [];
+  try {
+    await freezeFrames(page);
+    const headers = page.waitForResponse(url, { timeout: timeoutMs });
+    const waiting = Promise.withResolvers();
+    await Promise.all([
+      openFixture(page, siteUrl, file, (step, detail) => {
+        events.push([step, detail]);
+        if (step === 'waiting for ready') waiting.resolve();
+      }),
+      (async () => {
+        assert.equal((await headers).status(), 200);
+        await bounded(() => waiting.promise, timeoutMs, 'control to begin waiting on the held fixture');
+        assert.equal(await page.evaluate(() => document.body.dataset.ready), undefined);
+        assert.ok(!events.some(([step]) => step === 'fixture body received'), 'the server is still holding the body');
+        assert.ok(!events.some(([step]) => step === 'ready attribute set'));
+        const body = page.waitForEvent('requestfinished', { predicate: request => request.url() === url, timeout: timeoutMs });
+        releaseBody();
+        await body;
+      })(),
+    ]);
+    assert.ok(events.some(([step, seen]) => step === 'fixture body received' && seen === file));
+    assert.ok(events.some(([step]) => step === 'ready attribute set'));
+    const draws = () => page.evaluate(() => window.__fea.stage.draws);
+    assert.equal(await page.evaluate(() => window.__fea.stage.frames), 0, 'startup must finish before the first frame');
+    await assert.rejects(fitAndWaitForDraw(page, () => {}), /post-fit FEA surface draw exceeded 30000 ms/);
+    assert.equal(await draws(), 0, 'a ready flag cannot pass the surface check with frames withheld');
+    await bounded(() => page.evaluate(() => window.resumeFeaFrames()), timeoutMs, 'control stage to resume frames');
+    assert.ok(await draws() > 0, 'the mounted stage must draw after frames resume');
+  } finally {
+    releaseBody();
+    await page.close();
+  }
+}
+
+progress(null, 'starting fixture server');
+const heldBody = Promise.withResolvers();
 const site=await serveWebkit(new Map([
   ['/fixture.json',(_req,res)=>res.writeHead(200,{'Content-Type':'application/json'}).end(JSON.stringify(fixture))],
+  ['/stalled-fixture.json', (_req, res) => {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.write('{');
+  }],
+  ['/held-fixture.json', async (_req, res) => {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    const body = JSON.stringify(fixture);
+    res.write(body.slice(0, 1));
+    await heldBody.promise;
+    res.end(body.slice(1));
+  }],
   ['/favicon.ico',(_req,res)=>res.writeHead(204).end()],
 ]));
-const engine=process.env.PLAYWRIGHT_BROWSER==='webkit'?webkit:chromium;
+progress(null, 'launching browser');
 const browser=await engine.launch(engine===chromium?{headless:true,channel:process.env.PLAYWRIGHT_CHANNEL==='chromium'?'chromium':'chrome',executablePath:process.env.CHROMIUM_EXECUTABLE}:{headless:true});
 const out=process.env.TEST_OUTPUT||'/tmp/cad-agent-fea';await mkdir(out,{recursive:true});
 const cases=[],errors=[];
@@ -42,14 +230,18 @@ try{
       error.errors[0] === primary && error.errors[1] === secondary);
   cases.push({ failureEvidence: 'original preserved with a successful or failed screenshot' });
   for(const theme of ['light','dark']){
-    const context=await browser.newContext({viewport:{width:1366,height:900},colorScheme:theme}),page=await context.newPage();
+    const mark = (step, detail) => progress(theme, step, detail);
+    mark('creating context');
+    const context=await browser.newContext({viewport:{width:1366,height:900},colorScheme:theme});
+    mark('creating page');
+    const page=await context.newPage();
     page.on('pageerror',error=>errors.push(error.message));
     try{
-      await page.goto(site.url+'/kit/fea/fea.html?case=/fixture.json&nav=0&title=FEA%20fixture');
-      await page.waitForFunction(()=>document.body.dataset.ready==='1');
-      await page.evaluate(()=>window.__fea.fit('top'));
+      await openFixture(page, site.url, '/fixture.json', mark);
+      await fitAndWaitForDraw(page, mark);
       // Finish a real paint before the native pointer enters the projected surface.
-      await page.screenshot({path:out+'/'+engine.name()+'-'+theme+'-ready.png'});
+      mark('capturing ready surface');
+      await bounded(() => page.screenshot({ path: `${out}/${engine.name()}-${theme}-ready.png`, timeout: timeoutMs }), timeoutMs, 'FEA ready screenshot');
       const hover=async()=>{
         const point=await page.evaluate(async()=>{
           const THREE=await import('/kit/vendor/three/three.module.min.js'),v=window.__fea;v.stage.root.updateMatrixWorld(true);v.stage.camera.updateMatrixWorld(true);
@@ -72,6 +264,7 @@ try{
       const header=await paint('#topbar h1','#topbar'),panel=await paint('#panel');readable(header);
       assert.equal(panel.background,theme==='light'?'rgb(255, 255, 255)':'rgb(14, 14, 20)');
       for(const state of ['design','overload']){
+        mark('checking surface', state);
         if(state==='overload'){
           await page.getByRole('button',{name:'Max',exact:true}).click();
           await page.waitForFunction(()=>document.querySelector('.fea-status').classList.contains('over'));
@@ -96,11 +289,31 @@ try{
       const label = `${engine.name()} ${theme}`;
       // A slow or cancelled diagnostic capture must not hide the first failing assertion or browser action.
       console.error(`FEA ${label} failed`, error);
-      await rethrowWithScreenshot(error, label, () => page.screenshot({ path: `${out}/${engine.name()}-${theme}-failure.png` }));
+      await rethrowWithScreenshot(error, label, () => bounded(
+        () => page.screenshot({ path: `${out}/${engine.name()}-${theme}-failure.png`, timeout: timeoutMs }), timeoutMs, 'FEA failure screenshot'));
     }
-    finally{await context.close();}
+    finally{
+      mark('closing context');
+      await context.close();
+    }
   }
   assert.deepEqual(errors,[]);
+  progress(null, 'checking stalled initialization and withheld surface draw');
+  await Promise.all([
+    checkStalledInitialization(browser, site.url),
+    checkReadyBeforeFrame(browser, site.url, heldBody.resolve),
+  ]);
+  cases.push({ stalledInitialization: 'an unfinished fixture body fails at the 30-second Node deadline' });
+  cases.push({ deferredFrame: 'startup completes without frames, and a missing post-fit draw fails at the 30-second Node deadline' });
+  progress(null, 'checking failed initialization');
+  await checkFailedInitialization(browser, site.url);
+  cases.push({ failedInitialization: 'actual missing fixture retained before screenshot error' });
   await writeFile(out+'/'+engine.name()+'-report.json',JSON.stringify({passed:true,browser:await browser.version(),cases,errors},null,2));
   console.log(JSON.stringify({passed:true,engine:engine.name(),cases:cases.length,out}));
-}finally{await browser.close();await site.close();}
+}finally{
+  progress(null, 'closing browser');
+  try { await browser.close(); } finally {
+    progress(null, 'closing fixture server');
+    await site.close();
+  }
+}

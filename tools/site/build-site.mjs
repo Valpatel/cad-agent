@@ -205,7 +205,7 @@ const THEME_BUTTON = '<button type="button" class="theme-toggle" aria-pressed="f
   '<svg class="moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg></button>';
 // A shared link shows a card (#804): the page's own title, description and address, and the one owned picture.
 // `missing` (the 404 page) has no address of its own: its feedback link names the address the reader asked for (web/site.js).
-function frame({ title, fullTitle, body, md, description = LEDE, current = '', page = 'doc', css = [], updated = committed, url = current || '/', missing = false }) {
+function frame({ title, fullTitle, body, md, description = LEDE, current = '', page = 'doc', css = [], updated = committed, url = current || '/', missing = false, hasDocOutline = false }) {
   const pageTitle = fullTitle || (title === TAGLINE ? 'cad-agent · ' + TAGLINE : title + ' · cad-agent');
   // Cloudflare's documented region guard preserves package@version code literals without changing zone settings,
   // compression or CSP. Keep the guard outside the authored elements; verify actual hosted bytes after release.
@@ -215,7 +215,7 @@ function frame({ title, fullTitle, body, md, description = LEDE, current = '', p
 <script src="/kit/ui/theme.js"></script><link rel="icon" href="/web/icon.svg"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><link rel="preload" href="/kit/vendor/fonts/inter.woff2" as="font" type="font/woff2" crossorigin><link rel="preload" href="/kit/vendor/fonts/jetbrains-mono.woff2" as="font" type="font/woff2" crossorigin><link rel="stylesheet" href="/web/site.css"><link rel="stylesheet" href="/kit/documents/diagrams.css">${css.map(c => `<link rel="stylesheet" href="${c}">`).join('')}${kitDemos(body)}
 ${md ? `<link rel="alternate" type="text/markdown" href="${esc(md)}" title="Markdown for agents">` : ''}
 <link rel="alternate" type="text/plain" href="/llms.txt" title="llms.txt"></head>
-<body class="${page}-page"><!--email_off--><a class="skip-link" href="#main:content">Skip to content</a><header class="site-header"><div class="wrap"><a class="wordmark" href="/"><img src="/web/icon.svg" alt="" width="34" height="34">cad-agent<b>.</b></a>
+<body class="${page}-page"${hasDocOutline ? ' data-doc-outline' : ''}><!--email_off--><a class="skip-link" href="#main:content">Skip to content</a><header class="site-header"><div class="wrap"><a class="wordmark" href="/"><img src="/web/icon.svg" alt="" width="34" height="34">cad-agent<b>.</b></a>
 <nav aria-label="Main">${NAV.map(([h, t, keep]) => `<a href="${h}"${keep ? ' data-keep' : ''}${h === current || (h === '/toolkit' && current.startsWith('/toolkit/')) ? ' aria-current="page"' : ''}>${t}</a>`).join('')}<a class="pill-link" href="${REPO}">GitHub ↗</a>${THEME_BUTTON}</nav></div></header>
 <main class="${page === 'landing' ? '' : 'wrap'} ${page === 'doc' ? 'doc' : ''}"${body.includes('id="main:content"') ? '' : ' id="main:content" tabindex="-1"'}>${current === '/catalog' || current.startsWith('/references') || current === '/docs/common-issues' || current === '/research/landscape' ? `<p class="discovery-context"><a href="/explore${current.startsWith('/references') ? '?kind=references' + (current.split('/')[2] ? '&amp;area=' + encodeURIComponent(current.split('/')[2]) : '') : current === '/docs/common-issues' ? '?kind=lessons' : current === '/research/landscape' ? '?kind=external' : ''}">← Explore all knowledge${current.startsWith('/references') ? ' · search sources across topics' : current === '/docs/common-issues' ? ' · search individual lessons and pitfalls' : ''}</a></p>` : ''}${body}</main>
 <footer class="site-footer"><div class="wrap"><p>Created by <a href="https://valpatel.com">Valpatel Software LLC</a>. Project-owned toolkit code, documentation and artwork use the <a href="${REPO}/blob/dev/LICENSE">MIT licence</a>. Every third-party tool keeps its own licence and credit. ${updated ? `Last updated <time datetime="${esc(updateTime(updated).datetime)}">${esc(updateTime(updated).label)}</time>.` : 'This page has uncommitted changes.'} Built from <a href="${REPO}/commit/${revision}">${esc(revisionLabel)}</a>.</p>
@@ -360,7 +360,7 @@ for (const p of allPages) {
     `<li class="h${h.level}"><a href="#${esc(encodeURIComponent(h.id))}">${h.text}</a></li>`).join('')}</ol>`;
   const nav = readerNav({areas:areaTree,pages,pageURL,current:pageURL(p.file),outlineHTML:outline('',true)});
   const rail = heads.length < 2 ? '' : `<nav class="doc-rail" aria-labelledby="rail-title"><p class="doc-rail-title" id="rail-title">On this page</p>${outline(' cad-nav-rail', false)}</nav>`;
-  docPages.push([dest, frame({ title: p.title, body: `<div class="doc-layout explore-reader">${nav}<div class="doc-main" id="main:content" tabindex="-1">${crumbs}<article class="prose">${html}</article>` + feedbackBox(p.title, pageURL(p.file), p.file) + `</div>${rail}</div>`, md: '/' + publicPath(p.file), description: p.summary, current: pageURL(p.file), updated: lastChange(p.file), css: ['/kit/documents/nav.css', '/web/catalog.css', '/web/discovery.css', ...(html.includes('class="ref-cite') ? ['/web/references.css'] : [])] })]);
+  docPages.push([dest, frame({ title: p.title, hasDocOutline: Boolean(rail), body: `<div class="doc-layout explore-reader">${nav}<div class="doc-main" id="main:content" tabindex="-1">${crumbs}<article class="prose">${html}</article>` + feedbackBox(p.title, pageURL(p.file), p.file) + `</div>${rail}</div>`, md: '/' + publicPath(p.file), description: p.summary, current: pageURL(p.file), updated: lastChange(p.file), css: ['/kit/documents/nav.css', '/web/catalog.css', '/web/discovery.css', ...(html.includes('class="ref-cite') ? ['/web/references.css'] : [])] })]);
   visuals.set(p.file, (html.match(VISUAL) || []).length);
   p.html = html;                                                      // the catalogue takes each page's first figure
   p.updated = lastChange(p.file);
@@ -430,7 +430,7 @@ const refsUpdated = WORKTREE && git('status', '--porcelain', '--', ...REF_SOURCE
 for (const p of refSite.pages) {
   const outline=articleOutline(p.body),rail=outline?`<nav class="doc-rail" aria-labelledby="rail-title"><p class="doc-rail-title" id="rail-title">On this page</p>${outline.replace('class="cad-nav-outline"','class="cad-nav-outline cad-nav-rail"')}</nav>`:'';
   await mkdir(path.dirname(path.join(out, p.file)), { recursive: true });
-  await writeFile(path.join(out, p.file), frame({ title: p.title, body: `<div class="doc-layout explore-reader">${readerNav({areas:areaTree,pages,pageURL,current:p.url,outlineHTML:outline})}<div class="doc-main" id="main:content" tabindex="-1">${p.body}</div>${rail}</div>`, md: '/' + p.md, description: p.description, current: p.url,
+  await writeFile(path.join(out, p.file), frame({ title: p.title, hasDocOutline: Boolean(rail), body: `<div class="doc-layout explore-reader">${readerNav({areas:areaTree,pages,pageURL,current:p.url,outlineHTML:outline})}<div class="doc-main" id="main:content" tabindex="-1">${p.body}</div>${rail}</div>`, md: '/' + p.md, description: p.description, current: p.url,
     page: 'references', css: ['/web/references.css','/kit/documents/nav.css','/web/catalog.css','/web/discovery.css'], updated: refsUpdated }));
   await writeFile(path.join(out, p.md), p.markdown);
 }
@@ -801,6 +801,7 @@ ${agentGuide}
 
 - [README](${ORIGIN}/README.md): what cad-agent is and how it grows
 - [Engineering toolkit](${ORIGIN}/toolkit.md): viewers, SCADA elements, simulations and build/review capabilities
+- Create a box with \`cad-agent init my-box\` and run \`cad-agent gates\` in it. [Try the starter box](${ORIGIN}/docs/gates#try-the-starter-box)
 - [SCADA elements](${ORIGIN}/toolkit/scada/elements.md): animated equipment, variants and editable visual states
 - [SCADA simulations](${ORIGIN}/toolkit/scada/simulations.md): target-owned process examples, including wastewater digestion
 - [Tools](${ORIGIN}/docs/toolkit.md): every command, the project contract and the Python API

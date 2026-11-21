@@ -70,27 +70,18 @@ The simulation modules and the site build use these at run time. None of their c
 | fflate (the ZIP reader the 3MF loader imports) | MIT | 0.8.3, from npm | `file-parsers/FFLATE-LICENSE.txt` |
 | Mermaid | MIT | 11.17.2 | `mermaid/LICENSE`; derived fixed-dependency build, complete emitted dependency licences in `mermaid/THIRD-PARTY-LICENSES.txt`, provenance in `mermaid/BUILD.json` |
 | linkedom | ISC | 0.18.12 | `linkedom/LICENSE` |
-| occt-import-js (Open CASCADE Technology compiled to WebAssembly) | LGPL-2.1 with the OCCT exception | 0.0.23 | `occt-import-js/` (four licence files; sources in `occt-import-js/source`) |
+| @sunbox/occt-import-js (Open CASCADE Technology compiled to WebAssembly) | Importer LGPL-2.1, OCCT LGPL-2.1 with the OCCT exception | 0.0.29 | `occt-import-js/` (four licence files; sources in `occt-import-js/source`) |
 | Inter | SIL Open Font License 1.1 | 4.001, variable, Latin subset from Google Fonts (sources in `fonts/SOURCE.json`) | `fonts/OFL-Inter.txt` |
 | JetBrains Mono | SIL Open Font License 1.1 | 2.211, variable, Latin subset from Google Fonts (sources in `fonts/SOURCE.json`) | `fonts/OFL-JetBrainsMono.txt` |
 
 <details>
-<summary>Retained STEP preview parser (maintenance checked 2026-11-20)</summary>
+<summary>STEP preview parser</summary>
 
-occt-import-js last pushed 2024-12-03; ongoing maintenance is unverified. The 0.0.23 parser uses importer
-commit `c2148e54b456b571238d35cac037d304053d64b2`, with OCCT source commit
-`d2abb6d844231cb8f29be6894440874a4700e4a5`, the four licence files and corresponding sources above. The
-`file-viewer-sources.json` receipt records the original npm integrity and distribution hashes, the build settings for the static JavaScript bindings,
-and every retained file hash. The native reader is byte-identical to the original npm WASM. The [rebuild instructions](../cadagent/webkit/vendor/FILE-VIEWER-NOTICES.md) use the same C++ sources.
-
-The actual loader permits same-origin STL, STEP and 3MF URLs, rejects redirects, caps a download at 128 MiB,
-and terminates its worker on cancellation or the 120-second parse deadline. Existing browser fixtures exercise
-real STEP readiness, unavailable-WASM retry, timeout and cancellation. These are compatibility/resource limits,
-not a security sandbox or proof against every malformed model; bundled native-code advisory coverage is incomplete.
-
-This accepts only the visible age warning for these recorded bytes. A new parser/version, changed archive,
-advisory or licence needs fresh review. If a security fix cannot be qualified, keep the original download/desktop
-CAD route and disable affected preview support rather than waive a known vulnerability or blindly upgrade.
+The viewer uses the SunboX fork of Viktor Kovács's importer at `ba1decadb3d19e4585d2c54deb2c4325f64b9ae9` and the official
+Open CASCADE Technology 8.0.0 revision `d3056ef80c9668f395da40f5fd7be186cae4501f`. The wheel includes the importer
+sources, build scripts and licenses. The file-viewer receipt records the shipped assets and source pins. The dedicated
+worker loads the same-origin JavaScript and WebAssembly files and can be terminated to cancel an import.
+[Build and replacement instructions](../cadagent/webkit/vendor/FILE-VIEWER-NOTICES.md) · [Upstream release](https://github.com/SunboX/occt-import-js/releases/tag/0.0.29)
 
 </details>
 
@@ -122,7 +113,7 @@ described wrongly here, please [tell us](https://github.com/Valpatel/cad-agent/i
 [VTK](https://vtk.org/), [OpenFOAM](https://www.openfoam.com/), [MuJoCo](https://github.com/google-deepmind/mujoco),
 [Optuna](https://github.com/optuna/optuna), [Bambu Studio](https://github.com/bambulab/BambuStudio); in the browser
 [three.js](https://github.com/mrdoob/three.js), [Mermaid](https://github.com/mermaid-js/mermaid),
-[occt-import-js](https://github.com/kovacsv/occt-import-js) by Viktor Kovács, [fflate](https://github.com/101arrowz/fflate),
+[occt-import-js](https://github.com/SunboX/occt-import-js) by Viktor Kovács and SunboX, [fflate](https://github.com/101arrowz/fflate),
 [linkedom](https://github.com/WebReflection/linkedom), and the [Inter](https://rsms.me/inter/) (Rasmus Andersson) and
 [JetBrains Mono](https://www.jetbrains.com/lp/mono/) (JetBrains) typefaces, both SIL OFL. Board checks read reports
 from [KiCad](https://www.kicad.org/)'s `kicad-cli`. OpenFOAM (GPL) and Bambu Studio (AGPL) run only as separate

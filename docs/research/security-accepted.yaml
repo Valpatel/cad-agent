@@ -98,20 +98,6 @@
   accepted: 2026-11-01
 
 - check: repo-stale
-  subject: webkit:occt-import-js
-  fp: 05fb9809cc9cad4c
-  reason: >-
-    The 0.0.23 reader retains the original npm WASM. Static JavaScript bindings were built with Emscripten
-    3.1.69 from importer c2148e54b456b571238d35cac037d304053d64b2 and OCCT d2abb6d844231cb8f29be6894440874a4700e4a5 (#828).
-    Two builds produced identical JavaScript. The receipt pins each shipped file, npm integrity and build inputs.
-    Both binding sets produced identical complete mesh data on the STEP block and pump manifold. The viewer renders
-    the manifold in Chromium and WebKit with the published policy. Upstream last pushed 2024-12-03 and ongoing
-    maintenance is unverified. The LGPL sources, exceptions, replacement route, same-origin download limits and
-    worker deadlines are documented. This acceptance is for upstream age on these exact files. Native advisory
-    coverage remains incomplete. A runtime change or advisory needs fresh review.
-  accepted: 2026-11-20
-
-- check: repo-stale
   subject: url:https://github.com/AutodeskAILab/JoinABLe
   fp: 2b3dd90bfb3d6816
   reason: >-
@@ -242,18 +228,6 @@
     Existing unmaintained calculator warning retained; manufacturer ratings and standards remain the basis.
     Retain this exact age warning with that disposition; maintenance beyond the recorded activity is unverified.
     This does not accept a new advisory, archive/owner/licence change or any future adoption.
-  accepted: 2026-11-07
-
-- check: repo-stale
-  subject: url:https://github.com/kovacsv/occt-import-js
-  fp: f54b684d7011e10a
-  reason: >-
-    Checked 2026-11-07: last push 2024-12-03; visible maintenance warning in
-    software/vendor/THIRD_PARTY_NOTICES.md. Visible age of the actual retained 0.0.23 runtime, whose separate
-    webkit finding binds package/version/file hashes and records fallback/qualification limits. No advisory,
-    licence or integrity failure is accepted here. Retain this exact age warning with that disposition;
-    maintenance beyond the recorded activity is unverified. This does not accept a new advisory,
-    archive/owner/licence change or any future adoption.
   accepted: 2026-11-07
 
 - check: repo-stale

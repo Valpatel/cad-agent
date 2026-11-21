@@ -28,7 +28,7 @@ flowchart TD
 | [host/](host/README.md) | Two real viewers, scoped interaction, cancellation and independent teardown |
 | `__init__.py` | Empty: makes the folder a package, so a test here may share a file name with one in another folder |
 | `webkit-diagrams-browser.mjs` | Real diagram lifecycle/themes/math, hostile labels, and advisory boundaries on hash-bound emitted sanitizer/math inputs |
-| `webkit-fea-browser.mjs` | Actual projected-surface hover, shared tooltip/marker/readout contrast, normal and overload states, a rejected mixed-palette control in both engines, and preservation of the first failure when a diagnostic screenshot fails |
+| `webkit-fea-browser.mjs` | Actual projected-surface hover, shared tooltip/marker/readout contrast, normal and overload states, a rejected mixed-palette control in both engines, a 30-second Node deadline for initialization with frames withheld, a required post-fit render before the ready screenshot, and preservation of the original initialization error when a diagnostic screenshot fails |
 | `webkit-fan-curve.test.mjs` | `<cad-fan-curve>` without a browser: every setting gives a point on both curves |
 | `webkit-formulas.test.mjs` | `formulas.js` against the golden vectors the Python writes |
 | `webkit-fourbar.test.mjs` | `<cad-fourbar>`'s pure parts in Node |

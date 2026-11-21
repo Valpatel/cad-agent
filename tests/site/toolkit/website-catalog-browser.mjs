@@ -31,15 +31,16 @@ const fail = (where, what) => problems.push(`${where}: ${what}`);
 // `forced`: 'active' emulates forced colours (Windows High Contrast and the like).
 // `trace`: keep a navigation trail (main-frame navigations, load events, the page's own history writes and clicks),
 // written out only by `evidence` when a step fails (#754).
-async function open(route, { width = 1366, height = 900, js = true, motion = 'no-preference', block = null, init = null, fails = null, forced = 'none', color = 'light', trace = false } = {}) {
+async function open(route, { width = 1366, height = 900, js = true, motion = 'no-preference', block = null, init = null, fails = null, forced = 'none', color = 'light', trace = false, expected503 = null } = {}) {
   const context = await browser.newContext({ viewport: { width, height }, javaScriptEnabled: js, reducedMotion: motion, forcedColors: forced, colorScheme: color });
   const page = await context.newPage();
   const seen = [];
+  const expectedUnavailable = url => expected503 && url === base + expected503;
   if (block) await page.route(`**${block}`, r => r.abort());
-  page.on('console', m => { if (m.type() === 'error' && !/status of 404/.test(m.text()) && !(block && /gallery\.js|Failed to load|load failed|importing a module/i.test(m.text()))) seen.push(`console: ${m.text()}`); });
+  page.on('console', m => { if (m.type() === 'error' && !/status of 404/.test(m.text()) && !(expectedUnavailable(m.location().url) && /503/.test(m.text())) && !(block && /gallery\.js|Failed to load|load failed|importing a module/i.test(m.text()))) seen.push(`console: ${m.text()}`); });
   page.on('pageerror', e => { if (!(fails && fails.test(e.message))) seen.push(`page error: ${e.message}`); });
   page.on('requestfailed', r => { if (!/ERR_ABORTED|cancelled/i.test(r.failure()?.errorText || '') && !(block && r.url().endsWith(block))) seen.push(`failed: ${r.url()}`); });
-  page.on('response', r => { if (r.status() >= 400) seen.push(`HTTP ${r.status()}: ${r.url()}`); });
+  page.on('response', r => { if (r.status() >= 400 && !(r.status() === 503 && expectedUnavailable(r.url()))) seen.push(`HTTP ${r.status()}: ${r.url()}`); });
   page.on('request', r => { if (!r.url().startsWith(base) && !/^(data|blob):/.test(r.url())) seen.push(`third party: ${r.url()}`); });
   if (js) await page.addInitScript(() => document.addEventListener('securitypolicyviolation', e => console.error(`CSP ${e.violatedDirective} ${e.blockedURI}`)));
   if (init) await page.addInitScript(init);
@@ -50,19 +51,30 @@ async function open(route, { width = 1366, height = 900, js = true, motion = 'no
     page.on('framenavigated', f => { if (f === page.mainFrame()) note(`framenavigated ${f.url()}`); });
     page.on('domcontentloaded', () => note('domcontentloaded'));
     page.on('load', () => note('load'));
-    await page.addInitScript(() => {
-      const log = window.__catalogTrace = [], note = what => log.push(`${Date.now()} ${what}`);
+    const tracePrefix = 'catalogue browser test: ';
+    page.on('console', message => {
+      if (message.type() === 'debug' && message.text().startsWith(tracePrefix)) trail.push(message.text().slice(tracePrefix.length));
+    });
+    await page.addInitScript(prefix => {
+      const log = window.__catalogTrace = [], note = what => {
+        const line = `${Date.now()} ${what}`;
+        log.push(line);
+        console.debug(prefix + line); // Keep earlier document events if a recovery triggers a reload.
+      };
       for (const name of ['pushState', 'replaceState']) {
         const write = history[name];
         history[name] = function (state, title, url) { note(`${name} ${url}`); return write.apply(this, arguments); };
       }
       addEventListener('popstate', () => note(`popstate ${location.href}`));
       // Capture phase: the click arrived (and on what); bubble phase: it got past the page's handlers, and whether one prevented it.
-      const what = e => e.target?.getAttribute?.('aria-label') || e.target?.localName;
+      const what = e => e.target?.closest?.('[data-scada-preview]')?.dataset.scadaPreview || e.target?.getAttribute?.('aria-label') || e.target?.localName;
+      for (const name of ['cancel', 'close']) document.addEventListener(name, e => {
+        if (e.target.matches?.('dialog')) note(`dialog ${name} open=${e.target.open}`);
+      }, true);
       addEventListener('click', e => note(`click ${what(e)}`), true);
       addEventListener('click', e => note(`click handled ${what(e)} defaultPrevented=${e.defaultPrevented}`));
       addEventListener('pageshow', () => note(`pageshow ${location.href}`));
-    });
+    }, tracePrefix);
   }
   await page.goto(base + route, { waitUntil: 'networkidle' });
   if (js && !block && !fails && /^\/(?:explore|catalog)(?:[?#]|$)/.test(route)) await page.waitForSelector('cad-gallery[data-ready]', { timeout: 10000 }).catch(() => seen.push('the gallery did not start'));
@@ -72,18 +84,22 @@ async function open(route, { width = 1366, height = 900, js = true, motion = 'no
   // pushState, a page error in `seen`) or wrote nothing because the URL was unchanged (`chips`/`checked` show the state);
   // the engine not reporting (a pushState and `inPage.href` without the change, `playwrightUrl` still with it); and a page
   // that stopped responding (`inPage.unavailable`). The page reads are bounded, so a hung page still fails in about 30 s.
-  const evidence = async (where, error) => {
+  const evidence = async (where, error, {requests, inspectPage, readMetadata} = {}) => {
     const out = await mkdtemp(path.join(tmpdir(), 'cad-agent-catalog-wait-'));
-    const record = inPage => writeFile(path.join(out, 'state.json'), JSON.stringify({ where, error: String(error?.message || error), route, playwrightUrl: page.url(), inPage, trail, seen }, null, 2) + '\n');
+    const record = inPage => writeFile(path.join(out, 'state.json'), JSON.stringify({ where, error: String(error?.message || error), route, playwrightUrl: page.url(), inPage, trail, seen, requests }, null, 2) + '\n');
     await record({ unavailable: 'not read yet' });   // the Node-side facts need no page
     let timer;
     const timedOut = new Promise(ok => { timer = setTimeout(() => ok({ unavailable: 'timed out after 5 s: the page did not answer' }), 5000); });
-    const inPage = await Promise.race([timedOut, page.evaluate(() => ({ href: location.href, readyState: document.readyState, history: history.length, trace: window.__catalogTrace || null,
+    const metadata = readMetadata?.();
+    const inPage = await Promise.race([timedOut, Promise.all([page.evaluate(() => ({ href: location.href, readyState: document.readyState, history: history.length, trace: window.__catalogTrace || null,
       chips: [...document.querySelectorAll('[data-gallery-chips] button')].map(b => b.getAttribute('aria-label')),
       checked: [...document.querySelectorAll('cad-gallery input:checked')].map(b => `${b.name}=${b.value}`),
-      focus: document.activeElement?.getAttribute('aria-label') || document.activeElement?.localName })).catch(e => ({ unavailable: String(e) }))]);
+      focus: document.activeElement?.getAttribute('aria-label') || document.activeElement?.localName })), inspectPage ? page.evaluate(inspectPage) : undefined])
+      .then(([state, detail]) => ({...state, detail})).catch(e => ({ unavailable: String(e) }))]);
+    await Promise.race([timedOut, metadata]);
     clearTimeout(timer);
     await record(inPage);
+    if (requests) console.error(JSON.stringify({where, inPage, trail, requests, seen}));
     if (!inPage.unavailable) await page.screenshot({ path: path.join(out, 'page.png'), fullPage: true, timeout: 5000 }).catch(() => {});
     console.error(`${where}: failure evidence in ${out}`);
   };
@@ -197,15 +213,32 @@ async function legacyChecks(){
    const got=(await visible(page)).sort();if(JSON.stringify(got)!==JSON.stringify(expected))fail('legacy filter matrix',JSON.stringify({q:String(q),got,expected}));
    if(await page.locator('.mat-dots,.area-maturity,.key-scale').count())fail('legacy','maturity presentation remains');
    const controls=await page.locator('input[name=maturity]').evaluateAll(xs=>xs.filter(x=>x.checkVisibility()).length);if(controls)fail('legacy','maturity controls are visible');
-   if(await firstResultTop(page)>400)fail('legacy','saved view does not open on its results');
+   const top = await firstResultTop(page);
+   if (top > 400) fail('legacy', `saved view ${page.url()} opens its first result at y=${top} (limit 400 px)`);
   }finally{await done();}
  }
  for(const anchor of ['tool','upstream','library','benchmark','docs','skills','agents','lessons','research',catalog.items.at(-1).id]){
-  const {page,done}=await open('/catalog#'+anchor);try{
+  const {page,done,evidence}=await open('/catalog#'+anchor,{trace:true});try{
    const target=page.locator('[id="'+anchor+'"]');if(!await target.count()||!await target.evaluate(el=>el.closest('[data-item],[data-group]')?.checkVisibility()))fail('legacy hash','invisible '+anchor);
+   const bookmark = await page.evaluate(() => location.href);
+   assert.equal(new URL(bookmark).hash, '#'+anchor);
    const selected=await page.locator('[data-gallery-tabs] [aria-selected=true]').getAttribute('data-tab');
    await page.locator('[data-gallery-tabs] [data-tab="tools"]').click();await page.waitForURL(u=>u.searchParams.get('kind')==='tools');
-   if(selected!=='tools'){await page.goBack();if(new URL(page.url()).hash!=='#'+anchor)fail('legacy hash history','Back lost '+anchor);}
+   if (selected !== 'tools') {
+    // Chromium can resolve goBack before Playwright observes this same-document traversal.
+    await Promise.all([page.waitForURL(url => url.href === bookmark, {waitUntil:'commit'}), page.goBack()]);
+    await page.waitForFunction(({anchor, selected}) => {
+     const target = document.getElementById(anchor), group = target?.closest('details[data-group]');
+     return document.querySelector('[data-gallery-tabs] [aria-selected=true]')?.dataset.tab === selected &&
+       group?.dataset.group === selected && group.open && target.closest('[data-item],[data-group]').checkVisibility();
+    }, {anchor, selected});
+   }
+  }catch(error){
+   await evidence('legacy hash history #'+anchor, error, {inspectPage:() => ({
+    selected:document.querySelector('[data-gallery-tabs] [aria-selected=true]')?.dataset.tab,
+    openGroups:[...document.querySelectorAll('details[data-group][open]')].filter(g => g.checkVisibility()).map(g => g.dataset.group)
+   })}).catch(e => console.error('Could not write legacy bookmark evidence: ' + e.message));
+   throw error;
   }finally{await done();}
  }
  for(const config of [{js:false},{block:'/kit/ui/gallery.js'},{block:'/web/site.js'}]){
@@ -286,7 +319,9 @@ async function readerChecks(){
    const input=nav.getByRole('searchbox',{name:'Filter topic pages'}),prior=await nav.locator('details[open]').count();
    await input.fill('fasteners');if(!await nav.locator('details[data-topic="fasteners-and-hardware"]').isVisible())fail('topic filter','topic name does not match');
    await input.fill('zz-no-topic-603');if(!await nav.locator('.cad-nav-empty').textContent().then(x=>x.includes('No topics or pages match')))fail('topic filter','no empty result');
-   await input.press('Escape');if(await nav.locator('details[open]').count()!==prior)fail('topic filter','clear did not restore fold state');
+   await input.press('Escape');
+   const restored = await nav.locator('details[open]').count();
+   if (restored !== prior) fail('topic filter', `${page.url()} at ${width}px ${color} had ${prior} open folds before filtering and ${restored} after Escape`);
    if(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1))fail('reader','horizontal overflow');
    const stamp=await page.locator('.site-footer time').evaluate(t=>({datetime:t.dateTime,text:t.textContent}));if(!/^\d{4}-\d{2}-\d{2}T/.test(stamp.datetime)||!/(?:PST|PDT)/.test(stamp.text))fail('timestamp','lost recorded instant/Pacific label');
   }finally{await done();}

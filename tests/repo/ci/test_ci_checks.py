@@ -404,6 +404,12 @@ def test_glob_matching(glob, path, hit):
     assert bool(pf.glob_regex(glob).match(path)) is hit
 
 
+@pytest.mark.parametrize("path", ["docs/research/process-profiles.yaml", "docs/research/references.yaml",
+                                  "docs/research/references/guides-inserts.yaml"])
+def test_packaged_manufacturing_data_selects_the_wheel_smoke(mapping, path):
+    assert "wheel-smoke" in {item.id for item in pf.select(mapping, [path])}
+
+
 def test_the_real_case_selects_the_scada_provenance_check(mapping):
     """#753's first commit changed the explorer's main.mjs without regenerating thumbnails.json."""
     ids = {i.id for i in pf.select(mapping, ["software/cadagent/webkit/scada/explorer/main.mjs"])}

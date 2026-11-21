@@ -30,8 +30,9 @@ test('every vendored file matches the SHA-256 in its receipt, and every vendored
   const hashes = await recordedHashes();
   for (const [rel, want] of Object.entries(hashes)) assert.equal(await sha256(path.join(vendor, rel)), want, rel);
   const viewer = await json('file-viewer-sources.json');
-  assert.equal(viewer.sha256['occt-import-js/occt-import-js.wasm'], viewer.occt.build.upstream_dist_sha256['occt-import-js.wasm'],
-    'the viewer ships the original npm OCCT WebAssembly reader');
+  const stepSource = await json('occt-import-js/source/package.json');
+  assert.equal(viewer.occt.package, stepSource.name);
+  assert.equal(viewer.occt.version, stepSource.version);
   assert.ok(viewer.sha256['file-parsers/fflate.module.js'] && viewer.sha256['file-parsers/FFLATE-LICENSE.txt']);
   const records = new Set(['file-viewer-sources.json', 'FILE-VIEWER-NOTICES.md']);
   const files = (await readdir(vendor, { recursive: true, withFileTypes: true })).filter((e) => e.isFile())
@@ -126,22 +127,30 @@ test('the vendored unzipSync rejects a malformed ZIP64 directory instead of loop
   assert.deepEqual(await unzipInWorker(malformedZip64()), { error: 'invalid zip data', code: 13 });
 });
 
-/** The shipped 3MF worker's answer for these bytes: {error} or {model}, through the test-only Node adapter. */
-async function viewer3MF(bytes) {
-  const worker = new Worker(new URL('./files/worker-node.mjs', import.meta.url), { workerData: { format: '3mf' } });
+/** Read original bytes through a shipped parser using the corpus runner's Node adapter. */
+async function readWithWorker(bytes, format = '3mf') {
+  const worker = new Worker(new URL('./files/worker-node.mjs', import.meta.url), { workerData: { format } });
   try {
     const buffer = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
     return await new Promise((resolve, reject) => {
-      const timer = setTimeout(() => reject(new Error('the 3MF worker did not answer in 10 s')), 10000);
+      const timer = setTimeout(() => reject(new Error(`the ${format} worker did not answer in 10 s`)), 10000);
       worker.on('message', (m) => { if (m.error || m.model) { clearTimeout(timer); resolve(m); } });
       worker.once('error', reject);
-      worker.postMessage({ format: '3mf', buffer, name: 'test.3mf', unit: 'millimeter' }, [buffer]);
+      worker.postMessage({ format, buffer, name: `test.${format}`, unit: 'millimeter' }, [buffer]);
     });
   } finally { await worker.terminate(); }
 }
 
+test('the packaged STEP reader opens the reference block through the Node corpus adapter', async () => {
+  const bytes = await readFile(path.join(root, 'tests/fixtures/file-viewer/block.step'));
+  const { model, error } = await readWithWorker(bytes, 'step');
+  assert.equal(error, undefined);
+  assert.equal(model.triangles, 12);
+  assert.deepEqual(model.meshes.map((mesh) => mesh.bounds), [[0, 0, 0, 10, 20, 30]]);
+});
+
 test('the file viewer rejects that archive before any parser runs', async () => {
-  assert.equal((await viewer3MF(malformedZip64())).error, 'This 3MF uses an unsupported ZIP layout.');
+  assert.equal((await readWithWorker(malformedZip64())).error, 'This 3MF uses an unsupported ZIP layout.');
 });
 
 /** A one-triangle 3MF: content types, relationships, the model, and optionally a thumbnail part. */
@@ -177,13 +186,13 @@ function damage(zip, name, { method } = {}) {
 }
 
 test('a damaged 3MF shows the generic message, not fflate or loader internals', async () => {
-  assert.equal((await viewer3MF(await small3MF())).model?.triangles, 1, 'the undamaged fixture reads');
+  assert.equal((await readWithWorker(await small3MF())).model?.triangles, 1, 'the undamaged fixture reads');
   const generic = 'The model file could not be decoded.';
   // fflate 0.8 throws Error objects ("invalid block type", "unknown compression type 12") where 0.6 threw strings.
-  assert.equal((await viewer3MF(damage(await small3MF(), '3D/3dmodel.model'))).error, generic);
-  assert.equal((await viewer3MF(damage(await small3MF(), '3D/3dmodel.model', { method: 12 }))).error, generic);
+  assert.equal((await readWithWorker(damage(await small3MF(), '3D/3dmodel.model'))).error, generic);
+  assert.equal((await readWithWorker(damage(await small3MF(), '3D/3dmodel.model', { method: 12 }))).error, generic);
   // A damaged part beside the model passes the worker's model-only unzip; the loader's own unzip then fails.
-  assert.equal((await viewer3MF(damage(await small3MF({ thumbnail: true }), 'Metadata/thumbnail.png'))).error, generic);
+  assert.equal((await readWithWorker(damage(await small3MF({ thumbnail: true }), 'Metadata/thumbnail.png'))).error, generic);
 });
 
 test('unzipSync keeps the interface the 3MF worker relies on, and honours its model filter', async () => {

@@ -213,15 +213,32 @@ async function legacyChecks(){
    const got=(await visible(page)).sort();if(JSON.stringify(got)!==JSON.stringify(expected))fail('legacy filter matrix',JSON.stringify({q:String(q),got,expected}));
    if(await page.locator('.mat-dots,.area-maturity,.key-scale').count())fail('legacy','maturity presentation remains');
    const controls=await page.locator('input[name=maturity]').evaluateAll(xs=>xs.filter(x=>x.checkVisibility()).length);if(controls)fail('legacy','maturity controls are visible');
-   if(await firstResultTop(page)>400)fail('legacy','saved view does not open on its results');
+   const top = await firstResultTop(page);
+   if (top > 400) fail('legacy', `saved view ${page.url()} opens its first result at y=${top} (limit 400 px)`);
   }finally{await done();}
  }
  for(const anchor of ['tool','upstream','library','benchmark','docs','skills','agents','lessons','research',catalog.items.at(-1).id]){
-  const {page,done}=await open('/catalog#'+anchor);try{
+  const {page,done,evidence}=await open('/catalog#'+anchor,{trace:true});try{
    const target=page.locator('[id="'+anchor+'"]');if(!await target.count()||!await target.evaluate(el=>el.closest('[data-item],[data-group]')?.checkVisibility()))fail('legacy hash','invisible '+anchor);
+   const bookmark = await page.evaluate(() => location.href);
+   assert.equal(new URL(bookmark).hash, '#'+anchor);
    const selected=await page.locator('[data-gallery-tabs] [aria-selected=true]').getAttribute('data-tab');
    await page.locator('[data-gallery-tabs] [data-tab="tools"]').click();await page.waitForURL(u=>u.searchParams.get('kind')==='tools');
-   if(selected!=='tools'){await page.goBack();if(new URL(page.url()).hash!=='#'+anchor)fail('legacy hash history','Back lost '+anchor);}
+   if (selected !== 'tools') {
+    // Chromium can resolve goBack before Playwright observes this same-document traversal.
+    await Promise.all([page.waitForURL(url => url.href === bookmark, {waitUntil:'commit'}), page.goBack()]);
+    await page.waitForFunction(({anchor, selected}) => {
+     const target = document.getElementById(anchor), group = target?.closest('details[data-group]');
+     return document.querySelector('[data-gallery-tabs] [aria-selected=true]')?.dataset.tab === selected &&
+       group?.dataset.group === selected && group.open && target.closest('[data-item],[data-group]').checkVisibility();
+    }, {anchor, selected});
+   }
+  }catch(error){
+   await evidence('legacy hash history #'+anchor, error, {inspectPage:() => ({
+    selected:document.querySelector('[data-gallery-tabs] [aria-selected=true]')?.dataset.tab,
+    openGroups:[...document.querySelectorAll('details[data-group][open]')].filter(g => g.checkVisibility()).map(g => g.dataset.group)
+   })}).catch(e => console.error('Could not write legacy bookmark evidence: ' + e.message));
+   throw error;
   }finally{await done();}
  }
  for(const config of [{js:false},{block:'/kit/ui/gallery.js'},{block:'/web/site.js'}]){
@@ -302,7 +319,9 @@ async function readerChecks(){
    const input=nav.getByRole('searchbox',{name:'Filter topic pages'}),prior=await nav.locator('details[open]').count();
    await input.fill('fasteners');if(!await nav.locator('details[data-topic="fasteners-and-hardware"]').isVisible())fail('topic filter','topic name does not match');
    await input.fill('zz-no-topic-603');if(!await nav.locator('.cad-nav-empty').textContent().then(x=>x.includes('No topics or pages match')))fail('topic filter','no empty result');
-   await input.press('Escape');if(await nav.locator('details[open]').count()!==prior)fail('topic filter','clear did not restore fold state');
+   await input.press('Escape');
+   const restored = await nav.locator('details[open]').count();
+   if (restored !== prior) fail('topic filter', `${page.url()} at ${width}px ${color} had ${prior} open folds before filtering and ${restored} after Escape`);
    if(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1))fail('reader','horizontal overflow');
    const stamp=await page.locator('.site-footer time').evaluate(t=>({datetime:t.dateTime,text:t.textContent}));if(!/^\d{4}-\d{2}-\d{2}T/.test(stamp.datetime)||!/(?:PST|PDT)/.test(stamp.text))fail('timestamp','lost recorded instant/Pacific label');
   }finally{await done();}

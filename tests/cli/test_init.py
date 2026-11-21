@@ -113,7 +113,9 @@ def test_init_never_copies_a_runs_outputs(tmp_path, monkeypatch):
     """A starter that `cad-agent all` ran in where it lives (a checkout) still copies as the bare starter."""
     src = tmp_path / "starter-box"
     project.init_project(src)
-    for junk in ("exports/box.stl", "build/slicer/x.json", "docs/cad-agent-report.html", "cad/__pycache__/b.pyc"):
+    outputs = ("exports/box.stl", "build/slicer/x.json", "preview/index.html", "site/index.html",
+               "docs/cad-agent-report.html", "cad/__pycache__/b.pyc")
+    for junk in outputs:
         (src / junk).parent.mkdir(parents=True, exist_ok=True)
         (src / junk).write_text("x")
     monkeypatch.setattr(project, "starter_dir", lambda: src)
@@ -121,9 +123,10 @@ def test_init_never_copies_a_runs_outputs(tmp_path, monkeypatch):
     assert {f.relative_to(tmp_path / "copy").as_posix() for f in written} == starter_files()
     assert {f.relative_to(tmp_path / "copy").as_posix() for f in (tmp_path / "copy").rglob("*") if f.is_file()} \
         == starter_files()
-    ignored = (STARTER / ".gitignore").read_text().split()
-    for out in ("build/", "exports/", "preview/", "site/"):
-        assert out in ignored, f"the starter's .gitignore leaves {out} out of the user's repo"
+    subprocess.run(["git", "init", "--quiet"], cwd=src, check=True)
+    ignored = subprocess.run(["git", "-c", f"core.excludesFile={os.devnull}", "check-ignore", "--stdin"],
+                             cwd=src, input="\n".join(outputs), capture_output=True, text=True, check=True)
+    assert set(ignored.stdout.splitlines()) == set(outputs), "the starter's Git rules must ignore each generated file"
 
 
 def test_wheel_data_declarations_cover_the_starter():
@@ -132,6 +135,8 @@ def test_wheel_data_declarations_cover_the_starter():
     data = tomllib.loads((ROOT / "pyproject.toml").read_text())["tool"]["setuptools"]["data-files"]
     listed = set()
     for into, files in data.items():
+        if into in {"share/cad-agent/research", "share/cad-agent/research/references"}:
+            continue
         assert into.startswith("share/cad-agent/starter-box"), into
         sub = into[len("share/cad-agent/starter-box"):].strip("/")
         for f in files:
@@ -214,12 +219,17 @@ from pathlib import Path
 from importlib import metadata
 import cadagent
 from cadagent import project
+from cadagent.manufacturing import process
+from cadagent.mechanical import inserts
+profiles = process.load()
+assert all(profile.sources[rule.source].resolved for profile in profiles for rule in profile.rules)
+assert inserts.hole_design(inserts.insert("mcmaster-94459A140"))["diameter_mm"] == 4.2
 dist = metadata.distribution("cad-agent")
 records = [p for p in dist.files or () if p.as_posix().endswith("share/cad-agent/starter-box/cad-agent.yaml")]
 assert len(records) == 1
 print(json.dumps({"package": str(Path(cadagent.__file__).resolve()), "project": str(Path(project.__file__).resolve()),
  "distribution": str(Path(dist.locate_file("")).resolve()), "declared_config": str(Path(dist.locate_file(records[0])).resolve()),
- "starter": str(project.starter_dir().resolve())}))'''
+ "starter": str(project.starter_dir().resolve()), "profiles": str(process.data_path())}))'''
     paths = json.loads(run([python, "-I", "-c", probe]).stdout)
     assert all(Path(p).is_relative_to(env_dir) for p in paths.values()), paths
     actual = {p.relative_to(target).as_posix(): hashlib.sha256(p.read_bytes()).hexdigest()
@@ -352,6 +362,56 @@ def test_a_project_command_without_a_project_points_at_init(tmp_path, monkeypatc
     assert "`cad-agent init` starts one" in capsys.readouterr().err
 
 
+def test_starter_gates_measure_the_edited_lid(tmp_path, monkeypatch):
+    """Run the published first-project sequence, including failure and recovery on rebuilt geometry."""
+    pytest.importorskip("cadquery")
+    pytest.importorskip("trimesh")
+    monkeypatch.chdir(tmp_path)
+    assert main(["init", "my-box"]) == 0
+    monkeypatch.chdir(tmp_path / "my-box")
+    assert main(["gates"]) == 0
+    wall = Path("exports/gates/wall.json")
+    connectivity = json.loads(Path("exports/gates/connectivity.json").read_text())
+    assert connectivity["status"] == "warn"
+    assert {item["name"] for item in connectivity["not_drawn"]} == {"lid-screws", "threaded-inserts"}
+    initial = json.loads(wall.read_text())
+    assert initial["status"] == "pass" and initial["physical_fit_verified"] is False
+
+    build = Path("cad/build.py")
+    original = build.read_text()
+    assert original.count("LID_MM = 3.0") == 1
+    build.write_text(original.replace("LID_MM = 3.0", "LID_MM = 1.5"))
+    assert main(["gates", "--build"]) == 1
+    failed = json.loads(wall.read_text())
+    finding = next(check for check in failed["checks"] if check["id"] == "wall:lid")
+    assert finding["status"] == "fail"
+    assert finding["evidence"]["wall_mm"] == 2.0
+    assert finding["evidence"]["brep-ray"]["min_mm"] == pytest.approx(1.5)
+    assert failed["inputs"]["geometry"]["hashes"]["lid"] != initial["inputs"]["geometry"]["hashes"]["lid"]
+
+    build.write_text(original)
+    assert main(["gates", "--build"]) == 0
+    fixed = json.loads(wall.read_text())
+    assert fixed["status"] == "pass"
+    assert fixed["inputs"]["geometry"]["hashes"]["lid"] == initial["inputs"]["geometry"]["hashes"]["lid"]
+
+
+def test_starter_gate_receipt_when_the_insert_changes(tmp_path):
+    """The omissions describe the purchased parts even when the user chooses the starter's M4 insert."""
+    pytest.importorskip("cadquery")
+    dest = tmp_path / "m4-box"
+    assert main(["init", str(dest)]) == 0
+    build = dest / "cad/build.py"
+    source = build.read_text()
+    assert source.count('INSERT = "mcmaster-94459A140"') == 1
+    build.write_text(source.replace('INSERT = "mcmaster-94459A140"', 'INSERT = "mcmaster-94459A160"'))
+    assert main(["gates", "--project", str(dest), "--only", "connectivity"]) == 0
+    receipt = json.loads((dest / "exports" / "gates" / "connectivity.json").read_text())
+    screw = next(item for item in receipt["not_drawn"] if item["name"] == "lid-screws")
+    assert set(screw["near"]) == {"lid", "box"}
+    assert "M3" not in screw["reason"]
+
+
 def test_the_starter_passes_cad_agent_all_as_copied(tmp_path, monkeypatch, capsys):
     """What CI runs on the starter (the full job has the cad extra): init, then `cad-agent all` passes every row, with
     the insert hole inserts.hole_design gives (4.20 mm for the M3 insert, #317), and leaves only its outputs."""
@@ -366,7 +426,7 @@ def test_the_starter_passes_cad_agent_all_as_copied(tmp_path, monkeypatch, capsy
     assert re.search(r"\d+ pass / 0 fail", out), out
     results = json.loads((dest / "exports" / "cad-agent-results.json").read_text())
     ids = json.dumps(results)
-    for row in ("inserts", "overhangs", "cad-holes"):
+    for row in ("inserts", "overhangs", "cad-holes", "cad-gates"):
         assert row in ids, f"the report has the {row} rows"
     from cadagent.mechanical import inserts
     joint = json.loads((dest / "exports" / "insert-joints.json").read_text())["joints"][0]

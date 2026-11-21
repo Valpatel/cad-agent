@@ -14,5 +14,6 @@ flowchart TD
 | File or folder | Purpose |
 |---|---|
 | [build.py](build.py) | Generate STEP/assembly outputs from configurable dimensions. |
+| [gate_model.py](gate_model.py) | Register those same box and lid shapes, their seat and the purchased hardware omitted from the model. |
 
 [Parent map](../README.md)

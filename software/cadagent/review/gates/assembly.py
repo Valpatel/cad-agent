@@ -61,7 +61,7 @@ from cadagent.review.gates.fasteners import (FastenerSpec, install_step, owner, 
                                              tools_from, fasteners_from_build)
 from cadagent.review.gates.motion import _mul, box_distance
 from cadagent.review.gates.relations import Relation, Tolerances
-from cadagent.review.gates.verdict import Check, verdict, write_verdict
+from cadagent.review.gates.verdict import Check, not_drawn_markdown, note_not_drawn, verdict, write_verdict
 
 GATE = "assembly"
 Vec = Tuple[float, float, float]
@@ -783,9 +783,11 @@ def assembly_gate(assembly: Any, steps: Iterable[Any], *, fasteners: Any = None,
     data = verdict(GATE, res["checks"], assumptions=assumptions, limits=limits, exclusions=res["exclusions"],
                    extra={"steps": res["steps"], "not_checked": res["not_checked"], "world_stats": world.stats,
                           "tools": dict(tools or {}), **extra})
+    note_not_drawn(data, getattr(assembly, "not_drawn", None) or [])     # a build's assembly says what it lacks
     if out is not None:
         path = write_verdict(out, data)
-        path.with_suffix(".md").write_text("# Assembly sequence\n\n" + steps_markdown(data))
+        path.with_suffix(".md").write_text("# Assembly sequence\n\n" + "\n".join(not_drawn_markdown(data) + [""])
+                                           .lstrip("\n") + steps_markdown(data))
     return data
 
 

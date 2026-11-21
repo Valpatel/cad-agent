@@ -77,7 +77,7 @@ from cadagent.review.gates import relations as _relations
 from cadagent.review.gates.relations import (Assembly, Relation, Tolerances, _boolean, _distance, _faces,
                                              _kernel_version, _pt, _trsf, _volume, aabb_distances, bounding_box,
                                              relate_pair)
-from cadagent.review.gates.verdict import Check, verdict, write_verdict
+from cadagent.review.gates.verdict import Check, note_not_drawn, verdict, write_verdict
 
 GATE = "containment"
 VERSION = "3"            # support decisions retain volume uncertainty
@@ -867,6 +867,7 @@ def containment_gate(assembly: Assembly, declarations: Iterable[Any], *, tol: To
                         if p}}
     data = verdict(GATE, checks, assumptions=ASSUMPTIONS, limits=limits, exclusions=excl,
                    extra={"declarations": summary})
+    note_not_drawn(data, getattr(assembly, "not_drawn", None) or [])     # a build's assembly says what it lacks
     if out is not None:
         write_verdict(out, data)
     return data

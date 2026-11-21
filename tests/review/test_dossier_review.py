@@ -758,3 +758,67 @@ def test_view_citations_are_checked_while_the_packet_is_the_one_submitted_agains
     assert "unknown-view" in f.message and res.sections["S1"]["status"] == "gated"
     render_packet(root)                                        # another packet: the lint can no longer judge views
     assert "review-incomplete" not in lint_project(project, min_section_status=None).codes()
+
+
+# ------------------------------------------------------------------- components declared not drawn (#722)
+
+def _declare_not_drawn(root: Path, table) -> None:
+    """Add ``not_drawn`` to the geometry record and bring the verdicts up to date, as a rebuild and
+    ``cad-agent gates`` would (the shapes and their hashes do not change)."""
+    from cadagent.review.gates.verdict import geometry_digest, note_not_drawn
+    geo_file = root / "exports" / "dossier-geometry.json"
+    geo = json.loads(geo_file.read_text())
+    geo["not_drawn"] = table
+    geo_file.write_text(json.dumps(geo))
+    for g in GATES_RUN:
+        path = root / "exports" / "gates" / f"{g}.json"
+        v = json.loads(path.read_text())
+        v.pop("not_drawn", None)
+        v["assumptions"] = [a for a in v.get("assumptions") or [] if "declared not drawn" not in a]
+        for key in ("checks", "findings"):
+            v[key] = [c for c in v.get(key) or [] if not str(c.get("id")).endswith(":not-drawn")]
+        v = note_not_drawn(v, geo)
+        v["inputs"]["geometry"]["digest"] = geometry_digest(geo)
+        path.write_text(json.dumps(v))
+
+
+def test_a_component_declared_not_drawn_after_a_sign_off_voids_it(project):
+    """A sign-off binds the shapes' hashes, which a declaration does not change. The record also lists the
+    components declared not drawn near the section's parts, so one declared later voids the review: the reviewer
+    signed off without knowing that part of the design was missing there. A declaration without ``near`` names no
+    section and voids nothing."""
+    root = Path(project.root)
+    old = fill(template(project))
+    assert "not_drawn" not in old                                       # nothing declared: the record as before
+    path, _, problems = submit_record(project, "S1", dict(old, not_drawn=["spring"]), reviewer="reviewer")
+    assert path is None and "stale-not-drawn" in codes(problems)
+    path, _, problems = submit_record(project, "S1", old, reviewer="reviewer")
+    assert problems == [] and lint_project(project).sections["S1"]["status"] == "signed_off"
+
+    _declare_not_drawn(root, {"plug": {"reason": "bought part", "near": [], "declared_at": "cad/build.py:50"}})
+    res = lint_project(project)
+    assert res.sections["S1"]["status"] == "signed_off" and "review-stale" not in res.codes()
+
+    spring = {"reason": "sized in analysis", "near": ["hopper"], "declared_at": "cad/build.py:51"}
+    _declare_not_drawn(root, {"plug": {"reason": "bought part", "near": [], "declared_at": "cad/build.py:50"},
+                              "spring": spring})
+    res = lint_project(project)
+    assert res.sections["S1"]["status"] == "gated", res.sections["S1"]
+    inv = res.sections["S1"]["invalidated"]
+    assert inv["not_drawn"] == ["spring"] and inv["changed"] == ["hopper"] and inv["signed_off"] is True
+    [stale] = [f for f in res.findings if f.code == "review-stale"]
+    assert "spring declared not drawn near hopper since" in stale.message and stale.parts == ("hopper",)
+    assert res.parts["hopper"]["invalidated"]["not_drawn"] == ["spring"] and "invalidated" not in res.parts["lid"]
+
+    render_packet(root)                                                 # the old answers, submitted again: refused
+    _, _, problems = submit_record(project, "S1", old, reviewer="reviewer")
+    assert "stale-not-drawn" in codes(problems)
+    assert "spring" in next(str(p) for p in problems if p.code == "stale-not-drawn")
+    new = template(project)
+    assert new["not_drawn"] == ["spring"]                               # the reviewer is told, and the record says so
+    path, saved, problems = submit_record(project, "S1", fill(new), reviewer="reviewer")
+    assert problems == [], [str(p) for p in problems]
+    assert saved["not_drawn"] == ["spring"] and validate_record(saved) == []
+    res = lint_project(project)
+    assert res.sections["S1"]["status"] == "signed_off" and "review-stale" not in res.codes()
+    assert "type" in codes(validate_record({**saved, "not_drawn": "spring"}))

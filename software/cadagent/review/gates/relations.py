@@ -89,6 +89,7 @@ from typing import Any, Dict, Iterable, Iterator, List, Mapping, Optional, Seque
 from cadagent._deps import require
 from cadagent.review.evidence import shape_content_hash
 from cadagent.review.gates.cache import PairCache, digest, matrix_key
+from cadagent.review.gates.verdict import not_drawn_of
 
 STATES = ("apart", "touching", "overlapping", "contains", "unknown", "unchecked")
 CONTACT_STATES = ("touching", "overlapping", "contains")
@@ -273,6 +274,8 @@ class Assembly:
         self.cavities: Dict[str, Part] = {}
         self.joints: Dict[str, Any] = {}           # from a dossier build: {interface: {kind, moving, fixed, axis, ...}}
         self.fastener_axes: Dict[str, Any] = {}    # from a dossier build: {fastener: [Axis(seat, advance), ...]}
+        self.not_drawn: List[Dict[str, Any]] = []  # from a dossier build: components declared not drawn, which
+                                                   # every gate names in its verdict (verdict.note_not_drawn)
         for name, shape in (parts or {}).items():
             self.add(name, shape)
 
@@ -374,7 +377,7 @@ class Assembly:
         out = Assembly()
         out._parts = {n: pose(p) for n, p in self._parts.items()}
         out.cavities = {n: pose(c) for n, c in self.cavities.items()}
-        out.joints, out.fastener_axes = self.joints, self.fastener_axes
+        out.joints, out.fastener_axes, out.not_drawn = self.joints, self.fastener_axes, self.not_drawn
         return out
 
     @classmethod
@@ -412,6 +415,8 @@ class Assembly:
         * ``Part.kind`` from ``result.kind(key)`` (``"part"`` or ``"fastener"``), ``group`` = the part's section;
         * every cavity via ``add_cavity`` with its recorded hash (its host must be a single placed part);
         * ``joints`` and ``fastener_axes`` copied onto the assembly for the motion and fastener gates;
+        * ``not_drawn``: the components the build declared not drawn (``verdict.not_drawn_of``). They have no
+          shape here; every gate given this assembly names them in its verdict before it returns or writes it;
         * body labels from ``moving_bodies`` (final; docs/practice/dossier.md), a joint's ``moving`` part
           seeds its body, which grows transitively across ``fixed`` joints and fasteners (the fastener, what it
           clamps and what it threads into), never into a grounded part or a joint's ``fixed`` part.
@@ -436,6 +441,7 @@ class Assembly:
             out.add_cavity(name, shape, part=host, content_hash=hashes.get(name))
         out.joints = joints
         out.fastener_axes = dict(getattr(result, "fastener_axes", None) or {})
+        out.not_drawn = not_drawn_of(geo)
         return out
 
 

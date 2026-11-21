@@ -154,6 +154,63 @@ def test_views_cover_the_section(tmp_path):
     assert m["not_rendered"] == [{"what": "part ghost", "why": "its card has no registered shape"}]
 
 
+@pytest.mark.parametrize("declared", [False, True])
+def test_custom_drawing_warning_only_reaches_its_own_section(declared):
+    from cadagent.review.gates.verdict import Check, verdict
+    geo = record()
+    if declared:
+        geo["not_drawn"] = {"plug": {"reason": "purchased part", "near": []}}
+    check = Check("inspection:not-drawn", "warn", "Hopper drawing lacks dimensions",
+                  parts=["hopper"], evidence={"not_drawn": ["boss diameter", "edge distance"]})
+    result = bind_inputs(verdict("inspection", [check], assumptions=["check drawing dimensions"]), geo)
+    for sid in ("S1", "S2"):
+        packet = pk.plan_packet(sid, geo, None, {"inspection": result}, None)
+        rows = packet["measurements"]["gates"]["inspection"]["section_checks"]
+        ids = {row["id"] for row in rows}
+        assert (check.id in ids) == (sid == "S1")
+        assert ("inspection:1:not-drawn" in ids) == declared
+
+
+def test_a_component_declared_not_drawn_reaches_every_section_s_packet(tmp_path):
+    """A gate's ``<gate>:not-drawn`` row and the lint's ``not-drawn`` warning are in the packet of every section,
+    whether or not the declaration's ``near`` names one of its parts (#722): the component has no extent, so no
+    section is known to be clear of it. Without a declaration no packet changes."""
+    from cadagent.review.gates.verdict import note_not_drawn
+    d = load_dossier(write_dossier(tmp_path), strict=False, root=tmp_path)
+
+    def packets(table):
+        rec = record()
+        if table:
+            rec["not_drawn"] = table
+        vs = {"motion": bind_inputs({"schema": "cadagent.gate/1", "gate": "motion", "pass": True, "status": "pass",
+                                     "checks": [{"id": "joint:I-arm", "status": "pass", "message": "clear",
+                                                 "parts": ["arm"]}], "findings": [], "assumptions": ["a"],
+                                     "counts": {"pass": 1, "warn": 0, "fail": 0}}, rec)}
+        lint = {"schema": "cadagent.gate/1", "gate": "dossier-lint", "pass": True, "status": "warn", "checks": [
+            {"id": f"not-drawn@cad/build.py:{40 + i}", "status": "warn", "message": f"component '{name}' of the "
+             "design is not drawn", "parts": list(info.get("near") or []), "evidence": {"code": "not-drawn"}}
+            for i, (name, info) in enumerate((table or {}).items())]}
+        return {sid: pk.plan_packet(sid, rec, d, vs, None, lint=lint, lint_current=True) for sid in ("S0", "S1", "S2")}
+
+    for table, parts in (({"spring": {"reason": "sized in analysis", "near": ["hopper"]}}, ["hopper"]),   # in S1 only
+                         ({"plug": {"reason": "bought part"}}, [])):                                     # no near at all
+        name = next(iter(table))
+        for sid, m in packets(table).items():
+            rows = [f for f in m["findings"] if f["check"] == "motion:not-drawn"]
+            assert len(rows) == 1 and rows[0]["scope"] == "section" and rows[0]["status"] == "warn", (sid, name)
+            assert f"not in the model: {name}" in rows[0]["message"] and rows[0]["parts"] == parts
+            assert rows[0]["stale"] is None
+            assert "motion:not-drawn" in [c["id"] for c in m["measurements"]["gates"]["motion"]["section_checks"]]
+            assert m["measurements"]["gates"]["motion"]["status"] == "warn"
+            lint_rows = [f for f in m["findings"] if f["gate"] == pk.LINT_GATE]
+            assert [f["check"] for f in lint_rows] == ["not-drawn@cad/build.py:40"], (sid, name)
+            assert [c["id"] for c in m["measurements"]["lint"]["section_checks"]] == ["not-drawn@cad/build.py:40"]
+    for sid, m in packets(None).items():
+        assert not [f for f in m["findings"] if "not-drawn" in str(f["check"])], sid
+        assert m["measurements"]["gates"]["motion"]["status"] == "pass"
+    assert note_not_drawn({"gate": "motion"}, record()) == {"gate": "motion"}
+
+
 def test_parts_hashes_and_context(tmp_path):
     m = plan(tmp_path)
     rec = record()
@@ -447,6 +504,31 @@ def make_project(root: Path) -> Path:
             bind_inputs(v, rec, **gr.expected_inputs(g, cfg, dossier, extra))
         (root / "exports" / "gates" / f"{g}.json").write_text(json.dumps(v))
     return root
+
+
+def test_wall_only_project_packet_carries_declared_components(tmp_path):
+    from cadagent.project import load_project
+    from cadagent.review.gates import run as gr
+
+    (tmp_path / "cad-agent.yaml").write_text("cad:\n  name: demo\n")
+    gates = tmp_path / "exports/gates"
+    gates.mkdir(parents=True)
+    rec = record()
+    rec["not_drawn"] = {"spring": {"reason": "spring pending", "near": ["hopper"]}}
+    (gates.parent / "dossier-geometry.json").write_text(json.dumps(rec))
+    cfg = gr.gates_config(load_project(tmp_path))
+    wall = gr.verdict("wall", [gr.Check("wall:hopper", "pass", "wall measured", parts=["hopper"])],
+                      assumptions=["drawn parts"])
+    gr.bind_inputs(wall, rec, **gr.expected_inputs("wall", cfg, None, gr.load_extra(cfg)))
+    (gates / "wall.json").write_text(json.dumps(wall))
+
+    manifest, _ = pk.plan_project_packet("S1", root=tmp_path)
+    wall_row = manifest["measurements"]["gates"]["wall"]
+    assert wall_row["status"] == "pass" and not wall_row.get("stale")
+    assert manifest["geometry"]["not_drawn"] == [{"name": "spring", "reason": "spring pending", "near": ["hopper"]}]
+    assert pk.packet_stale(manifest, rec) is None
+    del manifest["geometry"]["not_drawn"]
+    assert "not drawn" in pk.packet_stale(manifest, rec)
 
 
 def test_cli_lists_the_views_without_rendering(tmp_path, capsys):

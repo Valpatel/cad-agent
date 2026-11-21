@@ -94,25 +94,28 @@ async function checkFailedInitialization(browser, siteUrl) {
   }
 }
 
-async function checkReadyBeforeFrame(browser, siteUrl) {
+async function checkReadyBeforeFrame(browser, siteUrl, releaseBody) {
   const page = await browser.newPage();
+  const file = '/held-fixture.json', url = siteUrl + file;
   const events = [];
   try {
     await page.clock.install();
     await page.clock.pauseAt(await page.evaluate(() => Date.now() + 1000));
-    const mutation = page.waitForEvent('console', {
-      predicate: message => message.type() === 'debug' && message.text() === readyMessage,
-      timeout: 30000,
-    });
-    const body = page.waitForEvent('requestfinished', {
-      predicate: request => request.url() === siteUrl + '/fixture.json',
-      timeout: 30000,
-    });
+    const headers = page.waitForResponse(url, { timeout: 30000 });
     await Promise.all([
-      openFixture(page, siteUrl, '/fixture.json', (step, detail) => events.push([step, detail])),
+      openFixture(page, siteUrl, file, (step, detail) => events.push([step, detail])),
       (async () => {
+        assert.equal((await headers).status(), 200);
+        assert.ok(!events.some(([step]) => step === 'fixture body received'), 'the server is still holding the body');
+        assert.ok(!events.some(([step]) => step === 'ready attribute set'));
+        const body = page.waitForEvent('requestfinished', { predicate: request => request.url() === url, timeout: 30000 });
+        const mutation = page.waitForEvent('console', {
+          predicate: message => message.type() === 'debug' && message.text() === readyMessage,
+          timeout: 30000,
+        });
+        releaseBody();
         await Promise.all([body, mutation]);
-        assert.ok(events.some(([step, file]) => step === 'fixture body received' && file === '/fixture.json'));
+        assert.ok(events.some(([step, seen]) => step === 'fixture body received' && seen === file));
         assert.ok(events.some(([step]) => step === 'ready attribute set'));
         const frames = () => page.evaluate(() => window.__fea.stage.frames);
         assert.equal(await frames(), 0, 'the ready message must arrive with the first stage frame still withheld');
@@ -121,13 +124,21 @@ async function checkReadyBeforeFrame(browser, siteUrl) {
       })(),
     ]);
   } finally {
+    releaseBody();
     await page.close();
   }
 }
 
 progress(null, 'starting fixture server');
+const heldBody = Promise.withResolvers();
 const site=await serveWebkit(new Map([
   ['/fixture.json',(_req,res)=>res.writeHead(200,{'Content-Type':'application/json'}).end(JSON.stringify(fixture))],
+  ['/held-fixture.json', async (_req, res) => {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.flushHeaders();
+    await heldBody.promise;
+    res.end(JSON.stringify(fixture));
+  }],
   ['/favicon.ico',(_req,res)=>res.writeHead(204).end()],
 ]));
 progress(null, 'launching browser');
@@ -211,7 +222,7 @@ try{
   }
   assert.deepEqual(errors,[]);
   progress(null, 'checking ready before the first frame');
-  await checkReadyBeforeFrame(browser, site.url);
+  await checkReadyBeforeFrame(browser, site.url, heldBody.resolve);
   cases.push({ deferredFrame: 'fixture body and ready mutation recorded before the first stage frame' });
   progress(null, 'checking failed initialization');
   await checkFailedInitialization(browser, site.url);

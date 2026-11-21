@@ -93,16 +93,16 @@ test('labels are escaped, invalid IDs are rejected and decorative instances do n
 test('visual state suppresses production activity for failures, offline and disconnected equipment',()=>{
  for(const item of SCADA_COMPONENTS){
   for(const override of [{active:false},{fault:true},{status:'offline'},...(item.stateFields.some(field=>field.key==='connected')?[{connected:false}]:[])]){
-   const dom=new JSDOM(renderScadaComponent(item.type,{state:override}));
-   try{const wrapper=dom.window.document.querySelector('.scada-component');assert.equal(wrapper.dataset.active,'false',`${item.type} reflects ${JSON.stringify(override)}`);assert.equal(wrapper.dataset.flow,'false');}
-   finally{dom.window.close();}
+   const fragment=JSDOM.fragment(renderScadaComponent(item.type,{state:override}));
+   const wrapper=fragment.querySelector('.scada-component');
+   assert.equal(wrapper.dataset.active,'false',`${item.type} reflects ${JSON.stringify(override)}`);assert.equal(wrapper.dataset.flow,'false');
   }
  }
  for(const type of ['gate-valve','control-valve','check-valve','relief-valve','butterfly-valve','pipe','junction','breaker']){
   for(const open of [false,true]){
-   const dom=new JSDOM(renderScadaComponent(type,{state:{open}}));
-   try{const wrapper=dom.window.document.querySelector('.scada-component');assert.equal(wrapper.dataset.open,String(open));assert.equal(wrapper.dataset.flow,String(type==='breaker'?!open:open),'an open breaker interrupts its electrical path');}
-   finally{dom.window.close();}
+   const fragment=JSDOM.fragment(renderScadaComponent(type,{state:{open}}));
+   const wrapper=fragment.querySelector('.scada-component');
+   assert.equal(wrapper.dataset.open,String(open));assert.equal(wrapper.dataset.flow,String(type==='breaker'?!open:open),'an open breaker interrupts its electrical path');
   }
  }
 });
@@ -243,6 +243,7 @@ test('every standalone component exposes distinct warning and fault cues without
 });
 
 test('every declared damage mode has physical SVG geometry and every numeric endpoint remains readable',()=>{
+ // These cases inspect static component markup. A fragment parses the same SVG without a window per state.
  const physicalShape='path,rect,circle,ellipse,line,polyline,polygon';
  const geometrySignatures=wrapper=>new Set([...wrapper.querySelectorAll(physicalShape)].filter(shape=>shape.closest('svg')&&!shape.closest('defs,.scada-component-condition')).map(shape=>{
   const transforms=[];
@@ -251,38 +252,33 @@ test('every declared damage mode has physical SVG geometry and every numeric end
  }));
  for(const item of SCADA_COMPONENTS){
   const damage=item.stateFields.find(field=>field.key==='damage');assert.ok(damage,`${item.type} declares damage choices`);
-  const id='damage-contract-'+item.type,baseline=new JSDOM(renderScadaComponent(item.type,{id}));
-  const baselineGeometry=geometrySignatures(baseline.window.document.querySelector('.scada-component'));
-  baseline.window.close();
+  const id='damage-contract-'+item.type,baseline=JSDOM.fragment(renderScadaComponent(item.type,{id}));
+  const baselineGeometry=geometrySignatures(baseline.querySelector('.scada-component'));
   for(const option of damage.options){
-   const dom=new JSDOM(renderScadaComponent(item.type,{id,state:{damage:option.value}}));
-   try{
-    const wrapper=dom.window.document.querySelector('.scada-component');
-    assert.equal(wrapper.dataset.damage,option.value);
-    if(option.value!=='none'){
-     const shape=wrapper.querySelector(`[data-damage="${option.value}"].scada-damage-art,[data-industrial-damage="${option.value}"],[data-power-damage="${option.value}"],[data-agri-damage="${option.value}"],[data-nuclear-damage="${option.value}"] > :last-child`);
-     const hookedGeometry=shape&&(shape.matches(physicalShape)||shape.querySelector(physicalShape));
-     // Equipment-specific incidents can alter the main drawing rather than
-     // append to a generic damage group (for example condenser air bubbles).
-     // Same-ID comparisons exclude the condition badge and label-only changes.
-     const damagedGeometry=geometrySignatures(wrapper);
-     const changedGeometry=[...damagedGeometry].some(signature=>!baselineGeometry.has(signature))||[...baselineGeometry].some(signature=>!damagedGeometry.has(signature));
-     assert.ok(hookedGeometry||changedGeometry,`${item.type}/${option.value} is more than a text label`);
-     assert.ok(wrapper.getAttribute('aria-label').includes(`damage: ${option.value.replaceAll('-',' ')}`));
-    }
-   }finally{dom.window.close();}
+   const fragment=JSDOM.fragment(renderScadaComponent(item.type,{id,state:{damage:option.value}}));
+   const wrapper=fragment.querySelector('.scada-component');
+   assert.equal(wrapper.dataset.damage,option.value);
+   if(option.value!=='none'){
+    const shape=wrapper.querySelector(`[data-damage="${option.value}"].scada-damage-art,[data-industrial-damage="${option.value}"],[data-power-damage="${option.value}"],[data-agri-damage="${option.value}"],[data-nuclear-damage="${option.value}"] > :last-child`);
+    const hookedGeometry=shape&&(shape.matches(physicalShape)||shape.querySelector(physicalShape));
+    // Equipment-specific incidents can alter the main drawing rather than
+    // append to a generic damage group (for example condenser air bubbles).
+    // Same-ID comparisons exclude the condition badge and label-only changes.
+    const damagedGeometry=geometrySignatures(wrapper);
+    const changedGeometry=[...damagedGeometry].some(signature=>!baselineGeometry.has(signature))||[...baselineGeometry].some(signature=>!damagedGeometry.has(signature));
+    assert.ok(hookedGeometry||changedGeometry,`${item.type}/${option.value} is more than a text label`);
+    assert.ok(wrapper.getAttribute('aria-label').includes(`damage: ${option.value.replaceAll('-',' ')}`));
+   }
   }
   for(const field of item.stateFields.filter(field=>field.type==='number')){
    for(const value of [field.min,(field.min+field.max)/2,field.max]){
-    const dom=new JSDOM(renderScadaComponent(item.type,{state:{[field.key]:value}}));
-    try{
-     const reading=dom.window.document.querySelector(`[data-scada-reading="${field.key}"]`);
-     assert.ok(reading,`${item.type}/${field.key} has a keyed readable value`);
-     const unit=field.unit==='index'?'idx':field.unit||'';
-     assert.equal(reading.textContent,`${Number(value.toFixed(1))}${unit&&unit!=='%'?' ':''}${unit}`);
-     const bar=reading.closest('[data-scada-gauge]').querySelector('b');
-     assert.equal(Number.parseFloat(bar.style.width),100*(value-field.min)/(field.max-field.min));
-    }finally{dom.window.close();}
+    const fragment=JSDOM.fragment(renderScadaComponent(item.type,{state:{[field.key]:value}}));
+    const reading=fragment.querySelector(`[data-scada-reading="${field.key}"]`);
+    assert.ok(reading,`${item.type}/${field.key} has a keyed readable value`);
+    const unit=field.unit==='index'?'idx':field.unit||'';
+    assert.equal(reading.textContent,`${Number(value.toFixed(1))}${unit&&unit!=='%'?' ':''}${unit}`);
+    const bar=reading.closest('[data-scada-gauge]').querySelector('b');
+    assert.equal(Number.parseFloat(bar.style.width),100*(value-field.min)/(field.max-field.min));
    }
   }
  }

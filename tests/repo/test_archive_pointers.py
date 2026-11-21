@@ -160,6 +160,7 @@ def test_an_archived_record_with_the_same_sha_is_left_alone(root, tmp_path, caps
     "not json", "[1, 2]", json.dumps({"url": "https://example.org/end"}),
     json.dumps(entry("ftp://example.org/end", SHA_A)), json.dumps(entry("https://example.org/end", "A" * 64)),
     json.dumps(entry("https://example.org/end", "a" * 63)), json.dumps(entry("https://example.org/end", SHA_A, "2026-13-01")),
+    json.dumps(entry("https://example.org/end", SHA_A, "2026-W46-1")),
     json.dumps(entry("https://example.org/end", SHA_A, "14 Nov 2026")), json.dumps(entry("https://example.org/end", SHA_A, kind="PDF")),
     json.dumps(entry("https://example.org/end", SHA_A, kind="yes")), json.dumps(entry("https://ex ample.org/end", SHA_A)),
 ])
@@ -190,3 +191,35 @@ def test_the_tool_names_no_path_or_host_in_what_it_writes(root, tmp_path):
     for rel in (ap.CORE, SHARD):
         text = (root / rel).read_text()
         assert str(tmp_path) not in text and "manifest.jsonl" not in text
+
+@pytest.mark.parametrize("summary", ["summary: |\n      First paragraph.\n\n      Second paragraph.\n",
+                                     "summary: Last line without a newline."])
+def test_unparseable_candidate_preserves_core_and_updates_independent_shards(root, tmp_path, capsys, summary):
+    core = root / ap.CORE
+    before = ("sources:\n  - id: tricky\n    url: https://example.org/plain.pdf\n    " + summary).encode()
+    core.write_bytes(before)
+    assert run(root, manifest(tmp_path, *GOOD), "--write") == 0
+    report = capsys.readouterr().out
+    assert f"{ap.CORE}: left alone" in report
+    assert core.read_bytes() == before
+    assert load(root, SHARD)["sources"][0]["archive"]["sha256"] == SHA_B
+
+
+def test_valid_yaml_with_wrong_inserted_value_preserves_core(root, tmp_path, monkeypatch, capsys):
+    core = root / ap.CORE
+    before = core.read_bytes()
+    original_dump = ir.dump
+    monkeypatch.setattr(ir, "dump", lambda data: original_dump(data).replace(SHA_A, SHA_B))
+    run(root, manifest(tmp_path, entry("https://example.org/plain.pdf", SHA_A)), "--write")
+    assert "would change more than the pointers" in capsys.readouterr().out
+    assert core.read_bytes() == before
+
+
+def test_shared_digests_report_only_distinct_usable_urls_in_stable_order(root, tmp_path, capsys):
+    path = manifest(tmp_path, entry("https://example.org/b", SHA_A), entry("https://example.org/a", SHA_A),
+                    entry("https://example.org/b", SHA_A), entry("https://example.org/conflict", SHA_A),
+                    entry("https://example.org/conflict", SHA_B), entry("https://example.org/updated", SHA_A),
+                    entry("https://example.org/updated", SHA_C, "2026-11-15"))
+    run(root, path)
+    lines = [line for line in capsys.readouterr().out.splitlines() if line.startswith("shared sha256 ")]
+    assert lines == [f"shared sha256 {SHA_A}: https://example.org/a, https://example.org/b"]

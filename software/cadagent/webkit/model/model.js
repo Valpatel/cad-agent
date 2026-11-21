@@ -162,6 +162,7 @@ const BUTTON = (label, pressed) => {
 // Node (the decoder's tests) has no HTMLElement: the element is only defined in a browser.
 class CadModel extends (typeof HTMLElement === 'undefined' ? class {} : HTMLElement) {
   #started = false;
+  #addedTabStop = false;
   #resolve;
   #status;
   #meter;
@@ -186,7 +187,10 @@ class CadModel extends (typeof HTMLElement === 'undefined' ? class {} : HTMLElem
     // loading="scroll": nothing starts until the reader scrolls the page or reaches the element (focus, pointer). The
     // element joins the tab order, so a keyboard reader can start a viewer that is already on screen without scrolling.
     if (this.getAttribute('loading') === 'scroll') {
-      if (!this.hasAttribute('tabindex')) this.tabIndex = 0;
+      if (!this.hasAttribute('tabindex')) {
+        this.tabIndex = 0;
+        this.#addedTabStop = true;
+      }
       if (!this.hasAttribute('role')) this.setAttribute('role', 'group');
       if (!this.hasAttribute('aria-label')) this.setAttribute('aria-label', `${this.getAttribute('label') || 'Model'}, 3D view`);
     }
@@ -390,7 +394,7 @@ class CadModel extends (typeof HTMLElement === 'undefined' ? class {} : HTMLElem
     const label = document.createElement('p');
     label.className = 'cad-model-label';
     label.textContent = 'Drag to turn';
-    const pause = BUTTON('Pause'), apart = BUTTON('Explode', false);   // Pause's label changes; Explode is a toggle
+    const pause = BUTTON('Pause turning', false), apart = BUTTON('Explode', false);
     if (!turning) pause.hidden = true;
     ui.append(label, apart, pause);
     const ray = new THREE.Raycaster(), pointer = new THREE.Vector2();
@@ -406,6 +410,7 @@ class CadModel extends (typeof HTMLElement === 'undefined' ? class {} : HTMLElem
       hovered = mesh;
       if (mesh) mesh.material.emissive.setHex(0x3a2008);
       label.textContent = mesh ? partLabel(mesh.userData.part.name) : 'Drag to turn';
+      label.toggleAttribute('data-part', Boolean(mesh));
       request();
     };
     // Touch (#650, #769): one finger turns the model both ways without scrolling the page; two fingers still zoom the page.
@@ -480,7 +485,8 @@ class CadModel extends (typeof HTMLElement === 'undefined' ? class {} : HTMLElem
     canvas.addEventListener('pointerleave', e => { if (e.pointerType === 'mouse' && !drag) highlight(null); });
     pause.addEventListener('click', () => {
       paused = !paused;
-      pause.textContent = paused ? 'Turn' : 'Pause';
+      pause.textContent = paused ? 'Resume turning' : 'Pause turning';
+      pause.setAttribute('aria-pressed', String(paused));
       lastInput = -1e9;
       request();
     });
@@ -578,6 +584,11 @@ class CadModel extends (typeof HTMLElement === 'undefined' ? class {} : HTMLElem
       })) };
     };
     this.stats = { parts: meshes.length, triangles: model.triangles, bytes: model.bytes };
+    if (this.#addedTabStop && this.getAttribute('tabindex') === '0') {
+      if (this.getRootNode().activeElement === this) apart.focus({ preventScroll: true });
+      this.removeAttribute('tabindex');
+    }
+    this.#addedTabStop = false;
   }
 }
 

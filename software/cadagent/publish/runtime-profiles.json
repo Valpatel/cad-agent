@@ -30,7 +30,7 @@
             "assembly/guide.js",
             "vendor/three/three.module.min.js"
           ],
-          "sha256": "42a17fd2a2384807233683f01b988e7e98ab52c438726f5eebc3baa7e6e41aec"
+          "sha256": "af19fdfa5e32d69ea515c37d199b031195178f511c031bab197cee607eb5e2f9"
         },
         "model/stage.js": {
           "requires": [
@@ -48,7 +48,7 @@
             "vendor/three/three.module.min.js",
             "ui/appnav.js"
           ],
-          "sha256": "c6ac7505f61a3da42266031eb6ebe6494b7108edca6f7e92256b7c5759ba7a8b"
+          "sha256": "f2eeb46f5cf7f7f346cb98de8729d58388839a0d2ceff96611ae259e38970c7b"
         },
         "model/viewer.js": {
           "requires": [

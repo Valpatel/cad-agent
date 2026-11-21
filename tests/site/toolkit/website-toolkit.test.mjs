@@ -9,6 +9,35 @@ import {YAML} from '../npm-context.mjs';
 import {matchesToolkitCard} from '../../../tools/site/assets/toolkit.js';
 import {sourceLicenseResolver} from '../../../tools/site/compiler/site-catalog.mjs';
 
+import {checkManifoldSource, manifoldGeometryMismatches} from './toolkit-examples-browser.mjs';
+
+test('original STEP reports the failed measurements independently', () => {
+  const reference = { format: 'STEP', triangles: 9518, bounds: [114.300003, 114.197014, 83.184998] };
+  assert.deepEqual(manifoldGeometryMismatches(reference), []);
+  assert.deepEqual(manifoldGeometryMismatches({ ...reference, triangles: 8305 }),
+    [{ field: 'triangles', expected: 9518, actual: 8305 }]);
+  const wrongBounds = [114.302, 114.197, 83.185];
+  assert.deepEqual(manifoldGeometryMismatches({ ...reference, format: 'STL', bounds: wrongBounds }), [
+    { field: 'format', expected: 'STEP', actual: 'STL' },
+    { field: 'boundsMm', expected: [114.300, 114.197, 83.185], actual: wrongBounds },
+  ]);
+});
+
+test('a failed original download preserves the measured geometry and its missing digest', async () => {
+  const original = '/files/pump-manifold.step';
+  const page = {
+    getByRole: () => ({ getAttribute: async () => original }),
+    url: () => 'https://example.test/viewer',
+    request: { get: async () => { throw new Error('connection reset'); } },
+  };
+  const failures = [];
+  await checkManifoldSource(page, original,
+    { format: 'STEP', triangles: 8305, bounds: [114.3, 114.197, 83.185] }, message => failures.push(message));
+  assert.match(failures[0], /pump-manifold[.]step: connection reset/);
+  const details = JSON.parse(failures[1].slice('unexpected manifold geometry: '.length));
+  assert.deepEqual(details, { original, sha256: null, differences: [{ field: 'triangles', expected: 9518, actual: 8305 }] });
+});
+
 const root = path.resolve(import.meta.dirname,'../../..');
 const read = file => JSON.parse(readFileSync(path.join(root,file),'utf8'));
 const fixture = () => {

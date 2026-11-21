@@ -354,7 +354,7 @@
    "paths": ["software/cadagent/webkit/scada/**", "tools/webkit/scada/**", "tests/webkit/scada/**", "software/cadagent/webkit/ui/**", "software/cadagent/webkit/vendor/fonts/**", "tests/fixtures/scada/**"],
    "command": "npm test",
    "cwd": "tools/webkit/scada",
-   "needs": {"node_deps": ["tools/webkit/scada"], "node_heap_mb": 4096, "node_heap_why": "tests/webkit/scada/ui/scada-components.test.mjs peaks near 3.2 GB; at a 2 GB heap it runs out of memory"},
+   "needs": {"node_deps": ["tools/webkit/scada"]},
    "cost": "fast",
    "mirrors": [{"workflow": "webkit.yml", "job": "scada", "run": "npm test"}]
   },

@@ -238,10 +238,23 @@ async function interactionChecks(){
   if(await page.locator('[data-gallery-tabs] [aria-selected=true]').getAttribute('data-tab')!=='guides')fail('keyboard tabs','ArrowRight does not select guides');
   await page.keyboard.press('End');await page.waitForURL(u=>u.searchParams.get('kind')==='demos');await page.keyboard.press('Home');await page.waitForURL(u=>!u.searchParams.has('kind'));
   await page.locator('.discover-filter-options > summary').click();
-  const box=page.locator('input[name=format][value=tool]');await box.check();await page.waitForURL(u=>u.searchParams.get('format')==='tool');
+  const box=page.locator('input[name=format][value=tool]');
+  // Sample at the end of the real change event, before locator click can scroll a moving chip back under the pointer.
+  await box.evaluate(el => {
+   el.scrollIntoView({block:'center',behavior:'instant'});
+   document.addEventListener('change', () => {
+    const chip = document.querySelector('[aria-label="Remove filter: tool"]');
+    const rect = chip.getBoundingClientRect();
+    const x = rect.left + rect.width / 2, y = rect.top + rect.height / 2;
+    window.__chipAim = {x,y,onChip:document.elementFromPoint(x,y) === chip};
+   }, {once:true});
+  });
+  await box.check();await page.waitForURL(u=>u.searchParams.get('format')==='tool');
   const chip=page.getByRole('button',{name:'Remove filter: tool',exact:true});if(!await chip.isVisible())fail('filter chip','label includes a count or is not removable');
   await page.locator('[data-gallery-sort]').selectOption('az');await page.waitForURL(u=>u.searchParams.get('sort')==='az');
-  await page.getByRole('button',{name:'Remove filter: tool',exact:true}).click();await page.waitForURL(u=>!u.searchParams.has('format'));
+  const aim = await page.evaluate(() => window.__chipAim);
+  if (!aim?.onChip) throw new Error('The filter chip was outside the pointer target when the filter finished: ' + JSON.stringify(aim));
+  await page.mouse.click(aim.x,aim.y);await page.waitForURL(u=>!u.searchParams.has('format'));
   await page.goBack();await box.waitFor();if(!await box.isChecked()||await page.locator('[data-gallery-sort]').inputValue()!=='az')fail('filter history','Back lost checkbox or sort');
   await page.locator('[data-group=guides] [data-gallery-more]').click();await page.waitForURL(u=>u.searchParams.get('kind')==='guides');
   const titles=await page.locator('[data-item]').evaluateAll(xs=>xs.filter(x=>x.checkVisibility()).map(x=>x.querySelector('.result-title').textContent.toLowerCase()));

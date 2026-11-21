@@ -562,7 +562,7 @@ try {
         await reduced.waitForFunction(src => document.querySelector(`cad-model[src="${src}"]`)?.dataset.state === 'ready', await model.getAttribute('src'), {timeout:20000})
           .catch(() => problems.push('reduced motion: a project viewer did not load'));
       }
-      const turning = await reduced.evaluate(() => [...document.querySelectorAll('cad-model .cad-model-ui button')].filter(b => !b.hidden && b.textContent === 'Pause').length);
+      const turning = await reduced.evaluate(() => [...document.querySelectorAll('cad-model .cad-model-ui button')].filter(b => !b.hidden && b.textContent === 'Pause turning').length);
       if (turning) problems.push('reduced motion: the 3D model turns by itself');
       await reduced.close();
       problems.push(...await reducedHeroProblems(browser, base));

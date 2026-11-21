@@ -167,23 +167,29 @@ class CadModel extends (typeof HTMLElement === 'undefined' ? class {} : HTMLElem
   #status;
   #meter;
   #message;
+  #connection = null;
+  #cancelActivation = null;
   #cleanup = null;
   #arbitrate = null;                   // re-decides touch arbitration (#769) once the 3D view is built
   ready = new Promise(r => { this.#resolve = r; });
 
   connectedCallback() {
-    if (this.#started) { this.#arbitrate?.(); return; }
+    if (!this.isConnected) return;
+    if (this.#connection) { this.#arbitrate?.(); return; }
+    this.#connection = new AbortController();
+    const { signal } = this.#connection;
     this.dataset.state ||= 'poster';
-    const go = () => this.#start();
+    const go = () => { if (!signal.aborted) this.#start(); };
     if (this.getAttribute('loading') === 'eager') return go();
     if (navigator.connection?.saveData) {
       const b = BUTTON('Load the 3D model');
       b.classList.add('cad-model-load');
-      b.addEventListener('click', () => { b.remove(); go(); }, { once: true });
+      this.#cancelActivation = () => b.remove();
+      b.addEventListener('click', go, { once: true, signal });
       this.append(b);
       return;
     }
-    const whenLoaded = document.readyState === 'complete' ? Promise.resolve() : new Promise(r => addEventListener('load', r, { once: true }));
+    const whenLoaded = document.readyState === 'complete' ? Promise.resolve() : new Promise(r => addEventListener('load', r, { once: true, signal }));
     // loading="scroll": nothing starts until the reader scrolls the page or reaches the element (focus, pointer). The
     // element joins the tab order, so a keyboard reader can start a viewer that is already on screen without scrolling.
     if (this.getAttribute('loading') === 'scroll') {
@@ -199,16 +205,46 @@ class CadModel extends (typeof HTMLElement === 'undefined' ? class {} : HTMLElem
         removeEventListener('scroll', done); this.removeEventListener('focusin', done); this.removeEventListener('pointerdown', done);
         r();
       };
-      addEventListener('scroll', done, { passive: true }); this.addEventListener('focusin', done); this.addEventListener('pointerdown', done);
+      addEventListener('scroll', done, { passive: true, signal }); this.addEventListener('focusin', done, { signal }); this.addEventListener('pointerdown', done, { signal });
     });
     Promise.all([whenLoaded, whenReader]).then(() => {
+      if (signal.aborted) return;
       const io = new IntersectionObserver(entries => {
-        if (!entries.some(e => e.isIntersecting)) return;
+        if (signal.aborted || !entries.some(e => e.isIntersecting)) return;
         io.disconnect();
-        (window.requestIdleCallback || (cb => setTimeout(cb, 1)))(go, { timeout: 1500 });
+        if (window.requestIdleCallback) {
+          const id = requestIdleCallback(go, { timeout: 1500 });
+          this.#cancelActivation = () => cancelIdleCallback(id);
+        } else {
+          const id = setTimeout(go, 1);
+          this.#cancelActivation = () => clearTimeout(id);
+        }
       }, { rootMargin: '300px' });
+      this.#cancelActivation = () => io.disconnect();
       io.observe(this);
     });
+  }
+
+  disconnectedCallback() {
+    // Moving directly between connected parents can deliver both reactions after the move.
+    // Keep its view for that case; connectedCallback updates the touch rule for its new parent.
+    if (this.isConnected || !this.#connection) return;
+    this.#connection.abort();
+    this.#connection = null;
+    this.#cancelActivation?.();
+    this.#cancelActivation = null;
+    this.#cleanup?.();
+    this.#cleanup = null;
+    this.#status?.remove();
+    this.#status = this.#meter = this.#message = null;
+    if (this.#addedTabStop && this.getAttribute('tabindex') === '0') this.removeAttribute('tabindex');
+    this.#addedTabStop = false;
+    // A pending ready promise can still be awaited across removal and reattachment.
+    if (['ready', 'error'].includes(this.dataset.state)) this.ready = new Promise(resolve => { this.#resolve = resolve; });
+    this.#started = false;
+    this.dataset.state = 'poster';
+    delete this.dataset.error;
+    this.removeAttribute('aria-busy');
   }
 
   #report(message, bytes = null, total = null) {
@@ -227,32 +263,40 @@ class CadModel extends (typeof HTMLElement === 'undefined' ? class {} : HTMLElem
 
   async #start() {
     if (this.#started) return;
+    const { signal } = this.#connection;
+    this.#cancelActivation?.();
+    this.#cancelActivation = null;
     this.#started = true; this.dataset.state = 'loading'; this.setAttribute('aria-busy', 'true');
-    this.#report('Preparing 3D viewer');
+    const report = (...args) => {
+      signal.throwIfAborted();
+      this.#report(...args);
+    };
+    report('Preparing 3D viewer');
     try {
       const src = new URL(this.getAttribute('src'), location.href);
       const [THREE, metadata] = await Promise.all([import(new URL('../vendor/three/three.module.min.js', KIT).href),
-        fetch(src).then(r => modelBytes(r, (n, total) => this.#report('Loading model structure', n, total)))]);
+        fetch(src, { signal }).then(r => modelBytes(r, (n, total) => report('Loading model structure', n, total)))]);
       const model = JSON.parse(new TextDecoder().decode(metadata));
       if (model.schema !== 'cad-agent-model/1') throw new Error(`unknown model schema ${model.schema}`);
       const meshHashes = model.assembly_plan !== undefined ? planMeshHashes(model.parts) : null;
-      this.#report('Loading mesh data');
-      const bin = await modelBytes(await fetch(new URL(model.bin, src)), (n, total) => this.#report('Loading mesh data', n, total));
+      report('Loading mesh data');
+      const bin = await modelBytes(await fetch(new URL(model.bin, src), { signal }), (n, total) => report('Loading mesh data', n, total));
       let plan;
       if (model.assembly_plan !== undefined) {
         const binding = model.assembly_plan;
         if (!binding || Object.keys(binding).sort().join(',') !== 'file,sha256' || !/^[0-9a-f]{64}$/.test(binding.sha256)) throw new Error('Invalid assembly plan binding');
-        plan = normalizePlan(parseJSON(await readAsset(assetURL(binding.file, src), { expectedHash: binding.sha256, maxBytes: 2 * 1024 * 1024 })),
+        plan = normalizePlan(parseJSON(await readAsset(assetURL(binding.file, src), { signal, expectedHash: binding.sha256, maxBytes: 2 * 1024 * 1024 })),
           { meshHashes });
         if (model.units !== 'mm' || model.up !== 'z' || await sha256(bin) !== model.sha256) throw new Error('Stale plan-enabled packed geometry');
       }
-      this.#report(`Decoding ${model.parts.length} CAD parts`);
+      report(`Decoding ${model.parts.length} CAD parts`);
       const parts = decodeModel(model, await inflate(bin));
-      this.#report(`Preparing ${parts.length} parts for display`);
+      report(`Preparing ${parts.length} parts for display`);
       this.#build(THREE, model, parts, plan);
+      signal.throwIfAborted();
       this.dataset.state = 'ready'; this.setAttribute('aria-busy', 'false');
       this.#report(`${parts.length} parts ready · drag to turn`); this.#resolve(this);
-    } catch (err) { this.#fail(err); }
+    } catch (err) { if (!signal.aborted) this.#fail(err); }
   }
 
   #fail(err) {
@@ -267,7 +311,7 @@ class CadModel extends (typeof HTMLElement === 'undefined' ? class {} : HTMLElem
     retry.addEventListener('click', () => {
       retry.remove(); this.ready = new Promise(resolve => { this.#resolve = resolve; });
       delete this.dataset.error; this.#started = false; this.#start();
-    }, {once:true});
+    }, {once:true, signal:this.#connection.signal});
     this.#status.append(retry); this.#resolve(this);
   }
 
@@ -275,10 +319,15 @@ class CadModel extends (typeof HTMLElement === 'undefined' ? class {} : HTMLElem
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'low-power', preserveDrawingBuffer: false });
     // Register resources as soon as allocated: a late first-draw failure must roll back the entire attempt.
     const disposers = []; let disposed = false;
+    const listen = (target, event, handler) => {
+      target.addEventListener(event, handler);
+      disposers.push(() => target.removeEventListener(event, handler));
+    };
     this.#cleanup = () => {
       if (disposed) return; disposed = true;
       for (const dispose of disposers.reverse()) { try { dispose(); } catch { /* Preserve the original rendering failure. */ } }
       for (const name of ['snapshot','view','setExplode','stats','captureAssemblyLandmarks']) delete this[name];
+      this.#arbitrate = null;
       this.classList.remove('cad-model-live');
     };
     disposers.push(() => renderer.forceContextLoss?.(), () => renderer.dispose());
@@ -445,13 +494,12 @@ class CadModel extends (typeof HTMLElement === 'undefined' ? class {} : HTMLElem
     };
     this.#arbitrate = arbitrate;
     for (const target of [window, window.visualViewport].filter(Boolean)) {
-      target.addEventListener('resize', arbitrate);
-      disposers.push(() => target.removeEventListener('resize', arbitrate));
+      listen(target, 'resize', arbitrate);
     }
     // Pointers down on the canvas. A second one is a pinch, which belongs to the page: it ends the turn without inertia
     // and is itself ignored, so the view stays as it is until every finger lifts.
     const down = new Set();
-    canvas.addEventListener('pointerdown', e => {
+    listen(canvas, 'pointerdown', e => {
       if (e.isPrimary) down.clear();   // a new gesture: no pointer is down any more, even if a lift went unseen
       down.add(e.pointerId);
       if (down.size > 1) { if (drag) { drag = null; spin = 0; lastInput = performance.now(); } return; }
@@ -459,7 +507,7 @@ class CadModel extends (typeof HTMLElement === 'undefined' ? class {} : HTMLElem
       spin = 0; lastInput = performance.now();
       try { canvas.setPointerCapture?.(e.pointerId); } catch { /* a pointer the browser no longer tracks */ }
     });
-    canvas.addEventListener('pointermove', e => {
+    listen(canvas, 'pointermove', e => {
       if (drag && e.pointerId === drag.id) {
         const dx = e.clientX - drag.x, dy = e.clientY - drag.y, dt = Math.max(1, performance.now() - drag.t);
         drag.moved += Math.abs(dx) + Math.abs(dy);
@@ -480,17 +528,17 @@ class CadModel extends (typeof HTMLElement === 'undefined' ? class {} : HTMLElem
       lastInput = performance.now();
       request();
     };
-    canvas.addEventListener('pointerup', release);
-    canvas.addEventListener('pointercancel', e => { down.delete(e.pointerId); if (drag && e.pointerId === drag.id) { drag = null; spin = 0; } });
-    canvas.addEventListener('pointerleave', e => { if (e.pointerType === 'mouse' && !drag) highlight(null); });
-    pause.addEventListener('click', () => {
+    listen(canvas, 'pointerup', release);
+    listen(canvas, 'pointercancel', e => { down.delete(e.pointerId); if (drag && e.pointerId === drag.id) { drag = null; spin = 0; } });
+    listen(canvas, 'pointerleave', e => { if (e.pointerType === 'mouse' && !drag) highlight(null); });
+    listen(pause, 'click', () => {
       paused = !paused;
       pause.textContent = paused ? 'Resume turning' : 'Pause turning';
       pause.setAttribute('aria-pressed', String(paused));
       lastInput = -1e9;
       request();
     });
-    apart.addEventListener('click', () => {
+    listen(apart, 'click', () => {
       const to = (anim?.to ?? (explode > 0.5 ? 1 : 0)) === 1 ? 0 : 1;
       apart.setAttribute('aria-pressed', String(to === 1));
       if (reduced()) { anim = null; setExplode(to); request(); return; }
@@ -542,12 +590,10 @@ class CadModel extends (typeof HTMLElement === 'undefined' ? class {} : HTMLElem
     };
     const viewObserver = new IntersectionObserver(es => { onScreen = es.at(-1).isIntersecting; show(); }); viewObserver.observe(this);
     disposers.push(() => viewObserver.disconnect());
-    document.addEventListener('visibilitychange', show);
-    disposers.push(() => document.removeEventListener('visibilitychange', show));
+    listen(document, 'visibilitychange', show);
     const motionMedia = matchMedia('(prefers-reduced-motion: reduce)');
     const motionChange = () => { turning = !reduced() && speed !== 0; pause.hidden = !turning; request(); };
-    motionMedia.addEventListener?.('change', motionChange);
-    disposers.push(() => motionMedia.removeEventListener?.('change', motionChange));
+    if (motionMedia.addEventListener) listen(motionMedia, 'change', motionChange);
 
     this.append(canvas, ui);
     resize();

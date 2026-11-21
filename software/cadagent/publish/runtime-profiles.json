@@ -30,7 +30,7 @@
             "assembly/guide.js",
             "vendor/three/three.module.min.js"
           ],
-          "sha256": "af19fdfa5e32d69ea515c37d199b031195178f511c031bab197cee607eb5e2f9"
+          "sha256": "4916fbe257b19bd7d0f5205ff6f011e1c8f83cbcaa3741fde4b3ef54f358daf6"
         },
         "model/stage.js": {
           "requires": [

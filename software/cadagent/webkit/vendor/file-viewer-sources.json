@@ -109,6 +109,8 @@
     "occt-import-js/source/src/dist-package.json": "c366c8924e786646a7e69185092cddccd3953667e8476f584ebbcc548b632690",
     "occt-import-js/source/src/occt-import-js-worker.js": "388f514d360437db7d72663efda0f6411c508e48420b09287bfcf9f50e3e6133",
     "occt-import-js/source/tools/build_wasm_dist.sh": "c2e4fa8b5da96904623a5446a831d2ba91f229ce1832774c9b39450000c17be1",
-    "occt-import-js/source/tools/rebuild_dist.js": "b527d0ca5ae43cd7d5b9a2e3962b8e19d357635a44554dbb949fa9c643bdaf34"
+    "occt-import-js/source/tools/rebuild_dist.js": "b527d0ca5ae43cd7d5b9a2e3962b8e19d357635a44554dbb949fa9c643bdaf34",
+    "occt-import-js/source/docs/release-notes-v0.0.28.md": "521b7650165c68f994c7af77c65db98f2e8581afa96089ac0330ecab14a82101",
+    "occt-import-js/source/docs/release-notes-v0.0.29.md": "9f9be172970700213333b55a2ebb719e94e9949b0cf243e9f02718b6019e6f39"
   }
 }

@@ -248,8 +248,8 @@ cad-nav,.doc-rail{--cad-nav-font:13px/1.5 var(--font);--cad-nav-fg:var(--ink);--
   cad-nav .cad-nav-panel .cad-nav-outline{display:none}}
 /* Compact navigation columns leave the existing 880px article measure available on laptops. */
 @media(min-width:1366px) and (width < 1400px){
-  body.doc-page main.wrap:has(.doc-rail){width:min(1328px,calc(100% - 24px))}
-  body.doc-page .doc-layout:has(.doc-rail){grid-template-columns:210px minmax(0,1fr) 190px;gap:24px}}
+  body.doc-page[data-doc-outline] main.wrap{width:min(1328px,calc(100% - 24px))}
+  body.doc-page[data-doc-outline] .doc-layout{grid-template-columns:210px minmax(0,1fr) 190px;gap:24px}}
 @media(min-width:1366px){
   body.doc-page .doc-rail{display:block;position:sticky;top:96px;max-height:calc(100vh - 112px);overflow:auto;margin-top:28px;padding-right:4px;scrollbar-width:thin}
   body.doc-page cad-nav .cad-nav-panel .cad-nav-outline{display:none}}
@@ -260,7 +260,7 @@ cad-nav,.doc-rail{--cad-nav-font:13px/1.5 var(--font);--cad-nav-fg:var(--ink);--
   body.doc-page .doc-main .prose :where(p,ul,ol,blockquote):not(:has(img,picture,svg,canvas,video,table)){max-width:80ch}
   body.doc-page .doc-main .prose>:is(h1,h2,h3,h4){max-width:32ch}
   body.doc-page .doc-main :is(cad-cantilever,cad-fourbar,cad-fan-curve,cad-torsion-snap,cad-printed-boss){max-width:1200px}
-  body.doc-page .doc-layout:not(:has(.doc-rail)){grid-template-columns:260px minmax(0,1fr)}}
+  body.doc-page:not([data-doc-outline]) .doc-layout{grid-template-columns:260px minmax(0,1fr)}}
 /* A page with no outline has no "On this page" column: the article keeps its width, not an empty column beside it. */
 @media(min-width:1500px){.doc-layout:not(:has(.doc-rail)){grid-template-columns:260px minmax(0,1fr)}}
 /* On paper: no page tree (kit/documents/nav.css) and no right-hand outline, so the article keeps the whole width, not the tree's column */

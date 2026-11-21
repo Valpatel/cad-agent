@@ -401,6 +401,32 @@ export async function treeEdgeProblems(browser, base) {
       }
     } finally { await page.close(); }
   }
+  // A long response can paint the whole article before the trailing outline arrives.
+  // Compare the partial and complete documents with the same CSS and no client script.
+  for (const route of ['/docs/toolkit', '/research/process-profiles']) {
+    const page = await browser.newPage({ viewport: { width: 1366, height: 800 }, javaScriptEnabled: false });
+    const url = base + route;
+    const columns = () => page.locator('main.wrap, .doc-layout > cad-nav, .doc-main').evaluateAll(nodes =>
+      nodes.map(node => { const { x, width } = node.getBoundingClientRect(); return [x, width]; }));
+    try {
+      await page.route(url, async intercepted => {
+        const response = await intercepted.fetch();
+        const html = await response.text();
+        const rail = html.indexOf('<nav class="doc-rail"');
+        await intercepted.fulfill({ response, body: rail < 0 ? html : html.slice(0, rail) });
+      });
+      await navigate(page, url);
+      const before = await columns();
+      const partialRails = await page.locator('.doc-rail').count();
+      await page.unroute(url);
+      await navigate(page, url);
+      const after = await columns();
+      if (partialRails !== 0 || await page.locator('.doc-rail').count() !== 1 || before.length !== 3 ||
+          JSON.stringify(before) !== JSON.stringify(after)) {
+        problems.push(`1366px ${route}: columns moved when the outline arrived: ${JSON.stringify({ before, after })}`);
+      }
+    } finally { await page.close(); }
+  }
   // The wider shell from 1400 px is the docs pages' only: at 1440 px the other pages keep dev's 1240 px shell (#807
   // review), and a docs page with no outline has no empty column (the article keeps the room). Planted control: the
   // widening unscoped, as first written, is reported.

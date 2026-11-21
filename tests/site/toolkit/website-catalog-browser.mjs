@@ -31,15 +31,16 @@ const fail = (where, what) => problems.push(`${where}: ${what}`);
 // `forced`: 'active' emulates forced colours (Windows High Contrast and the like).
 // `trace`: keep a navigation trail (main-frame navigations, load events, the page's own history writes and clicks),
 // written out only by `evidence` when a step fails (#754).
-async function open(route, { width = 1366, height = 900, js = true, motion = 'no-preference', block = null, init = null, fails = null, forced = 'none', color = 'light', trace = false } = {}) {
+async function open(route, { width = 1366, height = 900, js = true, motion = 'no-preference', block = null, init = null, fails = null, forced = 'none', color = 'light', trace = false, expected503 = null } = {}) {
   const context = await browser.newContext({ viewport: { width, height }, javaScriptEnabled: js, reducedMotion: motion, forcedColors: forced, colorScheme: color });
   const page = await context.newPage();
   const seen = [];
+  const expectedUnavailable = url => expected503 && url === base + expected503;
   if (block) await page.route(`**${block}`, r => r.abort());
-  page.on('console', m => { if (m.type() === 'error' && !/status of 404/.test(m.text()) && !(block && /gallery\.js|Failed to load|load failed|importing a module/i.test(m.text()))) seen.push(`console: ${m.text()}`); });
+  page.on('console', m => { if (m.type() === 'error' && !/status of 404/.test(m.text()) && !(expectedUnavailable(m.location().url) && /503/.test(m.text())) && !(block && /gallery\.js|Failed to load|load failed|importing a module/i.test(m.text()))) seen.push(`console: ${m.text()}`); });
   page.on('pageerror', e => { if (!(fails && fails.test(e.message))) seen.push(`page error: ${e.message}`); });
   page.on('requestfailed', r => { if (!/ERR_ABORTED|cancelled/i.test(r.failure()?.errorText || '') && !(block && r.url().endsWith(block))) seen.push(`failed: ${r.url()}`); });
-  page.on('response', r => { if (r.status() >= 400) seen.push(`HTTP ${r.status()}: ${r.url()}`); });
+  page.on('response', r => { if (r.status() >= 400 && !(r.status() === 503 && expectedUnavailable(r.url()))) seen.push(`HTTP ${r.status()}: ${r.url()}`); });
   page.on('request', r => { if (!r.url().startsWith(base) && !/^(data|blob):/.test(r.url())) seen.push(`third party: ${r.url()}`); });
   if (js) await page.addInitScript(() => document.addEventListener('securitypolicyviolation', e => console.error(`CSP ${e.violatedDirective} ${e.blockedURI}`)));
   if (init) await page.addInitScript(init);
@@ -50,19 +51,30 @@ async function open(route, { width = 1366, height = 900, js = true, motion = 'no
     page.on('framenavigated', f => { if (f === page.mainFrame()) note(`framenavigated ${f.url()}`); });
     page.on('domcontentloaded', () => note('domcontentloaded'));
     page.on('load', () => note('load'));
-    await page.addInitScript(() => {
-      const log = window.__catalogTrace = [], note = what => log.push(`${Date.now()} ${what}`);
+    const tracePrefix = 'catalogue browser test: ';
+    page.on('console', message => {
+      if (message.type() === 'debug' && message.text().startsWith(tracePrefix)) trail.push(message.text().slice(tracePrefix.length));
+    });
+    await page.addInitScript(prefix => {
+      const log = window.__catalogTrace = [], note = what => {
+        const line = `${Date.now()} ${what}`;
+        log.push(line);
+        console.debug(prefix + line); // Keep earlier document events if a recovery triggers a reload.
+      };
       for (const name of ['pushState', 'replaceState']) {
         const write = history[name];
         history[name] = function (state, title, url) { note(`${name} ${url}`); return write.apply(this, arguments); };
       }
       addEventListener('popstate', () => note(`popstate ${location.href}`));
       // Capture phase: the click arrived (and on what); bubble phase: it got past the page's handlers, and whether one prevented it.
-      const what = e => e.target?.getAttribute?.('aria-label') || e.target?.localName;
+      const what = e => e.target?.closest?.('[data-scada-preview]')?.dataset.scadaPreview || e.target?.getAttribute?.('aria-label') || e.target?.localName;
+      for (const name of ['cancel', 'close']) document.addEventListener(name, e => {
+        if (e.target.matches?.('dialog')) note(`dialog ${name} open=${e.target.open}`);
+      }, true);
       addEventListener('click', e => note(`click ${what(e)}`), true);
       addEventListener('click', e => note(`click handled ${what(e)} defaultPrevented=${e.defaultPrevented}`));
       addEventListener('pageshow', () => note(`pageshow ${location.href}`));
-    });
+    }, tracePrefix);
   }
   await page.goto(base + route, { waitUntil: 'networkidle' });
   if (js && !block && !fails && /^\/(?:explore|catalog)(?:[?#]|$)/.test(route)) await page.waitForSelector('cad-gallery[data-ready]', { timeout: 10000 }).catch(() => seen.push('the gallery did not start'));
@@ -72,18 +84,22 @@ async function open(route, { width = 1366, height = 900, js = true, motion = 'no
   // pushState, a page error in `seen`) or wrote nothing because the URL was unchanged (`chips`/`checked` show the state);
   // the engine not reporting (a pushState and `inPage.href` without the change, `playwrightUrl` still with it); and a page
   // that stopped responding (`inPage.unavailable`). The page reads are bounded, so a hung page still fails in about 30 s.
-  const evidence = async (where, error) => {
+  const evidence = async (where, error, {requests, inspectPage, readMetadata} = {}) => {
     const out = await mkdtemp(path.join(tmpdir(), 'cad-agent-catalog-wait-'));
-    const record = inPage => writeFile(path.join(out, 'state.json'), JSON.stringify({ where, error: String(error?.message || error), route, playwrightUrl: page.url(), inPage, trail, seen }, null, 2) + '\n');
+    const record = inPage => writeFile(path.join(out, 'state.json'), JSON.stringify({ where, error: String(error?.message || error), route, playwrightUrl: page.url(), inPage, trail, seen, requests }, null, 2) + '\n');
     await record({ unavailable: 'not read yet' });   // the Node-side facts need no page
     let timer;
     const timedOut = new Promise(ok => { timer = setTimeout(() => ok({ unavailable: 'timed out after 5 s: the page did not answer' }), 5000); });
-    const inPage = await Promise.race([timedOut, page.evaluate(() => ({ href: location.href, readyState: document.readyState, history: history.length, trace: window.__catalogTrace || null,
+    const metadata = readMetadata?.();
+    const inPage = await Promise.race([timedOut, Promise.all([page.evaluate(() => ({ href: location.href, readyState: document.readyState, history: history.length, trace: window.__catalogTrace || null,
       chips: [...document.querySelectorAll('[data-gallery-chips] button')].map(b => b.getAttribute('aria-label')),
       checked: [...document.querySelectorAll('cad-gallery input:checked')].map(b => `${b.name}=${b.value}`),
-      focus: document.activeElement?.getAttribute('aria-label') || document.activeElement?.localName })).catch(e => ({ unavailable: String(e) }))]);
+      focus: document.activeElement?.getAttribute('aria-label') || document.activeElement?.localName })), inspectPage ? page.evaluate(inspectPage) : undefined])
+      .then(([state, detail]) => ({...state, detail})).catch(e => ({ unavailable: String(e) }))]);
+    await Promise.race([timedOut, metadata]);
     clearTimeout(timer);
     await record(inPage);
+    if (requests) console.error(JSON.stringify({where, inPage, trail, requests, seen}));
     if (!inPage.unavailable) await page.screenshot({ path: path.join(out, 'page.png'), fullPage: true, timeout: 5000 }).catch(() => {});
     console.error(`${where}: failure evidence in ${out}`);
   };

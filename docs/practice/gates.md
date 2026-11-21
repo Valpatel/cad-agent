@@ -334,7 +334,8 @@ appears in the places this table names, and nowhere else:
 | the dossier lint | one `not-drawn` warning per component ([dossier.md](dossier.md#joining-cards-and-geometry)) |
 
 If a project gate already uses `<gate>:not-drawn`, the toolkit leaves that check intact and numbers its own
-warning (`<gate>:1:not-drawn`, then `<gate>:2:not-drawn` if needed).
+warning (`<gate>:1:not-drawn`, then `<gate>:2:not-drawn` if needed). Rerun any gate with an omission warning
+from an earlier draft of this feature. Its saved results cannot show whether it overwrote a project warning.
 
 The site and the packets list the row on every section, not only on the sections of the `near` parts: a component
 declared without `near`, or near a part of another section, would otherwise reach no reviewer.

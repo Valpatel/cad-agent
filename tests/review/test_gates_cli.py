@@ -738,6 +738,21 @@ def test_stored_verdict_that_lost_a_failed_check_must_be_rerun():
     assert data == before
 
 
+def test_legacy_omission_warning_cannot_certify_a_custom_warning_survived():
+    record = geometry_with()
+    bound = gr.bind_inputs(passing("custom"), record)
+    legacy = json.loads(json.dumps(bound))
+    for field in ("checks", "findings"):
+        legacy[field][-1]["evidence"].pop("code", None)
+    # The old writer left these exact rows and totals when it overwrote a warning with the same ID.
+    before = copy.deepcopy(legacy)
+    assert stale_reason(legacy, record)
+    with pytest.raises(ValueError, match="rerun"):
+        gr.bind_inputs(legacy, record)
+    assert before == legacy
+    assert stale_reason(bound, record) is None
+
+
 def test_binding_first_declaration_adds_current_caveats_only_once():
     earlier = gr.bind_inputs(passing("custom"), base_geometry())
     updated = geometry_with()

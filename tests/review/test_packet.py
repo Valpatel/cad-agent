@@ -154,6 +154,23 @@ def test_views_cover_the_section(tmp_path):
     assert m["not_rendered"] == [{"what": "part ghost", "why": "its card has no registered shape"}]
 
 
+@pytest.mark.parametrize("declared", [False, True])
+def test_custom_drawing_warning_only_reaches_its_own_section(declared):
+    from cadagent.review.gates.verdict import Check, verdict
+    geo = record()
+    if declared:
+        geo["not_drawn"] = {"plug": {"reason": "purchased part", "near": []}}
+    check = Check("inspection:not-drawn", "warn", "Hopper drawing lacks dimensions",
+                  parts=["hopper"], evidence={"not_drawn": ["boss diameter", "edge distance"]})
+    result = bind_inputs(verdict("inspection", [check], assumptions=["check drawing dimensions"]), geo)
+    for sid in ("S1", "S2"):
+        packet = pk.plan_packet(sid, geo, None, {"inspection": result}, None)
+        rows = packet["measurements"]["gates"]["inspection"]["section_checks"]
+        ids = {row["id"] for row in rows}
+        assert (check.id in ids) == (sid == "S1")
+        assert ("inspection:1:not-drawn" in ids) == declared
+
+
 def test_a_component_declared_not_drawn_reaches_every_section_s_packet(tmp_path):
     """A gate's ``<gate>:not-drawn`` row and the lint's ``not-drawn`` warning are in the packet of every section,
     whether or not the declaration's ``near`` names one of its parts (#722): the component has no extent, so no

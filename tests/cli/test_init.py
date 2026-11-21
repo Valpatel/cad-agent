@@ -393,6 +393,22 @@ def test_starter_gates_measure_the_edited_lid(tmp_path, monkeypatch):
     assert fixed["inputs"]["geometry"]["hashes"]["lid"] == initial["inputs"]["geometry"]["hashes"]["lid"]
 
 
+def test_starter_gate_receipt_when_the_insert_changes(tmp_path):
+    """The omissions describe the purchased parts even when the user chooses the starter's M4 insert."""
+    pytest.importorskip("cadquery")
+    dest = tmp_path / "m4-box"
+    assert main(["init", str(dest)]) == 0
+    build = dest / "cad/build.py"
+    source = build.read_text()
+    assert source.count('INSERT = "mcmaster-94459A140"') == 1
+    build.write_text(source.replace('INSERT = "mcmaster-94459A140"', 'INSERT = "mcmaster-94459A160"'))
+    assert main(["gates", "--project", str(dest), "--only", "connectivity"]) == 0
+    receipt = json.loads((dest / "exports" / "gates" / "connectivity.json").read_text())
+    screw = next(item for item in receipt["not_drawn"] if item["name"] == "lid-screws")
+    assert set(screw["near"]) == {"lid", "box"}
+    assert "M3" not in screw["reason"]
+
+
 def test_the_starter_passes_cad_agent_all_as_copied(tmp_path, monkeypatch, capsys):
     """What CI runs on the starter (the full job has the cad extra): init, then `cad-agent all` passes every row, with
     the insert hole inserts.hole_design gives (4.20 mm for the M3 insert, #317), and leaves only its outputs."""

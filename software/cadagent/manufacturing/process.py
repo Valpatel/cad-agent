@@ -20,9 +20,9 @@ never passes or fails a part on it. :meth:`Profile.verified_rule` refuses one, f
 
 **Where the data comes from.**
 
-* Rules, formulas and the shop table: ``docs/research/process-profiles.yaml`` at the root of the cad-agent checkout this
-  package runs from (an editable install or ``PYTHONPATH=software``), or the file named by ``CADAGENT_PROCESS_PROFILES``, or
-  the ``path`` given to :func:`load`. A wheel without the checkout has no data: :func:`load` says so.
+* Rules, formulas and the shop table come from ``docs/research/process-profiles.yaml`` in a checkout or the
+  installed wheel's ``share/cad-agent/research`` data. ``CADAGENT_PROCESS_PROFILES`` selects another file, and
+  an explicit ``path`` passed to :func:`load` takes precedence.
 * FDM materials: the maker's data sheets that :mod:`cadagent.mechanical.compliant.allowables` holds, one entry per
   filament with every edition read. Their source ids (``bambu-petg-basic-tds`` and so on) are the reference registry's
   (#118), and so are the rules' sources: ``docs/research/references.yaml`` beside the data file holds every one. A data
@@ -580,10 +580,17 @@ def _sheet_materials(data: Mapping[str, Any]) -> Dict[str, SheetMaterial]:
 
 
 def data_path(path: Any = None) -> Path:
-    p = Path(path) if path is not None else Path(os.environ[ENV]) if os.environ.get(ENV) else DATA
+    override = path if path is not None else os.environ.get(ENV) or None
+    if override is None and not DATA.is_file():
+        from cadagent.project import installed_data_file
+
+        installed = installed_data_file("research/process-profiles.yaml")
+        if installed is not None:
+            return installed
+    p = DATA if override is None else Path(override)
     if not p.is_file():
-        raise ProfileDataError(f"no process-profile data at {p}: it is docs/research/process-profiles.yaml in a cad-agent "
-                               f"checkout; run from one (an editable install) or set {ENV} to the file")
+        raise ProfileDataError(f"no process-profile data at {p}: reinstall cad-agent or set {ENV} to the "
+                               "checkout's docs/research/process-profiles.yaml")
     return p
 
 

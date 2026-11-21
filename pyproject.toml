@@ -18,6 +18,7 @@ dependencies = ["pyyaml>=6.0", "numpy>=1.22", "packaging>=26.3"]
 
 [project.optional-dependencies]
 bambu = ["paho-mqtt>=2.1"]
+bambu-camera = ["paho-mqtt>=2.1", "pillow>=13.0"]
 cad = [
     "cadquery>=2.8",
     "trimesh>=4.0",

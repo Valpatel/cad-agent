@@ -247,16 +247,20 @@ cad-nav,.doc-rail{--cad-nav-font:13px/1.5 var(--font);--cad-nav-fg:var(--ink);--
   .doc-main :is(cad-cantilever,cad-fourbar,cad-fan-curve,cad-torsion-snap,cad-printed-boss){max-width:1200px}
   .doc-rail{display:block;position:sticky;top:96px;max-height:calc(100vh - 112px);overflow:auto;margin-top:28px;padding-right:4px;scrollbar-width:thin}
   cad-nav .cad-nav-panel .cad-nav-outline{display:none}}
-/* Docs pages take the same wide layout from 1400px (#807), so a 1440px laptop has the "On this page" column; every
-   other page (home, Explore, catalogue, Toolkit, references) keeps the 1240px shell until 1500px. */
+/* Compact navigation columns leave the existing 880px article measure available on laptops. */
+@media(min-width:1366px) and (width < 1400px){
+  body.doc-page main.wrap:has(.doc-rail){width:min(1328px,calc(100% - 24px))}
+  body.doc-page .doc-layout:has(.doc-rail){grid-template-columns:210px minmax(0,1fr) 190px;gap:24px}}
+@media(min-width:1366px){
+  body.doc-page .doc-rail{display:block;position:sticky;top:96px;max-height:calc(100vh - 112px);overflow:auto;margin-top:28px;padding-right:4px;scrollbar-width:thin}
+  body.doc-page cad-nav .cad-nav-panel .cad-nav-outline{display:none}}
+/* From 1400px docs also get the wider shell and full-size navigation columns. */
 @media(min-width:1400px){body.doc-page .wrap{width:calc(100% - clamp(96px,6vw,192px))}
   body.doc-page .doc-layout{grid-template-columns:260px minmax(0,1fr) 240px;gap:clamp(28px,2vw,48px)}
   body.doc-page .doc-main{max-width:none}
   body.doc-page .doc-main .prose :where(p,ul,ol,blockquote):not(:has(img,picture,svg,canvas,video,table)){max-width:80ch}
   body.doc-page .doc-main .prose>:is(h1,h2,h3,h4){max-width:32ch}
   body.doc-page .doc-main :is(cad-cantilever,cad-fourbar,cad-fan-curve,cad-torsion-snap,cad-printed-boss){max-width:1200px}
-  body.doc-page .doc-rail{display:block;position:sticky;top:96px;max-height:calc(100vh - 112px);overflow:auto;margin-top:28px;padding-right:4px;scrollbar-width:thin}
-  body.doc-page cad-nav .cad-nav-panel .cad-nav-outline{display:none}
   body.doc-page .doc-layout:not(:has(.doc-rail)){grid-template-columns:260px minmax(0,1fr)}}
 /* A page with no outline has no "On this page" column: the article keeps its width, not an empty column beside it. */
 @media(min-width:1500px){.doc-layout:not(:has(.doc-rail)){grid-template-columns:260px minmax(0,1fr)}}

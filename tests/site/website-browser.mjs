@@ -118,7 +118,7 @@ try {
     ['cantilever', cantileverProblems],  // the snap-arm explorer on /docs/compliant (#137), below
     ['fold', foldProblems],              // the page tree's fold on phones, with and without nav.js (#134)
     ['outline visibility', () => sameSectionOutlineProblems(browser, base)],
-    ['tree edge', () => treeEdgeProblems(browser, base)],   // no half row above the tree's search; the rail from 1400 px (#807)
+    ['tree edge', () => treeEdgeProblems(browser, base)],   // no half row above the tree's search; the rail from 1366 px (#807)
     ['reader scroll boundary', async () => [...await readerBoundaryProblems(browser, base),
       ...await readerOutlineClickProblems(browser, base), ...await readerOverflowProblems(browser, base)]],
     ['jump', jumpProblems],              // outline jumps: released by the reader's wheel, not by a stall
@@ -269,6 +269,8 @@ try {
           }));
           if (shift > 0.05) seen.push(`layout shifts while loading: ${shift.toFixed(3)}`);
           if (width >= 1100) {
+            // Exercise the tree's own outline at the last width before it moves to the right column.
+            await page.setViewportSize({ width: 1365, height: 800 });
             const outlineEvidence = await mkdtemp(path.join(tmpdir(), 'cad-agent-outline-'));
             // Bounded diagnostics only; mark/scroll readiness and assertions remain unchanged.
             await page.evaluate(() => {
@@ -336,6 +338,7 @@ try {
             await page.mouse.wheel(0, -back);
             await settle();
             if ((await middle.getAttribute('aria-current')) === 'location') seen.push(`"${await middle.textContent()}" stays marked after the reader scrolls back`);
+            await page.setViewportSize({ width, height: 800 });
             if (!(await nav.locator('.cad-nav-filter').isVisible())) seen.push('the filter is out of view');
             const filter = nav.locator('.cad-nav-filter');
             const beforeOpen=await nav.locator('details.cad-nav-group[open]').count();
@@ -742,8 +745,8 @@ try {
       if (atEnd.top < atEnd.stick - 1) problems.push(`2560px /docs/explore: at the page's end the page tree's panel slid up to ${Math.round(atEnd.top)}px, above where it sticks (${atEnd.stick}px)`);
       await big.close();
       // The same jumps through the tree's own outline, in a window tall enough that several sections cannot reach the
-      // reading line (review 3: at 1366x900 only the last one cannot, and the bottom rule marks it anyway).
-      const tall = await browser.newPage({ viewport: { width: 1366, height: 1600 } });
+      // reading line (review 3: at 1365x900 only the last one cannot, and the bottom rule marks it anyway).
+      const tall = await browser.newPage({ viewport: { width: 1365, height: 1600 } });
       await navigate(tall, base + '/docs/explore');
       await settled(tall);
       const unreachable = await tall.evaluate(() => {
@@ -751,7 +754,7 @@ try {
         return [...document.querySelectorAll('cad-nav .cad-nav-outline a')].map((a, i) => [i, document.getElementById(decodeURIComponent(a.hash.slice(1)))])
           .filter(([, h]) => h && h.getBoundingClientRect().top + scrollY - line > max).map(([i]) => i);
       });
-      if (unreachable.length < 2) problems.push(`1366x1600 /docs/explore: only ${unreachable.length} section(s) cannot reach the reading line; pick a page where several cannot`);
+      if (unreachable.length < 2) problems.push(`1365x1600 /docs/explore: only ${unreachable.length} section(s) cannot reach the reading line; pick a page where several cannot`);
       const outline = tall.locator('cad-nav .cad-nav-outline a');
       for (const i of unreachable) {
         await tall.evaluate(() => scrollTo({ top: 0, behavior: 'instant' }));
@@ -769,12 +772,12 @@ try {
           tick(); setTimeout(done, 10000);
         }));
         if ((await outline.nth(i).getAttribute('aria-current')) !== 'location')
-          problems.push(`1366x1600 /docs/explore: following "${await outline.nth(i).textContent()}" (smooth scroll) does not mark it`);
+          problems.push(`1365x1600 /docs/explore: following "${await outline.nth(i).textContent()}" (smooth scroll) does not mark it`);
       }
       await tall.close();
       // A wheel over the page tree scrolls the page when the tree has nothing to scroll (review 3: the panel trapped it).
       // Every group is folded first, so the panel is still a scroll container but has nothing to scroll whatever the
-      // number of pages. The open Docs group alone outgrew 1080 px when the vision page arrived (#148); from 1400 px the
+      // number of pages. The open Docs group alone outgrew 1080 px when the vision page arrived (#148); from 1366 px the
       // tree leaves out the page's outline.
       const desk = await browser.newPage({ viewport: { width: 1920, height: 1080 } });
       await navigate(desk, base + '/docs/toolkit');

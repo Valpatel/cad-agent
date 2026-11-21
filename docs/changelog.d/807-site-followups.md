@@ -1,5 +1,5 @@
 **Changed**
-- Website: on docs pages the "On this page" column and the wider page start at 1400 px instead of 1500 px, so a 1440 px laptop reaches a page's outline without scrolling the tree; other pages keep the 1240 px shell until 1500 px, and a docs page with no outline no longer keeps an empty column beside the article (#807).
+- Website: docs pages show “On this page” beside the article from 1366 px, keeping the topic tree available alongside it. At 1366 px the article keeps its previous reading width, and at 1400 px the navigation columns widen. Other pages retain the 1240 px shell until 1500 px, and articles without an outline use the available columns (#807).
 - Web kit `ui/appnav.js`: on a page that loads the kit's theme (`ui/theme.css`), the top bar takes its colours and follows the page's light or dark theme; other pages keep the dark bar (#807).
 
 **Fixed**

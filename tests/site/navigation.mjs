@@ -49,8 +49,8 @@ export const cleanURL = value => {
 /** Text as the receipts keep it: every URL in it cleaned, at most 300 characters. */
 export const cleanText = value => String(value).replace(/https?:\/\/[^\s"'<>]+/g, cleanURL).slice(0, 300);
 
-/** At most `ms` for one piece of evidence; the timer never outlives it. */
-const bounded = async (action, ms, what) => {
+/** Bound a browser action from Node; clear the timer when the action finishes. */
+export const bounded = async (action, ms, what) => {
   let timer;
   try {
     return await Promise.race([Promise.resolve().then(action), new Promise((_, reject) => {

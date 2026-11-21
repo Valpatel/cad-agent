@@ -2,6 +2,7 @@
 import assert from 'node:assert/strict';
 import {mkdir,writeFile} from 'node:fs/promises';
 import {chromium,webkit} from '../site/npm-context.mjs';
+import {bounded} from '../site/navigation.mjs';
 import {serveWebkit} from './webkit-server.mjs';
 
 const pack=(dtype,data)=>({dtype,b64:Buffer.from(new ({float32:Float32Array,uint32:Uint32Array,uint8:Uint8Array}[dtype])(data).buffer).toString('base64')});
@@ -35,18 +36,6 @@ function progress(theme, step, detail) {
 const readyMessage = 'FEA fixture: body data-ready set';
 const errorPrefix = 'FEA fixture initialization error: ';
 const timeoutMs = 30_000;
-
-// Own the deadline in Node. Even cancelling a renderer-side poll can wait for the renderer.
-async function withinDeadline(operation, label) {
-  let timer;
-  try {
-    return await Promise.race([operation, new Promise((_, reject) => {
-      timer = setTimeout(() => reject(new Error(`Timed out after ${timeoutMs}ms waiting for ${label}`)), timeoutMs);
-    })]);
-  } finally {
-    clearTimeout(timer);
-  }
-}
 
 async function openFixture(page, siteUrl, file, mark) {
   const url = new URL(file, siteUrl).href;
@@ -93,7 +82,7 @@ async function openFixture(page, siteUrl, file, mark) {
   mark('navigating', file);
   await page.goto(siteUrl+'/kit/fea/fea.html?case='+file+'&nav=0&title=FEA%20fixture');
   mark('waiting for ready');
-  const failure = await withinDeadline(startup.promise, 'FEA initialization');
+  const failure = await bounded(() => startup.promise, timeoutMs, 'FEA initialization');
   if (failure) throw new Error(failure);
   mark('ready');
 }
@@ -101,7 +90,7 @@ async function openFixture(page, siteUrl, file, mark) {
 async function fitAndWaitForDraw(page, mark) {
   mark('fitting top view');
   // A ready flag means initialization finished. Require a new renderer.render() after the camera fit.
-  await withinDeadline(page.evaluate(() => {
+  await bounded(() => page.evaluate(() => {
     const { stage, fit } = window.__fea;
     const before = stage.draws;
     fit('top');
@@ -112,7 +101,7 @@ async function fitAndWaitForDraw(page, mark) {
       }
       checkDraw();
     });
-  }), 'post-fit FEA surface draw');
+  }), timeoutMs, 'post-fit FEA surface draw');
   mark('top view drawn');
 }
 
@@ -144,7 +133,7 @@ async function checkStalledInitialization(browser, siteUrl) {
   try {
     await freezeFrames(page);
     await assert.rejects(openFixture(page, siteUrl, '/stalled-fixture.json', (step, detail) => events.push([step, detail])),
-      /Timed out after 30000ms waiting for FEA initialization/);
+      /FEA initialization exceeded 30000 ms/);
     assert.ok(events.some(([step, status]) => step === 'fixture response' && status === 200));
     assert.ok(!events.some(([step]) => step === 'fixture body received' || step === 'ready attribute set'));
   } finally {
@@ -189,7 +178,7 @@ async function checkReadyBeforeFrame(browser, siteUrl, releaseBody) {
       }),
       (async () => {
         assert.equal((await headers).status(), 200);
-        await withinDeadline(waiting.promise, 'control to begin waiting on the held fixture');
+        await bounded(() => waiting.promise, timeoutMs, 'control to begin waiting on the held fixture');
         assert.equal(await page.evaluate(() => document.body.dataset.ready), undefined);
         assert.ok(!events.some(([step]) => step === 'fixture body received'), 'the server is still holding the body');
         assert.ok(!events.some(([step]) => step === 'ready attribute set'));
@@ -202,9 +191,9 @@ async function checkReadyBeforeFrame(browser, siteUrl, releaseBody) {
     assert.ok(events.some(([step]) => step === 'ready attribute set'));
     const draws = () => page.evaluate(() => window.__fea.stage.draws);
     assert.equal(await page.evaluate(() => window.__fea.stage.frames), 0, 'startup must finish before the first frame');
-    await assert.rejects(fitAndWaitForDraw(page, () => {}), /Timed out after 30000ms waiting for post-fit FEA surface draw/);
+    await assert.rejects(fitAndWaitForDraw(page, () => {}), /post-fit FEA surface draw exceeded 30000 ms/);
     assert.equal(await draws(), 0, 'a ready flag cannot pass the surface check with frames withheld');
-    await withinDeadline(page.evaluate(() => window.resumeFeaFrames()), 'control stage to resume frames');
+    await bounded(() => page.evaluate(() => window.resumeFeaFrames()), timeoutMs, 'control stage to resume frames');
     assert.ok(await draws() > 0, 'the mounted stage must draw after frames resume');
   } finally {
     releaseBody();
@@ -252,7 +241,7 @@ try{
       await fitAndWaitForDraw(page, mark);
       // Finish a real paint before the native pointer enters the projected surface.
       mark('capturing ready surface');
-      await withinDeadline(page.screenshot({ path: `${out}/${engine.name()}-${theme}-ready.png`, timeout: timeoutMs }), 'FEA ready screenshot');
+      await bounded(() => page.screenshot({ path: `${out}/${engine.name()}-${theme}-ready.png`, timeout: timeoutMs }), timeoutMs, 'FEA ready screenshot');
       const hover=async()=>{
         const point=await page.evaluate(async()=>{
           const THREE=await import('/kit/vendor/three/three.module.min.js'),v=window.__fea;v.stage.root.updateMatrixWorld(true);v.stage.camera.updateMatrixWorld(true);
@@ -300,8 +289,8 @@ try{
       const label = `${engine.name()} ${theme}`;
       // A slow or cancelled diagnostic capture must not hide the first failing assertion or browser action.
       console.error(`FEA ${label} failed`, error);
-      await rethrowWithScreenshot(error, label, () => withinDeadline(
-        page.screenshot({ path: `${out}/${engine.name()}-${theme}-failure.png`, timeout: timeoutMs }), 'FEA failure screenshot'));
+      await rethrowWithScreenshot(error, label, () => bounded(
+        () => page.screenshot({ path: `${out}/${engine.name()}-${theme}-failure.png`, timeout: timeoutMs }), timeoutMs, 'FEA failure screenshot'));
     }
     finally{
       mark('closing context');

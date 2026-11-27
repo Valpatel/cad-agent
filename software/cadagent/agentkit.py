@@ -677,10 +677,10 @@ class ReceiptUnreadable(ValueError):
 
 def _receipt_requirements(text: str) -> List[dict]:
     """The ``[tool] requirements`` inline tables of uv's ``uv-receipt.toml``. tomllib where Python has it (3.11+).
-    On 3.10, a reader for exactly the form uv writes: ``requirements = [`` then inline tables of ``key = "string"`` and
-    ``key = ["strings"]``, separated by commas, then ``]``. Anything else (a comment, a nested table, an array of
-    tables, a ``{`` or ``]`` inside a string, more text before the closing bracket) raises ReceiptUnreadable rather
-    than be guessed at (#799)."""
+    On 3.10, a reader for exactly the form uv writes: ``requirements = [`` in the ``[tool]`` table (not another
+    table's key of that name, #808), then inline tables of ``key = "string"`` and ``key = ["strings"]``, separated by
+    commas, then ``]``. Anything else (a comment, a nested table, an array of tables, a ``{`` or ``]`` inside a string,
+    more text before the closing bracket) raises ReceiptUnreadable rather than be guessed at (#799)."""
     try:
         import tomllib
     except ImportError:
@@ -691,7 +691,11 @@ def _receipt_requirements(text: str) -> List[dict]:
         except ValueError as exc:
             raise ReceiptUnreadable(str(exc)) from None
         return [r for r in reqs if isinstance(r, dict)] if isinstance(reqs, list) else []
-    head = re.search(r"^requirements\s*=\s*\[", text, re.M)
+    # Only the [tool] table's own key: up to the next table header, never another table's `requirements` (#808).
+    tool = re.search(r"^\[\s*tool\s*\][ \t]*$", text, re.M)
+    section_end = re.compile(r"^\s*\[", re.M).search(text, tool.end()) if tool else None
+    head = re.compile(r"^requirements\s*=\s*\[", re.M).search(
+        text, tool.end(), section_end.start() if section_end else len(text)) if tool else None
     if head is None:
         if re.search(r"requirements", text):
             raise ReceiptUnreadable("requirements in a form other than uv's")
@@ -725,7 +729,8 @@ def _receipt_text() -> str:
 
 def _receipt_extras() -> Optional[List[str]]:
     """The extras uv recorded when it installed this cad-agent (``uv-receipt.toml`` in the tool environment), or None
-    for an install uv did not make, or a receipt this Python cannot read (then the installed packages decide)."""
+    for an install uv did not make, a receipt this Python cannot read, or extras that are not PEP 508 extra names
+    (then the installed packages decide)."""
     text = _receipt_text()
     if not text:
         return None
@@ -735,51 +740,114 @@ def _receipt_extras() -> Optional[List[str]]:
         return None
     for req in reqs:
         if req.get("name") == "cad-agent":
-            return sorted(str(e) for e in req.get("extras") or [])
+            extras = req.get("extras") or []
+            if not isinstance(extras, list) or not all(isinstance(e, str) and _EXTRA.fullmatch(e) for e in extras):
+                return None                                     # not extra names: the installed packages decide (#808)
+            return sorted(extras)
     return None
 
 
 _GIT_REFS = ("rev", "tag", "branch")
+# The URL schemes a Git row may name: never `ext::` or another remote helper, which runs a command (#808).
+_GIT_SCHEMES = ("https", "http", "ssh", "git", "file")
+_NAME = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]*")
+_EXTRA = re.compile(r"[A-Za-z0-9](?:[A-Za-z0-9._-]*[A-Za-z0-9])?")     # a PEP 508 extra name
+
+
+def _url_credentials(req: dict) -> bool:
+    """A ``url`` or ``git`` row whose URL holds credentials: a password, or for anything but ssh a user name (a token
+    is often given as one). uv 0.11 writes a ``url`` row's credentials into the receipt as given; it strips a ``git``
+    row's (#808)."""
+    from urllib.parse import urlsplit
+    for key in ("url", "git"):
+        value = req.get(key)
+        if isinstance(value, str):
+            try:
+                url = urlsplit(value)
+                if url.password is not None or (url.username is not None and
+                                                url.scheme.removeprefix("git+") != "ssh"):
+                    return True
+            except ValueError:
+                return True                    # an unparsable netloc: treat it as secret, never print it
+    return False
+
+
+def _pep508(line: str, name: str, extras: List[str], url: Optional[str]) -> bool:
+    """``line`` reads, by PEP 508, as exactly ``name`` with ``extras`` from ``url`` (None: from the index)."""
+    from packaging.requirements import InvalidRequirement, Requirement
+    try:
+        req = Requirement(line)
+    except InvalidRequirement:
+        return False
+    return req.name == name and req.extras == set(extras) and req.url == url
 
 
 def _with_args(req: dict) -> Optional[List[str]]:
     """The ``uv tool install`` arguments that add one receipt row again from the same source, or None when uv's command
     line cannot say it exactly. Never a bare name for a package that came from a folder, file, URL or Git: the index
-    could hold another package of that name (#799)."""
+    could hold another package of that name (#799). Built only from values that have the shape uv writes (#808): a
+    PEP 508 name, extras, version specifier and marker; a Git URL of an allowed scheme; no credentials in a URL, which
+    would be printed; no control characters. A receipt is a local file anyone who can edit it could change."""
+    from packaging.markers import InvalidMarker, Marker
+    from packaging.specifiers import InvalidSpecifier, SpecifierSet
     name, extras, marker = req.get("name"), req.get("extras") or [], req.get("marker")
+    specifier = req.get("specifier", "")
     known = {"name", "extras", "specifier", "marker", "directory", "editable", "path", "url", "git"}
-    if (set(req) - known or not isinstance(name, str) or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]*", name)
-            or not isinstance(extras, list) or not all(isinstance(e, str) for e in extras)
-            or not isinstance(marker, (str, type(None))) or not isinstance(req.get("specifier", ""), str)):
+    if (set(req) - known or not isinstance(name, str) or not _NAME.fullmatch(name)
+            or not isinstance(extras, list) or not all(isinstance(e, str) and _EXTRA.fullmatch(e) for e in extras)
+            or not isinstance(marker, (str, type(None))) or not isinstance(specifier, str)
+            or any(isinstance(v, str) and re.search(r"[\x00-\x1f\x7f]", v) for v in req.values())
+            or _url_credentials(req)):
+        return None
+    try:
+        SpecifierSet(specifier)
+        if marker is not None:
+            Marker(marker)
+    except (InvalidSpecifier, InvalidMarker):
         return None
     spec = name + (f"[{','.join(extras)}]" if extras else "")
     sources = [k for k in ("directory", "editable", "path", "url", "git") if k in req]
     if not sources:
-        return ["--with", spec + req.get("specifier", "") + (f"; {marker}" if marker else "")]
+        line = spec + specifier + (f"; {marker}" if marker else "")
+        return ["--with", line] if _pep508(line, name, extras, None) else None
     value = req[sources[0]]
-    if len(sources) > 1 or req.get("specifier") or not isinstance(value, str):
+    if len(sources) > 1 or specifier or not isinstance(value, str):
         return None
     tail = f" ; {marker}" if marker else ""
     from urllib.parse import parse_qsl, urlsplit
     if sources[0] == "editable":
         return ["--with-editable", value] if Path(value).is_absolute() and not extras and not marker else None
     if sources[0] in ("directory", "path"):
-        return ["--with", f"{spec} @ {Path(value).as_uri()}{tail}"] if Path(value).is_absolute() else None
-    url = urlsplit(value)
-    if sources[0] == "url":
-        return ["--with", f"{spec} @ {value}{tail}"] if url.scheme in ("https", "http", "file") and \
-            not url.query and not url.fragment else None
-    query = parse_qsl(url.query, keep_blank_values=True)
-    keys = [k for k, _ in query]
-    if url.fragment or len(set(keys)) != len(keys) or set(keys) - {*_GIT_REFS, "subdirectory"} or \
-            sum(k in _GIT_REFS for k in keys) > 1:
+        target = Path(value).as_uri() if Path(value).is_absolute() else None
+    elif sources[0] == "url":
+        url = urlsplit(value)
+        target = value if url.scheme in ("https", "http", "file") and not url.query and not url.fragment else None
+    else:
+        url = urlsplit(value)
+        query = parse_qsl(url.query, keep_blank_values=True)
+        keys = [k for k, _ in query]
+        scheme = url.scheme.removeprefix("git+")
+        if url.fragment or len(set(keys)) != len(keys) or set(keys) - {*_GIT_REFS, "subdirectory"} or \
+                sum(k in _GIT_REFS for k in keys) > 1 or scheme not in _GIT_SCHEMES or \
+                (scheme != "file" and not url.hostname):
+            return None
+        q = dict(query)
+        ref = next((q[k] for k in _GIT_REFS if k in q), "")
+        base = url._replace(query="").geturl()
+        target = (base if base.startswith("git+") else "git+" + base) + (f"@{ref}" if ref else "") + \
+            (f"#subdirectory={q['subdirectory']}" if q.get("subdirectory") else "")
+    if target is None:
         return None
-    q = dict(query)
-    ref = next((q[k] for k in _GIT_REFS if k in q), "")
-    base = url._replace(query="").geturl()
-    target = (base if base.startswith("git+") else "git+" + base) + (f"@{ref}" if ref else "") + \
-        (f"#subdirectory={q['subdirectory']}" if q.get("subdirectory") else "")
-    return ["--with", f"{spec} @ {target}{tail}"]
+    line = f"{spec} @ {target}{tail}"
+    return ["--with", line] if _pep508(line, name, extras, target) else None
+
+
+def _dropped_name(req: dict) -> str:
+    """How a row that is not carried over is named on stderr: its name when it is a plain package name, never the row
+    itself (it may hold credentials or control characters)."""
+    name = req.get("name")
+    shown = name if isinstance(name, str) and _NAME.fullmatch(name) else "(a row without a valid name)"
+    return shown + (" (its URL holds credentials, not shown)" if _url_credentials(req) else "")
 
 
 def _receipt_with() -> Tuple[List[str], List[str]]:
@@ -798,7 +866,7 @@ def _receipt_with() -> Tuple[List[str], List[str]]:
             continue
         again = _with_args(req)
         if again is None:
-            dropped.append(str(req.get("name") or req))
+            dropped.append(_dropped_name(req))
         else:
             args += again
     return args, dropped

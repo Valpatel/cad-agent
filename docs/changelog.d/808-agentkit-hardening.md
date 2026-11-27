@@ -1,0 +1,5 @@
+**Fixed**
+- `cad-agent update` reinstalls a uv tool's added packages only from uv receipt rows of the shape uv writes: a row whose version specifier, extras or marker is not PEP 508, whose Git URL uses a scheme other than https, http, ssh, git or file (never `ext::`), or that holds a control character is left out and named on stderr, as an unreadable row is (#808).
+- A package added with `--with 'name @ https://user:token@host/…'` is not carried over by the reinstall and its URL is not printed: uv writes such credentials into its receipt, and the update's hint, `update --reinstall-command` and error messages would have shown them. It is named on stderr, without the URL, to add again yourself (#808).
+- On Python 3.10 the receipt reader reads `requirements` only from the receipt's `[tool]` table (#808).
+- `tools/site/pin_installers.py --check` documents and tests that, in a shallow clone without the pinned commit, it reports "not checked" and exits 0, and says how to run the full check (#808).

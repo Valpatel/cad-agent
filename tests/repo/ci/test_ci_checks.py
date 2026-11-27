@@ -3,9 +3,9 @@
 The drift guard: every command a pull-request workflow runs as a check (pytest, ``npm run``/``npm test``, ``node``
 scripts, the repo's own ``tools/``/``tests/`` scripts, ``cad-agent``) is mirrored by a mapping entry with the same
 workflow, job, working directory and command, and every entry's mirror still exists, so the mapping cannot drift
-silently. Every other command of a step (each segment between ``&&``, ``||``, ``;``, ``|`` and new lines) must be a
-known kind of setup (``SETUP``) or an inert shell command (``INERT``), each named here with why it is not a check;
-anything else fails, so a check cannot hide behind ``pip install`` or ``npm ci``.
+silently. Every other command of a step (each segment between ``&&``, ``||``, ``;``, ``|``, a background ``&`` and
+new lines) must be a known kind of setup (``SETUP``) or an inert shell command (``INERT``), each named here with why
+it is not a check; anything else fails, so a check cannot hide behind ``pip install`` or ``npm ci``.
 
 Which workflows: those triggered by ``pull_request``. ``gates.yml`` (``pull_request_target``) reads the PR through
 the API as data with a token, ``release.yml`` and ``supply-chain.yml`` run after merging or on a schedule; none of them
@@ -13,9 +13,10 @@ can be mirrored offline before pushing. Steps that run only on ``workflow_dispat
 
 Limits of the guard: a mapped command whose ``env`` changes in the workflow is not noticed (the working directory is
 compared, the environment is not); ``uses:`` steps (actions) are not read; only an ``if:`` that requires
-``github.event_name == 'workflow_dispatch'`` makes a step dispatch-only; and the shell is split by a small quote-aware
-tokenizer, not a shell parser: an inert command holding ``$(``, a backtick or ``>(`` fails, but a check hidden in a
-heredoc is not seen.
+``github.event_name == 'workflow_dispatch'`` as a top-level ``&&`` term (in every ``||`` alternative) makes a step
+dispatch-only, and a ``ci_only`` entry's steps need ``failure()`` the same way; and the shell is split by a small
+quote-aware tokenizer, not a shell parser: a setup or inert command holding ``$(``, a backtick or ``>(`` fails, but a
+check hidden in a heredoc is not seen.
 
 The path scan: for each entry, the test files and scripts its command names (directly or through its npm scripts) are
 read for repo path literals (``'tools/…'``, ``'../../docs/…'``) that exist; each must be matched by the entry's globs,
@@ -96,20 +97,81 @@ INERT = {
 
 # A step that runs only on a manual dispatch: its `if:` requires the event to equal workflow_dispatch
 DISPATCH_ONLY = re.compile(r"github\.event_name\s*==\s*'workflow_dispatch'")
+# A step that runs only after an earlier one failed: its `if:` requires failure()
+AFTER_FAILURE = re.compile(r"failure\(\s*\)")
 # Command substitution or process substitution runs a command inside an otherwise inert one
 SUBSHELL = re.compile(r"\$\(|`|[<>]\(")
 
 
+def _top_level(expr: str, op: str) -> list[str]:
+    """``expr`` (a GitHub Actions expression) split at ``op`` outside quotes and parentheses."""
+    out, cur, depth, quote, i = [], "", 0, False, 0
+    while i < len(expr):
+        c = expr[i]
+        if c == "'":
+            quote = not quote                          # '' inside a string toggles twice: still inside
+        elif not quote and c in "([":
+            depth += 1
+        elif not quote and c in ")]":
+            depth -= 1
+        elif not quote and depth == 0 and expr.startswith(op, i):
+            out.append(cur)
+            cur, i = "", i + len(op)
+            continue
+        cur += c
+        i += 1
+    return out + [cur]
+
+
+def _unwrap(expr: str) -> str:
+    """``expr`` without ``${{ }}``, surrounding whitespace and parentheses that enclose all of it."""
+    expr = expr.strip()
+    m = re.fullmatch(r"\$\{\{(.*)\}\}", expr, re.S)
+    if m:
+        expr = m.group(1).strip()
+    while expr.startswith("(") and expr.endswith(")"):
+        depth, quote = 0, False
+        for i, c in enumerate(expr):                     # where the leading ( closes
+            if c == "'":
+                quote = not quote
+            elif not quote:
+                depth += (c == "(") - (c == ")")
+                if depth == 0:
+                    break
+        if i != len(expr) - 1:                           # `(a) && (b)`: the parentheses do not enclose it all
+            break
+        expr = expr[1:-1].strip()
+    return expr
+
+
+def requires(condition, term: re.Pattern) -> bool:
+    """Whether the ``if:`` ``condition`` holds only when ``term`` does: every ``||`` alternative has ``term`` as a
+    top-level ``&&`` operand. ``always() || failure()``, ``!failure()`` and a ``'failure()'`` string do not."""
+    expr = _unwrap(str(condition or ""))
+    if not expr:
+        return False
+    alternatives = _top_level(expr, "||")
+    if len(alternatives) > 1:
+        return all(requires(a, term) for a in alternatives)
+    operands = _top_level(expr, "&&")
+    if len(operands) > 1:
+        return any(requires(o, term) for o in operands)
+    return bool(term.fullmatch(expr))
+
+
 def _split(line: str) -> list[str]:
-    """``line`` split at ``&&``, ``||``, ``;`` and ``|`` outside quotes."""
+    """``line`` split at ``&&``, ``||``, ``;``, ``|`` and a lone ``&`` (a background command) outside quotes; the
+    ``&`` of a redirection (``2>&1``, ``&>``) is not a split point."""
     out, cur, quote, i = [], "", None, 0
     while i < len(line):
         c = line[i]
+        lone_amp = (c == "&" and not line.startswith("&&", i) and not cur.endswith((">", "<"))
+                    and not line.startswith("&>", i))
         if quote:
             quote = None if c == quote else quote
         elif c in "\"'":
             quote = c
-        elif line.startswith(("&&", "||"), i) or c in ";|":
+        elif line.startswith(("&&", "||"), i) or c in ";|" or lone_amp:
             out.append(cur)
             cur = ""
             i += 2 if line.startswith(("&&", "||"), i) else 1
@@ -138,9 +200,11 @@ def kind(segment: str) -> str | None:
     """``check``, ``setup`` or ``inert`` for a known command; None for anything else."""
     if CHECK.match(segment):
         return "check"
+    if SUBSHELL.search(segment):                       # `pip install $(make test)` runs make: not setup, not inert
+        return None
     if any(re.match(rx, segment) for rx in SETUP):
         return "setup"
-    if any(re.match(rx, segment) for rx in INERT) and not SUBSHELL.search(segment):
+    if any(re.match(rx, segment) for rx in INERT):
         return "inert"
     return None
 
@@ -162,7 +226,7 @@ def workflow_steps(flows: dict[str, dict]):
         for job_id, job in (doc.get("jobs") or {}).items():
             default_cwd = ((job.get("defaults") or {}).get("run") or {}).get("working-directory", ".")
             for i, step in enumerate(job.get("steps") or []):
-                if "run" not in step or DISPATCH_ONLY.search(str(step.get("if", ""))):
+                if "run" not in step or requires(step.get("if"), DISPATCH_ONLY):
                     continue
                 label = step.get("name") or f"step {i + 1} (`{segments(step['run'])[0][:60]}`)"
                 yield name, job_id, label, step.get("working-directory", default_cwd), step["run"]
@@ -687,9 +751,9 @@ def ci_only_problems(flows: dict[str, dict], mapping: dict) -> list[str]:
         for m in c["mirrors"]:
             key = (m["workflow"], m["job"], m.get("cwd", c.get("cwd", ".")), " ".join(m["run"].split()))
             ifs = conditions.get(key, [])
-            if not ifs or not all("failure()" in i for i in ifs):
-                out.append(f"{c['id']}: {' / '.join(key)} runs without `failure()` in its `if:` ({ifs}); a ci_only "
-                           "entry may mirror only a step CI runs after a failure")
+            if not ifs or not all(requires(i, AFTER_FAILURE) for i in ifs):
+                out.append(f"{c['id']}: {' / '.join(key)} runs without `failure()` as a required `&&` term of its "
+                           f"`if:` ({ifs}); a ci_only entry may mirror only a step CI runs after a failure")
     return out
 
 
@@ -1026,3 +1090,320 @@ def test_dispatch_only_means_equal_and_inert_cannot_hide_a_subshell(mapping):
     unmapped, unclassified, _, _ = audit(flows, mapping)
     named_steps = {m.split(" / ")[2].split(":")[0] for m in unmapped + unclassified}
     assert named_steps == {"Not manual", "Echo", "If", "Tee", "Tick"}
+
+
+# ---------------------------------------------------------------------------------------------------------------------
+# Follow-ups from the reviews of #766 (#767)
+
+
+def test_a_relative_workdir_is_made_absolute(tmp_path, capsys, monkeypatch):
+    """Python 3.10 and 3.11's mkdtemp returns a relative path for a relative ``dir``; the run folder (and the Python
+    shim's PATH entry under it) must still be absolute, or it resolves against each check's own cwd."""
+    real = tempfile.mkdtemp
+
+    def mkdtemp_311(prefix=None, dir=None):                       # the 3.11 behaviour, on any Python
+        made = real(prefix=prefix, dir=dir)
+        return os.path.relpath(made) if dir is not None and not os.path.isabs(dir) else made
+
+    monkeypatch.setattr(tempfile, "mkdtemp", mkdtemp_311)
+    args = _repo(tmp_path, [_check("bad", "echo {tmp}; exit 1")])
+    monkeypatch.chdir(tmp_path)
+    assert pf.main(args + ["--paths", "a/x", "--json", "--workdir", "runs"]) == 1
+    report = json.loads(capsys.readouterr().out)
+    assert os.path.isabs(report["workdir"]) and report["workdir"].startswith(str(tmp_path / "runs"))
+    assert report["checks"][0]["command"].startswith(f"echo {tmp_path / 'runs'}")
+
+
+def test_parents_made_for_the_workdir_go_after_a_passing_run(tmp_path, capsys):
+    args = _repo(tmp_path, [_check("ok", "true"), _check("bad", "exit 1", paths=["b/**"])])
+    assert pf.main(args + ["--paths", "a/x", "--workdir", str(tmp_path / "p" / "q" / "r")]) == 0
+    assert not (tmp_path / "p").exists(), "the folders --workdir made are removed when nothing is kept"
+    (tmp_path / "mine").mkdir()
+    assert pf.main(args + ["--paths", "a/x", "--workdir", str(tmp_path / "mine" / "q")]) == 0
+    assert (tmp_path / "mine").is_dir(), "a folder that already existed stays"
+    assert pf.main(args + ["--paths", "b/x", "--workdir", str(tmp_path / "p" / "q")]) == 1
+    assert len(list((tmp_path / "p" / "q").glob("cad-agent-preflight-*"))) == 1, "a failed run keeps its logs"
+    capsys.readouterr()
+
+
+def test_a_path_chromium_is_flagged_even_with_the_pinned_build_installed(tmp_path):
+    """The capture scripts default ``--chromium`` to ``shutil.which('chromium')``: a PATH browser wins over the
+    pinned build whenever there is one."""
+    pw = tmp_path / "pw" / "browsers.json"
+    pw.parent.mkdir()
+    pw.write_text(json.dumps({"browsers": [{"name": "chromium-headless-shell", "revision": "1234"}]}))
+    bindir = tmp_path / "bin"
+    bindir.mkdir()
+    (bindir / "chromium").write_text("#!/bin/sh\n")
+    (bindir / "chromium").chmod(0o755)
+    m = _machine(tmp_path / "m", browsers=["chromium_headless_shell-1234"])
+    m.probe = lambda exe, modules, dists, pythonpath: {"version": "3.12.1", "prefix": "/p", "modules": {},
+                                                       "dists": {}, "playwright": str(pw)}
+    m.python_candidates = lambda: ["/py312"]
+    check = {"id": "x", "command": "c", "needs": {"python": {"version": "3.12", "browser": "chromium"}}}
+    m.env["PATH"] = str(bindir)
+    inst = _assess(check, m)
+    assert inst.status == "runnable" and inst.differs == ["browser"]
+    assert any("`chromium` on PATH" in n and str(bindir / "chromium") in n for n in inst.notes)
+    m.env["PATH"] = "/nonexistent"
+    inst = _assess(check, m)
+    assert inst.status == "runnable" and inst.differs == [] and not inst.notes
+
+
+@pytest.mark.parametrize("mirrors,dists,needle", [
+    (["x"], None, "mirror 1 must be an object"),
+    ([{}], None, "mirror 1 has no `workflow`"),
+    ([{"workflow": "ci.yml", "job": "j"}], None, "mirror 1 has no `run`"),
+    ([{"workflow": "ci.yml", "job": "j", "run": 3}], None, "mirror 1: `run` must be a str"),
+    ([{"workflow": "ci.yml", "job": "j", "run": "x", "colour": "red"}], None, "unknown field `colour`"),
+    ([], ["optuna"], "`optuna` must be name==version"),
+    ([], ["optuna=="], "`optuna==` must be name==version"),
+])
+def test_malformed_mirrors_and_dist_pins_are_setup_errors(tmp_path, capsys, mirrors, dists, needle):
+    """Each reached the catch-all and left the run folder; ``mirrors: [{}]`` with ``--json`` did so after the checks
+    had run, losing their results."""
+    ran = tmp_path / "ran"
+    check = _check("a", f"touch {ran}", mirrors=mirrors)
+    if dists is not None:
+        check["needs"] = {"python": {"dists": dists}}
+    args = _repo(tmp_path, [check])
+    assert pf.main(args + ["--paths", "a/x", "--json"]) == 2
+    err = capsys.readouterr().err
+    assert "is malformed" in err and needle in err, err
+    assert not ran.exists(), "nothing runs on a malformed mapping"
+    assert not list(Path(tempfile.gettempdir()).glob("cad-agent-preflight-*")), "no run folder left behind"
+
+
+@pytest.mark.parametrize("cwd", ["..", "../repo/..", "/tmp", "out"])
+def test_a_cwd_outside_the_checkout_is_refused(tmp_path, capsys, cwd):
+    args = _repo(tmp_path, [_check("a", "true", cwd=cwd)])
+    (tmp_path / "elsewhere").mkdir()
+    (Path(args[1]) / "out").symlink_to(tmp_path / "elsewhere")
+    assert pf.main(args + ["--paths", "a/x"]) == 2
+    assert f"cwd {cwd} is outside the checkout" in capsys.readouterr().err
+
+
+def test_a_cwd_inside_the_checkout_still_works(tmp_path, capsys):
+    args = _repo(tmp_path, [_check("a", "test -f marker", cwd="sub/dir")])
+    (Path(args[1]) / "sub" / "dir").mkdir(parents=True)
+    (Path(args[1]) / "sub" / "dir" / "marker").write_text("")
+    assert pf.main(args + ["--paths", "a/x"]) == 0
+    capsys.readouterr()
+
+
+@pytest.mark.parametrize("command,refused", [
+    ('echo "{d:}"', True),
+    ('echo "{d!s}"', True),
+    ("echo '{d!r:>4}'", True),
+    ('echo "a\\" {d}"', True),           # the \" does not close the quotes: {d} is still inside them
+    ('echo \\" {d} \\"', False),         # escaped quotes outside quotes open nothing
+    ("echo '{{' {d} '}}'", False),       # literal braces in quotes; {d} itself is bare
+    ("echo {d}", False),
+])
+def test_quoted_fields_reads_the_shell_and_the_format_syntax(command, refused):
+    check = _check("a", command, per_match=r"^a/(?P<d>[a-z]+)/")
+    assert any("inside quotes" in p for p in pf.mapping_problems({"checks": [check]})) is refused, command
+
+
+@pytest.mark.parametrize("top,needle", [
+    ({"ci_node_major": 22}, "`ci_node_major` must be a str"),
+    ({"ci_node_major": "v22"}, "`ci_node_major` must be a Node major"),
+    ({"about": ["x"]}, "`about` must be a str"),
+    ({"colour": "red"}, "unknown top-level field `colour`"),
+])
+def test_top_level_keys_are_typed(tmp_path, capsys, top, needle):
+    """``ci_node_major`` as the integer 22 never equals node's "22" and flagged every Node check as differing."""
+    args = _repo(tmp_path, [_check("a", "true")])
+    Path(args[3]).write_text(json.dumps({"checks": [_check("a", "true")], **top}))
+    assert pf.main(args + ["--paths", "a/x"]) == 2
+    assert needle in capsys.readouterr().err
+
+
+def _send_when(marker: Path, *sigs):
+    """Send each of ``sigs`` to this process once ``marker`` holds the check's child pid."""
+    import threading
+
+    def go():
+        for _ in range(400):
+            if marker.exists() and marker.read_text().strip():
+                break
+            time.sleep(0.025)
+        for s in sigs:
+            os.kill(os.getpid(), s)
+
+    t = threading.Thread(target=go, daemon=True)
+    t.start()
+    return t
+
+
+def test_a_signal_after_the_last_check_still_reports(tmp_path, capsys, monkeypatch):
+    """A real SIGTERM while the report is being written: the checks all finished, so the report is printed in full,
+    the exit status still names the signal, and the message does not say no check ran."""
+    args = _repo(tmp_path, [_check("ok", "true")])
+    real = pf.text_report
+
+    def report_then_signal(*a, **kw):
+        os.kill(os.getpid(), signal.SIGTERM)                        # handled at the next bytecode
+        return real(*a, **kw)
+
+    monkeypatch.setattr(pf, "text_report", report_then_signal)
+    assert pf.main(args + ["--paths", "a/x"]) == 143
+    out, err = capsys.readouterr()
+    assert re.search(r"ok +passed", out) and "Verdict: passed" in out, out
+    assert "before any check" not in err and "after the checks finished" in err, err
+
+
+def test_a_second_signal_while_stopping_does_not_unreport_the_running_check(tmp_path, capsys, monkeypatch):
+    """Two real SIGTERMs close together: the second lands while the first is stopping the check's group. The check
+    is reported as interrupted (failed), never as "not run ... before it ran"."""
+    marker = tmp_path / "child.pid"
+    args = _repo(tmp_path, [_check("long", f"sleep 60 & echo $! > {marker}; wait"), _check("never", "true")])
+    real_stop = pf.stop_group
+
+    def stop_after_another_signal(pid):
+        os.kill(os.getpid(), signal.SIGTERM)
+        real_stop(pid)
+
+    monkeypatch.setattr(pf, "stop_group", stop_after_another_signal)
+    _send_when(marker, signal.SIGTERM)
+    assert pf.main(args + ["--paths", "a/x", "--json"]) == 143
+    report = json.loads(capsys.readouterr().out)
+    statuses = {c["id"]: (c["status"], c["reason"]) for c in report["checks"]}
+    assert statuses["long"] == ("failed", "interrupted (SIGTERM)"), statuses
+    assert statuses["never"][0] == "not run"
+
+
+def test_checks_an_interrupt_never_reached_are_not_called_cannot_run_here(tmp_path, capsys):
+    marker = tmp_path / "child.pid"
+    args = _repo(tmp_path, [_check("long", f"sleep 60 & echo $! > {marker}; wait"), _check("never", "true")])
+    _send_when(marker, signal.SIGTERM)
+    assert pf.main(args + ["--paths", "a/x"]) == 143
+    out = capsys.readouterr().out
+    assert "cannot run here: never" not in out and "0 cannot run here" in out, out
+    assert "  - not reached: never (): the run was interrupted (SIGTERM) before it started" in out, out
+    marker.unlink()
+    _send_when(marker, signal.SIGTERM)
+    assert pf.main(args + ["--paths", "a/x", "--json"]) == 143
+    report = json.loads(capsys.readouterr().out)
+    assert report["cannot_run"] == [] and [x["id"] for x in report["not_reached"]] == ["never"]
+    assert [x["id"] for x in report["not_run"]] == ["never"]                 # still not run, never passed
+
+
+def test_a_probe_that_times_out_is_stopped_with_its_children(tmp_path, monkeypatch):
+    """An interpreter probe runs in its own process group, and a timeout stops the whole group, not only the
+    interpreter (a wrapper script's children survived)."""
+    marker = tmp_path / "child.pid"
+    exe = tmp_path / "python-wrapper"
+    exe.write_text(f"#!/bin/sh\nsleep 60 & echo $! > {marker}\nwait\n")
+    exe.chmod(0o755)
+    monkeypatch.setattr(pf, "PROBE_TIMEOUT", 1, raising=False)
+    m = pf.Machine(tmp_path, env={"PATH": "/usr/bin:/bin"})
+    started = time.monotonic()
+    assert m.probe(str(exe), [], [], None) is None
+    assert time.monotonic() - started < 20
+    child = int(marker.read_text())
+    time.sleep(0.2)
+    status = Path(f"/proc/{child}/status")
+    state = re.search(r"^State:\s+(\S)", status.read_text(), re.M).group(1) if status.exists() else "gone"
+    assert state in {"gone", "Z", "X"}, f"the probe's child {child} still runs ({state})"
+
+
+def test_the_preset_browser_note_lands_only_on_suites_that_read_it(tmp_path, monkeypatch):
+    """``site-browser`` and others launch by channel and never read CHROMIUM_EXECUTABLE: with the pinned build here
+    they run on it, so a caller's preset is no reason to flag them."""
+    m = _machine(tmp_path, browsers=["chromium-1194", "chromium_headless_shell-1194"], monkeypatch=monkeypatch)
+    m.env["CHROMIUM_EXECUTABLE"] = "/opt/my/chromium"
+    reads = _assess({"id": "r", "command": "c", "engines": ["chromium"]}, m, engine="chromium")
+    assert reads.differs == ["browser"]
+    ignores = _assess({"id": "i", "command": "c", "engines": ["chromium"], "needs": {"chromium_executable": False}},
+                      m, engine="chromium")
+    assert ignores.status == "runnable" and ignores.differs == [] and not ignores.notes
+    m = _machine(tmp_path / "chrome", chrome=True, monkeypatch=monkeypatch)        # no pinned build, a local Chrome
+    m.env["CHROMIUM_EXECUTABLE"] = "/opt/my/chromium"
+    ignores = _assess({"id": "i", "command": "c", "engines": ["chromium"], "needs": {"chromium_executable": False}},
+                      m, engine="chromium")
+    assert ignores.differs == ["browser"] and not any("/opt/my/chromium" in n for n in ignores.notes)
+    assert any("local Chrome" in n for n in ignores.notes)
+
+
+def test_chromium_executable_false_matches_the_suites_that_ignore_it(mapping):
+    """The mapping says which Chromium suites never read CHROMIUM_EXECUTABLE; the suite files are the truth."""
+    wrong, seen = [], 0
+    for c in mapping["checks"]:
+        need = c.get("needs", {})
+        if "chromium" not in c.get("engines", []) and need.get("browser") != "chromium":
+            continue
+        files = suite_files(c)
+        assert files, f"{c['id']}: no suite files found to read"
+        seen += 1
+        reads = any("CHROMIUM_EXECUTABLE" in f.read_text(encoding="utf-8") for f in files)
+        if need.get("chromium_executable", True) != reads:
+            wrong.append(f"{c['id']}: its suites {'read' if reads else 'never read'} CHROMIUM_EXECUTABLE")
+    assert seen >= 10 and not wrong, "\n".join(wrong)
+    flags = {c["id"] for c in mapping["checks"] if c.get("needs", {}).get("chromium_executable") is False}
+    assert {"site-browser", "site-catalog-browser", "scada-explorer-browser"} <= flags
+
+
+def test_a_failure_under_load_says_so(tmp_path, capsys, monkeypatch):
+    """A wall-clock assertion (tests/webkit/files/browser.mjs) failed once at a load average of about 6 and passed
+    alone: a failure under a load above the CPU count carries a hint to rerun it alone."""
+    args = _repo(tmp_path, [_check("bad", "exit 1"), _check("ok", "true")])
+    monkeypatch.setattr(os, "cpu_count", lambda: 4)
+    monkeypatch.setattr(os, "getloadavg", lambda: (6.2, 5.0, 4.0))
+    assert pf.main(args + ["--paths", "a/x", "--json"]) == 1
+    checks = {c["id"]: c for c in json.loads(capsys.readouterr().out)["checks"]}
+    assert any("load average was 6.2 on 4 CPUs" in n and "--only bad" in n for n in checks["bad"]["notes"])
+    assert not checks["ok"]["notes"], "a pass carries no load note"
+    monkeypatch.setattr(os, "getloadavg", lambda: (3.9, 5.0, 4.0))
+    assert pf.main(args + ["--paths", "a/x", "--json"]) == 1
+    assert not json.loads(capsys.readouterr().out)["checks"][0]["notes"]
+
+
+@pytest.mark.parametrize("condition,dispatch_only", [
+    ("github.event_name == 'workflow_dispatch'", True),
+    ("${{ github.event_name == 'workflow_dispatch' && inputs.x }}", True),
+    ("(github.event_name == 'workflow_dispatch') && inputs.x", True),
+    ("github.event_name == 'workflow_dispatch' || github.event_name == 'pull_request'", False),
+    ("!(github.event_name == 'workflow_dispatch')", False),
+    ("contains('github.event_name == \\'workflow_dispatch\\'', x)", False),
+    ("inputs.x && (github.event_name == 'workflow_dispatch' || inputs.y)", False),
+])
+def test_dispatch_only_is_a_required_term(mapping, condition, dispatch_only):
+    flows = {"webkit.yml": {"on": {"pull_request": None}, "jobs": {"browser": {"steps": [
+        {"name": "Planted", "if": condition, "run": "npm run test:new"}]}}}}
+    unmapped, _, _, _ = audit(flows, mapping)
+    assert (not unmapped) is dispatch_only, condition
+
+
+@pytest.mark.parametrize("condition,ok", [
+    ("failure() && steps.scada_provenance.outcome == 'failure'", True),
+    ("${{ failure() }}", True),
+    ("always() || failure()", False),
+    ("success() || failure()", False),
+    ("!failure()", False),
+    ("contains(steps.x.outputs.y, 'failure()')", False),
+    ("", False),
+])
+def test_ci_only_needs_failure_as_a_required_term(mapping, condition, ok):
+    flows = {"webkit.yml": {"on": {"pull_request": None}, "jobs": {"browser": {"steps": [
+        {"name": "Repair", "if": condition, "run": "npm run test:repair"}]}}}}
+    marked = {"checks": [{"id": "r", "ci_only": "repairs", "cwd": ".", "mirrors": [
+        {"workflow": "webkit.yml", "job": "browser", "run": "npm run test:repair"}]}]}
+    assert (not ci_only_problems(flows, marked)) is ok, condition
+
+
+@pytest.mark.parametrize("script", [
+    "pip install $(make test)",
+    "npm ci $(bash check.sh)",
+    'echo "x" & npm run test:hidden',
+    "true & bash check.sh",
+])
+def test_a_subshell_in_setup_and_a_background_command_are_seen(mapping, script):
+    flows = {"webkit.yml": {"on": {"pull_request": None}, "jobs": {"browser": {"steps": [
+        {"name": "Planted", "run": script}]}}}}
+    unmapped, unclassified, _, _ = audit(flows, mapping)
+    assert unmapped or unclassified, script
+
+
+def test_redirections_are_not_split_at_their_ampersand():
+    assert segments('npm run x 2>&1 | tee log\nnode y &> out') == ["npm run x 2>&1", "tee log", "node y &> out"]

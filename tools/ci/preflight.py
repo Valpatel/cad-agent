@@ -33,15 +33,23 @@ Exit status, and the JSON report's ``verdict``:
 * 2: a usage or setup error (a malformed mapping included). ``--list`` exits 0 and its verdict is ``listed``;
 * 130, 143, 129: interrupted by SIGINT (Ctrl-C), SIGTERM (a harness or ``timeout``) or SIGHUP. The running check's
   whole process group is stopped first, the report for the checks that finished is still printed (valid JSON with
-  ``--json``, verdict ``interrupted (SIG…)``), and the logs are kept.
+  ``--json``, verdict ``interrupted (SIG…)``), and the logs are kept. The checks the run never reached are listed as
+  ``not reached``, apart from those that cannot run here. The first signal decides: a second one while the check is
+  being stopped is ignored. A signal after the last check finished still exits 128 + its number, after the full
+  report.
 
 ``--only <id>`` runs that check whether or not the changed paths select it, and even when it is slow. A ``per_match`` check named that way needs
 a changed path that gives it its value (``pytest-domain`` needs a path under ``software/cadagent/<domain>/``);
 without one it is ``not run``.
 
 Logs and the run folder (``cad-agent-preflight-*`` in the system temp, or under ``--workdir``; it also holds the
-built site) are deleted when every check that ran passed, and kept, with their path printed, when one failed or the
-run was interrupted.
+built site) are deleted when every check that ran passed, with any empty parents ``--workdir`` created, and kept, with
+their path printed, when one failed or the run was interrupted. A failure while the load average exceeds the CPU count
+carries a note to rerun that check alone: some suites assert on wall-clock time.
+
+A check's ``cwd`` must resolve inside the checkout. An entry whose suites never read ``CHROMIUM_EXECUTABLE`` says so
+with ``needs.chromium_executable: false`` (``tests/repo/ci/test_ci_checks.py`` keeps it true to the suite files), so
+a caller's value flags only the suites it changes.
 
 Limits, stated plainly:
 
@@ -83,6 +91,7 @@ CHROME_CHANNEL = Path("/opt/google/chrome/chrome")        # where Playwright's `
 PYTHON_NAMES = ["python3", "python3.10", "python3.11", "python3.12", "python3.13", "python3.14"]
 TAIL_LINES = 20
 DEFAULT_TIMEOUT = 1800
+PROBE_TIMEOUT = 30                                          # seconds for an interpreter or Node probe
 
 # Run by each candidate interpreter (with -I, so nothing from the checkout is imported): its version, which of the
 # asked modules it can find (find_spec only locates, it runs no package code), installed distribution versions, and
@@ -165,6 +174,7 @@ class Instance:
     tail: str = ""
     differs: list = field(default_factory=list)      # what differs from CI's runner: browser, python, node
     named: bool = False                              # named with --only: runs even when slow
+    not_reached: bool = False                        # not run because the run was interrupted before it
 
     @property
     def id(self) -> str:
@@ -197,8 +207,10 @@ FIELDS = {"id": STR, "title": STR, "paths": LIST, "exclude": LIST, "command": ST
           "provides_env": DICT, "needs": DICT, "engines": LIST, "cost": STR, "cost_note": STR, "timeout": INT,
           "subset": BOOL, "per_match": STR, "per_match_requires": LIST, "mirrors": LIST, "ci_only": STR}
 NEEDS = {"python": DICT, "node_deps": LIST, "commands": LIST, "after": LIST, "os": STR, "browser": STR,
-         "node_heap_mb": INT, "node_heap_why": STR}
+         "node_heap_mb": INT, "node_heap_why": STR, "chromium_executable": BOOL}
 PYTHON_NEED = {"version": STR, "exact": BOOL, "modules": LIST, "dists": LIST, "browser": STR, "why": STR}
+MIRROR = {"workflow": STR, "job": STR, "run": STR, "cwd": STR}
+TOP = {"about": STR, "ci_node_major": STR, "checks": LIST}
 
 
 def _type_problems(where: str, obj: dict, fields: dict) -> list[str]:
@@ -217,19 +229,31 @@ def _type_problems(where: str, obj: dict, fields: dict) -> list[str]:
 
 
 def _quoted_fields(command: str) -> set[str]:
-    """Format fields that sit inside single or double quotes in ``command``."""
-    out, quote, i = set(), None, 0
-    while i < len(command):
-        c = command[i]
-        if quote and c == quote:
-            quote = None
-        elif not quote and c in "\"'":
-            quote = c
-        elif quote and c == "{" and not command.startswith("{{", i):
-            end = command.find("}", i)
-            if end > i:
-                out.add(command[i + 1:end])
-        i += 1
+    """Format fields that sit inside single or double quotes in ``command``, read as ``str.format`` reads it (so
+    ``{d:}`` and ``{d!s}`` name ``d``) and as the shell quotes it (a backslash escapes the next character outside
+    single quotes, so ``\\"`` neither opens nor closes double quotes). A stray brace yields nothing here; it is
+    reported on its own."""
+    out, quote = set(), None
+    try:
+        parsed = list(string.Formatter().parse(command))
+    except ValueError:
+        return out
+    for literal, name, _, _ in parsed:
+        i = 0
+        while i < len(literal):
+            c = literal[i]
+            if c == "\\" and quote != "'":
+                i += 2                                   # the escaped character is literal, whatever it is
+                continue
+            if quote and c == quote:
+                quote = None
+            elif not quote and c in "\"'":
+                quote = c
+            i += 1
+        if name is not None and quote:
+            m = re.match(r"\w+", name)
+            if m:
+                out.add(m.group(0))
     return out
 
 
@@ -239,6 +263,13 @@ def mapping_problems(mapping) -> list[str]:
     if not isinstance(mapping, dict) or not isinstance(mapping.get("checks"), list):
         return ["the mapping has no `checks` list"]
     problems, ids = [], set()
+    for key, value in mapping.items():                 # ci_node_major as the integer 22 never equals node's "22"
+        if key not in TOP:
+            problems.append(f"unknown top-level field `{key}`")
+        elif not isinstance(value, TOP[key]):
+            problems.append(f"`{key}` must be a {TOP[key].__name__}, not {type(value).__name__}")
+        elif key == "ci_node_major" and not value.isdigit():
+            problems.append(f"`ci_node_major` must be a Node major such as \"22\", not {value!r}")
     for n, check in enumerate(mapping["checks"]):
         where = f"check {check.get('id', f'#{n}') if isinstance(check, dict) else f'#{n}'}"
         if not isinstance(check, dict):
@@ -249,6 +280,17 @@ def mapping_problems(mapping) -> list[str]:
             typed += _type_problems(f"{where} needs", check["needs"], NEEDS)
             if isinstance(check["needs"].get("python"), dict):
                 typed += _type_problems(f"{where} needs.python", check["needs"]["python"], PYTHON_NEED)
+                for pin in check["needs"]["python"].get("dists", []):
+                    name, eq, version = pin.partition("==") if isinstance(pin, str) else ("", "", "")
+                    if isinstance(pin, str) and not (name.strip() and eq and version.strip()):
+                        typed.append(f"{where} needs.python: dists item `{pin}` must be name==version")
+        for n, mirror in enumerate(check.get("mirrors", []) if isinstance(check.get("mirrors"), list) else [], 1):
+            if not isinstance(mirror, dict):
+                typed.append(f"{where}: mirror {n} must be an object with workflow, job and run, not "
+                             f"{type(mirror).__name__}")
+                continue
+            typed += [f"{where}: mirror {n} has no `{key}`" for key in ("workflow", "job", "run") if key not in mirror]
+            typed += _type_problems(f"{where}: mirror {n}", mirror, MIRROR)
         if typed:                                          # the checks below assume the right types
             problems += typed
             continue
@@ -295,9 +337,18 @@ def mapping_problems(mapping) -> list[str]:
 
 
 def root_problems(mapping: dict, root: Path) -> list[str]:
-    """What the mapping names that this checkout lacks: a working directory."""
-    return [f"check {c['id']}: cwd {c['cwd']} is not a folder in {root}" for c in mapping["checks"]
-            if c.get("cwd") and not (root / c["cwd"]).is_dir()]
+    """What the mapping names that this checkout lacks: a working directory, which must also resolve inside it (no
+    ``..``, absolute path or symlink out)."""
+    out, root = [], root.resolve()
+    for c in mapping["checks"]:
+        if not c.get("cwd"):
+            continue
+        where = (root / c["cwd"]).resolve()
+        if where != root and root not in where.parents:
+            out.append(f"check {c['id']}: cwd {c['cwd']} is outside the checkout {root} (it resolves to {where})")
+        elif not where.is_dir():
+            out.append(f"check {c['id']}: cwd {c['cwd']} is not a folder in {root}")
+    return out
 
 
 def named(mapping: dict, only: list[str], selected: list[Instance]) -> list[Instance]:
@@ -350,6 +401,24 @@ def select(mapping: dict, paths: list[str], root: Path = ROOT) -> list[Instance]
 # What this machine has
 
 
+def capture(cmd: list[str], env: dict, timeout: float | None = None) -> subprocess.CompletedProcess | None:
+    """Run a probe in its own process group and return its output, or None when it timed out. A timeout or an
+    interrupt stops the whole group (a wrapper script's children too), not only the process it started."""
+    with subprocess.Popen(cmd, env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.DEVNULL,
+                          text=True, start_new_session=True) as proc:
+        try:
+            out, err = proc.communicate(timeout=PROBE_TIMEOUT if timeout is None else timeout)
+        except subprocess.TimeoutExpired:
+            stop_group(proc.pid)
+            proc.wait()
+            return None
+        except BaseException:                          # an interrupt: stop the group, then let it propagate
+            stop_group(proc.pid)
+            proc.wait()
+            raise
+    return subprocess.CompletedProcess(cmd, proc.returncode, out, err)
+
+
 class Machine:
     """Capabilities, each probed once: interpreters, Playwright browser builds, installed Node dependencies."""
 
@@ -380,9 +449,8 @@ class Machine:
             # -I ignores PYTHONPATH, so a checkout path is added by hand where the check itself sets it
             code = (f"import sys; sys.path.insert(0, {pythonpath!r})\n" if pythonpath else "") + PROBE
             try:
-                out = subprocess.run([exe, "-I", "-c", code, json.dumps(modules), json.dumps(dists)], env=env,
-                                     capture_output=True, text=True, timeout=30)
-                self._probes[key] = json.loads(out.stdout) if out.returncode == 0 else None
+                out = capture([exe, "-I", "-c", code, json.dumps(modules), json.dumps(dists)], env)
+                self._probes[key] = json.loads(out.stdout) if out and out.returncode == 0 else None
             except (OSError, subprocess.SubprocessError, ValueError):
                 self._probes[key] = None
         return self._probes[key]
@@ -448,8 +516,11 @@ class Machine:
     def present_builds(self, prefix: str) -> list[str]:
         return sorted({p.name for d in self.browser_dirs() for p in d.glob(prefix + "-*")})
 
-    def node_engine(self, engine: str) -> tuple[dict | None, str, list[str]]:
-        """``(env, problem, notes)`` to run a Node Playwright suite in ``engine``, as CI's matrix does."""
+    def node_engine(self, engine: str, reads_preset: bool = True) -> tuple[dict | None, str, list[str]]:
+        """``(env, problem, notes)`` to run a Node Playwright suite in ``engine``, as CI's matrix does.
+        ``reads_preset`` is False for a suite that never reads CHROMIUM_EXECUTABLE (the entry's
+        ``needs.chromium_executable``): a caller's value then changes nothing for it, so it is neither named nor
+        flagged."""
         revs = self.revisions(self.root / NODE_PLAYWRIGHT)
         if not revs:
             return None, "Node Playwright is not installed in tools/site (run `npm ci` there)", []
@@ -464,7 +535,7 @@ class Machine:
         rev = revs.get("chromium-headless-shell") or revs.get("chromium")
         # Most Chromium suites launch CHROMIUM_EXECUTABLE when it is set, whatever the channel says: a caller's value
         # replaces CI's build, so it is named and flagged (a note sets the `browser` differs flag)
-        preset = self.env.get("CHROMIUM_EXECUTABLE")
+        preset = self.env.get("CHROMIUM_EXECUTABLE") if reads_preset else None
         preset_note = (f"runs on CHROMIUM_EXECUTABLE={preset} (set in your environment), not CI's Playwright "
                        f"Chromium r{rev}: evidence only")
         if rev and self.installed(f"chromium_headless_shell-{rev}") and self.installed(f"chromium-{rev}"):
@@ -477,7 +548,8 @@ class Machine:
             if preset:
                 return {"PLAYWRIGHT_BROWSER": "chromium", "CHROMIUM_EXECUTABLE": preset}, "", [
                     preset_note + (f" (installed here: {', '.join(have)})" if have else "")]
-            return ({"PLAYWRIGHT_BROWSER": "chromium", "CHROMIUM_EXECUTABLE": str(CHROME_CHANNEL)}, "",
+            return ({"PLAYWRIGHT_BROWSER": "chromium",
+                     "CHROMIUM_EXECUTABLE": self.env.get("CHROMIUM_EXECUTABLE") or str(CHROME_CHANNEL)}, "",
                     [f"runs on the local Chrome ({CHROME_CHANNEL}, as CHROMIUM_EXECUTABLE and Playwright's `chrome` "
                      f"channel), not CI's Playwright Chromium r{rev}"
                      + (f" (installed here: {', '.join(have)})" if have else "") + ": evidence only"])
@@ -490,12 +562,13 @@ class Machine:
         if not probe or not probe.get("playwright"):
             return "the chosen Python has no Playwright", ""
         rev = self.revisions(Path(probe["playwright"])).get("chromium-headless-shell")
-        if rev and (self.installed(f"chromium_headless_shell-{rev}") or self.installed(f"chromium-{rev}")):
-            return "", ""
+        pinned = rev and (self.installed(f"chromium_headless_shell-{rev}") or self.installed(f"chromium-{rev}"))
         other = shutil.which("chromium", path=self.env.get("PATH"))
-        if other:                                          # the capture scripts default to `chromium` on PATH
-            return "", (f"runs on the `chromium` on PATH ({other}), not Python Playwright's pinned Chromium r{rev}: "
-                        "evidence only")
+        if other:          # the capture scripts take `chromium` on PATH whenever there is one, pinned build or not
+            return "", (f"runs on the `chromium` on PATH ({other}), not Python Playwright's pinned Chromium r{rev}"
+                        + (" (installed here, but the PATH browser wins)" if pinned else "") + ": evidence only")
+        if pinned:
+            return "", ""
         have = self.present_builds("chromium")
         return (f"Python Playwright needs Chromium r{rev}" + (f" (found {', '.join(have)})" if have else "")
                 + "; CI installs it with `python -m playwright install chromium --only-shell`. Not installed for you."), ""
@@ -506,9 +579,9 @@ class Machine:
         cgroup limit included), so it can be smaller here than on CI's runner."""
         if not hasattr(self, "_heap"):
             try:
-                out = subprocess.run(["node", "-e", "console.log(require('v8').getHeapStatistics().heap_size_limit)"],
-                                     env=self.env, capture_output=True, text=True, timeout=30)
-                self._heap = int(out.stdout) // 2**20 if out.returncode == 0 else None
+                out = capture(["node", "-e", "console.log(require('v8').getHeapStatistics().heap_size_limit)"],
+                              self.env)
+                self._heap = int(out.stdout) // 2**20 if out and out.returncode == 0 else None
             except (OSError, ValueError, subprocess.SubprocessError):
                 self._heap = None
         return self._heap
@@ -516,8 +589,8 @@ class Machine:
     def node_major(self) -> str | None:
         if not hasattr(self, "_node_major"):
             try:
-                out = subprocess.run(["node", "--version"], env=self.env, capture_output=True, text=True, timeout=30)
-                self._node_major = out.stdout.strip().lstrip("v").split(".")[0] if out.returncode == 0 else None
+                out = capture(["node", "--version"], self.env)
+                self._node_major = out.stdout.strip().lstrip("v").split(".")[0] if out and out.returncode == 0 else None
             except (OSError, subprocess.SubprocessError):
                 self._node_major = None
         return self._node_major
@@ -564,7 +637,7 @@ def assess(inst: Instance, machine: Machine, slow: bool, done: dict[str, Instanc
             inst.notes.append(f"this machine's default Node heap is {have} MB, under the {want} MB this suite needs "
                               f"({need.get('node_heap_why', 'see the mapping')}); runs with --max-old-space-size={want}")
     if inst.engine or need.get("browser"):
-        env, problem, notes = machine.node_engine(inst.engine or need["browser"])
+        env, problem, notes = machine.node_engine(inst.engine or need["browser"], need.get("chromium_executable", True))
         if problem:
             inst.status, inst.reason = "not run", problem
             return
@@ -633,8 +706,33 @@ class Interrupted(Exception):
         self.signum = signum
 
 
-def _raise_interrupted(signum, frame):
-    raise Interrupted(signum)
+# The first signal of a run, and whether the checks are over (then it is only recorded, so the report still prints)
+_SIGNALS: dict = {"first": None, "defer": False}
+
+
+def _on_signal(signum, frame):
+    """The first signal decides: it raises ``Interrupted`` while checks run, or is recorded once they are over. A
+    later one (a second Ctrl-C, or a harness's SIGTERM right after SIGINT) is ignored, so it cannot cut short the
+    stopping of the running check and leave that check unreported."""
+    if _SIGNALS["first"] is not None:
+        return
+    _SIGNALS["first"] = signum
+    if not _SIGNALS["defer"]:
+        raise Interrupted(signum)
+
+
+def load_note(check_id: str) -> str | None:
+    """A hint for a failure under load: some suites assert on wall-clock time (``tests/webkit/files/browser.mjs``
+    gives Cancel two seconds), and a load average above the CPU count can fail them where they pass alone."""
+    try:
+        one = os.getloadavg()[0]
+    except (OSError, AttributeError):                  # not available on this platform
+        return None
+    cpus = os.cpu_count() or 1
+    if one <= cpus:
+        return None
+    return (f"the load average was {one:.1f} on {cpus} CPUs when it failed: a suite with a wall-clock assertion can "
+            f"fail under load, so rerun it alone (--only {check_id}) before reading the failure as the change's")
 
 
 def stop_group(pid: int) -> None:
@@ -672,11 +770,11 @@ def run(inst: Instance, ctx: dict, machine: Machine, workdir: Path, timeout: int
             proc.wait()
             code = None
         except (KeyboardInterrupt, Interrupted) as e:  # the check runs in its own session: the signal stops here
-            stop_group(proc.pid)
-            proc.wait()
-            inst.status, inst.log = "failed", str(log)
+            inst.status, inst.log = "failed", str(log)  # recorded first, before anything else can go wrong
             inst.reason = f"interrupted ({e if isinstance(e, Interrupted) else 'SIGINT'})"
             inst.seconds = round(time.monotonic() - started, 1)
+            stop_group(proc.pid)
+            proc.wait()
             raise
     inst.seconds = round(time.monotonic() - started, 1)
     inst.log = str(log)
@@ -687,6 +785,9 @@ def run(inst: Instance, ctx: dict, machine: Machine, workdir: Path, timeout: int
         inst.status = "failed"
         inst.reason = f"timed out after {timeout} s" if code is None else f"exit {code}"
         inst.tail = "\n".join(failure_excerpt(lines))
+        note = load_note(inst.id)
+        if note:
+            inst.notes.append(note)
 
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -768,15 +869,18 @@ def text_report(instances: list[Instance], paths: list[str], ctx: dict, listing:
         out.append(f"{len(differing)} ran on a different browser, Python or Node than CI's (evidence, not CI's "
                    f"result): " + ", ".join(f"{i.id} ({'/'.join(i.differs)})" for i in differing))
     skipped = [i for i in instances if i.status == "skipped"]
-    cannot = [i for i in instances if i.status == "not run"]
+    cannot = [i for i in instances if i.status == "not run" and not i.not_reached]
+    unreached = [i for i in instances if i.status == "not run" and i.not_reached]
     ci_only = [i for i in instances if i.status == "ci only"]
     if ci_only:
         out.append("CI only, never run here and not part of the verdict: " + ", ".join(i.id for i in ci_only))
-    if skipped or cannot:
+    if skipped or cannot or unreached:
         out.append(f"Not run, so not passed (CI runs them): {len(skipped)} skipped as slow (--slow runs them), "
-                   f"{len(cannot)} cannot run here:")
+                   f"{len(cannot)} cannot run here"
+                   + (f", {len(unreached)} not reached (the run was interrupted)" if unreached else "") + ":")
         out += [f"  - skipped: {i.id} ({i.check.get('title', '')}): {i.reason}" for i in skipped]
         out += [f"  - cannot run here: {i.id} ({i.check.get('title', '')}): {i.reason}" for i in cannot]
+        out += [f"  - not reached: {i.id} ({i.check.get('title', '')}): {i.reason}" for i in unreached]
     if not listing:
         out.append(f"Verdict: {verdict(instances, listing, interrupted)}")
     return "\n".join(out)
@@ -801,23 +905,24 @@ def verdict(instances: list[Instance], listing: bool = False, interrupted: Inter
 
 
 EXIT = {"passed": 0, "nothing selected": 0, "listed": 0, "failed": 1, "incomplete": 3}
-HANDLED = (signal.SIGTERM, signal.SIGHUP)              # SIGINT arrives as KeyboardInterrupt
+HANDLED = (signal.SIGINT, signal.SIGTERM, signal.SIGHUP)
 
 
 def main(argv: list[str] | None = None) -> int:
     """Install the signal handlers, run, restore them. Anything unexpected is a setup error (exit 2), never exit 1,
     which means a check that ran failed."""
     previous = {}
+    _SIGNALS.update(first=None, defer=False)
     try:
         for sig in HANDLED:
-            previous[sig] = signal.signal(sig, _raise_interrupted)
+            previous[sig] = signal.signal(sig, _on_signal)
     except ValueError:                                 # not the main thread: SIGINT still works
         previous = {}
     try:
         return _main(argv)
     except (Interrupted, KeyboardInterrupt) as e:      # before any check started: nothing to report
         signum = e.signum if isinstance(e, Interrupted) else signal.SIGINT
-        print(f"preflight: interrupted ({signal.Signals(signum).name}) before any check ran", file=sys.stderr)
+        print(f"preflight: interrupted ({signal.Signals(signum).name}) before any check started", file=sys.stderr)
         return 128 + signum
     except Exception as e:                             # a bug or a mapping shape the checks above missed
         print(f"preflight: setup error: {type(e).__name__}: {e}", file=sys.stderr)
@@ -881,7 +986,10 @@ def _main(argv: list[str] | None) -> int:
         for inst in instances:
             inst.named = True
 
+    made: list[Path] = []                               # the folders --workdir creates, deepest first
     if a.workdir:
+        a.workdir = a.workdir.resolve()                  # mkdtemp keeps a relative dir relative before Python 3.12
+        made = [p for p in (a.workdir, *a.workdir.parents) if not p.exists()]
         a.workdir.mkdir(parents=True, exist_ok=True)
     workdir = Path(tempfile.mkdtemp(prefix="cad-agent-preflight-", dir=a.workdir))
     ctx = {"base": merge_base, "tmp": str(workdir), "root": str(root)}
@@ -897,11 +1005,14 @@ def _main(argv: list[str] | None) -> int:
                     print(f"running {inst.id} ...", file=sys.stderr, flush=True)
                 run(inst, ctx, machine, workdir, a.timeout or inst.check.get("timeout", DEFAULT_TIMEOUT))
             done.setdefault(inst.check["id"], inst)
+        _SIGNALS["defer"] = True                         # the checks are over: a signal now waits for the report
     except (Interrupted, KeyboardInterrupt) as e:
+        _SIGNALS["defer"] = True
         interrupted = e if isinstance(e, Interrupted) else Interrupted(signal.SIGINT)
         for inst in instances:
             if inst.status in ("selected", "runnable"):
-                inst.status, inst.reason = "not run", f"interrupted ({interrupted}) before it ran"
+                inst.status, inst.not_reached = "not run", True
+                inst.reason = f"the run was interrupted ({interrupted}) before it started"
         print(f"preflight: interrupted ({interrupted}); stopped the running check and everything it started. "
               f"Logs kept in {workdir / 'logs'}", file=sys.stderr)
 
@@ -915,7 +1026,8 @@ def _main(argv: list[str] | None) -> int:
                           "differs": [{"id": i.id, "differs": i.differs} for i in ran if i.differs],
                           "skipped": [{"id": i.id, "reason": i.reason} for i in instances if i.status == "skipped"],
                           "cannot_run": [{"id": i.id, "reason": i.reason} for i in instances
-                                         if i.status == "not run"],
+                                         if i.status == "not run" and not i.not_reached],
+                          "not_reached": [{"id": i.id, "reason": i.reason} for i in instances if i.not_reached],
                           "not_run": [{"id": i.id, "status": i.status, "reason": i.reason} for i in instances
                                       if i.status in ("not run", "skipped")],
                           "ci_only": [{"id": i.id, "reason": i.reason} for i in instances if i.status == "ci only"],
@@ -928,6 +1040,16 @@ def _main(argv: list[str] | None) -> int:
         print(text_report(instances, paths, ctx, a.list, logs, interrupted), flush=True)
     if not keep:
         shutil.rmtree(workdir, ignore_errors=True)       # kept only when a check failed or the run was stopped
+        for folder in made:                              # and the parents --workdir made, while they are empty
+            try:
+                folder.rmdir()
+            except OSError:
+                break
+    late = _SIGNALS["first"]
+    if late and not interrupted:                         # arrived after the checks: the report above is whole
+        print(f"preflight: {signal.Signals(late).name} arrived after the checks finished; the report above is "
+              f"complete", file=sys.stderr)
+        return 128 + late
     return 128 + interrupted.signum if interrupted else EXIT[verdict(instances, a.list)]
 
 

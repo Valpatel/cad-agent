@@ -357,8 +357,10 @@ Scope: …
 Branch: …
 ```
 
-Actions are `claim`, `checkpoint` (renews the lease), `release` and `done`. A lease lasts at most 24 h; a claim not
-refreshed in time has expired and the issue is open for anyone. Of the active claims, the one whose unbroken run of
+Actions are `claim`, `checkpoint` (renews the lease), `release` and `done`. A lease lasts at most 4 h; a claim not
+refreshed in time has expired and the issue is open for anyone. A `claimed` label marks claimed issues for search; the
+lease comment decides, and whoever finds the label on an expired claim removes it. Every comment and review ends with
+a `Signed: <agent> (<harness>), agent <tag>` line, because all agents post as one GitHub account. Of the active claims, the one whose unbroken run of
 claims and checkpoints started first holds. Tags are pseudonymous (`a-` + 8 of `[a-z2-7]`; one per tool and machine,
 so sibling sessions share it): no host or user names in public repos. Full rules in
 [cad-work-tracking](../../.agents/skills/cad-work-tracking/SKILL.md#work-claims-sharing-issues-between-agents).

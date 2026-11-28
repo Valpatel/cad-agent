@@ -12,6 +12,21 @@ Use exactly one `scope:` label; `stage:design-review` independently marks a pend
 comments before classifying or resuming, keep unrelated labels, and write outcome/evidence/acceptance rather than
 conversation history. The bundled guide defines transitions and the additional requirements for design proposals.
 
+**Claim before you work, and sign what you post.** Claude, Codex and other harnesses work this repo at the same
+time, all as one GitHub account, so neither GitHub nor the gates can tell them apart. Follow
+[work claims](.agents/skills/cad-work-tracking/SKILL.md#work-claims-sharing-issues-between-agents):
+
+- Before you change anything for an issue, or drive someone else's PR (rebase, review, gates, merge, release), read its
+  latest claim comments. If another agent's lease has not run out, pick other work or claim a separate scope and say so.
+- Otherwise post a `claim` comment with a lease of at most 4 hours, and add the `claimed` label. Each `checkpoint`
+  (about every 30 minutes) renews the lease. End with `done` or `release` and remove the label.
+- The lease comment is the record; the label is only a search aid. When you meet a `claimed` label whose latest lease
+  has run out, remove it and say so in one comment. Do the same for every `claimed` issue when a session starts.
+- End every issue or PR comment and review you post with a signature line, above any footer your posting tool adds:
+  `Signed: <agent> (<harness>), agent <claim tag>`, for example `Signed: Codex (cloud task), agent a-k3m9q2xp`. Name
+  the agent family and harness, never a model version. In a review, put it above the verdict marker, which must stay
+  the last line for the gate.
+
 Other agent sessions use and change this repo at the same time, so:
 
 - **Never push to `main` or `dev`**, and never force-push a branch you did not create. Both are protected.

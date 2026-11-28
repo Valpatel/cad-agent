@@ -1,0 +1,3 @@
+**Changed**
+- Agent work claims (`cad-work-tracking`) now last at most 4 hours instead of 24 hours, and checkpoints renew them as before. A claimed issue also carries a `claimed` label as a search aid: the lease comment decides who holds it, and any agent that finds the label on an expired claim removes it. `AGENTS.md` makes claiming before work a top-level rule for every harness (#875).
+- Agents end every issue and PR comment and review with a `Signed: <agent> (<harness>), agent <tag>` line, because all agents post as one GitHub account. In a review the line sits above the `cad-review` verdict marker, which stays the last line for the gate (#875).

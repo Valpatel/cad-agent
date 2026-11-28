@@ -54,7 +54,7 @@
   },
   "generator": {
     "path": "tools/webkit/scada/ui/generate-thumbnails.py",
-    "sha256": "d451802120bae6385391f80b4414d03617e6a6c3522286cc9bff9bb4708ff804",
+    "sha256": "0b41db7233cceaf75f2e1945f2566840089faeac4d98c1f664e4e1a4076f6724",
     "capture_helper_sha256": "2d767c6b3ab41936f2d199969612c12150c228e8259c30623fccf72d95bf1ffa"
   },
   "capture": {
@@ -5018,8 +5018,8 @@
       "width": 480,
       "height": 360,
       "format": "jpeg",
-      "bytes": 21429,
-      "sha256": "f254b4297b072949834ce5ed9e1a3f14cc7898aa5ad8e9c48457e69163a57064"
+      "bytes": 21654,
+      "sha256": "838fdaf731a952ea11fa1143dc96ab340229977aebed62cf5b7d2b7e35bbcecb"
     },
     {
       "id": "statusbar",
@@ -5030,7 +5030,7 @@
       "height": 360,
       "format": "jpeg",
       "bytes": 15306,
-      "sha256": "9986342f5df5769f29c696021c14fd5b8e4b18a9dc0fed6a725e537d857cdc57"
+      "sha256": "e8995031343fd1b0c89e8041d18611777432ad58894e27359161b5c52930e0c3"
     },
     {
       "id": "buttons",
@@ -5051,8 +5051,8 @@
       "width": 480,
       "height": 360,
       "format": "jpeg",
-      "bytes": 18962,
-      "sha256": "ab3b047a0433d85835dbe8ade73f1642606e4751f3153387380506a2ad8aa0c0"
+      "bytes": 18963,
+      "sha256": "0eb9ce368e0bb7d434957860b6ce2e89d1cac560eee04c27071c25d76ab2a2a5"
     },
     {
       "id": "metrics",
@@ -5247,7 +5247,7 @@
     "width": 1152,
     "height": 797,
     "format": "jpeg",
-    "bytes": 68469,
-    "sha256": "926480bcab98559803f80e1e5b674698a80fe432d9208cf76ab0075a4056affb"
+    "bytes": 73819,
+    "sha256": "de2e73e4bd8462c7cd404c9855c5864a5410005d432b6cee0bc40e7e00851844"
   }
 }

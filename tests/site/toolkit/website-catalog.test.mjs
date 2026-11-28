@@ -118,6 +118,19 @@ test('KiCad MCP Pro is a historical reference in the published catalogue and hom
   assert.match(item.policy, /external program only/i);
   assert.match(item.notes, /4\.4\.0.*MIT/);
   assert.match(item.notes, /do not run/i);
+  const manifest = JSON.parse(show('software/vendor/manifest.json'));
+  const snapshot = manifest.projects.find(project => project.name === 'kicad-mcp-pro');
+  assert.equal(snapshot.license, 'MIT');
+  assert.match(snapshot.notes, /do not run/i);
+
+  const references = await json('catalog/references/records.json');
+  const record = references.records.find(ref => ref.id === 'kicad-mcp-pro');
+  assert.equal(record.licence, 'share-alike');
+  const referencePage = await readFile(path.join(out, 'references', record.areas[0] + '.html'), 'utf8');
+  const row = referencePage.match(/<tr id="kicad-mcp-pro"[\s\S]*?<\/tr>/)[0];
+  assert.match(row, /MIT/);
+  assert.match(row, /AGPL-3.0-only/);
+
   for (const file of ['index.html', 'index.md', 'llms.txt']) {
     const home = await readFile(path.join(out, file), 'utf8');
     assert.ok(!home.includes('kicad-mcp-pro (vendored)'), file);
@@ -126,10 +139,11 @@ test('KiCad MCP Pro is a historical reference in the published catalogue and hom
 
 test('KiCad MCP Pro launch and edit advice stays withdrawn across published reader and agent guidance', async () => {
   for (const file of ['research/landscape.html', 'research/landscape.md', 'llms-full.txt']) {
-    const guide = await readFile(path.join(out, file), 'utf8');
+    const guide = (await readFile(path.join(out, file), 'utf8')).replace(/<\/?(?:strong|b|code)>|\*\*/gi, '');
     const launch = /\buvx\s+kicad-mcp-pro\b|kicad-mcp-pro(?:@|==)4\.4\.0\b/i;
     const adoption = guide.match(/Adopt now([\s\S]*?)Thin add-on repo/)?.[1];
     assert.equal(guide.match(launch)?.[0], undefined, `${file} gives a launch instruction`);
+    assert.equal(guide.match(/kicad[- ]mcp[- ]pro for edits and exports/i)?.[0], undefined, `${file} recommends operational use`);
     assert.ok(adoption, `${file} has an adoption list`);
     assert.doesNotMatch(adoption, /kicad[- ]mcp[- ]pro/i);
     assert.ok(guide.includes('Stop using KiCad MCP Pro 4.4.0'), file);

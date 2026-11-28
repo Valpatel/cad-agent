@@ -473,7 +473,7 @@
    "drawings": "no",
    "vendor_integration": "JLCPCB default; Nexar/DigiKey/Mouser with keys",
    "evals": "evals/ and benchmarks/ dirs",
-   "notes": "The surveyed 4.4.0 snapshot at f03b478f597d is MIT and retained for source reference only. Four published advisories affect it. Do not run it or enable its unpinned MCP configuration. Fixed upstream releases are AGPL-3.0-only."
+   "notes": "The surveyed 4.4.0 snapshot at f03b478f597d is MIT and retained for source reference only. Four published advisories affect it. Do not run it or enable upstream's unpinned MCP client configuration. Fixed upstream releases are AGPL-3.0-only."
   },
   {
    "name": "Seeed-Studio/kicad-mcp-server",

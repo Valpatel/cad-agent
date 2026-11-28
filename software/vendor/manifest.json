@@ -50,7 +50,7 @@
         "scripts/check_github_repository_settings.py",
         "src-tauri"
       ],
-      "notes": "KiCad 10 MCP server (read-only by default). Pin; never launch via 'latest'.",
+      "notes": "Historical MIT 4.4.0 source reference only. Do not run this server or enable upstream's unpinned MCP client configuration. See issue #498.",
       "previous_sha": "f03b478f597d4b3e8c6d99827a2152b73077a122",
       "sha": "f03b478f597d4b3e8c6d99827a2152b73077a122",
       "imported": "2026-10-24",

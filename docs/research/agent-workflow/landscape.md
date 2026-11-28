@@ -173,7 +173,7 @@ export and print-handoff engine; cad-agent's checks, simulation and calculations
 
 | | kicad-mcp-pro | mixelpixx KiCAD-MCP-Server | Seeed kicad-mcp-server | kicad-happy (skills) |
 |---|---|---|---|---|
-| Install | Do not launch the 4.4.0 snapshot or enable its unpinned MCP configuration. | `git clone`; `npm install` runs `prepare` → `npm run build`; pip requirements | `pip install -e .` into KiCad's Python | CC marketplace plugin |
+| Install | Do not launch the 4.4.0 snapshot or enable upstream's unpinned MCP client configuration. | `git clone`; `npm install` runs `prepare` → `npm run build`; pip requirements | `pip install -e .` into KiCad's Python | CC marketplace plugin |
 | KiCad | 10.0.x primary (10.0.7 verified), 8.x deprecated, 9 dropped, 11 preview; SWIG forbidden by test | 9.0+; mixes kicad-python IPC and SWIG `pcbnew` | 8-10, `pcbnew` | file parsing |
 | Tools | 387 public; default profile = 24 read-only; writes need a profile | 244 registered | analysis, ERC/DRC, device-tree code | review scripts |
 | Network | JLCPCB public catalog by default; other distributors only with keys; telemetry **off** by default (opt-in OpenTelemetry) | JLCPCB, DigiKey; README advertises paid "Nimrod" service | PartReel downloads (host allowlist) | datasheets, distributors |

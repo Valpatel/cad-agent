@@ -158,7 +158,9 @@ async function previewRetryCheck(open, fail) {
     await art.waitFor();
     const running = retry.page.locator('[data-scada-state-fields] [name="running"]');
     await expect(running).toBeVisible();
-    const next = !await running.isChecked();
+    const current = await running.isChecked();
+    await expect(art).toHaveAttribute('data-running', String(current));
+    const next = !current;
     await running.setChecked(next);
     await expect(art).toHaveAttribute('data-running', String(next));
     await expect(retry.page.locator('[data-scada-preview-error]')).toHaveText('');

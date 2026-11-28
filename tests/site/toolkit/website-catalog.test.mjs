@@ -130,6 +130,7 @@ test('KiCad MCP Pro is a historical reference in the published catalogue and hom
   const row = referencePage.match(/<tr id="kicad-mcp-pro"[\s\S]*?<\/tr>/)[0];
   assert.match(row, /MIT/);
   assert.match(row, /AGPL-3.0-only/);
+  assert.match(row, /source reference only/);
 
   for (const file of ['index.html', 'index.md', 'llms.txt']) {
     const home = await readFile(path.join(out, file), 'utf8');

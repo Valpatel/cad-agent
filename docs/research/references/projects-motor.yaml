@@ -1297,11 +1297,12 @@ sources:
 - id: katz-thesis-low-cost-modular-actuator
   kind: paper
   category: design-guides
-  title: 'Katz thesis: low-cost modular actuator'
-  authors: []
-  org: dspace.mit.edu
-  year: null
-  url: https://dspace.mit.edu/handle/1721.1/119863
+  title: A low cost modular actuator for dynamic robots
+  authors:
+  - Benjamin G. Katz
+  org: Massachusetts Institute of Technology
+  year: 2018
+  url: https://dspace.mit.edu/entities/publication/b85069e2-f1cd-470e-a92a-9bf0dadfa7ee
   access: free
   terms: cited and summarised, never copied
   licence:
@@ -1323,12 +1324,8 @@ sources:
     level: low
     estimate: 0.4
     sources: 1
-  summary: Mini Cheetah actuator rationale. Handle and the 17 N·m figure not confirmed.
-  archive:
-    sha256: f58db7cdff66936fc33a59b8106e7d1c17b1851994311a890869a42cfe787fb1
-    kind: html
-    fetched: '2026-11-14'
-    redistribute: false
+  summary: Mechanical engineering master’s thesis on a modular actuator for dynamic robots. The previously catalogued 17 N·m
+    figure remains unconfirmed.
   used_for: []
   imported: b1cf4c9d501f574b
 - id: opentorque-hackaday-log

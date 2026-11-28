@@ -9,13 +9,12 @@ import {lowContrast} from './layout/outline.mjs';
  * move the page while it loads or need script to show (#132: the build draws them). Also the page tree's fold on
  * phones with nav.js loaded, late, blocked, failing or off, and outline jumps (foldProblems and jumpProblems, below). */
 import assert from 'node:assert/strict';
-import { spawn } from 'node:child_process';
 import { mkdtemp, readdir, readFile, writeFile } from 'node:fs/promises';
 import { createServer } from 'node:net';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { chromium, webkit, expect } from './npm-context.mjs';
-import { builtSite } from './built-site.mjs';
+import { builtSite, generatedDocument, startPreview } from './built-site.mjs';
 import { configureNavigation, fetchThrough, inLanes, navigate, navigationFailure, ownContexts, partHandler, watchRoutes } from './navigation.mjs';
 import { folderMapPath } from '../../tools/site/publication.mjs';
 import { reducedHeroProblems, repositoryHeroProblems, homepageModelProblems, homepageViewerGateProblems, heroRecordingProblems, replayCardProblems, learningPictureProblems, homepageLateDrawProblems, resultImageMotionProblems } from './layout/motion.mjs';
@@ -26,11 +25,6 @@ import { wideLayoutProblems } from './layout/wide.mjs';
 const root = path.resolve(import.meta.dirname, '../..');
 const site = await builtSite('cad-agent-website-browser-', { stdio: 'inherit' });   // CAD_AGENT_SITE, or a fresh build of HEAD
 const dir = site.dir;
-// The IPC channel lets a failed diagram navigation ask the server for its own record of that request (#686); the
-// server's errors go to this log.
-const server = spawn(process.execPath, ['tools/site/preview-site.mjs', '--dir', dir, '--port', '0'], { cwd: root, stdio: ['pipe', 'pipe', 'inherit', 'ipc'] });
-server.channel?.unref();   // a pending evidence query holds its own timer; the channel alone never keeps this test alive
-let evidenceQueries = 0;
 // This process's event-loop lag (#686): a starved test process times out a navigation its browser and server
 // finished. Samples late by 20 ms or more, in a fixed ring; the interval never keeps the test alive. Declared here,
 // before the parts run under this module's top-level await.
@@ -43,10 +37,7 @@ const testLag = [];
     expected = now + 100;
   }, 100).unref();
 }
-const base = await new Promise((ok, fail) => {
-  server.stdout.on('data', d => { const m = String(d).match(/http:\/\/[\d.]+:\d+/); if (m) ok(m[0]); });
-  server.on('exit', c => fail(new Error(`preview server exited ${c}`)));
-});
+const { server, base, serverEvidence } = await startPreview(dir);
 const engine = process.env.PLAYWRIGHT_BROWSER === 'webkit' ? webkit : chromium;
 const launchOptions = engine === chromium ? { channel: process.env.PLAYWRIGHT_CHANNEL === 'chromium' ? undefined : 'chrome', headless: true } : { headless: true };
 const browser = await engine.launch(launchOptions);
@@ -54,7 +45,8 @@ const browser = await engine.launch(launchOptions);
 // the preview server's record, and becomes a finding of its part (runPart, in inLanes) instead of ending the run.
 ownContexts(browser);
 watchRoutes(browser);   // a failed navigation's receipt says which route handler, if any, its document went through
-configureNavigation({ serverEvidence: previewServerEvidence, testLag, fullEvidenceLimit: 5 });
+configureNavigation({ serverEvidence, generatedDocument: url => generatedDocument(dir, base, url),
+  testLag, fullEvidenceLimit: 5 });
 // A reference area page (#323): the one route with the records' charts, table and filters (a small area, so the
 // theme part's text walk stays short; the walls part measures every reference page).
 const REFS = '/references/laser-cutting';
@@ -1500,6 +1492,9 @@ async function routeHopControls(context) {
   const neverURL = `${base}/docs/toolkit`;
   await never.route(neverURL, async route => { await gate; await route.abort('aborted').catch(() => {}); });
   const one = await failed('a handler that never answers', never, neverURL);
+  if (one && (one.evidence.generatedDocument?.file !== '/docs/toolkit.html' || !/^[0-9a-f]{64}$/.test(one.evidence.generatedDocument?.sha256) ||
+      !/^[0-9a-f]{40}$/.test(one.evidence.generatedDocument?.revision)))
+    say('the unserved Toolkit navigation lost its generated HTML or build revision');
   if (one && one.document.events?.response !== false) say(`a handler that never answers: the page saw a response: ${JSON.stringify(one.document.events)}`);
   if (one && (typeof one.route !== 'object' || one.route.handlers?.[0]?.outcome !== 'running' || one.route.calls?.length !== 0))
     say(`a handler that never answers: the receipt does not show a running handler with no calls: ${JSON.stringify(one.route).slice(0, 400)}`);
@@ -1556,6 +1551,8 @@ async function stallControlProblems(parts, found, finished) {
     const document = Array.isArray(evidence.documents) ? evidence.documents.find(d => d.url === stallControl.url) : null;
     if (!document || document.events?.response !== false || !/^no route on the page or its context/.test(document.route))
       out.push(`the receipt does not say the held document got no response and passed through no route handler: ${JSON.stringify(evidence.documents).slice(0, 400)}`);
+    if (evidence.generatedDocument?.unavailable !== 'requested URL belongs to another origin')
+      out.push('the preview build was attributed to the separate holding server');
     if (typeof evidence.server?.coversWindow !== 'boolean' || !evidence.server.window || !Array.isArray(evidence.server.matchingFirst) || !(evidence.server.lag?.maxMs >= 0))
       out.push(`the receipt lost the preview server's record: ${JSON.stringify(evidence.server).slice(0, 400)}`);
     if (!(evidence.testProcessLag?.maxMs >= 0) || evidence.engine?.name !== engine.name() || !evidence.engine.version || evidence.evidenceError)
@@ -2188,24 +2185,6 @@ async function withDiagramPage(options, action, open = options => browser.newCon
   }
 }
 
-/** Ask the preview server for its record of `pathname` since `since` (tools/site/preview-site.mjs). Bounded by
- * `limit`: a server that cannot answer in time is itself the evidence, and never turns a failure into a hang. */
-async function previewServerEvidence(pathname, since, limit = 2000) {
-  if (!server.connected) return { unavailable: 'the preview server has no IPC channel (exited or disconnected)' };
-  const id = ++evidenceQueries, asked = Date.now();
-  let timer, listener;
-  try {
-    return await new Promise(resolve => {
-      listener = message => { if (message?.id === id) resolve({ ...message, id: undefined, answeredInMs: Date.now() - asked }); };
-      server.on('message', listener);
-      timer = setTimeout(() => resolve({ unavailable: `the preview server did not answer in ${limit} ms` }), limit);
-      server.send({ type: 'preview-evidence', id, path: pathname, since }, error => {
-        if (error) resolve({ unavailable: `could not ask the preview server: ${error.message}` });
-      });
-    });
-  } finally { clearTimeout(timer); server.off('message', listener); }
-}
-
 /** A real stylesheet stays pending through a short fixture timeout; the ordinary checks keep their 30 seconds. The
  * shared navigation (tests/site/navigation.mjs) must keep the browser's and the server's record of it and rethrow
  * Playwright's own TimeoutError. */
@@ -2244,6 +2223,9 @@ async function diagramNavigationControl() {
         !evidence.server.keepAlive || evidence.server.coversWindow !== true || !evidence.server.coverage || !(evidence.server.openSockets >= 0) || !(evidence.testProcessLag?.maxMs >= 0)) {
       out.push(`diagram navigation control lost the preview server's record of the document: ${JSON.stringify(evidence?.server ?? null).slice(0, 400)}`);
     }
+    const generated = evidence?.generatedDocument;
+    if (!generated?.sha256 || generated.file !== '/docs/style-guide.html' || generated.sha256 !== doc?.responseBody?.sha256 ||
+        generated.bytes !== doc?.responseBody?.bytes) out.push('generated style guide bytes differ from the matching preview response');
     if (browser.contexts().includes(owned)) out.push('diagram navigation failure retained its owned context');
     if (await neighbor.evaluate(() => document.readyState) !== 'complete') out.push('diagram cleanup disrupted another context');
   } catch (error) { failed = true; failure = error; throw error; }

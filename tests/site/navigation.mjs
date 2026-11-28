@@ -1,5 +1,5 @@
-/** The one navigation function of the site browser suite (tests/site/website-browser.mjs and the layout/ helpers it
- * runs), and the per-part boundary that turns a failed navigation into a finding of its own part (#686).
+/** Shared navigation diagnostics for the website, catalogue and Python-generated diagram browser suites.
+ * The website suite also uses a per-part boundary that turns a failed navigation into a finding of its own part (#686).
  *
  * `navigate(page, url, options)` calls `page.goto(url, options)` with exactly the arguments given. On success it only
  * watched the page's own events: it writes nothing and asks the preview server nothing. On failure it keeps, within
@@ -21,22 +21,24 @@
  * which keeps the original message, and its own browser contexts are closed; any other error propagates as before.
  * Nothing here retries a navigation, changes its timeout or turns a failure into a pass: the finding fails the run.
  * The receipt says what each side recorded; it does not say why a navigation stalled. */
+import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { AsyncLocalStorage } from 'node:async_hooks';
-import { mkdtemp, writeFile } from 'node:fs/promises';
+import { mkdtemp, readFile, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
 const parts = new AsyncLocalStorage();
 const failures = new WeakMap();   // the original error -> { error, evidence, receipt }
-let sources = {};                 // { serverEvidence(pathname, since), testLag: [{ at, lateMs }], fullEvidenceLimit }
+let sources = {};                 // { serverEvidence(pathname, since), generatedDocument(url), testLag: [{ at, lateMs }], fullEvidenceLimit }
 let fullEvidenceKept = 0;
 
 /** The preview server's record and this process's lag, which only the suite's entry point can reach, and how many
  * failures in a run keep full evidence (DOM, screenshot and receipt): after that, only the evidence line, with the
  * browser's and the server's record. A part that goes on after each failed navigation (wide layouts catches each of
  * its 40) cannot then keep 40 screenshots. Planted controls and probes that bring their own folder do not count. */
-export function configureNavigation({ serverEvidence, testLag, fullEvidenceLimit = Infinity } = {}) {
-  sources = { serverEvidence, testLag, fullEvidenceLimit };
+export function configureNavigation({ serverEvidence, generatedDocument, testLag, fullEvidenceLimit = Infinity } = {}) {
+  sources = { serverEvidence, generatedDocument, testLag, fullEvidenceLimit };
   fullEvidenceKept = 0;
 }
 
@@ -170,16 +172,20 @@ async function keepEvidence(error, kept, { page, url, options, diag, began, pend
     const server = sources.serverEvidence
       ? bounded(() => sources.serverEvidence(new URL(url).pathname, began - 1000), 2500, 'server record')
       : Promise.resolve({ unavailable: 'no preview server record configured' });
+    const generated = sources.generatedDocument
+      ? bounded(() => sources.generatedDocument(url), 2000, 'generated HTML inspection')
+      : Promise.resolve({ unavailable: 'no generated site configured' });
     const skipped = Promise.reject(new Error('not taken: full evidence skipped'));
     skipped.catch(() => {});
     const hops = routeHopsOf(page, began);
-    const [dom, png, record, , planted] = await Promise.allSettled([
+    const [dom, png, record, artifact, , planted] = await Promise.allSettled([
       full ? bounded(() => page.evaluate(domSnapshot), 1000, 'diagnostic capture') : skipped,
       full ? bounded(() => page.screenshot({ type: 'png', fullPage: false, timeout: 1000 }), 1000, 'diagnostic capture') : skipped,
-      server,
+      server, generated,
       bounded(() => hopBodySizes(hops), 1000, 'route fetch body sizes'),
       // a planted control's action at the moment the navigation has failed (a late fulfil), before the record is read
       diag.planted && diag.afterFailure ? bounded(diag.afterFailure, 1000, 'planted after-failure action') : Promise.resolve()]);
+    evidence.generatedDocument = artifact.status === 'fulfilled' ? artifact.value : { unavailable: 'generated HTML inspection failed or exceeded its deadline' };
     if (planted.status === 'rejected') evidence.captureErrors.push('planted after-failure action: ' + cleanText(planted.reason?.message));
     if (!full) { /* the DOM and screenshot were not taken */ }
     else if (dom.status === 'fulfilled') {
@@ -220,15 +226,15 @@ async function keepEvidence(error, kept, { page, url, options, diag, began, pend
 /** One line for the log: enough to tell which side stalled without opening the receipt. */
 function evidenceLine(e) {
   const s = e.server ?? {}, at = r => ({ id: r.id, receivedMs: r.receivedAt - e.began, status: r.status ?? null,
-    headersMs: r.headersAt ? r.headersAt - r.receivedAt : null, finishedMs: r.finishedAt ? r.finishedAt - r.receivedAt : null, socket: r.socket?.id ?? r.socket });
+    responseBody: r.responseBody, headersMs: r.headersAt ? r.headersAt - r.receivedAt : null, finishedMs: r.finishedAt ? r.finishedAt - r.receivedAt : null, socket: r.socket?.id ?? r.socket });
   return { part: e.part, where: e.where, url: e.url, error: e.error.message.split('\n')[0], waitUntil: e.waitUntil, elapsedMs: e.elapsedMs, engine: e.engine,
-    currentURL: e.currentURL, committed: e.committed, pendingCount: e.pendingCount,
+    currentURL: e.currentURL, generatedDocument: e.generatedDocument, committed: e.committed, pendingCount: e.pendingCount,
     pendingDocuments: e.pending.filter(r => r.type === 'document').map(r => ({ url: r.url, ageMs: r.ageMs, status: r.status ?? null })),
     routing: e.routing, documents: Array.isArray(e.documents) ? e.documents.map(documentLine) : e.documents,
     routeHops: e.routeHops?.length ? e.routeHops : undefined,
     failed: e.events.failed.length, testLagMaxMs: e.testProcessLag?.maxMs ?? null,
     server: s.unavailable ? { unavailable: s.unavailable } : { coversWindow: s.coversWindow, openSockets: s.openSockets,
-      matchingFirst: s.matchingFirst?.map(at), matchingLast: s.matching?.slice(-3).map(at), requests: s.window?.requests,
+      matchingCount: s.matchingCount, matchingBasis: s.matchingBasis, matchingFirst: s.matchingFirst?.map(at), matchingLast: s.matching?.slice(-3).map(at), requests: s.window?.requests,
       unanswered: s.window?.unanswered?.length, unfinished: s.window?.unfinished,
       socketsWithoutRequest: s.window?.socketsWithoutRequest?.length, lagMaxMs: s.lag?.maxMs },
     evidenceError: e.evidenceError, captureErrors: e.captureErrors.length ? e.captureErrors : undefined, fullEvidence: e.fullEvidence, receipt: e.receipt };
@@ -244,6 +250,33 @@ export function navigationFailure(error, seen = new Set()) {
     if (found) return found;
   }
   return null;
+}
+
+/** Read the artifact from a planted standalone navigation. The caller checks the evidence specific to its server. */
+export async function checkNavigationReceipt(attempt, { url, waitUntil, where, dir, file }) {
+  let receipt;
+  await assert.rejects(attempt, error => {
+    const failure = navigationFailure(error);
+    assert.equal(failure?.error, error, 'the original page.goto error must reach the suite');
+    assert.match(error.message, /page\.goto:/);
+    receipt = failure.receipt;
+    assert.ok(receipt, 'the failed navigation must retain an artifact');
+    return true;
+  });
+  assert.equal(path.dirname(receipt), tmpdir());
+  assert.match(path.basename(receipt), /^cad-agent-navigation-/);
+  const json = await readFile(path.join(receipt, 'navigation-failure.json'), 'utf8');
+  assert.doesNotMatch(json, /private-navigation-control/);
+  const record = JSON.parse(json);
+  assert.equal(record.url, url);
+  assert.equal(record.waitUntil, waitUntil);
+  assert.equal(record.where, where);
+  assert.equal(record.documents.find(doc => doc.url === url)?.events.requestfailed, true);
+  const html = await readFile(path.join(dir, file));
+  assert.equal(record.generatedDocument.file, file);
+  assert.equal(record.generatedDocument.bytes, html.length);
+  assert.equal(record.generatedDocument.sha256, createHash('sha256').update(html).digest('hex'));
+  return record;
 }
 
 /** Count each browser context a part opens (browser.newPage opens one too) as that part's, so a part stopped by a

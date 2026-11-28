@@ -2,10 +2,14 @@
 the design peak, slivers before meshing and the mesher's refusals. Meshes stay small so the suite stays fast."""
 import gc
 import math
+import os
 import platform
 import re
+import subprocess
+import sys
 import warnings
 import weakref
+import xml.etree.ElementTree as ET
 
 import numpy as np
 import pytest
@@ -428,7 +432,34 @@ def test_a_live_refusal_names_the_two_walls():
         pytest.skip(f'gmsh {gmsh.__version__} meshes the 0.02 mm slit on this build')
 
 
-def test_a_shelled_box_too_thin_for_its_mesh_is_a_refusal():
+def _run_thin_shell_worker(node, tmp_path):
+    """Isolate this marginal mesh so a stuck native call cannot strand the suite (#877)."""
+    report = tmp_path / 'thin-shell.xml'
+    worker = [sys.executable, '-m', 'pytest', '-vv', '-s', '-p', 'no:cacheprovider',
+              '-o', 'python_functions=check_shelled_box_refusal', '-o', 'faulthandler_timeout=15',
+              f'--junitxml={report}', node]
+    try:
+        result = subprocess.run(worker, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, timeout=60,
+                                env={**os.environ, 'PYTEST_ADDOPTS': '', 'TMPDIR': str(tmp_path)})
+    except subprocess.TimeoutExpired as err:  # run() kills and waits for the worker before raising
+        output = (err.output or b'').decode(errors='replace')
+        pytest.fail(f'Thin-shell mesh worker exceeded 60 s.\n{output}', pytrace=False)
+    output = result.stdout.decode(errors='replace')
+    if result.returncode:
+        pytest.fail(f'Thin-shell mesh worker exited {result.returncode}.\n{output}', pytrace=False)
+    case, = ET.parse(report).iter('testcase')
+    if float(case.attrib['time']) >= 15:
+        warnings.warn(f'Slow thin-shell mesh worker completed.\n{output}', pytest.PytestWarning)
+    skipped = case.find('skipped')
+    if skipped is not None:
+        pytest.skip(skipped.attrib['message'])
+
+
+def test_a_shelled_box_too_thin_for_its_mesh_is_a_refusal(tmp_path):
+    _run_thin_shell_worker(f'{__file__}::check_shelled_box_refusal', tmp_path)
+
+
+def check_shelled_box_refusal():
     """A 2 mm shell with R1 inside corners at a 4 mm mesh: gmsh 4.15.2 throws 'Could not recover boundary mesh: error
     2' (sometimes the PLC line instead), which used to reach the caller as gmsh's bare Exception. It is a MeshRefusal
     now, with the faces when gmsh gives a point. A build that meshes it skips."""
@@ -442,6 +473,27 @@ def test_a_shelled_box_too_thin_for_its_mesh_is_a_refusal():
         assert (err.point is None) == (err.faces == []) and err.log
     else:
         pytest.skip(f'gmsh {gmsh.__version__} meshes the 2 mm shell at 4 mm on this build')
+
+
+def test_thin_shell_worker_keeps_its_deadline_and_native_stack(tmp_path, monkeypatch):
+    def stalled(command, *, timeout, **kwargs):
+        assert timeout == 60 and 'faulthandler_timeout=15' in command
+        raise subprocess.TimeoutExpired(command, timeout, output=b'planted native stack')
+
+    monkeypatch.setattr(subprocess, 'run', stalled)
+    with pytest.raises(pytest.fail.Exception, match=r'exceeded 60 s\.\nplanted native stack'):
+        _run_thin_shell_worker(f'{__file__}::check_shelled_box_refusal', tmp_path)
+
+
+@pytest.mark.parametrize(('statement', 'outcome', 'message'), [
+    ("pytest.skip('build meshed the box')", pytest.skip.Exception, 'build meshed the box'),
+    ("raise RuntimeError('unexpected native error')", pytest.fail.Exception, 'RuntimeError: unexpected native error'),
+], ids=['supported-skip', 'unexpected-error'])
+def test_thin_shell_worker_propagates_skips_and_failures(tmp_path, statement, outcome, message):
+    case = tmp_path / 'test_worker.py'
+    case.write_text(f'import pytest\n\ndef check_shelled_box_refusal():\n    {statement}\n')
+    with pytest.raises(outcome, match=message):
+        _run_thin_shell_worker(f'{case}::check_shelled_box_refusal', tmp_path)
 
 
 def test_a_retry_that_meshes_is_used_with_a_warning(monkeypatch):

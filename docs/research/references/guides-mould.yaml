@@ -3115,3 +3115,42 @@ sources:
     kind: html
     fetched: '2026-11-14'
     redistribute: false
+- id: zhengna-pp-shrinkage-warpage-rfq
+  kind: guide
+  category: manufacturing-guides
+  title: 'Polypropylene Injection Molding: Shrinkage, Warpage and RFQ Guide'
+  authors: []
+  org: Zhengna Technology
+  year: 2026
+  url: https://www.zenatc.com/polypropylene-injection-molding-shrinkage-warpage-rfq-guide
+  access: free
+  terms: cited and summarised, never copied
+  licence:
+    spdx: null
+    class: proprietary
+    read: false
+    note: The page footer reserves all rights to Zhejiang Zhengna Technology Co., Ltd.
+  reuse:
+    text: cite-only
+    geometry: none
+  areas:
+  - moulded-part-design
+  processes:
+  - injection
+  process_groups:
+  - mould
+  evidence:
+    class: read
+    numbers: none
+    tested: 'no'
+    authority: primary
+  confidence:
+    level: low
+    estimate: 0.4
+    sources: 1
+  summary: The supplier’s RFQ guide asks buyers to identify the approved polypropylene grade, dimensions along and across
+    melt flow, time after moulding and conditioning. For warpage inspection it links trial samples to the cavity and tool
+    revision, and asks which datums apply when the part is free, supported or restrained in a fixture.
+  used_for: []
+  verified: '2026-11-28: Read the supplier’s 25 July 2026 guide, including the shrinkage questions, warpage inspection plan
+    and RFQ checklist. Grade-specific shrinkage needs resin data and validation on the moulded part.'

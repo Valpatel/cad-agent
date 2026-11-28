@@ -9,6 +9,17 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
 
 ## Unreleased
 
+## v0.51.3 (2026-11-28)
+
+**New**
+- The mould-design references now include a supplier guide to specifying how polypropylene parts are supported, conditioned and measured when comparing shrinkage or warpage (#881).
+
+**Changed**
+- A failed website navigation now records the generated HTML digest and build revision even when the preview receives no request. Matching server responses retain their own byte counts and HTML digests (#686).
+
+**Fixed**
+- The thin-shell FEA regression now captures a stack if the test takes 15 seconds and fails if its worker exceeds 60 seconds. The deadline applies only to this test (#877).
+
 ## v0.51.2 (2026-11-28)
 
 **Fixed**

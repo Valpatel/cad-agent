@@ -156,6 +156,38 @@ def test_the_pin_tool_refuses_a_commit_that_is_not_heads_or_not_its_ancestor(tmp
         tool.pin(good, old, repo)
 
 
+def test_the_pin_check_in_a_shallow_clone_without_the_commit_says_not_checked(tmp_path, capsys):
+    """#808: CI's and a cloud session's checkouts are shallow. Where the pinned commit is missing, `--check` says the
+    commit was not checked and exits 0; the hash is still checked. A full clone without that commit fails."""
+    tool = _pin_tool()
+    repo = tmp_path / "repo"
+    for rel in [tool.GUIDE, *[Path(p) for _, p in tool.INSTALLERS.values()]]:
+        (repo / rel).parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy(ROOT / rel, repo / rel)
+    _git(repo.parent, "init", "-q", str(repo))
+    _git(repo, "add", "-A")
+    _git(repo, "commit", "-q", "-m", "installers")
+    pinned = _git(repo, "rev-parse", "HEAD")
+    assert tool.main([pinned], root=repo) == 0
+    _git(repo, "commit", "-q", "-am", "pin the guide")
+    capsys.readouterr()
+    assert tool.main(["--check"], root=repo) == 0 and capsys.readouterr().err == "", "a full clone checks everything"
+    shallow = tmp_path / "shallow"
+    _git(tmp_path, "clone", "-q", "--depth", "1", f"file://{repo}", str(shallow))
+    assert _git(shallow, "rev-parse", "--is-shallow-repository") == "true"
+    assert tool.main(["--check"], root=shallow) == 0
+    err = capsys.readouterr().err
+    assert err.count(f"not checked: {pinned[:12]} is not in this shallow clone") == 2, err
+    guide = shallow / tool.GUIDE
+    guide.write_text(guide.read_text().replace(hashlib.sha256(_snapshot_bytes(SH)).hexdigest(), "0" * 64))
+    assert tool.main(["--check"], root=shallow) == 1, "the hash is still checked"
+    assert "SHA-256 is not HEAD's" in capsys.readouterr().err
+    full = repo / tool.GUIDE
+    full.write_text(full.read_text().replace(pinned, "1" * 40))
+    assert tool.main(["--check"], root=repo) == 1
+    assert "is not a commit in this repository" in capsys.readouterr().err
+
+
 @pytest.mark.parametrize("hasher", ["sha256sum", "shasum"])
 @pytest.mark.parametrize("outcome", ["good", "corrupt", "download-failed"])
 def test_actual_posix_guide_checks_before_real_installer_handoff(tmp_path, hasher, outcome):
@@ -294,6 +326,43 @@ function Get-Process {{ param([int]$Id) [pscustomobject]@{{Path={quote(sink)}}} 
         assert result.returncode != 0 and not handed.exists(), "failed input never reaches a child process"
         if outcome == "corrupt":
             assert "Installer checksum mismatch" in result.stderr
+
+
+# The words of a `cad-agent update` / `add_packages_command` hint that PowerShell would otherwise read as a redirect, a
+# pipe, a statement separator, an expansion or a quote (#803), and a rebuilt `--with` row with a marker.
+HINT_WORDS = ["tool", "install", "--force", "--with", "idna>=3", "--with", "x<1", "--with", "a|b", "--with", "it's",
+              "--with", "$(Set-Content pwned 1)", "--with", "%PATH%", "--with", "a;b", "--with", "^x", "--with", "@x",
+              "--with", "kept[socks]>=2; python_version >= '3'", "C:\\Users\\First Last\\cad-agent[cad]",
+              "C:\\Users\\D\u2019Angelo\\a\u2018b\u201ac\u201bd;calc;\u2019"]
+
+
+@pytest.mark.skipif(not shutil.which("pwsh"), reason="PowerShell (pwsh) is not installed")
+def test_actual_powershell_guide_hint_line_runs_with_every_word_literal(tmp_path):
+    """#808: the PowerShell line cadagent.agentkit._shell_line prints, run once in real PowerShell. A recorder stands in
+    for uv and writes the arguments it got: each word arrives unchanged, and nothing was redirected into a file (a bare
+    `idna>=3` would create `=3`) or run. Named so the installer-windows job's -k selection (.github/workflows/ci.yml)
+    runs it on Windows; test_the_windows_job_selects_the_powershell_hint_test keeps that true."""
+    from cadagent import agentkit
+    work = tmp_path / "work"
+    work.mkdir()
+    recorder = tmp_path / "record uv.py"
+    got = tmp_path / "argv.json"
+    recorder.write_text(f"import json, sys\nopen({str(got)!r}, 'w', encoding='utf-8').write(json.dumps(sys.argv[1:]))\n")
+    line = agentkit._shell_line([sys.executable, str(recorder), *HINT_WORDS], windows=True)
+    run = subprocess.run(["pwsh", "-NoProfile", "-NonInteractive", "-Command", line], cwd=work, capture_output=True,
+                         text=True, timeout=60)
+    assert run.returncode == 0, line + "\n" + run.stdout + run.stderr
+    assert json.loads(got.read_text(encoding="utf-8")) == HINT_WORDS, line
+    assert sorted(p.name for p in work.iterdir()) == [], "nothing was redirected into a file or run"
+
+
+def test_the_windows_job_selects_the_powershell_hint_test():
+    """The installer-windows job runs this file with `-k`; the PowerShell hint test must stay selected by it."""
+    workflow = (ROOT / ".github" / "workflows" / "ci.yml").read_text()
+    job = workflow.split("\n  installer-windows:", 1)[1].split("\n  # ", 1)[0]
+    expression = re.search(r'test_installer\.py -k "([^"]+)"', job).group(1)
+    name = test_actual_powershell_guide_hint_line_runs_with_every_word_literal.__name__
+    assert any(term.strip() in name for term in expression.split(" or ")), expression
 
 
 @pytest.mark.parametrize("phase, state", [("missing", "missing"), ("partial", "partial"),

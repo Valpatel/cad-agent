@@ -1093,12 +1093,12 @@ def cmd_update(args: argparse.Namespace) -> int:
         agentkit.reinstall_pending(root, extras)
         if os.name == "nt" and cmd[1:3] == ["tool", "install"]:  # uv: this process holds cad-agent.exe, install.ps1 finishes
             _update_notes(root, moved["old"], args.project)
-            _say(f"update: {why}; finish with: " + " ".join(cmd) + ", then cad-agent update --reinstalled and "
-                 "cad-agent agents install (install.ps1 does this)")
+            _say(f"update: {why}; finish with: " + agentkit._shell_line(cmd, windows=True) + ", then cad-agent update "
+                 "--reinstalled and cad-agent agents install (install.ps1 does this)")
             return agentkit.REINSTALL_LATER
         _say(f"update: {why}: reinstalling with extras [{','.join(extras)}]")
         if subprocess.run(cmd).returncode:
-            _err("update: the reinstall failed (run update again to retry): " + " ".join(cmd))
+            _err("update: the reinstall failed (run update again to retry): " + agentkit._shell_line(cmd))
             return 1
         agentkit.reinstall_pending(root, clear=True)
     else:

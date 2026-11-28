@@ -103,16 +103,21 @@ def add_packages_command(*packages: str, requirements: Optional[Path] = None) ->
     return _shell_line([sys.executable, "-m", "pip", "install", *(["-r"] if requirements is not None else []), *adds])
 
 
+# What PowerShell reads as a single quote: ASCII ' and the typographic U+2018, U+2019, U+201A and U+201B. Each opens and
+# closes a single-quoted string, so each is doubled inside one (#868 review).
+_PS_QUOTES = "(['\u2018\u2019\u201a\u201b])"
+
+
 def _shell_line(cmd: List[str], windows: Optional[bool] = None) -> str:
     """``cmd`` as one line to paste into this platform's shell: POSIX sh (``shlex``), or PowerShell on Windows, where
-    every word that is not plainly safe is single-quoted (``'`` doubled inside, so ``$``, ``>``, ``|``, ``%`` and the
-    rest stay literal) and a quoted program is called with ``&``, as install.ps1 prints it. The PowerShell form is
-    checked on the produced text, not run on Windows here."""
+    every word that is not plainly safe is single-quoted (``'`` and its typographic forms doubled inside, so ``$``,
+    ``>``, ``|``, ``%`` and the rest stay literal) and a quoted program is called with ``&``, as install.ps1 prints it. The PowerShell form is
+    checked on the produced text here, and run in real PowerShell by tests/cli/test_installer.py where pwsh is."""
     if not (os.name == "nt" if windows is None else windows):
         import shlex
         return shlex.join(cmd)
     quote = lambda a: a if re.fullmatch(r"[A-Za-z0-9_./:\\=+-]+", a) and not a.startswith("-") or \
-        re.fullmatch(r"--?[A-Za-z0-9][A-Za-z0-9-]*", a) else "'" + a.replace("'", "''") + "'"
+        re.fullmatch(r"--?[A-Za-z0-9][A-Za-z0-9-]*", a) else "'" + re.sub(_PS_QUOTES, r"\1\1", a) + "'"
     words = [quote(a) for a in cmd]
     return ("& " if words and words[0].startswith("'") else "") + " ".join(words)
 
@@ -692,10 +697,20 @@ def _receipt_requirements(text: str) -> List[dict]:
             raise ReceiptUnreadable(str(exc)) from None
         return [r for r in reqs if isinstance(r, dict)] if isinstance(reqs, list) else []
     # Only the [tool] table's own key: up to the next table header, never another table's `requirements` (#808).
-    tool = re.search(r"^\[\s*tool\s*\][ \t]*$", text, re.M)
+    # Refused rather than guessed at: a second [tool] table or `requirements` key (not TOML), and a multi-line string
+    # before the list, which could hold a table or a list that is not one (#868 review).
+    tools = list(re.finditer(r"^\[\s*tool\s*\][ \t]*\r?$", text, re.M))
+    if len(tools) > 1:
+        raise ReceiptUnreadable("more than one [tool] table")
+    tool = tools[0] if tools else None
     section_end = re.compile(r"^\s*\[", re.M).search(text, tool.end()) if tool else None
-    head = re.compile(r"^requirements\s*=\s*\[", re.M).search(
-        text, tool.end(), section_end.start() if section_end else len(text)) if tool else None
+    heads = list(re.compile(r"^requirements\s*=\s*\[", re.M).finditer(
+        text, tool.end(), section_end.start() if section_end else len(text))) if tool else []
+    if len(heads) > 1:
+        raise ReceiptUnreadable("more than one requirements key in [tool]")
+    head = heads[0] if heads else None
+    if head is not None and re.search(r"\"\"\"|\'\'\'", text[:head.start()]):
+        raise ReceiptUnreadable("a multi-line string before the requirements")
     if head is None:
         if re.search(r"requirements", text):
             raise ReceiptUnreadable("requirements in a form other than uv's")
@@ -786,8 +801,11 @@ def _with_args(req: dict) -> Optional[List[str]]:
     """The ``uv tool install`` arguments that add one receipt row again from the same source, or None when uv's command
     line cannot say it exactly. Never a bare name for a package that came from a folder, file, URL or Git: the index
     could hold another package of that name (#799). Built only from values that have the shape uv writes (#808): a
-    PEP 508 name, extras, version specifier and marker; a Git URL of an allowed scheme; no credentials in a URL, which
-    would be printed; no control characters. A receipt is a local file anyone who can edit it could change."""
+    PEP 508 name, extras, version specifier and marker; a Git URL of an allowed scheme, whose host, ref and folder do not
+    start with ``-``; no credentials in a URL's user part, which would be printed (a token in a URL's path cannot be
+    told from a file name, and stays); no control characters or ``"`` anywhere (Windows PowerShell 5.1 does not escape
+    a ``"`` inside an argument it passes on), and only ASCII in a URL, specifier or marker (uv writes them
+    percent-encoded or quoted with ``'``). A receipt is a local file anyone who can edit it could change."""
     from packaging.markers import InvalidMarker, Marker
     from packaging.specifiers import InvalidSpecifier, SpecifierSet
     name, extras, marker = req.get("name"), req.get("extras") or [], req.get("marker")
@@ -796,7 +814,8 @@ def _with_args(req: dict) -> Optional[List[str]]:
     if (set(req) - known or not isinstance(name, str) or not _NAME.fullmatch(name)
             or not isinstance(extras, list) or not all(isinstance(e, str) and _EXTRA.fullmatch(e) for e in extras)
             or not isinstance(marker, (str, type(None))) or not isinstance(specifier, str)
-            or any(isinstance(v, str) and re.search(r"[\x00-\x1f\x7f]", v) for v in req.values())
+            or any(isinstance(v, str) and re.search(r'[\x00-\x1f\x7f"]', v) for v in req.values())
+            or any(isinstance(req.get(k), str) and not req[k].isascii() for k in ("url", "git", "marker", "specifier"))
             or _url_credentials(req)):
         return None
     try:
@@ -829,7 +848,8 @@ def _with_args(req: dict) -> Optional[List[str]]:
         scheme = url.scheme.removeprefix("git+")
         if url.fragment or len(set(keys)) != len(keys) or set(keys) - {*_GIT_REFS, "subdirectory"} or \
                 sum(k in _GIT_REFS for k in keys) > 1 or scheme not in _GIT_SCHEMES or \
-                (scheme != "file" and not url.hostname):
+                (scheme != "file" and not url.hostname) or (url.hostname or "").startswith("-") or \
+                any(v.startswith("-") for _, v in query):          # never option-shaped (#868 review)
             return None
         q = dict(query)
         ref = next((q[k] for k in _GIT_REFS if k in q), "")

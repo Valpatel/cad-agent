@@ -332,7 +332,8 @@ function Get-Process {{ param([int]$Id) [pscustomobject]@{{Path={quote(sink)}}} 
 # pipe, a statement separator, an expansion or a quote (#803), and a rebuilt `--with` row with a marker.
 HINT_WORDS = ["tool", "install", "--force", "--with", "idna>=3", "--with", "x<1", "--with", "a|b", "--with", "it's",
               "--with", "$(Set-Content pwned 1)", "--with", "%PATH%", "--with", "a;b", "--with", "^x", "--with", "@x",
-              "--with", "kept[socks]>=2; python_version >= '3'", "C:\\Users\\First Last\\cad-agent[cad]"]
+              "--with", "kept[socks]>=2; python_version >= '3'", "C:\\Users\\First Last\\cad-agent[cad]",
+              "C:\\Users\\D\u2019Angelo\\a\u2018b\u201ac\u201bd;calc;\u2019"]
 
 
 @pytest.mark.skipif(not shutil.which("pwsh"), reason="PowerShell (pwsh) is not installed")

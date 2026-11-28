@@ -26,6 +26,9 @@ ORIGINAL = "http://azure.archive.ubuntu.com/ubuntu/\tpriority:1\n" + FALLBACKS
 CORRECTED = ORIGINAL.replace(mirror.AZURE, mirror.PREFERRED)
 # Observed verbatim URI/priority order in full job 131436221538, 2026-11-12.
 OBSERVED_EC2 = "http://us-east-2.ec2.archive.ubuntu.com/ubuntu/\tpriority:1\n" + FALLBACKS
+# Each observed EC2 region, verbatim URI/priority order from the job named beside it in apt_mirror.EC2S.
+OBSERVED_EC2_REGIONS = {region: OBSERVED_EC2.replace("us-east-2", region)
+                        for region in ("us-east-2", "us-west-2", "us-east-1")}
 # Fields captured by the bounded diagnostic in full job 131567345145.
 # Comments/blank lines are not a reconstruction of its original source bytes.
 OBSERVED_SPLIT_SECURITY = SOURCE.replace(" noble-security", "") + "\n" + SOURCE.replace(
@@ -115,7 +118,10 @@ class MirrorTests(unittest.TestCase):
 
     def test_observed_ec2_is_not_a_wildcard_or_a_mixed_profile(self):
         uri = "http://us-east-2.ec2.archive.ubuntu.com/ubuntu/"
-        mutants = [OBSERVED_EC2.replace("us-east-2", "us-east-1"),
+        # Regions never observed stay refused: the list is exact, not a pattern.
+        mutants = [OBSERVED_EC2.replace("us-east-2", region) for region in (
+                       "eu-west-1", "ap-southeast-2", "us-gov-west-1", "us-east-3", "us-east-1x", "xus-east-1")]
+        mutants += [
                    OBSERVED_EC2.replace(".ubuntu.com/", ".ubuntu.com.evil.example/"),
                    OBSERVED_EC2.replace(uri, uri.replace("http://", "http://user@")),
                    OBSERVED_EC2.replace(uri, uri + "?extra=1"),
@@ -133,6 +139,35 @@ class MirrorTests(unittest.TestCase):
                     mirror.configure(self.path, self.source)
                 self.assertEqual(self.path.read_text(), mutant)
                 self.assertEqual(self.source.read_text(), SOURCE)
+
+    def test_every_observed_ec2_region_is_preferred_and_idempotent(self):
+        import contextlib
+        import io
+        self.assertEqual(sorted(mirror.EC2S), sorted(
+            "http://%s.ec2.archive.ubuntu.com/ubuntu/" % region for region in OBSERVED_EC2_REGIONS))
+        expected = "https://mirror.pilotfiber.com/ubuntu/\tpriority:1\n" + FALLBACKS
+        for region, original in OBSERVED_EC2_REGIONS.items():
+            with self.subTest(region=region):
+                self.path.write_text(original)
+                self.source.write_text(SOURCE)
+                output = io.StringIO()
+                with contextlib.redirect_stdout(output):
+                    mirror.configure(self.path, self.source)
+                self.assertEqual(self.path.read_text(), expected)
+                self.assertEqual(self.source.read_text(), SOURCE)
+                self.assertIn("input primary: http://%s.ec2.archive.ubuntu.com/ubuntu/" % region, output.getvalue())
+                mirror.configure(self.path, self.source)
+                self.assertEqual(self.path.read_text(), expected)
+
+    def test_two_observed_ec2_regions_together_are_refused(self):
+        regions = list(OBSERVED_EC2_REGIONS)
+        for first, second in zip(regions, regions[1:] + regions[:1]):
+            mutant = OBSERVED_EC2_REGIONS[first] + OBSERVED_EC2_REGIONS[second].splitlines(keepends=True)[0]
+            with self.subTest(pair=(first, second)):
+                self.path.write_text(mutant)
+                with self.assertRaises(ValueError):
+                    mirror.configure(self.path, self.source)
+                self.assertEqual(self.path.read_text(), mutant)
 
     def test_observed_ec2_still_requires_complete_signed_active_sources(self):
         for mutant in [SOURCE.replace("noble-security", ""), SOURCE + "Trusted: yes\n",

@@ -10,8 +10,12 @@ stays reachable once the branch merges), and rewrites each block's URL and hash.
     python3 tools/site/pin_installers.py --check      # exit 1 unless the guide pins HEAD's installers
 
 `--check` requires each block's SHA-256 to be HEAD's installer, and its URL's commit to hold that same file and to be
-an ancestor of HEAD. In a shallow clone that lacks the URL's commit (CI's checkout), the commit cannot be checked
-there and is reported as not checked; the hash is still checked. tests/cli/test_installer.py runs both.
+an ancestor of HEAD. In a shallow clone that lacks the URL's commit (CI's checkout, a cloud session's), the commit
+cannot be checked there: `--check` prints "not checked" for it and exits 0, and the hash is still checked. CI does
+not fetch that commit (#808): one fetched commit would not prove ancestry, which needs the history between it and
+HEAD; `pin` refuses a commit that is not HEAD's ancestor, and a full clone (`git fetch --unshallow`) runs the whole
+check. A wrong commit cannot hand out a different installer, since the guide checks the download against HEAD's hash.
+tests/cli/test_installer.py runs both.
 """
 from __future__ import annotations
 
@@ -52,7 +56,7 @@ def commit_problems(root: Path, commit: str, path: str) -> List[str]:
     Empty when it can. ``["not checked: ..."]`` when this clone does not have the commit and is shallow."""
     if _git(root, "cat-file", "-e", f"{commit}^{{commit}}", check=False).returncode:
         shallow = _git(root, "rev-parse", "--is-shallow-repository").stdout.strip() == b"true"
-        return [f"not checked: {commit[:12]} is not in this shallow clone"] if shallow else \
+        return [f"not checked: {commit[:12]} is not in this shallow clone (git fetch --unshallow, then check again)"] if shallow else \
             [f"{commit[:12]} is not a commit in this repository"]
     problems = []
     if _blob(root, commit, path) != _blob(root, "HEAD", path):

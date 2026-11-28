@@ -339,7 +339,7 @@
   {
    "id": "diagrams",
    "title": "Diagrams in the kit and in a generated site",
-   "paths": ["software/cadagent/webkit/**", "tests/webkit/webkit-diagrams-browser.mjs", "tests/site/site-diagrams-browser.mjs", "tools/site/package.json", "tools/site/package-lock.json", "tests/webkit/webkit-server.mjs", "tests/site/npm-context.mjs", "software/cadagent/publish/**", "tools/site/compiler/site-diagrams.mjs", "tools/mermaid/**"],
+   "paths": ["software/cadagent/webkit/**", "tests/webkit/webkit-diagrams-browser.mjs", "tests/site/site-diagrams-browser.mjs", "tests/site/built-site.mjs", "tests/site/navigation.mjs", "tools/site/preview-routes.mjs", "tools/site/package.json", "tools/site/package-lock.json", "tests/webkit/webkit-server.mjs", "tests/site/npm-context.mjs", "software/cadagent/publish/**", "tools/site/compiler/site-diagrams.mjs", "tools/mermaid/**"],
    "exclude": ["software/cadagent/webkit/scada/**"],
    "command": "npm run test:diagrams",
    "cwd": "tools/site",

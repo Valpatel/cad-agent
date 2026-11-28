@@ -4,25 +4,22 @@ import {lowContrast} from '../layout/outline.mjs';
  * Native fallback, hostile data, runtime/CSP, exact legacy filters/hash/history and current contrast remain hard gates.
  */
 import assert from 'node:assert/strict';
-import { spawn } from 'node:child_process';
 import { mkdtemp, readFile, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { chromium, webkit } from '../npm-context.mjs';
-import { builtSite } from '../built-site.mjs';
+import { builtSite, generatedDocument, startPreview } from '../built-site.mjs';
+import { checkNavigationReceipt, configureNavigation, navigate, watchRoutes } from '../navigation.mjs';
 import { longestStretch, VISUAL, WALL_LIMIT } from '../layout/walls.mjs';
 import {toolkitBrowserChecks} from './toolkit-browser.mjs';
 
-const root = path.resolve(import.meta.dirname, '../../..');
 const site = await builtSite('cad-agent-catalog-browser-', { stdio: 'inherit' });   // CAD_AGENT_SITE, or a fresh build of HEAD
 const dir = site.dir;
-const server = spawn(process.execPath, ['tools/site/preview-site.mjs', '--dir', dir, '--port', '0'], { cwd: root });
-const base = await new Promise((ok, fail) => {
-  server.stdout.on('data', d => { const m = String(d).match(/http:\/\/[\d.]+:\d+/); if (m) ok(m[0]); });
-  server.on('exit', c => fail(new Error(`preview server exited ${c}`)));
-});
+const { server, base, serverEvidence } = await startPreview(dir);
 const engine = process.env.PLAYWRIGHT_BROWSER === 'webkit' ? webkit : chromium;
 const browser = await engine.launch(engine === chromium ? { channel: process.env.PLAYWRIGHT_CHANNEL === 'chromium' ? undefined : 'chrome', headless: true } : { headless: true });
+watchRoutes(browser);
+configureNavigation({ serverEvidence, generatedDocument: url => generatedDocument(dir, base, url) });
 // Legacy filtering and reader behavior now share the compact Explore shell.
 const problems = [];
 const fail = (where, what) => problems.push(`${where}: ${what}`);
@@ -31,7 +28,7 @@ const fail = (where, what) => problems.push(`${where}: ${what}`);
 // `forced`: 'active' emulates forced colours (Windows High Contrast and the like).
 // `trace`: keep a navigation trail (main-frame navigations, load events, the page's own history writes and clicks),
 // written out only by `evidence` when a step fails (#754).
-async function open(route, { width = 1366, height = 900, js = true, motion = 'no-preference', block = null, init = null, fails = null, forced = 'none', color = 'light', trace = false, expected503 = null } = {}) {
+async function open(route, { width = 1366, height = 900, js = true, motion = 'no-preference', block = null, init = null, fails = null, forced = 'none', color = 'light', trace = false, expected503 = null, where = 'Catalogue open' } = {}) {
   const context = await browser.newContext({ viewport: { width, height }, javaScriptEnabled: js, reducedMotion: motion, forcedColors: forced, colorScheme: color });
   const page = await context.newPage();
   const seen = [];
@@ -76,7 +73,7 @@ async function open(route, { width = 1366, height = 900, js = true, motion = 'no
       addEventListener('pageshow', () => note(`pageshow ${location.href}`));
     }, tracePrefix);
   }
-  await page.goto(base + route, { waitUntil: 'networkidle' });
+  await navigate(page, base + route, { waitUntil: 'networkidle' }, { where, javaScriptEnabled: js });
   if (js && !block && !fails && /^\/(?:explore|catalog)(?:[?#]|$)/.test(route)) await page.waitForSelector('cad-gallery[data-ready]', { timeout: 10000 }).catch(() => seen.push('the gallery did not start'));
   const done = async () => { for (const s of seen) fail(`${route} @${width}${js ? '' : ' no-JS'}`, s); await context.close(); };
   // On a failed step only: what the client believes the URL is, what the document says, its load state, the trail and a picture.
@@ -159,7 +156,8 @@ async function sharedDiscoveryChecks() {
       await Promise.all([page.waitForURL(url=>url.origin===base&&url.pathname+url.hash===target,{waitUntil:'domcontentloaded'}),pitfall.click()]);
       const destination=page.locator('[id="'+decodeURIComponent(target.split('#')[1])+'"]');await destination.waitFor({state:'visible'});
       if (new URL(page.url()).origin !== base || new URL(page.url()).pathname+new URL(page.url()).hash!==target || !await destination.isVisible()) fail('Explore local destination', 'pitfall leaves preview or its real anchor stays hidden: '+target);
-      await page.goto(base+'/explore');await page.waitForSelector('cad-gallery[data-ready]');
+      await navigate(page, base + '/explore', undefined, { where: 'Explore return' });
+      await page.waitForSelector('cad-gallery[data-ready]');
       await box.fill('agentcad');
       const roles = await page.locator('[data-item]').evaluateAll(xs => xs.filter(x => x.checkVisibility()).map(x => x.textContent));
       if (!roles.some(x => x.includes('Adoption: candidate')) || !roles.some(x => x.includes('Source: Read'))) fail('Explore', 'shared-URL adoption and evidence roles disappeared');
@@ -367,7 +365,16 @@ async function outlineThemeChecks(){
   }finally{await done();}
  }
 }
-try{await sharedDiscoveryChecks();await legacyChecks();await lifecycleChecks();await interactionChecks();await detailsChecks();await readerChecks();await outlineThemeChecks();await toolkitBrowserChecks({open,fail});}
+async function catalogueNavigationControl() {
+  const route = '/docs/vision', where = 'Catalogue open receipt control';
+  const record = await checkNavigationReceipt(
+    () => open(route + '?private-navigation-control#private-navigation-control', { block: route + '*', where }),
+    { url: base + route, waitUntil: 'networkidle', where, dir, file: route + '.html' });
+  assert.equal(record.generatedDocument.revision, catalog.revision);
+  assert.equal(record.server.coversWindow, true);
+  assert.equal(record.server.matchingCount, 0);
+}
+try{await sharedDiscoveryChecks();await legacyChecks();await lifecycleChecks();await interactionChecks();await detailsChecks();await readerChecks();await outlineThemeChecks();await toolkitBrowserChecks({open,fail});await catalogueNavigationControl();}
 catch(error){if(problems.length)console.error(`Findings before the error:\n${problems.join('\n')}`);throw error;}   // a thrown step would otherwise hide them
 finally{await browser.close();server.kill();await site.done();}
 assert.deepEqual(problems,[],problems.join('\n'));

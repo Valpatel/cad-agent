@@ -1,4 +1,5 @@
 import test from 'node:test';
+import {EventEmitter} from 'node:events';
 import assert from 'node:assert/strict';
 import {existsSync, readFileSync, statSync} from 'node:fs';
 import path from 'node:path';
@@ -9,7 +10,7 @@ import {YAML} from '../npm-context.mjs';
 import {matchesToolkitCard} from '../../../tools/site/assets/toolkit.js';
 import {sourceLicenseResolver} from '../../../tools/site/compiler/site-catalog.mjs';
 
-import {checkManifoldSource, manifoldGeometryMismatches} from './toolkit-examples-browser.mjs';
+import {checkManifoldSource, hostedStepCheck, manifoldGeometryMismatches} from './toolkit-examples-browser.mjs';
 
 test('original STEP reports the failed measurements independently', () => {
   const reference = { format: 'STEP', triangles: 9518, bounds: [114.300003, 114.197014, 83.184998] };
@@ -36,6 +37,54 @@ test('a failed original download preserves the measured geometry and its missing
   assert.match(failures[0], /pump-manifold[.]step: connection reset/);
   const details = JSON.parse(failures[1].slice('unexpected manifold geometry: '.length));
   assert.deepEqual(details, { original, sha256: null, differences: [{ field: 'triangles', expected: 9518, actual: 8305 }] });
+});
+
+test('a STEP import error reports only the matching page response and keeps the original failure', { timeout: 5000 }, async () => {
+  const original = '/web/toolkit/pump-manifold.step';
+  const base = 'https://example.test';
+  const selected = original + '?edition=public';
+  const bytes = readFileSync(new URL('../../../software/vendor/agentcad/tests/fixtures/real_world/pump_manifold.step', import.meta.url));
+  const page = new EventEmitter();
+  const main = {};
+  const response = (frame, url, body, type = 'fetch', method = 'GET') => ({
+    url: () => url, status: () => 200, body,
+    request: () => ({ frame: () => frame, resourceType: () => type, method: () => method }),
+  });
+  const match = response(main, base + selected, async () => bytes);
+  const wrongBody = () => assert.fail('read an unrelated response');
+  Object.assign(page, {
+    url: () => base + '/toolkit', mainFrame: () => main,
+    locator: () => ({
+      getByRole: () => ({ getAttribute: async () => selected }),
+      locator: () => ({ getAttribute: async () => '/kit/files/file-viewer.html' }),
+    }),
+    waitForFunction: async () => {},
+    evaluate: async () => ({ state: 'error', message: 'controlled import failure' }),
+  });
+  const unreadable = response(main, base + selected, async () => { throw new Error('unavailable'); });
+  for (const [responses, observed] of [
+    [[match], { status: 200, bytes: 504693, sha256: '8596ec93c6b3fa01e907806204e8f30e1c0e4210988a5b86e237c7ac667edac6' }],
+    [[], { unavailable: 'No matching main-frame fetch response' }],
+    [[match, match], { unavailable: 'Multiple matching main-frame fetch responses' }],
+    [[unreadable], { status: 200, unavailable: 'Response body unavailable' }],
+    [[response(main, base + selected, () => new Promise(() => {}))], { status: 200, unavailable: 'Response body unavailable' }],
+  ]) {
+    page.goto = async () => {
+      page.emit('response', response({}, base + selected, wrongBody));
+      page.emit('response', response(main, base + selected + '&probe=other', wrongBody));
+      page.emit('response', response(main, base + selected, wrongBody, 'xhr'));
+      page.emit('response', response(main, base + selected, wrongBody, 'fetch', 'POST'));
+      for (const r of responses) page.emit('response', r);
+      return { headerValue: async () => "script-src 'wasm-unsafe-eval'" };
+    };
+    const failures = [];
+    await hostedStepCheck(async () => ({ page, done: async () => {} }), (_where, msg) => failures.push(msg));
+    assert.equal(failures.length, 1);
+    const [error, detail] = failures[0].split('\nOriginal STEP evidence: ');
+    assert.equal(error, 'controlled import failure');
+    assert.deepEqual(JSON.parse(detail), { selected: original, matchingResponses: responses.length, pageResponse: observed });
+    assert.equal(page.listenerCount('response'), 0);
+  }
 });
 
 const root = path.resolve(import.meta.dirname,'../../..');

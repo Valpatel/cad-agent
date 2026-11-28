@@ -453,6 +453,70 @@ test('a stall in one part is still printed when another part throws an ordinary 
   assert.match(log, /a part threw, so the run stops; 1 finding\(s\)[^]*- fold: a navigation failed, so this part stopped there: page\.goto: Timeout 30000ms exceeded\./);
 });
 
+test('inLanes runs at most the requested number of parts at once', async t => {
+  t.mock.method(console, 'log', () => {});
+  const twoStarted = Promise.withResolvers();
+  const release = Promise.withResolvers();
+  let active = 0, peak = 0;
+  const parts = ['first', 'second', 'third', 'fourth'].map(name => [name, async () => {
+    active++;
+    peak = Math.max(peak, active);
+    if (active === 2) twoStarted.resolve();
+    await release.promise;
+    active--;
+    return [];
+  }]);
+
+  const run = inLanes(parts, { lanes: 2 });
+  await twoStarted.promise;
+  release.resolve();
+  const { finished } = await run;
+  assert.equal(peak, 2);
+  assert.deepEqual(finished, [true, true, true, true]);
+});
+
+test('inLanes preserves input order for findings from parts that finish out of order', async t => {
+  t.mock.method(console, 'log', () => {});
+  const thirdStarted = Promise.withResolvers();
+  const releaseFirst = Promise.withResolvers();
+  const run = inLanes([
+    ['first', async () => { await releaseFirst.promise; return ['first A', 'first B']; }],
+    ['second', async () => ['second']],
+    ['third', async () => { thirdStarted.resolve(); return ['third']; }],
+  ], { lanes: 2 });
+
+  // Starting the third part means the second has finished while the first is still waiting.
+  await thirdStarted.promise;
+  releaseFirst.resolve();
+  const { found, finished } = await run;
+  assert.deepEqual(found, [['first A', 'first B'], ['second'], ['third']]);
+  assert.deepEqual(finished, [true, true, true]);
+});
+
+test('inLanes stops dispatch on error and waits for the part already running', async t => {
+  t.mock.method(console, 'log', () => {});
+  const peerStarted = Promise.withResolvers();
+  const releasePeer = Promise.withResolvers();
+  const failure = new Error('ordinary part failure');
+  const started = [];
+  let outcome;
+  const run = inLanes([
+    ['failing', async () => { started.push('failing'); await peerStarted.promise; throw failure; }],
+    ['peer', async () => { started.push('peer'); peerStarted.resolve(); await releasePeer.promise; return []; }],
+    ['queued', async () => { started.push('queued'); return []; }],
+  ], { lanes: 2 }).then(value => { outcome = { value }; }, error => { outcome = { error }; });
+
+  await peerStarted.promise;
+  // Drain the failing part's promise reactions while its peer is still blocked.
+  await new Promise(resolve => setImmediate(resolve));
+  const beforeRelease = outcome;
+  releasePeer.resolve();
+  await run;
+  assert.equal(beforeRelease, undefined, 'the run settled before its peer finished');
+  assert.equal(outcome.error, failure);
+  assert.deepEqual(started, ['failing', 'peer']);
+});
+
 test('after the run\'s first failures, a failed navigation keeps only its evidence line', async t => {
   t.after(() => configureNavigation());
   configureNavigation({ fullEvidenceLimit: 1 });

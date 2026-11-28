@@ -274,11 +274,11 @@ sources:
 - id: eurocircuits-current-pcb-design-guidelines
   kind: guide
   category: manufacturing-guides
-  title: Eurocircuits current PCB design guidelines
+  title: PCB Design Guidelines
   authors: []
   org: Eurocircuits
   year: null
-  url: https://www.eurocircuits.com/?p=8953
+  url: https://www.eurocircuits.com/technical-guidelines/pcb-design-guidelines/
   access: free
   terms: cited and summarised, never copied
   licence:
@@ -297,24 +297,15 @@ sources:
   - pcb
   evidence:
     class: snippet-only
-    numbers: claimed
+    numbers: unknown
     tested: 'no'
     authority: primary
   confidence:
     level: low
     estimate: 0.4
     sources: 1
-  claims:
-  - text: Pooled orders min track/spacing 0.100 mm; non-pooled 0.090 mm.
-    status: unconfirmed
-    evidence: No second source checked.
-  summary: 'Guidelines with classification table and panelisation; pooled min track/space 0.100 mm vs 0.090 mm non-pooled.
-    Note: Values from STANDARD pool snippet; guideline PDF not read'
-  archive:
-    sha256: b619e754f50af08f7f13aa4eba288d95574e27ee513a6747abaa6e165b344d5c
-    kind: html
-    fetched: '2026-11-14'
-    redistribute: false
+  summary: Eurocircuits index covering PCB classification, copper layers and track widths. The separate STANDARD pool service
+    table covers pooled and non-pooled manufacturing limits.
   used_for: []
   imported: d97afec74fd5fb60
 - id: eurocircuits-standard-pool-services

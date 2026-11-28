@@ -481,7 +481,7 @@ sources:
   authors: []
   org: Hubs (Protolabs Network)
   year: null
-  url: https://www.hubs.com/knowledge-base/selecting-materials-cnc-machining-25-materials-compared
+  url: https://www.hubs.com/knowledge-base/selecting-right-cnc-material/
   access: free
   terms: cited and summarised, never copied
   licence:
@@ -517,6 +517,8 @@ sources:
     redistribute: false
   used_for: []
   imported: 5b5e051adb1c97e4
+  mirrors:
+  - https://www.hubs.com/knowledge-base/selecting-materials-cnc-machining-25-materials-compared
 - id: hubs-what-is-delrin-hubs
   kind: guide
   category: manufacturing-guides
@@ -571,7 +573,7 @@ sources:
   authors: []
   org: Hubs (Protolabs Network)
   year: null
-  url: https://hubs.com/knowledge-base/surface-finishes-cnc-machinings
+  url: https://www.hubs.com/knowledge-base/surface-finishes-cnc-machinings/
   access: free
   terms: cited and summarised, never copied
   licence:
@@ -606,6 +608,8 @@ sources:
     redistribute: false
   used_for: []
   imported: 16284d0d0397fff7
+  mirrors:
+  - https://hubs.com/knowledge-base/surface-finishes-cnc-machinings
 - id: hubs-protolabs-network-manufacturing-standards
   kind: guide
   category: manufacturing-guides
@@ -613,7 +617,7 @@ sources:
   authors: []
   org: Hubs (Protolabs Network)
   year: null
-  url: https://hubs.com/manufacturing-standards
+  url: https://www.hubs.com/manufacturing-standards/
   access: free
   terms: cited and summarised, never copied
   licence:
@@ -652,6 +656,8 @@ sources:
     redistribute: false
   used_for: []
   imported: 693cc4508141d464
+  mirrors:
+  - https://hubs.com/manufacturing-standards
 - id: fictiv-cnc-design-guide-fictiv-ebook
   kind: guide
   category: manufacturing-guides
@@ -1575,7 +1581,7 @@ sources:
   authors: []
   org: Machining Doctor
   year: null
-  url: https://www.machiningdoctor.com/?p=11834
+  url: https://www.machiningdoctor.com/tol-design/
   access: free
   terms: cited and summarised, never copied
   licence:
@@ -1613,6 +1619,8 @@ sources:
     seen across sources'
   used_for: []
   imported: 46cd8cc42dd60650
+  mirrors:
+  - https://www.machiningdoctor.com/?p=11834
 - id: xometry-cnc-10-tips
   extends: true
   kind: guide

@@ -4,7 +4,7 @@
 import { createHash } from 'node:crypto';
 import { createReadStream } from 'node:fs';
 import { previewRedirects, previewRoute } from '../../tools/site/preview-routes.mjs';
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawn } from 'node:child_process';
 import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
@@ -51,7 +51,12 @@ export async function generatedDocument(dir, previewOrigin, target) {
   result.status = status;
   if (location !== undefined) return { ...result, unavailable: 'requested route redirects without an HTML body' };
   if (!file?.endsWith('.html')) return { ...result, unavailable: 'requested route selects no generated HTML' };
-  result.file = file.slice(0, 300);
+  return { ...result, ...await generatedHtmlIdentity(dir, file, signal) };
+}
+
+/** Hash only the HTML selected by the caller's own server routing. */
+export async function generatedHtmlIdentity(dir, file, signal = AbortSignal.timeout(1500)) {
+  const result = { file: file.slice(0, 300) };
   const hash = createHash('sha256');
   let bytes = 0;
   try {
@@ -63,4 +68,34 @@ export async function generatedDocument(dir, previewOrigin, target) {
   } catch {
     return { ...result, unavailable: signal.aborted ? 'generated HTML read exceeded its deadline' : 'selected HTML could not be read' };
   }
+}
+
+/** Start the Pages preview with its failure-only evidence channel. Each server owns its query IDs. */
+export async function startPreview(dir) {
+  const server = spawn(process.execPath, ['tools/site/preview-site.mjs', '--dir', dir, '--port', '0'], { cwd: root, stdio: ['pipe', 'pipe', 'inherit', 'ipc'] });
+  server.channel?.unref();   // a pending evidence query holds its own timer; the channel alone never keeps this test alive
+  let evidenceQueries = 0;
+  const base = await new Promise((ok, fail) => {
+    server.stdout.on('data', d => { const m = String(d).match(/http:\/\/[\d.]+:\d+/); if (m) ok(m[0]); });
+    server.once('error', fail);
+    server.once('exit', c => fail(new Error(`preview server exited ${c}`)));
+  });
+  /** Ask the preview server for its record of `pathname` since `since` (tools/site/preview-site.mjs). Bounded by
+   * `limit`: a server that cannot answer in time is itself the evidence, and never turns a failure into a hang. */
+  async function serverEvidence(pathname, since, limit = 2000) {
+    if (!server.connected) return { unavailable: 'the preview server has no IPC channel (exited or disconnected)' };
+    const id = ++evidenceQueries, asked = Date.now();
+    let timer, listener;
+    try {
+      return await new Promise(resolve => {
+        listener = message => { if (message?.id === id) resolve({ ...message, id: undefined, answeredInMs: Date.now() - asked }); };
+        server.on('message', listener);
+        timer = setTimeout(() => resolve({ unavailable: `the preview server did not answer in ${limit} ms` }), limit);
+        server.send({ type: 'preview-evidence', id, path: pathname, since }, error => {
+          if (error) resolve({ unavailable: `could not ask the preview server: ${error.message}` });
+        });
+      });
+    } finally { clearTimeout(timer); server.off('message', listener); }
+  }
+  return { server, base, serverEvidence };
 }

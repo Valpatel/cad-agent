@@ -1,5 +1,6 @@
 import {createHash} from 'node:crypto';
 import {readFileSync} from 'node:fs';
+import {navigate} from '../navigation.mjs';
 const fileHash=path=>createHash('sha256').update(readFileSync(new URL('../../../'+path,import.meta.url))).digest('hex');
 
 /** Real capability cards and their existing viewer/calculator consumers; reuse the suite's error recorder. */
@@ -62,7 +63,7 @@ async function hostedStepCheck(open, fail) {
     const file = await card.getByRole('link', { name: 'Download STEP', exact: true }).getAttribute('href');
     const viewer = new URL(await card.locator('[data-toolkit-launch]').getAttribute('href'), page.url());
     viewer.searchParams.set('file', file);
-    const response = await page.goto(viewer.href);
+    const response = await navigate(page, viewer.href, undefined, { where });
     const policy = await response.headerValue('content-security-policy') || '';
     if (!policy.includes("'wasm-unsafe-eval'") || policy.includes("'unsafe-eval'")) fail(where, 'unexpected script policy');
 

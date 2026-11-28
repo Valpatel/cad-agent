@@ -9,6 +9,18 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
 
 ## Unreleased
 
+## v0.52.0 (2026-11-28)
+
+**Changed**
+- The hosted catalogue and generated-diagram browser checks now save a receipt when opening a page fails. The receipt identifies the requested HTML and records the browser events. Catalogue receipts also include the local preview server’s request history (#686).
+
+**Fixed**
+- The Toolkit browser check for reopening a SCADA pump after a catalogue error now lets the renderer finish loading and verifies that its Running control changes the displayed pump (#863).
+- The Toolkit reader browser check verifies that Escape restores each topic the reader left open, including a topic opened by hand (#886).
+
+**Projects must change**
+- Disable any agent configuration that starts KiCad MCP Pro 4.4.0. Four published advisories affect the historical MIT snapshot. Use KiCad’s own CLI for board exports (#498).
+
 ## v0.51.3 (2026-11-28)
 
 **New**

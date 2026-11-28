@@ -1,5 +1,5 @@
-/** The one navigation function of the site browser suite (tests/site/website-browser.mjs and the layout/ helpers it
- * runs), and the per-part boundary that turns a failed navigation into a finding of its own part (#686).
+/** Shared navigation diagnostics for the website, catalogue and Python-generated diagram browser suites.
+ * The website suite also uses a per-part boundary that turns a failed navigation into a finding of its own part (#686).
  *
  * `navigate(page, url, options)` calls `page.goto(url, options)` with exactly the arguments given. On success it only
  * watched the page's own events: it writes nothing and asks the preview server nothing. On failure it keeps, within
@@ -21,8 +21,10 @@
  * which keeps the original message, and its own browser contexts are closed; any other error propagates as before.
  * Nothing here retries a navigation, changes its timeout or turns a failure into a pass: the finding fails the run.
  * The receipt says what each side recorded; it does not say why a navigation stalled. */
+import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { AsyncLocalStorage } from 'node:async_hooks';
-import { mkdtemp, writeFile } from 'node:fs/promises';
+import { mkdtemp, readFile, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
@@ -248,6 +250,33 @@ export function navigationFailure(error, seen = new Set()) {
     if (found) return found;
   }
   return null;
+}
+
+/** Read the artifact from a planted standalone navigation. The caller checks the evidence specific to its server. */
+export async function checkNavigationReceipt(attempt, { url, waitUntil, where, dir, file }) {
+  let receipt;
+  await assert.rejects(attempt, error => {
+    const failure = navigationFailure(error);
+    assert.equal(failure?.error, error, 'the original page.goto error must reach the suite');
+    assert.match(error.message, /page\.goto:/);
+    receipt = failure.receipt;
+    assert.ok(receipt, 'the failed navigation must retain an artifact');
+    return true;
+  });
+  assert.equal(path.dirname(receipt), tmpdir());
+  assert.match(path.basename(receipt), /^cad-agent-navigation-/);
+  const json = await readFile(path.join(receipt, 'navigation-failure.json'), 'utf8');
+  assert.doesNotMatch(json, /private-navigation-control/);
+  const record = JSON.parse(json);
+  assert.equal(record.url, url);
+  assert.equal(record.waitUntil, waitUntil);
+  assert.equal(record.where, where);
+  assert.equal(record.documents.find(doc => doc.url === url)?.events.requestfailed, true);
+  const html = await readFile(path.join(dir, file));
+  assert.equal(record.generatedDocument.file, file);
+  assert.equal(record.generatedDocument.bytes, html.length);
+  assert.equal(record.generatedDocument.sha256, createHash('sha256').update(html).digest('hex'));
+  return record;
 }
 
 /** Count each browser context a part opens (browser.newPage opens one too) as that part's, so a part stopped by a

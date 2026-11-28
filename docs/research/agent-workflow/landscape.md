@@ -81,7 +81,7 @@ Clients: **CC** = Claude Code plugin/skill, **MCP** = MCP server, **Cx** = Codex
 | [ahujasid/mcp-for-blender](https://github.com/ahujasid/mcp-for-blender) | MIT | 32,261 | 10-24 | MCP, Cx plugin | Blender (mesh, not B-rep) | visual only | No | No | Yes | No | Poly Haven, Sketchfab, paid generators | none |
 | [mixelpixx/KiCAD-MCP-Server](https://github.com/mixelpixx/KiCAD-MCP-Server) | MIT | 2,933 | 10-26 | MCP | KiCad 9+ (kicad-python + SWIG `pcbnew`) | PCB | KiCad DRC | JLCPCB parts + prices | Snapshots | No | JLCPCB, DigiKey, Freerouting | none |
 | [mixelpixx/Konnect](https://github.com/mixelpixx/Konnect) (archived again at the 2026-11-07 readback after the 2026-11-01 unarchived observation; remains rejected; [obhox/kicad-mcp](https://github.com/obhox/kicad-mcp) is a fork) | **AGPL-3.0** | 1,399 | 10-26 | KiCad plugin + MCP, CC skills | KiCad 10 IPC (Rust) | PCB | design-review audits (u) | (u) | (u) | No | Freerouting | none |
-| [oaslananka/kicad-mcp-pro](https://github.com/oaslananka/kicad-mcp-pro) | MIT | 149 | 10-25 | MCP, CC plugin skills, Cx/VS Code config | KiCad 10.0.x (kicad-cli/IPC; no SWIG) | PCB | 8 fab profiles with source URLs | Fab pricing coefficients | 3D render PNG | No | JLCPCB; Nexar/DigiKey/Mouser with keys | `evals/`, `benchmarks/` dirs |
+| [oaslananka/kicad-mcp-pro](https://github.com/oaslananka/kicad-mcp-pro) (4.4.0 snapshot, reference only) | MIT at import, AGPL-3.0-only upstream | 149 | 10-25 | MCP, CC plugin skills, Cx/VS Code config | KiCad 10.0.x (kicad-cli/IPC; no SWIG) | PCB | 8 fab profiles with source URLs | Fab pricing coefficients | 3D render PNG | No | JLCPCB; Nexar/DigiKey/Mouser with keys | `evals/`, `benchmarks/` dirs |
 | [Seeed-Studio/kicad-mcp-server](https://github.com/Seeed-Studio/kicad-mcp-server) | **No LICENSE file** (MIT only in pyproject) | 168 | 10-22 | MCP | KiCad 8-10 (`pcbnew`) | PCB analysis, device tree | KiCad ERC/DRC | PartReel registry | No | No | PartReel | none |
 | [lamaalrajih/kicad-mcp](https://github.com/lamaalrajih/kicad-mcp) | MIT | 529 | 2025-10-17 | MCP | KiCad 9 | PCB | DRC | BOM | (u) | No | none | none; declined 2026-11-07 (inactive KiCad 9 candidate; maintenance unverified) |
 | [aklofas/kicad-happy](https://github.com/aklofas/kicad-happy) | MIT | 1,499 | 10-25 | CC plugin, Cx, Copilot, Gemini/Antigravity, GitHub Action | KiCad file parsing, SPICE | PCB review, EMC, Gerber | EMC rules ref | BOM, distributors | No | No | JLCPCB, PCBWay, DigiKey, Mouser, LCSC, element14 | none |
@@ -173,17 +173,19 @@ export and print-handoff engine; cad-agent's checks, simulation and calculations
 
 | | kicad-mcp-pro | mixelpixx KiCAD-MCP-Server | Seeed kicad-mcp-server | kicad-happy (skills) |
 |---|---|---|---|---|
-| Install | upstream runs it through `uvx` with no version: the shipped `.mcp.json` is **unpinned**, so each launch runs the latest PyPI release. Pin it: `uvx kicad-mcp-pro@4.4.0` | `git clone`; `npm install` runs `prepare` → `npm run build`; pip requirements | `pip install -e .` into KiCad's Python | CC marketplace plugin |
+| Install | Do not launch the 4.4.0 snapshot or enable upstream's unpinned MCP client configuration. | `git clone`; `npm install` runs `prepare` → `npm run build`; pip requirements | `pip install -e .` into KiCad's Python | CC marketplace plugin |
 | KiCad | 10.0.x primary (10.0.7 verified), 8.x deprecated, 9 dropped, 11 preview; SWIG forbidden by test | 9.0+; mixes kicad-python IPC and SWIG `pcbnew` | 8-10, `pcbnew` | file parsing |
 | Tools | 387 public; default profile = 24 read-only; writes need a profile | 244 registered | analysis, ERC/DRC, device-tree code | review scripts |
 | Network | JLCPCB public catalog by default; other distributors only with keys; telemetry **off** by default (opt-in OpenTelemetry) | JLCPCB, DigiKey; README advertises paid "Nimrod" service | PartReel downloads (host allowlist) | datasheets, distributors |
 | Hygiene | CodeQL, OpenSSF Scorecard, gitleaks, SECURITY.md; one maintainer (1,029 commits), repo created 2026-05-31 | active; still maintained under MIT (Konnect, its successor, was archived 2026-10-26) | no LICENSE file | plugin.json declares no hooks |
 | Deps of note | — | pymupdf (AGPL) at runtime | fastmcp | — |
 
-**Recommendation:** use **kicad-happy** for review and **kicad-mcp-pro** for edits and exports. Both are MIT.
-kicad-mcp-pro targets KiCad 10 with no SWIG, is read-only by default, ships cited fab profiles, and is the most
-active. Pin its version (`kicad-mcp-pro==4.4.0`) and keep the default profile until edits are needed. Use mixelpixx
-only if KiCad 9 is required. Treat Seeed as all-rights-reserved until it commits a LICENSE file. obhox/kicad-mcp is
+**Stop using KiCad MCP Pro 4.4.0.** Four published advisories cover the MIT snapshot at `f03b478f597d`.
+Disable any agent configuration that starts the server. The snapshot is retained for source reference only.
+Upstream releases with fixes for all four advisories are AGPL-3.0-only. Any future integration would require
+review as an external program. [Upstream advisories](https://github.com/oaslananka/kicad-mcp-pro/security/advisories) · [Tracking issue #498](https://github.com/Valpatel/cad-agent/issues/498)
+
+Use **kicad-happy** for review and KiCad's own CLI for board exports. Use mixelpixx only if KiCad 9 is required. Treat Seeed as all-rights-reserved until it commits a LICENSE file. obhox/kicad-mcp is
 AGPL: run it only as an external program.
 
 (Updated 2026-10-31: Konnect was archived on 2026-10-26 and continues as a commercial, closed-source product, so it is
@@ -217,12 +219,12 @@ no longer a candidate; KiCAD-MCP-Server is still maintained under MIT.)
 | DfAM | ISO/ASTM 52910 / 52911-1 | paid standard: cite, don't copy | text-to-cad `process-limits.md` (MIT summary citing Hubs, Formlabs, HP MJF, EOS) |
 | Sheet / laser | [SendCutSend specs JSON](https://cdn.sendcutsend.com/specs/sendcutsend-specs.json) + catalog: 178 materials, k-factor, bend radius, bend deduction, minimum hole and bridge (inches) | vendor data, no licence stated: fetch live and cite | text-to-cad `sendcutsend` |
 | Sheet / CNC / molding | [Hubs](https://www.hubs.com/guides/sheet-metal-fabrication/) and [Protolabs](https://www.protolabs.com/services/sheet-metal-fabrication/design-guidelines/) guides | copyrighted pages: cite | text-to-cad `dfm` references |
-| PCB fab | JLCPCB, PCBWay, Eurocircuits, OSH Park, NextPCB capability pages | vendor terms | kicad-mcp-pro `dfm_profiles/*.json` (MIT, with source URLs and pricing coefficients); kicad-happy jlcpcb/pcbway skills |
+| PCB fab | JLCPCB, PCBWay, Eurocircuits, OSH Park, NextPCB capability pages | vendor terms | the historical MIT kicad-mcp-pro snapshot (`dfm_profiles/*.json` with source URLs and pricing coefficients); kicad-happy jlcpcb/pcbway skills |
 | PCB design | IPC-2221/2222, IPC-7351 | paid: cite only | text-to-cad PR #518 skill cites IPC-2221 widths |
 | Materials | FreeCAD `.FCMat` cards | CC-BY-3.0 (some older cards LGPL) | FreeCAD |
 | Polymers | OpenPoly | CC BY 4.0 (research data) | none |
 | Fasteners | bd_warehouse | Apache-2.0 | none |
-| Cost | kicad-mcp-pro `dfm_calculate_manufacturing_cost` (area, layers, vias); slicer time and grams from OrcaSlicer G-code | MIT; OrcaSlicer AGPL (external) | kicad-mcp-pro |
+| Cost | Pricing coefficients in the historical kicad-mcp-pro snapshot (area, layers, vias) and slicer time and grams from OrcaSlicer G-code | MIT at import, OrcaSlicer AGPL (external) | kicad-mcp-pro 4.4.0 source reference |
 
 No open, cited cost model for FDM, sheet metal or CNC turned up in any agent tool (gap). MatWeb has no bulk export;
 MakeItFrom's terms are (u).
@@ -249,7 +251,7 @@ could seed one: the vendor STEP is fetched by URL and hash, never committed.
 **Adopt now**
 1. text-to-cad plugin pinned to a release, with `CADGEN_TELEMETRY=0`, `DO_NOT_TRACK=1` and `CADGEN_UPDATE_CHECK=0` in
    the environment. It provides the CAD runtime, drawings, DfAM, slicing, Bambu and SendCutSend.
-2. kicad-happy (review) plus kicad-mcp-pro pinned (edits and exports), and `kicad-cli pcb export step` for the board model.
+2. kicad-happy for review and `kicad-cli pcb export step` for the board model.
 3. build123d-mcp or agentcad as an optional inspection loop; both are Apache-2.0 and have CADGenBench evidence.
 4. CADGenBench as the regression eval for generic CAD skill.
 
@@ -271,7 +273,7 @@ and CAM.
 
 **Licence constraints**
 - Incorporate code only from MIT, BSD or Apache-2.0 projects, with attribution: text-to-cad, build123d, CadQuery,
-  bd_warehouse, agentcad, build123d-mcp, MAC, kicad-mcp-pro, kicad-happy, KiStack, kicad-python, PCBWorld, CADGenBench.
+  bd_warehouse, agentcad, build123d-mcp, MAC, kicad-happy, KiStack, kicad-python, PCBWorld, CADGenBench.
 - Never copy code from: flowful-ai/cad-skill (PolyForm Noncommercial), Svetlana cad-agent (custom licence),
   circuit-skills and Seeed (no LICENSE file), or Text2CAD and CAD-Recode data (NC).
 - External programs only: CADAM (GPL-3.0); Konnect (archived) and obhox/kicad-mcp (AGPL-3.0); kicadStepUp, OrcaSlicer

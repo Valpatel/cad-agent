@@ -316,12 +316,27 @@ async function readerChecks(){
   const {page,done}=await open('/docs/toolkit',{width,color});try{
    const nav=page.locator('cad-nav');if(width<1100)await nav.locator('.cad-nav-toggle').click();
    if(!await nav.locator('a[aria-current=page]').isVisible())fail('reader','current article missing from topic tree');
-   const input=nav.getByRole('searchbox',{name:'Filter topic pages'}),prior=await nav.locator('details[open]').count();
+   const input = nav.getByRole('searchbox', { name: 'Filter topic pages' });
+   // The topic filter stays disabled until the dynamically imported navigation component starts.
+   await input.and(page.locator('input:enabled')).waitFor();
+   const where = `${page.url()} at ${width}px ${color}`;
+   // Start with a reader's choice as well as the current page's open ancestors.
+   const closedTopic = nav.locator('[data-topic-tree] > details[data-topic]:not([open])').first();
+   const selected = await closedTopic.getAttribute('data-topic');
+   await closedTopic.locator(':scope > summary').click();
+   const readFolds = () => nav.evaluate(tree => ({
+    wrapperOpen: tree.querySelector(':scope > .cad-nav-fold').open,
+    topics: [...tree.querySelectorAll('details[data-topic][open]')].map(group => group.dataset.topic).sort()
+   }));
+   const prior = await readFolds();
+   if (!prior.topics.includes(selected)) fail('topic filter', `${where} did not open the selected topic ${selected}`);
    await input.fill('fasteners');if(!await nav.locator('details[data-topic="fasteners-and-hardware"]').isVisible())fail('topic filter','topic name does not match');
    await input.fill('zz-no-topic-603');if(!await nav.locator('.cad-nav-empty').textContent().then(x=>x.includes('No topics or pages match')))fail('topic filter','no empty result');
    await input.press('Escape');
-   const restored = await nav.locator('details[open]').count();
-   if (restored !== prior) fail('topic filter', `${page.url()} at ${width}px ${color} had ${prior} open folds before filtering and ${restored} after Escape`);
+   const restored = await readFolds();
+   if (!prior.wrapperOpen || !restored.wrapperOpen) fail('reader', `${where} navigation wrapper open before filtering: ${prior.wrapperOpen}, after Escape: ${restored.wrapperOpen}`);
+   if (JSON.stringify(prior.topics) !== JSON.stringify(restored.topics))
+    fail('topic filter', `${where} had open topics ${JSON.stringify(prior.topics)} before filtering and ${JSON.stringify(restored.topics)} after Escape`);
    if(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1))fail('reader','horizontal overflow');
    const stamp=await page.locator('.site-footer time').evaluate(t=>({datetime:t.dateTime,text:t.textContent}));if(!/^\d{4}-\d{2}-\d{2}T/.test(stamp.datetime)||!/(?:PST|PDT)/.test(stamp.text))fail('timestamp','lost recorded instant/Pacific label');
   }finally{await done();}

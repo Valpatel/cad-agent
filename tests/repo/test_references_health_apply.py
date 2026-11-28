@@ -134,14 +134,19 @@ def test_an_edit_that_would_fail_the_registry_check_is_left_out(root):
     assert files == {} and p.rows == [] and "left out" in dict(p.notes)[rid]
 
 
-def test_a_permanent_same_site_move_updates_the_link(root):
+@pytest.mark.parametrize("previous", [[], ["https://example.org/original-publisher-link"]])
+def test_a_permanent_same_site_move_updates_the_link(root, previous):
     head, doc = shard(root)
     r = recs(doc)[0]
     rid, old = r["id"], r["url"]
+    r.pop("mirrors", None)
+    if previous:
+        r["mirrors"] = list(previous)
+    save(root, head, doc)
     new = f"https://{ra.host(old)}/blog/heat-set-inserts-moved"
     files, p = apply(root, health(**{rid: entry(old, "moved", 2, final_url=new, permanent=True)}))
     got = record(root, rid)
-    assert got["url"] == new and got["mirrors"] == [old] and p.rows[0][1].startswith("url -> ")
+    assert got["url"] == new and got["mirrors"] == [*previous, old] and p.rows[0][1].startswith("url -> ")
     # once moved, the old report describes another link: nothing more to do
     assert apply(root, health(**{rid: entry(old, "moved", 3, final_url=new, permanent=True)}))[0] == {}
 

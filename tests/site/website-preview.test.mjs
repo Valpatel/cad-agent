@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {spawn} from 'node:child_process';
 import {createHash} from 'node:crypto';
 import net from 'node:net';
+import { generatedDocument } from './built-site.mjs';
 import {mkdtemp,mkdir,writeFile,rm} from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
@@ -26,6 +27,41 @@ test('directory applications retain a slash so their relative module URLs resolv
     }
     const flat=await fetch(base+'/toolkit.html',{redirect:'manual'});assert.equal(flat.headers.get('location'),'/toolkit');
   } finally {server?.kill();await rm(dir,{recursive:true,force:true});}
+});
+
+test('the generated document follows preview route selection without making a request', async t => {
+  const dir = await mkdtemp(path.join(os.tmpdir(), 'cad-agent-preview-source-'));
+  t.after(() => rm(dir, { recursive: true, force: true }));
+  const origin = 'http://127.0.0.1:1', revision = 'c'.repeat(40);
+  const inspect = route => generatedDocument(dir, origin, origin + route);
+  const digest = text => createHash('sha256').update(text).digest('hex');
+  await mkdir(path.join(dir, 'guide'));
+  await writeFile(path.join(dir, 'guide/index.html'), 'directory');
+  await writeFile(path.join(dir, 'guide.html'), 'flat');
+  await writeFile(path.join(dir, 'version.json'), JSON.stringify({ revision }));
+  await writeFile(path.join(dir, '_redirects'), '/moved /guide?private-locator 301');
+  assert.deepEqual(await inspect('/guide?private-query#fragment'),
+    { revision, status: 200, file: '/guide.html', bytes: 4, sha256: digest('flat') });
+  assert.equal((await inspect('/guide/')).sha256, digest('directory'));
+  await rm(path.join(dir, 'guide.html'));
+  for (const [route, status] of [['/guide', 308], ['/guide/index.html', 308], ['/moved', 301], ['/%', 400]]) {
+    const evidence = await inspect(route);
+    assert.equal(evidence.status, status); assert.ok(evidence.unavailable); assert.equal(evidence.sha256, undefined);
+    assert.doesNotMatch(JSON.stringify(evidence), /private/);
+  }
+  await writeFile(path.join(dir, 'raw'), 'exact path wins');
+  await writeFile(path.join(dir, 'raw.html'), 'ignored');
+  assert.deepEqual(await inspect('/raw'), { revision, status: 200, unavailable: 'requested route selects no generated HTML' });
+  const unseen = await generatedDocument(dir, origin, 'http://user:private@127.0.0.1:2/guide/');
+  assert.deepEqual(unseen, { unavailable: 'requested URL belongs to another origin' });
+  assert.deepEqual(await inspect('/absent'), { revision, status: 404, file: '/404.html', unavailable: 'selected HTML could not be read' });
+  await writeFile(path.join(dir, '404.html'), 'missing');
+  await writeFile(path.join(dir, 'version.json'), '{');
+  const fallback = await inspect('/absent');
+  assert.equal(fallback.status, 404); assert.equal(fallback.file, '/404.html'); assert.equal(fallback.sha256, digest('missing'));
+  assert.equal(fallback.revision, null); assert.ok(fallback.revisionUnavailable); assert.ok(!JSON.stringify(fallback).includes(dir));
+  await rm(path.join(dir, '_redirects')); await mkdir(path.join(dir, '_redirects'));
+  assert.equal((await inspect('/guide/')).unavailable, 'preview routing could not be inspected');
 });
 
 // The server's own request record, asked for over IPC by a browser test whose page request stalls (#686).
@@ -54,6 +90,8 @@ test('an IPC parent can read the server record of each request and its socket; a
       assert.equal(r.sha256,createHash('sha256').update(page).digest('hex'));
       assert(r.receivedAt>=since&&r.readAt>=r.receivedAt&&r.headersAt>=r.readAt&&r.finishedAt>=r.headersAt);
     }
+    assert.equal(record.matchingCount, 2);
+    assert.deepEqual(first.responseBody, { bytes: Buffer.byteLength(page), sha256: first.sha256 });
     assert.equal(first.socket.id,second.socket.id,'both requests were on one socket');
     assert.deepEqual([first.onSocket,second.onSocket],[1,2]);assert(second.idleBeforeMs>=0);
     assert.equal(record.window.unfinished,0);assert.equal(record.openSockets,1);
@@ -80,6 +118,12 @@ test('an IPC parent can read the server record of each request and its socket; a
     assert.equal(after.openSockets,0,seen);assert.equal(after.window.socketsClosedIdle,0,seen);
     assert.equal(after.matching[2].socket.idleTimeoutAt,undefined,seen);
     for(const r of after.matching)assert.equal(r.aborted,undefined,JSON.stringify(r));
+    await fetch(base + '/recorded', { method: 'HEAD' });
+    const head = (await ask('/recorded', since)).matching.at(-1);
+    assert.equal(head.method, 'HEAD'); assert.deepEqual(head.responseBody, { bytes: 0 });
+    await fetch(base + '/recorded.html?private', { redirect: 'manual' });
+    const redirect = (await ask('/recorded.html', since)).matching.at(-1);
+    assert.equal(redirect.status, 308); assert.deepEqual(redirect.responseBody, { bytes: 0 });
   } finally {server?.kill();await rm(dir,{recursive:true,force:true});}
 });
 

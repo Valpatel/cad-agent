@@ -788,8 +788,13 @@ def _url_credentials(req: dict) -> bool:
 
 
 def _pep508(line: str, name: str, extras: List[str], url: Optional[str]) -> bool:
-    """``line`` reads, by PEP 508, as exactly ``name`` with ``extras`` from ``url`` (None: from the index)."""
+    """``line`` reads, by PEP 508, as exactly ``name`` with ``extras`` from ``url`` (None: from the index), and is
+    ASCII with no ``"`` or control character. Checked on the rebuilt line, not the receipt's values: a Git row's ref
+    and folder are percent-decoded on the way (``%22`` is a ``"``, #868 re-review). A folder's path is percent-encoded
+    into its ``file://`` URL, so it may hold any character."""
     from packaging.requirements import InvalidRequirement, Requirement
+    if not line.isascii() or re.search(r'[\x00-\x1f\x7f"]', line):
+        return False
     try:
         req = Requirement(line)
     except InvalidRequirement:

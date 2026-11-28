@@ -13,7 +13,7 @@ sources:
   authors: []
   org: Jawstec
   year: null
-  url: https://www.jawstec.com/?p=76921
+  url: https://www.jawstec.com/heat-set-insert-data-what-engineers-must-know/
   access: free
   terms: cited and summarised, never copied
   licence:
@@ -47,6 +47,8 @@ sources:
   summary: 'Retells CNC Kitchen''s insert tests: oversized holes lose pull-out, undersized ones are hard to install and may
     crack; size the hole for your insert and material and test it. No numbers.'
   used_for: []
+  mirrors:
+  - https://www.jawstec.com/?p=76921
 - id: stanley-engineered-fastening-pop-rivet-design-guidelines
   kind: guide
   category: manufacturing-guides
@@ -523,7 +525,7 @@ sources:
   authors: []
   org: McMaster-Carr
   year: null
-  url: https://www.mcmaster.com/thread-adapting-inserts
+  url: https://www.mcmaster.com/info/how-to-install-key-locking-inserts.html
   access: free
   terms: cited and summarised, never copied
   licence:
@@ -545,20 +547,14 @@ sources:
   - cnc
   evidence:
     class: snippet-only
-    numbers: some
+    numbers: none
     tested: 'no'
     authority: primary
   confidence:
     level: low
     estimate: 0.4
     sources: 1
-  summary: 'Key-locking insert install notes; tap size can differ from insert thread; comparable to Keensert. Note: Snippet
-    had no figures'
-  archive:
-    sha256: 146585a9294a7ed450e691dafc66fefebd2e16db7829c7b6cda9ae83741d5750
-    kind: html
-    fetched: '2026-11-14'
-    redistribute: false
+  summary: Illustrated guide to installing key-locking threaded inserts, including use of the installation tool.
   used_for: []
   imported: 10df785e1caac2e9
 - id: hex-technology-k-factor-finding-torque-values-for-bolted

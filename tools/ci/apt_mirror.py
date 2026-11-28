@@ -14,9 +14,11 @@ import hashlib
 from urllib.parse import urlsplit
 
 AZURE = "http://azure.archive.ubuntu.com/ubuntu/"
-# Captured by the rejection diagnostic in hosted full job 131436221538 (2026-11-12).
-# Exact observed URI only: other regions or cloud-branded hosts are not inferred.
-EC2 = "http://us-east-2.ec2.archive.ubuntu.com/ubuntu/"
+# Exact observed EC2 regional URIs only: other regions or cloud-branded hosts are not inferred.
+# Each was captured by the rejection diagnostic of a hosted full job:
+EC2S = ("http://us-east-2.ec2.archive.ubuntu.com/ubuntu/",  # job 131436221538 (2026-11-12)
+        "http://us-west-2.ec2.archive.ubuntu.com/ubuntu/",  # job 140752603300 (2026-11-27)
+        "http://us-east-1.ec2.archive.ubuntu.com/ubuntu/")  # job 140825315655 (2026-11-28)
 ARCHIVE = "https://archive.ubuntu.com/ubuntu/"
 SECURITY = "https://security.ubuntu.com/ubuntu/"
 MIRROR = "mirror+file:/etc/apt/apt-mirrors.txt"
@@ -25,7 +27,7 @@ MIRROR = "mirror+file:/etc/apt/apt-mirrors.txt"
 SPLIT_SECURITY = "http://security.ubuntu.com/ubuntu"
 # Ubuntu Official Archive Mirrors: /ubuntu/+mirror/mirror.pilotfiber.com-archive.
 PREFERRED = "https://mirror.pilotfiber.com/ubuntu/"
-EXPECTED = {AZURE: "priority:1", EC2: "priority:1", PREFERRED: "priority:1",
+EXPECTED = {AZURE: "priority:1", PREFERRED: "priority:1", **{uri: "priority:1" for uri in EC2S},
             ARCHIVE: "priority:2", SECURITY: "priority:3"}
 
 
@@ -159,7 +161,7 @@ def configure(path: Path, source: Path, codename: str = "noble") -> None:
         if len(tokens) != 2 or EXPECTED.get(tokens[0]) != tokens[1] or tokens[0] in seen:
             raise ValueError("unexpected hosted runner mirror entry or priority; observed=" + mirror_profile(original))
         seen.add(tokens[0])
-    if seen not in ({AZURE, ARCHIVE, SECURITY}, {EC2, ARCHIVE, SECURITY}, {PREFERRED, ARCHIVE, SECURITY}):
+    if seen not in [{primary, ARCHIVE, SECURITY} for primary in (AZURE, PREFERRED, *EC2S)]:
         raise ValueError("runner mirror list lacks the expected Canonical HTTPS fallbacks; observed=" + mirror_profile(original))
     source_text = source.read_text()
     try:
@@ -167,7 +169,7 @@ def configure(path: Path, source: Path, codename: str = "noble") -> None:
     except ValueError:
         print("Rejected Ubuntu source; observed=" + source_profile(source_text), file=sys.stderr)
         raise
-    primary = next(uri for uri in (AZURE, EC2, PREFERRED) if uri in seen)
+    primary = next(uri for uri in (AZURE, *EC2S, PREFERRED) if uri in seen)
     updated = "".join(line.replace(primary, PREFERRED, 1) if line.strip() and line.split()[0] == primary else line
                       for line in lines)
     if updated != original:

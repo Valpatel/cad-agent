@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-ROOT=Path(__file__).resolve().parents[2]
+ROOT=Path(__file__).resolve().parents[3]
 spec=importlib.util.spec_from_file_location('standard_eval',ROOT/'tools/evaluation/standard_eval.py')
 eval=importlib.util.module_from_spec(spec)
 spec.loader.exec_module(eval)

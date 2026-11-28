@@ -188,11 +188,11 @@
   what: "MCP server for KiCad schematic, PCB, ERC/DRC, DFM and manufacturing-export work, read-only by default"
   areas: [circuit-boards]
   url: https://github.com/oaslananka/kicad-mcp-pro
-  license: MIT
+  license: AGPL-3.0-only
   stars: 149
   last_push: 2026-10-25
-  status: trial
-  policy: may incorporate with attribution
+  status: reference
+  policy: Historical MIT 4.4.0 snapshot for source reference only. Do not run it. Review any future integration as an external program only.
 - name: Seeed-Studio/kicad-mcp-server
   what: "MCP server for KiCad: analyse schematics and boards, trace pin-level connections, edit designs"
   areas: [circuit-boards]
@@ -210,7 +210,7 @@
   stars: 529
   last_push: 2025-10-17
   status: rejected
-  policy: MIT permits incorporation with attribution, but declined for this pass; inactive KiCad 9 candidate (last push 2025-10-17, checked 2026-11-07); maintenance unverified; existing KiCad 10 vendors remain the chosen integration
+  policy: MIT permits incorporation with attribution, but declined for this pass; inactive KiCad 9 candidate (last push 2025-10-17, checked 2026-11-07); maintenance unverified
 - name: aklofas/kicad-happy
   what: "Agent skills that review KiCad schematics, layouts and Gerbers: power tree, subcircuits, SPICE, EMC, BOM"
   areas: [circuit-boards]

@@ -3183,7 +3183,7 @@ sources:
     year: 2026
     url: https://github.com/oaslananka/kicad-mcp-pro
     access: free
-    terms: MIT; vendored with attribution
+    terms: MIT at the imported commit f03b478f597d (4.4.0), retained for source reference only. Current upstream releases are AGPL-3.0-only.
     areas: [pcb]
     used_for: [software/vendor/kicad-mcp-pro]
     verified: "2026-10-31: gh api (MIT, pushed 2026-10-31); LICENSE copyright 2026 Osman Aslan."

@@ -176,8 +176,6 @@ stack:
     href: software/cadagent/simulation/README.md
   - label: text-to-cad (vendored)
     href: software/vendor/README.md
-  - label: kicad-mcp-pro (vendored)
-    href: software/vendor/README.md
   - label: Gmsh and scikit-fem
     href: docs/research/fea-and-process-tools.md
   - label: OpenFOAM

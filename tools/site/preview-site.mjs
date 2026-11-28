@@ -9,7 +9,8 @@
  */
 import { createHash } from 'node:crypto';
 import { createServer } from 'node:http';
-import { readFile, stat } from 'node:fs/promises';
+import { readFile } from 'node:fs/promises';
+import { previewRedirects, previewRoute } from './preview-routes.mjs';
 import path from 'node:path';
 
 const arg = (name, dflt) => { const i = process.argv.indexOf(name); return i > 0 ? process.argv[i + 1] : dflt; };
@@ -44,11 +45,8 @@ export function headersFor(rules, pathname) {
   return out;
 }
 
-const exists = async f => { try { return (await stat(f)).isFile(); } catch { return false; } };
 const rules = parseHeaders(await readFile(path.join(dir, '_headers'), 'utf8').catch(() => ''));
-// _redirects, as Pages reads it for exact paths: "<from> <to> [status]" per line.
-const redirects = new Map((await readFile(path.join(dir, '_redirects'), 'utf8').catch(() => '')).split('\n')
-  .map(l => l.trim().split(/\s+/)).filter(p => p.length >= 2 && p[0].startsWith('/')).map(([from, to, code]) => [from, [to, Number(code) || 302]]));
+const redirects = await previewRedirects(dir);
 
 /** The server's own record of recent requests and sockets, for a test that started it with an IPC channel (#686).
  * A browser test that sees a page request pending for 30 s cannot tell whether this server never received it,
@@ -129,7 +127,11 @@ function track(server) {
     const windowed = record.requests.filter(inWindow);
     const socketView = s => record.open.has(s) ? { ...s, bytesRead: record.open.get(s).bytesRead } : s;
     const matched = record.requests.filter(r => r.path === message.path && inWindow(r));
-    const withSocket = r => ({ ...r, socket: socketView(record.sockets.find(s => s.id === r.socket)) ?? r.socket });
+    const withSocket = r => ({
+      ...r, socket: socketView(record.sockets.find(s => s.id === r.socket)) ?? r.socket,
+      // No body for HEAD or a redirect/error without a selected file. Legacy bytes/sha256 describe the read buffer.
+      ...(r.headersAt && { responseBody: r.method === 'HEAD' || !r.file ? { bytes: 0 } : { bytes: r.bytes, sha256: r.sha256 } }),
+    });
     process.send({ id: message.id, now: Date.now(), pid: process.pid,
       clock: 'Date.now() epoch ms in the preview server process',
       keepAlive: { keepAliveTimeout: server.keepAliveTimeout, keepAliveTimeoutBuffer: server.keepAliveTimeoutBuffer,
@@ -141,6 +143,8 @@ function track(server) {
         maxRecords: MAX_RECORDS, droppedThrough: record.droppedThrough || null, droppedByBound: record.droppedByBound },
       // The first ten and the last ten in the window: a stalled request is usually the window's first, and a busy
       // window (the other lane navigating to the same page) would push it out of the last ten (#686).
+      matchingCount: matched.length,
+      matchingBasis: 'Server requests with the same path in this time window. These IDs do not identify the browser navigation or prove receipt.',
       matchingFirst: matched.slice(0, 10).map(withSocket),
       matching: matched.slice(-10).map(withSocket),
       window: { requests: windowed.length, unanswered: windowed.filter(r => !r.headersAt).slice(-10),
@@ -157,23 +161,11 @@ function track(server) {
 
 const server = createServer(async (req, res) => {
   const url = new URL(req.url, 'http://x');
-  let pathname;
-  try { pathname = decodeURIComponent(url.pathname); } catch { res.writeHead(400).end(); return; }   // e.g. /%
-  // No NUL, no dot segments, no backslash: '/\\host' in a redirect would send the browser to another host.
-  if (/[\0\\]/.test(pathname) || path.posix.normalize(pathname) !== pathname) { res.writeHead(400).end(); return; }
-  if (redirects.has(pathname)) { const [to, code] = redirects.get(pathname); res.writeHead(code, { location: to + url.search }).end(); return; }
-  if (pathname.endsWith('.html')) {                               // Pages drops .html with a redirect
-    const pretty = pathname.endsWith('/index.html') ? pathname.slice(0,-'index.html'.length) : pathname.replace(/\.html$/, '');
-    res.writeHead(308, { location: pretty + url.search }).end(); return;
+  const { status, location, pathname, file } = await previewRoute(dir, url.pathname, redirects);
+  if (!file) {
+    res.writeHead(status, location === undefined ? {} : { location: location + url.search }).end();
+    return;
   }
-  const candidates = pathname.endsWith('/') ? [pathname + 'index.html'] : [pathname, pathname + '.html', pathname + '/index.html'];
-  let file = null;
-  for (const c of candidates) if (await exists(path.join(dir, c))) { file = c; break; }
-  // Directory applications resolve their own modules beside index.html. Keep the trailing slash, including
-  // requests for the bare directory; otherwise a relative ./app.mjs incorrectly resolves one level above it.
-  if(file === pathname+'/index.html') {res.writeHead(308,{location:pathname+'/'+url.search}).end();return;}
-  const status = file ? 200 : 404;
-  file ??= '/404.html';
   const body = await readFile(path.join(dir, file)).catch(() => Buffer.from('Not found'));
   const r = req[slot];
   if (r) Object.assign(r, { file, readAt: Date.now(), bytes: body.length,

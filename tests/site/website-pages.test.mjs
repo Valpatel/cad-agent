@@ -333,11 +333,15 @@ import { configureNavigation, fetchThrough, inLanes, navigate, navigationFailure
 
 test('shared navigation passes the call site\'s exact arguments and does nothing else on success', async t => {
   const page = new ReaderProbePage(), response = {}, args = [];
+  let inspections = 0;
+  configureNavigation({ generatedDocument: () => { inspections++; } });
+  t.after(() => configureNavigation());
   page.goto = async (...given) => { args.push(given); return response; };
   t.mock.method(console, 'log', () => assert.fail('a passing navigation printed evidence'));
   assert.equal(await navigate(page, 'http://localhost/a'), response);
   assert.equal(await navigate(page, 'http://localhost/b', { waitUntil: 'load', timeout: 30000 }), response);
   assert.deepEqual(args, [['http://localhost/a'], ['http://localhost/b', { waitUntil: 'load', timeout: 30000 }]]);
+  assert.equal(inspections, 0);
   assert.equal(page.domCalls, undefined); assert.equal(page.imageOptions, undefined); noProbeListeners(page);
 });
 
@@ -351,6 +355,20 @@ test('a fault in the navigation evidence is recorded and the original error is r
   assert.equal(kept.evidence.error.message, original.message);
   assert.equal(JSON.parse(await readFile(path.join(context.evidence, 'navigation-failure.json'), 'utf8')).evidenceError, kept.evidence.evidenceError);
   assert.equal(lines.filter(line => line.startsWith('Navigation failure evidence: ')).length, 1); noProbeListeners(page);
+});
+
+test('blocked or broken generated HTML inspection preserves the partial receipt and original failure', { timeout: 5000 }, async t => {
+  const context = await probeContext(t), page = new ReaderProbePage(), original = new Error('original navigation');
+  page.navigate = () => { throw original; };
+  t.after(() => configureNavigation());
+  for (const inspect of [() => { throw new Error('/private/build/location'); }, () => new Promise(() => {})]) {
+    configureNavigation({ generatedDocument: inspect, serverEvidence: async () => ({ matching: [] }) });
+    await assert.rejects(navigate(page, page.url(), { waitUntil: 'load', timeout: 30000 }, { evidence: context.evidence }), err => err === original);
+    const text = await readFile(path.join(context.evidence, 'navigation-failure.json'), 'utf8');
+    const receipt = JSON.parse(text);
+    assert.ok(receipt.generatedDocument.unavailable); assert.deepEqual(receipt.server.matching, []);
+    assert.doesNotMatch(text, /password|secret|private|user:/); noProbeListeners(page);
+  }
 });
 
 test('evidence code that throws outright still leaves the original error, known as a failed navigation', async t => {

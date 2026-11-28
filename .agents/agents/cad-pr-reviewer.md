@@ -50,8 +50,9 @@ flowchart TD
    whether any item under the skill's "Needs the owner's go-ahead" applies (and which; for a release PR, that none
    needs its own). On a re-review, say whether the new commits stay within the earlier findings, and accept or
    reject each reply to a blocking finding.
-   End the summary with the verdict marker on its own line, for the head commit you reviewed (an attribution footer
-   added by the posting tool may follow it):
+   End the summary with a `Signed: <agent> (<harness>), agent <tag>` line where the repo asks for one (cad-agent's
+   AGENTS.md does), then the verdict marker on its own line, for the head commit you reviewed (an attribution footer
+   added by the posting tool may follow it; nothing else may):
    `<!-- cad-review verdict=pass sha=<full 40-character head sha> -->` when nothing blocking is left, otherwise
    `verdict=block`. Repos with merge gates read it (cad-agent: the latest verdict must be pass, on the PR's head
    commit); then re-run them. Do not approve or merge.

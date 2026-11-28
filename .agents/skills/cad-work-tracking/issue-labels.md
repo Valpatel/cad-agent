@@ -35,13 +35,14 @@ Use the stage and area labels independently of scope:
 | `area:viewer-platform` | The issue concerns shared viewer hosting, lifecycle, artifact/review integration, discovery or browser runtime distribution. | The remaining scope no longer concerns that area. |
 | `area:scada` | The issue concerns SCADA diagrams, equipment components, system descriptions, simulation models or their integration. | The remaining scope no longer concerns that area. |
 
-`claimed` is not a classification: it marks an issue an agent has claimed, as a search aid next to the
-[work-claim comments](SKILL.md#work-claims-sharing-issues-between-agents). The latest lease comment decides who holds
-the issue, and whoever finds the label after that lease has run out removes it. Never treat the label alone as a hold.
-
 Both area labels may apply; neither is mandatory. Preserve useful existing labels such as `bug`, `documentation`,
 `enhancement`, research or domain labels. Scope describes the unit of work, stage describes a pending decision, and
 area describes the affected capability. None expresses priority, authorization, deployment or a review verdict.
+
+`claimed` is not a classification: it marks an issue an agent has claimed, as a search aid next to the
+[work-claim comments](SKILL.md#work-claims-sharing-issues-between-agents). The claim comments decide who holds the
+issue; the label comes off only when no agent's latest `claim` or `checkpoint` is unexpired. Never treat the label
+alone as a hold, or its absence as proof that nobody holds the issue.
 
 Examples:
 

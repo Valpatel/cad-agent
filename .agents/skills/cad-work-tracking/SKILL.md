@@ -39,7 +39,9 @@ flowchart TD
    **Then check who holds it and claim it.** Several agents on different tools and machines work the same repos.
    Read the issue's latest [work-claim comments](#work-claims-sharing-issues-between-agents): if another agent holds
    an unexpired claim, pick other work or claim a separate scope. Otherwise post a `claim` before changing anything,
-   and add the `claimed` label. The same applies before driving a PR someone else opened (review, gates, merge).
+   and add the `claimed` label. The same applies before changing state on a PR someone else opened (push, rebase,
+   gates dispatch, merge, release). A requested review is not a claim: review without claiming or backing off, and
+   never change the branch.
 2. **Branch from the integration branch and push it at once.** Follow the repo's AGENTS.md / CONTRIBUTING.md: in
    cad-agent that is a `feat/<topic>` worktree from `origin/dev`; in a product repo, often `dev`. Push before you
    have much to push (`git push -u origin <branch>`), so the branch exists remotely from the start.
@@ -64,7 +66,8 @@ flowchart TD
    issue and comment with the merge commit. Close issues that turned out to be unnecessary, with the reason.
    Delete your own merged branches and remove your own worktrees (after checking no virtualenv imports from them);
    never touch another session's branch or worktree. End your claim with `done` (PR, commit, evidence), or
-   `release` with resume notes if you stop before the end, and remove the `claimed` label either way. Completing one child does not complete an ongoing
+   `release` with resume notes if you stop before the end, and remove the `claimed` label unless another agent's
+   claim on the issue is still unexpired. Completing one child does not complete an ongoing
    program. A design deliverable closes on its planning acceptance; link remaining implementation work and never
    describe the accepted design as shipped functionality.
 
@@ -116,21 +119,22 @@ commit or evidence.
 | Action | When | Lease |
 |---|---|---|
 | `claim` | before starting; add the `claimed` label | until `lease=`, at most 4 h after the comment |
-| `checkpoint` | progress; at least once per lease | renews `lease=` |
-| `release` | stopping before the end, with resume notes; remove the label | none: the claim ends |
-| `done` | PR merged or evidence posted; remove the label | none: the claim ends |
+| `checkpoint` | progress, about every 30 minutes; always before the lease runs out; re-add a missing label | renews `lease=` |
+| `release` | stopping before the end, with resume notes; remove the label unless another claim is unexpired | none: the claim ends |
+| `done` | PR merged or evidence posted; remove the label unless another claim is unexpired | none: the claim ends |
 
 - **Format.** The tag is `a-` plus eight characters of `[a-z2-7]`. `lease=` is UTC to the minute, `YYYY-MM-DDTHH:MMZ`
-  (no seconds), and is at most 4 h after the comment's own timestamp. A long run in flight (CI, a simulation) is no
-  exception: post a checkpoint while you wait.
-- **A claim not refreshed within its lease has expired**: the issue is open for anyone. A checkpoint at least every
-  4 hours is the price of holding work.
+  (no seconds), and is at most 4 h after the comment's own timestamp; a later `lease=` counts as ending 4 h after the
+  comment. A long run in flight (CI, a simulation) is no exception: post a checkpoint while you wait.
+- **A claim not refreshed within its lease has expired**: the issue is open for anyone. A checkpoint about every 30
+  minutes ([step 5](#the-loop)), and always before the lease runs out, is the price of holding work.
 - **The `claimed` label is a search aid, not the record.** It cannot expire, so the lease comment decides. Whoever
-  reads an issue with the label and finds its latest lease run out removes the label and posts one line saying so
-  (no claim needed). A session also sweeps every open `claimed` issue when it starts ([Resuming](#resuming)). An
+  reads an issue with the label removes it only when no agent's latest `claim` or `checkpoint` is unexpired, and
+  posts one line saying so (no claim needed). A holder whose label was removed in a race re-adds it at its next
+  checkpoint. A session also sweeps every open `claimed` issue when it starts ([Resuming](#resuming)). An
   issue without the label can still hold a live claim: always read the comments.
 - **Sign every comment and review** with a final line (above any footer the posting tool adds)
-  `Signed: <agent> (<harness>), agent <tag>`, for example
+  `Signed: <agent> (<harness>), agent <tag>`, using your claim tag or the tag you would claim with, for example
   `Signed: Codex (cloud task), agent a-k3m9q2xp`. Every agent posts as the same GitHub account, so this line is the
   only way to tell who wrote what. Name the agent family and harness, never a model version. In a review, put it
   above the `cad-review` verdict marker: the gate reads only the last line, plus one posting-tool footer.

@@ -148,7 +148,11 @@ def open_viewer(page):
     page.goto(BASE + '/software/cadagent/webkit/scada/ui/' + path.relative_to(PACKAGE).as_posix(), wait_until='networkidle')
     viewer = page.locator('#utility-viewer [data-scada-viewer]')
     viewer.wait_for(state='visible')
-    set_capture_font(viewer)
+    # Reset recreates the viewer root. Scope the fixture style to replacements too.
+    page.add_style_tag(content=f'#utility-viewer [data-scada-viewer] {{ --font: {CAPTURE_FONT}; font-family: var(--font); }}')
+    page.evaluate("()=>{document.querySelector('[data-demo-action=reset]').click();document.querySelector('[data-demo-action=running]').click()}")
+    assert page.locator('[data-demo-status]').inner_text().startswith('0 illustrative minutes · Paused')
+    viewer.locator('[data-scada-zoom=fit]').click()
     check_bold_text(viewer.locator('.scada-viewer-header h2'))
     check_bold_text(viewer.locator('[data-scada-zoom=fit]'))
     return path
@@ -318,9 +322,6 @@ with sync_playwright() as playwright:
         manifest['contact_sheet']=capture(page,THUMBS/'contact-sheet.jpg')
         if args.viewer_path:
             viewer_path=open_viewer(page)
-            page.evaluate("()=>{document.querySelector('[data-demo-action=reset]').click();document.querySelector('[data-demo-action=running]').click()}")
-            assert page.locator('[data-demo-status]').inner_text().startswith('0 illustrative minutes · Paused')
-            page.locator('#utility-viewer [data-scada-zoom=fit]').click()
             freeze_animation_frame(page, FRAME_MS)
             definition=json.loads(viewer_path.with_name('system.json').read_text())
             active_id=page.locator('#utility-viewer [data-scada-view-choice][aria-current=page]').get_attribute('data-scada-view-choice')

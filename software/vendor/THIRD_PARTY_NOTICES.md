@@ -48,7 +48,7 @@ The simulation modules and the site build use these at run time. None of their c
 | Project | Licence | How cad-agent uses it |
 |---|---|---|
 | OpenFOAM v2512 (OpenCFD) | GPL-3.0 | External program (`cadagent.simulation.cfd` writes a case and runs it natively or in the `opencfd/openfoam-default` Docker image) |
-| Bambu Studio | AGPL-3.0 | External program (`cadagent.manufacturing.slicer` runs its command line; profiles are read, flattened and passed back as files) |
+| Bambu Studio | AGPL-3.0 | External program (`cadagent.manufacturing.slicer` runs its command line; profiles are read, flattened and passed back as files). The separate `tools/bambu-camera` draft reader adapts the public `BambuTunnel.h` C interface at `355d71eee5a9ebc794693fe57e63674806019770` under AGPL-3.0-only, with its own `COPYING`; it is not imported into the MIT package. No proprietary media/network plugin is redistributed. |
 | PrusaSlicer | AGPL-3.0 | External program (`cadagent.manufacturing.slicer_prusa` runs its command line: PrusaSlicer resolves the named presets, and they go back to it with the overrides as one config file) |
 | gmsh | GPL-2.0-or-later | Imported by the optional `fea` extra. Our source stays MIT; distributing a bundle that includes gmsh falls under the GPL |
 | scikit-fem | BSD-3-Clause | Imported (`fea`) |

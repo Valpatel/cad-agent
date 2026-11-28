@@ -15,7 +15,7 @@ import { createServer } from 'node:net';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { chromium, webkit, expect } from './npm-context.mjs';
-import { builtSite } from './built-site.mjs';
+import { builtSite, generatedDocument } from './built-site.mjs';
 import { configureNavigation, fetchThrough, inLanes, navigate, navigationFailure, ownContexts, partHandler, watchRoutes } from './navigation.mjs';
 import { folderMapPath } from '../../tools/site/publication.mjs';
 import { reducedHeroProblems, repositoryHeroProblems, homepageModelProblems, homepageViewerGateProblems, heroRecordingProblems, replayCardProblems, learningPictureProblems, homepageLateDrawProblems, resultImageMotionProblems } from './layout/motion.mjs';
@@ -54,7 +54,8 @@ const browser = await engine.launch(launchOptions);
 // the preview server's record, and becomes a finding of its part (runPart, in inLanes) instead of ending the run.
 ownContexts(browser);
 watchRoutes(browser);   // a failed navigation's receipt says which route handler, if any, its document went through
-configureNavigation({ serverEvidence: previewServerEvidence, testLag, fullEvidenceLimit: 5 });
+configureNavigation({ serverEvidence: previewServerEvidence, generatedDocument: url => generatedDocument(dir, base, url),
+  testLag, fullEvidenceLimit: 5 });
 // A reference area page (#323): the one route with the records' charts, table and filters (a small area, so the
 // theme part's text walk stays short; the walls part measures every reference page).
 const REFS = '/references/laser-cutting';
@@ -1500,6 +1501,9 @@ async function routeHopControls(context) {
   const neverURL = `${base}/docs/toolkit`;
   await never.route(neverURL, async route => { await gate; await route.abort('aborted').catch(() => {}); });
   const one = await failed('a handler that never answers', never, neverURL);
+  if (one && (one.evidence.generatedDocument?.file !== '/docs/toolkit.html' || !/^[0-9a-f]{64}$/.test(one.evidence.generatedDocument?.sha256) ||
+      !/^[0-9a-f]{40}$/.test(one.evidence.generatedDocument?.revision)))
+    say('the unserved Toolkit navigation lost its generated HTML or build revision');
   if (one && one.document.events?.response !== false) say(`a handler that never answers: the page saw a response: ${JSON.stringify(one.document.events)}`);
   if (one && (typeof one.route !== 'object' || one.route.handlers?.[0]?.outcome !== 'running' || one.route.calls?.length !== 0))
     say(`a handler that never answers: the receipt does not show a running handler with no calls: ${JSON.stringify(one.route).slice(0, 400)}`);
@@ -1556,6 +1560,8 @@ async function stallControlProblems(parts, found, finished) {
     const document = Array.isArray(evidence.documents) ? evidence.documents.find(d => d.url === stallControl.url) : null;
     if (!document || document.events?.response !== false || !/^no route on the page or its context/.test(document.route))
       out.push(`the receipt does not say the held document got no response and passed through no route handler: ${JSON.stringify(evidence.documents).slice(0, 400)}`);
+    if (evidence.generatedDocument?.unavailable !== 'requested URL belongs to another origin')
+      out.push('the preview build was attributed to the separate holding server');
     if (typeof evidence.server?.coversWindow !== 'boolean' || !evidence.server.window || !Array.isArray(evidence.server.matchingFirst) || !(evidence.server.lag?.maxMs >= 0))
       out.push(`the receipt lost the preview server's record: ${JSON.stringify(evidence.server).slice(0, 400)}`);
     if (!(evidence.testProcessLag?.maxMs >= 0) || evidence.engine?.name !== engine.name() || !evidence.engine.version || evidence.evidenceError)
@@ -2244,6 +2250,9 @@ async function diagramNavigationControl() {
         !evidence.server.keepAlive || evidence.server.coversWindow !== true || !evidence.server.coverage || !(evidence.server.openSockets >= 0) || !(evidence.testProcessLag?.maxMs >= 0)) {
       out.push(`diagram navigation control lost the preview server's record of the document: ${JSON.stringify(evidence?.server ?? null).slice(0, 400)}`);
     }
+    const generated = evidence?.generatedDocument;
+    if (!generated?.sha256 || generated.file !== '/docs/style-guide.html' || generated.sha256 !== doc?.responseBody?.sha256 ||
+        generated.bytes !== doc?.responseBody?.bytes) out.push('generated style guide bytes differ from the matching preview response');
     if (browser.contexts().includes(owned)) out.push('diagram navigation failure retained its owned context');
     if (await neighbor.evaluate(() => document.readyState) !== 'complete') out.push('diagram cleanup disrupted another context');
   } catch (error) { failed = true; failure = error; throw error; }

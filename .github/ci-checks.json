@@ -166,7 +166,7 @@
    "paths": ["**"],
    "command": "node tools/site/build-site.mjs --out \"{tmp}/site\" > \"{tmp}/site.log\" 2>&1; s=$?; cat \"{tmp}/site.log\"; exit $s",
    "provides_env": {"CAD_AGENT_SITE": "{tmp}/site"},
-   "needs": {"node_deps": ["tools/site"], "browser": "chromium"},
+   "needs": {"node_deps": ["tools/site"], "browser": "chromium", "chromium_executable": false},
    "cost": "slow",
    "cost_note": "the whole site with its folder maps; CI's browser job allows 45 minutes",
    "mirrors": [{"workflow": "webkit.yml", "job": "browser", "run": "node tools/site/build-site.mjs --out \"$RUNNER_TEMP/site\""}]
@@ -177,7 +177,7 @@
    "paths": ["**"],
    "command": "node --test --test-name-pattern='all owned folder diagrams' tests/site/website-repo-map.test.mjs",
    "env": {"CAD_AGENT_REPO_MAP_DIAGRAMS": "1"},
-   "needs": {"node_deps": ["tools/site"], "browser": "chromium"},
+   "needs": {"node_deps": ["tools/site"], "browser": "chromium", "chromium_executable": false},
    "cost": "slow",
    "cost_note": "draws every folder map in the repo",
    "mirrors": [{"workflow": "webkit.yml", "job": "browser", "run": "node --test --test-name-pattern='all owned folder diagrams' tests/site/website-repo-map.test.mjs"}]
@@ -210,7 +210,7 @@
    "paths": ["**"],
    "command": "node tests/site/website-browser.mjs",
    "engines": ["chromium", "webkit"],
-   "needs": {"node_deps": ["tools/site"], "after": ["site-build"]},
+   "needs": {"node_deps": ["tools/site"], "after": ["site-build"], "chromium_executable": false},
    "cost": "slow",
    "cost_note": "visits every applicable page, theme and width",
    "mirrors": [{"workflow": "webkit.yml", "job": "browser", "run": "node tests/site/website-browser.mjs"}]
@@ -221,7 +221,7 @@
    "paths": ["**"],
    "command": "node tests/site/toolkit/website-catalog-browser.mjs",
    "engines": ["chromium", "webkit"],
-   "needs": {"node_deps": ["tools/site"], "after": ["site-build"]},
+   "needs": {"node_deps": ["tools/site"], "after": ["site-build"], "chromium_executable": false},
    "cost": "slow",
    "cost_note": "needs the whole built site",
    "mirrors": [{"workflow": "webkit.yml", "job": "browser", "run": "node tests/site/toolkit/website-catalog-browser.mjs"}]
@@ -294,7 +294,7 @@
    "command": "npm run test:part-table",
    "cwd": "tools/site",
    "engines": ["chromium", "webkit"],
-   "needs": {"node_deps": ["tools/site"]},
+   "needs": {"node_deps": ["tools/site"], "chromium_executable": false},
    "cost": "fast",
    "mirrors": [{"workflow": "webkit.yml", "job": "browser", "run": "npm run test:part-table"}]
   },
@@ -317,7 +317,7 @@
    "command": "npm run test:served-bar",
    "cwd": "tools/site",
    "engines": ["chromium", "webkit"],
-   "needs": {"node_deps": ["tools/site"], "python": {"version": "3.12", "modules": ["yaml", "numpy", "packaging", "markdown"]}},
+   "needs": {"node_deps": ["tools/site"], "python": {"version": "3.12", "modules": ["yaml", "numpy", "packaging", "markdown"]}, "chromium_executable": false},
    "cost": "fast",
    "subset": true,
    "mirrors": [{"workflow": "webkit.yml", "job": "browser", "run": "npm run test:assembly-release"}],
@@ -331,7 +331,7 @@
    "command": "npm run test:assembly-release",
    "cwd": "tools/site",
    "engines": ["chromium", "webkit"],
-   "needs": {"node_deps": ["tools/site"], "python": {"version": "3.12", "modules": ["yaml", "numpy", "packaging", "markdown"]}},
+   "needs": {"node_deps": ["tools/site"], "python": {"version": "3.12", "modules": ["yaml", "numpy", "packaging", "markdown"]}, "chromium_executable": false},
    "cost": "fast",
    "mirrors": [{"workflow": "webkit.yml", "job": "browser", "run": "npm run test:assembly-release"}],
    "env": {"PYTHONPATH": "{root}/software"}
@@ -344,7 +344,7 @@
    "command": "npm run test:diagrams",
    "cwd": "tools/site",
    "engines": ["chromium", "webkit"],
-   "needs": {"node_deps": ["tools/site", "tools/mermaid"], "python": {"version": "3.12", "modules": ["yaml", "numpy", "packaging", "markdown"]}},
+   "needs": {"node_deps": ["tools/site", "tools/mermaid"], "python": {"version": "3.12", "modules": ["yaml", "numpy", "packaging", "markdown"]}, "chromium_executable": false},
    "cost": "fast",
    "mirrors": [{"workflow": "webkit.yml", "job": "browser", "run": "npm run test:diagrams"}],
    "env": {"PYTHONPATH": "{root}/software"}
@@ -455,7 +455,7 @@
    "paths": ["software/cadagent/webkit/scada/**", "tools/webkit/scada/**", "tests/webkit/scada/**", "software/cadagent/webkit/ui/**", "software/cadagent/webkit/vendor/fonts/**", "tests/site/npm-context.mjs", "tests/webkit/webkit-server.mjs", "tests/fixtures/scada/**", "tools/site/package.json", "tools/site/package-lock.json"],
    "command": "node tests/webkit/scada/explorer/browser.mjs",
    "engines": ["chromium", "webkit"],
-   "needs": {"node_deps": ["tools/site"]},
+   "needs": {"node_deps": ["tools/site"], "chromium_executable": false},
    "cost": "fast",
    "mirrors": [{"workflow": "webkit.yml", "job": "scada", "run": "node tests/webkit/scada/explorer/browser.mjs"}]
   }

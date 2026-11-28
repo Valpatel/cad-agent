@@ -1158,6 +1158,8 @@ def test_a_path_chromium_is_flagged_even_with_the_pinned_build_installed(tmp_pat
     ([{"workflow": "ci.yml", "job": "j", "run": "x", "colour": "red"}], None, "unknown field `colour`"),
     ([], ["optuna"], "`optuna` must be name==version"),
     ([], ["optuna=="], "`optuna==` must be name==version"),
+    ([], 5, "`dists` must be a list, not int"),
+    ([], "x==1", "`dists` must be a list, not str"),
 ])
 def test_malformed_mirrors_and_dist_pins_are_setup_errors(tmp_path, capsys, mirrors, dists, needle):
     """Each reached the catch-all and left the run folder; ``mirrors: [{}]`` with ``--json`` did so after the checks
@@ -1170,17 +1172,29 @@ def test_malformed_mirrors_and_dist_pins_are_setup_errors(tmp_path, capsys, mirr
     assert pf.main(args + ["--paths", "a/x", "--json"]) == 2
     err = capsys.readouterr().err
     assert "is malformed" in err and needle in err, err
+    assert "must be name==version" not in err or isinstance(dists, list), "a string `dists` is not read per character"
     assert not ran.exists(), "nothing runs on a malformed mapping"
     assert not list(Path(tempfile.gettempdir()).glob("cad-agent-preflight-*")), "no run folder left behind"
 
 
-@pytest.mark.parametrize("cwd", ["..", "../repo/..", "/tmp", "out"])
+@pytest.mark.parametrize("cwd", ["..", "../repo/..", "out"])
 def test_a_cwd_outside_the_checkout_is_refused(tmp_path, capsys, cwd):
     args = _repo(tmp_path, [_check("a", "true", cwd=cwd)])
     (tmp_path / "elsewhere").mkdir()
     (Path(args[1]) / "out").symlink_to(tmp_path / "elsewhere")
     assert pf.main(args + ["--paths", "a/x"]) == 2
     assert f"cwd {cwd} is outside the checkout" in capsys.readouterr().err
+
+
+@pytest.mark.parametrize("where", ["outside", "inside"])
+def test_an_absolute_cwd_is_refused_even_inside_the_checkout(tmp_path, capsys, where):
+    """Review of #867: an absolute cwd is never portable between checkouts, so it is refused wherever it points."""
+    root = tmp_path / "repo"
+    cwd = str(tmp_path) if where == "outside" else str(root / "real")
+    args = _repo(tmp_path, [_check("a", "true", cwd=cwd)])
+    (root / "real").mkdir()
+    assert pf.main(args + ["--paths", "a/x"]) == 2
+    assert f"cwd {cwd} is absolute" in capsys.readouterr().err
 
 
 def test_a_cwd_inside_the_checkout_still_works(tmp_path, capsys):
@@ -1208,6 +1222,7 @@ def test_quoted_fields_reads_the_shell_and_the_format_syntax(command, refused):
 @pytest.mark.parametrize("top,needle", [
     ({"ci_node_major": 22}, "`ci_node_major` must be a str"),
     ({"ci_node_major": "v22"}, "`ci_node_major` must be a Node major"),
+    ({"ci_node_major": "\uff12\uff12"}, "`ci_node_major` must be a Node major"),     # full-width digits pass isdigit()
     ({"about": ["x"]}, "`about` must be a str"),
     ({"colour": "red"}, "unknown top-level field `colour`"),
 ])
@@ -1327,7 +1342,11 @@ def test_the_preset_browser_note_lands_only_on_suites_that_read_it(tmp_path, mon
 
 
 def test_chromium_executable_false_matches_the_suites_that_ignore_it(mapping):
-    """The mapping says which Chromium suites never read CHROMIUM_EXECUTABLE; the suite files are the truth."""
+    """The mapping says which Chromium suites never read CHROMIUM_EXECUTABLE; the suite files are the truth.
+
+    Limit: ``suite_files`` returns the files a command names, directly or through npm scripts, not the modules those
+    files import. A shared launch helper that read the variable would not be seen here, and a suite using it could
+    keep a wrong ``false`` (losing its ``browser`` flag); today only the named suite files read it."""
     wrong, seen = [], 0
     for c in mapping["checks"]:
         need = c.get("needs", {})
@@ -1357,6 +1376,19 @@ def test_a_failure_under_load_says_so(tmp_path, capsys, monkeypatch):
     monkeypatch.setattr(os, "getloadavg", lambda: (3.9, 5.0, 4.0))
     assert pf.main(args + ["--paths", "a/x", "--json"]) == 1
     assert not json.loads(capsys.readouterr().out)["checks"][0]["notes"]
+
+
+@pytest.mark.parametrize("before,after,noted", [(6.2, 1.0, True), (1.0, 6.2, False)])
+def test_the_load_is_read_before_the_check_starts(tmp_path, capsys, monkeypatch, before, after, noted):
+    """Review of #867: read after the check, the figure included the check's own load, and a suite that used every
+    core was told to rerun "alone" though it had. The load that counts is the one before it starts."""
+    started = tmp_path / "started"
+    args = _repo(tmp_path, [_check("bad", f"touch {started}; exit 1")])
+    monkeypatch.setattr(os, "cpu_count", lambda: 4)
+    monkeypatch.setattr(os, "getloadavg", lambda: (after if started.exists() else before, 1.0, 1.0))
+    assert pf.main(args + ["--paths", "a/x", "--json"]) == 1
+    (check,) = json.loads(capsys.readouterr().out)["checks"]
+    assert any("load average" in n for n in check["notes"]) is noted, check["notes"]
 
 
 @pytest.mark.parametrize("condition,dispatch_only", [

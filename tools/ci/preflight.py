@@ -36,7 +36,9 @@ Exit status, and the JSON report's ``verdict``:
   ``--json``, verdict ``interrupted (SIG…)``), and the logs are kept. The checks the run never reached are listed as
   ``not reached``, apart from those that cannot run here. The first signal decides: a second one while the check is
   being stopped is ignored. A signal after the last check finished still exits 128 + its number, after the full
-  report.
+  report. After the first signal, and once the checks are over, SIGINT, SIGTERM and SIGHUP are only recorded, so a
+  report write that blocks (a stdout pipe nobody reads) or a long removal of the run folder can be cut short only by
+  SIGKILL.
 
 ``--only <id>`` runs that check whether or not the changed paths select it, and even when it is slow. A ``per_match`` check named that way needs
 a changed path that gives it its value (``pytest-domain`` needs a path under ``software/cadagent/<domain>/``);
@@ -45,7 +47,8 @@ without one it is ``not run``.
 Logs and the run folder (``cad-agent-preflight-*`` in the system temp, or under ``--workdir``; it also holds the
 built site) are deleted when every check that ran passed, with any empty parents ``--workdir`` created, and kept, with
 their path printed, when one failed or the run was interrupted. A failure while the load average exceeds the CPU count
-carries a note to rerun that check alone: some suites assert on wall-clock time.
+carries a note to rerun that check on a quieter machine: some suites assert on wall-clock time. The load is read
+just before the check starts, so a check's own load does not count.
 
 A check's ``cwd`` must resolve inside the checkout. An entry whose suites never read ``CHROMIUM_EXECUTABLE`` says so
 with ``needs.chromium_executable: false`` (``tests/repo/ci/test_ci_checks.py`` keeps it true to the suite files), so
@@ -268,7 +271,7 @@ def mapping_problems(mapping) -> list[str]:
             problems.append(f"unknown top-level field `{key}`")
         elif not isinstance(value, TOP[key]):
             problems.append(f"`{key}` must be a {TOP[key].__name__}, not {type(value).__name__}")
-        elif key == "ci_node_major" and not value.isdigit():
+        elif key == "ci_node_major" and not re.fullmatch(r"[0-9]+", value):
             problems.append(f"`ci_node_major` must be a Node major such as \"22\", not {value!r}")
     for n, check in enumerate(mapping["checks"]):
         where = f"check {check.get('id', f'#{n}') if isinstance(check, dict) else f'#{n}'}"
@@ -280,7 +283,8 @@ def mapping_problems(mapping) -> list[str]:
             typed += _type_problems(f"{where} needs", check["needs"], NEEDS)
             if isinstance(check["needs"].get("python"), dict):
                 typed += _type_problems(f"{where} needs.python", check["needs"]["python"], PYTHON_NEED)
-                for pin in check["needs"]["python"].get("dists", []):
+                pins = check["needs"]["python"].get("dists", [])
+                for pin in pins if isinstance(pins, list) else []:   # a wrong type is reported above
                     name, eq, version = pin.partition("==") if isinstance(pin, str) else ("", "", "")
                     if isinstance(pin, str) and not (name.strip() and eq and version.strip()):
                         typed.append(f"{where} needs.python: dists item `{pin}` must be name==version")
@@ -337,11 +341,14 @@ def mapping_problems(mapping) -> list[str]:
 
 
 def root_problems(mapping: dict, root: Path) -> list[str]:
-    """What the mapping names that this checkout lacks: a working directory, which must also resolve inside it (no
-    ``..``, absolute path or symlink out)."""
+    """What the mapping names that this checkout lacks: a working directory, which must be relative and resolve
+    inside it (no absolute path, and no ``..`` or symlink out)."""
     out, root = [], root.resolve()
     for c in mapping["checks"]:
         if not c.get("cwd"):
+            continue
+        if Path(c["cwd"]).is_absolute():               # never portable between checkouts, even when inside
+            out.append(f"check {c['id']}: cwd {c['cwd']} is absolute; give it relative to the checkout")
             continue
         where = (root / c["cwd"]).resolve()
         if where != root and root not in where.parents:
@@ -721,18 +728,24 @@ def _on_signal(signum, frame):
         raise Interrupted(signum)
 
 
-def load_note(check_id: str) -> str | None:
-    """A hint for a failure under load: some suites assert on wall-clock time (``tests/webkit/files/browser.mjs``
-    gives Cancel two seconds), and a load average above the CPU count can fail them where they pass alone."""
+def load_before() -> float | None:
+    """The one-minute load average just before a check starts: the load from other processes, not the check's own."""
     try:
-        one = os.getloadavg()[0]
+        return os.getloadavg()[0]
     except (OSError, AttributeError):                  # not available on this platform
         return None
+
+
+def load_note(check_id: str, one: float | None) -> str | None:
+    """A hint for a failure under outside load: some suites assert on wall-clock time (``tests/webkit/files/
+    browser.mjs`` gives Cancel two seconds), and a load average above the CPU count, measured before the check
+    started, can fail them where they pass on a quiet machine."""
     cpus = os.cpu_count() or 1
-    if one <= cpus:
+    if one is None or one <= cpus:
         return None
-    return (f"the load average was {one:.1f} on {cpus} CPUs when it failed: a suite with a wall-clock assertion can "
-            f"fail under load, so rerun it alone (--only {check_id}) before reading the failure as the change's")
+    return (f"the load average was {one:.1f} on {cpus} CPUs when it started (other processes, not this check): a "
+            f"suite with a wall-clock assertion can fail under load, so rerun it (--only {check_id}) on a quieter "
+            f"machine before reading the failure as the change's")
 
 
 def stop_group(pid: int) -> None:
@@ -758,6 +771,7 @@ def run(inst: Instance, ctx: dict, machine: Machine, workdir: Path, timeout: int
     log = workdir / "logs" / (re.sub(r"[^\w.-]", "_", inst.id) + ".log")
     log.parent.mkdir(parents=True, exist_ok=True)
     cwd = machine.root / check.get("cwd", ".")
+    outside_load = load_before()
     started = time.monotonic()
     with log.open("w", encoding="utf-8", errors="replace") as out:
         # its own process group, so a timeout stops the browsers and servers a suite started, not only the shell
@@ -785,7 +799,7 @@ def run(inst: Instance, ctx: dict, machine: Machine, workdir: Path, timeout: int
         inst.status = "failed"
         inst.reason = f"timed out after {timeout} s" if code is None else f"exit {code}"
         inst.tail = "\n".join(failure_excerpt(lines))
-        note = load_note(inst.id)
+        note = load_note(inst.id, outside_load)
         if note:
             inst.notes.append(note)
 

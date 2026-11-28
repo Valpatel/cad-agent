@@ -595,6 +595,66 @@ test('the ordinary part limit preserves a recorded fetch failure if the part the
   assert.ok(failure.message.includes(receipt));
 });
 
+test('a deadline in a peer is reported even when another part throws first', async t => {
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  const lines = [];
+  t.mock.method(console, 'log', message => lines.push(String(message)));
+  const failure = new Error('original failure'), stuck = Promise.withResolvers();
+  let result;
+  const run = inLanes([
+    ['failed assertion', async () => { throw failure; }],
+    ['stuck peer', async () => stuck.promise],
+  ], { timeoutMs: 100 }).catch(error => { result = error; });
+  await new Promise(resolve => setImmediate(resolve));
+  const beforeDeadline = result;
+  t.mock.timers.tick(100);
+  await new Promise(resolve => setImmediate(resolve));
+  const afterDeadline = result;
+  stuck.resolve([]);
+  await run;
+  assert.equal(beforeDeadline, undefined, 'the first error must wait for its peer');
+  assert.equal(afterDeadline, failure);
+  assert.match(lines.join('\n'), /stuck peer.*exceeded 100 ms/);
+});
+
+test('part failures include fetch evidence recorded by a route handler during cleanup', async t => {
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  t.mock.method(console, 'log', () => {});
+  for (const reason of ['ordinary error', 'deadline']) {
+    const errors = [];
+    const fetchFailure = async message => {
+      const error = new Error(message);
+      errors.push(error);
+      await fetchThrough({ fetch: async () => { throw error; }, abort: async () => {},
+        request: () => ({ url: () => 'http://localhost/fixture', method: () => 'GET' }) });
+    };
+    let closingRoute;
+    const browser = { newContext: async () => ({ close: async () => closingRoute() }) };
+    ownContexts(browser);
+    const ready = Promise.withResolvers(), stuck = Promise.withResolvers();
+    const part = runPart(reason, async () => {
+      await browser.newContext();
+      closingRoute = partHandler(() => fetchFailure('pending fetch failed during context shutdown'));
+      await assert.rejects(fetchFailure('earlier fetch failed'));
+      ready.resolve();
+      if (reason === 'ordinary error') throw new Error('action stopped');
+      return stuck.promise;
+    }, { timeoutMs: 100 });
+    const outcome = part.then(findings => findings.join('\n'), error => error.message);
+    await ready.promise;
+    if (reason === 'deadline') t.mock.timers.tick(100);
+    const report = await outcome;
+    stuck.resolve([]);
+    assert.equal(errors.length, 2);
+    for (const original of errors) {
+      const receipt = navigationFailure(original).receipt;
+      t.after(() => rm(receipt, { recursive: true, force: true }));
+      assert.ok(report.includes(original.message), `${reason} dropped ${original.message}`);
+      assert.ok(report.includes(receipt), `${reason} dropped the receipt path`);
+    }
+  }
+});
+
 test('a context arriving after a part deadline is closed and further opens are rejected', async t => {
   t.mock.timers.enable({ apis: ['setTimeout'] });
   const opening = Promise.withResolvers(), reply = Promise.withResolvers(), resumed = Promise.withResolvers();

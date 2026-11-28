@@ -573,17 +573,21 @@ export async function runPart(name, action, { timeoutMs = 25 * 60_000, onTimeout
   }
   catch (error) {
     const failure = navigationFailure(error);
-    if (scope.deadline && error === scope.deadline) {
+    const deadline = scope.deadline && error === scope.deadline;
+    if (!deadline && !failure && !scope.failures.length) throw error;
+    // Closing the context can settle route handlers and produce additional fetch receipts.
+    const cleanup = await closePartContexts(scope);
+    if (deadline) {
       const recorded = fetched();
       if (recorded.length) error.message += '\n' + recorded.join('\n');
-      error.message += await closePartContexts(scope);
+      error.message += cleanup;
+      console.log(error.message);  // retain the deadline even if another lane threw the first error
       throw error;
     }
-    if (!failure && !scope.failures.length) throw error;
     const findings = scope.failures.filter(fetchError => fetchError !== failure?.error).map(fetchError => failureFinding(name, fetchError, navigationFailure(fetchError), false));
     findings.push(failure ? failureFinding(name, error, failure, true)
       : `${name}: after a test-side fetch failed, this part stopped on: ${String(error?.stack || error).slice(0, 2000)}`);
-    findings[findings.length - 1] += await closePartContexts(scope);
+    findings[findings.length - 1] += cleanup;
     return findings;
   }
 }

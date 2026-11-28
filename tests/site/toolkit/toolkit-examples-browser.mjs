@@ -1,6 +1,6 @@
 import {createHash} from 'node:crypto';
 import {readFileSync} from 'node:fs';
-import {navigate} from '../navigation.mjs';
+import {bounded, navigate} from '../navigation.mjs';
 const fileHash=path=>createHash('sha256').update(readFileSync(new URL('../../../'+path,import.meta.url))).digest('hex');
 
 /** Real capability cards and their existing viewer/calculator consumers; reuse the suite's error recorder. */
@@ -54,15 +54,52 @@ export async function checkManifoldSource(page, selectedFile, model, fail) {
   }
 }
 
+// Observe the viewer's own fetch. The separate download assertion issues a new request.
+function watchManifoldResponse(page, file) {
+  const selected = new URL(file, page.url());
+  let response, matchingResponses = 0;
+  const onResponse = incoming => {
+    if (incoming.url() !== selected.href) return;
+    const request = incoming.request();
+    if (request.method() !== 'GET' || request.resourceType() !== 'fetch') return;
+    try {
+      if (request.frame() !== page.mainFrame()) return;
+    } catch { return; } // Service worker requests can have no frame.
+    matchingResponses++;
+    response = incoming;
+  };
+  page.on('response', onResponse);
+  return {
+    stop: () => page.off('response', onResponse),
+    async evidence() {
+      page.off('response', onResponse); // Freeze the observations at the time the viewer reported its error.
+      const pageResponse = {};
+      if (matchingResponses === 1) {
+        try {
+          pageResponse.status = response.status();
+          const bytes = await bounded(() => response.body(), 1000, 'STEP response body');
+          pageResponse.bytes = bytes.length;
+          pageResponse.sha256 = createHash('sha256').update(bytes).digest('hex');
+        } catch { pageResponse.unavailable = 'Response body unavailable'; }
+      } else {
+        pageResponse.unavailable = matchingResponses ? 'Multiple matching main-frame fetch responses' : 'No matching main-frame fetch response';
+      }
+      return { selected: selected.pathname, matchingResponses, pageResponse };
+    },
+  };
+}
+
 /** Open the Toolkit's original STEP under the same headers as a Pages deployment. */
-async function hostedStepCheck(open, fail) {
+export async function hostedStepCheck(open, fail) {
   const where = 'Original STEP under the published site policy';
   const { page, done } = await open('/toolkit', { width: 1366, color: 'light' });
+  let observed;
   try {
     const card = page.locator('#files');
     const file = await card.getByRole('link', { name: 'Download STEP', exact: true }).getAttribute('href');
     const viewer = new URL(await card.locator('[data-toolkit-launch]').getAttribute('href'), page.url());
     viewer.searchParams.set('file', file);
+    observed = watchManifoldResponse(page, file);
     const response = await navigate(page, viewer.href, undefined, { where });
     const policy = await response.headerValue('content-security-policy') || '';
     if (!policy.includes("'wasm-unsafe-eval'") || policy.includes("'unsafe-eval'")) fail(where, 'unexpected script policy');
@@ -74,7 +111,8 @@ async function hostedStepCheck(open, fail) {
         format: viewer.info?.format, bounds: viewer.info?.boundsMm, triangles: viewer.info?.triangles };
     });
     if (model.state !== 'ready') {
-      fail(where, model.message || 'STEP parser failed');
+      const evidence = await observed.evidence();
+      fail(where, `${model.message || 'STEP parser failed'}\nOriginal STEP evidence: ${JSON.stringify(evidence)}`);
       return;
     }
     await checkManifoldSource(page, file, model, message => fail(where, message));
@@ -97,7 +135,7 @@ async function hostedStepCheck(open, fail) {
     if (picture.shown - picture.hidden !== model.triangles || picture.restored !== picture.shown) {
       fail(where, `expected the manifold's ${model.triangles} triangles to disappear and return: ${JSON.stringify(picture)}`);
     }
-  } finally { await done(); }
+  } finally { observed?.stop(); await done(); }
 }
 
 export async function toolkitExampleChecks({open,fail}) {

@@ -517,6 +517,171 @@ test('inLanes stops dispatch on error and waits for the part already running', a
   assert.deepEqual(started, ['failing', 'peer']);
 });
 
+test('a part deadline stops dispatch, cleans up its own contexts and waits for its running peer', async t => {
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  t.mock.method(console, 'log', () => {});
+  const live = new Set();
+  const finishCleanup = Promise.withResolvers();
+  const browser = { contexts: () => [...live], newContext: async () => {
+    const context = { browser: () => browser, close: async () => {
+      await finishCleanup.promise;
+      live.delete(context);
+    } };
+    live.add(context);
+    return context;
+  } };
+  ownContexts(browser);
+  const other = await browser.newContext();
+  const hung = Promise.withResolvers(), hungStarted = Promise.withResolvers();
+  const quick = Promise.withResolvers(), peerStarted = Promise.withResolvers(), peer = Promise.withResolvers();
+  const started = [];
+  let result;
+  const run = inLanes([
+    ['stuck', async () => { started.push('stuck'); await browser.newContext(); hungStarted.resolve(); return hung.promise; }],
+    ['quick', async () => { started.push('quick'); return quick.promise; }],
+    ['peer', async () => { started.push('peer'); peerStarted.resolve(); return peer.promise; }],
+    ['queued', async () => { started.push('queued'); return []; }],
+  ], { lanes: 2, timeoutMs: 100 }).then(value => { result = value; }, error => { result = error; });
+
+  await hungStarted.promise;
+  t.mock.timers.tick(99);
+  quick.resolve([]);
+  await peerStarted.promise;
+  t.mock.timers.tick(1);
+  await new Promise(resolve => setImmediate(resolve));
+  const closing = live.size;
+  peer.resolve([]);
+  await new Promise(resolve => setImmediate(resolve));
+  const beforeCleanup = result;
+  finishCleanup.resolve();
+  await new Promise(resolve => setImmediate(resolve));
+  const deadline = result;
+  // Free the planted hang even if the deadline implementation regresses.
+  hung.resolve([]);
+  await run;
+  assert.equal(closing, 2);
+  assert.equal(beforeCleanup, undefined, 'the run settled before its cleanup finished');
+  assert.match(deadline?.message ?? '', /stuck.*exceeded 100 ms/);
+  assert.deepEqual(started, ['stuck', 'quick', 'peer']);
+  assert.deepEqual([...live], [other], 'only the expired part’s context is closed');
+});
+
+test('the ordinary part limit preserves a recorded fetch failure if the part then hangs', async t => {
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  t.mock.method(console, 'log', () => {});
+  const stuck = Promise.withResolvers(), afterFetch = Promise.withResolvers();
+  const original = new Error('route.fetch: fixture closed');
+  const route = { fetch: async () => { throw original; }, abort: async () => {},
+    request: () => ({ url: () => 'http://localhost/fixture', method: () => 'GET' }) };
+  let deadline;
+  const part = runPart('fixture reader', async () => {
+    await assert.rejects(fetchThrough(route), error => error === original);
+    afterFetch.resolve();
+    return stuck.promise;
+  }).catch(error => { deadline = error; });
+  await afterFetch.promise;
+  const receipt = navigationFailure(original).receipt;
+  t.after(() => rm(receipt, { recursive: true, force: true }));
+  t.mock.timers.tick(25 * 60_000 - 1);
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(deadline, undefined);
+  t.mock.timers.tick(1);
+  await new Promise(resolve => setImmediate(resolve));
+  const failure = deadline;
+  stuck.resolve([]);
+  await part;
+  assert.match(failure?.message ?? '', /fixture reader.*exceeded 1500000 ms/);
+  assert.ok(failure.message.includes('route.fetch: fixture closed'));
+  assert.ok(failure.message.includes(receipt));
+});
+
+test('a deadline in a peer is reported even when another part throws first', async t => {
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  const lines = [];
+  t.mock.method(console, 'log', message => lines.push(String(message)));
+  const failure = new Error('original failure'), stuck = Promise.withResolvers();
+  let result;
+  const run = inLanes([
+    ['failed assertion', async () => { throw failure; }],
+    ['stuck peer', async () => stuck.promise],
+  ], { timeoutMs: 100 }).catch(error => { result = error; });
+  await new Promise(resolve => setImmediate(resolve));
+  const beforeDeadline = result;
+  t.mock.timers.tick(100);
+  await new Promise(resolve => setImmediate(resolve));
+  const afterDeadline = result;
+  stuck.resolve([]);
+  await run;
+  assert.equal(beforeDeadline, undefined, 'the first error must wait for its peer');
+  assert.equal(afterDeadline, failure);
+  assert.match(lines.join('\n'), /stuck peer.*exceeded 100 ms/);
+});
+
+test('part failures include fetch evidence recorded by a route handler during cleanup', async t => {
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  t.mock.method(console, 'log', () => {});
+  for (const reason of ['ordinary error', 'deadline']) {
+    const errors = [];
+    const fetchFailure = async message => {
+      const error = new Error(message);
+      errors.push(error);
+      await fetchThrough({ fetch: async () => { throw error; }, abort: async () => {},
+        request: () => ({ url: () => 'http://localhost/fixture', method: () => 'GET' }) });
+    };
+    let closingRoute;
+    const browser = { newContext: async () => ({ close: async () => closingRoute() }) };
+    ownContexts(browser);
+    const ready = Promise.withResolvers(), stuck = Promise.withResolvers();
+    const part = runPart(reason, async () => {
+      await browser.newContext();
+      closingRoute = partHandler(() => fetchFailure('pending fetch failed during context shutdown'));
+      await assert.rejects(fetchFailure('earlier fetch failed'));
+      ready.resolve();
+      if (reason === 'ordinary error') throw new Error('action stopped');
+      return stuck.promise;
+    }, { timeoutMs: 100 });
+    const outcome = part.then(findings => findings.join('\n'), error => error.message);
+    await ready.promise;
+    if (reason === 'deadline') t.mock.timers.tick(100);
+    const report = await outcome;
+    stuck.resolve([]);
+    assert.equal(errors.length, 2);
+    for (const original of errors) {
+      const receipt = navigationFailure(original).receipt;
+      t.after(() => rm(receipt, { recursive: true, force: true }));
+      assert.ok(report.includes(original.message), `${reason} dropped ${original.message}`);
+      assert.ok(report.includes(receipt), `${reason} dropped the receipt path`);
+    }
+  }
+});
+
+test('a context arriving after a part deadline is closed and further opens are rejected', async t => {
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  const opening = Promise.withResolvers(), reply = Promise.withResolvers(), resumed = Promise.withResolvers();
+  let calls = 0, closes = 0, lateError, nextError;
+  const browser = { newContext: async () => { calls++; opening.resolve(); return reply.promise; } };
+  ownContexts(browser);
+  let deadline;
+  const run = runPart('late context', async () => {
+    try { await browser.newContext(); } catch (error) { lateError = error; }
+    try { await browser.newContext(); } catch (error) { nextError = error; }
+    resumed.resolve();
+    return [];
+  }, { timeoutMs: 50 }).catch(error => { deadline = error; });
+  await opening.promise;
+  t.mock.timers.tick(50);
+  await new Promise(resolve => setImmediate(resolve));
+  const beforeReply = deadline;
+  reply.resolve({ close: async () => { closes++; } });
+  await resumed.promise;
+  await run;
+  assert.match(beforeReply?.message ?? '', /late context.*exceeded 50 ms/);
+  assert.equal(lateError, deadline);
+  assert.equal(nextError, deadline);
+  assert.equal(calls, 1);
+  assert.equal(closes, 1);
+});
+
 test('after the run\'s first failures, a failed navigation keeps only its evidence line', async t => {
   t.after(() => configureNavigation());
   configureNavigation({ fullEvidenceLimit: 1 });

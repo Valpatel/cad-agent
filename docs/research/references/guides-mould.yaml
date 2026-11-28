@@ -374,7 +374,7 @@ sources:
   authors: []
   org: Fictiv
   year: null
-  url: https://fictiv.com/injection-molding-design-guide/
+  url: https://www.fictiv.com/ebooks/get-smart-on-injection-molding
   access: free
   terms: cited and summarised, never copied
   licence:
@@ -409,6 +409,8 @@ sources:
     redistribute: false
   used_for: []
   imported: 9dc1004287b95e4b
+  mirrors:
+  - https://fictiv.com/injection-molding-design-guide/
 - id: fictiv-how-to-design-snap-fit-components
   kind: guide
   category: manufacturing-guides
@@ -1106,7 +1108,7 @@ sources:
   authors: []
   org: Moldex3D
   year: null
-  url: https://www.moldex3d.com/en/events/webinar/webinar-eliminating-sink-mark-and-voids-in-injection-molded-parts-cet/
+  url: https://www.moldex3d.com/events/webinar/webinar-eliminating-sink-mark-and-voids-in-injection-molded-parts-cet/
   access: free
   terms: cited and summarised, never copied
   licence:
@@ -1141,6 +1143,8 @@ sources:
     redistribute: false
   used_for: []
   imported: e04bfd32ab2c6611
+  mirrors:
+  - https://www.moldex3d.com/en/events/webinar/webinar-eliminating-sink-mark-and-voids-in-injection-molded-parts-cet/
 - id: pmc-mdpi-mechanical-properties-of-weld-lines-in-injection
   kind: paper
   category: manufacturing-guides

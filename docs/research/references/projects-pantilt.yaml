@@ -761,7 +761,7 @@ sources:
   authors: []
   org: audiomatica.com
   year: null
-  url: https://www.audiomatica.com/wp/?p=3024
+  url: https://www.audiomatica.com/wp/?page_id=3024
   access: free
   terms: cited and summarised, never copied
   licence:
@@ -794,6 +794,8 @@ sources:
       seen: U
   used_for: []
   imported: 081d37d6b7edbfa3
+  mirrors:
+  - https://www.audiomatica.com/wp/?p=3024
 - id: eclick-panorama-head
   kind: project
   category: assemblies

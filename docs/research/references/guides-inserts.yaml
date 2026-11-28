@@ -13,7 +13,7 @@ sources:
   authors: []
   org: Jawstec
   year: null
-  url: https://www.jawstec.com/?p=76921
+  url: https://www.jawstec.com/heat-set-insert-data-what-engineers-must-know/
   access: free
   terms: cited and summarised, never copied
   licence:
@@ -47,6 +47,8 @@ sources:
   summary: 'Retells CNC Kitchen''s insert tests: oversized holes lose pull-out, undersized ones are hard to install and may
     crack; size the hole for your insert and material and test it. No numbers.'
   used_for: []
+  mirrors:
+  - https://www.jawstec.com/?p=76921
 - id: stanley-engineered-fastening-pop-rivet-design-guidelines
   kind: guide
   category: manufacturing-guides

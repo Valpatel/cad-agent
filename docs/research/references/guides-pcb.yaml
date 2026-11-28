@@ -278,7 +278,7 @@ sources:
   authors: []
   org: Eurocircuits
   year: null
-  url: https://www.eurocircuits.com/?p=8953
+  url: https://www.eurocircuits.com/drc-settings-and-guide-lines-for-cad-packages/
   access: free
   terms: cited and summarised, never copied
   licence:
@@ -317,6 +317,8 @@ sources:
     redistribute: false
   used_for: []
   imported: d97afec74fd5fb60
+  mirrors:
+  - https://www.eurocircuits.com/?p=8953
 - id: eurocircuits-standard-pool-services
   kind: guide
   category: manufacturing-guides

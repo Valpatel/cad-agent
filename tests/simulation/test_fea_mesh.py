@@ -2,10 +2,14 @@
 the design peak, slivers before meshing and the mesher's refusals. Meshes stay small so the suite stays fast."""
 import gc
 import math
+import os
 import platform
 import re
+import subprocess
+import sys
 import warnings
 import weakref
+import xml.etree.ElementTree as ET
 
 import numpy as np
 import pytest
@@ -428,7 +432,29 @@ def test_a_live_refusal_names_the_two_walls():
         pytest.skip(f'gmsh {gmsh.__version__} meshes the 0.02 mm slit on this build')
 
 
-def test_a_shelled_box_too_thin_for_its_mesh_is_a_refusal():
+def test_a_shelled_box_too_thin_for_its_mesh_is_a_refusal(tmp_path):
+    """Run this marginal mesh in its own interpreter so a stuck native call cannot strand the suite (#877)."""
+    report = tmp_path / 'thin-shell.xml'
+    worker = [sys.executable, '-m', 'pytest', '-vv', '-s', '-p', 'no:cacheprovider',
+              '-o', 'python_functions=check_shelled_box_refusal', '-o', 'faulthandler_timeout=15',
+              f'--junitxml={report}', f'{__file__}::check_shelled_box_refusal']
+    try:
+        result = subprocess.run(worker, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, timeout=60,
+                                env={**os.environ, 'PYTEST_ADDOPTS': '', 'TMPDIR': str(tmp_path)})
+    except subprocess.TimeoutExpired as err:  # run() kills and waits for the worker before raising
+        output = (err.output or b'').decode(errors='replace')
+        pytest.fail(f'Thin-shell mesh worker exceeded 60 s.\n{output}', pytrace=False)
+    output = result.stdout.decode(errors='replace')
+    assert result.returncode == 0, output
+    case, = ET.parse(report).iter('testcase')
+    if float(case.attrib['time']) >= 15:
+        warnings.warn(f'Slow thin-shell mesh worker completed.\n{output}', pytest.PytestWarning)
+    skipped = case.find('skipped')
+    if skipped is not None:
+        pytest.skip(skipped.attrib['message'])
+
+
+def check_shelled_box_refusal():
     """A 2 mm shell with R1 inside corners at a 4 mm mesh: gmsh 4.15.2 throws 'Could not recover boundary mesh: error
     2' (sometimes the PLC line instead), which used to reach the caller as gmsh's bare Exception. It is a MeshRefusal
     now, with the faces when gmsh gives a point. A build that meshes it skips."""

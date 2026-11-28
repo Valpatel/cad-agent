@@ -169,7 +169,7 @@ At the start of a session, or after a crash, rebuild the state from GitHub befor
 ```bash
 gh issue list --state open --assignee @me ; gh issue list --state open --limit 30
 gh issue list --state open --search '"work v1" in:comments'  # issues with claims: read who holds what
-gh issue list --state open --label claimed                     # clear the label where the latest lease ran out
+gh issue list --state open --label claimed                     # clear the label where no claim or checkpoint is live
 gh pr list --state open --author @me
 git fetch --all --prune && git status -sb
 git log --oneline --branches --not --remotes                # commits on no remote: push them first

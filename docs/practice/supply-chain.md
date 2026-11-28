@@ -150,7 +150,7 @@ variables yourself for tools you or your agent start directly, such as an MCP se
 |---|---|---|
 | text-to-cad's cadgen, installed from upstream | yes, analytics and an update check, on by default | `CADGEN_TELEMETRY=0`, `CADGEN_UPDATE_CHECK=0`, `DO_NOT_TRACK=1` |
 | text-to-cad's cadgen, our vendored copy | no: patched off (`software/vendor/patches/text-to-cad/0001-…`) | |
-| kicad-mcp-pro (your agent starts it) | only to an OpenTelemetry endpoint you set; off by default | `KICAD_MCP_TELEMETRY_ENABLED=false`, and leave `KICAD_MCP_OTEL_ENDPOINT` and `OTEL_EXPORTER_OTLP_ENDPOINT` unset: an endpoint turns export on |
+| kicad-mcp-pro 4.4.0 (historical survey, do not launch) | only to an OpenTelemetry endpoint you set; off by default | `KICAD_MCP_TELEMETRY_ENABLED=false`, and leave `KICAD_MCP_OTEL_ENDPOINT` and `OTEL_EXPORTER_OTLP_ENDPOINT` unset: an endpoint turns export on |
 | Cloudflare wrangler (`npm --prefix tools/site run deploy:site`) | usage data on by default; asks about each error report | `WRANGLER_SEND_METRICS=false`, `WRANGLER_SEND_ERROR_REPORTS=false`, both set in the script |
 | Python extras, npm dev packages, the other vendored projects | none found (survey of 2026-11-01) | |
 | Desktop programs a project step may drive: KiCad, slicers, OpenFOAM, Graphviz | not surveyed; any reporting is in each program's own settings | |

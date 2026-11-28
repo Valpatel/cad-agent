@@ -454,7 +454,7 @@
   {
    "name": "oaslananka/kicad-mcp-pro",
    "url": "https://github.com/oaslananka/kicad-mcp-pro",
-   "license_spdx": "MIT",
+   "license_spdx": "AGPL-3.0-only",
    "stars": 149,
    "last_push": "2026-10-25",
    "clients": [
@@ -473,7 +473,7 @@
    "drawings": "no",
    "vendor_integration": "JLCPCB default; Nexar/DigiKey/Mouser with keys",
    "evals": "evals/ and benchmarks/ dirs",
-   "notes": "387 tools; default profile 24 read-only; telemetry off by default; shipped .mcp.json unpinned"
+   "notes": "The surveyed 4.4.0 snapshot at f03b478f597d is MIT and retained for source reference only. Four published advisories affect it. Do not run it or enable upstream's unpinned MCP client configuration. Fixed upstream releases are AGPL-3.0-only."
   },
   {
    "name": "Seeed-Studio/kicad-mcp-server",
@@ -517,7 +517,7 @@
    "drawings": "no",
    "vendor_integration": "none",
    "evals": "none",
-   "notes": "Declined for this maintenance pass: KiCad 9 candidate, last push 2025-10-17 (checked 2026-11-07), maintenance unverified. Keep the historical MIT entry; current integration work uses the existing KiCad 10 vendors instead. Future adoption needs a fresh review."
+   "notes": "Declined for this maintenance pass: KiCad 9 candidate, last push 2025-10-17 (checked 2026-11-07), maintenance unverified. Future adoption needs a fresh review."
   },
   {
    "name": "aklofas/kicad-happy",

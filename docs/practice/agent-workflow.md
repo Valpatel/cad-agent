@@ -195,6 +195,9 @@ agents: these also need what cad-agent can't check from here:
 
 The commands fit how this cad-agent was installed. The installer's uv tool environment has no pip, so the notice names
 uv's `tool install --with`, which `cad-agent update` keeps on later reinstalls; an install in your own venv gets pip.
+A package uv recorded from a URL with a user name or password in it (uv writes them into its receipt) is not kept,
+and the update names it so you can add it again; a token inside a URL's path cannot be told from a file name, so
+keep tokens out of URL paths.
 
 | Needs | Checked how | Who needs it |
 |---|---|---|

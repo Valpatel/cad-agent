@@ -141,14 +141,29 @@ async function previewRetryCheck(open, fail) {
     if (entry) entry.failure = request.failure()?.errorText;
   });
   try {
-    await retry.page.route('**/toolkit/scada/catalog.json',route=>route.fulfill({contentType:'application/json',body:'{"schema":"unsupported","elements":[]}'}));
+    let firstMetadataRequest = true;
+    await retry.page.route('**/toolkit/scada/catalog.json', route => {
+      // Keep interception active while Chromium fetches the renderer's module graph.
+      if (!firstMetadataRequest) return route.continue();
+      firstMetadataRequest = false;
+      return route.fulfill({contentType:'application/json', body:'{"schema":"unsupported","elements":[]}'});
+    });
     const documentStart = await retry.page.evaluate(() => performance.timeOrigin);
     const pump=retry.page.locator('#equipment--pump'),button=pump.getByRole('button',{name:'Try states'});
     await button.click();await retry.page.locator('[data-scada-preview-error]').filter({hasText:'could not load'}).waitFor();
     await retry.page.keyboard.press('Escape');
     if(!await pump.getByRole('link',{name:'SVG asset'}).isVisible())fail('Toolkit preview failure','native asset link disappeared');
-    await retry.page.unroute('**/toolkit/scada/catalog.json');
-    await button.click();await retry.page.locator('[data-scada-preview-art] [data-scada-type="pump"]').waitFor();
+    await button.click();
+    const art = retry.page.locator('[data-scada-preview-art] [data-scada-type="pump"]');
+    await art.waitFor();
+    const running = retry.page.locator('[data-scada-state-fields] [name="running"]');
+    await expect(running).toBeVisible();
+    const current = await running.isChecked();
+    await expect(art).toHaveAttribute('data-running', String(current));
+    const next = !current;
+    await running.setChecked(next);
+    await expect(art).toHaveAttribute('data-running', String(next));
+    await expect(retry.page.locator('[data-scada-preview-error]')).toHaveText('');
     if (await retry.page.evaluate(() => performance.timeOrigin) !== documentStart)
       fail('Toolkit preview retry', 'recoverable metadata failure reloaded the document');
     await retry.page.keyboard.press('Escape');

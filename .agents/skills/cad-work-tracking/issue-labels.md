@@ -39,6 +39,11 @@ Both area labels may apply; neither is mandatory. Preserve useful existing label
 `enhancement`, research or domain labels. Scope describes the unit of work, stage describes a pending decision, and
 area describes the affected capability. None expresses priority, authorization, deployment or a review verdict.
 
+`claimed` is not a classification: it marks an issue an agent has claimed, as a search aid next to the
+[work-claim comments](SKILL.md#work-claims-sharing-issues-between-agents). The claim comments decide who holds the
+issue; the label comes off only when no agent's latest `claim` or `checkpoint` is unexpired. Never treat the label
+alone as a hold, or its absence as proof that nobody holds the issue.
+
 Examples:
 
 - A continuing effort to improve simulation evidence is a program; its finite receipt-format proposal is bounded

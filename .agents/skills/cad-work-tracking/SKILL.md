@@ -38,7 +38,10 @@ flowchart TD
    is not a quick fix. A large job gets a program issue that links bounded deliverables.
    **Then check who holds it and claim it.** Several agents on different tools and machines work the same repos.
    Read the issue's latest [work-claim comments](#work-claims-sharing-issues-between-agents): if another agent holds
-   an unexpired claim, pick other work or claim a separate scope. Otherwise post a `claim` before changing anything.
+   an unexpired claim, pick other work or claim a separate scope. Otherwise post a `claim` before changing anything,
+   and add the `claimed` label. The same applies before changing state on a PR someone else opened (push, rebase,
+   gates dispatch, merge, release). A requested review is not a claim: review without claiming or backing off, and
+   never change the branch.
 2. **Branch from the integration branch and push it at once.** Follow the repo's AGENTS.md / CONTRIBUTING.md: in
    cad-agent that is a `feat/<topic>` worktree from `origin/dev`; in a product repo, often `dev`. Push before you
    have much to push (`git push -u origin <branch>`), so the branch exists remotely from the start.
@@ -58,12 +61,13 @@ flowchart TD
    Ask yourself: "if this session ended now, could someone else continue from GitHub without asking me?"
    If not, checkpoint. Reconcile scope and pending design status with new evidence using the
    [label transitions](issue-labels.md#maintaining-labels). Post it as a work-claim `checkpoint` so it renews your
-   lease (at least once a day).
+   lease (at least once per 4-hour lease).
 6. **Close out as you go.** When a PR merges, its `Closes #N` closes the issue; check that it did, tick the tracking
    issue and comment with the merge commit. Close issues that turned out to be unnecessary, with the reason.
    Delete your own merged branches and remove your own worktrees (after checking no virtualenv imports from them);
    never touch another session's branch or worktree. End your claim with `done` (PR, commit, evidence), or
-   `release` with resume notes if you stop before the end. Completing one child does not complete an ongoing
+   `release` with resume notes if you stop before the end, and remove the `claimed` label unless another agent's
+   claim on the issue is still unexpired. Completing one child does not complete an ongoing
    program. A design deliverable closes on its planning acceptance; link remaining implementation work and never
    describe the accepted design as shipped functionality.
 
@@ -97,12 +101,14 @@ agents are named by a stable pseudonymous tag. Always **post a new comment**; ne
 
 Scope: <what this agent is doing on this issue>
 Branch: <branch or PR>
+
+Signed: Claude Code (cloud session), agent a-7kq2m4xw
 ```
 
 The first lines of the other actions:
 
 ```markdown
-<!-- work v1 checkpoint agent=a-7kq2m4xw lease=2026-11-02T08:30Z -->
+<!-- work v1 checkpoint agent=a-7kq2m4xw lease=2026-11-01T22:30Z -->
 <!-- work v1 release agent=a-7kq2m4xw -->
 <!-- work v1 done agent=a-7kq2m4xw -->
 ```
@@ -112,15 +118,26 @@ commit or evidence.
 
 | Action | When | Lease |
 |---|---|---|
-| `claim` | before starting | until `lease=`, at most 24 h after the comment |
-| `checkpoint` | progress; at least once per lease | renews `lease=` |
-| `release` | stopping before the end, with resume notes | none: the claim ends |
-| `done` | PR merged or evidence posted | none: the claim ends |
+| `claim` | before starting; add the `claimed` label | until `lease=`, at most 4 h after the comment |
+| `checkpoint` | progress, about every 30 minutes; always before the lease runs out; re-add a missing label | renews `lease=` |
+| `release` | stopping before the end, with resume notes; remove the label unless another claim is unexpired | none: the claim ends |
+| `done` | PR merged or evidence posted; remove the label unless another claim is unexpired | none: the claim ends |
 
 - **Format.** The tag is `a-` plus eight characters of `[a-z2-7]`. `lease=` is UTC to the minute, `YYYY-MM-DDTHH:MMZ`
-  (no seconds), and is at most 24 h after the comment's own timestamp.
-- **A claim not refreshed within its lease has expired**: the issue is open for anyone. Daily checkpoints are the
-  price of holding work.
+  (no seconds), and is at most 4 h after the comment's own timestamp; a later `lease=` counts as ending 4 h after the
+  comment. A long run in flight (CI, a simulation) is no exception: post a checkpoint while you wait.
+- **A claim not refreshed within its lease has expired**: the issue is open for anyone. A checkpoint about every 30
+  minutes ([step 5](#the-loop)), and always before the lease runs out, is the price of holding work.
+- **The `claimed` label is a search aid, not the record.** It cannot expire, so the lease comment decides. Whoever
+  reads an issue with the label removes it only when no agent's latest `claim` or `checkpoint` is unexpired, and
+  posts one line saying so (no claim needed). A holder whose label was removed in a race re-adds it at its next
+  checkpoint. A session also sweeps every open `claimed` issue when it starts ([Resuming](#resuming)). An
+  issue without the label can still hold a live claim: always read the comments.
+- **Sign every comment and review** with a final line (above any footer the posting tool adds)
+  `Signed: <agent> (<harness>), agent <tag>`, using your claim tag or the tag you would claim with, for example
+  `Signed: Codex (cloud task), agent a-k3m6q2xp`. Every agent posts as the same GitHub account, so this line is the
+  only way to tell who wrote what. Name the agent family and harness, never a model version. In a review, put it
+  above the `cad-review` verdict marker: the gate reads only the last line, plus one posting-tool footer.
 - **Who holds a contested issue.** Each agent's run of claims starts with its first `claim` and continues while
   every following `claim` or `checkpoint` is posted before the previous lease runs out. A gap ends the run; the
   next comment starts a new one. Of the agents whose latest comment is an unexpired `claim` or `checkpoint`, the one
@@ -152,6 +169,8 @@ At the start of a session, or after a crash, rebuild the state from GitHub befor
 ```bash
 gh issue list --state open --assignee @me ; gh issue list --state open --limit 30
 gh issue list --state open --search '"work v1" in:comments'  # issues with claims: read who holds what
+gh api --paginate 'repos/{owner}/{repo}/issues?state=open&labels=claimed&per_page=100' \
+  --jq '.[] | select(.pull_request == null) | [.number, .title] | @tsv'
 gh pr list --state open --author @me
 git fetch --all --prune && git status -sb
 git log --oneline --branches --not --remotes                # commits on no remote: push them first

@@ -31,7 +31,9 @@ flowchart TD
      stage, or an unresolved investigation marked quick-fix; this read-only role does not change labels.
    - CI state of the open PRs (`gh pr checks <n>`) and unresolved review threads.
    - Work claims on those issues (comments starting `<!-- work v1 `): who holds each one, until when, and which
-     claims have expired (lease passed with no newer `checkpoint`) and are open for grabs.
+     claims have expired (lease passed with no newer `checkpoint`) and are open for grabs. List open issues still
+     labelled `claimed` on which no agent's latest `claim` or `checkpoint` is unexpired, so the writer can remove the
+     stale label.
    - If the project already configures a goal graph (for example `project.goals` in `cad-agent.yaml`), read it
      through the organization's available authorized tool/skill and map each issue's `Goal:` line to its goal.
      Report open goals without open issues and issue links whose goals cannot be resolved. Missing access means

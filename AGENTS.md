@@ -12,6 +12,25 @@ Use exactly one `scope:` label; `stage:design-review` independently marks a pend
 comments before classifying or resuming, keep unrelated labels, and write outcome/evidence/acceptance rather than
 conversation history. The bundled guide defines transitions and the additional requirements for design proposals.
 
+**Claim before you work, and sign what you post.** Claude, Codex and other harnesses work this repo at the same
+time, all as one GitHub account, so neither GitHub nor the gates can tell them apart. Follow
+[work claims](.agents/skills/cad-work-tracking/SKILL.md#work-claims-sharing-issues-between-agents):
+
+- Before you change anything for an issue, or change state on someone else's PR (push, rebase, dispatch gates, merge,
+  release), read the issue's latest claim comments. If another agent holds an unexpired claim, pick other work or
+  claim a separate scope and say so. A **requested review is not a claim**: review without claiming or backing off,
+  and never change the branch.
+- Otherwise post a `claim` comment with a lease of at most 4 hours, and add the `claimed` label. A `checkpoint` about
+  every 30 minutes, and always before the lease runs out, renews it (and re-adds a missing label). End with `done` or
+  `release`, and remove the label unless another agent's claim is still unexpired.
+- The lease comment is the record; the label is only a search aid. Remove a `claimed` label only when no agent's
+  latest `claim` or `checkpoint` on the issue is unexpired, and say so in one comment. Check every `claimed` issue
+  this way when a session starts.
+- End every issue or PR comment and review you post with a signature line, above any footer your posting tool adds:
+  `Signed: <agent> (<harness>), agent <tag>`, for example `Signed: Codex (cloud task), agent a-k3m6q2xp`. Use your
+  claim tag, or the tag you would claim with. Name the agent family and harness, never a model version. In a review,
+  put it above the verdict marker, which must stay the last line for the gate.
+
 Other agent sessions use and change this repo at the same time, so:
 
 - **Never push to `main` or `dev`**, and never force-push a branch you did not create. Both are protected.

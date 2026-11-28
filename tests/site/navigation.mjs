@@ -52,11 +52,15 @@ export const cleanURL = value => {
 export const cleanText = value => String(value).replace(/https?:\/\/[^\s"'<>]+/g, cleanURL).slice(0, 300);
 
 /** Bound a browser action from Node; clear the timer when the action finishes. */
-export const bounded = async (action, ms, what) => {
+export const bounded = async (action, ms, what, onTimeout) => {
   let timer;
   try {
     return await Promise.race([Promise.resolve().then(action), new Promise((_, reject) => {
-      timer = setTimeout(() => reject(new Error(`${what} exceeded ${ms} ms`)), ms);
+      timer = setTimeout(() => {
+        const error = new Error(`${what} exceeded ${ms} ms`);
+        onTimeout?.(error);
+        reject(error);
+      }, ms);
     })]);
   } finally { clearTimeout(timer); }
 };
@@ -286,8 +290,16 @@ export async function checkNavigationReceipt(attempt, { url, waitUntil, where, d
 export function ownContexts(browser) {
   const newContext = browser.newContext.bind(browser);
   browser.newContext = async (...args) => {
+    const scope = parts.getStore();
+    if (scope?.deadline) throw scope.deadline;
     const context = await newContext(...args);
-    parts.getStore()?.contexts.add(context);
+    // The browser may finish opening a context after its part's deadline and cleanup.
+    if (scope?.deadline) {
+      try { await closeContext(context); }
+      catch (error) { console.error(`Closing a late browser context failed: ${cleanText(error.message)}`); }
+      throw scope.deadline;
+    }
+    scope?.contexts.add(context);
     return context;
   };
 }
@@ -531,26 +543,47 @@ function failureFinding(name, error, failure, stopped) {
     `\n  ${failure.kind === 'fetch' ? 'fetch' : 'navigation'} evidence: ${failure.receipt ?? `no receipt (${failure.evidenceError ? `evidence collection failed: ${failure.evidenceError.split('\n')[0]}` : failure.evidence?.fullEvidence ? `full evidence ${failure.evidence.fullEvidence}; see the evidence line above` : 'see the evidence line above'})`}`;
 }
 
+function closeContext(context) {
+  return bounded(() => context.close(), 10000, 'closing a context');
+}
+
+async function closePartContexts(scope) {
+  const left = [...scope.contexts].filter(context => { try { return context.browser()?.contexts().includes(context) ?? true; } catch { return true; } });
+  const closed = await Promise.allSettled(left.map(closeContext));
+  const cleanup = closed.filter(result => result.status === 'rejected').map(result => cleanText(result.reason?.message));
+  return (left.length ? `\n  closed ${left.length - cleanup.length} of ${left.length} browser context(s) the part left open` : '') +
+    (cleanup.length ? `; cleanup failed: ${cleanup.join('; ')}` : '');
+}
+
 /** Run one part: its findings, plus one for each test-side fetch that failed in it (fetchThrough). A part that ends on
  * a failed navigation, or that throws after one of its fetches failed, reports that as its finding, keeping the
  * original message (and the error it was raised as, if a caller wrapped it), after closing the contexts the part left
  * open. Cleanup is bounded and its faults are added to the finding; they never replace it. Any other error
- * propagates. */
-export async function runPart(name, action) {
+ * propagates. The per-part deadline fails a stalled action even when it has no pending browser call.
+ * A deadline covers asynchronous work while Node can run timers. */
+export async function runPart(name, action, { timeoutMs = 25 * 60_000, onTimeout } = {}) {
   const scope = { name, contexts: new Set(), failures: [] };
   const fetched = () => scope.failures.map(error => failureFinding(name, error, navigationFailure(error), false));
-  try { return [...await parts.run(scope, action), ...fetched()]; }
+  try {
+    const result = await bounded(() => parts.run(scope, action), timeoutMs, `browser part "${name}"`, error => {
+      scope.deadline = error;
+      onTimeout?.(error);  // stop dispatch immediately, including while this part's cleanup is running
+    });
+    return [...result, ...fetched()];
+  }
   catch (error) {
     const failure = navigationFailure(error);
+    if (scope.deadline && error === scope.deadline) {
+      const recorded = fetched();
+      if (recorded.length) error.message += '\n' + recorded.join('\n');
+      error.message += await closePartContexts(scope);
+      throw error;
+    }
     if (!failure && !scope.failures.length) throw error;
-    const left = [...scope.contexts].filter(context => { try { return context.browser()?.contexts().includes(context) ?? true; } catch { return true; } });
-    const closed = await Promise.allSettled(left.map(context => bounded(() => context.close(), 10000, 'closing a context')));
-    const cleanup = closed.filter(result => result.status === 'rejected').map(result => cleanText(result.reason?.message));
     const findings = scope.failures.filter(fetchError => fetchError !== failure?.error).map(fetchError => failureFinding(name, fetchError, navigationFailure(fetchError), false));
     findings.push(failure ? failureFinding(name, error, failure, true)
       : `${name}: after a test-side fetch failed, this part stopped on: ${String(error?.stack || error).slice(0, 2000)}`);
-    findings[findings.length - 1] += (left.length ? `\n  closed ${left.length - cleanup.length} of ${left.length} browser context(s) the part left open` : '') +
-      (cleanup.length ? `; cleanup failed: ${cleanup.join('; ')}` : '');
+    findings[findings.length - 1] += await closePartContexts(scope);
     return findings;
   }
 }
@@ -561,14 +594,18 @@ export async function runPart(name, action) {
  * else fails the run once the parts already started have finished, so no page is closed under a part still using
  * it. Before that error is thrown, the findings gathered so far are printed: a stall in one part must not vanish
  * behind another part's error. */
-export async function inLanes(parts, { lanes = 2, label = 'browser' } = {}) {
+export async function inLanes(parts, { lanes = 2, label = 'browser', timeoutMs } = {}) {
   const found = parts.map(() => []), took = parts.map(() => 0), finished = parts.map(() => false), errors = [], start = Date.now();
+  const stop = error => { if (!errors.includes(error)) errors.push(error); };
   let next = 0;
   const lane = async () => {
     while (next < parts.length && !errors.length) {
       const i = next++, t = Date.now();
       console.log(`${label}: starting ${parts[i][0]}`);
-      try { found[i] = await runPart(parts[i][0], parts[i][1]); finished[i] = true; } catch (e) { errors.push(e); }
+      try {
+        found[i] = await runPart(parts[i][0], parts[i][1], { timeoutMs, onTimeout: stop });
+        finished[i] = true;
+      } catch (error) { stop(error); }
       took[i] = Math.round((Date.now() - t) / 1000);
       console.log(`${label}: finished ${parts[i][0]} in ${took[i]} s; ${found[i].length} findings, ${errors.length} errors so far`);
     }

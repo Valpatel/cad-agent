@@ -52,7 +52,7 @@ flowchart TD
 | [compiler/](compiler/README.md) | Compilers, rendering helpers and permanent redirect data |
 | [figures/](figures/README.md) | Explorer stills and existing-viewer picture scripts |
 | [assets/](assets/README.md) | Files emitted at /web/ and the existing installer URLs |
-| [pin_installers.py](pin_installers.py) | Pin the install guide's checked installer blocks (URL commit and SHA-256) to a pushed commit; `--check` compares them with HEAD |
+| [pin_installers.py](pin_installers.py) | Pin the install guide's checked installer blocks (URL commit and SHA-256) to a pushed commit; `--check` compares them with HEAD (in a shallow clone that lacks the pinned commit it prints "not checked" for that commit and exits 0) |
 | package.json, package-lock.json, wrangler.toml | npm ownership, pinned dependencies and root-dist deployment configuration |
 
 From the repository root:

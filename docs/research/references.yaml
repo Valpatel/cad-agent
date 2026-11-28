@@ -3183,7 +3183,7 @@ sources:
     year: 2026
     url: https://github.com/oaslananka/kicad-mcp-pro
     access: free
-    terms: MIT at the imported commit f03b478f597d (4.4.0), retained for source reference only. Current upstream releases are AGPL-3.0-only.
+    terms: The MIT snapshot at f03b478f597d (4.4.0) is used with attribution to Osman Aslan for source reference only. Current upstream releases are AGPL-3.0-only.
     licence:
       class: share-alike
       spdx: AGPL-3.0-only
@@ -3192,8 +3192,9 @@ sources:
     areas: [pcb]
     used_for: [software/vendor/kicad-mcp-pro]
     verified: >-
-      The MIT licence at f03b478f597d credits Osman Aslan (2026). On 2026-11-28 the four advisories in #498
-      covered the 4.4.0 snapshot. Upstream 4.22.0 declares AGPL-3.0-only. The snapshot is for source reference only.
+      2026-10-31: read the MIT licence crediting Osman Aslan (2026). On 2026-11-28, verified that the four
+      advisories in #498 cover the 4.4.0 snapshot at f03b478f597d and that upstream 4.22.0 declares AGPL-3.0-only.
+      The snapshot is retained for source reference only.
 
   - id: build123d-mcp
     title: build123d-mcp

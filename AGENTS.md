@@ -27,7 +27,7 @@ time, all as one GitHub account, so neither GitHub nor the gates can tell them a
   latest `claim` or `checkpoint` on the issue is unexpired, and say so in one comment. Check every `claimed` issue
   this way when a session starts.
 - End every issue or PR comment and review you post with a signature line, above any footer your posting tool adds:
-  `Signed: <agent> (<harness>), agent <tag>`, for example `Signed: Codex (cloud task), agent a-k3m9q2xp`. Use your
+  `Signed: <agent> (<harness>), agent <tag>`, for example `Signed: Codex (cloud task), agent a-k3m6q2xp`. Use your
   claim tag, or the tag you would claim with. Name the agent family and harness, never a model version. In a review,
   put it above the verdict marker, which must stay the last line for the gate.
 

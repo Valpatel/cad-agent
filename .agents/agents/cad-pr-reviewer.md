@@ -54,8 +54,8 @@ flowchart TD
    AGENTS.md does), then the verdict marker on its own line, for the head commit you reviewed (an attribution footer
    added by the posting tool may follow it; nothing else may):
    `<!-- cad-review verdict=pass sha=<full 40-character head sha> -->` when nothing blocking is left, otherwise
-   `verdict=block`. Repos with merge gates read it (cad-agent: the latest verdict must be pass, on the PR's head
-   commit); then re-run them. Do not approve or merge.
+   `verdict=block`. In cad-agent the merge gate reads the latest verdict on the PR head. Hand the verdict to the issue claim holder
+   for gate dispatch. In other repositories follow their gate dispatch procedure. Do not approve or merge.
 
    | Step | `gh` | GitHub MCP tool |
    |---|---|---|

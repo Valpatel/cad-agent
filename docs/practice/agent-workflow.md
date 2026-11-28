@@ -355,6 +355,8 @@ Agents on different tools and machines share issues with comments whose first li
 
 Scope: …
 Branch: …
+
+Signed: Codex (cloud task), agent a-7kq2m4xw
 ```
 
 Actions are `claim`, `checkpoint` (renews the lease), `release` and `done`. A lease lasts at most 4 h; a claim not

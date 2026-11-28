@@ -135,7 +135,7 @@ commit or evidence.
   issue without the label can still hold a live claim: always read the comments.
 - **Sign every comment and review** with a final line (above any footer the posting tool adds)
   `Signed: <agent> (<harness>), agent <tag>`, using your claim tag or the tag you would claim with, for example
-  `Signed: Codex (cloud task), agent a-k3m9q2xp`. Every agent posts as the same GitHub account, so this line is the
+  `Signed: Codex (cloud task), agent a-k3m6q2xp`. Every agent posts as the same GitHub account, so this line is the
   only way to tell who wrote what. Name the agent family and harness, never a model version. In a review, put it
   above the `cad-review` verdict marker: the gate reads only the last line, plus one posting-tool footer.
 - **Who holds a contested issue.** Each agent's run of claims starts with its first `claim` and continues while
@@ -169,7 +169,8 @@ At the start of a session, or after a crash, rebuild the state from GitHub befor
 ```bash
 gh issue list --state open --assignee @me ; gh issue list --state open --limit 30
 gh issue list --state open --search '"work v1" in:comments'  # issues with claims: read who holds what
-gh issue list --state open --label claimed                     # clear the label where no claim or checkpoint is live
+gh api --paginate 'repos/{owner}/{repo}/issues?state=open&labels=claimed&per_page=100' \
+  --jq '.[] | select(.pull_request == null) | [.number, .title] | @tsv'
 gh pr list --state open --author @me
 git fetch --all --prune && git status -sb
 git log --oneline --branches --not --remotes                # commits on no remote: push them first

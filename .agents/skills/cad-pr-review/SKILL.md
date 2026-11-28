@@ -77,7 +77,8 @@ flowchart TD
   attribution footer added by the posting tool may follow it):
   `<!-- cad-review verdict=pass sha=<full 40-character head sha> -->` when nothing blocking is left, otherwise
   `verdict=block`. A re-review after fixes posts a new summary with a new marker. Where the repo has merge gates,
-  re-run them so they read it. Do not approve or merge unless the repo's rules give the reviewer that role.
+  the issue claim holder dispatches them after the verdict when the repo requires a claim for dispatch. Otherwise
+  the reviewer re-runs them. Do not approve or merge unless the repo's rules give the reviewer that role.
 - Finish with a list of findings (file:line, severity, one sentence) for the author.
 - Post ordinary timeline updates as new comments and verify the created comment and its target. The issue-update
   resource edits the description; it is not a substitute for the comments collection. Formal reviews and inline

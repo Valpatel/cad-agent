@@ -109,6 +109,32 @@ def front_matter(text: str) -> dict:
     return data
 
 
+@pytest.mark.parametrize("relative", [
+    "AGENTS.md",
+    ".agents/skills/cad-work-tracking/SKILL.md",
+    "docs/practice/agent-workflow.md",
+])
+def test_work_signatures_use_valid_claim_tags(relative):
+    text = (ROOT / relative).read_text()
+    tags = re.findall(r"Signed: [^\n`]+?, agent (a-[\w-]+)", text)
+    assert tags, f"missing concrete signature example in {relative}"
+    assert all(re.fullmatch(r"a-[a-z2-7]{8}", tag) for tag in tags), tags
+
+
+@pytest.mark.parametrize("relative", [
+    ".agents/skills/cad-work-tracking/SKILL.md",
+    "docs/practice/agent-workflow.md",
+])
+def test_copyable_claim_ends_with_its_own_signature(relative):
+    text = (ROOT / relative).read_text()
+    claims = re.findall(r"```markdown\n(<!-- work v1 claim .*?)\n```", text, re.DOTALL)
+    assert claims, f"missing complete claim example in {relative}"
+    for claim in claims:
+        first, *_, last = claim.splitlines()
+        tag = re.search(r"\bagent=(a-[a-z2-7]{8}) ", first)
+        assert tag and last.startswith("Signed: ") and last.endswith(f", agent {tag[1]}")
+
+
 def test_there_are_skills():
     assert any(p.parent.name == "design-process" for p in SKILLS)
 

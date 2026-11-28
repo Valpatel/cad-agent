@@ -148,7 +148,7 @@ def open_viewer(page):
     page.goto(BASE + '/software/cadagent/webkit/scada/ui/' + path.relative_to(PACKAGE).as_posix(), wait_until='networkidle')
     viewer = page.locator('#utility-viewer [data-scada-viewer]')
     viewer.wait_for(state='visible')
-    # Reset recreates the viewer root. Scope the fixture style to replacements too.
+    # Reset clears inline styles on the viewer. Keep the capture font in the fixture stylesheet.
     page.add_style_tag(content=f'#utility-viewer [data-scada-viewer] {{ --font: {CAPTURE_FONT}; font-family: var(--font); }}')
     page.evaluate("()=>{document.querySelector('[data-demo-action=reset]').click();document.querySelector('[data-demo-action=running]').click()}")
     assert page.locator('[data-demo-status]').inner_text().startswith('0 illustrative minutes · Paused')

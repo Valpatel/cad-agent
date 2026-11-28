@@ -9,6 +9,20 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
 
 ## Unreleased
 
+## v0.51.1 (2026-11-28)
+
+**Fixed**
+- `tools/ci/preflight.py`: a relative `--workdir` is made absolute (on Python 3.10 and 3.11 checks could run on another Python than the report named), and the empty folders it created are removed after a passing run. A malformed mirror, a `dists` pin without `==`, a wrongly typed top-level key (`ci_node_major` as a number) and a `cwd` outside the checkout are setup errors (exit 2) before anything runs. A placeholder in quotes is refused however it is written (`"{d:}"`, `"{d!s}"`, after `\"`) (#767).
+- `tools/ci/preflight.py`: a `chromium` on PATH is flagged as differing from CI even when the pinned build is installed (the capture scripts take it first), and a preset `CHROMIUM_EXECUTABLE` is flagged only on the suites that read it. Interpreter and Node probes run in their own process group, so a timeout or Ctrl-C stops their children too (#767).
+- `tools/ci/preflight.py` signals: the first signal decides and a second one cannot leave the running check unreported; a signal after the last check still prints the full report; checks never reached are listed as `not reached`, not as "cannot run here". A failure under a load above the CPU count notes that a timing assertion may be the cause (#767).
+- `tests/repo/ci/test_ci_checks.py`: a step counts as manual-only, and a `ci_only` step as after-a-failure, only when `github.event_name == 'workflow_dispatch'` or `failure()` is a required `&&` term of its `if:`; a command substitution in setup (`pip install $(make test)`) and a command after a lone `&` are audited (#767).
+- The file-viewer browser check measures the two-second Cancel deadline from the user's pointer input to both the cancelled state and worker termination, so a slow test runner can still verify a responsive viewer (#802).
+- `cad-agent update` reinstalls a uv tool's added packages only from uv receipt rows of the shape uv writes: a row whose version specifier, extras or marker is not PEP 508, whose Git URL uses a scheme other than https, http, ssh, git or file (never `ext::`), or that holds a control character is left out and named on stderr, as an unreadable row is (#808).
+- A package added with `--with 'name @ https://user:token@host/…'` is not carried over by the reinstall and its URL is not printed: uv writes such credentials into its receipt, and the update's hint, `update --reinstall-command` and error messages would have shown them. It is named on stderr, without the URL, to add again yourself. A token inside a URL's path (not its user part) cannot be told from a file name and is not detected (#808).
+- The PowerShell lines `cad-agent` prints double the typographic single quotes (U+2018, U+2019, U+201A, U+201B) as well as `'`, since PowerShell ends a quoted string at any of them; and the update's Windows "finish with" line and its reinstall-failure message are quoted for the shell like its other hints. A rebuilt receipt row with `"` anywhere, non-ASCII in a URL, specifier or marker, or a Git host, ref or subfolder starting with `-` is left out (#808).
+- On Python 3.10 the receipt reader reads `requirements` only from the receipt's `[tool]` table, and refuses a receipt with two `[tool]` tables, two `requirements` keys or a multi-line string before the list (#808).
+- `tools/site/pin_installers.py --check` documents and tests that, in a shallow clone without the pinned commit, it reports "not checked" and exits 0, and says how to run the full check (#808).
+
 ## v0.51.0 (2026-11-21)
 
 **New**
